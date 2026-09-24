@@ -255,7 +255,11 @@ export const OWNER_JS = `
     locked:function(a){ return !!a.locked; },
     none:function(a){ return a.account===false; }
   };
-  var HOWW={password:'by password', link:'by link', remembered:'on a remembered phone'};
+  /* HOW AN OPEN CAME: the road markSeen recorded. Stage 3's hand-over records key (the code scanned) and code (the
+     code typed); a road this page does not know says no road, and only an open with none at all, from before v827
+     when the password was the one road recorded, was by password. */
+  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', key:'by a scanned code', code:'by a typed code'};
+  function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
   function chipsOf(a){
     if(a.test) return [chip('mist','Test, counts nowhere')];
@@ -263,7 +267,7 @@ export const OWNER_JS = `
     var out=[];
     if(a.locked) out.push(chip('alarm','Locked'+(a.locked.until?' till '+hm(a.locked.until):'')));
     if(a.flag&&a.flag!=='clear') out.push(chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a)));
-    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(HOWW[a.seen.how]?' '+HOWW[a.seen.how]:'')):chip('steel','Not opened'));
+    out.push(a.seen&&a.seen.opens?chip('mist','Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):'')):chip('steel','Not opened'));
     if(a.alerts) out.push(chip('verdigris','Alerts on'));
     if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
     return out;
@@ -484,7 +488,6 @@ export const OWNER_JS = `
   /* a moment today is its time, any other its day */
   function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
   function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
-  var HOW={password:'password', link:'link', remembered:'a remembered phone'};
   function ghost(t, lit){ var b=el('button','salt-ghost'+(lit?' salt-ghost--lit':''),t); b.type='button'; return b; }
   function needCard(key, party, entry, reason){
     var c=el('article','salt-approve need'); c.setAttribute('data-need', key);
@@ -558,7 +561,7 @@ export const OWNER_JS = `
     var c=needCard('k:'+a.username, a.code||a.username, 'locked out',
       'Ten wrong passwords from '+(L.from>1?L.from+' addresses':'one address')+'.'
       +(L.until?' Opens again at '+hm(L.until)+'.':'')
-      +(s&&s.opens?' Last got in by '+(HOW[s.how]||'password')+', '+dayMon(s.last)+'.':' Has never got in.'));
+      +(s&&s.opens?' Last got in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never got in.'));
     var row=el('div','salt-approve__actions');
     c.appendChild(row);
     row.appendChild(linkButton(a, noteOf(c)));
