@@ -21947,10 +21947,11 @@ await (async () => {
   } finally { w.close(); }
 })();
 
-section("24 Sep 2026: Prices says the delivery charge is set when the order is confirmed");
+section("24 Sep 2026: Prices says the delivery charge is set when the order is acknowledged");
 await (async () => {
   /* L48 of the Counter study: the Prices lead said the delivery charge is added "when the order is marked ready",
-     which v694 moved to the acknowledgement. Said in the customer's words: when we confirm your order. */
+     which v694 moved to the acknowledgement. UX7: in the page's own word for that step, acknowledged, never
+     "confirm", which names the customer's own Confirm on the order card. */
   const { landingPage: lpP } = await import("../stmt/page.js");
   const CP = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wcP } = await import("node:crypto");
@@ -21974,8 +21975,8 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
     const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/.test(t)) || "";
-    ok(/the charge is set when we confirm your order/.test(lead) && !/marked ready/.test(lead),
-      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it: " + lead.slice(0, 160));
+    ok(/the charge is set when your order is acknowledged/.test(lead) && !/marked ready|confirm/.test(lead),
+      "the Prices lead puts the delivery charge at the acknowledgement, where v694 moved it, in the page's own word: " + lead.slice(0, 160));
   } finally { w.close(); }
 })();
 
