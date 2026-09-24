@@ -33,7 +33,7 @@
    with node:fs, and a Worker has no filesystem. `node tools/stmt-style.mjs --sync` writes
    this file and CI runs --check, so there is still one source. */
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
-import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
+import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
@@ -194,6 +194,13 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .payhead[hidden]{display:none}
 .payhead .btn{margin-top:12px}
 .payhead .salt-ledger__value{white-space:nowrap}
+/* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
+.payseg{display:flex;gap:8px;margin-top:12px}
+.payseg .salt-ghost{flex:1 1 0;min-width:0}
+.payhow,.payinto,.payref{margin-top:18px}
+.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
+.paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
+#payFoot .salt-pill{flex:1 1 auto}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -409,6 +416,9 @@ const GLYPH = {
   install: "M12 4 V14.6 M8 10.8 L12 14.8 L16 10.8 M5 16.6 V19.6 H19 V16.6",
   menu: "M4.5 7 H19.5 M4.5 12 H19.5 M4.5 17 H19.5",
   paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
+  bank: "M3.8 9.4 L12 4.6 L20.2 9.4 Z M5.8 10.6 V16.8 M9.9 10.6 V16.8 M14.1 10.6 V16.8 M18.2 10.6 V16.8 M3.8 19.4 H20.2",
+  qr: "M4.2 4.2 H10 V10 H4.2 Z M14 4.2 H19.8 V10 H14 Z M4.2 14 H10 V19.8 H4.2 Z M14 14 H16.4 V16.4 H14 Z M17.6 17.6 H19.8 V19.8 H17.6 Z M14 17.6 V19.8 M17.6 14 H19.8",
+  copy: "M10.6 8.6 H17.4 A2 2 0 0 1 19.4 10.6 V17.4 A2 2 0 0 1 17.4 19.4 H10.6 A2 2 0 0 1 8.6 17.4 V10.6 A2 2 0 0 1 10.6 8.6 Z M15.4 8.6 V6.6 A2 2 0 0 0 13.4 4.6 H6.6 A2 2 0 0 0 4.6 6.6 V13.4 A2 2 0 0 0 6.6 15.4 H8.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
 };
 const FILLED = { dots: true, vdots: true };
@@ -476,6 +486,16 @@ function keepSheet() {
     + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
     + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="keepCopy" type="button">Copy the code</button></div>'
     + "</div>";
+}
+
+/* S6 6.4: THE PAY SHEET (his D8 as amended). One Sheet for every Pay; the script fills its body and its foot. */
+function paySheet() {
+  return '<div id="payScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="paySheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="payT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="payT">Pay</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="payX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body" id="payBody"></div><div class="salt-sheet__foot" id="payFoot"></div></div>';
 }
 
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
@@ -709,7 +729,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
     + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet() + paySheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -740,6 +760,9 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE)).replace("__MON3__", JSON.stringify(MON3))
+      /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
+      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy }))
+      .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
@@ -799,7 +822,7 @@ const CLIENT_JS = `
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={};
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
   var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
@@ -1222,7 +1245,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; pick={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     owedNow=0; hold=false; tPrices.hidden=false; tOrder.textContent='Order';
     payDue=null; liveAt=''; drawPayHead();
     out.textContent=''; mos.textContent=''; mos.hidden=true;
@@ -1231,7 +1254,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent='';
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    closeKeep(); closePay(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
@@ -1742,14 +1765,11 @@ const CLIENT_JS = `
       dueBox.appendChild(el('div','quote',rm(owedNow)));
       dueBox.appendChild(el('p','lead','Please pay the overdue amount of '+rm(owedNow)+' before placing another order.'));
       dueBox.appendChild(el('p','sub2','Ordering opens again here once the payment is recorded on your account. Each order the amount is made of is on your statement.'));
-      var ways=PAY.filter(function(a){ return !a.maintenance&&(a.qr||a.transfer); });
-      if(ways.length){
-        dueBox.appendChild(el('span','lbl','Ways to pay'));
-        ways.forEach(function(a){
-          var l=el('a','btn lnk salt-ghost','Open '+a.name+' in QR Command');
-          l.href=PAY_SITE+'/#'+encodeURIComponent(a.key); l.target='_blank'; l.rel='noopener';
-          dueBox.appendChild(l);
-        });
+      /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
+      if(!view){
+        var hp=el('button','btn salt-pill salt-pill--md','Pay '+rm(owedNow)); hp.type='button';
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:owedNow, label:'Overdue', note:function(){ return document.createTextNode('Each order the amount is made of is on your statement.'); }}); });
+        dueBox.appendChild(hp);
       }
       dueBox.appendChild(el('p','sub2','Once it has left your side, say so on any of your orders below, or tell us directly, so it can be recorded.'));
       var sv=el('button','btn quiet salt-ghost','See your statement'); sv.type='button';
@@ -2130,19 +2150,16 @@ const CLIENT_JS = `
     }
     return L;
   }
-  /* ONE NEXT ACTION. Pay opens the ways to pay in its place, and theirs is then the one filled control. On a desk the
-     order form's own filled control stands beside the open order until the form moves into a sheet (stage 4), and
-     while one does, Pay is the lit ghost: one filled control a screen. On a phone the open order is the whole tab. */
+  /* ONE NEXT ACTION. Pay opens the pay sheet for this order (S6 6.4). On a desk the order form's own filled control
+     stands beside the open order until the form moves into a sheet (stage 4), and while one does, Pay is the lit
+     ghost: one filled control a screen. On a phone the open order is the whole tab. */
   function oFormPill(){ return oWide()&&[].some.call(pOrder.querySelectorAll('.salt-pill'),function(p){ return !p.closest('.oplace'); }); }
   function oAct(o){
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
-      if((draft.oPay||{})[o.id]) a.appendChild((o.method&&!(pick[o.id]||{}).again)?payBox(o):payChooser(o));
-      else {
-        var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
-        pb.addEventListener('click',function(){ (draft.oPay=draft.oPay||{})[o.id]=true; oDraw(); });
-        a.appendChild(pb);
-      }
+      var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md','Pay '+rm(oToPay(o))); pb.type='button';
+      pb.addEventListener('click',function(){ openPay(orderCtx(o.id)); });
+      a.appendChild(pb);
     }
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
@@ -2409,7 +2426,7 @@ const CLIENT_JS = `
       box.appendChild(kpiTile('ember','To pay now',rm(now.rm),nowNote(now)));
       if(!view){
         var pb=el('button','btn salt-pill salt-pill--md','Pay '+rm(now.rm)); pb.type='button'; pb.id='payNow';
-        pb.addEventListener('click',function(){ showTab('order'); });
+        pb.addEventListener('click',function(){ openPay(acctCtx()); });
         box.appendChild(pb);
       }
       /* each overdue part with the day it fell due; one part says so in the line above */
@@ -2431,102 +2448,104 @@ const CLIENT_JS = `
   var METHOD_WORDS={cod:'cash on handover', transfer:'DuitNow Transfer', qr:'DuitNow QR', jompay:'JomPAY', tngbiz:"Touch 'n Go Business"};
   function acct(key){ return PAY.filter(function(a){return a.key===key;})[0]; }
   function methodWord(m,a){ var x=acct(a); return (METHOD_WORDS[m]||m)+(x&&m!=='tngbiz'?' to '+x.name:''); }
-  function accountsFor(m){ return PAY.filter(function(a){ return !a.maintenance&&a[m]; }); }
-
-  /* THE CHOICE, OFFERED FROM THE ACKNOWLEDGEMENT (v694; it was at ready). Five rails; three of them
-     name an account off the list QR Command carries, and the page shows only those that run that
-     rail. CASH ON HANDOVER IS WITHHELD from anyone already holding goods they have not paid for
-     (his instruction, 18 Sep 2026): settling that at the door is how one advance becomes two. */
-  function payChooser(o){
-    var box=el('div','pay');
-    box.appendChild(el('p','sub2','How will you pay '+rm(dueOf(o))+'?'));
-    var cur=pick[o.id]||{}, noCod=heldUnpaid();
-    var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
-              ['transfer','DuitNow Transfer, to an account number'],
-              ['qr','DuitNow QR, a code I save and scan'],
-              ['jompay','JomPAY'],
-              ['tngbiz',"DuitNow purchase, the Touch 'n Go Business code"]];
-    opts.forEach(function(m){
-      if(m[0]==='cod'&&noCod) return;
-      if(m[0]!=='cod'&&m[0]!=='tngbiz'&&!accountsFor(m[0]).length) return;
-      if(m[0]==='tngbiz'&&!(acct('tngbiz')&&acct('tngbiz').qr&&!acct('tngbiz').maintenance)) return;
-      var lab=el('label'); var r=el('input'); r.type='radio'; r.name='pm-'+o.id; r.value=m[0]; r.checked=(cur.method===m[0]);
-      r.addEventListener('change',function(){ pick[o.id]={method:m[0],account:'',again:cur.again}; drawOrder(); });
-      lab.appendChild(r); lab.appendChild(el('span',null,m[1])); box.appendChild(lab);
-    });
-    if(cur.method==='transfer'||cur.method==='qr'||cur.method==='jompay'){
-      var sel=el('select','fld salt-field__input salt-field__input--mono'); sel.setAttribute('aria-label','Account');
-      var o0=el('option',null,cur.method==='jompay'?'Choose the biller':'Choose the bank or e-wallet'); o0.value=''; sel.appendChild(o0);
-      accountsFor(cur.method).forEach(function(a){ var op=el('option',null,a.name+(a.bank&&a.bank!==a.name?' ('+a.bank+')':'')); op.value=a.key; if(cur.account===a.key)op.selected=true; sel.appendChild(op); });
-      sel.addEventListener('change',function(){ pick[o.id].account=sel.value; drawOrder(); });
-      box.appendChild(sel);
-    }
-    if(noCod) box.appendChild(el('p','sub2','Cash on handover is not offered while goods you already hold are unpaid. Settle those first and it comes back.'));
-    var ok=cur.method&&(cur.method==='cod'||cur.method==='tngbiz'||cur.account);
-    var cb=el('button','btn salt-pill salt-pill--md','Confirm'); cb.type='button'; cb.disabled=!ok;
-    cb.addEventListener('click', async function(){
-      if(!ok) return; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/method',{method:cur.method,account:cur.account||undefined,rid:ridFor(o.id+':method',cur.method+' '+(cur.account||''))});
-      if(mine!==ticket) return;
-      if(!r.body.ok) tapSaid(o,'pay',r.body.error||'The choice was not recorded.'); else { ridDone(o.id+':method'); tapSaid(o,'pay',''); delete pick[o.id]; }
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(cb);
-    return box;
+  /* ---- S6 6.4: THE PAY SHEET (his D8 as he amended it, 24 Sep 2026) ------------------------------------------------
+     Every Pay opens it: To pay now's, an order's, the held page's. The figure and what it is for, All or Part of it,
+     then the two ways, Transfer or Scan a code, as the system's Option tiles. NO ACCOUNT IS CHOSEN FOR THEM: they
+     choose which of his accounts to pay into, from the accounts payHref will link, so a suspended one is never
+     offered. Their username is the reference, with Copy. Show the account number, or Show the code, opens the pay page
+     through payHref at that account, rail and figure; the Counter never carries a number and never names that page.
+     The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
+  var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
+  var GL=__GLYPH__;
+  function glyph(name,px){ var s=psym('_',px); s.setAttribute('class','psym glyph'); s.firstChild.setAttribute('d',GL[name]); return s; }
+  /*__PAYHREF__*/
+  function payInto(rail,amt){ return PAY.filter(function(a){ return !!payHref(a.key,rail,amt,user); }); }
+  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:n?n.rm:0, label:'To pay now', note:function(){ return nowNote(n); }}; }
+  function orderCtx(id){
+    var o=oFind(id);
+    return {kind:'order', id:id, fig:o?oToPay(o):0, label:'Still to pay', note:function(){
+      var s=el('span'); s.appendChild(psym(o.product,15)); s.appendChild(el('span','sr',pshape(o.product)));
+      s.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o))+', ordered '+oDay(o.at)+(movedAll(o)?'. The goods are with you.':'.')));
+      return s; }};
   }
-  /* ONE LINK, FOR THE RAIL CHOSEN, AND THEN WHAT WAS PAID. Everything that pays lives on that page:
-     the account number behind its Copy button, the code to save, the biller and reference. Nothing
-     here repeats it. THE FIGURE IS THEIRS (his instruction, 18 Sep 2026): the site takes no money
-     and no rail tells it anything, so the customer types what they paid and the desk reads it
-     against the fold. It accumulates, so a part payment is a part payment. */
-  function payBox(o){
-    var box=payLink(o), due=dueOf(o), cur=pick[o.id]||{};
-    var row=el('div','payamt');
-    row.appendChild(el('span','cur','RM'));
-    var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
-    inp.value=(cur.amount!==undefined&&cur.amount!==null)?cur.amount:due.toFixed(2);
-    inp.setAttribute('aria-label','What you paid, in ringgit');
-    inp.addEventListener('input',function(){ pick[o.id]=Object.assign({},pick[o.id],{amount:inp.value}); var b=document.getElementById('pd-'+o.id); if(b)b.disabled=!(parseFloat(inp.value)>0); });
-    row.appendChild(inp); box.appendChild(row);
-    var pb=el('button','btn salt-pill salt-pill--md',"I have paid"); pb.type='button'; pb.id='pd-'+o.id;
-    pb.disabled=!(parseFloat(inp.value)>0);
-    pb.addEventListener('click', async function(){
-      var amt=parseFloat(inp.value);
-      if(!(amt>0)) return;
-      /* the id stays with the figure it was minted for: a retry of this payment carries it, a
-         different figure is a different payment, and it is dropped once one is recorded */
-      var fig=amt.toFixed(2), was=pick[o.id]||{};
-      pick[o.id]=Object.assign({},was,{amount:inp.value},was.rid&&was.ridFor===fig?{}:{rid:mintRid(),ridFor:fig});
-      pb.disabled=true; var mine=ticket;
-      var r=await api('/orders/'+encodeURIComponent(o.id)+'/pay',{amount:+fig,rid:pick[o.id].rid});
-      if(mine!==ticket) return;
-      var took=!!(r.body&&r.body.ok);
-      tapSaid(o,'pay',took?'Recorded. It shows on your statement once it is folded into the book.':((r.body&&r.body.error)||'That payment was not recorded.'));
-      if(took) delete pick[o.id];
-      await loadOrders(); if(mine!==ticket) return; drawOrder();
-    });
-    box.appendChild(pb);
-    box.appendChild(el('p','sub2','Tell us once it has left your side. '+rm(due)+' is outstanding; a part payment is fine and the rest stays here.'));
-    var ch=el('button','btn quiet salt-ghost','Pay another way'); ch.type='button';
-    ch.addEventListener('click',function(){ pick[o.id]={again:true}; drawOrder(); });
-    box.appendChild(ch);
-    return box;
+  function openPay(ctx){
+    if(!paySh||view||!(ctx.fig>0.004)) return;
+    PS={ctx:ctx, part:false, amt:'', rail:'', acct:'', said:''};
+    payScr.hidden=false; paySh.hidden=false; drawPay();
+    try{ paySh.focus(); }catch(e){}
   }
-  function payLink(o){
-    var box=el('div','pay');
-    var a=acct(o.account), due=dueOf(o);
-    var word={cod:(o.mode==='deliver'?'Pay '+rm(due)+' in cash on delivery.':'Pay '+rm(due)+' in cash when you collect.'),
-      transfer:'Transfer '+rm(due)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
-      qr:'Pay '+rm(due)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',
-      jompay:'Pay '+rm(due)+' by JomPAY. The page that opens has the biller code and the reference behind Copy; enter them in your banking app under JomPAY.',
-      tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
-    box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
-    if(o.method!=='cod'&&o.account){
-      var l=el('a','btn lnk salt-ghost','Open '+(a?a.name:'the account')+' in QR Command');
-      l.href=PAY_SITE+'/#'+encodeURIComponent(o.account); l.target='_blank'; l.rel='noopener';
-      box.appendChild(l);
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; }
+  if(paySh){
+    document.getElementById('payX').addEventListener('click',closePay);
+    payScr.addEventListener('click',closePay);
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closePay(); });
+  }
+  /* the figure being paid: all of it, or the part typed, never above all of it */
+  function payAmt(){ if(!PS.part) return PS.ctx.fig; var v=parseFloat(PS.amt); return v>0&&v<=PS.ctx.fig+0.004?+v.toFixed(2):0; }
+  function payTitle(){ document.getElementById('payT').textContent='Pay '+rm(payAmt()||PS.ctx.fig); }
+  var HOW=[{v:'transfer', label:'Transfer to an account', g:'bank'}, {v:'qr', label:'Scan a code', g:'qr', detail:'DuitNow QR, any bank or e-wallet'}];
+  function drawPay(){
+    var body=document.getElementById('payBody'), c=PS.ctx;
+    body.textContent=''; payTitle();
+    body.appendChild(kpiTile('ember',c.label,rm(c.fig),c.note()));
+    var seg=el('div','payseg');
+    [[false,'All, '+rm(c.fig)],[true,'Part of it']].forEach(function(x){
+      var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
+      b.addEventListener('click',function(){ PS.part=x[0]; drawPay(); var f=document.getElementById('payAmt'); if(f) try{ f.focus(); }catch(e){} });
+      seg.appendChild(b);
+    });
+    body.appendChild(seg);
+    if(PS.part){
+      var row=el('div','payamt'); row.appendChild(el('span','cur','RM'));
+      var inp=el('input','fld salt-field__input salt-field__input--mono'); inp.id='payAmt'; inp.type='number'; inp.min='0'; inp.step='0.01'; inp.inputMode='decimal';
+      inp.value=PS.amt; inp.setAttribute('aria-label','How much you are paying, in ringgit');
+      inp.addEventListener('input',function(){ PS.amt=inp.value; payTitle(); drawPayFoot(); });
+      row.appendChild(inp); body.appendChild(row);
+      body.appendChild(el('p','sub2','Up to '+rm(c.fig)+'. The rest stays here to pay.'));
     }
-    return box;
+    var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
+    fs.appendChild(el('legend','salt-options__legend','How you pay'));
+    HOW.forEach(function(w){
+      var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
+          ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
+      r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v;
+      r.addEventListener('change',function(){ PS.rail=w.v; if(!payInto(w.v,payAmt()||c.fig).some(function(x){ return x.key===PS.acct; })) PS.acct=''; drawPay(); });
+      ld.appendChild(glyph(w.g,22)); face.appendChild(ld);
+      tx.appendChild(el('span','salt-option__label',w.label));
+      tx.appendChild(el('span','salt-option__detail',w.detail||('From your banking app, to '+(a?a.name:'one of our accounts'))));
+      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
+    });
+    fs.appendChild(g); body.appendChild(fs);
+    if(PS.rail){
+      var fw=el('div','salt-field payinto'), lb=el('label','salt-field__label','Pay into'), sel=el('select','fld salt-field__input');
+      lb.htmlFor='payInto'; sel.id='payInto';
+      var o0=el('option',null,'Choose one of our accounts'); o0.value=''; sel.appendChild(o0);
+      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){ var op=el('option',null,a.name); op.value=a.key; op.selected=PS.acct===a.key; sel.appendChild(op); });
+      sel.addEventListener('change',function(){ PS.acct=sel.value; drawPay(); });
+      fw.appendChild(lb); fw.appendChild(sel); body.appendChild(fw);
+    }
+    var L=el('div','salt-ledger salt-ledger--plain payref'), rr=lrow('Reference',user,'Put this in the reference, so we can match it.'),
+        cp=el('button','salt-ghost'); cp.type='button'; cp.setAttribute('aria-label','Copy the reference'); cp.appendChild(glyph('copy',18));
+    var said=statusLine(PS.said); said.hidden=!PS.said;
+    cp.addEventListener('click',async function(){
+      var t; try{ await navigator.clipboard.writeText(user); t='Copied.'; }catch(e){ t='Copy failed. Press and hold the reference instead.'; }
+      if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
+    });
+    rr.querySelector('.salt-ledger__value').appendChild(cp);
+    L.appendChild(rr); body.appendChild(L); body.appendChild(said);
+    drawPayFoot();
+  }
+  /* the one filled control, and above it what it opens or what is still to choose */
+  function drawPayFoot(){
+    var foot=document.getElementById('payFoot'), a=payAmt(), qr=PS.rail==='qr', word=qr?'Show the code':'Show the account number',
+        href=PS.rail&&PS.acct&&a?payHref(PS.acct,PS.rail,a,user):'';
+    foot.textContent='';
+    foot.appendChild(el('p','paycap',href?'Opens our payment page with the '+(qr?'code':'account number')+'. Come back here after paying.'
+      :!a?'Say how much you are paying, up to '+rm(PS.ctx.fig)+'.':!PS.rail?'Choose how you are paying.':'Choose which of our accounts to pay into.'));
+    var go;
+    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener'; }
+    else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
+    go.id='payGo'; foot.appendChild(go);
   }
 
   async function loadOrders(){
@@ -2787,7 +2806,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; draft={}; pick={}; }
+    if(!same){ orders=[]; draft={}; closePay(); }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

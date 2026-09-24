@@ -551,10 +551,12 @@ it does with the quoted total. An associate with no bucket on the roster is refu
 
 **MONEY AND GOODS ARE TWO TRACKS** (v694). `paid` and `payments[]` are what the customer says they
 have paid, `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
-**from the acknowledgement**. Five rails: cash on collection or delivery, DuitNow
-Transfer to a named account, a DuitNow QR to save, JomPAY, and the Touch 'n Go Business code;
-the page hands over one link into QR Command for the rail chosen, and the accounts it may name
-are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+**from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
+S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two ways, Transfer or Scan
+a code, **with no account chosen for them**: they choose which of his accounts to pay into from those
+`payHref` links, a suspended one never offered, and their username is the reference. Show the account
+number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
+a number of. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`

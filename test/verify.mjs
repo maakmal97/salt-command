@@ -16719,7 +16719,7 @@ await (async () => {
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
   ok(page94.includes("Review this order") && page94.includes("Check this over") && page94.includes("Place this order")
-    && page94.includes("a neighbourhood or a landmark") && page94.includes("I have paid")
+    && page94.includes("a neighbourhood or a landmark") && page94.includes("Part of it")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
   ok(!/url\((?!\/fonts\/)/.test(page94), "and nothing on the page loads anything but its own two fonts, the chevron included");
@@ -24228,8 +24228,12 @@ await (async () => {
     ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
     const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
     if (pay) pay.click();
-    ok(!!pay && !!scr().querySelector(".oact .pay") && JSON.stringify(pills()) === JSON.stringify(["I have paid"]),
-      "Pay opens the ways to pay in its place, and theirs is then the one filled control: " + JSON.stringify(pills()));
+    /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
+    const shP = d.getElementById("paySheet");
+    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190"
+      && shP.querySelectorAll(".salt-pill").length === 1,
+      "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
+    if (shP) d.getElementById("payX").click();
     const hist = part("hist").querySelector("details.salt-plan");
     ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
       "what happened is folded under its own line");
@@ -30239,7 +30243,10 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
     env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280 })) };
+    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
+      now: { rm: 280, due: "2026-09-10", parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
+      overdue: { rm: 280, parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
+      coming: { rm: 0, parts: [] } } })) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
   const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
   const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -30257,25 +30264,28 @@ await (async () => {
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    /* S5 5.2: each order's payment box is in its own screen, behind its one Pay: opened one at a time */
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
-    const hold = d.querySelector("#pOrder .pane");
-    const openPay = (id) => { const b = d.querySelector("#pOrder .oback"); if (b && d.querySelector("#pOrder .oscreen")) b.click();
-      d.querySelector('#pOrder [data-row="' + id + '"]').click();
-      const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
-      return d.querySelector("#pOrder .oscreen"); };
-    const scrC = openPay("oC"), boxC = scrC.querySelector(".oact .pay"), pillsC = scrC.querySelectorAll(".salt-pill").length;
-    const ctrlsC = boxC ? [...boxC.querySelectorAll("button, a, select, input")] : [];
-    const scrA = openPay("oA"), boxA = scrA.querySelector(".oact .pay"), pillsA = scrA.querySelectorAll(".salt-pill").length;
-    const ctrls = [hold, boxA].filter(Boolean).flatMap((s) => [...s.querySelectorAll("button, a, select, input")]).concat(ctrlsC).filter((x) => x.type !== "radio");
-    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input)( |$)/.test(x.className));
-    ok(d.getElementById("pd-oA") && !!boxA && !!boxC && ctrls.length >= 8 && !bare.length,
-      "every button, link and field on the payment pane and in every order's payment box is a recipe ("
+    /* S6 6.4: every Pay opens the one pay sheet. The held page's own Pay first, then an order's, with a way, an
+       account and a part chosen, so every control the sheet can draw is on it */
+    const hold = d.querySelector("#pOrder .pane"), sh = d.getElementById("paySheet");
+    const holdPills = hold ? hold.querySelectorAll(".salt-pill").length : -1;
+    const hp = hold && [...hold.querySelectorAll("button")].find((x) => /^Pay RM/.test(x.textContent)); if (hp) hp.click();
+    const byHold = !!hp && !sh.hidden;
+    d.getElementById("payX").click();
+    d.querySelector('#pOrder [data-row="oA"]').click();
+    const pay = [...d.querySelectorAll("#pOrder .oact button")].find((x) => /^Pay RM/.test(x.textContent)); if (pay) pay.click();
+    const r = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const s = d.getElementById("payInto"); s.value = "maybank"; s.dispatchEvent(new w.Event("change", { bubbles: true }));
+    [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it").click();
+    const ctrls = [hold, sh].filter(Boolean).flatMap((x) => [...x.querySelectorAll("button, a, select, input")]);
+    const bare = ctrls.filter((x) => !/(^| )salt-(pill|ghost|field__input|orb|option__input)( |$)/.test(x.className));
+    ok(byHold && !!pay && ctrls.length >= 10 && !bare.length,
+      "every button, link and field on the held page and in the pay sheet is a recipe ("
       + ctrls.length + " controls): " + bare.map((x) => x.tagName + " " + (x.textContent || x.getAttribute("aria-label"))).join(", "));
-    const pills = [pillsA, pillsC];
-    ok(pills.join() === "1,1" && d.getElementById("pd-oA").classList.contains("salt-pill") && !hold.querySelector(".salt-pill"),
-      "one filled control an order, I have paid on the one with a rail chosen, and the payment pane's ways to pay all quiet: " + pills.join());
-    const amt = scrA.querySelector('input[type="number"]'), cs = w.getComputedStyle(amt);
+    const inSheet = sh.querySelectorAll(".salt-pill").length;
+    ok(holdPills === 1 && inSheet === 1 && d.getElementById("payGo").classList.contains("salt-pill"),
+      "one filled control on the held page, its Pay, and one in the sheet, Show the account number: " + [holdPills, inSheet].join());
+    const amt = d.getElementById("payAmt"), cs = w.getComputedStyle(amt);
     ok(amt.classList.contains("salt-field__input") && amt.inputMode === "decimal" && cs.width !== "18px" && cs.height !== "18px",
       "the amount is the field, typed on a decimal keypad, and no longer squeezed by the radio buttons' size: " + cs.width + " x " + cs.height);
   } finally { w.close(); }
@@ -30317,11 +30327,12 @@ await (async () => {
     for (let i = 0; i < 100 && !d.querySelector('#pOrder [data-row="oA"]'); i++) await new Promise((r) => setTimeout(r, 50));
     const rowA = d.querySelector('#pOrder [data-row="oA"]'); if (rowA) rowA.click();
     const payA = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(b.textContent)); if (payA) payA.click();
-    for (let i = 0; i < 100 && !d.getElementById("pd-oA"); i++) await new Promise((r) => setTimeout(r, 50));
+    /* S6 6.4: the pay row is the pay sheet's, under Part of it */
+    const partA = [...d.querySelectorAll("#payBody .payseg button")].find((b) => b.textContent === "Part of it"); if (partA) partA.click();
     const cells = [...d.querySelectorAll("#out td.amt, #out th.amt")].map((x) => w.getComputedStyle(x));
     ok(cells.length === 2 && cells.every((c) => c.display !== "flex" && c.marginTop !== "10px"),
       "the statement's Amount cells are table cells, not flex rows pushed 10px down: " + cells.map((c) => c.display + " " + c.marginTop).join(", "));
-    const row = d.querySelector('#pOrder input[type="number"]') && d.querySelector('#pOrder input[type="number"]').parentNode;
+    const row = d.querySelector('#payBody input[type="number"]') && d.querySelector('#payBody input[type="number"]').parentNode;
     ok(row && w.getComputedStyle(row).display === "flex" && !row.classList.contains("amt"),
       "and the pay row keeps its own flex layout under its own name: " + (row && row.className));
   } finally { w.close(); }
@@ -30735,6 +30746,101 @@ await (async () => {
   const unsealed = await open(undefined);
   ok(none.hidden && !none.pills && unsealed.hidden && unsealed.shown,
     "with nothing to pay and nothing coming, or a live document sealed before v841, nothing is drawn above the statement");
+})();
+
+section("S6 6.4: every Pay opens one sheet: the figure, All or Part, Transfer or Scan a code, his account chosen by them, the username as reference, and the pay page through payHref");
+await (async () => {
+  /* STAGE 6 OF THE COUNTER REDESIGN, his D8 as he amended it (24 Sep 2026): NO default account; they choose which of
+     his accounts to pay into, from those payHref will link; two ways up front; the username is the reference; Show the
+     account number or Show the code opens the pay page through payHref; the Counter carries no number and never names
+     the pay page. Forced state: a fixture live document owing RM 70 now and one confirmed order owing RM 200. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const { payHref, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s64", ck = await C.contentKey("test-secret", u);
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const pay = { term: 10, now: { rm: 70, due: kl(2), parts: [{ date: kl(-8), due: kl(2), late: false, rm: 70, whole: 120, product: "salt", qty: 2.5, got: 2.5, gotOn: kl(-8), resale: false }] },
+    overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s64",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+  const ord = { id: "20260920000000-s64a", product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, delivery: 0, paid: 0, moved: 0,
+    at: "2026-09-20T03:00:00Z", status: "acknowledged", history: [], msgs: [] };
+  const dom = new JD(lp(u, "ns64", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [ord] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const sh = () => d.getElementById("paySheet");
+  const go = () => d.getElementById("payGo");
+  const cap = () => t(d.querySelector("#payFoot .paycap"));
+  const how = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  const into = () => [...d.querySelectorAll("#payInto option")].map((o) => o.value).filter(Boolean);
+  const pickInto = (k) => { const s = d.getElementById("payInto"); s.value = k; s.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  const linked = (rail, amt) => PAY_ACCOUNTS.filter((a) => payHref(a.key, rail, amt, u)).map((a) => a.key);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("payNow"));
+    d.getElementById("payNow").click();
+    const first = { open: !sh().hidden, title: t(d.getElementById("payT")), tile: t(d.querySelector("#payBody .salt-kpi__label")) + " " + t(d.querySelector("#payBody .salt-kpi__value")),
+      seg: [...d.querySelectorAll("#payBody .payseg button")].map((b) => t(b) + ":" + b.getAttribute("aria-pressed")),
+      ways: [...d.querySelectorAll('#payBody input.salt-option__input[name="payHow"]')].map((r) => r.value + (r.checked ? "*" : "")),
+      labels: [...d.querySelectorAll("#payBody .salt-option__label")].map(t), select: !!d.getElementById("payInto"),
+      go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody .payref .salt-ledger__value")),
+      copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
+    ok(first.open && first.title === "Pay RM 70" && first.tile === "To pay now RM 70" && first.seg.join() === "All, RM 70:true,Part of it:false"
+      && first.ways.join() === "transfer,qr" && first.labels.join() === "Transfer to an account,Scan a code" && !first.select
+      && first.go === "BUTTON disabled" && first.cap === "Choose how you are paying." && first.ref === u && first.copy && first.pills === 1,
+      "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways and nothing chosen for them, the username as the reference with Copy, and Show waiting: "
+      + JSON.stringify(first));
+    how("transfer");
+    const tIn = into(), tPicked = d.getElementById("payInto").value, tGo = go().tagName + (go().disabled ? " disabled" : ""), tCap = cap();
+    pickInto("maybank");
+    const a1 = go(), live = t(sh());
+    ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer", 70)) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
+      && tGo === "BUTTON disabled" && tCap === "Choose which of our accounts to pay into."
+      && a1.tagName === "A" && a1.getAttribute("href") === payHref("maybank", "transfer", 70, u) && a1.target === "_blank" && t(a1) === "Show the account number"
+      && cap() === "Opens our payment page with the account number. Come back here after paying."
+      && /to Maybank$/.test(t(d.querySelectorAll("#payBody .salt-option__detail")[0])),
+      "Transfer offers every account payHref links and no suspended one, chooses none, and once they choose Maybank, Show opens the pay page at that account, rail and figure: "
+      + JSON.stringify({ tIn, tPicked, href: a1.getAttribute("href") }));
+    how("qr");
+    const qIn = into(), qGo = go();
+    [...d.querySelectorAll("#payBody .payseg button")].find((b) => t(b) === "Part of it").click();
+    const amt = d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const part = { title: t(d.getElementById("payT")), href: go().getAttribute("href") };
+    amt.value = "90"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const over = { go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap() };
+    ok(JSON.stringify(qIn) === JSON.stringify(linked("qr", 70)) && !qIn.includes("wise") && qGo.getAttribute("href") === payHref("maybank", "qr", 70, u) && t(qGo) === "Show the code"
+      && part.title === "Pay RM 40" && part.href === payHref("maybank", "qr", 40, u) && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.",
+      "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
+      + JSON.stringify({ qIn, part, over }));
+    const text = live + " " + t(sh());
+    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/salt|oil/i.test(text),
+      "the sheet names no pay page, carries no account number and no product word: " + text.slice(0, 120));
+    d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    const closed = sh().hidden;
+    d.querySelector('button[data-t="order"]').click();
+    await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
+    if (payO) payO.click();
+    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
+      && !d.querySelector("#payBody input[name=payHow]:checked") && !d.querySelector("#pOrder .oact .pay"),
+      "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, nothing chosen and nothing drawn in the order itself");
+  } finally { w.close(); }
 })();
 
 section("23 Sep 2026: over RM 100 owed, the account is a payment page");
