@@ -1552,8 +1552,10 @@ const CLIENT_JS = `
       try{ history.replaceState(null,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
     }
     window.scrollTo(0,0);
-    /* S5: an order drawn open while the place was elsewhere is seen when the place is turned to */
-    if(t==='order'){ var o=oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } }
+    /* S5: an order drawn open while the place was elsewhere is seen when they turn to the place themselves. Only a tap:
+       a road aimed at another order (a row on Home, a banner, See the order, Pay) passes here before drawing it, and
+       the order left open would be marked seen without ever being shown */
+    if(t==='order'&&tapped){ var o=oFind(draft.oShown||''); if(o){ seeIt(o); oSync([o.id]); } }
   }
   tabs.addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-t]'); if(b) placeShow(b.getAttribute('data-t'),true);

@@ -32750,6 +32750,64 @@ await (async () => {
   } finally { dom.window.close(); }
 })();
 
+section("S7 fix: a road into Orders aimed at one order never marks the order left open as seen");
+await (async () => {
+  /* S7R-1 of the stage 7 review (25 Sep 2026). Showing Orders marked the order drawn open there as seen, and a row on Home,
+     a banner, See the order and Pay all show Orders before drawing the order they were aimed at: a reply that came to the
+     order left open while Home showed was taken as read without ever being shown, and left Home, the count and its row.
+     Driven by the page's own poll, shortened in the served HTML. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s7f1", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f1",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const A = "20260920090000-aaaa", B = "20260921090000-bbbb";
+  let phase = 0;
+  const o = (id, x) => Object.assign({ id, at: "2026-09-20T03:00:00Z", product: "salt", qty: 1, unit: 110, total: 110, delivery: 0, mode: "collect",
+    paid: 110, moved: 0, status: "acknowledged", history: [], msgs: [] }, x);
+  const list = () => [o(A, { msgs: [{ at: "2026-09-21T02:00:00Z", by: "desk", text: "Ready Thursday." }]
+    .concat(phase ? [{ at: "2026-09-22T02:00:00Z", by: "desk", text: "Moved to Friday." }] : []) }), o(B, { at: "2026-09-21T03:00:00Z" })];
+  const html = landingPage(u, "ns7f1", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
+  ok(fast !== html, "the served poll is shortened, so the second reply arrives by the page's own re-read");
+  const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: list() } : { ok: true };
+      return { ok: true, status: 200, json: async () => j };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const waits = () => /A reply for you/.test((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent || "");
+  const onHome = () => !!d.querySelector('#hNeeds [data-row="' + A + '"]');
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#pOrder [data-olist]"));
+    d.querySelector('nav.salt-appbar button[data-t="order"]').click();
+    d.querySelector('#pOrder [data-row="' + A + '"]').click();
+    ok(d.querySelector("#pOrder .oscreen").getAttribute("data-order") === A && !waits() && !onHome(),
+      "opened in Orders, the first reply is shown and so no longer waits");
+    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    phase = 1;
+    await until(() => onHome() && waits());
+    ok(onHome() && waits(), "a second reply to the order left open, come while Home shows, waits on Home and on its row");
+    d.querySelector('#pHome [data-row="' + B + '"]').click();
+    ok(d.querySelector("#pOrder .oscreen").getAttribute("data-order") === B && !d.getElementById("pOrder").hidden,
+      "a row on Home for another order opens that order in Orders");
+    await new Promise((r) => setTimeout(r, 300));
+    ok(waits(), "and the order left open, never drawn again, still has its reply waiting on its row: "
+      + JSON.stringify((d.querySelector('#pOrder [data-row="' + A + '"]') || {}).textContent));
+    d.querySelector('nav.salt-appbar button[data-t="home"]').click();
+    ok(onHome() && [...d.querySelectorAll('#tabs [data-n="order"]')].every((c) => c.textContent === "1"),
+      "and on Home, and in the Orders count");
+  } finally { w.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
