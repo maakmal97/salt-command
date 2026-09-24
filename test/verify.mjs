@@ -19915,6 +19915,33 @@ await (async () => {
       "and the code screen and the form go back to their own places");
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
 })();
+section("S3 fix: pasting any message a customer is sent into the username keeps the username, passing over four-letter words");
+await (async () => {
+  /* F8 (24 Sep 2026). 3.4's sign-in message opens "Your Salt Counter account is ready", and the username field kept its
+     first two words, your-salt, which the alphabet then refused; that is the message a customer with a spent link
+     would paste from. */
+  const { landingPage: lpU } = await import("../stmt/page.js");
+  const SU = await import("../stmt/send.js");
+  const { JSDOM: JDU } = await import("jsdom");
+  const user = "k7mp-q2wx", pass = "abcd-efgh-jkmn-pqrs";
+  const dom = new JDU(lpU("", "nU", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) { win.scrollTo = () => {}; win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) }); } });
+  const W = dom.window, D = W.document;
+  const paste = (field, text) => { const e = new W.Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(e, "clipboardData", { value: { getData: () => text } }); field.value = ""; field.dispatchEvent(e); return field.value; };
+  try {
+    const un = D.getElementById("un"), pw = D.getElementById("pw");
+    const msgs = {
+      signIn: SU.signInMessage({ url: "https://k7m3p2.example/s/" + "Ab3_x".repeat(6) + "Zq", user }),
+      link: SU.linkMessage({ url: "https://k7m3p2.example/?u=" + user, user }),
+      password: SU.passwordMessage({ pw: pass })
+    };
+    const got = { signIn: paste(un, msgs.signIn), link: paste(un, msgs.link), password: paste(pw, msgs.password) };
+    ok(got.signIn === user, "the sign-in link's message pasted into the username keeps the username, not its opening words: " + JSON.stringify(got.signIn));
+    ok(got.link === user && got.password === pass, "and the link's message keeps the username, the password's message the password: " + JSON.stringify(got));
+    ok(paste(un, "Your test account is 0000-0000.") === "0000-0000", "his test account's zeros are still taken");
+  } finally { W.close(); }
+})();
 section("S3 fix: no function is declared twice in the owner's page, where stmt/owner.js is spliced into the Counter's script");
 await (async () => {
   /* S3, 24 SEP 2026. The door's one way in named its opener unseal, which stmt/owner.js already declared: spliced in

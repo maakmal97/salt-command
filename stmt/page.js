@@ -843,10 +843,17 @@ const CLIENT_JS = `
   var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
   var UN_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
   var PW_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
-  /* a username or a password in the form it was sent in, or '' when the text holds none */
+  /* a username or a password in the form it was sent in, or '' when the text holds none. S3 fix: the first group of
+     the right shape that the alphabet allows, so words of four letters in a message ("Your Salt") are passed over */
   function shaped(t, n){
-    var low=String(t||'').toLowerCase(), m=(n===8?UN_IN:PW_IN).exec(low);
-    var raw=m?m.slice(1).join(''):clean(low);
+    var low=String(t||'').toLowerCase(), re=new RegExp((n===8?UN_IN:PW_IN).source,'g'), m, first='', raw='';
+    while((m=re.exec(low))){
+      var got=m.slice(1).join('');
+      if(!first) first=got;
+      if(/^0+$/.test(got)||!ALPHA.test(got)){ raw=got; break; }
+      re.lastIndex=m.index+1;
+    }
+    raw=raw||first||clean(low);
     return raw.length===n?raw.match(/.{4}/g).join('-'):'';
   }
   function canonPass(t){ return shaped(t,16)||String(t||'').trim(); }
