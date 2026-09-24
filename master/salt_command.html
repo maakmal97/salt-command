@@ -19218,6 +19218,20 @@ function ordQuickKeep(id){
     else{try{localStorage.setItem(ORD_QUICK_KEY,JSON.stringify([t].concat(cur).slice(0,6)));said='Kept as a quick reply on this device.';}catch(e){said='This browser would not keep it.';}}}
   ORD_SAID={id,t:said};ordDraw();
 }
+/* S11 11.7 (24 Sep 2026): DECLINE AND CANCEL TAKE A REASON, which the customer reads with the words for it:
+   Not taken, or Cancelled by us. The first tap opens the reasons; the second, once one is chosen, moves the
+   order. Every reason is checked by siteSafe here and by siteWords on the Worker, as his answers are. */
+let ORD_WHY={};
+const ORD_WHY_PICK=[['stock','Out of stock this week'],['place','Cannot deliver there'],['price','Prices have changed'],['own','Other']];
+function ordWhyText(o){const w=ORD_WHY[o.id]||{};if(!w.pick)return '';if(w.pick!=='own'){const r=ORD_WHY_PICK.find(x=>x[0]===w.pick);return r?r[1]:'';}
+  const i=document.querySelector('input[data-why="'+o.id+'"]');return i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,140):'';}
+function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
+  const opt=(k,t)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="why-${esc(o.id)}" value="${k}" data-whypick="${esc(o.id)}"${w.pick===k?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${t}</span></span></label>`;
+  const picks=ORD_WHY_PICK.filter(x=>x[0]!=='place'||o.mode==='deliver');
+  return `<fieldset class="salt-options ordwhy"><legend class="salt-options__legend">${w.st==='declined'?'Why it is not taken':'Why it is cancelled'}, for them to read</legend>
+    <div class="salt-options__grid">${picks.map(x=>opt(x[0],x[1])).join('')}</div>
+    <label class="salt-field ordother"${w.pick==='own'?'':' hidden'}><span class="salt-field__label">In your words</span>
+      <input type="text" maxlength="140" value="" class="salt-field__input" data-why="${esc(o.id)}"></label></fieldset>`;}
 /* S11 11.5 (24 Sep 2026): WHAT THE CUSTOMER WAS TOLD. His card says what their own page says of this order,
    in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
    chip and the first line under it) and the suite holds the two copies together: a word changed on one side
@@ -19225,7 +19239,10 @@ function ordQuickKeep(id){
 function ordTold(o){
   const T={placed:['Placed','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
     ready:['Ready',o.mode==='deliver'?'ready to be delivered':'ready to collect'],done:['Completed','complete'],
-    declined:['Declined','could not be taken'],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+    declined:['Not taken',''],cancelled:['Withdrawn','withdrawn']}[o.status]||[o.status,''];
+  /* S11 11.7: an end of his is said with its reason, and a cancellation of his is Cancelled by us */
+  if(o.status==='declined'||o.status==='cancelled'){const e=(o.history||[]).filter(x=>x&&x.status===o.status).slice(-1)[0];
+    if(e&&e.by==='desk'){if(o.status==='cancelled')T[0]='Cancelled by us';T[1]=e.note||'';}}
   const h=(o.history||[]).filter(x=>x&&x.status===o.status),since=h.length?h[h.length-1].at:o.at;
   return {word:T[0],line:T[1],since};
 }
@@ -19285,7 +19302,10 @@ function ordCard(o){
   const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):null,pv=ORD_PV[o.id];
   const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait';
   const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
-  if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
+  const whyOpen=ORD_WHY[o.id];
+  const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
+  if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
+  else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(rowed&&o.status!=='done')acts=(o.status==='acknowledged'?btn('ready','Ready to collect',false,'collect')+btn('ready','Ready to deliver',false,'deliver'):'')
     +(moved>0?'':btn('cancelled','Cancel',true));
   /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
@@ -19315,7 +19335,7 @@ function ordCard(o){
     ${ordToldLine(o)}
     ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
     ${fee}${thread}${reply}
-    ${hand}
+    ${hand}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${o.status==='placed'?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
         :!pvFor?'Drafting the row first.'
@@ -19328,7 +19348,7 @@ function ordCard(o){
    the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
    named by what it holds and the order it is on; only a figure that differs from the card's own is
    carried, so a move that went through clears its box by putting the default back first. */
-function ordField(i){return ['fee','hand','say'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+function ordField(i){return ['fee','hand','say','why'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
 /* S11 11.4: WHAT IS SELECTED, and whether the phone has opened it. On the laptop the list and the card
    stand side by side and the card is the first row's until he picks another; on the phone the list comes
    first and a row opens its card, with the way back at its head. Every card is drawn and the others are
@@ -19358,7 +19378,7 @@ function ordDraw(){
    if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
   const typed={};let focused='';
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
   let selO=null;
   const lead=document.getElementById('ordLead');
@@ -19384,7 +19404,7 @@ function ordDraw(){
       ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
     selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
   }
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say]').forEach(i=>{const k=ordField(i);
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
   if(selO)ordPreview(selO);
@@ -19395,6 +19415,8 @@ function ordDraw(){
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
   box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();}};});
+  box.querySelectorAll('input[data-whypick]').forEach(i=>{i.onchange=()=>{const w=ORD_WHY[i.dataset.whypick];if(w){w.pick=i.value;ordDraw();}};});
+  box.querySelectorAll('button[data-whyoff]').forEach(b=>{b.onclick=()=>{delete ORD_WHY[b.dataset.whyoff];ordDraw();};});
   box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
   box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
@@ -19425,6 +19447,15 @@ async function ordAct(b){
     const pv=ORD_PV[id];
     body=JSON.stringify({delivery:d,hash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
     url='orders/'+encodeURIComponent(id)+'/accept';
+  }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
+    ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
+  }else if(st==='declined'||st==='cancelled'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{id};
+    const why=ordWhyText(o);
+    if(!why)return refuse('Choose a reason first; nothing moved.');
+    const chk=siteSafe(why);
+    if(chk.refuse)return refuse(chk.refuse+' Nothing moved.');
+    body=JSON.stringify({status:st,note:why});
   }else if(st==='noreply'){
     body=JSON.stringify({noReply:true});
   }else if(st==='say'){
@@ -19450,10 +19481,11 @@ async function ordAct(b){
       :st==='acknowledged'?'Accepted. They see Acknowledged. The row is approved as it is drafted if it is the one you saw; if not, it waits under Approve, marked. '+told
       :st==='say'?'Sent. '+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
-      :st==='declined'?'Declined. The customer sees it.'
-      :st==='cancelled'?'Cancelled. Any payment taken is refunded on the row. '+told
+      :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
+      :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
     ORD_SAID={id,t:said};
+    if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
     const used=r.ok&&document.querySelector('input[data-'+({say:'say',handover:'hand',acknowledged:'fee'}[st]||'none')+'="'+id+'"]');
     if(used)used.value=used.defaultValue;   /* what went through is not carried into the redraw */
   }catch(e){ ORD_SAID={id,t:'No connection, so nothing moved.'}; }

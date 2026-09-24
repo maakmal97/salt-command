@@ -23089,6 +23089,129 @@ await (async () => {
   }
 })();
 
+section("S11 11.7: Decline and Cancel take a reason, checked on the desk, which the customer reads as Not taken or Cancelled by us");
+await (async () => {
+  /* 24 Sep 2026 (PLAN 5; the study's F13: one tap, no reason, and the card vanished). The first tap opens the
+     reasons; a second, once one is chosen, moves the order with it as the event's note. Their page says Not taken
+     or Cancelled by us with that reason; one they withdrew stays Withdrawn. The reason is his and never reaches
+     a ledger note: the entry the reconcile queues is built from fixed words. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const { cancelEntry } = await import("../src/orders.js");
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const u = "abcd-efgh";
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
+  const move = async (id, body) => {
+    const log = console.log; console.log = () => {};
+    try {
+      const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + id, { method: "POST",
+        headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body) }), denv, ctx);
+      return { status: r.status, j: await r.json() };
+    } finally { await new Promise((r) => setTimeout(r, 20)); console.log = log; }
+  };
+  const place = async (x) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" }, x || {}))).order;
+  const dec = await place();
+  await move(dec.id, { status: "declined", note: "  Out of stock   this week " });
+  const can = await place();
+  await move(can.id, { status: "acknowledged", mode: "collect" });
+  await move(can.id, { status: "cancelled", note: "Prices have changed" });
+  const wd = await place();
+  await O.customerMove(senv, u, wd.id, "cancel", {});
+  const rec = async (id) => JSON.parse(await skv.get("order:" + u + ":" + id));
+  const dR = await rec(dec.id), cR = await rec(can.id);
+  ok(dR.history.slice(-1)[0].note === "Out of stock this week" && cR.history.slice(-1)[0].note === "Prices have changed" && cR.history.slice(-1)[0].by === "desk",
+    "his reason rides on the event that ended the order, as one line: " + JSON.stringify([dR.history.slice(-1)[0], cR.history.slice(-1)[0]]));
+  const e = cancelEntry(cR, "CC5-OKR", "desk", new Date("2026-09-24T03:00:00Z"));
+  ok(!/Prices have changed/.test(JSON.stringify(e)) && /Withdrawn on the statements site by the desk/.test(e.payload.note),
+    "and the Cancellation the reconcile queues says who ended it in fixed words, never the reason: " + e.payload.note);
+
+  /* ---- THEIR PAGE ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const pass = "fixture-pass-117", ck = await CR.contentKey("test-secret", u);
+  const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-117",
+    env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+  const list = [dR, cR, await rec(wd.id)].map(O.customerView);
+  const dom = new JSDOM(landingPage(u, "n117", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? openB : (p === "/orders" && m === "GET") ? { ok: true, orders: list } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const pw = dom.window, pd = pw.document;
+  try {
+    pd.getElementById("un").value = u; pd.getElementById("pw").value = pass;
+    pd.getElementById("f").dispatchEvent(new pw.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && pd.querySelectorAll("#pOrder .pane .state").length < 3; i++) await new Promise((r) => setTimeout(r, 50));
+    const pane = (id) => pd.querySelector('#pOrder .pane[data-order="' + id + '"]');
+    const said = (id) => { const p = pane(id); return p ? [p.querySelector(".state").textContent, [...p.querySelectorAll("p.sub2")].map((x) => x.textContent).join(" | ")] : null; };
+    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken: Out of stock this week. Nothing is owed."]),
+      "a decline reads Not taken, with his reason: " + JSON.stringify(said(dec.id)));
+    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us: Prices have changed. Nothing is owed."]),
+      "a cancellation of his reads Cancelled by us, with his reason: " + JSON.stringify(said(can.id)));
+    ok(said(wd.id) && said(wd.id)[0] === "Withdrawn" && /^Withdrawn before anything moved/.test(said(wd.id)[1]),
+      "and one they withdrew still reads Withdrawn: " + JSON.stringify(said(wd.id)));
+  } finally { pw.close(); }
+
+  /* ---- THE DESK: two taps, a reason between them ---- */
+  const { openMaster: om117 } = await import("../tools/payload.mjs");
+  const { w } = await om117();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 95; w.clearInterval = () => {};
+    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "p1", status: "placed", at: "2026-09-24T02:00:00.000Z" }, base)];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = () => D.querySelector('.ordcard[data-id="p1"]');
+    const moves = () => calls.filter((c) => c.p === "orders/" + u + "/p1");
+    card().querySelector('button[data-ord="declined"]').click();
+    await settle();
+    const picks = () => [...card().querySelectorAll('input[data-whypick="p1"]')];
+    const go = () => card().querySelector('button[data-ord="declined"][data-go="1"]');
+    ok(moves().length === 0 && picks().map((x) => x.value).join(",") === "stock,price,own" && go() && go().disabled,
+      "the first tap moves nothing and opens the reasons, a collection's without Cannot deliver there, and the second waits for one: "
+      + JSON.stringify({ moves: moves().length, picks: picks().map((x) => x.value) }));
+    const own = picks().find((x) => x.value === "own"); own.checked = true; own.dispatchEvent(new w.Event("change", { bubbles: true }));
+    card().querySelector('input[data-why="p1"]').value = "your Gold rate is gone";
+    go().click();
+    await settle();
+    ok(moves().length === 0 && /names a level/.test(card().querySelector('[data-msg="p1"]').textContent),
+      "his own words are checked before they leave, and a level's name moves nothing");
+    const st = picks().find((x) => x.value === "stock"); st.checked = true; st.dispatchEvent(new w.Event("change", { bubbles: true }));
+    go().click();
+    await settle();
+    ok(moves().length === 1 && JSON.stringify(moves()[0].body) === '{"status":"declined","note":"Out of stock this week"}'
+      && /They read Not taken: Out of stock this week/.test(card().querySelector('[data-msg="p1"]').textContent),
+      "a chosen reason goes with the decline, and the card says what they read: " + JSON.stringify(moves()));
+    const told = String(w.eval("ordToldLine(" + JSON.stringify(Object.assign({}, base, { id: "c1", status: "cancelled", at: "2026-09-20T02:00:00.000Z",
+      history: [{ at: "2026-09-24T02:00:00.000Z", status: "cancelled", by: "desk", note: "Prices have changed" }] })) + ")"));
+    ok(/They see <b>Cancelled by us<\/b>, Prices have changed, since 24 Sep, 10:00\./.test(told), "and his card says the same of an order he cancelled: " + told);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

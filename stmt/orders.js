@@ -581,7 +581,9 @@ export function decideDesk(order, body, at) {
     const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
   }
-  if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);
+  /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
+     Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
+  if (body && typeof body.note === "string" && cleanMsg(body.note, MSG_MAX)) ev.note = cleanMsg(body.note, MSG_MAX);
   return { ev };
 }
 
