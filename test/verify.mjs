@@ -17776,6 +17776,75 @@ await (async () => {
     rmSync(fold, { recursive: true, force: true });
   }
 })();
+section("S14 fix SEC-1: one username, one code: the fold, the gate and the publish refuse a _users.json that gives one account to two codes");
+await (async () => {
+  /* The binding is the same on every machine: two folds made from one base take the same spare, and git merges
+     their two one-line additions to _users.json cleanly. The publish then sealed whichever code sorted last into
+     the account with no word, so a customer already handed its password read somebody else's statement. */
+  const { registerAccounts: ra1 } = await import("../tools/fold.mjs");
+  const { planPublish: pp1 } = await import("../tools/stmt-publish.mjs");
+  const G1 = await import("../tools/gate.mjs");
+  const root = join(REPO, "test", "tmp", "poolsec1"), kv = join(root, "2026-09", "_kv"), fold = join(REPO, "test", "tmp", "poolsec1fold");
+  rmSync(root, { recursive: true, force: true }); rmSync(fold, { recursive: true, force: true });
+  mkdirSync(kv, { recursive: true }); mkdirSync(fold, { recursive: true });
+  const rec = (u, extra) => JSON.stringify(Object.assign({ u, issued: "2026-09-01", issues: ["2026-09-01"], wrap: { v: 2 }, env: { v: 2 } }, extra || {})) + "\n";
+  writeFileSync(join(kv, "aaaa-bbbb.json"), rec("aaaa-bbbb"));
+  writeFileSync(join(kv, "2aaa-aaaa.json"), rec("2aaa-aaaa", { spare: true }));
+  writeFileSync(join(kv, "3aaa-aaaa.json"), rec("3aaa-aaaa", { spare: true }));
+  const base = JSON.stringify({ "CZ9-OLD": "aaaa-bbbb" }) + "\n";
+  const stage = (id, code) => ({ ok: true, count: 1, approved: [{ id, collection: "roster", row: { code, kind: "customer", parent: null, note: null },
+    entry: { at: id, payload: { mode: "addid", code, kind: "customer" } } }] });
+  const wasDir = process.env.SALT_STATEMENTS_DIR;
+  try {
+    /* ---- two folds from one base bind the same spare, and their lines merge without a conflict ---- */
+    const a = join(fold, "users-a.json"), b = join(fold, "users-b.json");
+    writeFileSync(a, base); writeFileSync(b, base);
+    ra1(root, a, stage("s1", "CZ1-AAA"), ["s1"]); ra1(root, b, stage("s2", "CZ1-ZZZ"), ["s2"]);
+    const merged = Object.assign(JSON.parse(readFileSync(a, "utf8")), JSON.parse(readFileSync(b, "utf8")));
+    ok(merged["CZ1-AAA"] === "2aaa-aaaa" && merged["CZ1-ZZZ"] === "2aaa-aaaa",
+      "the fixture is the fault: two folds from one base take the same spare, and the merge holds both lines: " + JSON.stringify(merged));
+    const mergedText = JSON.stringify(merged, null, 2) + "\n";
+    writeFileSync(join(root, "_users.json"), mergedText);
+
+    /* ---- the fold's own half refuses it and writes nothing ---- */
+    let why = "";
+    try { ra1(root, join(root, "_users.json"), stage("s3", "CZ1-NEW"), ["s3"]); } catch (e) { why = String(e.message); }
+    ok(/one username to two codes: 2aaa-aaaa is held by CZ1-AAA and CZ1-ZZZ/.test(why) && readFileSync(join(root, "_users.json"), "utf8") === mergedText,
+      "registerAccounts refuses a file giving one username to two codes, naming both, and leaves the file as it was: " + why.slice(0, 120));
+
+    /* ---- the fold as the cloud job runs it: refused before the book is written, so nothing folds ---- */
+    const f = (n) => join(fold, n);
+    const bookText = readFileSync(join(REPO, "ledger", "book.json"), "utf8"), masterText = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    writeFileSync(f("book.json"), bookText); writeFileSync(f("salt_command.html"), masterText);
+    writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
+    writeFileSync(f("staged.json"), JSON.stringify(stage("2099-01-01T00:00:00.001Z", "CZ1-NEW")));
+    writeFileSync(f("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+    const run = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f("book.json"), "--master", f("salt_command.html"),
+      "--staged", f("staged.json"), "--notes", f("notes.json"), "--folded", f("folded.json"), "--users", join(root, "_users.json"),
+      "--statements", root, "--today", "2099-01-01"], { encoding: "utf8" });
+    ok(run.status === 1 && /FAIL  nothing folded: statements\/_users\.json gives one username to two codes/.test(run.stdout)
+      && readFileSync(f("book.json"), "utf8") === bookText && readFileSync(f("salt_command.html"), "utf8") === masterText
+      && !existsSync(f("folded.json")) && readFileSync(join(root, "_users.json"), "utf8") === mergedText,
+      "fold.mjs --apply over it stops red with the book, the master and the file untouched: " + JSON.stringify({ status: run.status, out: run.stdout.slice(-160) }));
+
+    /* ---- the publish refuses before anything is sealed or put ---- */
+    let pubWhy = "", plan = null;
+    try { plan = await pp1(root, null, new Date("2026-09-24T02:00:00Z"), [], "2026-09-01"); } catch (e) { pubWhy = String(e.message); }
+    ok(plan === null && /one username to two codes/.test(pubWhy), "planPublish refuses it rather than sealing the code that sorts last into the account: " + (pubWhy || JSON.stringify(plan && plan.users)));
+
+    /* ---- the gate: first, and nothing after runs; the base file passes ---- */
+    const g = spawnSync(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_STATEMENTS_DIR: root } });
+    process.env.SALT_STATEMENTS_DIR = fold;
+    writeFileSync(join(fold, "_users.json"), base);
+    let baseOk = -1;
+    try { baseOk = G1.usersCheck(); } catch (e) { baseOk = String(e.message); }
+    ok(g.status === 1 && /FAIL  statements\/_users\.json gives one username to two codes/.test(g.stdout) && !/ok    the workflows parse/.test(g.stdout) && baseOk === 1,
+      "the gate fails on it before any other check, and passes a file where each username has one code: " + JSON.stringify({ status: g.status, baseOk, out: g.stdout.slice(0, 160) }));
+  } finally {
+    if (wasDir === undefined) delete process.env.SALT_STATEMENTS_DIR; else process.env.SALT_STATEMENTS_DIR = wasDir;
+    rmSync(root, { recursive: true, force: true }); rmSync(fold, { recursive: true, force: true });
+  }
+})();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available

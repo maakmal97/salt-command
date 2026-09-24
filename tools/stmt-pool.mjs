@@ -30,6 +30,20 @@ export function newestIssue(root) {
 /** A record is a spare while it is marked one and no code holds its username (`byUser`: username to code). */
 export const isSpare = (rec, byUser) => !!rec && rec.spare === true && !byUser[rec.u];
 
+/* ONE USERNAME, ONE CODE. "The next" spare is the same on every machine, so two folds made from one base
+   take the same one, and git merges their two one-line additions to _users.json without a conflict: two
+   codes would then hold one account, and the publish would seal whichever sorts last into it. The fold,
+   the gate and the publish each refuse such a file before anything is written. */
+export function oneCodeEach(users) {
+  const by = {};
+  for (const c of Object.keys(users || {}).sort()) (by[users[c]] = by[users[c]] || []).push(c);
+  const shared = Object.keys(by).filter((u) => by[u].length > 1).map((u) => u + " is held by " + by[u].join(" and "));
+  if (shared.length) throw new Error("statements/_users.json gives one username to two codes: " + shared.join("; ")
+    + ". Keep it on the code given it first (git log statements/_users.json), delete the other's line, and "
+    + "node tools/stmt-account.mjs --mint on the laptop gives that one its own");
+  return users;
+}
+
 /** The free spares in the newest issue, sorted by username, so "the next" is the same on every machine. */
 export function freeSpares(root, users) {
   const issue = newestIssue(root);

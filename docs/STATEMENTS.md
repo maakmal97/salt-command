@@ -92,6 +92,9 @@ publish in the same run seals the live statement and price list into it, so a wa
 the fold's few minutes. With none free the fold mints a bare username as before; Salt Admin then reads
 "Made at the next laptop update. Until then, show the Silver link." (the level is the ladder's last,
 from `tiers`), and `update.mjs` mints the account.
+**One username, one code**: the next spare is the same on every machine, so two folds from one base
+take the same one and git merges their lines cleanly. The fold, the gate and the publish each refuse a
+`_users.json` giving one username to two codes (`oneCodeEach`), before anything is written.
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts

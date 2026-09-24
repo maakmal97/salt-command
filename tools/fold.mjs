@@ -60,7 +60,7 @@ import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { nextRid } from "./rid.mjs";
 import { userFor, usersJson } from "./stmt-crypto.mjs";
-import { freeSpares } from "./stmt-pool.mjs";
+import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -105,11 +105,14 @@ export function mintUsernames(users, staged, folded, spares) {
   }
   return minted;
 }
-/* The run's half: read the pool off the committed records, bind, and write _users.json in its one format. */
+/* The run's half: read the pool off the committed records, bind, and write _users.json in its one format.
+   It throws, writing nothing, on a file that gives one username to two codes (oneCodeEach), and the run
+   calls it before the book is written, so that refusal folds nothing. */
 export function registerAccounts(stmtsDir, usersFile, staged, folded) {
   const users = existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {};
   const spares = freeSpares(stmtsDir, users);
   const minted = mintUsernames(users, staged, folded, spares);
+  oneCodeEach(users);
   if (minted.length) writeFileSync(usersFile, usersJson(users));
   return { users, minted, bound: minted.filter((c) => spares.includes(users[c])) };
 }
@@ -1011,12 +1014,16 @@ if (isMain) {
     const masterText = readFileSync(MASTER, "utf8");
     const res = apply(book, staged, notes, masterText);
     if (!res.ok) { console.log("  FAIL  nothing folded:"); res.problems.forEach((x) => console.log("         " + x)); process.exit(1); }
+    /* v588: a registration that folded is minted its statement username now, not the month of its first statement;
+       D15: on the next free spare account where there is one, which opens at this run's publish. Before the book
+       is written, so a _users.json giving one username to two codes folds nothing. */
+    let reg;
+    try { reg = registerAccounts(STMTS, USERS, staged, res.folded); }
+    catch (e) { console.log("  FAIL  nothing folded: " + e.message); process.exit(1); }
+    const { users, minted, bound } = reg;
     writeBookFile(book, BOOK);
     writeFileSync(MASTER, res.master);
     writeFileSync(FOLDED, JSON.stringify({ ids: res.folded }) + "\n");
-    /* v588: a registration that folded is minted its statement username now, not the month of its first statement;
-       D15: on the next free spare account where there is one, which opens at this run's publish */
-    const { users, minted, bound } = registerAccounts(STMTS, USERS, staged, res.folded);
     if (minted.length) console.log(`  ok    statement username minted for ${minted.join(", ")}, kept for life`
       + (bound.length ? `; ${bound.join(", ")} on a spare account, which opens at this run's publish` : ""));
     const waiting = minted.filter((c) => !bound.includes(c));

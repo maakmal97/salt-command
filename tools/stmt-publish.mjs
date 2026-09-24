@@ -24,7 +24,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { liveRecords, siteBaseUrl, partyTotals, reviewFlag, klToday } from "./make_statements.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { isSpare } from "./stmt-pool.mjs";
+import { isSpare, oneCodeEach } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
@@ -46,6 +46,10 @@ export function usersMap(root) {
 
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
+  /* S14: ONE USERNAME, ONE CODE (tools/stmt-pool.mjs), refused before anything is sealed or put, or the
+     account would carry whichever code sorts last and the other would drop off every list in silence */
+  const usersFile = join(root, "_users.json");
+  oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
   const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
