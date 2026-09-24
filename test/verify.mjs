@@ -27893,6 +27893,81 @@ await (async () => {
   } finally { w.close(); }
 })();
 
+section("S6 fix: the desk never books the same money on a row twice, once as a claim on its order and once against the account");
+await (async () => {
+  /* HIS D6 AND D7: one Received books exactly the rows drawn. The account claim's allocation read the mirror, which knows
+     nothing of an order claim waiting, received or of cash not yet folded, so it drew a row an order claim already
+     covered; and an order claim's Received booked a row a claim against the account had booked and no fold had landed.
+     Each row is now taken as owing less the money on its way to it. Driven through both Workers over the real schema. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so money on its way to a row was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const C = "CX1-AB", U = "abcd-efgh";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  const row = (rid, date, total) => ({ rid, customer: C, product: "salt", date, qty: 1, total, cash: 0, deliveredQty: 1, deliveredOn: date });
+  const rows = [row("s30", "2026-09-10", 180), row("s31", "2026-09-12", 120)];
+  rows.forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+  let book = { sales: [], state: { OPEN: { byKey: {}, position: {} } } };
+  for (const r of rows) book = withPending(book, r);
+  setState("roster", [C]); setState("OPEN", book.state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  /* an order agreed and handed over, whose row is on the book */
+  const handed = async (total, key) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: key, ack: "2026-09-10T01:00:00.000Z" } });
+    await O.deskMove(senv, U, o.id, { handover: { units: 1, mode: "collect" } });
+    await O.customerMove(senv, U, o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    return o;
+  };
+  const a = await handed(180, C + "|2026-09-10|180");
+  await O.customerMove(senv, U, a.id, "pay", { amount: 180 });   /* waiting on its card */
+  const c1 = (await O.claimAccount(senv, U, { amount: 180, method: "transfer", account: "wise" })).claim;
+  const pv = await call("/claims/" + c1.id + "/preview", {});
+  ok(pv.status === 200 && JSON.stringify(pv.j.rows.map((r) => [r.rid, r.rm])) === '[["s31",120]]' && pv.j.left === 60,
+    "a claim against the account passes over a row whose order has RM 180 sent on it and waiting, and says what no other row owes: "
+    + JSON.stringify({ rows: pv.j.rows && pv.j.rows.map((r) => [r.rid, r.rm]), left: pv.j.left }));
+
+  const c2 = (await O.claimAccount(senv, U, { amount: 120, method: "transfer", account: "wise" })).claim;
+  const pv2 = await call("/claims/" + c2.id + "/preview", {});
+  const yes = await call("/claims/" + c2.id + "/received", { hash: pv2.j.hash });
+  const c3 = (await O.claimAccount(senv, U, { amount: 100, method: "transfer", account: "wise" })).claim;
+  const pv3 = await call("/claims/" + c3.id + "/preview", {});
+  ok(pv3.status === 200 && pv3.j.rows.length === 0 && pv3.j.left === 100,
+    "nor does a second claim against the account draw a row the first one booked and no fold has landed: " + JSON.stringify({ rows: pv3.j.rows, left: pv3.j.left }));
+  const b = await handed(120, C + "|2026-09-12|120");
+  await O.customerMove(senv, U, b.id, "pay", { amount: 120 });
+  const cb = (await O.ordersOf(senv, U)).find((x) => x.id === b.id).payments.find((p) => p.claim === "waiting");
+  const twice = await call("/orders/" + b.id + "/received", { claim: cb.at, amount: 120 });
+  ok(yes.status === 200 && yes.j.approved.length === 1 && twice.status === 409 && /booked on this order's row and not folded yet/.test(twice.j.error)
+    && (await O.ordersOf(senv, U)).find((x) => x.id === b.id).claimed === 120,
+    "and an order claim's Received is refused on a row a claim against the account booked and no fold has landed, the claim still waiting: "
+    + JSON.stringify({ acct: yes.j.approved, order: twice.status, error: twice.j.error }));
+})();
+
 section("v764: what he records on the desk reaches the customer's order, and the chase stops");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Every road built since v694 runs from the site to the book. A

@@ -419,7 +419,7 @@ export async function receivedOrder(env, id, body, by, now) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [], shut = new Set();
+  let queued = [], shut = new Set(), onRows = {};
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
@@ -427,6 +427,7 @@ export async function receivedOrder(env, id, body, by, now) {
     /* S6 11.14: a claim's entry filed not found never lands, so that claim is not received after it */
     const rj = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE status='rejected' AND decided_by='notfound' AND entry LIKE ?1").bind('%"orderId":"' + id + '"%').all();
     shut = new Set((rj.results || []).map((r) => r.id));
+    onRows = await acctInFlight(env.SALT_LEDGER, null);
   }
   return stageTap(env, id, body, by, now, "pay", (o, at) => {
     const amount = body && body.amount;
@@ -439,6 +440,9 @@ export async function receivedOrder(env, id, body, by, now) {
       if (!p) return { status: 409, error: "that claim of theirs is not waiting any more: look again" };
       if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
       if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
+      /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
+      const onRow = onRows[o.ledgerKey] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+      if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
       const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
       const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
       if (p.queued) { own.at = p.queued; return { entry: own, pin: p.queued, site, shown }; }
@@ -520,8 +524,37 @@ export async function notFoundClaim(env, id, body) {
  * an exact match; then the site hears Received. Different, the tap is refused with the rows as they now stand and
  * nothing is queued. A figure more than the rows owe is never approved on a tap: the card says what is left over. */
 const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, "0")).join("");
-function claimRows(book, c) {
-  const alloc = POSITION_ENGINE.claimAlloc(book.sales || [], c.code, +c.amount);
+/* S6 fix: MONEY ALREADY ON ITS WAY TO A ROW, by the row's key. What a claim against the account has booked on it, pending or
+   approved, that no fold has landed yet; and with the site's orders, what the site knows of an order beyond its row's
+   cash (a claim waiting, one received, cash he took: none of them folded yet). An account claim takes each row as owing
+   that much less, and an order claim's Received refuses money a claim against the account booked on its row, so the same
+   money is never booked on a row twice. */
+async function acctInFlight(db, except) {
+  const by = {};
+  const rs = await db.prepare("SELECT entry FROM draft WHERE (status='pending' OR (status='approved' AND committed_at IS NULL)) AND entry LIKE ?1").bind('%"claimId":"%').all();
+  for (const r of rs.results || []) {
+    let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; }
+    const k = e && e.claimId && e.claimId !== except && e.payload && e.payload.orderKey;
+    if (k) by[k] = +((by[k] || 0) + (+e.payload.cash || 0)).toFixed(2);
+  }
+  return by;
+}
+async function inFlight(env, db, c, sales) {
+  const all = await listOrders(env, true);
+  if (!all.ok) return null;
+  const by = await acctInFlight(db, c.id), cash = {};
+  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
+  for (const o of all.orders) {
+    if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[o.ledgerKey] || 0)).toFixed(2);
+    if (more > 0.004) by[o.ledgerKey] = +((by[o.ledgerKey] || 0) + more).toFixed(2);
+  }
+  return by;
+}
+function claimRows(book, c, fl) {
+  const sales = (book.sales || []).map((s) => { const on = fl && fl[POSITION_ENGINE.ovKey(s)];
+    return on ? Object.assign({}, s, { cash: +((+s.cash || 0) + on).toFixed(2) }) : s; });
+  const alloc = POSITION_ENGINE.claimAlloc(sales, c.code, +c.amount);
   const date = klDate(new Date(c.at)), method = c.method + (c.account ? " via " + c.account : "");
   const entries = alloc.rows.map((r, i) => ({ at: new Date(Date.parse(c.at) + i).toISOString(), type: "SELL", party: r.party, qty: 0, total: r.rm,
     status: "Payment", by: "customer", claim: true, claimId: c.id,
@@ -554,7 +587,9 @@ export async function claimPreview(env, id) {
   const booked = await claimBooked(db, c.id);
   if (booked) return { ok: true, claim: c, rows: booked, left: 0, booked: true, own: [] };
   const book = await readBook(db);
-  const { alloc, entries } = claimRows(book, c);
+  const fl = await inFlight(env, db, c, book.sales || []);
+  if (!fl) return { ok: false, status: 503, error: "the site's orders could not be read, so the rows it settles cannot be drawn" };
+  const { alloc, entries } = claimRows(book, c, fl);
   const rows = [], own = [];
   for (let i = 0; i < entries.length; i++) {
     const d = draftRow(entries[i], book);

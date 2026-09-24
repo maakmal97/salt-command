@@ -172,7 +172,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
-  drawn as the engine's oldest-first `claimAlloc`, row by row, and its one Received approves exactly those rows. A close under what they paid
+  drawn as the engine's oldest-first `claimAlloc`, each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,

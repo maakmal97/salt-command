@@ -585,10 +585,12 @@ never having moved, and the wake says "Payment not found yet" (`notfound` in `NE
 refused** (`NOT_FOUND_ON_KV`), a figure that falls never being a read-modify-write. A claim not found is never offered again,
 and a Received on a claim whose row was filed not found is refused. **A claim against the account is received row by
 row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
-bucket's with goods out and money owed, by date, each to what it owes) as one Fulfilment a row, against the mirror and
+bucket's with goods out and money owed, by date, each to what it owes, less the money already on its way to it: a claim
+on its order waiting or received, cash not folded, another account claim's booked row) as one Fulfilment a row, against the mirror and
 stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
 Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
-then tells the site. More than the rows owe is never a tap. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+then tells the site. More than the rows owe is never a tap. An order claim's Received is refused on a row an account claim
+booked and no fold has landed, so no money is booked on a row twice. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
 order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
 choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
