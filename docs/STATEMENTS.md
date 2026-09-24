@@ -849,7 +849,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   through ticks the account sent. A link shared or copied from any card is dropped from the page and a fresh one made
   (`retire`), so the one Sign out everywhere spares has never left it. Beside it Show a code, in person; View as them; Copy password;
   Sign out everywhere, on a second tap. Then **How they got in** (`GET /all/account/<username>`): the last ten ways in
-  (link, code scanned or typed, password), each with its moment and the device in the site's own words (`deviceOf`
+  (link; a code scanned from his counter's QR, `qr`, copied across from the customer's own Keep Sheet, `copy`, or typed, `code`; password), each with its moment and the device in the site's own words (`deviceOf`
   in `stmt/signin.js`, from the browser's description at that open: "iPhone, Safari", never an address or a version),
   kept by `markSeen` in `seen:<username>`'s `log`; a remembered phone coming back is not a way in. Share and Copy
   message, and the QR of the username's address, left with the Send card.

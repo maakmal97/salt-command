@@ -248,7 +248,8 @@ export const OWNER_JS = `
   }
   /* HOW THEY GOT IN (/all/account/<u>): each way in, newest first, with its moment and the kind of device it was used
      on, as the browser described itself then, never an address; a password refused at an address stands above them */
-  var HOWW={link:'Sign-in link', key:'Code, scanned', code:'Code, typed', password:'Password'};
+  /* S9 fix: a code his counter showed is scanned; a customer's own is copied across; key, before the two were told apart */
+  var HOWW={link:'Sign-in link', qr:'Code, scanned', copy:'Code, copied across', key:'Code', code:'Code, typed', password:'Password'};
   function lineRow(label, value, flag){
     var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
     l.appendChild(el('span','salt-ledger__label',label));
@@ -441,10 +442,11 @@ export const OWNER_JS = `
     locked:function(a){ return !!a.locked; },
     none:function(a){ return a.account===false; }
   };
-  /* HOW AN OPEN CAME: the road markSeen recorded. Stage 3's hand-over records key (the code scanned) and code (the
-     code typed); a road this page does not know says no road, and only an open with none at all, from before v827
-     when the password was the one road recorded, was by password. */
-  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', key:'by a scanned code', code:'by a typed code'};
+  /* HOW AN OPEN CAME: the road markSeen recorded. Stage 3's hand-over records qr (his counter's code, scanned), copy (a
+     customer's own, copied across) and code (typed), and key where it was one word for the first two; a road this
+     page does not know says no road, and only an open with none at all, from before v827 when the password was the
+     one road recorded, was by password. */
+  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code'};
   function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
   function chipsOf(a){

@@ -15960,7 +15960,7 @@ await (async () => {
   await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
     accounts: us.map((u, k) => ({ code: codes[k], username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
   const seen = (how) => JSON.stringify(Object.assign({ first: "2026-09-02T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 1 }, how ? { how } : {}));
-  await kv.put("seen:" + us[0], seen("key")); await kv.put("seen:" + us[1], seen("code"));
+  await kv.put("seen:" + us[0], seen("qr")); await kv.put("seen:" + us[1], seen("code"));
   await kv.put("seen:" + us[2], seen(null)); await kv.put("seen:" + us[3], seen("zzz"));
   const TEAM = "maakmal", AUD = "aud-s9-r5", KID = "kid-s9-r5";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
@@ -16930,6 +16930,78 @@ await (async () => {
     ok(said2 === "Nothing was signed in." && await live() === 1,
       "and its Sign out everywhere burns the first page's link, never sent, without counting it: " + said2);
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
+})();
+section("S9 fix S9R-4b: How they got in tells his counter's code, scanned, from a customer's own code copied across and a code typed");
+await (async () => {
+  /* Every open by a key was kept as "key" and drawn as a scanned code, but the customer's own road into the saved iPhone
+     app (the Keep Sheet copies the key, the app takes it by Paste or from its address) is a key as well, and nothing is
+     scanned on it. Only his counter's QR carries a key he minted. */
+  const W = (await import("../stmt/worker.js")).default;
+  const S = await import("../stmt/signin.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const kv = new KV(), MASTER = "mp-s9r4b";
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9r4b", u);
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    wrapMaster: await C.wrapKey(MASTER, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  await kv.put("roster", JSON.stringify([{ code: "CX4-HW", username: u }]));
+  await kv.put("issue", "2026-09-01");
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-25T00:00:00Z", issue: "2026-09-01",
+    accounts: [{ code: "CX4-HW", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
+  const TEAM = "maakmal", AUD = "aud-s9r4b", KID = "kid-s9r4b";
+  const env = { STMT: kv, STMT_MASTER: MASTER, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, STMT_HANDOVER_KEY: "ho-secret-s9r4b" };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const post = async (path, body, headers) => { const r = await site(path, { method: "POST", headers: Object.assign({ "content-type": "application/json", "user-agent": IPHONE }, headers || {}), body: JSON.stringify(body) });
+    return { status: r.status, j: await r.json().catch(() => ({})) }; };
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" }));
+  const c = b64u(JSON.stringify({ iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+  const A = { "cf-access-jwt-assertion": h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c)))) };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("reached for " + x);
+  };
+  let win = null;
+  try {
+    const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" };
+    const hows = async () => (JSON.parse((await kv.get("seen:" + u)) || "{}").log || []).map((x) => x.how);
+    /* his counter's QR, which a browser tab spends */
+    const k1 = S.newSignin();
+    await post("/all/handover", { u, token: k1, wrap }, A);
+    ok((await post("/handover/open", { token: k1, tab: true })).status === 200, "his counter's code opens in the camera's tab");
+    /* the customer's own key, the Keep Sheet's, which the saved app takes by Paste */
+    const s = (await post("/open", { u, password: pw })).j.session;
+    const k2 = S.newSignin();
+    await post("/handover", { token: k2, wrap }, { "X-Stmt-Session": s });
+    ok((await post("/handover/open", { token: k2 })).status === 200, "the customer's own key opens in the saved app");
+    /* and a code typed */
+    const k3 = S.newSignin(), ho = await post("/handover", { token: k3, wrap }, { "X-Stmt-Session": s });
+    ok((await post("/handover/open", { code: ho.j.code })).status === 200, "a code typed opens");
+    const got = await hows();
+    ok(JSON.stringify(got.slice(0, 4)) === JSON.stringify(["code", "copy", "password", "qr"]),
+      "each is kept by its road, his QR scanned, the customer's key copied across, the code typed: " + JSON.stringify(got));
+    win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+    } }).window;
+    const D = win.document;
+    const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
+    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    D.querySelector('button[data-m="accounts"]').click();
+    await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
+    const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
+    ok(/by a typed code/.test(chip()), "Accounts says the last open was by a typed code: " + chip());
+    D.querySelector('#rlist [data-u="' + u + '"]').click();
+    const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
+    ok(await until(() => rows().includes("Code, typed")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code, typed", "Code, copied across", "Password", "Code, scanned"]),
+      "and How they got in names each road: " + JSON.stringify(rows()));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {

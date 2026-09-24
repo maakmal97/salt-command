@@ -221,6 +221,8 @@ export async function dropHandover(env, token) {
 }
 
 /** Open by { token } or { code }: both records burnt, then { u, token, wrap, by }, or null for anything at all wrong.
+ *  `by` is the road (S9 fix): qr, the key of one his counter minted, which only its QR carries; copy, a customer's own
+ *  key, pasted or carried in the saved app's address; code, the eight symbols typed.
  *  S3 FIX, 24 SEP 2026: A KEY A BROWSER TAB FOUND IN ITS ADDRESS ({ token, tab: true }) OPENS ONLY ONE HE MINTED, the QR
  *  at his counter, and anything else is refused unspent. Any customer can mint a key for their own account, and
  *  /app#<key> sent to somebody else signed that browser into the sender's account with no tap, and kept it. */
@@ -240,6 +242,6 @@ export async function burnHandover(env, b) {
       await sealKey(secret), unb64(rec.s.ct))));
     if (!(body && body.u && body.token && body.wrap)) return null;
     try { await unpoint(env, body.u, token ? id : rec.pair); } catch (e) { /* the pointer lapses with it */ }
-    return Object.assign(body, { by: token ? "key" : "code" });
+    return Object.assign(body, { by: token ? (rec.admin === true ? "qr" : "copy") : "code" });
   } catch (e) { return null; }
 }
