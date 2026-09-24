@@ -17922,6 +17922,33 @@ await (async () => {
     rmSync(root, { recursive: true, force: true });
   }
 })();
+section("S14 fix R3: a bound spare's password, filed under its username, is found by code: a retry keeps it and Send hands it over");
+await (async () => {
+  /* The pool files a spare's password under its USERNAME, a spare having no code, and the fold binds it in
+     _users.json without moving it. Every laptop reader looked by code, so a same-issue retry of
+     make_statements minted the walk-in a new password in silence, and Send found none. */
+  const { makeStatements: ms3 } = await import("../tools/make_statements.mjs");
+  const { sheetParty: sp3 } = await import("../tools/stmt-send.mjs");
+  const C3 = await import("../tools/stmt-crypto.mjs");
+  const p = sp3("CZ9-WLK", { "CZ9-WLK": "2aaa-aaaa" }, { "2aaa-aaaa": "pw-walk-in" }, "");
+  ok(!!p && p.pw === "pw-walk-in" && p.who === "CZ9-WLK" && p.user === "2aaa-aaaa",
+    "Send's pairing finds a bound spare's password under its username: " + JSON.stringify(p));
+  const root = join(REPO, "test", "tmp", "poolr3"), out = join(root, "2026-09");
+  rmSync(root, { recursive: true, force: true });
+  const q = console.log; console.log = () => { };
+  try {
+    const first = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+    const code = Object.keys(first.passwords).sort()[0], u = first.users[code], pw = first.passwords[code];
+    /* the file as it reads once a spare minted into the pool is bound to this code */
+    const filed = Object.assign({}, first.passwords); delete filed[code]; filed[u] = pw;
+    writeFileSync(join(out, "_passwords.json"), JSON.stringify(filed, null, 2) + "\n");
+    const again = await ms3(out, "2026-09-01", { key: "test-secret", master: "mp", newIssue: true });
+    const rec = JSON.parse(readFileSync(join(out, "_kv", u + ".json"), "utf8"));
+    console.log = q;
+    ok(again.passwords[code] === pw && await C3.checkVerifier(pw, rec.verifier),
+      "a same-issue retry keeps the password filed under the username, so the walk-in's own still opens the account: " + code);
+  } finally { console.log = q; rmSync(root, { recursive: true, force: true }); }
+})();
 section("v707: an ID with no account cannot sign in, and now something mints one and something says so");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "an add ID, or amend ID, is applicable to the accounts available

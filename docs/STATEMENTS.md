@@ -85,7 +85,8 @@ no count. The site's door answers a spare with its one refusal, his master inclu
 (`--count N` for another figure, `--check` to write nothing) and, as `--mint` does, refuses without a
 master that unwraps a record and a key that opens one that is not a spare, `$env:STMT_KEY` winning over
 the file. Each is sealed as an account is, around an empty bundle, its password under the master as
-`pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet.
+`pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet; once
+bound it stays there, and a `make_statements` retry and Send look under the username after the code.
 `tools/update.mjs` warns with that line when fewer than three are free.
 **The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
 username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
