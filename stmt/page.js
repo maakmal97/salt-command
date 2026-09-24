@@ -59,15 +59,37 @@ const PAGE_CSS = `
 /* the level's mark: small, quiet, and never in the way of the price beside it (16 Sep 2026) */
 .mark{margin-left:7px;font-size:0.72em;line-height:1;vertical-align:0.12em;opacity:0.85}
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
+/* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
+.appmark{display:block;margin:0 0 14px}
+.gate .salt-glass-card{margin:0 0 4px}
+.gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
+.gate .salt-ledger__row:last-child{border-bottom:0}
+.gate .salt-insight .glyph{vertical-align:-0.3em}
+.center{text-align:center}
+/* S3 3.11: the code screen, the system's Code field under the one filled Paste */
+#codeBox .salt-code{margin-top:22px;display:flex;flex-direction:column;gap:8px}
+#codePaste .glyph{margin-right:8px;color:inherit}
+#toCode,#codeDoor{margin-top:14px}
+/* S3 3.8: the question sits where the tapped control was */
+.ask .lead{margin:18px 0 0}
+.ask .nocase{text-transform:none}
+/* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
+.mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
 .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
   color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
 /* a well is black 28%, decision 4 */
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
    44px tall; a code or a figure takes --mono and a sentence stays in the display face */
 .fld{display:block}
-/* the username in two boxes and the password in four, one group of four symbols each (16 Sep 2026) */
-.seg{display:flex;gap:8px}
-.seg .fld{flex:1 1 0;min-width:0;padding:13px 4px;text-align:center;letter-spacing:.12em}
+/* S3 3.7: the door's two fields, the password beside its Show */
+#doorBox .salt-field{margin-top:14px}
+.pwrow{display:flex;gap:8px;align-items:stretch}
+.pwrow .fld{flex:1 1 auto;min-width:0}
+.pwrow .salt-ghost{flex:none}
+.gate .salt-insight,#doorBox .salt-insight{margin:22px 0 0}
+/* S3 fix: the code screen, carried into the signed-out Sheet, under the Sheet's own title */
+#outForm #codeBox{margin:0}
+#outForm .appmark{display:none}
 /* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
    draws a white list of black words under a dark field, which is the colour he called bizarre.
    color-scheme tells the system the page is dark and the list follows it; option is named too, for
@@ -102,13 +124,14 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* KEEP IT ON YOUR PHONE (v693): the quietest block on the door, under everything, and gone the
-   moment the page is running as an app. */
-.inst{margin-top:26px;padding-top:16px;border-top:1px solid var(--salt-line)}
-.inst h2{margin:0 0 8px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-family:var(--salt-font-mono);font-weight:700}
-.inst ol{margin:0;padding-left:20px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.8}
-.inst b{color:var(--salt-text);font-weight:600}
+/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): a card on the account, once signed in, in a browser that is not
+   already the app; its steps sit in a Sheet and draw the phone's own marks */
+.keepcard{max-width:620px;margin:0 auto 18px}
+.keepcard .kline{margin:6px 0 10px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.keepcard b{color:var(--salt-text);font-weight:600}
+.keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
+.keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
+.keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
 /* REMEMBER ME (v692): a checkbox on the door, at the tap size everything else here is */
 .rem{display:flex;align-items:center;gap:10px;margin-top:16px;min-height:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
@@ -365,6 +388,137 @@ export function psymSvg(product, px) {
     + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
 
+/* ---- THE MARKS A SCREEN DRAWS BESIDE ITS WORDS (S3, 24 Sep 2026) ------------------------------------
+   The app's ring, the three things inside it, and the phone's own controls (the menu's dots, Share, Add to
+   Home Screen, Paste, an install mark), drawn inline in the product marks' own hairline manner and never
+   loaded, so a phone set to another language still matches the picture. */
+const GLYPH = {
+  ring: RING,
+  home: "M4 10.6 L12 4 L20 10.6 V20 H14.6 V14.4 H9.4 V20 H4 Z",
+  prices: "M3.8 12.6 V4.3 H12.1 L20.2 12.4 L12.4 20.2 Z M9.7 8.6 A1.5 1.5 0 1 1 6.7 8.6 A1.5 1.5 0 1 1 9.7 8.6 Z",
+  orders: "M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5",
+  dots: "M5.1 12 A1.4 1.4 0 1 0 7.9 12 A1.4 1.4 0 1 0 5.1 12 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M16.1 12 A1.4 1.4 0 1 0 18.9 12 A1.4 1.4 0 1 0 16.1 12 Z",
+  close: "M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5",
+  share: "M12 3.6 V14.4 M8.3 7.2 L12 3.6 L15.7 7.2 M8.6 10.4 H6.6 V20.4 H17.4 V10.4 H15.4",
+  addsq: "M8.2 4.6 H15.8 A3.6 3.6 0 0 1 19.4 8.2 V15.8 A3.6 3.6 0 0 1 15.8 19.4 H8.2 A3.6 3.6 0 0 1 4.6 15.8 V8.2 A3.6 3.6 0 0 1 8.2 4.6 Z M12 8.4 V15.6 M8.4 12 H15.6",
+  install: "M12 4 V14.6 M8 10.8 L12 14.8 L16 10.8 M5 16.6 V19.6 H19 V16.6",
+  menu: "M4.5 7 H19.5 M4.5 12 H19.5 M4.5 17 H19.5",
+  paste: "M7.6 4.8 H16.4 A2 2 0 0 1 18.4 6.8 V18.4 A2 2 0 0 1 16.4 20.4 H7.6 A2 2 0 0 1 5.6 18.4 V6.8 A2 2 0 0 1 7.6 4.8 Z M9.2 4.8 V3.4 H14.8 V4.8 M9 10.2 H15 M9 13.6 H15 M9 17 H12.6",
+  vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
+};
+const FILLED = { dots: true, vdots: true };
+export function glyphSvg(name, px) {
+  const fill = FILLED[name] ? 'fill="currentColor" stroke="none"' : 'fill="none" stroke="currentColor" stroke-width="1.4"';
+  return '<svg class="psym glyph" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
+    + '<path d="' + GLYPH[name] + '" ' + fill + ' stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+/* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
+   remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
+function signedOutSheet() {
+  return '<div id="opening" class="gate" hidden><span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + '<p class="lead" role="status">Opening your account...</p></div>'
+    + '<div id="outScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="outSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="outT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="outT">You were signed out on this <span class="dev">phone</span></h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="outX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body"><p>Sign in again to carry on. What you were doing is kept.</p><div id="outForm"></div></div>'
+    + "</div>";
+}
+
+/* S3 3.8: ONE PHONE, ONE REMEMBERED ACCOUNT. Signing in as another account over a remembered one asks first,
+   beside the control that was tapped, which moves here when asked. */
+function replaceAsk() {
+  return '<div id="askRep" class="ask" role="group" aria-labelledby="askRepT" hidden>'
+    + '<p class="lead" id="askRepT"></p>'
+    + '<button class="btn salt-pill salt-pill--md" id="askYes" type="button">Replace</button>'
+    + '<button class="btn salt-ghost" id="askNo" type="button"></button></div>';
+}
+
+/* S3 3.10: KEEP IT ON YOUR HOME SCREEN. An iPhone's Home Screen app keeps its own storage, so what Safari
+   remembers never reaches it: the Sheet says so in one line and carries the sign-in across with a code. The code
+   and its key are minted as the Sheet opens, so Copy is a tap of its own (the judges' must-not-ship list), and
+   the steps draw the phone's own marks. Nothing here says a link signs the saved app in. */
+function keepCard() {
+  return '<div id="keepCard" class="keepcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" hidden>'
+    + '<p class="salt-eyebrow salt-eyebrow--brass" id="keepHead">Keep it on your Home Screen</p>'
+    + '<p class="kline" id="keepLine">One tap to open, and it stays signed in. It is saved as <b>Salt Counter</b>.</p>'
+    /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
+    + '<p class="kline" id="keepSam" hidden>Tap ' + glyphSvg("menu", 22) + " then Add page to, then Home screen.</p>"
+    + '<p class="kline" id="keepDesk" hidden>Look for the install mark ' + glyphSvg("install", 22) + " at the end of the address bar.</p>"
+    /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
+    + '<p class="kline" id="keepDroid" hidden>Tap ' + glyphSvg("vdots", 22) + " then Install app or Add to Home screen.</p>"
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button">Show me how</button>'
+    + '<button class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden>Install Salt Counter</button></div>';
+}
+function keepSheet() {
+  return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="keepSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="keepT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="keepT">Keep it on your Home Screen</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="keepX" aria-label="Close">' + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body">'
+    + "<p>On iPhone the Home Screen app starts signed out, so it asks once for this code. Copy it now, and paste it there.</p>"
+    + '<ol class="keepsteps">'
+    + "<li>Tap " + glyphSvg("dots", 22) + " then " + glyphSvg("share", 22)
+    + '<span class="sub2" id="keepWhere">At the foot of Safari. On an older iPhone, just the second mark.</span></li>'
+    + "<li>Tap " + glyphSvg("addsq", 22) + " then Add</li>"
+    + "<li>Open the new icon and tap " + glyphSvg("paste", 22) + " Paste the code</li></ol>"
+    + '<div class="salt-code"><label class="salt-code__label" for="keepCode">Your code</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
+    + '<span class="salt-code__hint" id="keepHint">Works once, for 15 minutes.</span></div>'
+    + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
+    + '<div class="salt-sheet__foot"><button class="btn salt-pill salt-pill--md" id="keepCopy" type="button">Copy the code</button></div>'
+    + "</div>";
+}
+
+/* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
+   eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
+function codeScreen() {
+  return '<div id="codeBox" class="gate" hidden>'
+    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + '<h1 id="codeH">One step to finish</h1>'
+    + '<p class="lead" id="codeLead">Bring your sign-in across from Safari. You do this once on this <span class="dev">phone</span>.</p>'
+    + '<button class="btn salt-pill salt-pill--md" id="codePaste" type="button">' + glyphSvg("paste", 20) + " Paste the code</button>"
+    + '<div class="salt-code"><label class="salt-code__label" for="codeIn">Or type it</label>'
+    + '<input class="fld salt-field__input salt-field__input--code" id="codeIn" type="text" placeholder="XXXX XXXX" '
+    + 'autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-describedby="codeHint">'
+    + '<span class="salt-code__hint" id="codeHint">Eight letters and numbers, as Safari showed them.</span></div>'
+    + '<p class="msg" id="codeMsg" role="status" aria-live="polite"></p>'
+    + '<button class="btn salt-ghost" id="codeDoor" type="button">Sign in with username and password</button>'
+    + '<p class="salt-insight" id="codeHelp">No code? Open your sign-in link in <b>Safari</b>, tap Keep it on your Home Screen, '
+    + "and copy the code shown there.</p>"
+    + "</div>";
+}
+
+/* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
+   and what is inside, and an app's own browser is sent to Safari or Chrome first. */
+function linkScreen() {
+  const row = (g, t) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
+    + glyphSvg(g, 20) + t + "</span></div></div>";
+  return '<div id="link" class="gate" hidden>'
+    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + "<h1>Your Salt Counter</h1>"
+    + '<p class="lead" id="linkLead">This link opens your account on this <span class="dev">phone</span> and keeps it signed in.</p>'
+    + '<div class="salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm">'
+    + '<p class="salt-eyebrow salt-eyebrow--copper">Inside</p>'
+    + '<div class="salt-ledger salt-ledger--plain">'
+    + row("home", "What you owe, and paying it") + row("prices", "Your prices, and ordering") + row("orders", "Each order, and its messages")
+    + "</div></div>"
+    /* an app's own browser keeps nothing once it closes: the phone's own menu mark, and where to go */
+    + '<p class="salt-insight" id="linkInapp" hidden>'
+    + '<span id="inappIos">This app keeps nothing once you close it. Tap ' + glyphSvg("dots", 20)
+    + " and choose to open this page in <b>Safari</b>, then tap Continue there.</span>"
+    + '<span id="inappDroid" hidden>This app keeps nothing once you close it. Tap ' + glyphSvg("vdots", 20)
+    + " and choose to open this page in <b>Chrome</b>, then tap Continue there.</span></p>"
+    + '<button class="btn salt-ghost" id="linkCopy" type="button" hidden>Copy the link</button>'
+    + '<button class="btn salt-pill salt-pill--md" id="linkGo" type="button">Continue</button>'
+    + '<p class="msg" id="linkMsg" role="status" aria-live="polite"></p>'
+    + '<p class="sub2 center" id="linkOnce">The link works once. Not your <span class="dev">phone</span>? Close this page and nothing is used.</p>'
+    + "</div>";
+}
+
 export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
@@ -381,19 +535,36 @@ export function boardPage(guest, nonce) {
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">No price list has been written yet.</p>';
-  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
-    + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-    + '<meta name="robots" content="noindex,nofollow,noarchive">'
-    + '<meta name="referrer" content="no-referrer">'
-    + "<title>Price list</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
-    + '<div class="panel">'
-    + "<h2>Price list</h2>"
+  return guestPage("<h2>Price list</h2>"
     + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
     + "The price is for the goods. Delivery is charged separately and quoted when you order. "
     + "Ask about any size that is not listed.</p>"
     + body
-    + "</div></body></html>";
+    /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
+       have, and it named no way to order. */
+    + '<p class="lead">To order, reply to the person who sent you this link.</p>', nonce, "Price list");
+}
+/* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
+   waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
+   it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
+export function shutPage(nonce) {
+  return guestPage("<h2>This link is not open</h2>"
+    + '<p class="lead">Ask the person who sent it to you.</p>', nonce, "Link not open");
+}
+/* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
+   to Malay or Chinese, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
+   included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
+   the customer's, a guest board, a shut link and Salt Admin. */
+const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
+  + '<meta name="google" content="notranslate">';
+function guestPage(inner, nonce, title) {
+  return DOC_OPEN
+    + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+    + '<meta name="robots" content="noindex,nofollow,noarchive">'
+    + '<meta name="referrer" content="no-referrer">'
+    + "<title>" + title + "</title>"
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
+    + '<div class="panel">' + inner + "</div></body></html>";
 }
 
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
@@ -418,7 +589,7 @@ function bulletinBand(b) {
 }
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
-  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+  return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
@@ -505,34 +676,35 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
-    + "<h1>Statement of account</h1>"
-    + '<p class="lead">Sign in with the username and password sent to you. '
-    + "Tick Remember me and this device stays signed in; Log out ends it.</p>"
-    + '<form id="f" autocomplete="off">'
-    + '<span class="lbl" id="unl">Username</span>'
-    + boxes("un", 2, "text", "Username")
-    + '<input type="hidden" id="un" value="' + u + '">'
-    + '<span class="lbl" id="pwl">Password</span>'
-    + boxes("pw", 4, "password", "Password")
-    + '<input type="hidden" id="pw">'
-    /* v692: Remember me, and the button says what it does */
+    + "<h1>Sign in</h1>"
+    + '<p class="lead">With the username and password we sent you.</p>'
+    /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
+       fill the door; the six boxes of 16 Sep could not be filled by anything but fingers */
+    + '<div id="doorBox"><form id="f" novalidate>'
+    + '<div class="salt-field"><label class="salt-field__label" for="un">Username</label>'
+    + '<input class="fld salt-field__input salt-field__input--mono" id="un" name="username" type="text" value="' + u + '" '
+    + 'autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="unHint">'
+    + '<span class="salt-field__hint" id="unHint">Two groups of four, like abcd-efgh.</span></div>'
+    + '<div class="salt-field"><label class="salt-field__label" for="pw">Password</label>'
+    + '<div class="pwrow"><input class="fld salt-field__input salt-field__input--mono" id="pw" name="password" type="password" '
+    + 'autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="pwHint">'
+    + '<button class="salt-ghost" id="pwShow" type="button" aria-pressed="false" aria-controls="pw">Show</button></div>'
+    + '<span class="salt-field__hint" id="pwHint">Pasting the whole message works: we keep only the password.</span></div>'
+    /* v692: remembering, in the words the link uses (S3 3.7) */
     + '<label class="rem" for="rem"><input type="checkbox" id="rem" checked>'
-    + "<span>Remember me on this device</span></label>"
-    + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Log in</button>'
+    + '<span>Keep me signed in on this <span class="dev">phone</span></span></label>'
+    + '<button class="btn salt-pill salt-pill--md" id="go" type="submit">Sign in</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
-    /* v693: how to keep it as an app, on the door where a first-time reader is, and hidden once
-       the page is running as one. Three steps, the two phones, and nothing to tap. */
-    + '<div class="inst" id="inst" hidden>'
-    + "<h2>Keep it on your phone</h2>"
-    + '<p class="sub2">It is saved as <b>Salt Counter</b>, and opens straight here.</p>'
-    + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
-    + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
-    /* S1 1.3: a saved iPhone app keeps its own storage and is not signed in by this browser, so the
-       step says where the sign-in happens rather than promising one */
-    + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
-    + "</div>"
-    + "</div>"
+    /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
+       reload needs */
+    + (owner ? "" : '<button class="btn salt-ghost" id="remAgain" type="button" hidden>Try again</button>')
+    /* S3 3.11: a code from another device, or from Salt Admin at the counter. S3 fix: both inside the form's box, so
+       the signed-out Sheet carries them with it */
+    + (owner ? "" : '<button class="btn salt-ghost" id="toCode" type="button">I have a sign-in code</button>')
+    + '<p class="salt-insight">Lost your password or your link? Ask us for a <b>new sign-in link</b>. It works straight away.</p>'
+    + "</div></div>"
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -547,7 +719,8 @@ export function landingPage(user, nonce, owner, bulletin) {
        that opened actually carries one, so the tab can never lead to an empty panel. */
     + '<button type="button" class="salt-tabs__pill" role="tab" aria-selected="false" data-t="card" id="tCard" hidden>Card</button>'
     + "</div>"
-    + '<div id="pStmt"><div id="mos" class="mos" hidden></div>'
+    + '<div id="pStmt">' + (owner ? "" : keepCard())
+    + '<div id="mos" class="mos" hidden></div>'
     + '<div id="mfil" class="mos mfil" hidden></div><p class="mfnote" id="mfnote"></p>'
     + '<div id="out"></div></div>'
     + '<div id="pPrices" class="panel" hidden></div>'
@@ -570,16 +743,6 @@ export function landingPage(user, nonce, owner, bulletin) {
       .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
     + "</script>"
     + "</body></html>";
-}
-
-/* One box per group of four symbols, the hidden field beside them carrying the joined value. */
-function boxes(id, n, type, label) {
-  let out = '<div class="seg" data-for="' + id + '" role="group" aria-labelledby="' + id + 'l">';
-  for (let i = 1; i <= n; i++) {
-    out += '<input class="fld salt-field__input salt-field__input--mono" type="' + type + '" inputmode="text" autocapitalize="none" autocorrect="off" '
-      + 'spellcheck="false" autocomplete="off" placeholder="xxxx" aria-label="' + label + ', part ' + i + ' of ' + n + '">';
-  }
-  return out + "</div>";
 }
 
 /* Kept as one string rather than a file so the whole page is a single Worker response with a
@@ -631,6 +794,8 @@ const CLIENT_JS = `
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
+  var curCk=null;
   /* v706: the associate's own card, opened from their record like the price list */
   /* cardMonth: null opens on the newest month, '' is All (24 Sep 2026: '' was both, so All showed the newest) */
   var card=null, cardMonth=null;
@@ -639,6 +804,17 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* S3: the device, read once. The words say phone on a phone and computer on anything else (nothing says phone
+     on a laptop), in the markup's .dev words and in every line the script writes. */
+  var UA=navigator.userAgent||'';
+  var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  /* S3 fix: an iPad is called one, and its Safari's Share is not at the foot, so the Sheet's position line is left off */
+  var IPAD=/iPad/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var DEV=IPAD?'iPad':/Mobi|Android|iPhone|iPod/.test(UA)||IOS?'phone':'computer';
+  /* already kept as an app: nothing teaches how to keep it (v693) */
+  var STANDALONE=false;
+  try{ STANDALONE=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
+  [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=DEV; });
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
@@ -677,19 +853,12 @@ const CLIENT_JS = `
   function norm(s){ s=String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     return s.length===8 ? s.slice(0,4)+'-'+s.slice(4) : ''; }
 
-  /* TWO BOXES FOR THE USERNAME AND FOUR FOR THE PASSWORD (his instruction, 16 Sep 2026), one group of
-     four symbols in each, as they are sent. A box that fills moves the cursor to the next, the last
-     username box to the first password box; Backspace in an empty box steps back and takes the symbol
-     before. A paste is spread across the boxes from the one it lands in, or from the first when it is
-     the whole username or password; an autofill or a keyboard suggestion that puts more than four in
-     one box is spread the same way. Only letters and digits are kept, in lower case, so hyphens, spaces
-     and capitals in a pasted value are forgiven as they were. The joined value goes into the hidden #un
-     and #pw the form reads, which is also what the owner's roster fills with the master passphrase; the
-     master can no longer be typed at this door, and /all opens every account. */
-  var SEG=[].slice.call(document.querySelectorAll('.seg input'));
-  function idOf(b){ return b.parentNode.getAttribute('data-for'); }
-  function boxesOf(id){ return SEG.filter(function(x){ return idOf(x)===id; }); }
-  function group(b){ return boxesOf(idOf(b)); }
+  /* ---- THE DOOR: ONE FIELD FOR EACH SECRET (S3 3.7, his D3 of 24 Sep 2026) --------------------------------
+     A password manager fills them by their names; Show unmasks the password; a paste keeps only what the field
+     takes, so pasting the whole message into the password keeps the password and nothing else; and a symbol the
+     alphabet never uses is caught on this phone before anything is sent, which says nothing about any account.
+     Every refusal from the site is still its one answer. The owner's roster fills the same two fields with the
+     master; only his page sends it as one, so the master still cannot be typed at a customer's door. */
   function clean(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   /* v695: A PRODUCT IS A MARK, NOT A WORD (his instruction, 18 Sep 2026). Drawn, never written,
      and never labelled either: naming it in aria would put the word back for half the readers. */
@@ -713,53 +882,45 @@ const CLIENT_JS = `
     var sr=el('span','sr',pshape(product)); w.appendChild(sr);
     return w;
   }
-  function sync(b){
-    var parts=group(b).map(function(x){ return x.value; });
-    document.getElementById(idOf(b)).value=parts.join('')?parts.join('-'):'';
-  }
-  function toEnd(b){ try{ b.focus(); var n=b.value.length; b.setSelectionRange(n,n); }catch(e){} }
-  /* raw is laid into the boxes from bs[i] on, four to a box; the box after the last full one takes the cursor */
-  function put(bs, i, raw){
-    for(var k=i;k<bs.length;k++) bs[k].value=raw.slice((k-i)*4,(k-i+1)*4);
-    sync(bs[0]);
-    var last=bs[Math.min(bs.length-1, i+Math.max(0,Math.ceil(raw.length/4)-1))];
-    var nx=last.value.length===4&&SEG[SEG.indexOf(last)+1];
-    toEnd(nx||last);
-  }
-  function typed(ev){
-    var b=ev.target, bs=group(b), i=bs.indexOf(b), raw=clean(b.value);
-    if(raw.length<=4){
-      b.value=raw; sync(b);
-      if(raw.length===4&&ev.type==='input'){ var nx=SEG[SEG.indexOf(b)+1]; if(nx) toEnd(nx); }
-      return;
+  var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
+  var UN_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
+  var PW_IN=/(?:^|[^a-z0-9_-])([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})[- ]([a-z0-9]{4})(?![a-z0-9_-])/;
+  /* a username or a password in the form it was sent in, or '' when the text holds none. S3 fix: the first group of
+     the right shape that the alphabet allows, so words of four letters in a message ("Your Salt") are passed over */
+  function shaped(t, n){
+    var low=String(t||'').toLowerCase(), re=new RegExp((n===8?UN_IN:PW_IN).source,'g'), m, first='', raw='';
+    while((m=re.exec(low))){
+      var got=m.slice(1).join('');
+      if(!first) first=got;
+      if(/^0+$/.test(got)||!ALPHA.test(got)){ raw=got; break; }
+      re.lastIndex=m.index+1;
     }
-    if(raw.length>=bs.length*4){ put(bs, 0, raw); return; }
-    put(bs, i, raw+bs.slice(i+1).map(function(x){ return x.value; }).join(''));
+    raw=raw||first||clean(low);
+    return raw.length===n?raw.match(/.{4}/g).join('-'):'';
   }
-  SEG.forEach(function(b){
-    b.addEventListener('input', typed);
-    b.addEventListener('change', typed);
-    b.addEventListener('paste', function(ev){
-      var cd=ev.clipboardData||window.clipboardData, raw=clean(cd&&cd.getData('text'));
-      if(!raw) return;
+  function canonPass(t){ return shaped(t,16)||String(t||'').trim(); }
+  [[un,8],[pw,16]].forEach(function(f){
+    f[0].addEventListener('paste', function(ev){
+      if(OWNER) return;
+      var cd=ev.clipboardData||window.clipboardData, got=shaped(cd&&cd.getData('text'), f[1]);
+      if(!got) return;
       ev.preventDefault();
-      var bs=group(b);
-      put(bs, raw.length>=bs.length*4?0:bs.indexOf(b), raw);
+      f[0].value=got; f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error');
+      if(f[0]===un) try{ pw.focus(); }catch(e){}
     });
-    b.addEventListener('keydown', function(ev){
-      if(ev.key!=='Backspace'||b.value) return;
-      var pv=SEG[SEG.indexOf(b)-1]; if(!pv) return;
-      ev.preventDefault();
-      pv.value=pv.value.slice(0,-1); sync(pv); toEnd(pv);
-    });
+    f[0].addEventListener('input', function(){ f[0].removeAttribute('aria-invalid'); f[0].classList.remove('salt-field__input--error'); });
   });
-  function firstEmpty(id){
-    var bs=boxesOf(id);
-    for(var i=0;i<bs.length;i++) if(bs[i].value.length<4) return bs[i];
-    return bs[bs.length-1];
+  var pwShow=document.getElementById('pwShow');
+  function showPw(on){ pw.type=on?'text':'password'; pwShow.setAttribute('aria-pressed',on?'true':'false'); pwShow.textContent=on?'Hide':'Show'; }
+  pwShow.addEventListener('click', function(){ showPw(pw.type==='password'); try{ pw.focus(); }catch(e){} });
+  /* what this phone can say about a value before it is sent: that one of the right length holds a symbol the
+     alphabet never uses, which is a typing slip and never a fact about an account. Anything else goes to the site
+     and its one answer. The test account's zeros are its own (v689). */
+  function unfit(v, n, what){
+    var raw=clean(v);
+    return raw.length===n&&!/^0+$/.test(raw)&&ALPHA.test(raw)?'A '+what+' never uses 0, 1, i, l, o or u. Check the symbols you typed.':'';
   }
-  /* a username from the QR arrives in the hidden field; it is shown in its boxes */
-  if(clean(un.value)) put(boxesOf('un'), 0, clean(un.value));
+
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* S5 5.3 (D11): "units" above one, "unit" at one and under */
@@ -819,7 +980,9 @@ const CLIENT_JS = `
     var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(w.salt),iterations:150000,hash:'SHA-256'},
       base, {name:'AES-GCM',length:256}, false, ['decrypt']);
     var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)}, kek, b64d(w.ct));
-    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']);
+    /* S3 3.4: extractable, as the password's is, because the link and the code remember the phone by wrapping
+       this key under the device's own */
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['decrypt']);
   }
   async function remember(u, ck){
     if(!session) return;
@@ -829,8 +992,222 @@ const CLIENT_JS = `
       var r=await fetch('/remember', {method:'POST',
         headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({wrap:wrap})});
       var j=await r.json();
-      if(r.ok&&j.ok&&j.token) remSet({t:j.token, k:b64e(key), u:u});
+      if(r.ok&&j.ok&&j.token){
+        var was=remGet();
+        remSet({t:j.token, k:b64e(key), u:u});
+        /* S3 3.8: what this phone remembered before is gone from it, so its wrap goes from the site as well; S3 fix: and,
+           for another account, this phone's alerts for it, or a phone handed over kept waking for the account it replaced */
+        if(was&&was.t&&was.t!==j.token){
+          var ep=null;
+          if(was.u!==u){ try{ var sub=await phoneSub(); ep=sub?sub.endpoint:null; }catch(e){} }
+          fetch('/logout',{method:'POST', headers:{'content-type':'application/json'},
+            body:JSON.stringify({token:was.t, endpoint:ep})}).catch(function(){});
+        }
+      }
     }catch(e){ /* not remembered; the password still opens it */ }
+  }
+  /* ---- KEEP IT ON YOUR HOME SCREEN (S3 3.10, his D2) ------------------------------------------------------
+     A signed-in iPhone mints a one-use key and its eight-symbol code as the Sheet opens (POST /handover, the
+     content key wrapped under the key), so the Copy tap copies and does nothing else: no derivation and no fetch
+     sits between the tap and the clipboard. The same tap rewrites the address to /app#<key>, so a saved app that
+     keeps the address signs itself in; one that does not takes the key by Paste, or the code typed. */
+  var keepCardEl=document.getElementById('keepCard'), keepSheetEl=document.getElementById('keepSheet'),
+      keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
+      keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
+  var keepTok='', keepN=0, keepMinted=[];   /* S3 fix: every key this page minted, for Log out to burn */
+  /* S3 3.12: WHERE THE BROWSER OFFERS AN INSTALL, ONE BUTTON TAKES IT (beforeinstallprompt; the app it installs
+     shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
+     and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
+  var bip=null;
+  var SAMSUNG=/SamsungBrowser/.test(UA), ANDROID=/Android/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
+  function keepMode(){
+    if(INAPP||STANDALONE||OWNER||view||!session) return '';
+    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'';
+  }
+  function drawKeep(){
+    if(!keepCardEl) return;
+    var mode=keepMode();
+    keepCardEl.hidden=!mode;
+    if(!mode) return;
+    document.getElementById('keepHead').textContent=IOS||DEV==='phone'?'Keep it on your Home Screen':'Keep it as an app';
+    document.getElementById('keepWhere').hidden=IPAD;
+    document.getElementById('keepGo').hidden=mode!=='ios';
+    document.getElementById('keepInstall').hidden=mode!=='install';
+    document.getElementById('keepSam').hidden=mode!=='samsung';
+    document.getElementById('keepDesk').hidden=mode!=='desk';
+    document.getElementById('keepDroid').hidden=mode!=='droid';
+  }
+  window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); });
+  window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; });
+  function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
+  async function mintKeep(){
+    var n=++keepN;
+    keepCopy.disabled=true; keepCode.value=''; ksay('Making your code...','wait');
+    try{
+      var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
+      var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
+      var r=await api('/handover',{token:tok, wrap:wrap});
+      if(n!==keepN||keepSheetEl.hidden) return;
+      if(r.status===503){ ksay('Saving it as an app is not switched on yet. Ask us, and sign in inside the new app meanwhile.','bad'); return; }
+      if(!r.body.ok||!r.body.code){ ksay(r.status===401?r.body.error:'The code could not be made just now. Close this and open it again.','bad'); return; }
+      keepTok=r.body.token||tok; keepMinted=keepMinted.concat(keepTok).slice(-10);
+      keepCode.value=String(r.body.code).toUpperCase().replace('-',' ');
+      keepCopy.disabled=false; ksay('');
+    }catch(e){ if(n===keepN) ksay('The code could not be made just now. Close this and open it again.','bad'); }
+  }
+  /* S3 fix, 24 Sep 2026: EVERY OPENING MINTS AFRESH. A code the saved app had already spent was shown and copied again
+     for up to fourteen minutes, while the app said to make a new one; closing forgets it here (a copy already made
+     still works in the app for its fifteen minutes) */
+  function openKeep(){
+    if(!keepSheetEl||!curCk) return;
+    keepScrim.hidden=false; keepSheetEl.hidden=false;
+    try{ keepSheetEl.focus(); }catch(e){}
+    mintKeep();
+  }
+  function closeKeep(){
+    if(!keepSheetEl||keepSheetEl.hidden) return;
+    keepSheetEl.hidden=true; keepScrim.hidden=true; keepN++;
+    keepTok=''; keepCode.value=''; keepCopy.disabled=true; ksay('');
+    try{ document.getElementById('keepGo').focus(); }catch(e){}
+  }
+  if(keepSheetEl){
+    document.getElementById('keepGo').addEventListener('click', openKeep);
+    document.getElementById('keepInstall').addEventListener('click', function(){
+      if(!bip) return;
+      /* the browser's own question, asked inside the tap; it can be asked once, so the event is spent here */
+      var e=bip; bip=null;
+      try{ e.prompt(); }catch(x){ drawKeep(); return; }
+      Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepCardEl.hidden=true; else drawKeep(); }, function(){ drawKeep(); });
+    });
+    document.getElementById('keepX').addEventListener('click', closeKeep);
+    keepScrim.addEventListener('click', closeKeep);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeKeep(); });
+    keepCopy.addEventListener('click', function(){
+      if(!keepTok) return;
+      /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
+      var done=null;
+      try{ done=navigator.clipboard.writeText(keepTok); }catch(e){ done=Promise.reject(e); }
+      try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
+      Promise.resolve(done).then(function(){ ksay('Copied. Now tap the marks above, then open the new icon and paste.'); },
+        function(){ ksay('Copy failed. Type the code in the new app instead.','bad'); });
+    });
+  }
+
+  /* ---- ONE STEP TO FINISH: THE SAVED APP TAKES THE SIGN-IN ACROSS (S3 3.11, his D2) -------------------------
+     /app is where the saved app starts, with storage of its own. A remembered phone opens as ever; otherwise the key
+     Safari copied comes by Paste (or in the address, where iOS kept it), or the eight symbols are typed, and
+     POST /handover/open answers what a sign-in link answers, the content key wrapped under the key. On success the
+     app is remembered, with the same split key as everywhere else, so this is done once. */
+  var APP=location.pathname==='/app';
+  var codeBox=document.getElementById('codeBox'), codeIn=document.getElementById('codeIn'), codeMsg=document.getElementById('codeMsg');
+  var TOK_RE=/^[A-Za-z0-9_-]{20,64}$/, codeIos=false;
+  function csay(t,cls){ if(codeMsg){ codeMsg.textContent=t||''; codeMsg.className='msg'+(cls?' '+cls:''); } }
+  function showCode(fromDoor){
+    if(!codeBox) return;
+    gate.hidden=true; if(opening) opening.hidden=true; codeBox.hidden=false;
+    /* the words fit the road: the saved iPhone app is told the true way to get a code; a browser is not told about Safari */
+    var ios=codeIos=IOS&&!fromDoor;
+    document.getElementById('codeH').textContent=ios?'One step to finish':'Sign in with a code';
+    document.getElementById('codeLead').textContent=ios?'Bring your sign-in across from Safari. You do this once on this '+DEV+'.'
+      :'Type the eight letters and numbers you were given. A code works once.';
+    document.getElementById('codeHint').textContent=ios?'Eight letters and numbers, as Safari showed them.':'Eight letters and numbers, in two groups of four.';
+    document.getElementById('codeHelp').hidden=!ios;
+    csay('');
+  }
+  async function openHandover(what){
+    var mine=++ticket, stale=function(){ return mine!==ticket; };
+    var paste=document.getElementById('codePaste');
+    busy=true; paste.disabled=true; codeIn.readOnly=true; csay('Opening...','wait');
+    var r, body;
+    var undo=function(){ if(!stale()){ busy=false; paste.disabled=false; codeIn.readOnly=false; } };
+    try{
+      r=await fetch('/handover/open', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(what)});
+      body=await r.json();
+    }catch(e){ if(stale()) return false; undo(); csay('Not opened: the connection dropped. Try again; if the code is then refused, make a new one.','bad'); return false; }
+    if(stale()) return false;
+    undo();
+    if(!r.ok||!body.ok){
+      csay(r.status===429||r.status===503?(body.error||'Try again later.')
+        :'That code did not open anything. A code works once, for 15 minutes: make a new one and try again.','bad');
+      if(what.code){ codeIn.setAttribute('aria-invalid','true'); }
+      return false;
+    }
+    var ck, b;
+    try{ ck=await unwrapUnder(new TextEncoder().encode(body.token||what.token||''), body.wrap); b=JSON.parse(await open(ck, body.env)); }
+    catch(e){ if(!stale()) csay('That code did not open anything. A code works once, for 15 minutes: make a new one and try again.','bad'); return false; }
+    if(stale()) return false;
+    var x=await openBeside(body, ck, b);
+    if(stale()) return false;
+    try{ if(location.hash) history.replaceState(null,'','/app'); }catch(e){}
+    var keep=await askReplace(document.getElementById('codePaste'), body.u);   /* S3 3.8 */
+    if(stale()) return false;
+    csay(''); codeBox.hidden=true; codeIn.value='';
+    enter(body.u, body, b, x, ck, true);
+    if(!(await follow(stale))) return true;
+    if(keep) await remember(body.u, ck);
+    askPush();
+    return true;
+  }
+  /* a code as the site takes it, xxxx-xxxx, or '' */
+  function codeOf(t){ var raw=clean(t); return raw.length===8?raw.slice(0,4)+'-'+raw.slice(4):''; }
+  /* an app's own browser keeps nothing once it closes: a key in its address is not spent there */
+  var INAPP_KEY='This app keeps nothing once you close it. Open this page in Safari or Chrome to sign in.';
+  if(codeBox){
+    /* S3 fix: in the signed-out Sheet the code screen takes the form's place there, and the draft is kept */
+    document.getElementById('toCode').addEventListener('click', function(){
+      if(outSheet&&!outSheet.hidden){ codeHome=codeHome||{p:codeBox.parentNode, n:codeBox.nextSibling}; document.getElementById('outForm').appendChild(codeBox); doorBox.hidden=true; }
+      showCode(true); try{ codeIn.focus(); }catch(e){}
+    });
+    document.getElementById('codeDoor').addEventListener('click', function(){
+      codeBox.hidden=true;
+      if(outSheet&&outSheet.contains(codeBox)) doorBox.hidden=false; else gate.hidden=false;
+      try{ (un.value?pw:un).focus(); }catch(e){}
+    });
+    codeIn.addEventListener('input', function(){
+      var v=codeIn.value.trim();
+      codeIn.removeAttribute('aria-invalid');
+      /* a key pasted into the field is a key, and goes as one */
+      if(TOK_RE.test(v)){ codeIn.value=''; openHandover({token:v}); return; }
+      var raw=clean(v).slice(0,8).toUpperCase();
+      codeIn.value=raw.length>4?raw.slice(0,4)+' '+raw.slice(4):raw;
+      if(raw.length<8) { csay(''); return; }
+      if(ALPHA.test(raw.toLowerCase())){ codeIn.setAttribute('aria-invalid','true'); csay('A code never uses 0, 1, I, L, O or U. Check the symbols you typed.','bad'); return; }
+      openHandover({code:codeOf(raw)});
+    });
+    document.getElementById('codePaste').addEventListener('click', async function(){
+      var t='';
+      try{ t=String(await navigator.clipboard.readText()||'').trim(); }
+      catch(e){ csay('Paste did not work here. Type the code below instead.','bad'); try{ codeIn.focus(); }catch(e2){} return; }
+      if(TOK_RE.test(t)){ openHandover({token:t}); return; }
+      var c=codeOf(t);
+      if(c&&!ALPHA.test(clean(c))){ codeIn.value=c.toUpperCase().replace('-',' '); openHandover({code:c}); return; }
+      /* S3 fix: Safari is named only on the saved iPhone app's screen */
+      csay(codeIos?'There is no code on the clipboard. Copy it in Safari, or type it below.':'There is no code on the clipboard. Type it below.','bad');
+    });
+  }
+
+  /* ---- REPLACE ANOTHER ACCOUNT ON THIS PHONE? (S3 3.8) ------------------------------------------------
+     Keeping a second account would overwrite the one this phone remembers, so it is asked, beside the control
+     that was tapped, before anything is kept: Replace keeps the new one and forgets the old; Keep leaves the old
+     one remembered and opens the new one for this visit only. Nothing is asked when nothing else is kept. */
+  function askReplace(anchor, u){
+    var was=remGet();
+    if(OWNER||!was||!was.u||was.u===u) return Promise.resolve(true);
+    var box=document.getElementById('askRep'), yes=document.getElementById('askYes'), no=document.getElementById('askNo'),
+        t=document.getElementById('askRepT');
+    t.textContent='';
+    t.appendChild(document.createTextNode('Replace ')); t.appendChild(el('span','mono',was.u));
+    t.appendChild(document.createTextNode(' on this '+DEV+'? It will open '));
+    t.appendChild(u?el('span','mono',u):document.createTextNode('this account'));
+    t.appendChild(document.createTextNode(' instead.'));
+    no.textContent='Keep '; no.appendChild(el('span','nocase',was.u));
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    anchor.hidden=true; box.hidden=false;
+    try{ yes.focus(); }catch(e){}
+    return new Promise(function(done){
+      var pick=function(v){ return function(){ yes.onclick=null; no.onclick=null; box.hidden=true; anchor.hidden=false; done(v); }; };
+      yes.onclick=pick(true); no.onclick=pick(false);
+    });
   }
 
   function lock(){
@@ -842,29 +1219,37 @@ const CLIENT_JS = `
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true; lapse.hidden=true;
+    tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
+    curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
+    closeKeep(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
+    try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
+    var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
     showTab('stmt');
-    pw.value=''; boxesOf('pw').forEach(function(x){ x.value=''; });
+    pw.value=''; showPw(false);
     if(cd) cd.textContent='';
     say(OWNER?'Signed out. Tap an account to open it again.':'Signed out. Sign in again when you want it.');
-    try{ (OWNER?rq:firstEmpty('pw')).focus(); }catch(e){}
+    try{ (OWNER?rq:pw).focus(); }catch(e){}
   }
   /* v692: LOGGING OUT IS A DEPARTURE, NOT A TIMER. It drops the session and the remembered wrap on
      the site as well as everything this page holds, so a phone handed on is a phone signed out. */
   async function logOut(){
-    var tok=(remGet()||{}).t||null, s=session, ep=null;
-    remClear();
-    try{ localStorage.removeItem(SEEN); }catch(e){}
+    /* S3 fix, 24 Sep 2026: an account open for a visit over one this phone keeps (Keep at the Replace question) signs
+       out alone: the kept account stays remembered here and on the site, and so do its alerts on this phone, and so
+       does the record of what this phone has seen (S5), which is the kept account's as well */
+    var rec=remGet(), other=!!rec&&rec.u!==user, tok=!other&&rec?rec.t||null:null, s=session, ep=null, ho=keepMinted;
+    keepMinted=[];
+    if(!other){ remClear(); try{ localStorage.removeItem(SEEN); }catch(e){} }
     lock();
     /* S1 1.42: this phone's alerts go too, here and on the site, and the site is told even when the session
        has lapsed, so the remembered wrap does not outlive the Log out */
-    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; await sub.unsubscribe(); } }catch(e){} }
-    if(s||tok||ep){
+    if(!OWNER){ try{ var sub=await phoneSub(); if(sub){ ep=sub.endpoint; if(!other) await sub.unsubscribe(); } }catch(e){} }
+    if(s||tok||ep||ho.length){
       try{ await fetch('/logout', {method:'POST', headers:{'content-type':'application/json','X-Stmt-Session':s},
-        body:JSON.stringify({token:tok, endpoint:ep})}); }catch(e){ /* the page has forgotten it either way */ }
+        body:JSON.stringify({token:tok, endpoint:ep, handover:ho})}); }catch(e){ /* the page has forgotten it either way */ }
     }
   }
   /* this phone's push subscription, or null; asking never registers anything */
@@ -875,23 +1260,63 @@ const CLIENT_JS = `
   }
   document.getElementById('lock').addEventListener('click', logOut);
 
-  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW. The fifteen minutes ran out in silence:
-     the poll stopped and a note was set that nothing drew, telling them to "lock", a control gone since
-     v692. Continue opens again through the remembered device where there is one, else puts the door back
-     with the username in it. Nothing is renewed without the tap. */
-  var lapse=document.getElementById('lapse');
-  var LAPSED='Signed out: tap Continue at the top.';
+  /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
+     silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
+     memory for a fresh session, once, and repeats the request, so nobody is stranded on a page that looks alive.
+     Only with nothing remembered does a Sheet say "You were signed out on this phone" over what they were doing,
+     carrying the door's own form, and a sign-in there keeps the draft. The bar keeps a line with the way back,
+     for a Sheet that was closed, or a site that could not be reached to reopen. */
+  var lapse=document.getElementById('lapse'), opening=document.getElementById('opening'),
+      outSheet=document.getElementById('outSheet'), outScrim=document.getElementById('outScrim'),
+      doorBox=document.getElementById('doorBox');
+  var LAPSED='Not sent: you were signed out on this '+DEV+'. Sign in to carry on.';
+  var reopening=null;
+  /* S3 fix, 24 Sep 2026: THE PHONE REOPENS ONLY THE ACCOUNT ON SCREEN. It remembers one account, and another can be
+     open for a visit (Keep at the Replace question, or the door with the tick off): a lapse there reopened the
+     remembered one, drew it in silence and sent the waiting request again on its session, an order included. */
+  function keptMine(){ var r=remGet(); return !!r&&!!user&&r.u===user; }
+  function reopen(){
+    if(OWNER||!keptMine()) return Promise.resolve(false);
+    if(!reopening) reopening=openRemembered(true).then(function(v){ reopening=null; return v; }, function(){ reopening=null; return false; });
+    return reopening;
+  }
   function lapsed(){
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
-    document.getElementById('lapseT').textContent='You were signed out after a while.';
+    var kept=keptMine();
+    document.getElementById('lapseT').textContent=kept?'This '+DEV+' could not sign you back in just now.':'You were signed out on this '+DEV+'.';
+    document.getElementById('lapseGo').textContent=kept?'Try again':'Sign in';
     lapse.hidden=false;
+    if(!kept) openSignedOut();
+  }
+  var doorNext=null, codeHome=null;
+  function openSignedOut(){
+    if(OWNER||!outSheet||!outSheet.hidden) return;
+    doorNext=doorBox.nextSibling;
+    document.getElementById('outForm').appendChild(doorBox);
+    if(user) un.value=user;
+    say('');
+    outScrim.hidden=false; outSheet.hidden=false;
+    try{ pw.focus(); }catch(e){}
+  }
+  function closeSignedOut(){
+    if(!outSheet||outSheet.hidden) return;
+    outSheet.hidden=true; outScrim.hidden=true;
+    /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
+    gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
+    if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
+  }
+  if(outSheet){
+    document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });
+    outScrim.addEventListener('click', closeSignedOut);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeSignedOut(); });
   }
   document.getElementById('lapseGo').addEventListener('click', async function(){
-    var u=user;
-    lock();
-    if(!OWNER&&remGet()&&await openRemembered()) return;
-    if(!OWNER&&u){ un.value=u; put(boxesOf('un'),0,clean(u)); }
+    if(OWNER) return;
+    if(!keptMine()){ openSignedOut(); return; }
+    /* the line stays until the phone is back in: enter() takes it away; a refusal forgets the phone, so it is redrawn */
+    if(!(await reopen())){ lapse.hidden=true; lapsed(); return; }
+    await oReread();
   });
 
   /* ---- the tabs: three for everyone, a fourth for an associate ---- */
@@ -1049,7 +1474,9 @@ const CLIENT_JS = `
         var rw=p.reward;
         pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
           +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
-          +(rw.held?'. Held for now.':'.')));
+          +(rw.held?'. Held for now.':'.')
+          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
+          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
         if(rw.next!=null){
           /* the fill is an <i>, which is what .pbar's own rule paints; a <span> drew an empty rule */
           var bar=el('div','pbar'); var fill=el('i'); fill.style.width=Math.round(rw.next*100)+'%';
@@ -1253,16 +1680,18 @@ const CLIENT_JS = `
      older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
   function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
   async function api(path, body, method){
-    var r;
-    try{
-      r=await fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
+    var send=function(){ return fetch(path,{method:method||(body?'POST':'GET'), cache:'no-store',
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
-        body:body?JSON.stringify(body):undefined});
-    }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
-    /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The bar says it with Continue; beside the tapped control each
-       caller says whatever the answer's error is, which is now a pointer to that Continue, where Place and Send
-       said "Sign in again" of a door the page did not show */
-    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:LAPSED}}; }
+        body:body?JSON.stringify(body):undefined}); };
+    var r;
+    try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    /* S3 3.5: a lapse reopens from the remembered phone and the request goes again, once */
+    if(r.status===401&&session&&await reopen()){
+      try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:NOT_SENT}}; }
+    }
+    /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The Sheet and the bar say it; beside the tapped control each
+       caller says whatever the answer's error is, which is a pointer to them */
+    if(r.status===401&&session){ lapsed(); return {status:401, body:{ok:false, error:keptMine()?NOT_SENT:LAPSED}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
@@ -1282,8 +1711,13 @@ const CLIENT_JS = `
     var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
+  /* what the tab above the orders is drawn off: the Pay page or the order form. A re-read of the account (a return to
+     the page, a lapse reopened, S3 3.5) that changes it draws the tab again; otherwise the orders are patched (S5 5.5) */
+  var drawnSig='';
+  function formSig(){ return JSON.stringify([hold,owedNow,view,assoc,prices]); }
   function drawOrder(){
     var sc=window.scrollY;
+    drawnSig=formSig();
     /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
        mid-sentence; the line is kept per order in draft.says, and the box that had the caret gets it back */
     var fo=document.activeElement, keep=fo&&fo.getAttribute&&pOrder.contains(fo)?fo.getAttribute('data-say'):null,
@@ -1472,10 +1906,12 @@ const CLIENT_JS = `
     return {placed:'Sent', acknowledged:'Confirmed', ready:d?'Ready to deliver':'Ready to collect', done:'Complete', declined:'Not taken',
       cancelled:by==='desk'?'Cancelled by us':'Cancelled by you'}[st]||st;
   }
+  /* S11 11.7: the event that ended an order, whose note is his reason for a decline or a cancellation of his */
+  function endOf(o){ var h=(o.history||[]).filter(function(x){ return x&&x.status===o.status; }); return h.length?h[h.length-1]:null; }
   function stateWord(o){
     if(oPayable(o)&&movedAll(o)) return o.mode==='deliver'?'Delivered':'Collected';
-    var c=(o.history||[]).filter(function(x){ return x.status==='cancelled'; });
-    return oWord(o.status,o,c.length?c[c.length-1].by:'');
+    var e=endOf(o);
+    return oWord(o.status,o,e?e.by:'');
   }
   function stateChip(o,cls){
     var s=o.status, tone=s==='placed'?'steel salt-status--dashed':s==='ready'&&!movedAll(o)?'brass':(s==='acknowledged'||s==='done'||oPayable(o))?'verdigris':'mist';
@@ -1486,6 +1922,9 @@ const CLIENT_JS = `
     var n=String(x.note||''), m, how=x.method?' by '+methodWord(x.method,x.account):'';
     if((m=/^paid ([0-9.]+)$/.exec(n))) return 'You paid '+rm(+m[1])+how;
     if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return 'We recorded a payment of '+rm(+m[1]);
+    /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
+    if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return 'We received '+rm(+m[1])+' in cash';
+    if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return 'Closed at '+unitsOf(+m[1],oUnit(o))+' of the '+m[2]+' ordered';
     if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return unitsOf(+m[1],oUnit(o))+' '+m[2];
     if(x.method) return 'You chose to pay'+how;
     return oWord(x.status,o,x.by)+(n?': '+n:'');
@@ -1521,7 +1960,8 @@ const CLIENT_JS = `
      nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
      order said before this device ever looked, or the first open after this shipped put every old thank-you
      under Needs you. Order ids only, never the username; where the browser keeps nothing, it lasts the visit. Log out
-     takes it with the rest, so the next account on this phone starts its own.
+     takes it with the rest, so the next account on this phone starts its own; an account open for a visit over one
+     the phone keeps (S3) leaves it, being the kept account's too.
      HIS READ-ONLY VIEW READS NOTHING AS NEW AND WRITES NOTHING HERE: what their phone has shown is not on his, and
      his route leaves nothing behind on his phone. */
   var SEEN='salt-stmt-seen', seenMem=null;
@@ -1635,18 +2075,22 @@ const CLIENT_JS = `
     });
     w.appendChild(ol); return w;
   }
-  /* where it stands and when, in one sentence, off the record's own moments */
+  /* where it stands and when, in one sentence, off the record's own moments. S11 11.7: an order he ended says so
+     with his reason; S11 11.9: one he closed at what was handed over says the size it was and the size it is. */
   function oWhen(o){
-    var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status;
+    var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
+        why=e&&e.note?': '+e.note:'', back=paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.';
     function put(a,b,c){ p.appendChild(document.createTextNode(a)); if(b){ p.appendChild(el('b',null,b)); p.appendChild(document.createTextNode(c||'')); } }
     if(s==='placed') put('Waiting to be confirmed. You will see it change here.');
     else if(s==='done') put('Your order is now complete. Thank you for your loyalty.');
-    else if(s==='declined') put('This order could not be taken. '+(paid>0?'The '+rm(paid)+' you paid is refunded.':'Nothing is owed.'));
+    else if(s==='declined') put('Not taken'+why+'. '+back);
+    else if(s==='cancelled'&&e&&e.by==='desk') put('Cancelled by us'+why+'. '+back);
     else if(s==='cancelled') put(paid>0?'Cancelled. The '+rm(paid)+' you paid is refunded.':'Cancelled before anything moved. Nothing is owed.');
     else if(movedAll(o)) put(d?'Delivered on ':'Collected on ',ymdDay(o.movedOn)||'the day it went','.');
     else if(mv>0) put(unitsOf(mv,oUnit(o))+' of '+unitsOf(o.qty,oUnit(o))+(d?' delivered on ':' collected on '),ymdDay(o.movedOn)||'the day it went','.');
     else if(s==='ready') put(d?'Ready to deliver, since ':'Ready to collect, since ',oDay(firstAt(o,'ready')),'.');
     else put('Confirmed on ',oDay(firstAt(o,'acknowledged')),', and being prepared.');
+    if(o.closed&&o.closed.qty) put(' Closed at '+unitsOf(o.qty,oUnit(o))+' of the '+o.closed.qty+' ordered, '+rm(o.total)+' for the goods.');
     w.appendChild(p);
     var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));
     return w;
@@ -1661,7 +2105,8 @@ const CLIENT_JS = `
      is still to pay, with when it may be paid */
   function oMoney(o){
     var L=el('div','salt-ledger salt-ledger--plain'), paid=+o.paid||0, claimed=oClaimed(o), d=o.mode==='deliver', where=o.place?'To '+o.place:'';
-    L.appendChild(lrow('Goods',rm(o.total)));
+    /* S11 11.9: a short order closed at what was handed over is billed for that, and its Goods line says so */
+    L.appendChild(lrow('Goods',rm(o.total),o.closed&&o.closed.qty?unitsOf(o.qty,oUnit(o))+' handed over of the '+o.closed.qty+' ordered':''));
     if(d) L.appendChild(o.status==='placed'?lrow('Delivery','',(where?where+'. ':'')+'Set when we confirm the order'):lrow('Delivery',rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow('Paid',rm(paid)));
     if(claimed>0) L.appendChild(lrow('Sent by you',rm(claimed),'Waiting for us to confirm it arrived'));
@@ -2015,10 +2460,13 @@ const CLIENT_JS = `
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
      caret with it (v827 put the words back; the element was still new). Now the orders are compared one by one,
-     and only the rows and the parts of the open order that changed are drawn again. */
+     and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
+     reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
+    if(mine!==ticket) return;
+    if(document.getElementById('oPlace')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
     if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
@@ -2091,20 +2539,23 @@ const CLIENT_JS = `
 
   document.getElementById('f').addEventListener('submit', async function(ev){
     ev.preventDefault();
-    var u=norm(un.value), pass=pw.value.trim();
-    if(!u){ say('Enter your username: two groups of four.','bad'); try{firstEmpty('un').focus();}catch(e){} return; }
-    if(!pass){ say('Enter the password sent to you.','bad'); try{firstEmpty('pw').focus();}catch(e){} return; }
+    var u=norm(un.value), pass=OWNER?pw.value.trim():canonPass(pw.value);
+    var bad=function(f,t){ say(t,'bad'); f.setAttribute('aria-invalid','true'); f.classList.add('salt-field__input--error'); try{ f.focus(); }catch(e){} };
+    if(!OWNER&&unfit(un.value,8,'username')){ bad(un,unfit(un.value,8,'username')); return; }
+    if(!u){ bad(un,'Enter your username: two groups of four.'); return; }
+    if(!pass){ bad(pw,'Enter the password sent to you.'); return; }
+    if(!OWNER&&unfit(pass,16,'password')){ bad(pw,unfit(pass,16,'password')); return; }
     un.value=u;
     var mine=++ticket;
     var stale=function(){ return mine!==ticket; };
     var done=function(){ if(!stale()){ busy=false; go.disabled=false; } };
-    busy=true; go.disabled=true; say('Checking...','wait');
+    busy=true; go.disabled=true; again(false); say('Checking...','wait');
     var r, body;
     /* the one field carries either secret: the Worker says which it matched, and the page
        unwraps with the matching wrap. A customer never knows there is a second one. */
     try{
       r=await fetch('/open', {method:'POST',
-        headers:{'content-type':'application/json'}, body:JSON.stringify({u:u, password:pass, master:pass})});
+        headers:{'content-type':'application/json'}, body:JSON.stringify(OWNER?{u:u, password:pass, master:pass}:{u:u, password:pass})});
       body=await r.json();
     }catch(e){ if(stale())return; done(); say('No connection. Try again in a moment.','bad'); return; }
     if(stale()) return;
@@ -2128,37 +2579,18 @@ const CLIENT_JS = `
     if(stale()) return;
     /* an empty bundle is a new account, not a fault: pickStmt says so */
     if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        if(stale()) return;
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open; the live one is simply absent */ }
-    }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){
-      try{ card=JSON.parse(await open(ck, body.card)); if(stale()) return; }
-      catch(e){ card=null; /* the statement still opens; the card is simply absent */ }
-    }
-    if(body.prices){
-      try{ prices=JSON.parse(await open(ck, body.prices)); if(stale()) return; }
-      catch(e){ prices=null; /* the statements still open; the list is simply absent */ }
-    }
+    var x=await openBeside(body, ck, b);
+    if(stale()) return;
+    /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
+       opens accounts with the master and must leave nothing behind on his phone. S3 3.8: over another
+       remembered account, only when that is said yes to. */
+    var rem=document.getElementById('rem');
+    var keep=!OWNER&&!!rem&&rem.checked&&(await askReplace(go, u));
     if(stale()) return;
     done();
-    say('');
-    user=u; session=body.session||''; orders=[]; draft={}; pick={};
-    view=!!(OWNER&&body.byMaster);
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    else if(view){ await loadView(u); if(stale()) return; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder();
-    /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
-       opens accounts with the master and must leave nothing behind on his phone. */
-    var rem=document.getElementById('rem');
-    if(!OWNER && rem && rem.checked) await remember(u, ck);
+    enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
+    if(!(await follow(stale))) return;
+    if(keep) await remember(u, ck);
     askPush();
   });
 
@@ -2183,104 +2615,220 @@ const CLIENT_JS = `
   /* ---- OPENING A REMEMBERED DEVICE (v692) -----------------------------------------------------
      The token names the record and brings back the wrap; the key beside it in this browser opens
      it. A refusal, a stale token or a record that has gone simply falls through to the door. */
-  var KEPT='Your account could not be opened just now. This phone is still remembered: try again in a moment.';
-  async function openRemembered(){
+  var KEPT='Your account could not be opened just now. This '+DEV+' is still remembered: try again in a moment.';
+  var remAgain=document.getElementById('remAgain');
+  function again(on){ if(remAgain) remAgain.hidden=!on; }
+  async function openRemembered(keep){
     var rec=remGet();
     if(!rec||!rec.t||!rec.k||OWNER) return false;
-    var mine=++ticket, stale=function(){ return mine!==ticket; };
-    say('Opening...','wait');
+    if(!keep) again(false);
+    /* S3 3.5: reopening a lapse runs under the flow that met it, so it takes no ticket of its own and says nothing */
+    var mine=keep?ticket:++ticket, stale=function(){ return mine!==ticket; };
+    if(!keep) say('Opening...','wait');
     var r, body;
     try{
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},
         body:JSON.stringify({token:rec.t})});
       body=await r.json();
-    }catch(e){ if(!stale()) say(KEPT,'bad'); return false; }
+    }catch(e){ if(!stale()&&!keep){ say(KEPT,'bad'); again(true); } return false; }
     if(stale()) return false;
     /* S1 1.41, 24 SEP 2026: ONLY THE DOOR'S REFUSAL FORGETS THIS PHONE. A server fault forgot it too, so one
        bad minute on the site signed every returning phone out for good; that, and a dropped connection,
        now keep it and say so. */
-    if(r.status===401){ remClear(); say(''); return false; }
-    if(!r.ok||!body.ok){ say(KEPT,'bad'); return false; }
+    if(r.status===401){ remClear(); if(!keep) say(''); return false; }
+    if(!r.ok||!body.ok){ if(!keep){ say(KEPT,'bad'); again(true); } return false; }
     var ck, b;
     try{
       ck=await unwrapUnder(b64d(rec.k), body.wrap);
       b=JSON.parse(await open(ck, body.env));
-    }catch(e){ remClear(); say(''); return false; }
+    }catch(e){ remClear(); if(!keep) say(''); return false; }
     if(stale()) return false;
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open */ }
-    }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    var x=await openBeside(body, ck, b);
     if(stale()) return false;
-    say('');
-    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    drawOrder();
+    enter(body.u, body, b, x, ck, keep);
+    /* a reopen hands the session back to the request that met the lapse, which repeats itself; the poll resumes */
+    if(keep){ if(!poll) poll=setInterval(refresh, POLL_MS); return true; }
+    if(!(await follow(stale))) return true;
     askPush();
     return true;
   }
-  /* ---- THE ONE-TIME LINK, OPENED (v710, his instruction of 18 Sep 2026) -----------------------
-     "When sharing the link, QR to the user, the site pre-fills their username and password." The
-     password never goes in a message, so the LINK signs them in instead. The token is in this
-     page's own address; it is posted once, the Worker burns it and hands back the content key
-     wrapped UNDER that token, and from there this is openRemembered's body exactly: nothing
-     downstream knows the difference.
-     THE ADDRESS IS REWRITTEN THE MOMENT IT IS POSTED. A reload of a burnt link would otherwise show
-     a refusal on a page the reader has just opened successfully, which is the worst of both. */
+
+  /* ---- THE PAGE RE-READS ON EVERY RETURN (S3 3.5) ------------------------------------------------------
+     A saved app has no reload, so coming back to the page (shown again, or restored from the back-forward cache)
+     reads the sealed documents and the orders afresh on the session, with the key it was opened with, keeping
+     what the customer was doing. A session that lapsed meanwhile reopens itself on the way, in api(). */
+  var rereading=false;
+  async function reread(){
+    if(OWNER||!session||!curCk||rereading) return;
+    rereading=true;
+    try{
+      var mine=ticket, ck=curCk;
+      var r=await api('/account');
+      if(mine!==ticket||!r.body.ok||!r.body.env) return;
+      var b=JSON.parse(await open(ck, r.body.env));
+      var x=await openBeside(r.body, ck, b);
+      if(mine!==ticket) return;
+      enter(user, {session:session}, b, x, ck, true);
+      /* S5 5.5: patched, so the order open and a line half typed in it survive the return */
+      await oReread();
+    }catch(e){ /* what is on screen stays, and the next return tries again */ }
+    finally{ rereading=false; }
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') reread(); });
+  window.addEventListener('pageshow', function(ev){ if(ev&&ev.persisted) reread(); });
+  if(remAgain) remAgain.addEventListener('click', async function(){
+    if(busy) return;
+    again(false); say('');
+    if(opening){ gate.hidden=true; opening.hidden=false; }
+    if((await openRemembered())||session) return;
+    if(opening) opening.hidden=true;
+    gate.hidden=false;
+  });
+  /* ---- ONE WAY IN (S3 3.3, 24 Sep 2026) ----------------------------------------------------------
+     The password, a remembered phone and the link all hand back the same record: these open it with the
+     content key and put the account on screen, so the roads cannot drift apart. openBeside opens what sits
+     beside the statement, enter draws the account, and follow starts its orders. */
+  /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
+  async function openBeside(body, ck, b){
+    var x={assoc:body.assoc===true, card:null, prices:null};
+    if(body.live){
+      try{ var l=JSON.parse(await open(ck, body.live));
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
+      catch(e){ /* the issued statements still open; the live one is simply absent */ }
+    }
+    if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
+    if(body.prices){ try{ x.prices=JSON.parse(await open(ck, body.prices)); }catch(e){ /* the statements still open; the list is simply absent */ } }
+    return x;
+  }
+  function enter(u, body, b, x, ck, keep){
+    say(''); again(false);
+    /* S3 3.5: the same account let in again (a lapse reopened, a sign-in on the Sheet, a return re-read) keeps
+       the draft, the tab, the month and the place on the page */
+    var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
+    prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
+    user=u; session=body.session||'';
+    if(!same){ orders=[]; draft={}; pick={}; }
+    view=!!(OWNER&&body.byMaster);
+    if(linkBox) linkBox.hidden=true;
+    if(opening) opening.hidden=true;
+    lapse.hidden=true; closeSignedOut();
+    show(b);
+    drawPrices();
+    drawKeep();
+    if(same){
+      if(t!==tab&&!(hold&&t==='prices')&&!(t==='card'&&tCard.hidden)) showTab(t);
+      if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
+      window.scrollTo(0,sy);
+    }
+  }
+  async function follow(stale){
+    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
+    drawOrder();
+    return true;
+  }
+
+  /* ---- THE ONE-TIME LINK (v710; S3 3.3 and 3.4, 24 Sep 2026) -------------------------------------------
+     "When sharing the link, QR to the user, the site pre-fills their username and password." The password
+     never goes in a message, so the LINK signs them in: the token is in this page's own address, and the
+     content key comes back wrapped UNDER it.
+     NOTHING IS SPENT UNTIL CONTINUE. The page first asks which account the link opens, which spends nothing,
+     so a preview or an app's own browser that runs the page cannot use it up. Continue posts the token with
+     this page's own nonce; the Worker burns it and keeps the answer two minutes for that nonce alone, so a
+     dropped connection is tried again from here rather than losing the link.
+     AN APP'S OWN BROWSER (WhatsApp, Instagram, Facebook, Line, WeChat) keeps nothing once it closes, so it is
+     sent to Safari or Chrome with that phone's menu mark before anything is spent; Continue stays, quieter.
+     S3 3.4, HIS D1: THE LINK KEEPS THE PHONE SIGNED IN, with the same split key as Keep me signed in: a device key
+     in this browser and the content key wrapped under it on the site, neither opening anything alone. */
+  var linkBox=document.getElementById('link'), linkGo=document.getElementById('linkGo'),
+      linkMsg=document.getElementById('linkMsg');
+  var INAPP=/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Line[/]|MicroMessenger/.test(UA);
+  var LOST='Not opened: the answer did not arrive. Tap Continue again. For two minutes this page can still open it.';
+  var SPENT='That link has been used already, or it has expired. Sign in with your username and password, or ask us for a new sign-in link.';
+  function lsay(t,cls){ if(linkMsg){ linkMsg.textContent=t||''; linkMsg.className='msg'+(cls?' '+cls:''); } }
   function signinToken(){
     /* [/] rather than an escaped slash: this script lives in a template literal, where a
        backslash before a slash is eaten and the regex would end at the first one. */
     var m=/^[/]s[/]([A-Za-z0-9_-]{20,64})$/.exec(location.pathname||'');
     return m?m[1]:null;
   }
-  async function openSignin(){
+  /* one a tab, kept for a reload of the same tab; minted afresh where the storage will not hold it */
+  var nonceMem='';
+  function linkNonce(){
+    var n='';
+    try{ n=sessionStorage.getItem('salt-link-nonce')||''; }catch(e){}
+    if(!/^[A-Za-z0-9_-]{16,64}$/.test(n)) n=nonceMem||b64e(crypto.getRandomValues(new Uint8Array(18))).replace(/[+]/g,'-').replace(/[/]/g,'_');
+    nonceMem=n;
+    try{ sessionStorage.setItem('salt-link-nonce', n); }catch(e){}
+    return n;
+  }
+  function linkSpent(){
+    try{ history.replaceState(null,'','/'); }catch(e){}
+    linkBox.hidden=true; gate.hidden=false;
+    say(SPENT,'bad');
+  }
+  async function showLink(){
     var tok=signinToken();
-    if(!tok||OWNER) return false;
-    var mine=++ticket, stale=function(){ return mine!==ticket; };
-    say('Opening...','wait');
-    var r, body;
+    if(!tok||OWNER||!linkBox) return false;
+    gate.hidden=true; linkBox.hidden=false;
+    if(INAPP){
+      document.getElementById('linkInapp').hidden=false;
+      document.getElementById('inappIos').hidden=!IOS; document.getElementById('inappDroid').hidden=IOS;
+      document.getElementById('linkCopy').hidden=false;
+      linkGo.className='btn salt-ghost'; linkGo.textContent='Continue here instead';
+    }
+    linkGo.disabled=true; lsay('Checking the link...','wait');
+    var r=null, body=null;
     try{
       r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
-        body:JSON.stringify({token:tok})});
+        body:JSON.stringify({token:tok, peek:true, nonce:linkNonce()})});
       body=await r.json();
-    }catch(e){ say(''); return false; }
-    /* burnt or not, this address is spent: never present it again */
-    try{ history.replaceState(null,'','/'); }catch(e){}
-    if(stale()) return false;
-    if(!r.ok||!body.ok){ say('That link has been used already, or it has expired. Sign in with your username and password.','bad'); return false; }
-    var ck, b;
-    try{
-      ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap);
-      b=JSON.parse(await open(ck, body.env));
-    }catch(e){ say(''); return false; }
-    if(stale()) return false;
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open */ }
+    }catch(e){ /* the question was lost, not the link: Continue still asks the real one */ }
+    if(r&&r.status===401){ linkSpent(); return false; }
+    if(r&&r.ok&&body&&body.ok&&body.u){
+      var lead=document.getElementById('linkLead'), who=el('span','mono',body.u);
+      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this '+DEV+' and keeps it signed in.'));
     }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
-    if(stale()) return false;
-    say('');
-    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    drawOrder();
-    askPush();
+    linkGo.disabled=false; lsay('');
     return true;
+  }
+  if(linkBox){
+    document.getElementById('linkCopy').addEventListener('click', async function(){
+      try{ await navigator.clipboard.writeText(location.href); lsay('Copied. Paste it into Safari or Chrome.'); }
+      catch(e){ lsay('Copy failed. Press and hold the address instead.','bad'); }
+    });
+    linkGo.addEventListener('click', async function(){
+      var tok=signinToken();
+      if(!tok||busy) return;
+      var mine=++ticket, stale=function(){ return mine!==ticket; };
+      busy=true; linkGo.disabled=true; lsay('Opening...','wait');
+      var r, body;
+      try{
+        r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
+          body:JSON.stringify({token:tok, nonce:linkNonce()})});
+        body=await r.json();
+      }catch(e){ if(stale()) return; busy=false; linkGo.disabled=false; lsay(LOST,'bad'); return; }
+      if(stale()) return;
+      busy=false;
+      if(r.status===401){ lsay(''); linkSpent(); return; }
+      if(!r.ok||!body.ok){ linkGo.disabled=false; lsay(LOST,'bad'); return; }
+      /* spent, and the answer is in hand: this address is never presented again */
+      try{ history.replaceState(null,'','/'); }catch(e){}
+      var ck, b;
+      try{ ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap); b=JSON.parse(await open(ck, body.env)); }
+      catch(e){ if(!stale()){ lsay(''); linkSpent(); } return; }
+      if(stale()) return;
+      var x=await openBeside(body, ck, b);
+      if(stale()) return;
+      lsay('');
+      var keep=await askReplace(linkGo, body.u);   /* S3 3.8 */
+      if(stale()) return;
+      enter(body.u, body, b, x, ck);
+      if(!(await follow(stale))) return;
+      /* S3 3.4 (his D1): the link keeps this phone signed in, with the same split key the door's tick makes */
+      if(keep) await remember(body.u, ck);
+      askPush();
+    });
   }
   /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
      needs -- say(), el(), stamp(), un, pw, whoacct, busy, OWNER -- is in scope at this point,
@@ -2288,17 +2836,37 @@ const CLIENT_JS = `
   /*__OWNER_JS__*/
 
   if(!OWNER){
-    /* v693: the tutorial is for a page opened in a browser, not one already kept as an app */
-    var installed=false;
-    try{ installed=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){}
-    var inst=document.getElementById('inst');
-    if(inst&&!installed) inst.hidden=false;
     /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
        memory on this phone must never wait on a request to be able to type */
-    try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
+    try{ (un.value?pw:un).focus(); }catch(e){}
     /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
-       use it, and if it is spent the remembered device is still there behind it. */
-    (async function(){ if(!(await openSignin())) await openRemembered(); })();
+       use it, and if it is spent the remembered device is still there behind it. S3 3.3: the link is a
+       page of its own now, spent on Continue, so the page waits there. */
+    var hk=(location.hash||'').slice(1);   /* read before anything waits: a page closed meanwhile has no address */
+    (async function(){
+      if(await showLink()) return;
+      /* S3 3.11: the saved app. A key in the address is the one Safari's Keep it on your Home Screen wrote there, and
+         only the saved app spends it. S3 FIX, 24 SEP 2026: A BROWSER TAB SPENDS ONLY HIS COUNTER'S QR, /app#qr.<key>,
+         which the customer's camera opens (3.13), and the Worker opens it for a tab only if his own page minted it,
+         so an address one customer sends another never signs the other in; an app's own browser spends nothing */
+      var qm=/^qr[.]([A-Za-z0-9_-]{20,64})$/.exec(hk);
+      var key=!APP?'':STANDALONE?(qm?qm[1]:TOK_RE.test(hk)?hk:''):(qm&&!INAPP?qm[1]:'');
+      /* S3 fix: his QR in a tab comes before this phone's memory, as a link does, and Replace asks over another account;
+         the saved app's own start address may keep a spent key, so there its memory still comes first */
+      if(key&&!STANDALONE){ showCode(true); await openHandover({token:key, tab:true}); return; }
+      /* S3 3.5: a remembered phone draws "Opening your account" while it opens, so nobody starts typing into a door
+         that is about to vanish; the door comes back only if it does not open */
+      if(remGet()&&opening){ gate.hidden=true; opening.hidden=false; }
+      var inNow=await openRemembered();
+      if(inNow||session) return;
+      if(opening) opening.hidden=true;
+      /* S3 fix: a phone still remembered, which the site could not open just now, says so on the door with Try again,
+         never on the saved app's code screen, which would send a customer still signed in to Safari for a code */
+      var kept=!!remGet();
+      if(APP&&!kept&&(IOS||key||qm)) showCode(!!qm&&!STANDALONE); else gate.hidden=false;
+      if(APP&&qm&&INAPP&&!STANDALONE) csay(INAPP_KEY,'bad');
+      if(key&&!kept) await openHandover({token:key});
+    })();
   }
 })();
 `;
