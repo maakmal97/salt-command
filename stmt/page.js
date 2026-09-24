@@ -1531,13 +1531,18 @@ const CLIENT_JS = `
       var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===o.product; })[0];
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label');
       lab.appendChild(withMark(o.product,unitsOf(o.qty,P?P.unit:'unit')+' ',16));
-      lab.appendChild(document.createTextNode(', '+(LIMIT_WORD[o.status]||(o.mode==='deliver'?'Ready to deliver':'Ready to collect'))));
+      /* goods handed over and not yet paid for keep an order open at ready: it reads as what happened to the goods (D11's
+         Delivered or Collected, the banner's part word for some of them), never Ready over "the goods are with you" */
+      var mv=+o.moved||0, part=mv>0&&mv<(+o.qty||0), dl=o.mode==='deliver';
+      lab.appendChild(document.createTextNode(', '+(mv>0?(part?(dl?'Part delivered':'Part collected'):(dl?'Delivered':'Collected'))
+        :(LIMIT_WORD[o.status]||(dl?'Ready to deliver':'Ready to collect')))));
       l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
       if(!(+o.moved>0)){
         var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag','Placed '+stamp(o.at)));
         var cb=el('button','salt-ghost','Cancel this order'); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id);
         cb.addEventListener('click',function(){ limitCancel(o); }); row.appendChild(cb); r.appendChild(row);
-      } else r.appendChild(el('span','salt-ledger__flag','The goods are with you, so this one finishes when it is paid.'));
+      } else r.appendChild(el('span','salt-ledger__flag',part?'Part of it is with you, so this one finishes once the rest is with you'
+        +((+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?' and it is paid.':'.'):'The goods are with you, so this one finishes when it is paid.'));
       if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
       L.appendChild(r);
     });

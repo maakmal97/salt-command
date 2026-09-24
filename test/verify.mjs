@@ -13472,7 +13472,7 @@ await (async () => {
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ t: r.querySelector(".salt-ledger__label").textContent, cancel: !!r.querySelector("button") }));
     ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
       && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]"
-      && rows.map((r) => r.t.replace(/^1 unit Cube, /, "")).join("|") === "Sent|Sent|Confirmed|Confirmed|Ready to collect",
+      && rows.map((r) => r.t.replace(/^1 unit Cube, /, "")).join("|") === "Sent|Sent|Confirmed|Confirmed|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
     const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
     for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
@@ -13936,6 +13936,52 @@ await (async () => {
     ok(ghosts.length === 2 && on && off && on.mark === on.ghost && off.mark === off.ghost && on.mark !== off.mark,
       "the chosen product's mark takes the pressed ghost's ink and the other's its own, so the two differ: " + JSON.stringify(ghosts));
   } finally { w.close(); }
+})();
+section("S4 fix: in the open-order limit, goods handed over read as Delivered or Collected, in part where only some moved");
+await (async () => {
+  /* S4R-4 (ux): an order stays open at ready once its goods are handed over and until it is paid, and the limit list
+     read it "Ready to deliver" over "The goods are with you", the one line contradicting the other. It reads as D11's
+     word for what happened to the goods, the banner's part word where only some moved, and the line under it says what
+     is left: the rest, the money, or both. */
+  const { landingPage: lpF7 } = await import("../stmt/page.js");
+  const CF7 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcF7 } = await import("node:crypto");
+  const { JSDOM: JDF7 } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-sf7", ck = await CF7.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] };
+  const ord = (n, status, extra) => Object.assign({ id: "2026092" + n + "010000-f7" + n, product: "salt", qty: 2, mode: "deliver", place: "Old market",
+    at: "2026-09-2" + n + "T01:00:00Z", status, total: 190, paid: 0, moved: 0, delivery: 10, history: [], msgs: [] }, extra || {});
+  const five = [ord(1, "placed"), ord(2, "placed"), ord(3, "ready", { moved: 2 }), ord(4, "ready", { moved: 1 }),
+    ord(5, "ready", { mode: "collect", place: "", delivery: 0, moved: 1, paid: 190 })];
+  const body = { ok: true, wrap: await CF7.wrapKey(pass, ck), session: "sess-sf7", prices: await CF7.encryptWith(ck, JSON.stringify(prices)),
+    env: await CF7.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JDF7(lpF7(u, "nsf7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF7, configurable: true }); } catch (e) { win.crypto = wcF7; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: five } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 60));
+    d.querySelector("#pPrices .szrow").click();
+    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
+      word: r.querySelector(".salt-ledger__label").textContent.replace(/^2 units Cube, /, ""),
+      flag: [...r.querySelectorAll(".salt-ledger__flag")].map((f) => f.textContent).filter((t) => !/^Placed /.test(t)).join("") }));
+    ok(rows.map((r) => r.word).join("|") === "Sent|Sent|Delivered|Part delivered|Part collected",
+      "a handover reads as what happened to the goods, in part where only some moved, never Ready: " + JSON.stringify(rows.map((r) => r.word)));
+    ok(rows[2] && rows[2].flag === "The goods are with you, so this one finishes when it is paid."
+      && rows[3] && rows[3].flag === "Part of it is with you, so this one finishes once the rest is with you and it is paid."
+      && rows[4] && rows[4].flag === "Part of it is with you, so this one finishes once the rest is with you.",
+      "and the line under it says what is left, the money, the rest, or both: " + JSON.stringify(rows.slice(2).map((r) => r.flag)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
 })();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
