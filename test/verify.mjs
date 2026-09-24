@@ -13218,6 +13218,91 @@ await (async () => {
     ok(posted.length === 2 && posted[1].total === 100 && posted[1].digest === "d4", "and Place carries the new stamp: " + JSON.stringify(posted.map((x) => x.digest)));
   } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
 })();
+section("S4 4.5: Sent answers in the sheet, and notifications are asked from a tap there");
+await (async () => {
+  /* HIS "ALL RECOMMENDED" OF 24 SEP 2026: Sent answers where Place was tapped, not in a line at the head of the Order tab,
+     and asks "A buzz when it is confirmed?", the moment the answer means something. The question is put only by the tap
+     on Turn on notifications: a browser grants nothing asked outside a gesture, and nothing is asked as the sheet draws. */
+  const { landingPage: lpB } = await import("../stmt/page.js");
+  const CB = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcB } = await import("node:crypto");
+  const { JSDOM: JDB } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s45", ck = await CB.contentKey("test-secret", u);
+  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const vapid = Buffer.from("k".repeat(65)).toString("base64url");
+  const placed = { id: "20260924040000-s45a", product: "salt", qty: 1, mode: "collect", status: "placed", at: "2026-09-24T04:00:00Z", total: 100, paid: 0, moved: 0, history: [], msgs: [] };
+  const drive = async (push) => {
+    const st = { asked: 0, orders: [], subscribed: [] };
+    const body = { ok: true, wrap: await CB.wrapKey(pass, ck), session: "sess-s45", prices: await CB.encryptWith(ck, JSON.stringify(prices)),
+      env: await CB.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDB(lpB(u, "ns45", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcB, configurable: true }); } catch (e) { win.crypto = wcB; }
+      win.scrollTo = () => {};
+      if (push) {
+        win.PushManager = function () {};
+        /* a phone that has already answered no, so the ask on the way in (v693) stays quiet and every ask counted is Sent's */
+        let perm = "denied";
+        win.Notification = { get permission() { return perm; }, requestPermission: async () => { st.asked++; perm = "granted"; return "granted"; } };
+        win.__allowAsk = () => { perm = "default"; };
+        const reg = { pushManager: { getSubscription: async () => null, subscribe: async () => ({ endpoint: "https://push.example/ep-s45" }) } };
+        Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: {
+          register: async () => reg, ready: Promise.resolve(reg), getRegistration: async () => reg } });
+      }
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: st.orders }) };
+        if (p === "/orders" && m === "POST") { st.orders = [placed]; return { ok: true, status: 200, json: async () => ({ ok: true, order: placed }) }; }
+        if (p === "/push/key") return { ok: true, status: 200, json: async () => ({ key: vapid, configured: true }) };
+        if (p === "/push/subscribe") { st.subscribed.push(JSON.parse(init.body).endpoint); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    await new Promise((r) => setTimeout(r, 100));
+    if (w.__allowAsk) w.__allowAsk();
+    d.getElementById("oNew").click();
+    d.getElementById("oGo").click();
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-order]')); i++) await new Promise((r) => setTimeout(r, 30));
+    return { w, d, st };
+  };
+  const A = await drive(true);
+  try {
+    const { w, d, st } = A;
+    const sh = () => d.getElementById("osheet");
+    const box = () => sh() && sh().querySelector(".obuzz");
+    ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-order="' + placed.id + '"]'),
+      "Place answers in the sheet, Order sent, and the order is on the Order tab behind it: " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
+    ok(!!box() && /A buzz when it is confirmed[?]/.test(box().textContent) && !!d.getElementById("oBuzz") && st.asked === 0,
+      "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
+    d.getElementById("oBuzz").click();
+    for (let i = 0; i < 100 && !(st.subscribed.length && !box()); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This phone is told/.test(sh().textContent),
+      "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
+    d.getElementById("oSee").click();
+    ok(!sh() && !d.getElementById("pOrder").hidden && !!d.querySelector('#pOrder [data-order="' + placed.id + '"]'),
+      "See the order closes the sheet on the Order tab, with the order in it");
+    void w;
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+  /* Not now puts the question away, and a browser that cannot be woken is told how rather than asked */
+  const B = await drive(true);
+  try {
+    [...B.d.querySelectorAll("#osheet .obuzz button")].find((b) => b.textContent === "Not now").click();
+    ok(!B.d.querySelector("#osheet .obuzz") && /Order sent/.test(B.d.getElementById("osheet").textContent) && B.st.asked === 0,
+      "Not now puts the question away and asks nothing");
+  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+  const E = await drive(false);
+  try {
+    const bx = E.d.querySelector("#osheet .obuzz");
+    ok(!!bx && /add this page to the Home Screen/.test(bx.textContent) && !bx.querySelector("button"),
+      "a browser with no push is told how to become one that can, with nothing to tap: " + JSON.stringify(bx && bx.textContent.slice(0, 80)));
+  } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
+})();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
@@ -14733,7 +14818,7 @@ await (async () => {
     const place = () => D.getElementById("oPlace");
     ok(await until(() => place()), "Review shows Place order");
     place().click();
-    ok(await until(() => /Placed[.]/.test(pOrder.textContent)), "the order is placed and the form says so");
+    ok(await until(() => D.getElementById("osheet") && /Order sent/.test(D.getElementById("osheet").textContent)), "the order is placed and the sheet says so");
     D.getElementById("tCard").click();
     const box = () => [...pCard.querySelectorAll(".pane")].find((x) => /Your links/.test(x.textContent));
     ok(await until(() => box() && box().querySelectorAll(".glink").length === RF.MAX_PER_ASSOC - 1),

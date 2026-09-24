@@ -99,12 +99,17 @@ h3.pmark{margin:0 0 4px;line-height:1}
    Sheet, Option tiles, pressed ghosts, the plain ledger, the insight and the glass card. What is here is where those
    pieces sit inside the sheet; no colour of its own. */
 .osheet .salt-sheet__title{flex:1 1 auto}
+.osheet .salt-sheet__close{margin-left:auto}
 .osheet .salt-sheet__body > * + *{margin-top:18px}
 .osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
 .ototal{flex:1 1 0;min-width:0}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}
 .osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
+.osent{text-align:center}
+.otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
+.obuzz > * + *{margin-top:10px}
+.obuzz .salt-pill,.obuzz .salt-ghost{width:100%}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
    this page decides only that they run the width of the form */
 .btn{margin-top:18px;width:100%}
@@ -1352,7 +1357,7 @@ const CLIENT_JS = `
     if(!sheet) return;
     var fo=document.activeElement, fk=fo&&sheet.box.contains(fo)?fo.getAttribute('data-k'):null;
     sheet.head.textContent=''; sheet.body.textContent=''; sheet.foot.textContent='';
-    if(draft.step==='check') drawCheck(); else drawForm();
+    if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else drawForm();
     sheet.foot.hidden=!sheet.foot.firstChild;
     if(fk){ var back=[].filter.call(sheet.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
@@ -1521,10 +1526,50 @@ const CLIENT_JS = `
     draft.busy=false;
     if(r.status===409&&r.body.error==='prices moved'){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
     if(!r.body.ok){ draft.snote=r.body.error||'The order was not placed.'; sheetDraw(); return; }
-    sheetClose();
-    draft.note='Placed. You will see it acknowledged below.'; draft.say=''; draft.noteOpen=false;
+    /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
+    var o=r.body.order;
+    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false;
+    sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
+  }
+  /* S4 4.5: SENT, AND THE ONE QUESTION WORTH ASKING THEN. An order placed is the moment a buzz means something (it says
+     when the order is confirmed), so the question is asked here and put only by a tap: nothing is asked as the sheet
+     draws. A phone that is already on is not asked; a browser that cannot be woken is told how to become one that can.
+     See the order closes the sheet on the order itself. */
+  function drawSent(){
+    sheetHead(null);
+    var B=sheet.body, top=el('div','osent');
+    top.appendChild(glyph('tick','otick',40));
+    var h=el('h2','salt-sheet__title','Order sent'); h.id='oshT'; top.appendChild(h);
+    top.appendChild(el('p',null,'It is under Your orders now. We confirm it there, and you pay once it is confirmed.'));
+    B.appendChild(top);
+    var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+    var on=!!draft.pushed||(can&&Notification.permission==='granted'&&!!draft.pushDone);
+    if(on){ if(draft.buzzAsked) B.appendChild(statusLine('On. This phone is told when it is confirmed.')); }
+    else if(!draft.buzzNo&&!(can&&Notification.permission==='denied')){
+      var bx=el('div','salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm obuzz');
+      bx.appendChild(el('p','salt-eyebrow salt-eyebrow--brass','A buzz when it is confirmed?'));
+      if(!can) bx.appendChild(el('p',null,'This browser cannot give notifications. On an iPhone, add this page to the Home Screen from the Share menu and open it from there.'));
+      else {
+        bx.appendChild(el('p',null,'Only for your orders and your payments.'));
+        var yes=el('button','salt-pill salt-pill--md','Turn on notifications'); yes.type='button'; yes.id='oBuzz'; yes.setAttribute('data-k','buzz');
+        yes.disabled=!!draft.buzzBusy;
+        yes.addEventListener('click',async function(){
+          if(draft.buzzBusy) return;
+          draft.buzzBusy=true; draft.buzzAsked=true; draft.pushNote=''; sheetDraw();
+          await subscribePush(); draft.buzzBusy=false; sheetDraw();
+        });
+        var no=el('button','salt-ghost','Not now'); no.type='button'; no.setAttribute('data-k','nobuzz');
+        no.addEventListener('click',function(){ draft.buzzNo=true; sheetDraw(); });
+        bx.appendChild(yes); bx.appendChild(no);
+        if(draft.pushNote) bx.appendChild(statusLine(draft.pushNote));
+      }
+      B.appendChild(bx);
+    }
+    var see=el('button','salt-ghost ofull','See the order'); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
+    see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); wantOrder=id||''; showTab('order'); drawOrder(); });
+    B.appendChild(see);
   }
   function drawOrder(){
     var sc=window.scrollY;
@@ -1566,7 +1611,6 @@ const CLIENT_JS = `
       var nb=el('button','btn salt-pill salt-pill--md','New order'); nb.type='button'; nb.id='oNew';
       nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
       pOrder.appendChild(nb);
-      if(draft.note) pOrder.appendChild(statusLine(draft.note));
     }
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
