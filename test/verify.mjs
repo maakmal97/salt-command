@@ -15472,8 +15472,9 @@ await (async () => {
 section("S9 9.8: Salt Admin counts the orders waiting on the desk and the desk counts the links waiting in Salt Admin, each a figure with no link and no name");
 await (async () => {
   /* THE PLAN'S SECTION 5: two owner apps remain, and each counts the other's waiting items. The desk tells the
-     site its own count (the one its banner reads) as a mark, recounting only when an order moved; the site
-     hands the desk's page the count of associate links waiting on his word. Driven through both real Workers. */
+     site its own count as a mark: since the S9 9.8 fix the desk's PAGE sends the Waiting on you figure its Today row
+     and Enter badge count, and the Worker only relays it; the site hands the desk's page the count of associate links
+     waiting on his word. Driven through both real Workers and the desk's own page. */
   const W = (await import("../stmt/worker.js")).default;
   const skv = new KV(), dkv = new KV();
   const senv = { STMT: skv, STMT_DESK_KEY: "desk-key-s98", STMT_MASTER: "mp-s9-8", ACCESS_TEAM: "maakmal", ACCESS_AUD: "aud-s9-8" };
@@ -15506,21 +15507,19 @@ await (async () => {
   const lj = await (await site("/desk/orders?links=1", { headers: desk })).json(), plain = await (await site("/desk/orders", { headers: desk })).json();
   ok(lj.ok && lj.links === 2 && !("links" in plain), "the desk's page is told the two links that wait on his word, and only when it asks: " + JSON.stringify([lj.links, "links" in plain]));
 
-  /* ---- the desk's half: the cron tells the site its count, and a quiet minute costs one read ---- */
+  /* ---- the desk's half (S9 9.8 fix): the cron counts nothing of its own; the Worker relays the page's count, keyed ---- */
   const ctx = () => ({ ps: [], waitUntil(p) { this.ps.push(p); } });
   const tick = async () => { const c = ctx(); await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T02:07:00Z") }, denv, c); await Promise.all(c.ps); };
   await tick();
   const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
-  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two things that wait on the desk, the order placed and the question unanswered, as the desk counts them: " + JSON.stringify(mark()));
-  const { tellWaiting } = await import("../src/orders.js");
-  siteCalls.length = 0;
-  const quiet = await tellWaiting(denv);
-  ok(quiet.ok && quiet.told === false && siteCalls.join() === "/desk/orders/last",
-    "a minute with nothing moved reads the marks and nothing else: " + JSON.stringify(siteCalls));
-  const moved = await site("/desk/orders/" + u + "/" + ids[0], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "acknowledged" }) });
-  ok(moved.status === 200, "he agrees the placed order");
-  const told = await tellWaiting(denv);
-  ok(told.ok && told.told === true && told.n === 1 && mark().n === 1, "and the next pass tells the site one waits now: " + JSON.stringify([told, mark()]));
+  ok(mark() === null, "the every-minute cron writes no count of its own, a second reading being how the two apps came to disagree: " + JSON.stringify(mark()));
+  const wenv = Object.assign({}, denv, { SALT_WRITE_KEY: "k98" });
+  const relay = (b, keyed) => worker.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, keyed ? { "X-Salt-Key": "k98" } : {}), body: JSON.stringify(b) }), wenv);
+  const wr = [(await relay({ n: 1 }, false)).status, (await relay({ n: -1 }, true)).status, (await relay({ n: "1" }, true)).status];
+  ok(wr.join() === "401,400,400" && mark() === null, "the relay takes a count only on the write key and only as a whole number: " + wr.join());
+  const relayed = await relay({ n: 1 }, true);
+  ok(relayed.status === 200 && mark() && mark().n === 1 && !!mark().at, "and on the key it sets the site's mark, with its moment: " + JSON.stringify(mark()));
 
   /* ---- Salt Admin's line ---- */
   const TEAM = "maakmal", AUD = "aud-s9-8", KID = "kid-s9-8";
@@ -15545,8 +15544,8 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const line = win.document.getElementById("nDesk");
-    ok(await until(() => !line.hidden && line.textContent === "1 thing waits on the desk.") && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
-      "Needs you says one thing waits on the desk, with no link and no name: " + JSON.stringify(line.textContent));
+    ok(await until(() => !line.hidden && /^1 thing waits on the desk, as at [0-9]{2}:[0-9]{2}[.]$/.test(line.textContent)) && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
+      "Needs you says one thing waits on the desk and when the desk counted it, with no link and no name: " + JSON.stringify(line.textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -15567,11 +15566,36 @@ await (async () => {
     ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
     answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
     ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
-    /* S9 fix: one definition. The desk's own reading of the same open orders is the figure Salt Admin was told. */
-    const { listOrders } = await import("../src/orders.js");
-    answer = { ok: true, orders: (await listOrders(denv, false)).orders, links: 0 }; await w.eval("ordLoad(true)");
-    const deskN = w.eval("(()=>{const x=ordWaiting();return new Set(x.placed.concat(x.asked).map(o=>o.id)).size;})()");
-    ok(deskN === 1 && mark().n === deskN, "and the desk's own count of those orders is the figure Salt Admin was told: " + JSON.stringify([deskN, mark().n]));
+    /* S9 9.8 FIX: ONE READING, THE DESK'S. Once the orders and the drafts have both been read, the page sends the Waiting
+       on you figure its Today row and Enter badge count: a new order, a question not marked No reply needed (and not one
+       he marked), cash to record and a payment they say they made, which the old recount (placed, or their line last)
+       got wrong three ways. A failed read sends nothing, and the same figure is not sent twice. */
+    const at = "2026-09-24T01:00:00Z", later = "2026-09-24T01:30:00Z", say = { at, by: "customer", text: "can it come on Friday" };
+    const o = (id, st, x) => Object.assign({ id, u, at, status: st, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect",
+      paid: 0, payments: [], moved: 0, msgs: [], history: [] }, x);
+    const five = [o("20260924010000-n001", "placed"), o("20260924010000-a002", "acknowledged", { msgs: [say] }),
+      o("20260924010000-q003", "acknowledged", { msgs: [say], quiet: later }), o("20260924010000-c004", "ready", { moved: 1, movedAt: at }),
+      o("20260924010000-p005", "acknowledged", { paid: 50, payments: [{ at, by: "customer", amount: 50 }] })];
+    const told = [];
+    let drafts = { status: 200, j: { ok: true, drafts: [{ id: "d-p005", entry: { orderId: "20260924010000-p005", status: "Payment", by: "customer" } }], refused: [], clock: null } };
+    answer = { ok: true, orders: five, links: 0 };
+    w.fetch = async (q, init) => {
+      const path = String(q);
+      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+      if (path.startsWith("drafts")) return { ok: drafts.status < 300, status: drafts.status, json: async () => drafts.j };
+      return { ok: true, status: 200, json: async () => answer };
+    };
+    await w.eval("ordLoad(true)");
+    ok(told.length === 0, "with the orders read and the drafts not yet, nothing is sent: " + JSON.stringify(told));
+    await w.eval("apLoad(true)");
+    const acts = w.eval("ordActs().map(a=>a.kind).sort().join()"), badge = w.eval("ordActs().length");
+    ok(acts === "asked,cash,new,paid" && told.length === 1 && told[0].n === 4 && told[0].n === badge,
+      "once both are read the desk sends its own Waiting on you figure, the new order, the question, the cash and the payment claimed: " + JSON.stringify([acts, told]));
+    await w.eval("ordLoad(true)");
+    ok(told.length === 1, "the same figure is not sent again");
+    drafts = { status: 500, j: { ok: false } };
+    await w.eval("apLoad(true)");
+    ok(told.length === 1, "and a read of the drafts that failed sends nothing, a figure it could not count being no figure: " + JSON.stringify(told));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix R1: Send them in turn takes one Share at a time, so a second tap while the tick is in flight never skips the next account");

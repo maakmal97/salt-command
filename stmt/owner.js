@@ -878,7 +878,9 @@ export const OWNER_JS = `
     /* S9 9.8: what waits on the desk, as the desk last told the site; a count, with no link and no name */
     var dw=document.getElementById('nDesk'), dn=deskWait?deskWait.n:0;
     dw.hidden=!deskWait;
-    document.getElementById('nDeskT').textContent=dn?dn+(dn===1?' thing waits':' things wait')+' on the desk.':'Nothing waits on the desk.';
+    /* S9 9.8 fix: the desk's own Waiting on you count, as fresh as the desk's last read, so it says when that was */
+    document.getElementById('nDeskT').textContent=(dn?dn+(dn===1?' thing waits':' things wait')+' on the desk':'Nothing waits on the desk')
+      +(deskWait&&deskWait.at?', as at '+when(deskWait.at):'')+'.';
     nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
       :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
     drawNeedOpen(false);

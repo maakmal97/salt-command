@@ -703,11 +703,6 @@ export default {
           await afterApproval(env, ctx, dp.approved);
           if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
-        /* S9 9.8: and Salt Admin is told what waits here, when it has changed */
-        try {
-          const tw = await tellWaiting(env);
-          if (!tw.ok || tw.told) console.log("orders waiting, told: " + JSON.stringify(tw));
-        } catch (e) { console.log("orders waiting FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await runDrafter(env);
@@ -858,6 +853,14 @@ export default {
         } catch (e) { /* a store before migrations/0011 has no yes to say */ }
       }
       return json(r, r.ok ? 200 : 503);
+    }
+    /* S9 9.8 FIX: the desk's page tells Salt Admin what waits here, its own Waiting on you count (tellWaiting) */
+    if (p === "/orders/waiting") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await tellWaiting(env, b && b.n);
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S11: THE CARD'S OWN ROUTES, by the order's id alone. An order id is minted digits and letters with a
        dash (mintOrderId) and is never one of these words, so they are read before a move `/orders/<u>/<id>`. */

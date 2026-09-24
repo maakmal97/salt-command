@@ -1053,40 +1053,27 @@ export async function tellSite(env) {
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
- *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge.
- *  `desk` is what the desk's own Today and rail count (the master's ordWaiting): placed, or its last line the
- *  customer's. An acknowledged order is a row already, so counting it there would say the same money twice. */
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
 export async function ordersWaiting(env) {
   const r = await listOrders(env, false);
-  if (!r.ok) return { ok: false, waiting: 0, placed: 0, desk: 0 };
-  const asked = (o) => { const m = o.msgs || []; return m.length > 0 && m[m.length - 1].by === "customer"; };
+  if (!r.ok) return { ok: false, waiting: 0, placed: 0 };
   return { ok: true, waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
-    placed: r.orders.filter((o) => o.status === "placed").length,
-    desk: r.orders.filter((o) => o.status === "placed" || asked(o)).length };
+    placed: r.orders.filter((o) => o.status === "placed").length };
 }
 
-/* S9 9.8: SALT ADMIN IS TOLD WHAT WAITS HERE, as one figure with no link and no name: the count the desk's own
-   Today and rail show (ordersWaiting's `desk`; S9 fix, it was the banner's, which counts agreed orders too, so the
-   two apps disagreed), written onto the site as a mark. Recounted only on a minute the site's order marks
-   moved (every move of an order moves `touched`), so a quiet minute costs one read; written only when the count
-   changes, and the mark here moves only once the site has taken it. */
-const WAIT_TOLD = "orders:waiting-told";
-export async function tellWaiting(env) {
-  const r = await site(env, "/desk/orders/last");
-  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
-  const m = await r.json().catch(() => ({}));
-  if (!r.ok || !m.ok) return { ok: false, error: m.error || ("the statements site answered http " + r.status) };
-  const key = [m.last, m.touched].join("|");
-  const was = (await env.SALT_QUEUE.get(WAIT_TOLD, "json")) || {};
-  if (was.key === key) return { ok: true, told: false };
-  const w = await ordersWaiting(env);
-  if (!w.ok) return { ok: false, error: "the orders could not be read" };
-  if (w.desk !== was.n) {
-    const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n: w.desk }) });
-    if (!t || !t.ok) return { ok: false, error: "the site would not take the count" + (t ? " (http " + t.status + ")" : "") };
-  }
-  await env.SALT_QUEUE.put(WAIT_TOLD, JSON.stringify({ key, n: w.desk }));
-  return { ok: true, told: w.desk !== was.n, n: w.desk };
+/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
+   master's ordActs, over the orders and the drafts together: a new order not yet accepted, a question of theirs not
+   marked No reply needed, cash to record, a payment they say they made) for its Today row and its Enter badge, and once
+   it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
+   One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
+   and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
+   last read of its orders, and the mark carries its moment, which Salt Admin shows. */
+export async function tellWaiting(env, n) {
+  if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
+  const t = await site(env, "/desk/waiting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ n }) });
+  if (!t) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  if (!t.ok) return { ok: false, status: 502, error: "the site would not take the count (http " + t.status + ")" };
+  return { ok: true, n };
 }
 
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had

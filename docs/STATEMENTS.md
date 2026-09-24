@@ -825,12 +825,15 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   both his devices read) before the next turn; a closed share ticks nothing and Skip leaves one for later. With
   no share sheet, Share copies the message and only his Sent it ticks. The refused card also carries stage 3's Show a
   code (`showHandover`), and every link a card or a turn makes is minted on `keyFor`, the one road Show a code takes too.
-- **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. The
-  desk's every-minute cron (`tellWaiting` in `src/orders.js`) tells the site what waits on the desk, the
-  count its own Today and rail show (`ordersWaiting`'s `desk`, the master's `ordWaiting`: placed, or its last
-  line the customer's; an agreed order is a row, not a wait), through the keyed `POST /desk/waiting` into the clear key
-  `desk-waiting` `{n, at}`; it recounts only when an order's `touched` mark has moved and writes only on a
-  change. Needs you says "N things wait on the desk." The desk's page reads its orders with the count of
+- **Each owner app counts the other's waiting items** (S9 9.8), a figure with no link and no name. **The figure
+  is the desk's own Waiting on you** (the S9 9.8 fix): once its page has read both the orders and the drafts, and
+  neither read failed, it sends `ordActs().length`, the count its Today row and Enter badge show (a new order, a
+  question not marked No reply needed, cash to record, a payment they say they made), to the desk Worker's keyed
+  `POST /orders/waiting`, and `tellWaiting` in `src/orders.js` relays it through the site's `POST /desk/waiting` into
+  the clear key `desk-waiting` `{n, at}`; the first count of a load and every change after it. The cron no longer
+  counts: its recount (placed, or their line last) missed cash and payments and ignored No reply needed. So the
+  figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." The
+  desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
   `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
 - **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
