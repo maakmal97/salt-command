@@ -18896,6 +18896,52 @@ await (async () => {
     "and a decline is his, as it always was: " + declined.payload.note);
 })();
 
+section("S1 1.27: a customer's line wakes him with its own words, that a customer wrote on an order");
+await (async () => {
+  /* 24 Sep 2026 (M28). The nudge wrote news only for a payment or a withdrawal, so a wake sent because
+     a customer wrote read "New customer order" or "Salt Command is square": the wrong sentence about
+     the right order, which is the case v760's own comment names. */
+  const O = await import("../stmt/orders.js");
+  const { nudgeOrders } = await import("../src/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const u = "abcd-efgh";
+  const o = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  await nudgeOrders(denv);   /* the placement's own wake, out of the way */
+  await dkv.delete("orders:news");
+  await O.customerMove(senv, u, o.id, "say", { text: "is it ready yet" });
+  const n1 = await nudgeOrders(denv);
+  const news = await dkv.get("orders:news", "json");
+  ok(n1.said && news && news.what === "A customer wrote on an order" && news.at === n1.said,
+    "the line is the news, at the moment it was written: " + JSON.stringify({ said: n1.said, news }));
+  const d1 = { prepare: (q) => { const first = async () => (/COUNT_ON/.test(q) ? null : (/COUNT\(\*\)/.test(q) ? { n: 0 } : null));
+    const all = async () => ({ results: [] }); return { bind: () => ({ all, first, run: async () => ({}) }), all, first, run: async () => ({}) }; } };
+  const summ = await (await deskW.fetch(new Request("https://salt-command.example/push/summary"),
+    Object.assign({ SALT_LEDGER: d1, REQUIRE_ACCESS: "0" }, denv))).json();
+  ok(summ.news === "A customer wrote on an order", "the summary the banner is written from carries it: " + JSON.stringify(summ.news));
+  const vm = await import("node:vm");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const L = {}, shown = [];
+  const ctx = { URL, console, caches: {},
+    self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+      registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+    clients: { matchAll: async () => [], openWindow: async () => {} },
+    fetch: async () => ({ ok: true, json: async () => summ }) };
+  vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+  const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+  ok(shown[0] && shown[0].t === "A customer wrote on an order" && shown[0].opt.data.url === "./desk#orders",
+    "so the banner says a customer wrote, and opens the card where he answers: " + JSON.stringify(shown[0] && shown[0].t));
+
+  /* A PLACEMENT WITH A NOTE IS A NEW ORDER, whose first line is the note typed with it */
+  await dkv.delete("orders:news");
+  await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "", note: "call when ready" });
+  const n2 = await nudgeOrders(denv);
+  ok(n2.newest && n2.said && (await dkv.get("orders:news")) === null,
+    "and a new order that carries a line wakes as a new order, not as a line: " + JSON.stringify(await dkv.get("orders:news")));
+})();
+
 section("v766: what is waiting on the site is on Today, ranked against everything else");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026: site orders reach the desk comprehensively. An order lived on one

@@ -34,7 +34,7 @@ const THEIRS_MARK = "orders:theirs";
 /* what the last of them was, for the banner to read. It expires, because a wake is delivered in
    seconds and a line about a payment made this morning would be a lie at lunchtime. */
 const NEWS_KEY = "orders:news";
-const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order" };
+const NEWS_WORD = { pay: "A customer has paid", cancel: "A customer has withdrawn an order", said: "A customer wrote on an order" };
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
@@ -496,6 +496,12 @@ export async function nudgeOrders(env) {
     /* an hour on the key and ten minutes on the reading: two limits because KV's own expiry is not
        prompt enough to be the freshness rule, and a banner is written from what is true now. */
     if (news) await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: String(theirs).split("|")[0] }), { expirationTtl: 3600 });
+  } else if (spoke && !placed) {
+    /* 24 Sep 2026: A LINE IS NEWS OF ITS OWN. A wake sent because a customer wrote read "New customer
+       order" or "is square", the wrong sentence v760 exists to stop. Not on a placement, whose first
+       line is the note typed with it: there the new order is the news, and the banner already says so. */
+    news = NEWS_WORD.said;
+    await env.SALT_QUEUE.put(NEWS_KEY, JSON.stringify({ what: news, at: said }), { expirationTtl: 3600 });
   }
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
   return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };
