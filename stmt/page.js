@@ -294,6 +294,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
+/* S7 polish: two columns read left to right stand apart, as the live statement's do (UX10): at 320 the card's date ran
+   into the next column ("2026-09-Through"). Only these, so a row that fits a 390 phone on one line still does */
+.pane td.l+td.l,.pane th.l+th.l{padding-left:10px}
 /* an order's state is the system's .salt-status (22 Sep 2026): a mono word in its colour with a hairline */
 .quote{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-text);margin:8px 0 2px;font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:8px}

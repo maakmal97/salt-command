@@ -35794,6 +35794,40 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("S7 polish: Rewards' card sets its date apart from what the line was");
+await (async () => {
+  /* At 320 the card's table ran its date into the next column ("2026-09-Through"): the pane sets every cell's side
+     padding to nothing, and the live statement's column gap (UX10) is .tblw's alone. The two columns read left to right
+     now stand 10px apart, and only those, so the row that fits a 390 phone on one line still does (the rig's measure:
+     287px of words in a 312px table). Driven: an associate's card as the page draws it, read through jsdom's cascade. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-pol3", ck = await C.contentKey("test-secret", u);
+  const card = { products: [{ product: "salt", unit: "unit", summary: { bought: 270 }, lines: [{ date: "2026-09-12", kind: "through", qty: 2.5, rm: 270 }] }] };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "", assoc: true,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    card: await C.encryptWith(ck, JSON.stringify(card)) };
+  const dom = new JSDOM(landingPage(u, "npol3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && !D.querySelector("#pCard .pane tbody td"); i++) await new Promise((r) => setTimeout(r, 50));
+    const pad = (sel) => [...D.querySelectorAll(sel)].map((c) => c.textContent + ":" + W.getComputedStyle(c).paddingLeft).join(" | ");
+    const head = pad("#pCard .pane thead th"), line = pad("#pCard .pane tbody td");
+    ok(head === "Date:0px | What:10px | Size:0px | RM:0px" && line === "2026-09-12:0px | Through you:10px | 2.5 units:0px | RM 270:0px",
+      "the card's date and what the line was stand 10px apart, heading and row, and no other column is pushed: " + JSON.stringify([head, line]));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
