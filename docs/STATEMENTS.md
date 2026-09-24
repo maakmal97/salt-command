@@ -215,7 +215,7 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
 | `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
-| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. |
+| a sign-in link | nowhere | KV `ot:<sha256(token)>`, 7 days, one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), so a lost answer is tried again and a second device is refused (S3 3.3). |
 
 `_secrets.json` is gitignored and looks like
 `{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
@@ -291,8 +291,8 @@ form's product dropdown became a **segment of marks**, because an `<option>` car
 drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
-**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
-install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+**The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
+sign-in link's page and the install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never

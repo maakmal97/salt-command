@@ -59,6 +59,15 @@ const PAGE_CSS = `
 /* the level's mark: small, quiet, and never in the way of the price beside it (16 Sep 2026) */
 .mark{margin-left:7px;font-size:0.72em;line-height:1;vertical-align:0.12em;opacity:0.85}
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
+/* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
+.appmark{display:block;margin:0 0 14px}
+.gate .salt-glass-card{margin:0 0 4px}
+.gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
+.gate .salt-ledger__row:last-child{border-bottom:0}
+.gate .salt-insight .glyph{vertical-align:-0.3em}
+.center{text-align:center}
+/* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
+.mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
 .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
   color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
 /* a well is black 28%, decision 4 */
@@ -344,6 +353,52 @@ export function psymSvg(product, px) {
     + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
 
+/* ---- THE MARKS A SCREEN DRAWS BESIDE ITS WORDS (S3, 24 Sep 2026) ------------------------------------
+   The app's ring, the three things inside it, and the phone's own controls (the menu's dots, Share, Add to
+   Home Screen, Paste, an install mark), drawn inline in the product marks' own hairline manner and never
+   loaded, so a phone set to another language still matches the picture. */
+const GLYPH = {
+  ring: RING,
+  home: "M4 10.6 L12 4 L20 10.6 V20 H14.6 V14.4 H9.4 V20 H4 Z",
+  prices: "M3.8 12.6 V4.3 H12.1 L20.2 12.4 L12.4 20.2 Z M9.7 8.6 A1.5 1.5 0 1 1 6.7 8.6 A1.5 1.5 0 1 1 9.7 8.6 Z",
+  orders: "M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5",
+  dots: "M5.1 12 A1.4 1.4 0 1 0 7.9 12 A1.4 1.4 0 1 0 5.1 12 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M16.1 12 A1.4 1.4 0 1 0 18.9 12 A1.4 1.4 0 1 0 16.1 12 Z",
+  vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
+};
+const FILLED = { dots: true, vdots: true };
+export function glyphSvg(name, px) {
+  const fill = FILLED[name] ? 'fill="currentColor" stroke="none"' : 'fill="none" stroke="currentColor" stroke-width="1.4"';
+  return '<svg class="psym glyph" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
+    + '<path d="' + GLYPH[name] + '" ' + fill + ' stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+/* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
+   and what is inside, and an app's own browser is sent to Safari or Chrome first. */
+function linkScreen() {
+  const row = (g, t) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
+    + glyphSvg(g, 20) + t + "</span></div></div>";
+  return '<div id="link" class="gate" hidden>'
+    + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
+    + "<h1>Your Salt Counter</h1>"
+    + '<p class="lead" id="linkLead">This link opens your account on this phone.</p>'
+    + '<div class="salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm">'
+    + '<p class="salt-eyebrow salt-eyebrow--copper">Inside</p>'
+    + '<div class="salt-ledger salt-ledger--plain">'
+    + row("home", "What you owe, and paying it") + row("prices", "Your prices, and ordering") + row("orders", "Each order, and its messages")
+    + "</div></div>"
+    /* an app's own browser keeps nothing once it closes: the phone's own menu mark, and where to go */
+    + '<p class="salt-insight" id="linkInapp" hidden>'
+    + '<span id="inappIos">This app keeps nothing once you close it. Tap ' + glyphSvg("dots", 20)
+    + " and choose to open this page in <b>Safari</b>, then tap Continue there.</span>"
+    + '<span id="inappDroid" hidden>This app keeps nothing once you close it. Tap ' + glyphSvg("vdots", 20)
+    + " and choose to open this page in <b>Chrome</b>, then tap Continue there.</span></p>"
+    + '<button class="btn salt-ghost" id="linkCopy" type="button" hidden>Copy the link</button>'
+    + '<button class="btn salt-pill salt-pill--md" id="linkGo" type="button">Continue</button>'
+    + '<p class="msg" id="linkMsg" role="status" aria-live="polite"></p>'
+    + '<p class="sub2 center" id="linkOnce">The link works once. Not your phone? Close this page and nothing is used.</p>'
+    + "</div>";
+}
+
 export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
@@ -512,6 +567,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "<li>Open it from that icon after this and sign in there with Remember me ticked. It can tell you when an order moves.</li></ol>"
     + "</div>"
     + "</div>"
+    + (owner ? "" : linkScreen())
     + '<div id="barw" hidden><div class="bar">'
     + '<span><b id="whoacct"></b><span id="cd"></span></span>'
     + '<button type="button" id="lock">Log out</button>'
@@ -820,7 +876,7 @@ const CLIENT_JS = `
     mfil.textContent=''; mfil.hidden=true; mfPick=null;
     var mfn=document.getElementById('mfnote'); if(mfn) mfn.textContent='';
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true; lapse.hidden=true;
+    tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
@@ -1753,33 +1809,11 @@ const CLIENT_JS = `
     if(stale()) return;
     /* an empty bundle is a new account, not a fault: pickStmt says so */
     if(!b||!b.statements){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        if(stale()) return;
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open; the live one is simply absent */ }
-    }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){
-      try{ card=JSON.parse(await open(ck, body.card)); if(stale()) return; }
-      catch(e){ card=null; /* the statement still opens; the card is simply absent */ }
-    }
-    if(body.prices){
-      try{ prices=JSON.parse(await open(ck, body.prices)); if(stale()) return; }
-      catch(e){ prices=null; /* the statements still open; the list is simply absent */ }
-    }
+    var x=await unseal(body, ck, b);
     if(stale()) return;
     done();
-    say('');
-    user=u; session=body.session||''; orders=[]; draft={}; pick={};
-    view=!!(OWNER&&body.byMaster);
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    else if(view){ await loadView(u); if(stale()) return; }   /* stmt/owner.js: his route alone carries it */
-    drawOrder();
+    enter(u, body, b, x);
+    if(!(await follow(stale))) return;
     /* v692: remembered only on a customer's own sign-in, and only when asked. The owner's route
        opens accounts with the master and must leave nothing behind on his phone. */
     var rem=document.getElementById('rem');
@@ -1832,80 +1866,141 @@ const CLIENT_JS = `
       b=JSON.parse(await open(ck, body.env));
     }catch(e){ remClear(); say(''); return false; }
     if(stale()) return false;
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open */ }
-    }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
+    var x=await unseal(body, ck, b);
     if(stale()) return false;
-    say('');
-    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    drawOrder();
+    enter(body.u, body, b, x);
+    if(!(await follow(stale))) return true;
     askPush();
     return true;
   }
-  /* ---- THE ONE-TIME LINK, OPENED (v710, his instruction of 18 Sep 2026) -----------------------
-     "When sharing the link, QR to the user, the site pre-fills their username and password." The
-     password never goes in a message, so the LINK signs them in instead. The token is in this
-     page's own address; it is posted once, the Worker burns it and hands back the content key
-     wrapped UNDER that token, and from there this is openRemembered's body exactly: nothing
-     downstream knows the difference.
-     THE ADDRESS IS REWRITTEN THE MOMENT IT IS POSTED. A reload of a burnt link would otherwise show
-     a refusal on a page the reader has just opened successfully, which is the worst of both. */
+  /* ---- ONE WAY IN (S3 3.3, 24 Sep 2026) ----------------------------------------------------------
+     The password, a remembered phone and the link all hand back the same record: these open it with the
+     content key and put the account on screen, so the roads cannot drift apart. unseal opens what sits
+     beside the statement, enter draws the account, and follow starts its orders. */
+  async function unseal(body, ck, b){
+    var x={assoc:body.assoc===true, card:null, prices:null};
+    if(body.live){
+      try{ var l=JSON.parse(await open(ck, body.live));
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
+      catch(e){ /* the issued statements still open; the live one is simply absent */ }
+    }
+    if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
+    if(body.prices){ try{ x.prices=JSON.parse(await open(ck, body.prices)); }catch(e){ /* the statements still open; the list is simply absent */ } }
+    return x;
+  }
+  function enter(u, body, b, x){
+    say('');
+    prices=x.prices; assoc=x.assoc; card=x.card;
+    user=u; session=body.session||''; orders=[]; draft={}; pick={};
+    view=!!(OWNER&&body.byMaster);
+    if(linkBox) linkBox.hidden=true;
+    show(b);
+    drawPrices();
+  }
+  async function follow(stale){
+    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
+    drawOrder();
+    return true;
+  }
+
+  /* ---- THE ONE-TIME LINK (v710; S3 3.3, 24 Sep 2026) -------------------------------------------------
+     "When sharing the link, QR to the user, the site pre-fills their username and password." The password
+     never goes in a message, so the LINK signs them in: the token is in this page's own address, and the
+     content key comes back wrapped UNDER it.
+     NOTHING IS SPENT UNTIL CONTINUE. The page first asks which account the link opens, which spends nothing,
+     so a preview or an app's own browser that runs the page cannot use it up. Continue posts the token with
+     this page's own nonce; the Worker burns it and keeps the answer two minutes for that nonce alone, so a
+     dropped connection is tried again from here rather than losing the link.
+     AN APP'S OWN BROWSER (WhatsApp, Instagram, Facebook, Line, WeChat) keeps nothing once it closes, so it is
+     sent to Safari or Chrome with that phone's menu mark before anything is spent; Continue stays, quieter. */
+  var linkBox=document.getElementById('link'), linkGo=document.getElementById('linkGo'),
+      linkMsg=document.getElementById('linkMsg');
+  var UA=navigator.userAgent||'';
+  var IOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var INAPP=/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Line[/]|MicroMessenger/.test(UA);
+  var LOST='Not opened: the answer did not arrive. Tap Continue again. For two minutes this page can still open it.';
+  var SPENT='That link has been used already, or it has expired. Sign in with your username and password, or ask us for a new sign-in link.';
+  function lsay(t,cls){ if(linkMsg){ linkMsg.textContent=t||''; linkMsg.className='msg'+(cls?' '+cls:''); } }
   function signinToken(){
     /* [/] rather than an escaped slash: this script lives in a template literal, where a
        backslash before a slash is eaten and the regex would end at the first one. */
     var m=/^[/]s[/]([A-Za-z0-9_-]{20,64})$/.exec(location.pathname||'');
     return m?m[1]:null;
   }
-  async function openSignin(){
+  /* one a tab, kept for a reload of the same tab; minted afresh where the storage will not hold it */
+  var nonceMem='';
+  function linkNonce(){
+    var n='';
+    try{ n=sessionStorage.getItem('salt-link-nonce')||''; }catch(e){}
+    if(!/^[A-Za-z0-9_-]{16,64}$/.test(n)) n=nonceMem||b64e(crypto.getRandomValues(new Uint8Array(18))).replace(/[+]/g,'-').replace(/[/]/g,'_');
+    nonceMem=n;
+    try{ sessionStorage.setItem('salt-link-nonce', n); }catch(e){}
+    return n;
+  }
+  function linkSpent(){
+    try{ history.replaceState(null,'','/'); }catch(e){}
+    linkBox.hidden=true; gate.hidden=false;
+    say(SPENT,'bad');
+  }
+  async function showLink(){
     var tok=signinToken();
-    if(!tok||OWNER) return false;
-    var mine=++ticket, stale=function(){ return mine!==ticket; };
-    say('Opening...','wait');
-    var r, body;
+    if(!tok||OWNER||!linkBox) return false;
+    gate.hidden=true; linkBox.hidden=false;
+    if(INAPP){
+      document.getElementById('linkInapp').hidden=false;
+      document.getElementById('inappIos').hidden=!IOS; document.getElementById('inappDroid').hidden=IOS;
+      document.getElementById('linkCopy').hidden=false;
+      linkGo.className='btn salt-ghost'; linkGo.textContent='Continue here instead';
+    }
+    linkGo.disabled=true; lsay('Checking the link...','wait');
+    var r=null, body=null;
     try{
       r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
-        body:JSON.stringify({token:tok})});
+        body:JSON.stringify({token:tok, peek:true})});
       body=await r.json();
-    }catch(e){ say(''); return false; }
-    /* burnt or not, this address is spent: never present it again */
-    try{ history.replaceState(null,'','/'); }catch(e){}
-    if(stale()) return false;
-    if(!r.ok||!body.ok){ say('That link has been used already, or it has expired. Sign in with your username and password.','bad'); return false; }
-    var ck, b;
-    try{
-      ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap);
-      b=JSON.parse(await open(ck, body.env));
-    }catch(e){ say(''); return false; }
-    if(stale()) return false;
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body, owed:l.owed}); }
-      catch(e){ /* the issued statements still open */ }
+    }catch(e){ /* the question was lost, not the link: Continue still asks the real one */ }
+    if(r&&r.status===401){ linkSpent(); return false; }
+    if(r&&r.ok&&body&&body.ok&&body.u){
+      var lead=document.getElementById('linkLead'), who=el('span','mono',body.u);
+      lead.textContent='This link opens account '; lead.appendChild(who); lead.appendChild(document.createTextNode(' on this phone.'));
     }
-    prices=null;
-    assoc=body.assoc===true;
-    card=null;
-    if(body.card){ try{ card=JSON.parse(await open(ck, body.card)); }catch(e){ card=null; } }
-    if(body.prices){ try{ prices=JSON.parse(await open(ck, body.prices)); }catch(e){ prices=null; } }
-    if(stale()) return false;
-    say('');
-    user=body.u; session=body.session||''; orders=[]; draft={}; pick={};
-    show(b);
-    drawPrices();
-    if(session){ await loadOrders(); if(stale()) return true; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
-    drawOrder();
-    askPush();
+    linkGo.disabled=false; lsay('');
     return true;
+  }
+  if(linkBox){
+    document.getElementById('linkCopy').addEventListener('click', async function(){
+      try{ await navigator.clipboard.writeText(location.href); lsay('Copied. Paste it into Safari or Chrome.'); }
+      catch(e){ lsay('Copy failed. Press and hold the address instead.','bad'); }
+    });
+    linkGo.addEventListener('click', async function(){
+      var tok=signinToken();
+      if(!tok||busy) return;
+      var mine=++ticket, stale=function(){ return mine!==ticket; };
+      busy=true; linkGo.disabled=true; lsay('Opening...','wait');
+      var r, body;
+      try{
+        r=await fetch('/open-link', {method:'POST', headers:{'content-type':'application/json'},
+          body:JSON.stringify({token:tok, nonce:linkNonce()})});
+        body=await r.json();
+      }catch(e){ if(stale()) return; busy=false; linkGo.disabled=false; lsay(LOST,'bad'); return; }
+      if(stale()) return;
+      busy=false;
+      if(r.status===401){ lsay(''); linkSpent(); return; }
+      if(!r.ok||!body.ok){ linkGo.disabled=false; lsay(LOST,'bad'); return; }
+      /* spent, and the answer is in hand: this address is never presented again */
+      try{ history.replaceState(null,'','/'); }catch(e){}
+      var ck, b;
+      try{ ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap); b=JSON.parse(await open(ck, body.env)); }
+      catch(e){ if(!stale()){ lsay(''); linkSpent(); } return; }
+      if(stale()) return;
+      var x=await unseal(body, ck, b);
+      if(stale()) return;
+      lsay('');
+      enter(body.u, body, b, x);
+      if(!(await follow(stale))) return;
+      askPush();
+    });
   }
   /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
      needs -- say(), el(), stamp(), un, pw, whoacct, busy, OWNER -- is in scope at this point,
@@ -1922,8 +2017,9 @@ const CLIENT_JS = `
        memory on this phone must never wait on a request to be able to type */
     try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
     /* v710: a one-time link first, a remembered device second. A reader arriving on a link came to
-       use it, and if it is spent the remembered device is still there behind it. */
-    (async function(){ if(!(await openSignin())) await openRemembered(); })();
+       use it, and if it is spent the remembered device is still there behind it. S3 3.3: the link is a
+       page of its own now, spent on Continue, so the page waits there. */
+    (async function(){ if(!(await showLink())) await openRemembered(); })();
   }
 })();
 `;

@@ -43,7 +43,7 @@ import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
-import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
+import { SIGNIN_RE, mintSignin, burnSignin, peekSignin } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE } from "./icons.js";
@@ -438,7 +438,13 @@ async function handleSignin(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && SIGNIN_RE.test(b.token) ? b.token : null;
-  const rec = tok ? await burnSignin(env, tok) : null;
+  /* S3 3.3: the page asks which account first, and that spends nothing; a spent link is refused alike */
+  if (b && b.peek === true) {
+    const live = tok ? await peekSignin(env, tok) : null;
+    if (!live || !(await env.STMT.get("u:" + live.u))) return json({ ok: false, error: REFUSED }, 401);
+    return json({ ok: true, u: live.u });
+  }
+  const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
   if (!rec) return json({ ok: false, error: REFUSED }, 401);
   const acct = await env.STMT.get("u:" + rec.u, "json");
   if (!acct) return json({ ok: false, error: REFUSED }, 401);

@@ -297,7 +297,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   `_passwords.json`, and no message ever carries it.
 - **The shared link signs them in, once**: the link signs in, the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
-  gated on the token's SHAPE, so a spent link and an invented one serve the same door.
+  gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
+  only on Continue** (asking which account spends nothing), and a spent record answers the page that
+  spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
 - **The door**: log in, remember me (a device key in the browser, the wrapped content key at
   `rem:<token>`, neither opening anything alone), log out, which also drops that wrap and this
   phone's notifications. A lapsed session says so in the bar, with Continue. Kept as an app:

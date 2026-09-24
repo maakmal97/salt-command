@@ -15280,6 +15280,11 @@ await (async () => {
         D.getElementById("pw").value = passA;
         D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
       }
+      /* S3 3.3: a link waits on its own page for Continue */
+      if (road === "link") {
+        for (let i = 0; i < 100 && D.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
+        D.getElementById("linkGo").dispatchEvent(new W.Event("click", { bubbles: true }));
+      }
       for (let i = 0; i < 200 && !D.querySelector("#pOrder .pane") && !errs.length && !D.getElementById("msg").textContent.includes("could not"); i++) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 50));
       return { errs: errs.slice(), out: D.getElementById("out").textContent, gate: D.getElementById("gate").hidden, msg: D.getElementById("msg").textContent,
@@ -15440,6 +15445,9 @@ await (async () => {
   const st2 = { reopened: 0, lapsed: false };
   const two = drive(null, st2);
   try {
+    /* S3 3.3: the link waits on its own page for Continue */
+    await wait(() => !two.D.getElementById("linkGo").disabled);
+    two.D.getElementById("linkGo").click();
     await wait(() => !two.D.getElementById("barw").hidden);
     st2.lapsed = true;
     await wait(() => !two.D.getElementById("lapse").hidden);
@@ -17963,6 +17971,123 @@ await (async () => {
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
 })();
+section("S3 3.3: the link page spends nothing until Continue, names its account, sends an app's own browser to Safari or Chrome, and a lost answer is tried again for two minutes");
+await (async () => {
+  /* S3 3.3, 24 SEP 2026. The link burnt on load, so a preview that ran the page, an app's own browser or a
+     dropped connection used it up and stranded a customer who had nothing else (the study's A8). */
+  const W33 = (await import("../stmt/worker.js")).default;
+  const S33 = await import("../stmt/signin.js");
+  const C33 = await import("../tools/stmt-crypto.mjs");
+  const kv33 = new KV();
+  const env33 = { STMT: kv33 };
+  const u33 = "k7m2-p9qr", ck33 = await C33.contentKey("s33", u33);
+  await kv33.put("u:" + u33, JSON.stringify({ u: u33, issued: "2026-09-01", issues: ["2026-09-01"],
+    env: await C33.encryptWith(ck33, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })) }));
+  const mint = async () => { const t = S33.newSignin(); await S33.mintSignin(env33, u33, t, await C33.wrapKey(t, ck33)); return t; };
+  const post = async (body) => { const r = await W33.fetch(new Request("https://k7m3p2.example/open-link", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), env33); return { status: r.status, j: await r.json() }; };
+
+  /* ---- asking spends nothing ---- */
+  const t1 = await mint(), h1 = "ot:" + (await S33.idOf(t1));
+  const pk = await post({ token: t1, peek: true });
+  ok(pk.status === 200 && pk.j.ok && pk.j.u === u33 && !pk.j.wrap && !pk.j.session,
+    "asking which account a link opens answers the username and nothing that opens it: " + JSON.stringify(pk.j));
+  ok(!JSON.parse(await kv33.get(h1)).spent && (await post({ token: t1, peek: true })).j.u === u33,
+    "and spends nothing: the record is whole and asking again answers again");
+  const pkBad = await post({ token: S33.newSignin(), peek: true });
+  ok(pkBad.status === 401 && pkBad.j.error === "That username and password were not accepted.",
+    "a link that never existed is the door's one refusal, asked or opened");
+
+  /* ---- Continue spends it, and the answer waits two minutes for that page alone ---- */
+  const nA = "nonceAAAAAAAAAAAAAAAAAAA", nB = "nonceBBBBBBBBBBBBBBBBBBB";
+  const first = await post({ token: t1, nonce: nA });
+  ok(first.j.ok && first.j.u === u33 && !!first.j.wrap && !!first.j.session, "Continue opens it");
+  ok(JSON.parse(await kv33.get(h1)).spent && (kv33.opts.get(h1) || {}).expirationTtl === S33.RETRY_TTL && S33.RETRY_TTL === 120,
+    "the record is marked spent and left to expire in two minutes");
+  const again = await post({ token: t1, nonce: nA });
+  ok(again.j.ok && JSON.stringify(again.j.wrap) === JSON.stringify(first.j.wrap) && again.j.session && again.j.session !== first.j.session,
+    "the same page asking again inside two minutes gets the answer it lost, with a session of its own");
+  const other = await post({ token: t1, nonce: nB }), bare = await post({ token: t1 });
+  ok(other.status === 401 && bare.status === 401 && other.j.error === pkBad.j.error,
+    "another page holding the same link is refused, in the door's one refusal, as a spent link always was");
+  ok((await post({ token: t1, peek: true })).status === 401, "and a spent link asked about is refused alike");
+
+  /* ---- the page ---- */
+  const { JSDOM: JD33 } = await import("jsdom");
+  const drive = async (ua, failFirst) => {
+    const t = await mint();
+    const html = await (await W33.fetch(new Request("https://k7m3p2.example/s/" + t), env33)).text();
+    const posts = [];
+    let failed = false;
+    const dom = new JD33(html, { url: "https://site.test/s/" + t, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (ua) Object.defineProperty(win.navigator, "userAgent", { value: ua, configurable: true });
+      win.fetch = async (path, init) => {
+        const body = init && init.body ? JSON.parse(init.body) : {};
+        posts.push(Object.assign({ path: String(path) }, body));
+        const r = await W33.fetch(new Request("https://k7m3p2.example" + String(path), { method: init && init.method || "GET",
+          headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body }), env33);
+        /* the Worker has acted; the answer is lost on the way back, once */
+        if (failFirst && String(path) === "/open-link" && !body.peek && !failed) { failed = true; throw new TypeError("Failed to fetch"); }
+        return { ok: r.ok, status: r.status, json: async () => r.json() };
+      };
+    } });
+    const D = dom.window.document;
+    for (let i = 0; i < 100 && (D.getElementById("linkGo").disabled || !posts.length); i++) await new Promise((r) => setTimeout(r, 30));
+    return { t, dom, W: dom.window, D, posts };
+  };
+  const tapGo = async (g) => {
+    g.D.getElementById("linkGo").dispatchEvent(new g.W.Event("click", { bubbles: true }));
+    for (let i = 0; i < 150 && g.D.getElementById("tabs").hidden && !/Tap Continue again/.test(g.D.getElementById("linkMsg").textContent); i++)
+      await new Promise((r) => setTimeout(r, 50));
+  };
+
+  const plain = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1");
+  try {
+    ok(!plain.D.getElementById("link").hidden && plain.D.getElementById("gate").hidden
+      && plain.D.getElementById("linkLead").textContent === "This link opens account " + u33 + " on this phone.",
+      "a link opens on its own page, naming the account it opens: " + JSON.stringify(plain.D.getElementById("linkLead").textContent));
+    ok(/What you owe/.test(plain.D.getElementById("link").textContent) && /Your prices/.test(plain.D.getElementById("link").textContent)
+      && /Each order/.test(plain.D.getElementById("link").textContent),
+      "and says what is inside");
+    ok(plain.posts.length === 1 && plain.posts[0].peek === true && !(await kv33.get("ot:" + (await S33.idOf(plain.t))).then(JSON.parse)).spent
+      && plain.W.location.pathname === "/s/" + plain.t,
+      "and has spent nothing: one question asked, the record whole, the address still the link's");
+    ok(plain.D.getElementById("linkInapp").hidden && /salt-pill/.test(plain.D.getElementById("linkGo").className),
+      "Safari is not told to go anywhere else, and Continue is the one filled control");
+    await tapGo(plain);
+    ok(!plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
+      && JSON.parse(await kv33.get("ot:" + (await S33.idOf(plain.t)))).spent,
+      "Continue signs them in, spends the link and rewrites the address");
+  } finally { plain.W.close(); }
+
+  const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1");
+  const ig = await drive("Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36 Instagram 330.0");
+  try {
+    const box = (g) => g.D.getElementById("linkInapp");
+    ok(!box(wa).hidden && !wa.D.getElementById("inappIos").hidden && wa.D.getElementById("inappDroid").hidden
+      && /Safari/.test(wa.D.getElementById("inappIos").textContent) && wa.D.getElementById("inappIos").querySelector("svg.glyph"),
+      "WhatsApp's own browser on an iPhone is sent to Safari, with the menu's mark drawn");
+    ok(!box(ig).hidden && ig.D.getElementById("inappIos").hidden && !ig.D.getElementById("inappDroid").hidden
+      && /Chrome/.test(ig.D.getElementById("inappDroid").textContent),
+      "and Instagram's on an Android to Chrome");
+    ok(/salt-ghost/.test(wa.D.getElementById("linkGo").className) && !/salt-pill/.test(wa.D.getElementById("linkGo").className)
+      && wa.posts.every((p) => p.peek === true),
+      "where Continue stays, quieter, and nothing has been spent");
+  } finally { wa.W.close(); ig.W.close(); }
+
+  const lost = await drive("", true);
+  try {
+    await tapGo(lost);
+    ok(/Tap Continue again/.test(lost.D.getElementById("linkMsg").textContent) && lost.D.getElementById("tabs").hidden
+      && lost.W.location.pathname === "/s/" + lost.t && !lost.D.getElementById("linkGo").disabled,
+      "an answer lost after the Worker spent the link says so beside Continue and keeps the address");
+    await tapGo(lost);
+    const spends = lost.posts.filter((p) => p.path === "/open-link" && !p.peek);
+    ok(!lost.D.getElementById("tabs").hidden && spends.length === 2 && spends[0].nonce && spends[0].nonce === spends[1].nonce,
+      "and Continue again opens it, the page asking with the nonce it spent it with");
+  } finally { lost.W.close(); }
+})();
 section("v710: the shared link signs them in once, so no message carries a password");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "when sharing the link, QR to the user, the site pre-fills their
@@ -18023,7 +18148,9 @@ await (async () => {
   /* ---- and never again ---- */
   const second = await openLink(tok10);
   ok(second.ok === false, "the second open is refused: the record is burnt on the way through");
-  ok(!(await kv10.get("ot:" + hash10)), "and nothing of it is left in the store");
+  /* S3 3.3: what is left answers only the page that spent it, and only for two minutes */
+  ok(JSON.parse(await kv10.get("ot:" + hash10)).spent && (kv10.opts.get("ot:" + hash10) || {}).expirationTtl === S10.RETRY_TTL,
+    "and what is left of it is marked spent and expires in two minutes");
   /* the refusal is the door's one refusal, byte for byte, so a used link reads as an invented one */
   const invented = await openLink(S10.newSignin());
   const badPass = await (await stmtW10.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
@@ -18117,9 +18244,9 @@ await (async () => {
 
   /* ---- the page reads the token off its own address ---- */
   const page10 = await (await doorOf("/")).text();
-  ok(/function openSignin\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
+  ok(/async function showLink\(\)/.test(page10) && /\/open-link/.test(page10) && /history\.replaceState/.test(page10),
     "the page posts the token once and rewrites its own address, so a reload never presents a spent link");
-  ok(/if\(!\(await openSignin\(\)\)\) await openRemembered\(\);/.test(page10),
+  ok(/if\(!\(await showLink\(\)\)\) await openRemembered\(\);/.test(page10),
     "a link is tried first and a remembered device is still there behind it");
 
   /* ---- AND THE PAGE, DRIVEN ON THE LINK ITSELF. Reading its source proves the code is there; it
@@ -18143,13 +18270,16 @@ await (async () => {
   } });
   try {
     const d10 = dom10.window.document;
+    /* S3 3.3: the link waits on its own page for Continue */
+    for (let i = 0; i < 100 && d10.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
+    d10.getElementById("linkGo").dispatchEvent(new dom10.window.Event("click", { bubbles: true }));
     for (let i = 0; i < 150 && d10.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
     ok(!d10.getElementById("tabs").hidden && d10.getElementById("gate").hidden,
-      "a reader landing on the link is signed in without typing anything: the tabs are up and the door is gone");
+      "a reader landing on the link is signed in with one tap and nothing typed: the tabs are up and the door is gone");
     ok(posts10.includes("/open-link"), "and it got there by posting the token off its own address");
     ok(dom10.window.location.pathname === "/",
       "which the page has already forgotten: the address is rewritten, so a reload never presents a spent link");
-    ok((await S10.burnSignin(env10, liveTok)) === null, "and the link itself is spent");
+    ok((await S10.burnSignin(env10, liveTok, "anotherPageNonce0000000")) === null, "and the link itself is spent");
   } finally { try { dom10.window.close(); } catch (e) { /* best effort */ } }
 })();
 section("v710a: -m takes a message or a file holding one, so a note is never committed as a path");
