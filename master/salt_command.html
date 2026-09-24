@@ -19201,7 +19201,7 @@ async function ordPreview(o){
 function ordPvBlock(o){
   const pv=ORD_PV[o.id];
   if(!pv||pv.st==='wait')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
-  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Nothing is approved on Accept until it can; the row then waits under Approve.</p>`;
+  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Accept opens once it can, your yes being to the row drawn here.</p>`;
   const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
   const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
   /* the preview's own shapes (src/orders.js previewAck): cost {unit,total}, margin {rm,pct}, floor {rm}, usual {rate} */
@@ -19318,10 +19318,11 @@ function ordCard(o){
   let acts='';
   /* S11 11.3: ACCEPT, RM <total>, the goods and the charge together, in a footer that stays in reach. It is
      open only once the row it approves is on the card: a delivery needs its charge chosen, and the preview has
-     to be of that charge. With no preview it still agrees the order, and the row then waits under Approve. */
+     to be of that charge. With no row drawn there is nothing to say yes to, and the Worker refuses an Accept
+     without the preview's digest, so it stays shut until the preview comes back. */
   const againAck=ordAgainAck(o);
   const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
-  const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait';
+  const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
   const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
   /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
      their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
@@ -19338,8 +19339,8 @@ function ordCard(o){
   const whyOpen=ORD_WHY[o.id];
   const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
-  else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
-  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvFor?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
+  else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
+  else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0?'':btn('cancelled','Cancel',true));
   else if(rowed&&o.status!=='done')acts=(cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Cash received, ${fmt(ordDue(o))}</button>`:'')
     +(handable?(part?handBtn('Record '+units(partN),'')+handBtn('Close at '+units(partN),' data-close="1"')+`<button class="salt-ghost" data-partoff="${esc(o.id)}">Keep it whole</button>`
       :`<button class="${cashNow?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
@@ -19386,7 +19387,7 @@ function ordCard(o){
       ${cashNow?`<p class="salt-approve__reason">${o.mode==='deliver'?'Delivered':'Collected'} ${units(moved)}, nothing paid. Cash received marks it paid in cash at once, so the chase stops, and books the payment when its row is drafted, if it is this one.</p>`:''}
       ${o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
         :!pvFor?'Drafting the row first.'
-        :pv.st==='err'?'Accept tells them '+fmt(sum)+'. The row could not be drafted here, so it waits under Approve.'
+        :pv.st==='err'?'The row could not be drafted, so Accept waits until it can.'
         :'Accept tells them '+fmt(sum)+' and approves this row. If the real row differs, it waits under Approve, marked.'}</p>`:''}
       <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;

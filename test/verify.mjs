@@ -23555,8 +23555,10 @@ await (async () => {
     pv = { status: 503, error: "the mirror could not be read" };
     await w.eval("ordLoad(true)");
     await settle();
-    ok(/could not be drafted: the mirror could not be read/.test(card("n2").textContent) && !card("n2").querySelector(".ordpv .salt-kpi"),
-      "a preview that fails says why and draws no figure it does not have");
+    const shut = card("n2").querySelector('.ordfoot button[data-ord="acknowledged"]');
+    ok(/could not be drafted: the mirror could not be read/.test(card("n2").textContent) && !card("n2").querySelector(".ordpv .salt-kpi")
+      && shut && shut.disabled && /The row could not be drafted, so Accept waits until it can\./.test(card("n2").textContent),
+      "a preview that fails says why, draws no figure it does not have, and keeps Accept shut, the Worker taking no yes without the row's digest: " + (shut && shut.disabled));
   } finally {
     try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){ordTimer=null;}"); } catch (e) { /* best effort */ }
     await new Promise((r) => setTimeout(r, 200));
