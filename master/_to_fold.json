@@ -1,0 +1,52 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-24T15:43:57.801Z",
+   "collection": "count",
+   "row": {
+    "product": "rice",
+    "qty": 94,
+    "date": "2026-09-24",
+    "was": 95,
+    "drift": -1
+   },
+   "reasoning": "Counted 94 unit of rice by hand on 2026-09-24, against 95 on the book: a drift of -1. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 95 and you counted 94: -1 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold.",
+    "9 unit of this inventory is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-24T15:43:57.801Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 94,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 94 unit Rice on hand on 2026-09-24",
+    "payload": {
+     "mode": "count",
+     "product": "rice",
+     "direction": null,
+     "party": null,
+     "date": "2026-09-24",
+     "qty": 94,
+     "total": null,
+     "cash": null,
+     "kg": 94,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-24T15:44:20.231Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
