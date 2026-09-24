@@ -42,7 +42,7 @@ import { landingPage, boardPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
-import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, MAX_PER_ASSOC } from "./refs.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC } from "./refs.js";
 import { SIGNIN_RE, mintSignin, burnSignin } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
@@ -482,6 +482,7 @@ function checkBulletin(body) {
     .map((s) => s.replace(/\s+/g, " ").trim().slice(0, 120)).filter(Boolean).slice(0, 8);
   return { lines, mode: body.mode === "change" ? "change" : "run" };
 }
+const DESK_WAITING = "desk-waiting";
 async function handleDesk(request, env, p, m) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!deskOk(request, env)) return json({ ok: false, error: "desk key required" }, 401);
@@ -506,7 +507,19 @@ async function handleDesk(request, env, p, m) {
     /* v694: the orders with a stage the ledger has not been told about, whatever state they are
        in. A completed order still owes its last entries, so this is not the open list. */
     if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
-    return json({ ok: true, orders: await allOrders(env, q.get("all") === "1") });
+    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Admin: a count, no link, no name */
+    const links = q.get("links") === "1" ? { links: (await listRefs(env)).filter(linkWaiting).length } : {};
+    return json(Object.assign({ ok: true, orders: await allOrders(env, q.get("all") === "1") }, links));
+  }
+  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Admin's
+     line. A count and its moment, nothing else: no order, no code and no way to the desk. */
+  if (p === "/desk/waiting") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const n = b && b.n;
+    if (!Number.isInteger(n) || n < 0 || n > 9999) return json({ ok: false, error: "send the count as a whole number" }, 400);
+    await env.STMT.put(DESK_WAITING, JSON.stringify({ n, at: new Date().toISOString() }));
+    return json({ ok: true, n });
   }
   /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026),
      and since v694 the moment of the newest change of any kind beside it, so the reconcile lists
@@ -669,7 +682,9 @@ async function ownerSheet(env, origin) {
       sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null, alerts: alerts.get(a.username) || 0
     });
   }
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out };
+  /* S9 9.8: the desk's own count of what waits there, as it last told this site */
+  const desk = await env.STMT.get(DESK_WAITING, "json");
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, desk: desk ? { n: +desk.n || 0, at: desk.at || null } : null };
 }
 
 /* A TICK IS THE SITE'S, NOT ONE BROWSER'S (v688). The laptop sheet keeps its ticks in that
@@ -1092,7 +1107,7 @@ export default {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin") return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting") return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

@@ -18942,6 +18942,8 @@ async function ordLoad(quiet){
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
+    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Admin: a count, no link and no name */
+    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Admin':'';}
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}

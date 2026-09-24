@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, bulletinRelay, rejectedOnOrder } from "./orders.js";
+import { listOrders, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -678,6 +678,11 @@ export default {
           if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed) console.log("orders reconcile: " + JSON.stringify(rc));
           if (rc.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
+        /* S9 9.8: and Salt Admin is told what waits here, when it has changed */
+        try {
+          const tw = await tellWaiting(env);
+          if (!tw.ok || tw.told) console.log("orders waiting, told: " + JSON.stringify(tw));
+        } catch (e) { console.log("orders waiting FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await runDrafter(env);
@@ -812,7 +817,8 @@ export default {
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      const r = await listOrders(env, url.searchParams.get("all") === "1");
+      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
+      const r = await listOrders(env, url.searchParams.get("all") === "1", true);
       return json(r, r.ok ? 200 : 503);
     }
     const om = /^\/orders\/([^/]+)\/([^/]+)$/.exec(p);

@@ -15277,6 +15277,103 @@ await (async () => {
     ok(await until(() => shown(W4, "aEnded")), "and an account opened under View as them meets the ended session the same way");
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
+section("S9 9.8: Salt Admin counts the orders waiting on the desk and the desk counts the links waiting in Salt Admin, each a figure with no link and no name");
+await (async () => {
+  /* THE PLAN'S SECTION 5: two owner apps remain, and each counts the other's waiting items. The desk tells the
+     site its own count (the one its banner reads) as a mark, recounting only when an order moved; the site
+     hands the desk's page the count of associate links waiting on his word. Driven through both real Workers. */
+  const W = (await import("../stmt/worker.js")).default;
+  const skv = new KV(), dkv = new KV();
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key-s98", STMT_MASTER: "mp-s9-8", ACCESS_TEAM: "maakmal", ACCESS_AUD: "aud-s9-8" };
+  const siteCalls = [];
+  const denv = { ...mkEnv(dkv), STMT_DESK_KEY: "desk-key-s98",
+    STMT_SITE: { fetch: (url, init) => { siteCalls.push(new URL(url).pathname); return W.fetch(new Request(url, init), senv); } } };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), senv);
+  const desk = { "X-Stmt-Desk": "desk-key-s98" };
+  const u = "abcd-efgh", at = "2026-09-24T01:00:00Z";
+  const order = (id, status) => ({ id, u, at, status, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [],
+    moved: status === "done" ? 1 : 0, movedOn: null, msgs: [], history: [{ at, status: "placed", by: "customer" }] });
+  const ids = ["20260924010000-aaaa", "20260924010100-bbbb", "20260924010200-cccc", "20260924010300-dddd"];
+  [["placed"], ["acknowledged"], ["ready"], ["done"]].forEach(([st], k) => skv.m.set("order:" + u + ":" + ids[k], JSON.stringify(order(ids[k], st))));
+  /* the links: two waiting, one approved, one declined, one withdrawn while waiting, a standing one and an older one */
+  const link = (id, o) => skv.m.set("g:" + id, JSON.stringify(Object.assign({ id, made: at, by: u, tier: 2 }, o)));
+  link("wait-aaaa", { approved: false }); link("wait-bbbb", { approved: false });
+  link("appr-cccc", { approved: true }); link("decl-dddd", { approved: false, declined: true });
+  link("revk-eeee", { approved: false, revoked: true }); link("stnd-ffff", { standing: true, level: "Silver" });
+  link("oldl-gggg", {});   /* an older link carries no approved field at all, and is open */
+
+  /* ---- the site's half: the desk's figure, taken on the desk key and shown on Salt Admin ---- */
+  const post = (body, h) => site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) });
+  const refused = [(await post({ n: 3 }, {})).status, (await post({ n: -1 }, desk)).status, (await post({ n: 2.5 }, desk)).status, (await post({ n: "3" }, desk)).status,
+    (await site("/desk/waiting", { headers: desk })).status];
+  ok(refused.join() === "401,400,400,400,405" && !skv.m.has("desk-waiting"),
+    "the site takes the figure only on the desk key, only as a whole number, and only as a POST: " + refused.join());
+  const lj = await (await site("/desk/orders?links=1", { headers: desk })).json(), plain = await (await site("/desk/orders", { headers: desk })).json();
+  ok(lj.ok && lj.links === 2 && !("links" in plain), "the desk's page is told the two links that wait on his word, and only when it asks: " + JSON.stringify([lj.links, "links" in plain]));
+
+  /* ---- the desk's half: the cron tells the site its count, and a quiet minute costs one read ---- */
+  const ctx = () => ({ ps: [], waitUntil(p) { this.ps.push(p); } });
+  const tick = async () => { const c = ctx(); await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-24T02:07:00Z") }, denv, c); await Promise.all(c.ps); };
+  await tick();
+  const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
+  ok(mark() && mark().n === 2, "the every-minute cron tells the site the two orders that wait on the desk, placed and agreed: " + JSON.stringify(mark()));
+  const { tellWaiting } = await import("../src/orders.js");
+  siteCalls.length = 0;
+  const quiet = await tellWaiting(denv);
+  ok(quiet.ok && quiet.told === false && siteCalls.join() === "/desk/orders/last",
+    "a minute with nothing moved reads the marks and nothing else: " + JSON.stringify(siteCalls));
+  const moved = await site("/desk/orders/" + u + "/" + ids[1], { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify({ status: "ready" }) });
+  ok(moved.status === 200, "he marks the agreed order ready");
+  const told = await tellWaiting(denv);
+  ok(told.ok && told.told === true && told.n === 1 && mark().n === 1, "and the next pass tells the site one waits now: " + JSON.stringify([told, mark()]));
+
+  /* ---- Salt Admin's line ---- */
+  const TEAM = "maakmal", AUD = "aud-s9-8", KID = "kid-s9-8";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  const { JSDOM } = await import("jsdom");
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
+    ok(sj.desk && sj.desk.n === 1 && Object.keys(sj.desk).sort().join() === "at,n", "his account list carries the desk's figure and its moment, nothing else: " + JSON.stringify(sj.desk));
+    win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+    } }).window;
+    const line = win.document.getElementById("nDesk");
+    ok(await until(() => !line.hidden && line.textContent === "1 thing waits on the desk.") && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
+      "Needs you says one thing waits on the desk, with no link and no name: " + JSON.stringify(line.textContent));
+  } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
+  const kvd = await worker.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k98" } }), Object.assign({}, denv, { SALT_WRITE_KEY: "k98" }));
+  const rj = await kvd.json();
+  ok(kvd.status === 200 && rj.links === 2, "the desk's own read of the orders carries the links waiting in Salt Admin: " + JSON.stringify(rj.links));
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const holder = w.document.createElement("div"); holder.innerHTML = String(w.eval("tabOrders()")); w.document.body.appendChild(holder);
+    const foot = () => w.document.querySelector(".rail .railfoot").textContent.trim();
+    let answer = { ok: true, orders: [], links: 2 };
+    w.fetch = async () => ({ ok: true, status: 200, json: async () => answer });
+    await w.eval("ordLoad(true)");
+    ok(foot() === "2 links wait in Salt Admin" && !w.document.querySelector(".rail .railfoot a"), "the rail's foot counts them, with no link: " + JSON.stringify(foot()));
+    answer = { ok: true, orders: [], links: 1 }; await w.eval("ordLoad(true)");
+    ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
+    answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
+    ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
 await (async () => {
   /* HIS DECISION OF 18 SEP 2026: Send statement must work from his phone, password and all. The password

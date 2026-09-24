@@ -20,7 +20,7 @@ export const OWNER_JS = `
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), oMore=document.getElementById('oMore'),
       oCards=document.getElementById('oCards'), aopen=document.getElementById('aopen'),
-      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null;
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null;
   /* S9 9.2: FOUR PLACES, Needs you (null), Accounts, Links and More; the report card is a page of More */
   var PLACE={accounts:'accounts', links:'links', more:'more', cards:'more'};
   function panel(which){
@@ -64,7 +64,7 @@ export const OWNER_JS = `
   async function loadSheet(){
     try{
       var j=await refs('/all/sheet');
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds();
       if(aOpen) openCard(aOpen);
@@ -632,6 +632,10 @@ export const OWNER_JS = `
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(turn||fresh.length) add(turn?turnCard():sendNeed(fresh), fresh.length>0);
     setCount('needs', n); setCount('links', links.filter(waitingLink).length);
+    /* S9 9.8: what waits on the desk, as the desk last told the site; a count, with no link and no name */
+    var dw=document.getElementById('nDesk'), dn=deskWait?deskWait.n:0;
+    dw.hidden=!deskWait;
+    document.getElementById('nDeskT').textContent=dn?dn+(dn===1?' thing waits':' things wait')+' on the desk.':'Nothing waits on the desk.';
     nCount.textContent=(!sheet||!linksRead)?'Reading what needs you.'
       :(n?n+(n===1?' thing':' things'):'Nothing needs you')+', as at '+hm(new Date().toISOString())+'.';
   }

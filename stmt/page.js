@@ -253,6 +253,8 @@ body.ended>*:not(#aEnded){display:none}
 .nlist .glink{margin:0}
 .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .nnote:empty{display:none}
+.nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
@@ -429,6 +431,7 @@ const ADMIN_ICONS = {
   accounts: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
   links: '<path d="M10.2 13.8 L13.8 10.2 M8.6 11.4 L6.7 13.3 A3.3 3.3 0 0 0 11.4 18 L13.3 16.1 M10.7 7.9 L12.6 6 A3.3 3.3 0 0 1 17.3 10.7 L15.4 12.6"/>',
   more: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+  desk: '<rect x="3.4" y="5" width="17.2" height="11.6" rx="1.6"/><path d="M9 19.6 H15 M12 16.6 V19.6"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
 const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
@@ -478,6 +481,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div id="nlist" class="nlist"></div>'
+        /* S9 9.8: what waits on the desk, as the desk last told this site: a count, no link and no name */
+        + '<p class="nwait" id="nDesk" hidden>' + aico("desk") + '<span id="nDeskT"></span></p>'
         + "</div>"
         /* S9 9.2: ACCOUNTS, one list for what Send and Review were: found by a word, narrowed by a filter, and a
            row opens the account beside the list from 1080px, in its place below it on a phone */
