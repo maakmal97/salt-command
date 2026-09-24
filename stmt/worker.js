@@ -1275,8 +1275,8 @@ export default {
          having opened the account under the master, so it wraps that key under a token it minted
          and hands over the token and the wrap. This Worker never sees the key and never stores the
          token, only its hash; the finished words and the code are built HERE so the one copy of the
-         message holds. Minted on a tap and never on a draw, or every page load would write a record
-         per account and burn links nobody sent. */
+         message holds. S9 9.3: made as his page opens an account, so its share runs inside the tap; each
+         opening files a record, which lapses in three days or is burnt by Sign out everywhere. */
       const sim = /^\/all\/signin\/([^/]+)$/.exec(p);
       if (sim) {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

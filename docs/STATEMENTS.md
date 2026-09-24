@@ -885,8 +885,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
   `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
-- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). It is minted ON A TAP and never on a draw: drawing
-  Accounts would file a record per account on every page load and burn links nobody sent. His
+- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). Since S9 9.3 it is made AS THE ACCOUNT OPENS, never on a
+  draw of the list, so the tap only shares (the plan's must-not-ship rule): each opening, and from 1080px the
+  account Needs you opens beside itself on every load, files a live three-day record and pointer that nobody may
+  ever be sent, lapsing on its own or burnt by Sign out everywhere. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
   token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
   carry and refuses to hand back a link it could not file. What comes back is the finished message
