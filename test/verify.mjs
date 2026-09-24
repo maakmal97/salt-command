@@ -16446,6 +16446,50 @@ await (async () => {
     "it says the link is not open and whom to ask, with a viewport and the brand faces, never the bare Not found");
   ok(bare[0] !== board.split('nonce="' + nonceOf({ body: board }) + '"').join(""), "and an open link is still its board, the control");
 })();
+section("S8 8.3: the reward line on an associate's card says how to take it, and only where there is some to take");
+await (async () => {
+  /* 24 SEP 2026, stage 8: the line said how much was there to take and never how. Driven on the associate's own
+     page against the real Worker: one book with a reward to take, one held, one with nothing left. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s8-83", u);
+  const day = "2026-09-21";
+  const book = (product, reward) => ({ product, name: "x", unit: "unit",
+    summary: { bought: 150, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward, lines: [{ date: day, kind: "own", qty: 1, rm: 150 }] });
+  const cardDoc = { at: day + "T00:00:00Z", products: [
+    book("salt", { earned: 1.6, taken: 1, left: 0.6, next: 0.4, held: false }),
+    book("oil", { earned: 2, taken: 0, left: 2, next: 0.5, held: true }),
+    book("candy", { earned: 1, taken: 1, left: 0, next: 0.2, held: false })] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  const env = { STMT: kv };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.getElementById("un").value = u; D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with a Card tab");
+    D.getElementById("tCard").click();
+    const pCard = D.getElementById("pCard");
+    const lineOf = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape);
+      const p = h && [...h.closest(".pane").querySelectorAll("p.sub2")].find((x) => /^Reward: /.test(x.textContent)); return p ? p.textContent : ""; };
+    ok(await until(() => lineOf("Cube") && lineOf("Droplet") && lineOf("Lozenge")), "each book's pane carries its reward line");
+    const take = /Ask on any order to take it[.]$/;
+    ok(take.test(lineOf("Cube")) && /^Reward: 0[.]6 unit to take /.test(lineOf("Cube")),
+      "a reward there to take says how to take it: " + JSON.stringify(lineOf("Cube")));
+    ok(!take.test(lineOf("Droplet")) && /Held for now[.]$/.test(lineOf("Droplet")) && !take.test(lineOf("Lozenge")),
+      "and a held reward, or one with nothing left, never invites an ask: " + JSON.stringify([lineOf("Droplet"), lineOf("Lozenge")]));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five

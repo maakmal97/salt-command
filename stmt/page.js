@@ -1037,7 +1037,9 @@ const CLIENT_JS = `
         var rw=p.reward;
         pane.appendChild(el('p','sub2','Reward: '+unitsOf(rw.left,p.unit)+' to take'
           +(rw.earned!==rw.left?' ('+unitsOf(rw.earned,p.unit)+' earned, '+unitsOf(rw.taken,p.unit)+' taken)':'')
-          +(rw.held?'. Held for now.':'.')));
+          +(rw.held?'. Held for now.':'.')
+          /* S8 8.3: and how to take it, which the line never said; only where there is some to take */
+          +(!rw.held&&rw.left>0?' Ask on any order to take it.':'')));
         if(rw.next!=null){
           /* the fill is an <i>, which is what .pbar's own rule paints; a <span> drew an empty rule */
           var bar=el('div','pbar'); var fill=el('i'); fill.style.width=Math.round(rw.next*100)+'%';
