@@ -1,6 +1,6 @@
 {
- "v": "v852",
- "stamped": "25 Sep 2026, 20:02 KL",
+ "v": "v853",
+ "stamped": "25 Sep 2026, 23:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 94
+    "stated": 85
    },
    "spare": {
     "qty": 0,
@@ -5094,8 +5094,8 @@
     "handover": "collected",
     "product": "rice",
     "date": "2026-09-23",
-    "deliveredQty": 1,
-    "deliveredOn": "2026-09-23",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-25",
     "paidOn": "2026-09-23",
     "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open. <b>RICE SELL DATED 23 SEP, COLLECTED AND PAID IN FULL ON THE SAME VISIT AS THE SALT.</b> CM3-OUG took 10 unit for RM50, RM5 a unit, RM50 cash in and 10 unit collected on 23 Sep on his word, so nothing stays open. Costed at RM3.20 a unit from the desk's own inventory cost, RM32 on the goods, RM18 at 36%. The RM50 clears the floor of RM34 and sits under the ask of RM60, with the ceiling at RM102. Flagged: CM3-OUG has no committed rice order on the book, so there is no rate of theirs to compare; the figures do not answer it. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1.",
     "rid": "s195",
@@ -5114,6 +5114,14 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION DATED 24 SEP ON S195, DELIVERED QUANTITY CUT FROM 10 TO 1.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day. The correction moves no cash: it rolls 9 unit back from CM4-TO, the difference it states, and leaves 1 unit handed over. Across 5 orders their median rate is RM52 with a range of RM5 to RM65, nothing outstanding, none defaulted and no unit on credit. On the roster, not an associate. No flag was raised. The 9.5 unit of salt owed out on s194 stays open."
+     },
+     {
+      "date": "2026-09-25",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 9,
+      "cost": 28.8,
+      "note": "<b>FULFILMENT DATED 25 SEP ON S195: 9 UNIT OF RICE MOVED, THE ORDER CLOSES.</b> The target is CM4-TO's rice sell of 23 Sep 2026, 10 unit for RM50 at RM5 a unit, RM50 cash in and paid on the day, cut to 1 unit delivered by the correction of 24 Sep. This hand over moves RM0 and 9 unit against RM0 and 9 unit outstanding, leaving RM0 and 0 unit. Across 5 orders CM4-TO shows a median rate of RM52, range RM5 to RM65, nothing outstanding, 0 unit on credit and none defaulted, on the roster. The drafter flagged full settlement; the figures answer it. No cost sits on this row and the salt inventory is not drawn on."
      }
     ]
    },
@@ -5997,9 +6005,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T12:01:53.130Z",
+  "QUEUE_COMMITTED": "2026-09-25T15:04:51.547Z",
   "PRICING": {
-   "takenAt": "2026-09-25T12:02:32.306Z",
+   "takenAt": "2026-09-25T15:06:35.645Z",
    "sizes": [
     0.5,
     1,
@@ -11749,8 +11757,8 @@
        "shrinkRate": 0.01,
        "avgDel": {
         "n": 2,
-        "kg": 5,
-        "mean": 2.5
+        "kg": 14,
+        "mean": 7
        }
       },
       "policy": {
@@ -12561,11 +12569,11 @@
      "cards": {}
     }
    },
-   "v": "v852"
+   "v": "v853"
   },
   "OPEN": {
-   "at": "2026-09-25T12:02:32.516Z",
-   "count": 9,
+   "at": "2026-09-25T15:06:35.948Z",
+   "count": 8,
    "byKey": {
     "CC5-OKR|2026-09-25|90": {
      "d": "2026-09-25",
@@ -12612,23 +12620,6 @@
      "deliveredOn": "2026-09-23",
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
-    },
-    "CM4-TO|2026-09-23|50": {
-     "d": "2026-09-23",
-     "p": "CM4-TO",
-     "dir": "S",
-     "q": 10,
-     "t": 50,
-     "cash": 50,
-     "mv": 1,
-     "st": "oweStock",
-     "oweUnits": 9,
-     "pr": "rice",
-     "rid": "s195",
-     "paidOn": "2026-09-23",
-     "deliveredOn": "2026-09-23",
-     "handover": "collected",
-     "key": "CM4-TO|2026-09-23|50"
     },
     "CN6-WM|2026-09-19|250": {
      "d": "2026-09-19",
@@ -12747,13 +12738,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 94,
+     "onHand": 85,
      "free": 85,
-     "owedOut": 9,
+     "owedOut": 0,
      "coverDays": 102.4,
      "rate": 0.83,
      "owedToYou": 0,
-     "promised": 9,
+     "promised": 0,
      "short": 0
     },
     "spare": {
@@ -12775,7 +12766,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v852"
+   "v": "v853"
   }
  }
 }
