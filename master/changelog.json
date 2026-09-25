@@ -1,5 +1,15 @@
 [
  {
+  "v": "v869",
+  "d": "26 Sep 2026",
+  "t": "THE PLAN IN VIEW IS KEPT AND THE WEEK'S MONDAY IS WORKED OUT ONCE",
+  "n": [
+   "<b>THE PLAN IN VIEW IS KEPT.</b> Reading another book's restock plan puts back the plans already held once the book in view returns, so the plan in view is not worked out again. Three other books read between reads of the one in view take 3 plans where they took 9, each identical to the plan read fresh.",
+   "<b>MONDAY IS WORKED OUT ONCE.</b> The week's Monday, read by the price sheet and each customer's own rate, is worked out from today's date on the first read and kept. A Today render made about 190 date conversions for it and now makes none, and the Monday does not change.",
+   "<b>NO RULE MOVES.</b> The reorder point is still the engine's, from measured demand, and no price moves."
+  ]
+ },
+ {
   "v": "v868",
   "d": "26 Sep 2026",
   "t": "A RENDER READS THE ACTIONS ONCE AND KEEPS NOTHING",
