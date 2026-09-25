@@ -786,8 +786,8 @@ export default {
      * reading the responses rather than the policy. `GET /drafts` returns each proposed row
      * WITH ITS COST AND MARGIN; `GET /ledger` returns the mirror; `GET /queue` returns every
      * device's pending entries. So the three figures the desk works hardest to keep off the
-     * public payload -- phonePayloadLeaks() bans every per-unit cost from data.json for
-     * exactly this reason -- were being served in full to anyone with the URL.
+     * public payload -- the phone app's leak gate banned every per-unit cost from data.json
+     * for exactly this reason -- were being served in full to anyone with the URL.
      *
      * These three now need the same X-Salt-Key as a write. `/rev`, `/queue/ping` and the
      * static assets stay open: a build id and a liveness probe carry no trade. The site is

@@ -13,8 +13,10 @@
  * name out of actions(), because `revealed` defaults to true since v217. It was the
  * difference between a code and a name on the open web FOR THE APP. It never guarded the
  * desk, which serves cost, margin and the whole P&L at the same public URL, so removing it
- * removes a gate on a road nobody travels rather than a gate on the book. The function is
- * still in the master and still tested; nothing calls it in the build.
+ * removes a gate on a road nobody travels rather than a gate on the book. With nothing left
+ * to call it, the function itself was deleted from the master on 26 Sep 2026. phonePayload()
+ * stays, names forced off while it builds, because tools/book.mjs openSnapshot files the D1
+ * OPEN key from it.
  *
  * WHAT IS LEFT is openMaster(), which is the shared jsdom harness. tools/ledger.mjs reads
  * the ledger declarations out of the global scope through it, the suite runs the desk

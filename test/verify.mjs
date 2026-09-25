@@ -429,6 +429,38 @@ await (async () => {
   }
 })();
 
+section("phonePayload builds with names off, whatever the screen shows, and leaves the screen as it was (26 Sep 2026)");
+await (async () => {
+  /* phonePayloadLeaks() is gone as dead code, so the guard that stays is phonePayload's own: it forces
+     `revealed` off while it builds, because tools/book.mjs openSnapshot files the D1 OPEN key from it and
+     ID() hands back a name whenever the screen shows names. Every code on the book gets an invented name
+     here, and one action titled through ID() is FORCED first on the list, so a build that read names
+     would carry one whatever the book holds that day. */
+  const { openMaster: omN } = await import("../tools/payload.mjs");
+  const { w: wN } = await omN();
+  const rdN = (e) => JSON.parse(wN.eval("JSON.stringify(" + e + ")"));
+  try {
+    const r = rdN(`(function(){
+      var codes={'ZZ9-QXV':1};
+      sales.forEach(function(s){if(s.customer)codes[s.customer]=1;});
+      var ks=Object.keys(codes), map={};
+      ks.forEach(function(c,i){map[c]='Qelvor'+String.fromCharCode(97+i%26)+String.fromCharCode(97+Math.floor(i/26)%26)+'zin';});
+      vaultNames=map; revealed=true;
+      var real=actions;
+      actions=function(){return [{sev:'now',kind:'collect',title:'Chase '+ID('ZZ9-QXV')+' for RM 50',rm:50}].concat(real.apply(this,arguments));};
+      try{
+        var shown=ID('ZZ9-QXV'), p=JSON.stringify(phonePayload());
+        return {shown:shown===map['ZZ9-QXV'], forced:p.indexOf('Chase ZZ9-QXV for RM 50')>=0,
+          named:ks.filter(function(c){return p.indexOf(map[c])>=0;}), after:revealed};
+      }finally{ actions=real; }
+    })()`);
+    ok(r.shown, "the screen shows the invented name, so a build that read the screen would carry it");
+    ok(r.forced, "the payload carries the forced action under its code, not its name");
+    ok(r.named.length === 0, `and no customer's name, across every code the book sells to (${r.named.length} found)`);
+    ok(r.after === true, "and the screen is left showing names, as it was");
+  } finally { try { wN.close(); } catch (e) { /* best effort */ } }
+})();
+
 /* ---- 1c. One surface: the desk is the only cloud copy (v387) --------------------- */
 section("One surface — the desk is the only cloud copy (v387)");
 await (async () => {
@@ -825,10 +857,10 @@ await (async () => {
     const fs2 = await import("node:fs");
     let workerSrc = "";
     for (const f of fs2.readdirSync(join(REPO, "src")).filter((n) => n.endsWith(".js")).sort())
-      workerSrc += f + " " + readFileSync(join(REPO, "src", f), "utf8") + " ";
+      workerSrc += f + "\0" + readFileSync(join(REPO, "src", f), "utf8") + "\0";
     const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
     const recomputed = createHash("sha256")
-      .update(parts.join("__SALT_BUILD_ID__")).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+      .update(parts.join("__SALT_BUILD_ID__")).update("\0sw\0").update(swSrc).update("\0worker\0").update(workerSrc)
       .digest("hex").slice(0, 16);
     ok(recomputed === rev.id, "rev.id reproduces from the build's own inputs by the build's own recipe");
   }
@@ -1058,7 +1090,7 @@ await (async () => {
     body: body(o)
   });
   /* READING A DRAFT NEEDS THE KEY SINCE 20 Aug 2026: the row carries its cost and its margin,
-     which is exactly what phonePayloadLeaks() keeps out of the public payload. */
+     which is exactly what the retired phone app's leak gate kept out of its public payload. */
   const get = (p, key) => req(p, { headers: key ? { "X-Salt-Key": key } : {} });
   const goodDraft = {
     id: "2026-08-14T12:16:00.151Z", collection: "sales",

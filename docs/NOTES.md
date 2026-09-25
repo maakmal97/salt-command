@@ -162,8 +162,9 @@ rewards, the demand turned away, the map's heat), Price, Record (Trade, Amend, S
 Approve. It reads `people` and `forward` from `data.json` and computes nothing; the leak test
 reads those sections as it reads the rest. **What stays off the phone by policy:** cost, margin,
 profit, the P&L, sourcing and the reseller menu. Note that `/desk` serves every one of those at
-the same public URL, so the rule protects nothing while `/desk` is open; lifting it is one line
-in `phonePayloadLeaks()` and is the owner's call, not a default.
+the same public URL, so the rule protects nothing while `/desk` is open; lifting it was one line
+in the leak gate, `phonePayloadLeaks()`, which went with the app and was deleted from the master
+as dead code on 26 Sep 2026.
 
 **The claude.ai mirror is retired.** It was published from the master by Cowork
 (`update_artifact`) into `Artifacts\salt-command\index.html`, and it went when the master moved
@@ -508,7 +509,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
 | `tools/build.mjs` | Master → `public/desk.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
-| `public/rev.json` | `{v,id,built}` for the build on disk. `id` is `sha256` over the PATCHED MASTER (the bytes that become `public/desk.html`, with the id token still in place), then a literal NUL, `sw`, a NUL and `public/sw.js`, then a NUL, `worker`, a NUL and every `src/*.js` sorted and NUL-joined. **The separators are real NUL bytes and print invisibly, which has cost a session before.** It does NOT hash the master separately, and round eight recorded that it omits `public/_headers`, `manifest.webmanifest` and the vendored `chart.umd.js`. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` is `sha256` over the PATCHED MASTER (the bytes that become `public/desk.html`, with the id token still in place), then a literal NUL, `sw`, a NUL and `public/sw.js`, then a NUL, `worker`, a NUL and every `src/*.js` sorted and NUL-joined. **The separators are real NUL bytes**, written as the `\0` escape in build.mjs and the suite since 26 Sep 2026: as raw bytes they printed invisibly, which cost a session before and led a review to read them as spaces. It does NOT hash the master separately, and round eight recorded that it omits `public/_headers`, `manifest.webmanifest` and the vendored `chart.umd.js`. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
 | `src/drafter.js` | The cloud drafter: queue + mirror -> a proposed row in `draft`. Runs on the cron and at `POST /draft-now`. Never writes to `entry`. |

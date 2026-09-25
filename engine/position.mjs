@@ -563,7 +563,7 @@ function ledgerRow(t,dir,defaultProd){
      which is why this costs 2 KB across 125 rows: most rows carry none of them.
 
      TWO ARE DELIBERATELY ABSENT AND MUST STAY ABSENT. `cost` is a per-unit cost, which is the
-     one figure phonePayloadLeaks() bans outright. `note` is prose that quotes lot costs and
+     one figure the phone app's leak gate banned outright. `note` is prose that quotes lot costs and
      margins in words, which is the same ban in a longer form. The phone therefore cannot edit
      those two, and its sheet says so rather than leaving it a mystery: it will not offer to
      replace a value it is not allowed to show you. */

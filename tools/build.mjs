@@ -286,7 +286,10 @@ if (externals.length) {
    ships and changes behaviour belongs in this hash.
    THE SEPARATORS ARE NUL BYTES, not spaces, and that is not decoration: a byte that cannot
    occur in any of these sources is the only separator that makes the concatenation
-   unambiguous, so no edit to one file can ever forge the hash of another. */
+   unambiguous, so no edit to one file can ever forge the hash of another. They are written
+   as the escape "\0", never the raw byte: a raw NUL prints as nothing or as a space, so a
+   review read the old source as spaces and a search took this file for binary. The suite's
+   recipe test writes them the same way, and the id did not move when the bytes became escapes. */
 /* AND THE WORKER ITSELF, added the same day for the same reason. src/worker.js and
    src/drafter.js ship on every deploy and decide what the phone is served and what the cron
    writes; a change to either that did not move this id would sit undeployed while update.mjs
@@ -296,12 +299,12 @@ let workerSrc = "";
 try {
   const dir = resolve(REPO, "src");
   for (const f of readdirSync(dir).filter((n) => n.endsWith(".js")).sort())
-    workerSrc += f + " " + readFileSync(resolve(dir, f), "utf8") + " ";
+    workerSrc += f + "\0" + readFileSync(resolve(dir, f), "utf8") + "\0";
 } catch (e) { /* no src is not a build failure; the assets still deploy */ }
 let swSrc = "";
 try { swSrc = readFileSync(resolve(REPO, "public", "sw.js"), "utf8"); } catch (e) { /* likewise */ }
 const BUILD_ID = createHash("sha256")
-  .update(src).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+  .update(src).update("\0sw\0").update(swSrc).update("\0worker\0").update(workerSrc)
   .digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);
