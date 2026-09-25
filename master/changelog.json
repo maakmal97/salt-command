@@ -1,5 +1,15 @@
 [
  {
+  "v": "v868",
+  "d": "26 Sep 2026",
+  "t": "A RENDER READS THE ACTIONS ONCE AND KEEPS NOTHING",
+  "n": [
+   "<b>ONE READ A RENDER.</b> A render opens one memo and drops it when it ends, an error included, so Today works out every book's actions once and each book's approach split once, where the Today tab and the badge each asked.",
+   "<b>TODAY DRAWS IN UNDER HALF THE TIME.</b> Measured on the live book, the approach split is worked out 4 times where it was 20, the actions once where twice, and Today's render takes 101 ms where it took 226 ms.",
+   "<b>NOTHING OUTLIVES THE RENDER.</b> A read outside one, a tap, a load's continuation or a chart drawn once its script arrives, works afresh, and a name Today drew while the vault was open is gone after the lock."
+  ]
+ },
+ {
   "v": "v867",
   "d": "26 Sep 2026",
   "t": "A LOST STAGE DISPATCH IS RUNG AGAIN",

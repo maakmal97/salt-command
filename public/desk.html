@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="42aa9c3b6c44b419";
+var SALT_BUILD_ID="2c2da192a7d7c6fc";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8481,7 +8481,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v867","d":"26 Sep 2026","t":"A LOST STAGE DISPATCH IS RUNG AGAIN","n":["<b>A LOST DISPATCH IS RUNG AGAIN.</b> While an approved row waits uncommitted, the desk's minute cron dispatches the stage again at 15, 30 and 60 minutes after the newest approval, once a rung.","<b>THE TRY IS MARKED FIRST.</b> The mark is written before each dispatch, so a failed or refused dispatch still counts. After the third the cron is silent and the hourly net stands.","<b>A NEWER APPROVAL STARTS AGAIN.</b> Committed, rejected and pending rows never ring it, and neither does the morning cron.","<b>THE HOURLY NET MOVES TO :23.</b> Away from GitHub's top-of-hour load, where a scheduled run is delayed or dropped, and clear of the desk's quarter-hour drafter net."]}];
+const evolution=[{"v":"v868","d":"26 Sep 2026","t":"A RENDER READS THE ACTIONS ONCE AND KEEPS NOTHING","n":["<b>ONE READ A RENDER.</b> A render opens one memo and drops it when it ends, an error included, so Today works out every book's actions once and each book's approach split once, where the Today tab and the badge each asked.","<b>TODAY DRAWS IN UNDER HALF THE TIME.</b> Measured on the live book, the approach split is worked out 4 times where it was 20, the actions once where twice, and Today's render takes 101 ms where it took 226 ms.","<b>NOTHING OUTLIVES THE RENDER.</b> A read outside one, a tap, a load's continuation or a chart drawn once its script arrives, works afresh, and a name Today drew while the vault was open is gone after the lock."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8596,7 +8596,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 05:29 KL';
+const LAST_UPDATED='26 Sep 2026, 06:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11020,7 +11020,18 @@ function tabOverview(){
 /* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (spare, 23 Sep) */
 function liveBooks(){return PROD_IDS.filter(p=>pSales(p).length||pPurch(p).length);}
 function eachBook(fn){const keep=PROD,out={};try{liveBooks().forEach(p=>{PROD=p;recompute();out[p]=fn(p);});}finally{PROD=keep;recompute();}return out;}
-function allActions(){
+/* THE RENDER'S MEMO (fold 4.1, 26 Sep 2026). One Today render ran allActions twice (tabToday, then navCounts for the
+   badge) and approachSplit twenty times across four books: 2 and 20 calls, about 170 of its 230 ms, measured in jsdom.
+   render() opens RENDER_MEMO and closes it in a finally, so a read inside one render is made once and reused, and a
+   read outside a render (a tap, apLoad's or ordLoad's continuation, a chart drawn after the script loads, the suite, a
+   tool) computes fresh. Nothing inside a render changes the book, the vault, a filter or storage, and render() is
+   synchronous, so there is nothing to invalidate. NOTHING SURVIVES THE RENDER, because actions() carries ID() text:
+   names while the vault is open, and the lock is lockVault(); render(). A reader whose answer moves with the book in
+   view keys by PROD, as approachSplit does; allActions walks every book and puts PROD back, so it needs no key. */
+let RENDER_MEMO=null;
+function renderMemo(k,f){if(!RENDER_MEMO)return f();return (k in RENDER_MEMO)?RENDER_MEMO[k]:(RENDER_MEMO[k]=f());}
+function allActions(){return renderMemo('all',allActionsNow);}
+function allActionsNow(){
   const per=eachBook(()=>actions()),ids=Object.keys(per),seen={},list=[];
   ids.forEach(p=>per[p].forEach(x=>{const k=[x.sev,x.kind,x.title,x.rm,x.why].join('|');
     if(seen[k])seen[k].books.push(p);else{seen[k]=Object.assign({},x,{books:[p]});list.push(seen[k]);}}));
@@ -18003,7 +18014,9 @@ function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;co
    An associate and their -R bucket are one person (the 13 Sep ruling): owner codes, nextBest(id,true), and a bucket's debt
    is added to its owner's. A party written off, banned or departed is not approached. The RM sums are made here once, so
    no reader adds its own. */
-function approachSplit(){
+/* read once per book in view inside a render (RENDER_MEMO), since it reads arList and outstandingOf, which recompute() sets per PROD */
+function approachSplit(){return renderMemo('split|'+PROD,approachSplitNow);}
+function approachSplitNow(){
   const MS=86400000, iso=d=>d.toISOString().slice(0,10), plus=(s,n)=>new Date(new Date(s).getTime()+n*MS);
   const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
   const sum=(l,f)=>+l.reduce((a,x)=>a+f(x),0).toFixed(2);
@@ -23496,7 +23509,8 @@ function railSubs(){
     const cur=partOf(V.id);
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
-function render(){recompute();
+function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
+function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const part=partOf(V.id), all=[V.lead].concat(V.parts);
