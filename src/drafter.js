@@ -1598,6 +1598,22 @@ async function queueEntries(env, keysRead) {
   return byAt;
 }
 
+/* ---- WHICH QUEUED ENTRIES ARE DRAFTED, read by id (26 Sep 2026, fold 5.7 of the streamlining plan) ----------
+ * A pass asked for every id in the draft table, and a draft is kept for good, so each pass read every draft there
+ * has ever been to learn about the few entries its queue holds: D1 bills the rows a query reads. It now reads those
+ * entries' ids alone, by primary key, a hundred to a query (D1 takes at most 100 bound parameters). The answer is
+ * the same for every entry a pass asks about, and it is still read once, before the pass drafts anything. */
+const BY_ID = 100;
+export async function draftedOf(db, ats) {
+  const known = new Set();
+  for (let i = 0; i < ats.length; i += BY_ID) {
+    const part = ats.slice(i, i + BY_ID);
+    const rs = await db.prepare("SELECT id FROM draft WHERE id IN (" + part.map((_, j) => "?" + (j + 1)).join(",") + ")").bind(...part).all();
+    for (const r of rs.results || []) known.add(r.id);
+  }
+  return known;
+}
+
 /* ---- a dry run ----------------------------------------------------------------------- */
 /* The same decisions, stored nowhere. This is how the drafter is proved against the real book
  * without putting a row in front of anyone: it returns exactly what it WOULD write. */
@@ -1607,8 +1623,7 @@ export async function dryRunDrafter(env) {
   const byAt = await queueEntries(env);
   const book = await readBook(env.SALT_LEDGER);
   const mark = book.state && book.state.QUEUE_COMMITTED;
-  const seen = await env.SALT_LEDGER.prepare("SELECT id FROM draft").all();
-  const already = new Set((seen.results || []).map((r) => r.id));
+  const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
   const out = { ok: true, dry: true, mirror: book.version, pricingAt: book.pricing && book.pricing.v, would: [], skipped: [], already: 0, committed: 0 };
   for (const at of [...byAt.keys()].sort()) {
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
@@ -1748,8 +1763,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
      stay queued and the next pass, the quarter-hour net at the latest, drafts them against the whole book. */
   if (book.version == null) return { ok: false, transition: true, error: "the mirror carries no snapshot, so it is being seeded or was never seeded; nothing is drafted until it is" };
   const mark = book.state && book.state.QUEUE_COMMITTED;
-  const seen = await env.SALT_LEDGER.prepare("SELECT id FROM draft").all();
-  const already = new Set((seen.results || []).map((r) => r.id));
+  const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
 
   /* SELF-CLEANING, and it runs before anything else, so nobody has to tidy up and a stale refusal
      cannot accumulate into a list people learn to ignore. v586, HIS DECISION OF 11 SEP 2026: A
@@ -1769,7 +1783,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   /* 08 Sep 2026: A FOLD'S OWN NOTICE RETIRES WITH THE NEXT FOLD. foldcall and the suite write
      refusals under "fold:<id>" and "suite:<id>", which sort above every ISO id, so the rule above
      never touches them and a failure notice stayed on the phone for good. One is stale once a draft
-     has been committed after it was written. */
+     has been committed after it was written. The newest commit is one entry of `draft_committed`
+     (migrations/0012), never a read of every draft. */
   const lastCommit = await env.SALT_LEDGER.prepare("SELECT MAX(committed_at) AS t FROM draft").first();
   if (lastCommit && lastCommit.t)
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE (id LIKE 'fold:%' OR id LIKE 'suite:%') AND seen_at<?1").bind(lastCommit.t).run();

@@ -30764,7 +30764,7 @@ await (async () => {
 section("Fold 1.4: a draft is counted only when this pass made its row, so a row another pass made first wakes nobody");
 await (async () => {
   /* D4 OF THE STREAMLINING PLAN (26 Sep 2026). runDrafter counted every INSERT OR IGNORE as drafted, made or not.
-     Another pass can insert the same id between this pass's SELECT id FROM draft and its INSERT: a tap and the
+     Another pass can insert the same id between this pass's read of which ids exist and its INSERT: a tap and the
      quarter-hour, or the minute cron at another location reading a queue up to a minute stale. D1 ignored the
      second insert, the count still said 1, and the net woke him for a row his own tap had just made. Driven on the
      real migrations in node:sqlite, the one stand-in whose INSERT reports what it really changed (the regex mocks
@@ -30791,7 +30791,7 @@ await (async () => {
     db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'vQ',NULL)").run();
     /* THE RACE: the other pass's row lands the moment this pass has read which ids exist, and not before */
     const waiting = (plant || []).slice();
-    const D1 = { prepare(sql) { const st = db.prepare(sql), snap = sql.trim() === "SELECT id FROM draft";
+    const D1 = { prepare(sql) { const st = db.prepare(sql), snap = sql.trim().startsWith("SELECT id FROM draft WHERE id IN (");   /* fold 5.7: the read is by id */
       const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
         first() { const r = st.get(...a); return r === undefined ? null : r; },
         all() { const results = st.all(...a);
@@ -30845,6 +30845,147 @@ await (async () => {
   ok(nFresh.ran && nFresh.ran.drafted === 1 && nFresh.pushed === 1 && nMixed.ran && nMixed.ran.drafted === 1 && nMixed.ran.raced === 1 && nMixed.pushed === 1,
     "while a row it made itself wakes him once, alone or beside a race and a refusal: "
     + JSON.stringify({ fresh: nFresh.pushed, mixed: nMixed.pushed, ran: nMixed.ran && say(nMixed.ran) }));
+})();
+
+section("Fold 5.7: the drafter reads the draft table by id, and the committed_at reads go through an index, with the same answers");
+await (async () => {
+  /* PHASE 5 OF THE STREAMLINING PLAN (26 Sep 2026). D1 bills the rows a query reads, and a draft is kept for good. Every
+     drafter pass read every id in the draft table to learn about the few entries its queue holds, and the whole table again
+     for the newest commit; the Approve view's clock read and sorted the whole table; and the minute cron's re-dispatch
+     ladder read every approved row to find the few with no commit. The drafter now reads its queue's ids by primary key,
+     a hundred to a query, and migrations/0012 adds draft_committed and draft_status_committed. Driven on the real
+     migrations in node:sqlite, every read of the draft table planned with EXPLAIN QUERY PLAN as it runs, and each answer
+     held against the old read on a store as it stood before the fold. Invented codes and ids only. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the draft table's reads were not planned against the real schema"); return; }
+  const { runDrafter, dryRunDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default;
+  const NEW = "0012_draft_reads.sql", BYID = "SELECT id FROM draft WHERE id IN (", MARK = "2026-08-20T00:00:00.000Z";
+  const files = readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort();
+  const T = (base, min) => new Date(Date.parse(base) + min * 60000).toISOString();
+  const book = {
+    pricing: { v: "vR", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    purchases: [{ date: "2026-08-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    sales: [{ date: "2026-08-01", customer: "CQ7-ZUV", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    state: { roster: ["CQ7-ZUV", "SQ2-VOX"], QUEUE_COMMITTED: MARK }
+  };
+  /* 260 drafts approved and folded, committed out of id order so the newest commit is not the newest id; three approved
+     and waiting for the fold; four pending; three rejected */
+  const DONE = Array.from({ length: 260 }, (_, i) => ({ id: T("2026-08-01T00:00:00.000Z", i), status: "approved",
+    decided: T("2026-08-02T00:00:00.000Z", i), committed: T("2026-08-03T00:00:00.000Z", (i * 37) % 260) }));
+  const WAIT = [0, 1, 2].map((i) => ({ id: T("2026-08-21T00:00:00.000Z", i), status: "approved", decided: T("2026-09-21T01:00:00.000Z", i * 5) }));
+  const PEND = [0, 1, 2, 3].map((i) => ({ id: T("2026-08-22T00:00:00.000Z", i), status: "pending" }));
+  const REJ = [0, 1, 2].map((i) => ({ id: T("2026-08-23T00:00:00.000Z", i), status: "rejected", decided: T("2026-08-24T00:00:00.000Z", i) }));
+  /* a mirror holding them, on every migration or on every one but `without` */
+  const store = (without) => {
+    const db = new DatabaseSync(":memory:");
+    for (const f of files.filter((x) => x !== without)) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    for (const c of ["sales", "purchases"]) book[c].forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run(c, i, c + i, JSON.stringify(r)));
+    for (const [k, v] of Object.entries(Object.assign({ PRICING: book.pricing }, book.state))) db.prepare("INSERT INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(v));
+    db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'vR',NULL)").run();
+    for (const r of [...DONE, ...WAIT, ...PEND, ...REJ]) db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at,decided_at,committed_at) "
+      + "VALUES (?,?,'sales','{}','{}','fixture','cloud-drafter',?,?,?)").run(r.id, r.status, r.id, r.decided || null, r.committed || null);
+    return db;
+  };
+  /* the D1 stand-in plans every read of the draft table as it runs; `old` answers the by-id read the way the drafter
+     asked before the fold, with every id in the table. A READ OF THE WHOLE TABLE is a plan that scans it, or a program
+     that starts a pass at the first entry (Rewind) of the table or of one of its indexes. The plan alone does not show
+     it: MAX(committed_at) over an index that does not lead with committed_at is planned as a SEARCH and reads every entry. */
+  const asD1 = (db, reads, old) => ({ prepare(sql) {
+    const q = old && sql.trim().startsWith(BYID) ? "SELECT id FROM draft" : sql, st = db.prepare(q);
+    const mk = (a0) => { const a = q === sql ? a0 : [];
+      const note = () => { if (!reads || !/\bFROM draft\b/.test(q)) return;
+        const roots = new Set(db.prepare("SELECT rootpage FROM sqlite_master WHERE tbl_name='draft'").all().map((r) => r.rootpage));
+        const ops = db.prepare("EXPLAIN " + q).all(...a), cur = new Set(ops.filter((o) => o.opcode === "OpenRead" && roots.has(o.p2)).map((o) => o.p1));
+        reads.push({ sql: q.replace(/\s+/g, " ").trim(), n: a.length, plan: db.prepare("EXPLAIN QUERY PLAN " + q).all(...a).map((r) => r.detail),
+          rewind: ops.some((o) => o.opcode === "Rewind" && cur.has(o.p1)) }); };
+      return { run() { note(); const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { note(); const r = st.get(...a); return r === undefined ? null : r; },
+        all() { note(); return { results: st.all(...a) }; } }; };
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } });
+  const wholeOf = (reads) => reads.filter((x) => x.rewind || x.plan.some((l) => /^SCAN draft\b/.test(l)))
+    .map((x) => x.sql.slice(0, 70) + " | " + x.plan.join(" / ") + (x.rewind ? " | from the first entry" : ""));
+
+  /* ---- THE DRAFTER: 131 queued entries, past one query of a hundred ids ---- */
+  const sale = (at, date, qty) => ({ at, payload: { mode: "new", direction: "SELL", party: "CQ7-ZUV", qty, total: 90, cash: 90, kg: qty, date, product: "salt" } });
+  const Q = [...DONE.slice(0, 118).map((r) => sale(r.id, "2026-08-02", 1)), ...WAIT.map((r) => sale(r.id, "2026-08-21", 1)), ...PEND.map((r) => sale(r.id, "2026-08-22", 1)),
+    sale("2026-08-19T00:00:00.000Z", "2026-08-19", 1),   /* stamped before the mark and known to no draft: drafted, never dropped */
+    sale("2026-08-25T00:00:00.000Z", "2026-08-25", 1), sale("2026-08-25T00:00:01.000Z", "2026-08-26", 1), sale("2026-08-25T00:00:02.000Z", "2026-08-27", 1),
+    sale("2026-08-25T00:00:03.000Z", "2026-08-28", 0)];   /* a zero: refused */
+  const FOLDED = sale(DONE[200].id, "2026-08-02", 1);   /* a site stage the fold has landed, on its own key: pruned */
+  const queued = async () => { const kv = new KV();
+    await kv.put("q:phone", JSON.stringify({ device: "phone", queue: Q }));
+    await kv.put("q:orders:" + FOLDED.at, JSON.stringify({ device: "orders", queue: [FOLDED] }));
+    return kv; };
+  const pass = async (db, reads, old) => {
+    const kv = await queued();
+    const r = await runDrafter({ SALT_QUEUE: kv, SALT_LEDGER: asD1(db, reads, old) }, { now: () => "2026-09-26T02:00:00.000Z" });
+    return { r, kept: (await kv.list({ prefix: "q:" })).keys.map((k) => k.name),
+      drafts: db.prepare("SELECT id,status,collection,row,flags,drafted_at,decided_at,committed_at FROM draft ORDER BY id").all(),
+      refused: db.prepare("SELECT id,why,seen_at FROM refused ORDER BY id").all() };
+  };
+  const readsP = [], now = await pass(store(), readsP), was = await pass(store(NEW), null, true);
+  const byId = readsP.filter((x) => x.sql.startsWith(BYID));
+  ok(now.r.ok && byId.length === 2 && byId[0].n === 100 && byId[1].n === 31 && readsP.some((x) => /MAX\(committed_at\)/.test(x.sql)) && wholeOf(readsP).length === 0,
+    "a drafter pass over 131 queued entries and 270 drafts reads the draft table by primary key, a hundred ids to a query, and its newest commit through an index, never the whole table: "
+    + JSON.stringify({ byId: byId.map((x) => x.n), whole: wholeOf(readsP) }));
+  const say = (r) => JSON.stringify({ considered: r.considered, committed: r.committed, already: r.already, drafted: r.drafted, raced: r.raced, skipped: r.skipped.length, pruned: r.pruned });
+  ok(now.r.ok && now.r.committed === 119 && now.r.already === 7 && now.r.drafted === 4 && now.r.raced === 0 && now.r.skipped.length === 1 && now.r.pruned === 1
+    && JSON.stringify(now.r) === JSON.stringify(was.r) && JSON.stringify(now.kept) === JSON.stringify(was.kept)
+    && JSON.stringify(now.drafts) === JSON.stringify(was.drafts) && JSON.stringify(now.refused) === JSON.stringify(was.refused),
+    "and it decides what the whole-table read decided on the same mirror: each entry committed, already drafted, drafted or refused alike, and the same stage pruned: "
+    + JSON.stringify({ now: say(now.r), was: say(was.r) }));
+  /* the dry run asks the same question the same way */
+  const dry = async (db, reads, old) => dryRunDrafter({ SALT_QUEUE: await queued(), SALT_LEDGER: asD1(db, reads, old) });
+  const readsD = [], dNow = await dry(store(), readsD), dWas = await dry(store(NEW), null, true);
+  ok(dNow.ok && dNow.committed === 119 && dNow.already === 7 && dNow.would.length === 4 && dNow.skipped.length === 1 && JSON.stringify(dNow) === JSON.stringify(dWas)
+    && readsD.filter((x) => x.sql.startsWith(BYID)).length === 2 && wholeOf(readsD).length === 0,
+    "and the dry run reads the same ids by primary key and would draft what the whole-table read would: "
+    + JSON.stringify({ committed: dNow.committed, already: dNow.already, would: dNow.would.length, same: JSON.stringify(dNow) === JSON.stringify(dWas), whole: wholeOf(readsD) }));
+
+  /* ---- THE APPROVE VIEW'S CLOCK: the newest committed row ---- */
+  const get = async (db, reads) => {
+    const env = { SALT_LEDGER: asD1(db, reads), SALT_QUEUE: new KV(), SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0" };
+    const r = await deskW.fetch(new Request("https://salt-command.example/drafts", { headers: { "X-Salt-Key": "k-fixture" } }), env, { waitUntil() {} });
+    return r.json();
+  };
+  const readsG = [], gNew = await get(store(), readsG), gOld = await get(store(NEW));
+  const newest = DONE.reduce((a, r) => (r.committed > a.committed ? r : a));
+  const clock = readsG.find((x) => /ORDER BY committed_at DESC LIMIT 1/.test(x.sql));
+  ok(gNew.ok && gNew.count === 4 && gNew.clock && gNew.clock.id === newest.id && gNew.clock.committedAt === newest.committed && JSON.stringify(gNew) === JSON.stringify(gOld)
+    && clock && clock.plan.length === 1 && /^SEARCH draft USING (COVERING )?INDEX draft_committed\b/.test(clock.plan[0]) && wholeOf(readsG).length === 0,
+    "the pending list's clock names the newest commit, not the newest id, from one index entry, and answers as the store before the fold did: "
+    + JSON.stringify({ clock: gNew.clock && gNew.clock.id, want: newest.id, plan: clock && clock.plan, whole: wholeOf(readsG) }));
+
+  /* ---- THE MINUTE CRON'S LADDER: approved, not committed ---- */
+  const tick = async (db, reads) => {
+    const kv = new KV(), env = { SALT_LEDGER: asD1(db, reads), SALT_QUEUE: kv, REQUIRE_ACCESS: "0", SALT_GITHUB_TOKEN: "ghp-test" };
+    const realF = globalThis.fetch, realL = console.log, waits = []; let hits = 0;
+    globalThis.fetch = async (u) => { if (/\/actions\/workflows\/cloud-commit\.yml\/dispatches$/.test(String(u))) { hits++; return new Response(null, { status: 204 }); }
+      return new Response("{}", { status: 404 }); };
+    console.log = () => {};
+    try {   /* 16 minutes after the newest approval, off the quarter-hour */
+      await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-21T01:26:00.000Z") }, env, { waitUntil: (p) => waits.push(p) });
+      for (let n = -1; n !== waits.length;) { n = waits.length; await Promise.allSettled(waits); }
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    return { hits, mark: await kv.get("stage:redispatch", "json") };
+  };
+  const readsT = [], tNew = await tick(store(), readsT), tOld = await tick(store(NEW));
+  const ladder = readsT.filter((x) => /MAX\(decided_at\)/.test(x.sql) && /status='approved' AND committed_at IS NULL/.test(x.sql));
+  ok(tNew.hits === 1 && tNew.mark && tNew.mark.newest === WAIT[2].decided && tNew.mark.tries === 1 && JSON.stringify(tNew) === JSON.stringify(tOld)
+    && ladder.length === 1 && ladder[0].plan.length === 1 && /^SEARCH draft USING (COVERING )?INDEX \w+ \(status=\? AND committed_at=\?\)$/.test(ladder[0].plan[0]),
+    "the minute cron's ladder reads only the approved rows with no commit, through an index on both, and rings as the store before the fold did: "
+    + JSON.stringify({ now: tNew, was: tOld, plan: ladder.map((x) => x.plan) }));
+
+  /* ---- THE FILE, applied alone to a live mirror, and again ---- */
+  const live = store(NEW), rowsOf = (db) => JSON.stringify(db.prepare("SELECT * FROM draft ORDER BY id").all());
+  const before = rowsOf(live), sqlNew = readFileSync(join(REPO, "migrations", NEW), "utf8");
+  let twice = null;
+  try { live.exec(sqlNew); live.exec(sqlNew); twice = true; } catch (e) { twice = String((e && e.message) || e); }
+  const idx = live.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='draft' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name);
+  ok(twice === true && rowsOf(live) === before && JSON.stringify(idx) === JSON.stringify(["draft_amends", "draft_committed", "draft_status", "draft_status_committed"]),
+    "migrations/0012 applied alone to a mirror holding rows, and applied again, keeps every row and every index and adds the two: " + JSON.stringify({ twice, idx }));
 })();
 
 section("Fold 2.2: the re-seed skips a book the mirror already carries, and nothing drafts while the mirror has no snapshot");

@@ -208,6 +208,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
   file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops
   rows. Newest rebuild: `migrations/0010`; `0011` adds `preapproval`, applied alone the same way.
+  `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`: a rebuild drops them and
+  must create them again. The drafter reads its queue's ids by primary key, never the whole table.
 - **Cowork:** Salt left Cowork on 20 Aug 2026. `salt-daily-price-brief` and
   `salt-monthly-statements` may still fire from Cowork's registry (`Scheduled\README.md`), which
   Code cannot see: retiring them is his.

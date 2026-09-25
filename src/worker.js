@@ -469,7 +469,8 @@ async function handleDraftsGet(env, url) {
   }
   /* v519: THE CLOCK RIDES ALONG. The last committed draft's three timestamps, so the Approve
      view can say how long the last tap took to reach the phone without a second round trip
-     and without reading every approved row there has ever been. Pending view only. */
+     and without reading every approved row there has ever been: one entry of `draft_committed`
+     (migrations/0012), where it read and sorted the whole table before. Pending view only. */
   let clock = null;
   if (want === "pending" && !uncommitted) {
     try {
@@ -567,7 +568,9 @@ function stageOnApproval(env, ctx) {
  * fold refuses stays approved and uncommitted for good, and nothing may ring for ever over it.
  * A newer approval starts the ladder again. The healthy chain takes about 8 minutes plus its
  * queue, so the first rung at 15 seldom rings a chain that is merely slow; if it does, the extra
- * run waits behind it on the lock, finds nothing to stage and deploys nothing. */
+ * run waits behind it on the lock, finds nothing to stage and deploys nothing. It runs every
+ * minute, so it reads through `draft_status_committed` (migrations/0012): the uncommitted approved
+ * rows alone, never every approved row there has ever been. */
 const REDISPATCH_KEY = "stage:redispatch";
 const REDISPATCH_MIN = [15, 30, 60];
 async function redispatchStale(env, ctx, now) {
