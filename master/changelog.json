@@ -1,5 +1,14 @@
 [
  {
+  "v": "v857",
+  "d": "26 Sep 2026",
+  "t": "A CORRECTION THAT SENDS GOODS OUT AND LEAVES THE RM130 STANDING",
+  "n": [
+   "<b>FOLDED: ONE CORRECTION ON s202, CR3-DAM.</b> The patch sets deliveredQty from 0 to 1.5, deliveredOn from unset to 26 Sep 2026 and handover from unset to collected, preapproved by phone. No cash moves, so the order of 1.5 unit for RM130 dated 25 Sep goes from acknowledged and pending to fully handed over and fully unpaid. The rate of RM86.67 a unit sits above their median of RM80 and inside their range of RM80 to RM92.50.",
+   "<b>WHAT THE INVENTORY DID AND WHAT IS UNUSUAL.</b> The shelf rolls out 1.5 unit to CR3-DAM, the difference the correction states, leaving 27 against a reorder mark of 28.2. The drafter flagged RM48 a unit as a blend across more than one lot rate, and these figures do not settle it; replacement stands at RM51. The drafter also flagged the advance: with RM155 outstanding before, no cap figure is on file to check it against."
+  ]
+ },
+ {
   "v": "v856",
   "d": "26 Sep 2026",
   "t": "ONE UNIT OUT AT FULL RATE, THE BLEND STILL UNANSWERED",

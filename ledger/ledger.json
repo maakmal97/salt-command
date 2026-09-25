@@ -1,6 +1,6 @@
 {
- "v": "v856",
- "stamped": "26 Sep 2026, 00:38 KL",
+ "v": "v857",
+ "stamped": "26 Sep 2026, 00:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 27,
+  "STATED_STOCK": 25.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-24",
@@ -5281,9 +5281,29 @@
     "total": 130,
     "cash": 0,
     "date": "2026-09-25",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 25 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID, NOTHING MOVED.</b> Booked to CR3-DAM from the statements site, order 20260925115016-gqlz1q, 1.5 unit for RM130 at RM86.67 a unit, to collect, RM0 in and 0 unit out, so the whole RM130 stands open. Costed at RM48 a unit from the desk's own inventory cost, RM58 on the goods at 44.6%. The total clears the RM85.07 floor for 1.5 unit and sits RM80 under the RM210 ask, ceiling RM230. Across 16 orders their median rate is RM80, range RM80 to RM92.50, RM25 outstanding, none defaulted, 0.27 unit on credit against a cap of 2. An associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
-    "rid": "s202"
+    "deliveredQty": 1.5,
+    "note": "<b>AMENDED 26 SEP: HANDED OVER IN FULL, PAID NOTHING.</b> <b>CORRECTION ON s202: 1.5 UNIT COLLECTED 26 SEP, NOT A SEN IN.</b> Against CR3-DAM's SELL of 1.5 unit for RM130 dated 25 Sep 2026, order 20260925115016-gqlz1q, at RM86.67 a unit. The patch moves deliveredQty 0 to 1.5, deliveredOn unset to 26 Sep 2026 and handover unset to collected, preapproved by phone. Cash stays at RM0, so the whole RM130 stands open as an advance on top of RM155 outstanding, 0.27 unit on credit before this, none defaulted on 17 orders. Median rate RM80, range RM80 to RM92.50. Associate, on the roster. Costed at RM48 a unit, the desk's own inventory cost; the drafter flagged that RM48 is a blend across lot rates and the credit cap needs checking, and these figures settle neither. <b>SALT SELL DATED 25 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID, NOTHING MOVED.</b> Booked to CR3-DAM from the statements site, order 20260925115016-gqlz1q, 1.5 unit for RM130 at RM86.67 a unit, to collect, RM0 in and 0 unit out, so the whole RM130 stands open. Costed at RM48 a unit from the desk's own inventory cost, RM58 on the goods at 44.6%. The total clears the RM85.07 floor for 1.5 unit and sits RM80 under the RM210 ask, ceiling RM230. Across 16 orders their median rate is RM80, range RM80 to RM92.50, RM25 outstanding, none defaulted, 0.27 unit on credit against a cap of 2. An associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
+    "rid": "s202",
+    "deliveredOn": "2026-09-26",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-26: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-09-26; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-09-25",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s202: 1.5 UNIT COLLECTED 26 SEP, NOT A SEN IN.</b> Against CR3-DAM's SELL of 1.5 unit for RM130 dated 25 Sep 2026, order 20260925115016-gqlz1q, at RM86.67 a unit. The patch moves deliveredQty 0 to 1.5, deliveredOn unset to 26 Sep 2026 and handover unset to collected, preapproved by phone. Cash stays at RM0, so the whole RM130 stands open as an advance on top of RM155 outstanding, 0.27 unit on credit before this, none defaulted on 17 orders. Median rate RM80, range RM80 to RM92.50. Associate, on the roster. Costed at RM48 a unit, the desk's own inventory cost; the drafter flagged that RM48 is a blend across lot rates and the credit cap needs checking, and these figures settle neither."
+     }
+    ],
+    "cost": 72
    },
    {
     "customer": "CA2-SEN",
@@ -6047,9 +6067,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T16:37:29.120Z",
+  "QUEUE_COMMITTED": "2026-09-25T16:39:07.549Z",
   "PRICING": {
-   "takenAt": "2026-09-25T16:38:51.208Z",
+   "takenAt": "2026-09-25T16:44:04.848Z",
    "sizes": [
     0.5,
     1,
@@ -6460,11 +6480,11 @@
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
-      "orders": 16,
+      "orders": 17,
       "tenureDays": 89,
-      "sinceLastDays": 4,
-      "perMonth": 5.47,
-      "smallShare": 0.81,
+      "sinceLastDays": 1,
+      "perMonth": 5.81,
+      "smallShare": 0.76,
       "bigShare": 0.06,
       "late": 0,
       "frequent": true,
@@ -7244,15 +7264,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.32786885245901637
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07471789611116293,
        "avgDel": {
-        "n": 170,
-        "kg": 430.45,
-        "mean": 2.5321
+        "n": 171,
+        "kg": 431.95,
+        "mean": 2.526
        }
       },
       "policy": {
@@ -12611,10 +12631,10 @@
      "cards": {}
     }
    },
-   "v": "v856"
+   "v": "v857"
   },
   "OPEN": {
-   "at": "2026-09-25T16:38:51.363Z",
+   "at": "2026-09-25T16:44:05.061Z",
    "count": 9,
    "byKey": {
     "CC5-OKR|2026-09-25|90": {
@@ -12640,12 +12660,15 @@
      "q": 1.5,
      "t": 130,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1.5,
+     "st": "dueMoney",
      "oweRM": 130,
-     "oweUnits": 1.5,
      "rid": "s202",
-     "key": "CR3-DAM|2026-09-25|130"
+     "deliveredOn": "2026-09-26",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-25|130",
+     "age": 1,
+     "exp": 130
     },
     "CA2-SEN|2026-09-25|750": {
      "d": "2026-09-25",
@@ -12761,13 +12784,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 27,
-     "free": 5,
+     "onHand": 25.5,
+     "free": 3.5,
      "owedOut": 22,
-     "coverDays": 1.3,
+     "coverDays": 1,
      "rate": 5.89,
-     "owedToYou": 350,
-     "promised": 23.5,
+     "owedToYou": 480,
+     "promised": 22,
      "short": 0
     },
     "oil": {
@@ -12822,7 +12845,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v856"
+   "v": "v857"
   }
  }
 }
