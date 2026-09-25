@@ -1,5 +1,16 @@
 [
  {
+  "v": "v864",
+  "d": "26 Sep 2026",
+  "t": "THE SITE'S QUEUE TAKES ONE KEY AN ENTRY",
+  "n": [
+   "<b>ONE KEY A STAGE.</b> Each stage a site order sends to the book is queued under a key of its own, so two roads queueing at once can no longer erase each other's entry.",
+   "<b>THE OLD QUEUE IS READ, NEVER ADDED TO.</b> The drafter takes out every entry the fold has passed and logs how many the old queue still holds.",
+   "<b>THE OLD QUEUE IS RETIRED ONLY EMPTY.</b> <code>node tools/drain.mjs --retire-orders-blob</code> deletes it once it holds nothing, and refuses while it holds anything.",
+   "<b>NO NEW STAGE TAKES A DRAFTED ID.</b> A clash of moments is checked against the old queue and the draft table as well, so a new stage never lands on the id of one already drafted."
+  ]
+ },
+ {
   "v": "v863",
   "d": "26 Sep 2026",
   "t": "THE MIRROR IS SEEDED ONLY WHEN THE BOOK MOVES",
