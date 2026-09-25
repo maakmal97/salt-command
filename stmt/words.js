@@ -75,6 +75,12 @@ export const EN = {
   "place.stmt": "Account",
   "place.card": "Rewards",
   "who.as": "Signed in as {u}",
+  /* ---- A PRODUCT'S MARK, named by its shape where a screen reader says it (PSHAPE), never by its product ---- */
+  "shape.Cube": "Cube",
+  "shape.Droplet": "Droplet",
+  "shape.Lozenge": "Lozenge",
+  "shape.Capsule": "Capsule",
+  "shape.Ring": "Ring",
   /* ---- THE DOOR ---- */
   "door.h": "Sign in",
   "door.lead": "With the username and password we sent you.",
@@ -210,7 +216,7 @@ export const EN = {
   "home.morning": "Good morning",
   "home.afternoon": "Good afternoon",
   "home.evening": "Good evening",
-  "home.stay": ". This {dev} stays signed in.",
+  "home.stay": "This {dev} stays signed in.",
   /* ---- ACCOUNT, and the month filter ---- */
   "acct.nothing": "Nothing on your account yet. Your orders will show here.",
   "acct.issued": "The statement issued {d}, kept as it was sent.",

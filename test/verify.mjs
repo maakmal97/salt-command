@@ -20648,7 +20648,7 @@ await (async () => {
     x(["hist."], ["paid", "sent", "chose"], ["", "By"]), ["hist.delivered", "hist.collected"],
     x(["oh."], ["deliverTo", "deliver", "collect"], ["", "F"]), x(["pw.", "hc.still"], ["WithYou", "Part", "CashArrives", "CashCollect", "NowArrives", "NowCollect"]),
     x(["due."], ["", "first"], ["Late", "Today", "Tomorrow", "InN"]), x(["part.", "part.rest"], ["Got", "Ordered", "Bare"], ["", "F"]),
-    x(["ha."], ["deliv", "coll"], ["", "F"]), x(["pr."], ["asAt", "week"], ["", "Tap"]));
+    x(["ha."], ["deliv", "coll"], ["", "F"]), x(["pr."], ["asAt", "week"], ["", "Tap"]), x(["shape."], Object.values(P.PSHAPE)));
   const miss = named.concat(built).filter((k) => typeof EN[k] !== "string" && !/^(lnk\.opened|hc\.still|part\.rest)$/.test(k));
   ok(named.length > 300 && !miss.length, "every key the script names, whole or from its parts, has its English: " + JSON.stringify(miss));
   /* drawn on a fixture account: Home, Prices, Orders, an order's own screen and the pay sheet */
@@ -20720,6 +20720,18 @@ await (async () => {
   ok(r1.status === 401 && j1.code === "refused" && j1.error === WD.EN["e.refused"] && r2.status === 404 && j2.code === "noOrder" && j2.error === WD.EN["e.noOrder"]
     && r3.status === 401 && j3.code === "signinOrders" && j3.error === WD.EN["e.signinOrders"] && j3.session === false,
     "the Worker answers a refusal with its code and the table's English for it, at the door, on an order and on a lapsed session: " + JSON.stringify([j1, j2, j3]));
+  /* and on the order book's road (ORDER_STORE object), where a refusal crosses the Durable Object before the Worker answers
+     it: its code, and its slots, which the page fills in the reader's language */
+  const H = await import("../test/orderbook-harness.mjs");
+  const envB = { STMT: new KV(), ORDERBOOK: H.orderBook({}).ns, ORDER_STORE: "object" }, sB = await O.mintSession(envB, "abcd-efgh");
+  const onB = async (p, b) => { const r = await SW.fetch(new Request("https://k7m3p2.example" + p, { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Session": sB }, body: JSON.stringify(b) }), envB); return [r.status, await r.json()]; };
+  const one = { product: "salt", qty: 1, mode: "collect", unit: 12, total: 12 };
+  const bNo = await onB("/orders/20260925000000-zz/cancel", { rid: "r133b" }), bWhere = await onB("/orders", Object.assign({}, one, { mode: "deliver", place: "" }));
+  for (let i = 0; i < O.MAX_OPEN; i++) await onB("/orders", Object.assign({}, one, { rid: "r133o" + i }));
+  const bMax = await onB("/orders", Object.assign({}, one, { rid: "r133x" }));
+  ok(bNo[0] === 404 && bNo[1].code === "noOrder" && bWhere[1].code === "placeWhere" && bWhere[1].error === WD.EN["e.placeWhere"]
+    && bMax[0] === 400 && bMax[1].code === "openMax" && bMax[1].vars && bMax[1].vars.n === O.MAX_OPEN && bMax[1].error === WD.fill(WD.EN["e.openMax"], { n: O.MAX_OPEN }),
+    "and on the order book's road the same codes come back, with their slots: " + JSON.stringify([bNo, bWhere, bMax]));
   /* the door: a known code is worded from the table, never from the Worker's words; an unknown one shows the Worker's */
   const door = async (body) => {
     const dom = new JSDOM(P.landingPage("abcd-efgh", "n133b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
@@ -20740,6 +20752,112 @@ await (async () => {
     await door({ ok: false })];
   ok(said[0] === WD.EN["e.refused"] && said[1] === "the worker's own words" && said[2] === WD.EN["e.refused"],
     "and the page words a code from its table, shows the Worker's English for a code it does not know, and its own refusal for none: " + JSON.stringify(said));
+})();
+
+section("S13 13.3: no table, English or Malay, names a product, a level, the desk or a roster code, and the banner words nothing of its own");
+await (async () => {
+  /* HIS D12 OF 24 SEP 2026 (the plan's 13.3 and 13.4): a table is what a customer reads, so every language's passes the
+     site's own checks (src/orders.js, with 13.2's Malay lists): no product word, no level's name, bare or after a Malay
+     cue, not the desk's name and no roster code. The app's name, Salt Counter, is the one name the site carries. */
+  const WD = await import("../stmt/words.js");
+  const O = await import("../src/orders.js");
+  const bad = [];
+  for (const [L, T] of Object.entries(WD.WORDS)) for (const [k, v] of Object.entries(T)) {
+    const t = String(v).replace(/Salt Counter/g, "");
+    if (O.wordsIn(t, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS)).length || O.siteWords(t) || /salt/i.test(t)) bad.push(L + " " + k);
+  }
+  ok(Object.keys(WD.WORDS).join() === "en,ms" && Object.keys(WD.EN).length > 400 && !bad.length,
+    "neither table names a product, a level, the desk or a roster code: " + JSON.stringify(bad));
+  /* the banner (stmt/sw.js): its script's own strings hold no sentence, and what it shows is the table's news words */
+  const { SW_JS } = await import("../stmt/sw.js");
+  const own = [...SW_JS.replace(/^var NEWS = .*$/m, "").replace(/[/][*][\s\S]*?[*][/]/g, "").matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]).filter((x) => / /.test(x) && /[A-Za-z]{2,}/.test(x));
+  const vm = await import("node:vm");
+  const show = async (data) => {
+    const L = {}, shown = [], waits = [];
+    const ctx = { URL, Date, console, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }),
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+        registration: { scope: "https://site.test/", showNotification: async (t, o) => { shown.push([t, o.body]); } }, clients: {} } };
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    L.push({ data: data && { json: () => data }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return shown[0];
+  };
+  const kinds = Object.keys(WD.EN).filter((k) => /^news[.]/.test(k) && !/^news[.](tap|open|order|update)$/.test(k)).map((k) => k.slice(5));
+  const seen = [];
+  for (const k of kinds) seen.push([k, await show({ k, o: "20260925101500-ab12" })]);
+  const bare = await show(null);
+  ok(!own.length && kinds.length === 13 && seen.every(([k, s]) => s && s[0] === WD.EN["news." + k] && s[1] === WD.EN["news.tap"])
+    && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
+    "the banner writes no words of its own and shows each kind's, and the fixed words, from the table: " + JSON.stringify({ own, seen: seen.filter(([k, s]) => !s || s[0] !== WD.EN["news." + k]) }));
+})();
+
+section("S13 13.3: with every word of the table marked, everything the page draws carries the mark, the account's own data apart");
+await (async () => {
+  /* HIS D12 (the plan's 13.3): EVERY WORD FROM ONE TABLE. The strongest reading of it: serve the page with each of the
+     table's words marked (a month, a day and each word of the list tables marked one by one), draw a fixture account
+     through Home, Prices, Orders, an order's own screen, the pay sheet and Account, and every word on the page, its
+     labels included, must carry the mark. What is left is the account's own data: its username, figures in RM, the
+     rails' own names, the place and the lines typed on the order, and the sealed statement, which is a dated record. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const EN = WD.EN, saved = Object.assign({}, EN);
+  const LISTS = ["mon3", "day3", "months"];
+  let html;
+  try {
+    for (const k of Object.keys(EN)) EN[k] = LISTS.includes(k) ? EN[k].split(" ").map((w) => "§" + w).join(" ") : "§" + EN[k];
+    html = P.landingPage("abcd-efgh", "n133m", null);
+  } finally { for (const k of Object.keys(saved)) EN[k] = saved[k]; }
+  ok(EN["door.h"] === "Sign in" && html.includes("§Sign in"), "the table is itself again, and the page was served marked");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
+  const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-09-16", due: "2026-09-30", resale: true };
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: true,
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 25, parts: [more] } } })),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
+  const orders = [
+    { id: "20260925000000-a1", product: "salt", qty: 3, unit: 11, total: 33, delivery: 5, paid: 10, moved: 1, movedOn: "2026-09-24", mode: "deliver", place: "PLACEQ", status: "ready", at: now,
+      history: [{ at: now, status: "placed" }, { at: now, status: "acknowledged", by: "desk" }, { at: now, status: "acknowledged", note: "paid 10.00", method: "transfer" }, { at: now, status: "ready", note: "1 unit delivered" }],
+      msgs: [{ by: "customer", text: "SAIDQ", at: now }, { by: "desk", text: "SAIDQ", at: now }] },
+    { id: "20260925000000-a2", product: "salt", qty: 1, unit: 12, total: 12, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", at: now, history: [{ at: now, status: "placed" }], msgs: [] }];
+  const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (p) => { p = String(p);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders, claims: [] }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    } });
+  const W = dom.window, D = W.document, left = new Set(), marked = new Set();
+  /* the account's own data: its username, a figure in RM, a time, the fixture's own words, and the names of the rails,
+     the banks and the wallets (stmt/pay.js), which are theirs. A keyed element's words are one sentence broken by its
+     marks and bold, so a piece of it passes when the element carries the mark. */
+  const PAYN = new Set(JSON.stringify((await import("../stmt/pay.js")).PAY_ACCOUNTS).match(/"[^"]*"/g).map((x) => JSON.parse(x))
+    .concat(["DuitNow Transfer", "DuitNow QR", "JomPAY", "Touch 'n Go Business"]));
+  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter)$/.test(t) || PAYN.has(t);
+  const look = () => { const w = (n) => { for (const c of n.childNodes) {
+    if (c.nodeType === 3) { const t = c.textContent.trim(), k = c.parentNode.closest("[data-w]");
+      if (t.includes("§")) marked.add(t);
+      if (/[A-Za-z]{2,}/.test(t) && !t.includes("§") && !DATA(t) && !(k && k.textContent.includes("§"))) left.add(t.slice(0, 80)); }
+    else if (c.nodeType === 1 && !/^(SCRIPT|STYLE)$/.test(c.tagName)) {
+      for (const a of ["aria-label", "placeholder", "alt", "title"]) { const v = c.getAttribute(a); if (v && /[A-Za-z]{2,}/.test(v) && !v.includes("§") && !DATA(v.trim()) && !/^X+ X+$/.test(v)) left.add(a + "=" + v.slice(0, 80)); }
+      w(c); } } }; w(D.body); };
+  const tap = async (sel) => { const x = D.querySelector(sel); if (x) x.click(); await new Promise((r) => setTimeout(r, 30)); look(); return !!x; };
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#oArea [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    look();
+    const went = [await tap('button[data-t="prices"]'), await tap('button[data-t="stmt"]'), await tap('button[data-t="card"]'), await tap('button[data-t="order"]'),
+      await tap('#oArea [data-row="20260925000000-a1"]'), await tap("#payNow")];
+    ok(went.every(Boolean) && !!D.querySelector(".oscreen") && !D.getElementById("paySheet").hidden && marked.size > 100 && !left.size,
+      "every word drawn on Home, Prices, Account, Rewards, Orders, an order and the pay sheet is the table's: " + JSON.stringify({ went, marked: marked.size, left: [...left] }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 
 section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");

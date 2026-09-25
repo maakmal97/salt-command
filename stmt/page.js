@@ -1206,7 +1206,8 @@ const CLIENT_JS = `
   /* v695: A PRODUCT IS A MARK, NOT A WORD (his instruction, 18 Sep 2026). Drawn, never written,
      and never labelled either: naming it in aria would put the word back for half the readers. */
   var PSYM=__PSYM__, PSHAPE=__PSHAPE__;
-  function pshape(product){ return PSHAPE[String(product||'').toLowerCase()]||PSHAPE._; }
+  /* S13: a mark's name is the table's, by its shape (shape.<Shape>), so a screen reader says it in the reader's language */
+  function pshape(product){ var n=PSHAPE[String(product||'').toLowerCase()]||PSHAPE._; return wordIn(LANG,'shape.'+n)||n; }
   function psym(product,px){
     var NS='http://www.w3.org/2000/svg';
     var svg=document.createElementNS(NS,'svg');
@@ -1816,7 +1817,7 @@ const CLIENT_JS = `
      when this phone keeps them signed in */
   function placeTitle(){
     setW(document.getElementById('placeT'),tab==='home'?(fresh()?'home.welcome':hail()):'place.'+tab);
-    document.getElementById('cstay').textContent=tab==='home'&&keptMine()?tw('home.stay'):'';
+    document.getElementById('cstay').textContent=tab==='home'&&keptMine()?'. '+tw('home.stay'):'';
   }
   /* an account with nothing on it yet: no statement, and no order */
   function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
@@ -3894,7 +3895,7 @@ const CLIENT_JS = `
     if(!keep) again(false);
     /* S3 3.5: reopening a lapse runs under the flow that met it, so it takes no ticket of its own and says nothing */
     var mine=keep?ticket:++ticket, stale=function(){ return mine!==ticket; };
-    if(!keep) say('Opening...','wait');
+    if(!keep) say(tw('x.opening'),'wait');
     var r, body;
     try{
       r=await fetch('/remember/open', {method:'POST', headers:{'content-type':'application/json'},

@@ -212,6 +212,14 @@ guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with 
 `notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
 opened statement to a translation service.
 
+**Every word by key** (his D12, the plan's 13.3): the Counter's page, its sheets and places, the banner
+(`stmt/sw.js`) and every refusal read ONE table a language, `stmt/words.js`: English complete, and a key a
+language lacks is English's, never its name. A figure, a date or a username is a `{n}` slot, and no sentence is
+joined from translated halves. A refusal a customer can meet is `e.<code>` there: the Worker answers
+`{error, code}` through `refusal()`, the order book passing the code and its slots on, and the page words the
+code, the Worker's English standing for one it does not know. Salt Admin, a guest's board and `stmt/send.js`
+stay English and unkeyed.
+
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
