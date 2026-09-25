@@ -12550,15 +12550,21 @@ await (async () => {
 
     /* the fixture: an associate at the Nilai point with a sale of their own and one through their resale account */
     const row30 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 0, deliveredQty: 1, qty: 1 }, o));
+    /* the live book trades in the same district, so the fixture's RM 1,000,000 is read as a difference from the map before it (26 Sep 2026: a fold moved the pinned figure) */
+    const rm30 = (s) => { const m = /RM ([\d,]+)/.exec(s || ""); return m ? +m[1].replace(/,/g, "") : 0; };
+    const serRow30 = "[].map.call(s.querySelectorAll('details.obsec tbody tr'),function(r){return [].map.call(r.cells,function(c){return c.textContent.trim();}).join('|');}).find(function(x){return /^Seremban[|]/.test(x);})||''";
+    w30.eval("queue=[];applyOverlay();recompute();MAP_VIEW=null;switchTab('map');");
+    const pre30 = rd30("(function(){var s=document.querySelector('.sec.on');var p=[].find.call(s.querySelectorAll('path.marea'),function(p){return /^Seremban:/.test((p.querySelector('title')||{}).textContent||'');});"
+      + "return {t:p?(p.querySelector('title')||{}).textContent:'',row:" + serRow30 + "};})()");
     w30.eval("roster.push('CZ9-NIL','CZ9-NIL-R');associates.push('CZ9-NIL');BASE_SALES.push(" + row30({ rid: "z630a", customer: "CZ9-NIL", date: "2026-07-01", total: 600000, cash: 600000 })
       + "," + row30({ rid: "z630b", customer: "CZ9-NIL-R", rev: "R2", date: "2026-07-02", total: 400000, cash: 400000 }) + ");queue=[];applyOverlay();recompute();vaultNames={'CZ9-NIL':'Zed Fixture Person (Nilai)'};revealed=true;");
     w30.eval("MAP_VIEW=null;switchTab('map');");
     const top30 = rd30("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return {t:(p.querySelector('title')||{}).textContent||'',f:p.getAttribute('fill')};});"
       + "return {n:ps.length,ser:(ps.find(function(p){return /^Seremban:/.test(p.t);})||{}),kl:(ps.find(function(p){return /^Kuala Lumpur:/.test(p.t);})||{}),labels:[].map.call(s.querySelectorAll('svg text'),function(t){return t.textContent;}),"
-      + "row:[].map.call(s.querySelectorAll('details.obsec tbody tr'),function(r){return r.textContent.replace(/\\s+/g,' ');}).find(function(x){return /Seremban/.test(x);})||'',credit:s.textContent};})()");
+      + "row:" + serRow30 + ",credit:s.textContent};})()");
     ok(top30.n === 18 && top30.labels.includes("Kuala Lumpur") && top30.labels.includes("Seremban"), "the core view shades the 18 core districts and names them: " + top30.n);
-    ok(top30.ser.f === "#d4694c" && top30.kl.f !== "#d4694c" && /RM 1,000,/.test(top30.ser.t), "the district carrying the most revenue takes the deepest step, and its tooltip gives the figure: " + JSON.stringify([top30.ser, top30.kl.f]));
-    ok(/RM 1,000,/.test(top30.row), "an associate's resale account has no place of its own, so what it sells counts where the associate is: " + top30.row);
+    ok(top30.ser.f === "#d4694c" && top30.kl.f !== "#d4694c" && rm30(top30.ser.t) - rm30(pre30.t) === 1000000, "the district carrying the most revenue takes the deepest step, and its tooltip gives the figure: " + JSON.stringify([top30.ser, top30.kl.f, pre30.t]));
+    ok(rm30(top30.row) - rm30(pre30.row) === 1000000, "an associate's resale account has no place of its own, so what it sells counts where the associate is: " + top30.row + " against " + pre30.row);
     ok(/CC BY 3\.0/.test(top30.credit) && /CC BY 4\.0/.test(top30.credit) && /ODbL/.test(top30.credit) && /and up/.test(top30.credit), "the credits for all three sources and the legend print under the map");
     ok(!sec30().includes("Zed Fixture Person"), "no party's name reaches the map, even with the names unlocked");
 
