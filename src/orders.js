@@ -14,16 +14,35 @@
  * WHAT COMPLETION DOES. "Done" is the owner's word that the goods are handed over and the money
  * is in. That is a sale, and a sale reaches the book by the one road every sale takes: a queue
  * entry, drafted, approved on the phone, staged, folded, deployed. So done writes an entry into
- * the queue under its own device, q:orders, shaped exactly as the Workbench shapes one, and the
- * drafter drafts it on arrival. Nothing here writes a row. The live statement follows the fold,
- * which is what "an updated statement after completion" means on this book.
+ * the queue under its own device, one key an entry (q:orders:<at>, fold 2.1), each shaped exactly as
+ * the Workbench shapes a device's queue, and the drafter drafts it on arrival. Nothing here writes a
+ * row. The live statement follows the fold, which is what "an updated statement after completion"
+ * means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending } from "./drafter.js";
+import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 
 const DEVICE = "orders";
+/* ONE KEY AN ENTRY (fold 2.1, 26 Sep 2026). q:orders was one blob that three roads (the minute's reconcile, a tap's
+   reconcile and Accept) read, appended to and wrote back whole, so a writer holding a copy up to a minute old erased
+   what another had appended, and nothing ever took a folded stage out. Each entry now has its own key, holding
+   the device's shape {device, updated, queue: [entry]}, so every reader that lists the q: prefix and collapses by
+   `at` reads both without a change. THE OLD BLOB IS READ, NEVER APPENDED TO: queueSale looks in it for a clash, the
+   drafter prunes it, and only `node tools/drain.mjs --retire-orders-blob` deletes it, and only once it is empty. */
+const OKEY = (at) => "q:" + DEVICE + ":" + at;
+const BLOB = "q:" + DEVICE;
+/** The queued entry of the orders device under `at`: its own key first, then the old blob; null when neither holds it
+ * or neither can be read. */
+async function queuedAt(env, at) {
+  for (const k of [OKEY(at), BLOB]) {
+    let v = null; try { v = await env.SALT_QUEUE.get(k, "json"); } catch (e) { v = null; }
+    const hit = ((v && Array.isArray(v.queue) && v.queue) || []).find((e) => e && e.at === at);
+    if (hit) return hit;
+  }
+  return null;
+}
 const MARK = "orders:nudged";
 /* v752: a line a customer wrote has its OWN mark. On one mark a message arriving in a quiet hour
    would be compared against the newest PLACEMENT and read as old news, and a placement would clear
@@ -504,7 +523,7 @@ export async function notFoundOrder(env, id, body, now, covered) {
   let at = p.queued || p.at;
   if (!p.queued) {
     const d = await db.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first();
-    let q = null; try { q = ((await env.SALT_QUEUE.get("q:" + DEVICE, "json")) || { queue: [] }).queue.find((e) => e && e.at === at) || null; } catch (e) { q = null; }
+    const q = await queuedAt(env, at);
     const theirs = (e) => !e || e.claimOf === p.at;
     let de = null; try { de = d ? JSON.parse(d.entry) : null; } catch (e) { de = {}; }
     if (!theirs(de) || !theirs(q)) at = null;
@@ -1039,35 +1058,39 @@ export function stageAt(order, job, now) {
   return d && !isNaN(d.getTime()) ? d : (now instanceof Date ? now : new Date(now || Date.now()));
 }
 
-/** Append one entry to the orders device's queue. Per-device replace, as the phone does.
- * A KEY THIS CANNOT READ IS STARTED AFRESH, AND SAID SO (20 Sep 2026). q:orders held a hand-written
- * value with its quotes stripped from 19 Sep 03:49 UTC: the json read threw, the catch in
- * reconcileOrders swallowed it, and every site order failed in silence for a day. What such a key
- * holds is nothing the book needs: an entry reaches it only from here, is drafted on arrival, and its
- * stage is marked told on the order only after this write, so anything lost is still owed and comes
- * round next minute. The drafter and the drain already read such a key as empty; the writer agrees
- * now, and the head of what it held goes to the log. THE SAME STAGE already queued under its `at` is
- * not queued twice, which is what lets a stage come round again after a failed mark; A DIFFERENT
- * stage that happens to carry the same millisecond (a payment and a handover typed together) takes
- * the next free one, because a draft's id is the `at` and two ids cannot be one. */
+/** Queue one entry for the orders device, under its own key (fold 2.1).
+ * A BLOB THIS CANNOT READ IS LEFT ALONE, AND SAID SO (20 Sep 2026). q:orders held a hand-written value
+ * with its quotes stripped from 19 Sep 03:49 UTC: the json read threw, the catch in reconcileOrders
+ * swallowed it, and every site order failed in silence for a day. Nothing writes the blob now, so such a
+ * value blocks nothing: it is read as holding no clash, the entry takes its own key, and the head of what
+ * the blob held goes to the log. THE SAME STAGE already queued under its `at` is not queued twice, which
+ * is what lets a stage come round again after a failed mark; A DIFFERENT stage that happens to carry the
+ * same millisecond (a payment and a handover typed together) takes the next free one, because a draft's
+ * id is the `at` and two ids cannot be one. A millisecond is spent while its entry is queued in either
+ * shape, and for good once the draft table holds it: the drafter prunes a committed entry from the queue,
+ * and a stage landing on its millisecond after that would be counted committed and never drafted. */
 export async function queueSale(env, entry) {
-  const key = "q:" + DEVICE;
-  const raw = await env.SALT_QUEUE.get(key);
-  let cur = null;
+  const raw = await env.SALT_QUEUE.get(BLOB);
+  let blob = [];
   if (raw) {
-    try { cur = JSON.parse(raw); }
-    catch (e) { console.log("orders queue: " + key + " could not be read and is started afresh (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
+    try { const j = JSON.parse(raw); blob = (j && Array.isArray(j.queue) && j.queue) || []; }
+    catch (e) { console.log("orders queue: " + BLOB + " could not be read and is left alone, so this entry takes its own key (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
   }
-  if (!cur || !Array.isArray(cur.queue)) cur = { device: DEVICE, queue: [] };
+  const spent = async (at) => {
+    let own = null; try { own = await env.SALT_QUEUE.get(OKEY(at), "json"); } catch (e) { own = null; }   /* its own key unreadable: written over */
+    const hit = ((own && Array.isArray(own.queue) && own.queue) || []).concat(blob).find((x) => x && x.at === at);
+    if (hit || !env.SALT_LEDGER) return hit || null;
+    try { const d = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first(); return d && d.entry ? (JSON.parse(d.entry) || {}) : null; }
+    catch (e) { return null; }
+  };
   for (;;) {
-    const hit = cur.queue.find((x) => x && x.at === entry.at);
+    const hit = await spent(entry.at);
     if (!hit) break;
     if (hit.raw === entry.raw) return false;
     entry.at = new Date(Date.parse(entry.at) + 1).toISOString();
   }
-  cur.queue = cur.queue.concat([entry]);
-  cur.updated = new Date().toISOString();
-  await env.SALT_QUEUE.put(key, JSON.stringify(cur));
+  await env.SALT_QUEUE.put(OKEY(entry.at), JSON.stringify({ device: DEVICE, updated: new Date().toISOString(), queue: [entry] }));
+  noteQueued(env.SALT_QUEUE, OKEY(entry.at));   /* a new key may be missing from the listing for a minute; the drafter reads it by name */
   return true;
 }
 
@@ -1216,8 +1239,7 @@ export async function dropAck(env, at, now) {
   const db = env.SALT_LEDGER;
   if (!db || !at) return "kept";
   const when = (now instanceof Date ? now : new Date()).toISOString();
-  let entry = null;
-  try { const q = await env.SALT_QUEUE.get("q:" + DEVICE, "json"); entry = ((q && q.queue) || []).find((e) => e && e.at === at) || null; } catch (e) { entry = null; }
+  const entry = await queuedAt(env, at);
   await db.prepare("INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) "
     + "VALUES (?1,'rejected','sales',?2,'{}',?3,'[]',?4,'orders',?5,?5,'withdrawn')")
     .bind(at, JSON.stringify(entry || { at }), "Withdrawn by the customer before it was drafted, so nothing reaches the book.", (entry && entry.party) || null, when).run();
@@ -1232,7 +1254,8 @@ export async function dropAck(env, at, now) {
    fold's watermark passed it, and a device that still held it re-posted it with its next tap.
    The Worker now drops it from every q:* key on the rejection, and a queue POST drops any entry
    whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the
-   decision is the record. */
+   decision is the record. An entry's own key (q:orders:<at>, fold 2.1) left holding nothing is deleted,
+   never kept empty; a device's key and the old blob are rewritten as before. */
 export async function dropQueued(env, ats) {
   const want = new Set(ats.filter(Boolean));
   if (!env.SALT_QUEUE || !want.size) return 0;
@@ -1245,7 +1268,10 @@ export async function dropQueued(env, ats) {
       let v; try { v = JSON.parse(raw); } catch (e) { continue; }
       const before = (v.queue || []).length;
       v.queue = (v.queue || []).filter((e) => !(e && want.has(e.at)));
-      if (v.queue.length !== before) { dropped += before - v.queue.length; await env.SALT_QUEUE.put(k.name, JSON.stringify(v)); }
+      if (v.queue.length === before) continue;
+      dropped += before - v.queue.length;
+      if (!v.queue.length && k.name.startsWith(BLOB + ":")) await env.SALT_QUEUE.delete(k.name);
+      else await env.SALT_QUEUE.put(k.name, JSON.stringify(v));
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);

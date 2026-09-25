@@ -34,6 +34,13 @@
  *                                      leaving a fake sale for the daily run to commit.
  *                                      It rewrites a KV key through --path, never as a
  *                                      JSON argument: the win32 shell strips the quotes.
+ *   node tools/drain.mjs --retire-orders-blob
+ *                                      delete the old orders blob q:orders, ONLY when it holds
+ *                                      nothing. Since fold 2.1 the site's stages take one key an
+ *                                      entry (q:orders:<at>) and the drafter prunes the blob as
+ *                                      the fold passes its entries; run this after seven days of
+ *                                      `"legacy":0` on the drafter's log line. It refuses while
+ *                                      the blob holds an entry or cannot be read, and says why.
  *   A device key that cannot be parsed is NAMED by every mode and deleted by none.
  *
  * Env:  SALT_DATA overrides the 10_Data folder. Uses the machine's existing wrangler auth;
@@ -51,6 +58,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const FILE = "salt_queue_cloud.json";
+const BLOB = "q:orders";   /* the orders device's old one-key queue; its entries take q:orders:<at> since fold 2.1 */
 
 const DATA = DATA_DIR;
 const OUT = join(DATA, FILE);
@@ -165,6 +173,11 @@ export function runStatus({ io = {} } = {}) {
   for (const k of keys) { const v = IO.get(k); if (v) { const qq = deviceQueue(v); if (qq) kv.push(...qq); else bad.push([k, v]); } }
   const file = IO.read();
   console.log(`KV: ${keys.length} device key(s), ${bad.length} unreadable, ${kv.length} entr${kv.length === 1 ? "y" : "ies"}.`);
+  /* fold 2.1: the old orders blob, read only now, until --retire-orders-blob takes it */
+  if (keys.includes(BLOB)) {
+    const bq = deviceQueue(IO.get(BLOB) || ""), own = keys.filter((k) => k.startsWith(BLOB + ":")).length;
+    console.log(`  ${BLOB}, the old orders blob: ${bq ? bq.length : "unreadable"}; orders keys of their own: ${own}.`);
+  }
   for (const [k, v] of bad) console.log(`  ${k} could not be parsed (${Buffer.byteLength(v, "utf8")} bytes): ${v.slice(0, 80)}`);
   console.log(`File ${FILE}: ${file.queue.length} entr${file.queue.length === 1 ? "y" : "ies"}.`);
   const all = unionByAt(file.queue, kv);
@@ -252,7 +265,7 @@ export function runForget({ at = process.argv[3], io = {} } = {}) {
     fromKv += qq.length - kept.length;
     if (kept.length) {
       /* the DEVICE shape the Worker writes, and through --path: a JSON argument loses its quotes to the shell */
-      try { IO.put(name, { device: name.slice(2), updated: nowISO(), queue: kept }); }
+      try { IO.put(name, { device: name.slice(2).split(":")[0], updated: nowISO(), queue: kept }); }
       catch (e) { console.error("  could not rewrite " + name + ": " + wranglerSaid(e)); }
     } else { IO.del(name); }
   }
@@ -262,8 +275,27 @@ export function runForget({ at = process.argv[3], io = {} } = {}) {
   else console.log("  it will not reach the ledger.");
 }
 
+/* --retire-orders-blob (fold 2.1): the old orders blob goes only when it holds nothing. An entry still in it is a
+   stage the fold has not passed, and one that cannot be read is named and kept, as every mode keeps such a key. */
+export function runRetireOrdersBlob({ io = {} } = {}) {
+  const IO = Object.assign({ get: kvGet, del: kvDelete }, io);
+  const raw = IO.get(BLOB);
+  if (!raw) { console.log(`${BLOB} is not there: nothing to retire.`); return "absent"; }
+  const q = deviceQueue(raw);
+  if (!q) { console.log(`REFUSED: ${BLOB} could not be parsed, so it is left alone: ${raw.slice(0, 80)}`); return "unreadable"; }
+  if (q.length) {
+    console.log(`REFUSED: ${BLOB} still holds ${q.length} entr${q.length === 1 ? "y" : "ies"}; the drafter prunes each once the fold passes it:`);
+    for (const e of q) console.log(`  ${(e && e.at) || "(no at)"}  ${String((e && e.raw) || "(no description)").slice(0, 96)}`);
+    return "refused";
+  }
+  if (!IO.del(BLOB)) { console.log(`${BLOB} is empty but could not be deleted: run it again.`); return "failed"; }
+  console.log(`RETIRED ${BLOB}: it held nothing, and the orders queue is one key an entry from here.`);
+  return "retired";
+}
+
 function main() {
   const arg = process.argv[2];
+  if (arg === "--retire-orders-blob") { const r = runRetireOrdersBlob(); if (r !== "retired" && r !== "absent") process.exitCode = 1; return; }
   if (arg === "--forget") return runForget();
   if (arg === "--committed") return runCommitted();
   if (arg === "--status") return runStatus();

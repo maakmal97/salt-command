@@ -1555,18 +1555,44 @@ export function draftRow(entry, book) {
 }
 
 /* ---- reading the queue -------------------------------------------------------------- */
-async function queueEntries(env) {
-  const entries = [];
+/* KEYS JUST QUEUED THROUGH THIS BINDING (fold 2.1). A key new to KV can be missing from list() for up to a minute
+   (the KV docs), where a get at the location that wrote it reads it at once. The orders entries shared one key the
+   listing always held; now each is a new key, and every road queues and drafts in the same invocation (the tap,
+   Accept, the minute's reconcile), so the pass also reads by name what was queued through the same binding in the
+   last two minutes. Memory of one isolate only: any other pass finds the key by the listing, the quarter-hour net
+   at the latest. */
+const JUST_QUEUED = new WeakMap();
+export function noteQueued(kv, key) {
+  if (!kv || typeof kv !== "object") return;
+  let m = JUST_QUEUED.get(kv);
+  if (!m) JUST_QUEUED.set(kv, (m = new Map()));
+  m.set(key, Date.now());
+}
+/* `keysRead`, when given, collects each key's name and value as read (value null when it cannot be read), so the
+   pass can prune the orders device's keys (fold 2.1) without reading them twice. */
+async function queueEntries(env, keysRead) {
+  const entries = [], listed = new Set();
+  const take = (name, raw) => {
+    let v = null;
+    try { v = JSON.parse(raw); for (const e of (v.queue || [])) entries.push(e); } catch (e) { v = null; /* skip a corrupt key */ }
+    if (keysRead) keysRead.push({ name, value: v });
+  };
   let cursor;
   do {
     const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
     for (const k of list.keys) {
+      listed.add(k.name);
       const raw = await env.SALT_QUEUE.get(k.name);
-      if (!raw) continue;
-      try { for (const e of (JSON.parse(raw).queue || [])) entries.push(e); } catch (e) { /* skip a corrupt key */ }
+      if (raw) take(k.name, raw);
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);
+  const noted = JUST_QUEUED.get(env.SALT_QUEUE);
+  for (const [name, t] of noted ? [...noted] : []) {
+    if (listed.has(name) || Date.now() - t > 120000) { noted.delete(name); continue; }
+    const raw = await env.SALT_QUEUE.get(name);
+    if (raw) take(name, raw);
+  }
   const byAt = new Map();
   for (const e of entries) if (e && e.at) byAt.set(e.at, e);
   return byAt;
@@ -1711,7 +1737,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   if (!env.SALT_LEDGER) return { ok: false, error: "no ledger binding" };
   if (!env.SALT_QUEUE) return { ok: false, error: "no queue binding" };
 
-  const byAt = await queueEntries(env);
+  const keysRead = [];
+  const byAt = await queueEntries(env, keysRead);
   const book = await readBook(env.SALT_LEDGER);
   /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
      first and writes it last (tools/d1.mjs buildSeed), so a mirror without one is being seeded or was never
@@ -1799,6 +1826,37 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
         else if (r === "differs") out.differs.push(at);
       } catch (e) { console.log("drafter: the pre-approval for " + at + " was not applied: " + String((e && e.message) || e)); }
     }
+  }
+  Object.assign(out, await pruneOrders(env, keysRead, mark, already));
+  return out;
+}
+
+/* ---- WHAT IS COMMITTED LEAVES THE ORDERS QUEUE (fold 2.1, 26 Sep 2026) ----------------------------------------
+ * Nothing took a folded stage out of q:orders, so every pass parsed every stage ever queued, the count of committed
+ * entries grew without end, and the drain listed stages folded weeks ago. An orders entry at or below the watermark
+ * that the draft table knows is the one the pass counts `committed`: its own key (q:orders:<at>) is deleted, and the
+ * old blob (q:orders) is rewritten without it, only when that changes it and never deleted. Retiring the blob is
+ * `node tools/drain.mjs --retire-orders-blob`, which refuses while it holds anything. A device's key is the phone's
+ * own and is never touched here. `legacy` is what the blob still holds, carried to the log; seven days of 0 and it
+ * may be retired. A prune that fails is said and left to the next pass: the pass has done its work. */
+async function pruneOrders(env, keysRead, mark, already) {
+  const done = (e) => !!(e && e.at && mark && e.at <= mark && already.has(e.at));
+  const out = { legacy: 0, pruned: 0 };
+  for (const k of keysRead) {
+    const q = k.value && Array.isArray(k.value.queue) ? k.value.queue : null;
+    try {
+      if (k.name === "q:orders") {
+        if (!q) { out.legacy = "unreadable"; continue; }
+        const kept = q.filter((e) => !done(e));
+        out.legacy = kept.length;
+        if (kept.length === q.length) continue;
+        await env.SALT_QUEUE.put(k.name, JSON.stringify(Object.assign({}, k.value, { queue: kept })));
+        out.pruned += q.length - kept.length;
+      } else if (k.name.startsWith("q:orders:") && q && q.length && q.every(done)) {
+        await env.SALT_QUEUE.delete(k.name);
+        out.pruned += q.length;
+      }
+    } catch (e) { console.log("drafter: " + k.name + " was not pruned, the next pass tries again: " + String((e && e.message) || e)); }
   }
   return out;
 }

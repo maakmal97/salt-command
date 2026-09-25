@@ -87,6 +87,20 @@ class KV {
     }), list_complete: true };
   }
 }
+/* FOLD 2.1: THE ORDERS QUEUE IS THE OLD BLOB q:orders AND EVERY q:orders:<at> KEY, read together and collapsed by
+   `at` as the drafter reads them, in the order a KV listing gives them (by key, so by `at`). It reads the Map under
+   the store (a KV's .m, a kvsim World's .store), so reading it moves no location's cache and no tamper applies. */
+const isOrdersKey = (k) => k === "q:orders" || k.startsWith("q:orders:");
+const ordersQueueIn = (m) => {
+  const byAt = new Map();
+  for (const k of [...m.keys()].filter(isOrdersKey).sort()) {
+    let j = null; try { j = JSON.parse(m.get(k)); } catch (e) { j = null; }
+    for (const e of (j && Array.isArray(j.queue) && j.queue) || []) if (e && e.at) byAt.set(e.at, e);
+  }
+  return [...byAt.values()].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+};
+const ordersQueue = (kv) => ordersQueueIn(kv.m);
+const dropOrdersQueue = (kv) => { for (const k of [...kv.m.keys()]) if (isOrdersKey(k)) kv.m.delete(k); };
 /* THE CLOCK PAST A MOMENT (25 Sep 2026). The site stamps a move to the millisecond, and the desk's nudge wakes for a
    placement or a line only on a moment LATER than the mark it holds, so a second one stamped in the first one's
    millisecond reads as nothing new.
@@ -8331,9 +8345,9 @@ await (async () => {
   /* v694: NO MOVE HERE WRITES ANY MORE. The acknowledgement is what makes the row and the
      every-minute reconcile is the one road that queues it, so Site orders moves the ORDER and
      Approve lands the ROW. Driven through the desk's Worker, with the site behind the binding. */
-  ok(!(await dkv.get("q:orders")), "the desk's moves have queued nothing at all: a tap on this card moves the order and writes no entry");
+  ok(!ordersQueue(dkv).length, "the desk's moves have queued nothing at all: a tap on this card moves the order and writes no entry");
   const rc0 = await reconcileOrders(denv);
-  const q = JSON.parse(await dkv.get("q:orders"));
+  const q = { queue: ordersQueue(dkv) };
   ok(rc0.ok && rc0.queued === 1 && q.queue.length === 1, "the reconcile queues the one stage the ledger has not been told about");
   const e = q.queue[0];
   /* 19 Sep 2026: THE ROW TAKES THEM APART AND THE KEY KEEPS THEM TOGETHER. The site has always
@@ -8368,7 +8382,7 @@ await (async () => {
     b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv)).json();
   const rc1 = await reconcileOrders(denv);
   ok(b.ok && /no desk code/.test(b.warn || "") && rc1.ok && rc1.queued === 0 && JSON.stringify(rc1.unmapped) === JSON.stringify([o3.id])
-    && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
+    && ordersQueue(dkv).length === 1,
     "an order for a username the map does not carry queues nothing, is named as unmapped, and is said so on the tap");
   ok((await ordersWaiting(denv)).waiting === 0, "and nothing is left waiting");
 
@@ -20398,7 +20412,7 @@ await (async () => {
   };
   const denv94 = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
-  const Q = async () => JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const Q = async () => ordersQueue(dkv);
 
   ok((await reconcileOrders(denv94)).queued === 0, "a placed order owes the ledger nothing: there is no row to make until he agrees it");
 
@@ -22070,7 +22084,7 @@ await (async () => {
   };
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
-  const Q = async () => JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const Q = async () => ordersQueue(dkv);
   const rec = async (id) => JSON.parse(await skv.get("order:" + un + ":" + id));
   const put = async (o) => skv.put("order:" + un + ":" + o.id, JSON.stringify(o));
   const place = async (qty, total) => (await J(await post("/orders", { product: "salt", qty, mode: "collect", unit: total / qty, total, week: "" }, S))).b.order;
@@ -22156,7 +22170,7 @@ await (async () => {
     "and a Cancellation with the withdrawal's: " + JSON.stringify([eX && eX.at]));
   /* two stages of one order in the same millisecond would share a draft id: the later takes the next */
   const oG = await place(1, 170); await ack(oG.id); await reconcileOrders(denv);
-  await dkv.delete("q:orders");   /* the laptop drained the queue in between: the queue itself can no longer see the acknowledgement */
+  dropOrdersQueue(dkv);   /* the laptop drained the queue in between: the queue itself can no longer see the acknowledgement */
   const rowG = { date: (await rec(oG.id)).ledgerKey.split("|")[1], customer: "CX1-AB", product: "salt", qty: 1, total: 170, delivery: 0, cash: 0, deliveredQty: 0, rid: "s731" };
   STATE.OPEN.byKey[PE.ovKey(rowG)] = Object.assign(PE.ledgerRow(rowG, "S", "salt"), { key: PE.ovKey(rowG) });
   await post("/orders/" + oG.id + "/cancel", {}, S);
@@ -22193,25 +22207,28 @@ await (async () => {
   ok(hM2.length === 2 && hM2[1].at === "2026-09-18T17:00:00.002Z" && hM2[1].payload.fields.deliveredQty === 2 && (await rec(oH.id)).queued.moved === 2,
     "and a stage from a later pass that lands on an id the queue already holds takes the next free millisecond rather than vanishing: " + JSON.stringify(hM2.map((x) => x.at)));
 
-  /* ---- 4. A QUEUE KEY THE DESK CANNOT READ IS STARTED AFRESH, LOUDLY, and the stage lands ---- */
-  dkv.m.set("q:orders", "{updated:2026-09-19T03:49:18.402Z,desk:cloud,queue:[{at:2026-09-16T09:39:17.951Z,type:SELL}]}");   /* the live value of 19 Sep, quotes stripped by a shell */
+  /* ---- 4. AN ORDERS BLOB THE DESK CANNOT READ IS LEFT ALONE, LOUDLY, and the stage lands under its own key (fold 2.1) ---- */
+  const bad = "{updated:2026-09-19T03:49:18.402Z,desk:cloud,queue:[{at:2026-09-16T09:39:17.951Z,type:SELL}]}";   /* the live value of 19 Sep, quotes stripped by a shell */
+  dkv.m.set("q:orders", bad);
   const oD = await place(1, 140); await ack(oD.id);
   const realLog = console.log, logs = [];
   console.log = (...x) => logs.push(x.join(" "));
   let rc4; try { rc4 = await reconcileOrders(denv); } finally { console.log = realLog; }
-  const qD = JSON.parse(await dkv.get("q:orders"));
-  ok(rc4.queued === 1 && !rc4.failed && qD.device === "orders" && qD.queue.length === 1 && qD.queue[0].raw.includes(oD.id) && !!(await rec(oD.id)).queued.ack,
-    "the corrupt key is replaced by a queue holding the one entry, and the stage is told: " + JSON.stringify(rc4));
-  ok(logs.some((l) => /^orders queue: q:orders could not be read and is started afresh \(.+\); it held: \{updated:2026-09-19/.test(l)),
-    "and the log names the key, the reason and the head of what it held: " + JSON.stringify(logs));
-  ok((await queueSale(denv, qD.queue[0])) === false && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
+  const eD = ordersQueue(dkv).filter((x) => x.raw.includes(oD.id));
+  const ownD = eD.length ? JSON.parse(await dkv.get("q:orders:" + eD[0].at)) : null;
+  ok(rc4.queued === 1 && !rc4.failed && eD.length === 1 && !!ownD && ownD.device === "orders" && ownD.queue.length === 1 && ownD.queue[0].raw.includes(oD.id)
+    && dkv.m.get("q:orders") === bad && !!(await rec(oD.id)).queued.ack,
+    "the corrupt blob is left as it was, the entry takes a key of its own holding it alone, and the stage is told: " + JSON.stringify(rc4));
+  ok(logs.some((l) => /^orders queue: q:orders could not be read and is left alone, so this entry takes its own key \(.+\); it held: \{updated:2026-09-19/.test(l)),
+    "and the log names the blob, the reason and the head of what it held: " + JSON.stringify(logs));
+  ok((await queueSale(denv, eD[0])) === false && ordersQueue(dkv).filter((x) => x.raw.includes(oD.id)).length === 1,
     "an entry queued again under an at already in the queue is not queued twice");
   /* and the catch: a queue write that throws names its reason */
   const oE = (await J(await post("/orders", { product: "salt", qty: 1, mode: "collect", unit: 160, total: 160, week: "" }, S2))).b.order;
   await post("/desk/orders/" + un2 + "/" + oE.id, { status: "acknowledged" }, D);
   const recE = async () => JSON.parse(await skv.get("order:" + un2 + ":" + oE.id));
   const realPut = dkv.put.bind(dkv); let boom = 1;
-  dkv.put = async (k, v, o) => { if (boom && k === "q:orders") { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
+  dkv.put = async (k, v, o) => { if (boom && k.startsWith("q:orders")) { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
   const rc4b = await reconcileOrders(denv);
   dkv.put = realPut;
   ok(rc4b.queued === 0 && !!rc4b.failed && rc4b.failed[0].id === oE.id && rc4b.failed[0].why === "kv put refused" && !((await recE()).queued || {}).ack,
@@ -22295,7 +22312,7 @@ await (async () => {
   /* ---- 2. FAILED, WITH THE REASON ---- */
   await post("/desk/orders/" + un + "/" + oA.id, { handover: { units: 1 } }, D);
   const realPut = dkv.put.bind(dkv); let boom = 1;
-  dkv.put = async (k, v, o) => { if (boom && k === "q:orders") { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
+  dkv.put = async (k, v, o) => { if (boom && k.startsWith("q:orders")) { boom--; throw new Error("kv put refused"); } return realPut(k, v, o); };
   const rcF = await reconcileOrders(denv);
   dkv.put = realPut;
   a = await rec(un, oA.id);
@@ -27762,7 +27779,7 @@ await (async () => {
   const place = (loc, tok, extra) => cust(loc, tok, "POST", "/orders", Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" }, extra || {}));
   const seen = async (loc, tok, id) => ((await cust(loc, tok, "GET", "/orders")).body.orders || []).find((x) => x.id === id) || null;
   const ownerSees = async (loc, id) => ((await desk(loc, "/desk/orders?all=1")).body.orders || []).find((x) => x.id === id) || null;
-  const deskQueue = () => JSON.parse(DESKQ.store.get("q:orders") || '{"queue":[]}').queue;
+  const deskQueue = () => ordersQueueIn(DESKQ.store);
   const lines = (o) => ((o && o.msgs) || []).map((m) => m.text);
   const told = () => deskQueue().filter((e) => e.status === "Payment").reduce((a, e) => a + +e.total, 0);
   /* an order placed, acknowledged, its pending row queued and on the book, and a rail chosen */
@@ -27923,8 +27940,8 @@ await (async () => {
     const pend = deskQueue().find((e) => e.status === "Pending");
     await at(-500, () => cust("KUL", tok, "POST", "/orders/" + id + "/pay", { amount: 50 }));
     await at(-490, () => desk("KUL", P(A, id), { handover: { units: 2 } }));
-    /* two stages in one pass are two writes to the desk's own q:orders inside a second, and KV takes one: the second
-       fails, is marked failed, and the next pass queues it (the first is found already queued, by its moment) */
+    /* two stages in one pass are two keys since fold 2.1 (q:orders:<at>, one an entry), so KV's one write a second a
+       key refuses neither; the next pass finds both already queued, by their moments, and queues nothing twice */
     await at(-480, () => DO.reconcileOrders(deskEnv("CRON")));
     const rc = await at(-420, () => DO.reconcileOrders(deskEnv("CRON")));
     /* S6: their RM 50 is a claim until his Received, which makes it the advance's money */
@@ -31089,8 +31106,7 @@ await (async () => {
         headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), denv2, { waitUntil: (p) => waits.push(p) });
       await Promise.all(waits);
     } finally { globalThis.fetch = realF; console.log = realL; }
-    const q = await dkv2.get("q:orders", "json");
-    return { ok: (await r.json()).ok, hit, logs, queue: (q && q.queue) || [] };
+    return { ok: (await r.json()).ok, hit, logs, queue: ordersQueue(dkv2) };
   };
 
   const ack = await tap({ status: "acknowledged", mode: "deliver", delivery: 15 });
@@ -31104,7 +31120,7 @@ await (async () => {
   ok(ack.hit.length === 0,
     "and it does not wake him: this is his own tap, and the desk draws the row while he is looking: " + JSON.stringify(ack.hit));
 
-  const before = ((await dkv2.get("q:orders", "json")) || { queue: [] }).queue.length;
+  const before = ordersQueue(dkv2).length;
   const mark = await tap({ mark: { paid: 0 } });
   ok(mark.ok && mark.queue.length === before && !mark.logs.some((l) => /on the tap/.test(l)),
     "a mark is the reconcile's own bookkeeping written back, and answering it with another reconcile "
@@ -31326,7 +31342,7 @@ await (async () => {
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   const draftOf = (id) => db.prepare("SELECT status,decided_by FROM draft WHERE id=?").get(id) || null;
-  const queued = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.map((e) => e.at);
+  const queued = async () => ordersQueue(dkv).map((e) => e.at);
   /* an order agreed on the road the card has used, its pending row queued by the reconcile */
   const agreed = async (draft) => {
     const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
@@ -31416,7 +31432,7 @@ await (async () => {
   /* the queue can be tampered with between Accept's write and the drafter's read, which is how a row field differs */
   let tamper = false;
   class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
-    if (!(tamper && k === "q:orders" && v)) return v;
+    if (!(tamper && k.startsWith("q:orders") && v)) return v;
     const q = typeof v === "string" ? JSON.parse(v) : v;
     for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
     return t === "json" ? q : JSON.stringify(q); } }
@@ -31459,7 +31475,7 @@ await (async () => {
   const a2 = await call("/orders/" + o2.id + "/accept", { hash: pvOld.j.hash });
   setState("PRICING", PRICING);
   ok(a2.status === 409 && a2.j.differs === true && a2.j.preview && a2.j.preview.hash !== pvOld.j.hash && !preOf(o2.id)
-    && (await orderOf(o2.id)).status === "placed" && !((await dkv.get("q:orders", "json")) || { queue: [] }).queue.some((e) => e.orderId === o2.id),
+    && (await orderOf(o2.id)).status === "placed" && !ordersQueue(dkv).some((e) => e.orderId === o2.id),
     "a digest the card drew before something changed is refused with the row as it now is, and nothing is queued or moved: " + JSON.stringify({ status: a2.status, differs: a2.j.differs }));
   const noCharge = await call("/orders/" + (await place(U1, 1, 100, "deliver")).id + "/accept", { hash: "x" });
   ok(noCharge.status === 400 && /delivery charge/.test(noCharge.j.error), "a delivery is not accepted with no charge chosen: " + JSON.stringify(noCharge.j));
@@ -31500,6 +31516,156 @@ await (async () => {
   const dp = await deskPass(denv, new Date());
   ok((dp.dropped || []).includes(cFlags.o.id) && draftOf(cFlags.a.j.draft).status === "rejected" && draftOf(cFlags.a.j.draft).decided_by === "withdrawn" && preOf(cFlags.o.id).status === "void",
     "a row Accept queued that still waits is dropped when the customer withdraws, and his yes is spent with it: " + JSON.stringify({ dp, draft: draftOf(cFlags.a.j.draft) }));
+})();
+
+section("Fold 2.1: the orders queue is one KV key an entry, read beside the old blob, pruned once committed, and the blob retired only empty");
+await (async () => {
+  /* q:orders was one blob that three roads read, appended to and wrote back whole, and nothing took a folded stage
+     out. An entry now takes q:orders:<at>; the blob is read and never appended to, the drafter prunes what is
+     committed from both shapes, and `drain.mjs --retire-orders-blob` deletes the blob only once it is empty. Driven
+     on the real schema; every code, username and order id is invented. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the orders queue was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { queueSale, dropAck, dropQueued, pendingEntry, reconcileOrders } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { runRetireOrdersBlob } = await import("../tools/drain.mjs");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
+  setState("roster", [C1]); setState("OPEN", { byKey: {}, position: {} });
+  setState("PRICING", { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const kv = new KV(); await kv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const env = { SALT_QUEUE: kv, SALT_LEDGER: D1 };
+  const OK = (at) => "q:orders:" + at;
+  const box = (...q) => JSON.stringify({ device: "orders", updated: "2026-09-25T00:00:00.000Z", queue: q });
+  const pend = (id, at) => pendingEntry({ id, qty: 1, total: 100, mode: "collect", product: "salt" }, C1, new Date(at));
+  const drafts = (at) => db.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(at).n;
+  const quiet = async (fn) => { const real = console.log; console.log = () => {}; try { return await fn(); } finally { console.log = real; } };
+
+  /* 1. BOTH SHAPES READ AS ONE QUEUE: an entry in the blob and under its own key is one draft, and one in the blob alone still drafts */
+  const eA = pend("20260925020000-a1", "2026-09-25T02:00:00.000Z"), eB = pend("20260925020000-b1", "2026-09-25T02:05:00.000Z");
+  await kv.put("q:orders", box(eA, eB)); await kv.put(OK(eA.at), box(eA));
+  const r1 = await quiet(() => runDrafter(env));
+  ok(r1.considered === 2 && drafts(eA.at) === 1,
+    "an entry held by the old blob and by its own key is considered once and drafted once: " + JSON.stringify({ considered: r1.considered, drafted: r1.drafted }));
+  ok(r1.drafted === 2 && drafts(eB.at) === 1, "and an entry the old blob alone holds is still drafted: " + JSON.stringify({ drafted: r1.drafted }));
+
+  /* 2. QUEUESALE WRITES ONLY ITS OWN KEY, ONCE, AND A CLASH IN EITHER SHAPE OR THE DRAFT TABLE TAKES THE NEXT MILLISECOND */
+  const blobBefore = kv.m.get("q:orders");
+  const eC = pend("20260925030000-c1", "2026-09-25T03:00:00.000Z");
+  const first = await queueSale(env, eC), second = await queueSale(env, pend("20260925030000-c1", "2026-09-25T03:00:00.000Z"));
+  const cKeys = [...kv.m.keys()].filter((k) => k.startsWith("q:orders:2026-09-25T03"));
+  ok(first === true && second === false && JSON.stringify(cKeys) === JSON.stringify([OK(eC.at)]) && JSON.parse(kv.m.get(OK(eC.at))).queue.length === 1,
+    "the same stage queued twice lands once, under a key of its own: " + JSON.stringify({ first, second, cKeys }));
+  ok(kv.m.get("q:orders") === blobBefore, "and the old blob is never written by a queueing");
+  const eC2 = pend("20260925030000-c2", "2026-09-25T03:00:00.000Z");
+  const twin = await queueSale(env, eC2);
+  ok(twin === true && eC2.at === "2026-09-25T03:00:00.001Z" && [...kv.m.keys()].filter((k) => k.startsWith("q:orders:2026-09-25T03")).length === 2,
+    "a different stage stamped in that millisecond takes the next one, two keys a millisecond apart: " + eC2.at);
+  await kv.put("q:orders", box(eA, eB, Object.assign(pend("20260925040000-x1", "2026-09-25T04:00:00.000Z"), { raw: "an entry only the blob holds" })));
+  const eD = pend("20260925040000-d1", "2026-09-25T04:00:00.000Z");
+  await queueSale(env, eD);
+  ok(eD.at === "2026-09-25T04:00:00.001Z" && kv.m.has(OK(eD.at)) && !kv.m.has(OK("2026-09-25T04:00:00.000Z")),
+    "a millisecond the old blob holds for another stage is spent, so the new one takes the next: " + eD.at);
+  await kv.delete(OK(eA.at));   /* eA drafted, and now gone from its key; the blob still holds it */
+  await kv.put("q:orders", box(eB));
+  const eA2 = pend("20260925020000-a2", eA.at), eAagain = pend("20260925020000-a1", eA.at);
+  const aAgain = await queueSale(env, eAagain); await queueSale(env, eA2);
+  ok(aAgain === false && eA2.at === "2026-09-25T02:00:00.001Z" && !kv.m.has(OK(eA.at)),
+    "a millisecond the draft table holds is spent after its entry has left the queue: the same stage is not queued again and another takes the next: " + JSON.stringify({ aAgain, at: eA2.at }));
+
+  /* 3. A WITHDRAWAL AND A REJECTION FIND THE ENTRY UNDER ITS OWN KEY, AND TAKE THE KEY WITH IT */
+  const eE = pend("20260925050000-e1", "2026-09-25T05:00:00.000Z");
+  await queueSale(env, eE);
+  const dropped = await dropAck(env, eE.at, new Date("2026-09-25T05:10:00.000Z"));
+  const rowE = db.prepare("SELECT status,party,entry FROM draft WHERE id=?").get(eE.at);
+  ok(dropped === "dropped" && rowE.status === "rejected" && rowE.party === C1 && JSON.parse(rowE.entry).raw === eE.raw,
+    "a withdrawal files the rejected row with the entry read off its own key, party and all: " + JSON.stringify({ dropped, party: rowE.party }));
+  ok(!kv.m.has(OK(eE.at)), "and the key it emptied is deleted, not left holding nothing");
+  const eF = pend("20260925060000-f1", "2026-09-25T06:00:00.000Z");
+  await kv.put("q:orders", box(eB, eF)); await kv.put(OK(eF.at), box(eF)); await kv.put("q:ph1", JSON.stringify({ device: "ph1", queue: [eF] }));
+  const nF = await dropQueued(env, [eF.at]);
+  ok(nF === 3 && !kv.m.has(OK(eF.at)) && JSON.stringify(JSON.parse(kv.m.get("q:orders")).queue.map((e) => e.at)) === JSON.stringify([eB.at])
+    && JSON.parse(kv.m.get("q:ph1")).queue.length === 0,
+    "a rejection drops the entry from its own key, from the old blob and from a device's queue: " + nF);
+
+  /* 4. THE DRAFTER PRUNES WHAT IS COMMITTED, FROM BOTH SHAPES, AND NOTHING ELSE */
+  for (const k of [...kv.m.keys()]) if (k.startsWith("q:")) kv.m.delete(k);
+  const eG = pend("20260925070000-g1", "2026-09-25T07:00:00.000Z"), eH = pend("20260925080000-h1", "2026-09-25T08:00:00.000Z");
+  const eK = pend("20260925090000-k1", "2026-09-25T09:00:00.000Z");
+  await kv.put("q:orders", box(eA, eB, eK)); await kv.put(OK(eB.at), box(eB)); await kv.put(OK(eK.at), box(eK));
+  await kv.put("q:ph1", JSON.stringify({ device: "ph1", queue: [eA] }));
+  await quiet(() => runDrafter(env));   /* eK drafted above the mark */
+  setState("QUEUE_COMMITTED", "2026-09-25T07:30:00.000Z");
+  await kv.put(OK(eG.at), box(eG)); await kv.put(OK(eH.at), box(eH));   /* eG under the mark but not drafted yet */
+  const r4 = await quiet(() => runDrafter(env));
+  const blob4 = JSON.parse(kv.m.get("q:orders") || "{}");
+  ok(!kv.m.has(OK(eB.at)) && JSON.stringify((blob4.queue || []).map((e) => e.at)) === JSON.stringify([eK.at]) && r4.pruned === 3 && r4.legacy === 1,
+    "an entry at or under the mark that the draft table knows leaves its own key and the old blob: " + JSON.stringify({ pruned: r4.pruned, legacy: r4.legacy }));
+  ok(kv.m.has("q:orders") && blob4.device === "orders", "and the blob is rewritten without it, never deleted");
+  ok(kv.m.has(OK(eG.at)) && r4.drafted === 2 && drafts(eG.at) === 1, "an entry under the mark that the draft table did not know is drafted and kept this pass");
+  ok(kv.m.has(OK(eH.at)) && kv.m.has(OK(eK.at)), "an entry above the mark is kept, drafted or not");
+  ok(kv.m.has("q:ph1") && JSON.parse(kv.m.get("q:ph1")).queue.length === 1, "and a device's own queue is never pruned here");
+  await kv.put(OK(eK.at), box(eK)); setState("QUEUE_COMMITTED", "2026-09-25T09:30:00.000Z");
+  const r4b = await quiet(() => runDrafter(env));
+  ok(r4b.legacy === 0 && kv.m.has("q:orders") && JSON.parse(kv.m.get("q:orders")).queue.length === 0 && !kv.m.has(OK(eK.at)) && !kv.m.has(OK(eG.at)) && !kv.m.has(OK(eH.at)),
+    "once the mark passes the rest, the blob holds nothing and legacy reads 0: " + JSON.stringify({ legacy: r4b.legacy, pruned: r4b.pruned }));
+
+  /* 5. THE BLOB IS RETIRED ONLY EMPTY */
+  const retire = (raw) => { const dels = []; let r;
+    try { r = runRetireOrdersBlob({ io: { get: () => raw, del: (k) => (dels.push(k), true) } }); } catch (e) { r = "threw: " + e.message; }
+    return { r, dels }; };
+  const [full, empty, unread, absent] = await quiet(() => [box(eK), box(), "{queue:[x]}", null].map(retire));
+  ok(full.r === "refused" && full.dels.length === 0, "the retire command refuses while the blob holds an entry, and deletes nothing");
+  ok(unread.r === "unreadable" && unread.dels.length === 0 && absent.r === "absent" && absent.dels.length === 0,
+    "and leaves a blob it cannot read, and says when there is none");
+  ok(empty.r === "retired" && JSON.stringify(empty.dels) === '["q:orders"]', "an empty blob is deleted, and nothing else");
+
+  /* 6. ACCEPT'S ROAD WRITES ITS OWN KEY, AND THE RECONCILE DOES NOT QUEUE THE ROW AGAIN. Accept stamps the entry with
+     the tap's moment and the site stamps the move a few milliseconds after it, so stageAt(order, "ack") is NOT the
+     entry's `at` (measured 26 Sep 2026: 4 ms apart). What keeps a second Pending out is the mark, which names the
+     entry's own moment, so the mark is what is pinned. */
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const denv = { SALT_QUEUE: kv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const o6 = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", place: "", unit: 100, total: 100, week: "" })).order;
+  const pv6 = await call("/orders/" + o6.id + "/preview", {});
+  const a6 = await quiet(() => call("/orders/" + o6.id + "/accept", { hash: pv6.j.hash }));
+  const s6 = (await O.allOrders(senv, true)).find((x) => x.id === o6.id);
+  const mine = () => ordersQueue(kv).filter((e) => e.raw.includes(o6.id));
+  const own6 = kv.m.get(OK(a6.j.draft));
+  ok(a6.status === 200 && !!own6 && JSON.parse(own6).queue[0].raw.includes(o6.id) && s6.queued && s6.queued.ack === a6.j.draft,
+    "Accept queues its row under a key of its own, and the order's mark names that same moment: " + JSON.stringify({ status: a6.status, draft: a6.j.draft, mark: s6.queued }));
+  const rc6 = await quiet(() => reconcileOrders(denv));
+  ok(rc6.queued === 0 && mine().length === 1, "and the reconcile then queues nothing for it, in either shape: " + JSON.stringify({ queued: rc6.queued, entries: mine().length }));
+
+  /* 7. A NEW KEY THE LISTING DOES NOT SHOW YET IS STILL DRAFTED BY THE PASS THAT QUEUED IT: KV may leave a new key out
+     of list() for up to a minute, and every road queues and drafts in one invocation */
+  class LagKV extends KV { async list(o) { const r = await super.list(o); return Object.assign(r, { keys: r.keys.filter((k) => !k.name.startsWith("q:orders:")) }); } }
+  const lag = new LagKV(), lenv = { SALT_QUEUE: lag, SALT_LEDGER: D1 };
+  const eL = pend("20260925100000-l1", "2026-09-25T10:00:00.000Z");
+  await queueSale(lenv, eL);
+  const r7 = await quiet(() => runDrafter(lenv));
+  ok(r7.drafted === 1 && drafts(eL.at) === 1,
+    "a key the listing does not show yet is read by name by the pass that queued it, and drafted: " + JSON.stringify({ considered: r7.considered, drafted: r7.drafted }));
 })();
 
 section("S11 11.12: Collected, Cash received and Received are a yes for a row not drafted yet, spent only if the row equals it");
@@ -31604,7 +31770,7 @@ await (async () => {
   const sD = await orderOf(D.o.id);
   ok(cD.status === 200 && cD.j.preapproval.waits === true && sD.paid === 120 && sD.queued.paid === 120 && sD.status === "acknowledged"
     && (sD.payments || []).slice(-1).some((p) => p.by === "desk" && p.method === "cod" && p.amount === 120)
-    && !((await dkv.get("q:orders", "json")).queue.some((e) => e.orderId === D.o.id && e.status === "Payment")),
+    && !ordersQueue(dkv).some((e) => e.orderId === D.o.id && e.status === "Payment"),
     "Cash received marks the order paid at once, in cash as his (the site's cash event), which is what stops the chase, and queues nothing before the row is there: " + JSON.stringify({ paid: sD.paid, queued: sD.queued, payments: sD.payments }));
   land(D.draft);
   const dp = await deskPass(denv, new Date()); await runDrafter(denv);
@@ -31669,7 +31835,7 @@ await (async () => {
     putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN); return row; };
   let tamper = false;
   class TKV extends KV { async get(k, t) { const v = await super.get(k, t);
-    if (!(tamper && k === "q:orders" && v)) return v;
+    if (!(tamper && k.startsWith("q:orders") && v)) return v;
     const q = typeof v === "string" ? JSON.parse(v) : v;
     for (const e of q.queue || []) if (e.status === "Pending" && e.payload) e.payload.note = e.payload.note + " Changed on the way.";
     return t === "json" ? q : JSON.stringify(q); } }
@@ -31922,7 +32088,7 @@ await (async () => {
   await O.customerMove(senv, U, o.id, "pay", { amount: 30, method: "tngbiz", account: "tngbiz" });
   const claimAt = (await O.allOrders(senv, true)).find((x) => x.id === o.id).payments.slice(-1)[0].at;
   const rc = await reconcileOrders(denv);
-  const q = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  const q = ordersQueue(dkv).filter((e) => e.orderId === o.id && e.status === "Payment");
   const after = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
   const pe = after.payments.slice(-1)[0];
   ok(rc.queued === 1 && q.length === 1 && q[0].claim === true && q[0].claimOf === claimAt && q[0].payload.cash === 30
@@ -31953,7 +32119,7 @@ await (async () => {
   const r2 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
   const rc3 = await reconcileOrders(denv);
   const r3 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
-  const pays = ((await dkv.get("q:orders", "json")) || { queue: [] }).queue.filter((e) => e.orderId === o.id && e.status === "Payment");
+  const pays = ordersQueue(dkv).filter((e) => e.orderId === o.id && e.status === "Payment");
   ok(r2.paid === 50 && JSON.stringify(O.orderWork(r2)) === '["claim"]' && rc3.queued === 1 && pays.length === 2 && pays[1].payload.cash === 20
     && pays[1].claimOf === at2 && r3.queued.paid === 50 && O.orderWork(r3).length === 0,
     "received before it was queued, it is told by its own entry and never as a payment beside it, and that entry's mark moves the ledger's figure: "
@@ -32124,7 +32290,7 @@ await (async () => {
   };
   const mine = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   const draft = (id) => db.prepare("SELECT id,status,decided_by FROM draft WHERE id = ?").get(id) || null;
-  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const q = async () => ordersQueue(dkv);
   const agreed = async (total, key) => {
     const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
     await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
@@ -32319,7 +32485,7 @@ await (async () => {
       headers: Object.assign({ "content-type": "application/json" }, key === false ? {} : { "X-Salt-Key": "k-fixture" }), body: JSON.stringify(body || {}) }), denv, { waitUntil: () => {} });
     return { status: r.status, j: await r.json() };
   };
-  const q = async () => ((await dkv.get("q:orders", "json")) || { queue: [] }).queue;
+  const q = async () => ordersQueue(dkv);
   const drafts = (id) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all().filter((d) => JSON.parse(d.entry).claimId === id);
 
   const c1 = (await O.claimAccount(senv, U, { amount: 80, method: "transfer", account: "wise" })).claim;
@@ -33256,7 +33422,7 @@ await (async () => {
   const o1 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await O.deskMove(senv, u, o1.id, { status: "acknowledged", mode: "collect" });
   await reconcileOrders(denv);
-  const e1 = JSON.parse(await dkv.get("q:orders")).queue[0];
+  const e1 = ordersQueue(dkv)[0];
   ok(e1 && e1.status === "Pending" && e1.orderId === o1.id && !JSON.stringify(e1).includes(u),
     "the entry the reconcile queues says which order made it, and still names no username: " + JSON.stringify(e1 && e1.orderId));
   const draftOf = (e) => ({ id: e.at, status: "pending", collection: "sales", entry: JSON.stringify(e), row: "{}", reasoning: "", flags: "[]",
@@ -33349,7 +33515,7 @@ await (async () => {
   await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
-  const last = async () => JSON.parse(await dkv.get("q:orders")).queue.slice(-1)[0];
+  const last = async () => ordersQueue(dkv).slice(-1)[0];
   /* each order is placed, agreed, its row put on the book, and then ended by one side */
   const endedBy = async (total, end) => {
     const o = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: total, total, week: "" })).order;
@@ -34174,7 +34340,7 @@ await (async () => {
   };
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (x, i) => stmtW.fetch(new Request(x, i), senv) } };
   const rc = await reconcileOrders(denv);
-  const q = JSON.parse((await dkv.get("q:orders")) || '{"queue":[]}').queue;
+  const q = ordersQueue(dkv);
   const e = q[0] || {}, f = (e.payload && e.payload.fields) || {};
   ok(rc.queued === 1 && q.length === 1 && e.status === "Close" && e.payload.kind === "Correction" && e.payload.orderKey === K0
     && f.qty === 2 && f.total === 200 && f.deliveredQty === 2 && f.handover === "collected" && /^\d{4}-\d{2}-\d{2}$/.test(f.deliveredOn),
