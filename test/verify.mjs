@@ -27232,8 +27232,15 @@ await (async () => {
   const s181 = rd("sales.find(function(s){return s.rid==='s181';})");
   ok(!!s181 && s181.goodwill === true && !s181.rebate && s181.cancelled === true,
     "s181 is a gift that was withdrawn: goodwill, no rebate, cancelled");
-  ok(!!che && che.taken === 0 && Math.abs(che.free - che.earned) < 1e-9 && che.earned >= 2,
-    "so CE4-CHE keeps EVERY unit they earned and has taken none: " + JSON.stringify(che));
+  /* 26 Sep 2026: WHAT THEY HAVE TAKEN IS READ OFF THEIR OWN ROWS, NOT ASSUMED NOUGHT. This asked that CE4-CHE had taken none
+     and held two or more, which was the book of 19 Sep: the first unit they redeem, or a cover spent against a sale, would turn
+     a version that changed nothing red. The claim is that the withdrawn gift takes nothing, so what the table nets must be
+     exactly the units their own redemptions and covers carry on the book, and s181 is neither. What they EARN with it is
+     proved at the foot of this section, as a difference. */
+  const cheRows = rd("sales.filter(function(s){return s.customer==='CE4-CHE'||s.customer==='CE4-CHE-R';}).map(function(s){return {rid:s.rid,rebate:!!s.rebate,rebateKg:s.rebateKg==null?null:+s.rebateKg,qty:+s.qty||0,cover:+s.coverUnits||0};})");
+  const cheTook = +cheRows.reduce((a, s) => a + (s.rebate ? (s.rebateKg != null ? s.rebateKg : s.qty) : 0) + (s.cover > 0 ? s.cover : 0), 0).toFixed(2);
+  ok(!!che && cheRows.length > 0 && Math.abs(che.taken - cheTook) < 0.005 && Math.abs(che.free - (che.earned - cheTook)) < 0.005,
+    "so CE4-CHE keeps every unit they earned less only the " + cheTook + " their own redemptions and covers carry: " + JSON.stringify(che));
   ok(!!s181 && s181.cost == null,
     "and it carries no cost of its own, so were it live it would be charged at the book's weighted "
     + "average, which is what costOf does for every uncosted row: the fallback is stated, not hidden");
