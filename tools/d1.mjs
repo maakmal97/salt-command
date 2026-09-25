@@ -12,7 +12,8 @@
  *
  * Modes:
  *   node tools/d1.mjs --schema    apply migrations/0001_ledger.sql
- *   node tools/d1.mjs --seed      ledger/ledger.json -> D1 (full replace), then verify
+ *   node tools/d1.mjs --seed      ledger/ledger.json -> D1 (full replace), then verify; a book the
+ *                                 mirror already carries is not written again (--force writes it)
  *   node tools/d1.mjs --verify    read D1 back and deep-compare against ledger/ledger.json
  *   node tools/d1.mjs --status    what the store holds, no writes
  *   --local                       act on the local D1 rather than the remote one
@@ -28,6 +29,7 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB = "salt_ledger";
 const LEDGER = resolve(REPO, "ledger", "ledger.json");
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
+const FORCE = process.argv.includes("--force");
 
 import { COLLECTIONS, readBook, bySalt, prodOrder } from "./book.mjs";
 
@@ -65,18 +67,39 @@ function loadLedger() {
 }
 
 /* ---- schema ------------------------------------------------------------------------- */
-function applySchema() {
+function applySchema(run = wrangler) {
   console.log("\n1  SCHEMA");
-  const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/0001_ledger.sql"], { quiet: true });
+  const r = run(["d1", "execute", DB, WHERE, "--file=migrations/0001_ledger.sql"], { quiet: true });
   if (r.code !== 0) { fail("could not apply the schema:\n        " + r.out.split("\n").slice(-6).join("\n        ")); return false; }
   ok("migrations/0001_ledger.sql applied to " + DB + " (" + WHERE.replace("--", "") + ")");
   return true;
 }
 
 /* ---- seed --------------------------------------------------------------------------- */
+/* THE SEED'S HASH IS THE BOOK, NEVER THE MOMENT IT WAS EXTRACTED (26 Sep 2026, fold 2.2 of the
+   streamlining plan). `snapshot.sha` was a hash of the raw extract, which carries the two stamps
+   tools/ledger.mjs mints on every run (compareForm, below), so no two extracts of one book ever
+   matched and every deploy run seeded again. It is now the stamp-free form --verify compares, key by
+   key in a fixed order, beside the version and LAST_UPDATED the snapshot row names. PRICING carries
+   `v`, so every version bump seeds; a Worker-only push, a statements push, a re-run or a hand dispatch
+   whose book did not move seeds nothing. */
+function seedHash(body) {
+  const L = body.ledger || {};
+  return sha(["v:" + JSON.stringify(body.v ?? null), "stamped:" + JSON.stringify(body.stamped ?? null),
+    ...Object.keys(L).sort().map((k) => k + ":" + compareForm(k, L[k]))].join("\n"));
+}
+
+/* THE SNAPSHOT ROW GOES FIRST AND COMES BACK LAST, so on any road a mirror with no snapshot is a mirror
+   being seeded, and the drafter (src/drafter.js runDrafter) and the Accept preview stand down on exactly
+   that. On the remote road it costs nothing and changes nothing: `d1 execute --remote --file` is D1's
+   import, which runs the file as one transaction, so a reader sees the old mirror, an error while the
+   import runs, or the new mirror, never an empty or a partial one (wrangler's own words: the database
+   "will be unavailable to serve queries", and a failed import returns it to "its original state"). The
+   window is D1 UNAVAILABLE, NOT EMPTY, and it is why an unchanged book is no longer seeded at all.
+   BEGIN and COMMIT in the file would fail: the import is inside a transaction already. */
 function buildSeed(body) {
   const L = body.ledger;
-  const out = ["DELETE FROM entry;", "DELETE FROM state;", "DELETE FROM snapshot;"];
+  const out = ["DELETE FROM snapshot;", "DELETE FROM entry;", "DELETE FROM state;"];
   let rows = 0;
   for (const c of COLLECTIONS) {
     const arr = L[c];
@@ -101,20 +124,30 @@ function buildSeed(body) {
      self-use". The names are written down so an empty list comes back as an empty list. */
   const present = COLLECTIONS.filter((c) => Array.isArray(L[c]));
   out.push(`INSERT INTO state (key,doc) VALUES ('__collections',${q(JSON.stringify(present))});`);
-  const stamp = new Date().toISOString();
+  const stamp = new Date().toISOString(), hash = seedHash(body);
   out.push(`INSERT INTO snapshot (one,v,stamped,sha,rows,at) VALUES (1,${q(body.v)},${q(body.stamped)},`
-    + `${q(sha(JSON.stringify(L)))},${rows},${q(stamp)});`);
-  return { sql: out.join("\n"), rows };
+    + `${q(hash)},${rows},${q(stamp)});`);
+  return { sql: out.join("\n"), rows, hash };
 }
 
-function seed() {
+/* A BOOK THE MIRROR ALREADY CARRIES IS NOT WRITTEN AGAIN: the snapshot row's hash and record count
+   against this extract's, read before the schema is applied, since that is an import of its own.
+   A snapshot that cannot be read (null, never seeded; undefined, wrangler did not answer) seeds, the
+   idempotent work. --force seeds regardless, for a mirror mangled under an unchanged book. The ones
+   injected are for the suite, which spawns nothing. */
+function seed({ body = loadLedger(), current = readSnapshot, run = wrangler, force = FORCE } = {}) {
   console.log("\n2  SEED");
-  const body = loadLedger();
-  const { sql, rows } = buildSeed(body);
+  const { sql, rows, hash } = buildSeed(body);
+  const held = force ? null : current();
+  if (held && held.sha === hash && held.rows === rows) {
+    ok(`the mirror already carries this book (${body.v}, ${rows} record rows, sha ${hash}): nothing to seed`);
+    return "held";
+  }
+  if (!applySchema(run)) return false;
   mkdirSync(resolve(REPO, "migrations"), { recursive: true });
   const file = resolve(REPO, "migrations", ".seed.generated.sql");
   writeFileSync(file, sql);
-  const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/.seed.generated.sql"], { quiet: true });
+  const r = run(["d1", "execute", DB, WHERE, "--file=migrations/.seed.generated.sql"], { quiet: true });
   if (r.code !== 0) { fail("the seed did not execute:\n        " + r.out.split("\n").slice(-8).join("\n        ")); return false; }
   ok(`seeded ${rows} record rows and ${Object.keys(body.ledger).length - COLLECTIONS.filter(c => Array.isArray(body.ledger[c])).length} state keys from ${body.v}`);
   return true;
@@ -277,15 +310,15 @@ async function prove() {
 
 /* THE STORE'S SNAPSHOT ROW, FOR tools/update.mjs (14 Sep 2026, his question). update.mjs read it from the
    desk's keyed /ledger, so on a laptop without SALT_WRITE_KEY in the shell the check never ran. wrangler
-   reads D1 on its own login, as drafts.mjs does, so no key is needed. {v, rows}; null when the store was
+   reads D1 on its own login, as drafts.mjs does, so no key is needed. {v, rows, sha}; null when the store was
    never seeded; undefined when wrangler could not answer, tried twice because a first "fetch failed" is
    routine here. It never calls fail(): update.mjs decides what a missing answer means. */
 function readSnapshot() {
   for (let i = 0; i < 2; i++) {
-    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows FROM snapshot WHERE one=1;")], { quiet: true });
+    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows,sha FROM snapshot WHERE one=1;")], { quiet: true });
     const a = r.out.indexOf("["), b = r.out.lastIndexOf("]");
     if (a < 0 || b < a) continue;
-    try { const s = JSON.parse(r.out.slice(a, b + 1)).flatMap((x) => x.results || [])[0]; return s ? { v: s.v, rows: s.rows } : null; }
+    try { const s = JSON.parse(r.out.slice(a, b + 1)).flatMap((x) => x.results || [])[0]; return s ? { v: s.v, rows: s.rows, sha: s.sha } : null; }
     catch (e) { /* unparseable: try once more */ }
   }
   return undefined;
@@ -306,7 +339,7 @@ function status() {
    GUARDED SO THE SUITE CAN IMPORT compareForm without this file reaching for wrangler on the
    way in. pathToFileURL, not a hand-built file URL: the hand-built form matches on Windows and
    not on Linux, which is how v522's gate ran as a silent no-op on the runner. */
-export { compareForm, readSnapshot };
+export { compareForm, readSnapshot, seedHash, buildSeed, seed };
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
 const arg = process.argv[2];
@@ -314,8 +347,11 @@ if (arg === "--status") status();
 else if (arg === "--schema") applySchema();
 else if (arg === "--verify") verify();
 else if (arg === "--prove") await prove();
-else if (arg === "--seed") { if (applySchema() && seed()) verify(); }
-else { console.log("usage: node tools/d1.mjs --schema | --seed | --verify | --prove | --status  [--local]"); process.exit(2); }
+else if (arg === "--seed") {
+  const s = seed();
+  if (s && !verify() && s === "held") fail("the snapshot names this book and the rows do not match it: seed it again with --seed --force");
+}
+else { console.log("usage: node tools/d1.mjs --schema | --seed [--force] | --verify | --prove | --status  [--local]"); process.exit(2); }
 
 console.log("");
 if (problems.length) { console.log(`D1 INCOMPLETE: ${problems.length} problem${problems.length === 1 ? "" : "s"} above.`); process.exitCode = 1; }

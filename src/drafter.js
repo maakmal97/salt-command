@@ -1713,6 +1713,13 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
 
   const byAt = await queueEntries(env);
   const book = await readBook(env.SALT_LEDGER);
+  /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
+     first and writes it last (tools/d1.mjs buildSeed), so a mirror without one is being seeded or was never
+     seeded. Drafting against it refused every sale for want of a cost or, on a book half written, froze a card's
+     flags wrong: a usual read off too few rows, a twin missed, a pre-approved site row landing as differing for
+     want of a pricing version. Nothing is drafted and nothing refused: the entries
+     stay queued and the next pass, the quarter-hour net at the latest, drafts them against the whole book. */
+  if (book.version == null) return { ok: false, transition: true, error: "the mirror carries no snapshot, so it is being seeded or was never seeded; nothing is drafted until it is" };
   const mark = book.state && book.state.QUEUE_COMMITTED;
   const seen = await env.SALT_LEDGER.prepare("SELECT id FROM draft").all();
   const already = new Set((seen.results || []).map((r) => r.id));

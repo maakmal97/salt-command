@@ -200,6 +200,8 @@ async function previewAck(env, o, code, delivery, now) {
   const entry = pendingEntry(agreed, code, now);
   entry.orderId = o.id;
   const book = await readBook(env.SALT_LEDGER);
+  /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
+  if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   const pricing = await pricingOf(book);

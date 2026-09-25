@@ -30013,6 +30013,118 @@ await (async () => {
     + JSON.stringify({ fresh: nFresh.pushed, mixed: nMixed.pushed, ran: nMixed.ran && say(nMixed.ran) }));
 })();
 
+section("Fold 2.2: the re-seed skips a book the mirror already carries, and nothing drafts while the mirror has no snapshot");
+await (async () => {
+  /* E11 OF THE STREAMLINING PLAN (26 Sep 2026). `snapshot.sha` hashed the raw extract, stamps and all, so it never
+     matched and every deploy run seeded again: an import in which D1 answers no query. The hash is now the book
+     without its stamps, an unchanged book is not seeded, and the seed takes the snapshot row out first and puts it
+     back last, so a mirror with no snapshot is one being seeded, and the drafter and the Accept preview stand down
+     on it. Driven on the real migrations in node:sqlite, the seed's own SQL included. Invented codes only. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the seed and the drafter were not driven against the real schema"); return; }
+  const D = await import("../tools/d1.mjs");
+  const { runDrafter } = await import("../src/drafter.js");
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const migrated = () => { const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    return db; };
+  const asD1 = (db) => ({ prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } });
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+
+  /* A BOOK AS tools/ledger.mjs WRITES IT, the two keys it stamps at extract time among the rest */
+  const CODE = "CQ7-ZUV", U = "abcd-efgh";
+  const body = { v: "vS1", stamped: "26 Sep 2026, 09:00 KL", ledger: {
+    sales: [{ date: "2026-08-01", customer: CODE, qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    purchases: [{ date: "2026-08-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    PRICING: { v: "vS1", takenAt: "2026-09-26T01:00:00.000Z", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    OPEN: { at: "2026-09-26T01:00:00.100Z", byKey: {}, position: {} },
+    roster: [CODE, "SQ2-VOX"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" } };
+  const restamped = clone(body);
+  restamped.ledger.PRICING.takenAt = "2026-09-26T03:30:00.000Z"; restamped.ledger.OPEN.at = "2026-09-26T03:30:00.200Z";
+  const moved = clone(body); moved.ledger.sales[0].total = 95;
+  const bumped = clone(body); bumped.ledger.PRICING.v = "vS2";
+  const renamed = clone(body); renamed.v = "vS9";
+
+  /* THE HASH IS THE BOOK */
+  ok(JSON.stringify(body.ledger) !== JSON.stringify(restamped.ledger) && D.seedHash(body) === D.seedHash(restamped),
+    "two extracts of one book, stamped at two moments, hash the same: the stamps are not the book");
+  ok(D.seedHash(moved) !== D.seedHash(body) && D.seedHash(bumped) !== D.seedHash(body),
+    "while a sale's total moving is another book, and so is another pricing version");
+  ok(D.seedHash(renamed) !== D.seedHash(body),
+    "and so is another version on the snapshot row with the ledger unchanged, so the row is never left naming the old one");
+
+  /* THE SNAPSHOT IS OUT FROM THE SEED'S FIRST STATEMENT TO ITS LAST, run statement by statement over an older mirror */
+  const db0 = migrated();
+  db0.exec(D.buildSeed(body).sql);
+  const next = D.buildSeed(moved), steps = next.sql.split("\n");
+  const snaps = steps.map((st) => { db0.exec(st); return db0.prepare("SELECT COUNT(*) AS n FROM snapshot").get().n; });
+  const row = db0.prepare("SELECT v,sha,rows FROM snapshot WHERE one=1").get();
+  const total = JSON.parse(db0.prepare("SELECT doc FROM entry WHERE collection='sales'").get().doc).total;
+  ok(steps.length > 3 && snaps.slice(0, -1).every((n) => n === 0) && snaps[snaps.length - 1] === 1
+    && row && row.sha === D.seedHash(moved) && row.sha === next.hash && row.rows === next.rows && total === 95,
+    "the seed takes the snapshot out with its first statement and puts it back, carrying the book's hash, with its last: "
+    + JSON.stringify({ statements: steps.length, snapshotAfterEach: snaps.join(""), sha: row && row.sha, want: D.seedHash(moved), total }));
+
+  /* AN UNCHANGED BOOK IS NOT SEEDED: nothing spawned, not even the schema, which is an import of its own */
+  const calls = [], run = (args) => { calls.push(args.join(" ")); return { code: 0, out: "" }; };
+  const quiet = (fn) => { const real = console.log; console.log = () => {}; try { return fn(); } finally { console.log = real; } };
+  const held = { v: body.v, rows: D.buildSeed(body).rows, sha: D.seedHash(body) };
+  const r1 = quiet(() => D.seed({ body: restamped, current: () => held, run }));
+  ok(r1 === "held" && calls.length === 0,
+    "a book the mirror already carries, extracted again, is not seeded and nothing is spawned: " + JSON.stringify({ r1, calls }));
+  const r2 = quiet(() => D.seed({ body: moved, current: () => held, run }));
+  const lastless = (s) => s.split("\n").map((l) => l.replace(/,'\d{4}-\d\d-\d\dT[\d:.]+Z'\);$/, ",AT);")).join("\n");
+  const written = readFileSync(join(REPO, "migrations", ".seed.generated.sql"), "utf8");
+  ok(r2 === true && calls.length === 2 && /--file=migrations\/0001_ledger\.sql/.test(calls[0]) && /--file=migrations\/\.seed\.generated\.sql/.test(calls[1])
+    && lastless(written) === lastless(D.buildSeed(moved).sql),
+    "another book is seeded: the schema, then one execute of the file buildSeed writes: " + JSON.stringify(calls));
+  calls.length = 0;
+  let asked = 0;
+  const r3 = quiet(() => D.seed({ body, current: () => { asked++; return held; }, run, force: true }));
+  ok(r3 === true && asked === 0 && calls.length === 2, "--force seeds a book the mirror already carries, without reading it: " + JSON.stringify({ r3, asked, calls: calls.length }));
+  calls.length = 0;
+  const r4 = quiet(() => D.seed({ body, current: () => undefined, run }));
+  ok(r4 === true && calls.length === 2, "a snapshot wrangler could not read seeds, the idempotent work: " + JSON.stringify({ r4, calls: calls.length }));
+  calls.length = 0;
+  const r5 = quiet(() => D.seed({ body, current: () => Object.assign({}, held, { rows: held.rows + 1 }), run }));
+  ok(r5 === true && calls.length === 2, "and so does a snapshot whose record count is not this book's: " + JSON.stringify({ r5, calls: calls.length }));
+
+  /* THE DRAFTER STANDS DOWN on the mirror one statement before the seed's end: the whole book, no snapshot row */
+  const mirror = (whole) => { const db = migrated(); const st = D.buildSeed(body).sql.split("\n"); for (const s of whole ? st : st.slice(0, -1)) db.exec(s); return db; };
+  const sale = { at: "2026-08-16T01:00:01.000Z", payload: { mode: "new", direction: "SELL", party: CODE, qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16", product: "salt" } };
+  const pass = async (db) => {
+    const kv = new KV();
+    await kv.put("q:phone", JSON.stringify({ device: "phone", queue: [sale] }));
+    const r = await runDrafter({ SALT_QUEUE: kv, SALT_LEDGER: asD1(db) });
+    return { r, drafts: db.prepare("SELECT COUNT(*) AS n FROM draft").get().n, refused: db.prepare("SELECT COUNT(*) AS n FROM refused").get().n };
+  };
+  const mid = await pass(mirror(false)), done = await pass(mirror(true));
+  ok(mid.r.ok === false && mid.r.transition === true && mid.drafts === 0 && mid.refused === 0,
+    "with no snapshot the drafter drafts nothing and refuses nothing, and says the mirror is in transition: " + JSON.stringify({ r: mid.r, drafts: mid.drafts, refused: mid.refused }));
+  ok(done.r.ok && done.r.drafted === 1 && done.drafts === 1 && done.refused === 0,
+    "and with the snapshot back the same entry drafts: " + JSON.stringify({ drafted: done.r.drafted, skipped: done.r.skipped, drafts: done.drafts }));
+
+  /* AND THE ACCEPT PREVIEW ANSWERS 503, never a drafter's reason off a book in transition */
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+  const preview = async (db) => {
+    const denv = { SALT_QUEUE: dkv, SALT_LEDGER: asD1(db), STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+      STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+    const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + o.id + "/preview", { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: "{}" }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const pMid = await preview(mirror(false)), pDone = await preview(mirror(true));
+  ok(pMid.status === 503 && /being seeded/.test(pMid.j.error || "") && pDone.status === 200 && pDone.j.ok && pDone.j.row && pDone.j.row.customer === CODE,
+    "the preview of an Accept answers 503 while the mirror has no snapshot, and draws the row once it has: " + JSON.stringify({ mid: [pMid.status, pMid.j.error], done: [pDone.status, pDone.j.error || "ok"] }));
+})();
+
 section("S12 12.1: a subscription keeps its two encryption keys, and a pair that is not one is dropped, never refused");
 await (async () => {
   /* 24 SEP 2026, his decision D4: a banner may say what kind of news it is, encrypted so only the phone can
@@ -32022,6 +32134,8 @@ await (async () => {
   };
   const keyA = C + "|2026-09-25|120", keyB = C + "|2026-09-25|130";
   db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: { [keyA]: { key: keyA } }, position: {} }));
+  /* fold 2.2: a mirror carries its snapshot row, as every seeded one does; with none the drafter stands down */
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
 
   /* A. NOT FOUND ON A CLAIM QUEUED AND DRAFTED */
   const a = await agreed(120, keyA);
@@ -32330,6 +32444,8 @@ await (async () => {
     const mine = async (id) => (await O.allOrders(senv, true)).find((o) => o.id === id);
     /* the order's pending row is approved and not folded yet: Received on a claim waits for it to land */
     db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ byKey: {}, position: {} }));
+    /* fold 2.2: a mirror carries its snapshot row, as every seeded one does; with none the drafter stands down */
+    db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
     db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
       .run(ACK, "approved", "sales", "{}", JSON.stringify(ROW), "fixture", "[]", C, "orders", ACK, ACK, "preapproved");
     const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
