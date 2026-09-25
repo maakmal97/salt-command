@@ -1236,16 +1236,16 @@ await (async () => {
     "INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (?1,?2,?3,?4,?5,?6)"
   ).bind(id, JSON.stringify({ at: id, raw: "Fulfilment " + party + " 5 unit", type: "AMEND" }),
     why, party, source, "2026-08-29T02:00:01.000Z").run();
-  await rf("2026-08-29T02:00:00.000Z", "a Linked amendment names no figure the drafter can check", "CC5-OKR", "cloud-drafter");
+  await rf("2026-08-29T02:00:00.000Z", "a Linked amendment names no figure the drafter can check", "CC9-OKR", "cloud-drafter");
   await rf("2026-08-29T03:00:00.000Z", "a Rewarded amendment: which award applies is a judgement", "SA5-BTR", "laptop-queue");
 
   r = await worker.fetch(get("/drafts", KEY), env);
   j = await r.json();
   ok(j.refusedCount === 2 && j.refused.length === 2, "GET /drafts carries the refusals beside the drafts");
-  const one = j.refused.find(x => x.party === "CC5-OKR");
+  const one = j.refused.find(x => x.party === "CC9-OKR");
   ok(one && one.why && one.source === "cloud-drafter" && one.seenAt === "2026-08-29T02:00:01.000Z",
      "a refusal comes back with its reason, the drafter that saw it and the date");
-  ok(one.entry && one.entry.raw === "Fulfilment CC5-OKR 5 unit", "the entry comes back parsed, not as a string");
+  ok(one.entry && one.entry.raw === "Fulfilment CC9-OKR 5 unit", "the entry comes back parsed, not as a string");
   ok(!("status" in one) && !("decided_at" in one) && !("decided_by" in one),
      "a refusal has no decision column: there is nothing on it to approve");
   ok(j.refused.some(x => x.source === "laptop-queue"), "a refusal from the laptop sweep is shown beside a cloud one");
@@ -1281,13 +1281,13 @@ await (async () => {
       { date: "2026-08-11", product: "oil", qty: 50, total: 350, receivedOn: "2026-08-11" }
     ],
     sales: [
-      { date: "2026-08-08", customer: "CC5-OKR", qty: 1, total: 90 },
-      { date: "2026-07-15", customer: "CC5-OKR", qty: 1, total: 90 },
+      { date: "2026-08-08", customer: "CC9-OKR", qty: 1, total: 90 },
+      { date: "2026-07-15", customer: "CC9-OKR", qty: 1, total: 90 },
       { date: "2026-08-11", product: "oil", customer: "CS6-BS", qty: 30, total: 330 },
       { date: "2026-08-11", product: "oil", customer: "CS6-BS-R", qty: 20, total: 120 },
-      { date: "2026-08-06", product: "oil", customer: "CN6-WM-R", qty: 10, total: 130 }
+      { date: "2026-08-06", product: "oil", customer: "CN3-WM-R", qty: 10, total: 130 }
     ],
-    state: { roster: ["CC5-OKR", "CH4-MAL", "CS6-BS", "CN6-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+    state: { roster: ["CC9-OKR", "CH4-MAL", "CS6-BS", "CN3-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   /* the bare rows above are COMPLETED orders: every row on the real book carries cash and
      deliveredQty, and since 08 Sep 2026 the drafter reads a row with neither as pending */
@@ -1302,9 +1302,9 @@ await (async () => {
   ok(costFor(book, "salt").mayBlend === false, "shelf cost equal to the newest lot rate means one lot, so no blend flag");
   const blended = { ...book, pricing: { ...book.pricing, byProduct: { ...book.pricing.byProduct, salt: { ...book.pricing.byProduct.salt, stockCost: 47.47 } } } };
   ok(costFor(blended, "salt").mayBlend === true, "shelf cost differing from the newest lot rate means a blend, and is flagged");
-  const blendRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), blended);
+  const blendRow = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), blended);
   ok(blendRow.flags.some(f => /inventory average/.test(f)), "a blended shelf is named on the row");
-  const singleRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), book);
+  const singleRow = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), book);
   ok(!singleRow.flags.some(f => /inventory average/.test(f)), "a single-lot shelf does not raise it, so the flag stays worth reading");
 
   /* the floor lookup falls to the nearest carded size BELOW, never above */
@@ -1319,20 +1319,20 @@ await (async () => {
      amends is a judgement. That was true of an amendment arriving with nothing identifying its
      target, and it is still true of one. It stopped being true of an amendment carrying the
      desk's own ovKey, which the phone now sends because it makes you tap a specific order. */
-  ok(/names no order/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""),
+  ok(/names no order/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CC9-OKR" } }, book).skip || ""),
     "an amendment with NO order key is still left for a person");
-  ok(/judgement rather than which row/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Linked", direction: "SELL", party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, book).skip || ""),
+  ok(/judgement rather than which row/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Linked", direction: "SELL", party: "CC9-OKR", orderKey: "CC9-OKR|2026-08-01|90" } }, book).skip || ""),
     "a Linked amendment is still left for a person even WITH a key: whose bucket it books to is the judgement");
 
   /* With a key, a Fulfilment kind and a matching OPEN snapshot, it drafts. */
   const openBook = { ...book, version: "vTEST", state: { ...(book.state || {}), OPEN: { v: "vTEST", byKey: {
-    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweUnits: 1 },
+    "CC9-OKR|2026-08-01|90": { p: "CC9-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweUnits: 1 },
   } } } };
   const amend = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
-    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 90, kg: 1 } }, openBook);
+    party: "CC9-OKR", orderKey: "CC9-OKR|2026-08-01|90", date: "2026-08-20", cash: 90, kg: 1 } }, openBook);
   ok(!amend.skip, "a Fulfilment with a key against an OPEN order is drafted, not refused");
-  ok(amend.amends === "CC5-OKR|2026-08-01|90" && amend.amendKind === "Fulfilment", "and it records which row it amends, and how");
-  ok(amend.row && amend.row.customer === "CC5-OKR" && amend.row.total === 90,
+  ok(amend.amends === "CC9-OKR|2026-08-01|90" && amend.amendKind === "Fulfilment", "and it records which row it amends, and how");
+  ok(amend.row && amend.row.customer === "CC9-OKR" && amend.row.total === 90,
     "the row it carries is the TARGET as it stands, not a row to append");
   ok(/SETTLES the order in full/.test(amend.flags.join(" ")), "settling the whole order is flagged as such");
   ok(/ovAmend/.test(amend.reasoning), "and the reasoning says plainly that the desk applies it, not the drafter");
@@ -1341,26 +1341,26 @@ await (async () => {
      and newTotal against a tapped order, so what changed is a figure rather than free text, and
      the drafter runs the same history/floor/below-cost comparisons a brand new row gets. */
   const mod = draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL",
-    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", newQty: 2, newTotal: 150 } }, openBook);
+    party: "CC9-OKR", orderKey: "CC9-OKR|2026-08-01|90", newQty: 2, newTotal: 150 } }, openBook);
   ok(!mod.skip, "a Modification with new terms against an OPEN order is drafted, not refused");
-  ok(mod.amends === "CC5-OKR|2026-08-01|90" && mod.amendKind === "Modification", "and it records which row it amends, and how");
-  ok(mod.row.customer === "CC5-OKR" && mod.row.qty === 1 && mod.row.total === 90, "the row is the TARGET as it stands today");
+  ok(mod.amends === "CC9-OKR|2026-08-01|90" && mod.amendKind === "Modification", "and it records which row it amends, and how");
+  ok(mod.row.customer === "CC9-OKR" && mod.row.qty === 1 && mod.row.total === 90, "the row is the TARGET as it stands today");
   ok(mod.row.newQty === 2 && mod.row.newTotal === 150, "and the proposed new terms travel beside it");
   ok(mod.flags.some(f => /has paid RM 90\/unit on every one of their 2 orders/.test(f)), "the restated rate is measured against the party's own history, exactly as a new row would be");
   ok(/Restates it to 2 unit for RM 150/.test(mod.reasoning), "the reasoning states the change plainly");
   const modNoTerms = draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL",
-    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, openBook);
+    party: "CC9-OKR", orderKey: "CC9-OKR|2026-08-01|90" } }, openBook);
   ok(/no new quantity and total/.test(modNoTerms.skip || ""), "a Modification with no new terms is refused rather than guessed at");
 
   /* overpaying and overdelivering are the comparisons an amendment cannot make against itself */
   const over = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
-    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 200, kg: 5 } }, openBook);
+    party: "CC9-OKR", orderKey: "CC9-OKR|2026-08-01|90", date: "2026-08-20", cash: 200, kg: 5 } }, openBook);
   ok(over.flags.some(f => /more than the order is owed/.test(f)), "paying more than is outstanding is flagged");
   ok(over.flags.some(f => /more than the order calls for/.test(f)), "moving more than is outstanding is flagged");
 
   /* a key that matches nothing OPEN is refused rather than guessed at */
   const noSuchOrder = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
-    party: "CC5-OKR", orderKey: "CC5-OKR|1999-01-01|1", date: "2026-08-20", cash: 1, kg: 1 } }, openBook);
+    party: "CC9-OKR", orderKey: "CC9-OKR|1999-01-01|1", date: "2026-08-20", cash: 1, kg: 1 } }, openBook);
   ok(/no OPEN order/.test(noSuchOrder.skip || ""), "a key matching no open order is refused, never applied to a near miss");
   /* ---- THE BOOKKEEPING ENTRIES, DRAFTED FROM 20 Aug 2026 ----------------------------
      A count, a loss, a lost sale and a registration. None is a row in sales or purchases, and
@@ -1368,7 +1368,7 @@ await (async () => {
      MEANS: a count of zero against a roll that includes stock somebody has already paid for is
      not ordinary shrinkage, and reading it as such is what nearly happened on 20 Aug. */
   const shelf = { ...book, state: { ...(book.state || {}),
-    roster: ["CC5-OKR", "CA4-DAM"],
+    roster: ["CC9-OKR", "CA4-DAM"],
     OPEN: { v: "vTEST", byKey: {},
       position: { salt: { onHand: 8.05, owedOut: 6, promised: 24.5, free: 2.05 } },
       countedOn: { salt: "2026-08-12" } } } };
@@ -1409,36 +1409,36 @@ await (async () => {
   /* ---- associate attribution goes through the gate now (25 Aug 2026) ---- */
   /* It used to be refused outright, so a downsell could only be typed at the laptop. Each of
      the three fields is a code the book either knows or does not, so each is CHECKED. */
-  const r2 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R2", downstream: "CM4-MK" }), book);
+  const r2 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN3-WM", stream: "R2", downstream: "CM4-MK" }), book);
   ok(!r2.skip, "an R2 downsell is drafted rather than refused");
-  ok(r2.row.customer === "CN6-WM-R" && r2.row.rev === "R2" && r2.row.downstream === "CM4-MK",
+  ok(r2.row.customer === "CN3-WM-R" && r2.row.rev === "R2" && r2.row.downstream === "CM4-MK",
     "v611: and it books to the associate's bucket, with the named buyer noted beside it, exactly as the desk's own rule does");
-  ok(r2.flags.some(f => /Booked to CN6-WM-R as R2/.test(f) && /CM4-MK is noted as the end buyer, credited nothing and sent no statement/.test(f)),
+  ok(r2.flags.some(f => /Booked to CN3-WM-R as R2/.test(f) && /CM4-MK is noted as the end buyer, credited nothing and sent no statement/.test(f)),
     "the reader is told where it books and that the named buyer is credited nothing and gets no statement from it");
-  const r3 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R3" }), book);
-  ok(!r3.skip && r3.row.customer === "CM4-MK" && r3.row.ref === "CN6-WM" && r3.row.refKg === 1,
+  const r3 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN3-WM", stream: "R3" }), book);
+  ok(!r3.skip && r3.row.customer === "CM4-MK" && r3.row.ref === "CN3-WM" && r3.row.refKg === 1,
     "R3 leaves the buyer on the row and credits the introduction beside it");
-  ok(/stream/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
+  ok(/stream/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN3-WM" }), book).skip || ""),
     "an associate with no stream is refused: the credit has no route");
   ok(/credit reaches nobody/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, stream: "R2" }), book).skip || ""),
     "a stream with no associate is refused: it credits nobody");
-  ok(/R2 or R3/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN6-WM", stream: "R9" }), book).skip || ""),
+  ok(/R2 or R3/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN3-WM", stream: "R9" }), book).skip || ""),
     "a stream that is not R2 or R3 is refused");
   ok(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CX9-NOBODY", stream: "R3" }), book)
     .flags.some(f => /not on the roster/.test(f)), "an associate the book does not know is flagged");
   ok(/links to another order/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, linkTo: "whatever" }), book).skip || ""),
     "the link fields stay refused: which order a row links to is a judgement");
   ok(/counterparty/.test(draftRow(entry({ direction: "SELL", qty: 1, total: 100 }), book).skip || ""), "no party, no row");
-  ok(/quantity or no total/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1 }), book).skip || ""), "no total, no row");
-  ok(/no date/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1 }), book).skip || ""),
+  ok(/quantity or no total/.test(draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1 }), book).skip || ""), "no total, no row");
+  ok(/no date/.test(draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1 }), book).skip || ""),
     "something moved but no date given: refused rather than dated by guess");
 
   /* ---- a pending row carries THE DAY IT WAS AGREED (v540; every row is dated since v487) ---- */
-  const pend = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: "2026-08-16" }), book);
+  const pend = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: "2026-08-16" }), book);
   ok(!pend.skip && pend.row.date === "2026-08-16", "nothing moved, so the row is pending and carries the agreed date the phone typed");
   ok(pend.row.deliveredQty === 0 && pend.row.cash === 0, "and it draws no stock and books no cash");
   ok(/PENDING/.test(pend.reasoning) && /2026-08-16/.test(pend.reasoning), "the reasoning says so, with the date");
-  const pendNoDate = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: null }), book);
+  const pendNoDate = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: null }), book);
   ok(!!pendNoDate.skip && /no date/.test(pendNoDate.skip), "a pending order with no date typed is refused rather than drafted undated");
 
   /* ---- THE RM115 OIL UNIT, the fixture this whole path exists for ---- */
@@ -1461,7 +1461,7 @@ await (async () => {
   ok(buyStranger.flags.some(f => /never supplied/.test(f)), "an unknown SUPPLIER is flagged as never having supplied, not as off-roster");
 
   /* ---- the party's own standing rate ---- */
-  const cut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), book);
+  const cut = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), book);
   ok(cut.flags.some(f => /has paid RM 90/.test(f)), "a party who has always paid RM90 being charged RM80 is flagged");
   ok(buyNoFloor.flags.every(f => !/floor/.test(f)), "a PURCHASE is never measured against a selling floor");
   /* v385: THE FLOOR IS THE COST LEG ALONE, so a row at it earns nothing at all rather than a
@@ -1470,12 +1470,12 @@ await (async () => {
      had quietly become two things. */
   /* v502: one floor per size, the goods after the leak; RM80 at 1 unit clears the RM79.5 floor. */
   ok(cut.flags.every(f => !/under the floor/.test(f)), "RM80 against a RM79.5 floor is not flagged: there is one floor now, and it clears it");
-  const under = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
+  const under = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
   ok(under.flags.some(f => /RM 9.5 under the floor of RM 79.5/.test(f)) && under.flags.some(f => /what the order costs to take out/.test(f)),
     "RM70 is flagged as RM9.5 under the RM79.5 floor, by how much, and the flag says what the floor IS");
   /* v502: a delivery charge inside the total is taken out before the floor is read */
   /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
-  const withDel = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
+  const withDel = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
   ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
     "RM75 of goods with RM20 of carriage beside it is RM95 owed, and the floor is read against the goods");
   /* v728: A CARRIAGE ABOVE THE GOODS IS NO LONGER A FAULT, and stating that is the point of this
@@ -1483,12 +1483,12 @@ await (async () => {
      exceed the figure containing it; since v727 it stands beside the goods, and half a unit driven
      a long way genuinely can cost more to carry than the salt is worth. What is refused instead is
      the CONTRADICTION: a word saying nobody carried it beside a figure saying somebody did. */
-  const bigCarry = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 0.5, total: 50, delivery: 60, cash: 110, kg: 0.5, date: "2026-08-16" }), book);
+  const bigCarry = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 0.5, total: 50, delivery: 60, cash: 110, kg: 0.5, date: "2026-08-16" }), book);
   ok(!bigCarry.skip && bigCarry.row.total === 50 && bigCarry.row.delivery === 60,
     "a carriage above the goods is drafted, not refused: the drive is what it cost, and it is beside the goods rather than inside them");
-  ok(/collected it and charges RM 20 to deliver it/.test(String(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "collected" }), book).skip || "")),
+  ok(/collected it and charges RM 20 to deliver it/.test(String(draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "collected" }), book).skip || "")),
     "what IS refused is the contradiction: collected by the customer, with a delivery charged");
-  ok(!draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "delivered" }), book).skip,
+  ok(!draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, delivery: 20, cash: 110, kg: 1, date: "2026-08-16", handover: "delivered" }), book).skip,
     "and the same figures with the word the other way round are a perfectly ordinary delivered order");
 
   /* THE TIME CHARGE IS READ OFF THE POLICY AND NEVER TYPED INTO THE FLAG. An older snapshot
@@ -1498,7 +1498,7 @@ await (async () => {
   timed.pricing.byProduct.salt.inputs = { policy: { timePerOrder: 25 } };
   ok(floorFor(timed, "salt", 1).time === 25 && floorFor(book, "salt", 1).time === null,
     "floorFor reports the stated time charge, and null where the snapshot has no policy");
-  const timedCut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), timed);
+  const timedCut = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), timed);
   ok(timedCut.flags.some(f => /RM 25 for your time/.test(f)), "and the flag names it where it is stated");
   ok(cut.flags.every(f => !/for your time/.test(f)), "and leaves the clause out where it is not, rather than guessing at RM25");
 
@@ -1511,7 +1511,7 @@ await (async () => {
   ok(stranger.flags.some(f => /not on the roster/.test(f)), "a party that is not on the roster is flagged, not silently accepted");
 
   /* ---- an advance ---- */
-  const adv = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 0, kg: 1, date: "2026-08-16" }), book);
+  const adv = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 0, kg: 1, date: "2026-08-16" }), book);
   ok(adv.flags.some(f => /ADVANCE/.test(f)), "a delivery with nothing paid is named an advance");
   ok(adv.row.deliveredOn === "2026-08-16" && adv.row.paidOn === undefined, "delivered but not paid, and the row says exactly that");
 
@@ -1523,17 +1523,17 @@ await (async () => {
   ok(buy.row.cost === undefined, "a purchase carries no per-unit cost field; it IS the cost");
 
   /* ---- history counts only what MOVED ---- */
-  /* A pending row is an intention. Counting one as history is what stopped CC5-OKR's four
+  /* A pending row is an intention. Counting one as history is what stopped CC9-OKR's four
      RM90 orders reading as a standing rate on the real book. */
-  const withPending = { ...book, sales: [...book.sales, { customer: "CC5-OKR", qty: 1, total: 80 }] };
-  const stillFlagged = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), withPending);
+  const withPending = { ...book, sales: [...book.sales, { customer: "CC9-OKR", qty: 1, total: 80 }] };
+  const stillFlagged = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), withPending);
   ok(stillFlagged.flags.some(f => /RM 90/.test(f)), "an undated pending row does not count as history, so the standing rate still reads RM90");
 
   /* ---- one odd order must not switch the check off for ever ---- */
-  const mixed = { ...book, sales: [...book.sales, { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 70, cash: 70, deliveredQty: 1 }] };
-  const vsMedian = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 130, cash: 130, kg: 1, date: "2026-08-16" }), mixed);
+  const mixed = { ...book, sales: [...book.sales, { date: "2026-08-01", customer: "CC9-OKR", qty: 1, total: 70, cash: 70, deliveredQty: 1 }] };
+  const vsMedian = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 130, cash: 130, kg: 1, date: "2026-08-16" }), mixed);
   ok(vsMedian.flags.some(f => /typically pays/.test(f)), "a party with a mixed history is measured against the median, not against perfect uniformity");
-  const inBand = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 88, cash: 88, kg: 1, date: "2026-08-16" }), book);
+  const inBand = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 88, cash: 88, kg: 1, date: "2026-08-16" }), book);
   ok(!inBand.flags.some(f => /RM 90/.test(f) || /typically pays/.test(f)), "a rate within tolerance of the median does not nag");
 
   /* ---- A GIFT IS NOT A PRICE ANYONE PAID ---- */
@@ -1549,14 +1549,14 @@ await (async () => {
      each, because one of either is invisible to a median over the two real rates this book holds. */
   const gifts = { ...book, sales: [...book.sales,
     ...Array.from({ length: 5 }, (_, i) => ({
-      date: "2026-08-0" + (i + 1), customer: "CC5-OKR", qty: 1, total: 48, cost: 48,
+      date: "2026-08-0" + (i + 1), customer: "CC9-OKR", qty: 1, total: 48, cost: 48,
       cash: 0, settledRM: 48, goodwill: true, deliveredQty: 1, deliveredOn: "2026-08-0" + (i + 1) })),
     ...Array.from({ length: 3 }, (_, i) => ({
-      date: "2026-08-1" + (i + 1), customer: "CC5-OKR", qty: 1, total: 0,
+      date: "2026-08-1" + (i + 1), customer: "CC9-OKR", qty: 1, total: 0,
       cash: 0, deliveredQty: 1, deliveredOn: "2026-08-1" + (i + 1) })) ] };
-  const atTheirRate = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), gifts);
+  const atTheirRate = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), gifts);
   ok(!atTheirRate.flags.some((f) => /typically pays/.test(f)),
-    "eight units given free, in both shapes a giveaway has had, do not become eight prices CC5-OKR paid: "
+    "eight units given free, in both shapes a giveaway has had, do not become eight prices CC9-OKR paid: "
       + JSON.stringify(atTheirRate.flags.filter((f) => /typically pays/.test(f))));
   /* AND A GIFT MUST NOT SWITCH A CHECK ON, which is the twin filter and the subtler half. This book
      holds TWO real salt rates, under the three the observed-range check needs, so that check does
@@ -1582,7 +1582,7 @@ await (async () => {
       + JSON.stringify(cheapOil.flags.filter((f) => /less than half|more than double/.test(f))));
 
   /* ---- a stale pricing snapshot ---- */
-  const stale = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }),
+  const stale = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }),
     { ...book, version: "v305", pricing: { ...book.pricing, v: "v302" } });
   ok(stale.flags.some(f => /stale/.test(f)), "pricing taken at an older version than the mirror is flagged as stale");
 
@@ -1642,7 +1642,7 @@ await (async () => {
 })();
 
 /* ---- 10c. refused entries are visible, never approvable ------------------------- */
-/* Built after the same CC5-OKR fulfilment was queued twice on 17 Aug, once per device. An
+/* Built after the same CC9-OKR fulfilment was queued twice on 17 Aug, once per device. An
    amendment is refused by the drafter, so it never reached the Approve tab, so there was no
    way to see from the phone that it was already in hand. These assertions guard the two
    properties that matter: it shows up, and it cannot be decided. */
@@ -2390,7 +2390,7 @@ await (async () => {
     ok(CORRECTABLE === E.CORRECTABLE, "the drafter reads the engine table rather than its own copy");
     ok(/PE\.CORRECT_BOOL/.test(mtxt), "and the desk applies a correction from that same table");
 
-    const bk = { state: { roster: ["CA4-DAM", "CN6-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN6-WM"] } };
+    const bk = { state: { roster: ["CA4-DAM", "CN3-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN3-WM"] } };
     const tgt = { rid: "sZ1", customer: "CA4-DAM", qty: 2, total: 200, cash: 200, deliveredQty: 2, cost: 44 };
     const errsOf = (f, t) => checkCorrection(f, bk, t || tgt, true).errs.join(" ");
     const flagsOf = (f, t) => checkCorrection(f, bk, t || tgt, true).flags;
@@ -2417,10 +2417,10 @@ await (async () => {
     /* THE ROW AS A PERSON NAMES IT. On an R2 row the counterparty field holds the ASSOCIATE and
        the buyer is the downstream, so a diff built from the raw row would report the associate
        as the buyer and every before-and-after line would be wrong. */
-    const r2 = { rid: "sZ2", customer: "CN6-WM", rev: "R2", downstream: "CA4-DAM", qty: 1, total: 100 };
+    const r2 = { rid: "sZ2", customer: "CN3-WM", rev: "R2", downstream: "CA4-DAM", qty: 1, total: 100 };
     ok(/changes nothing/.test(errsOf({ party: "CA4-DAM" }, r2)),
       "the buyer on an R2 row reads as the downstream, so restating it is not a change");
-    ok(checkCorrection({ party: "CN6-WM" }, bk, r2, true).changes.length === 1,
+    ok(checkCorrection({ party: "CN3-WM" }, bk, r2, true).changes.length === 1,
       "and naming a different buyer on it is");
   }
   /* ---- the 25 Aug audit: every finding pinned so it cannot come back quietly ---- */
@@ -2437,7 +2437,7 @@ await (async () => {
     ok(plainR.cashRaw === undefined && plainR.delivRaw === undefined, "a row with no divergence carries no extra fields");
 
     /* the drafter: one flag per fact, effective figures, and the two new refusals */
-    const bk2 = { state: { roster: ["CA4-DAM", "CN6-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN6-WM"] } };
+    const bk2 = { state: { roster: ["CA4-DAM", "CN3-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN3-WM"] } };
     const inkT = { rid: "sK1", customer: "CA4-DAM", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1, date: "2026-07-01" };
     const c1 = checkCorrection({ date: null }, bk2, inkT, true);
     ok(/cannot be cleared: money or stock has moved/.test(c1.errs.join(" ")),
@@ -2447,7 +2447,7 @@ await (async () => {
        EFFECTIVE paid, or an in-kind settlement hides it entirely. */
     {
       const bkL = { sales: [inkT], purchases: [], state: bk2.state, pricing: null };
-      const d1 = draftRow({ at: "a1", payload: { mode: "amend", kind: "Correction", rid: "sK1", fields: { party: "CN6-WM", date: "2026-07-02" } } }, bkL);
+      const d1 = draftRow({ at: "a1", payload: { mode: "amend", kind: "Correction", rid: "sK1", fields: { party: "CN3-WM", date: "2026-07-02" } } }, bkL);
       ok(!d1.skip && (d1.flags || []).filter((f) => /moves the row from/.test(f)).length === 1,
         "a party correction raises the party flag once, not twice");
       ok((d1.flags || []).filter((f) => /redating|counted as having happened/.test(f)).length === 1,
@@ -2546,12 +2546,12 @@ await (async () => {
       "a correction with no fields is refused rather than folded as a no-op");
 
     const A = JSON.parse(JSON.stringify(CB));
-    const ar = apply(A, corr("04:02", { product: "oil", assoc: "CN6-WM", stream: "R2", downstream: "CX9-TESTCOR" }), CNOTES("04:02"), master);
+    const ar = apply(A, corr("04:02", { product: "oil", assoc: "CN3-WM", stream: "R2", downstream: "CX9-TESTCOR" }), CNOTES("04:02"), master);
     ok(ar.ok, "product and attribution correct in one pass: " + (ar.ok ? "" : ar.problems.join("; ")));
     if (ar.ok) {
       const r = A.sales.find((x) => x.rid === "sX01");
       ok(r.product === "oil", "the product changed on a row that was already paid and delivered");
-      ok(r.customer === "CN6-WM-R" && r.rev === "R2" && r.downstream === "CX9-TESTCOR",
+      ok(r.customer === "CN3-WM-R" && r.rev === "R2" && r.downstream === "CX9-TESTCOR",
         "v611: the R2 attribution books it to the associate's bucket with the named buyer noted, as the desk does");
       ok(r.cash === 200 && r.deliveredQty === 2, "the settlement figures are untouched: a correction moves no money and no salt");
       ok(/corrected/.test(r.mod || "") && /salt to oil/.test(r.mod || ""),
@@ -2570,11 +2570,11 @@ await (async () => {
     }
 
     const R3 = JSON.parse(JSON.stringify(CB));
-    const rr = apply(R3, corr("04:04", { assoc: "CN6-WM", stream: "R3" }), CNOTES("04:04"), master);
+    const rr = apply(R3, corr("04:04", { assoc: "CN3-WM", stream: "R3" }), CNOTES("04:04"), master);
     ok(rr.ok, "an R3 correction applies: " + (rr.ok ? "" : rr.problems.join("; ")));
     if (rr.ok) {
       const r = R3.sales.find((x) => x.rid === "sX01");
-      ok(r.customer === "CX9-TESTCOR" && r.ref === "CN6-WM" && r.refKg === 2 && !r.rev,
+      ok(r.customer === "CX9-TESTCOR" && r.ref === "CN3-WM" && r.refKg === 2 && !r.rev,
         "R3 leaves the buyer as the counterparty and credits the introduction beside it");
     }
 
@@ -3897,9 +3897,9 @@ await (async () => {
   }]));
   w.eval("AP_REFUSED = " + JSON.stringify([{
     id: "2026-08-29T02:00:00.000Z",
-    entry: { raw: "Fulfilment CC5-OKR 5 unit", type: "AMEND" },
+    entry: { raw: "Fulfilment CC9-OKR 5 unit", type: "AMEND" },
     why: "a Linked amendment names no figure the drafter can check",
-    party: "CC5-OKR", source: "cloud-drafter", seenAt: "2026-08-29T02:00:01.000Z"
+    party: "CC9-OKR", source: "cloud-drafter", seenAt: "2026-08-29T02:00:01.000Z"
   }]));
   w.apDraw();
 
@@ -4692,7 +4692,7 @@ await (async () => {
      poRecvUnits falls through to "received in full" when receivedQty is absent, which is true of
      a lot and true of every sale that has ever existed. */
   const sale = (over) => Object.assign({ date: "2026-08-01", qty: 2, total: 200,
-    customer: "CN6-WM", rid: "s999" }, over);
+    customer: "CN3-WM", rid: "s999" }, over);
   const cancels = (row, dir) => {
     try { applyAmend(row, { kind: "Cancellation", date: "2026-08-31" }, dir, null); return row.cancelled === true; }
     catch (e) { return false; }
@@ -4964,9 +4964,9 @@ await (async () => {
   const { join: j5 } = await import("node:path");
 
   const SALES = [
-    { rid: "t101", date: null, qty: 2, total: 200, customer: "CN6-WM" },
-    { rid: "t102", date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", cash: 100, deliveredQty: 1 },
-    { rid: "t103", date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", cash: 0, deliveredQty: 0 },
+    { rid: "t101", date: null, qty: 2, total: 200, customer: "CN3-WM" },
+    { rid: "t102", date: "2026-08-01", qty: 2, total: 200, customer: "CN3-WM", cash: 100, deliveredQty: 1 },
+    { rid: "t103", date: "2026-08-01", qty: 2, total: 200, customer: "CN3-WM", cash: 0, deliveredQty: 0 },
   ];
   const LOTS = [
     { rid: "t201", date: null, qty: 10, total: 500, supplier: "SF6-KLC", pending: true },
@@ -5048,7 +5048,7 @@ await (async () => {
     (await import("node:path")).join(REPO, "ledger", "book.json"), "utf8"));
   const blocked = (row, isSale) => cc({ cancelled: true }, bkA, row, isSale).errs.filter((e) => /already moved/.test(e)).length > 0;
   const lotA = (o) => Object.assign({ date: "2026-07-08", qty: 12.5, total: 750, supplier: "SF6-KLC", rid: "p9" }, o);
-  const saleA = (o) => Object.assign({ date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", rid: "s9" }, o);
+  const saleA = (o) => Object.assign({ date: "2026-08-01", qty: 2, total: 200, customer: "CN3-WM", rid: "s9" }, o);
 
   ok(blocked(lotA({ status: "paid" }), false), "a landed lot cannot be cancelled");
   ok(!blocked(lotA({ defaulted: true, status: "paid" }), false),
@@ -5090,7 +5090,7 @@ await (async () => {
 
   /* a book whose customers hold cost and no revenue */
   const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
-  bk6.sales = [{ date: "2026-08-01", customer: "CN6-WM", qty: 2, total: 0, cash: 0, deliveredQty: 2, rid: "z1" }];
+  bk6.sales = [{ date: "2026-08-01", customer: "CN3-WM", qty: 2, total: 0, cash: 0, deliveredQty: 2, rid: "z1" }];
   const B6 = j6(REPO, "test", ".v426.json"), M6 = j6(REPO, "test", ".v426.html");
   wf6(B6, JSON.stringify(bk6, null, 1));
   wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
@@ -5193,7 +5193,7 @@ await (async () => {
 
   /* an unpriced row, built because the book has none */
   const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
-  bk8.sales = bk8.sales.concat([{ date: "2026-08-20", customer: "CN6-WM", qty: 3, total: 0, unpriced: true, cash: 0, deliveredQty: 0, rid: "u1" }]);
+  bk8.sales = bk8.sales.concat([{ date: "2026-08-20", customer: "CN3-WM", qty: 3, total: 0, unpriced: true, cash: 0, deliveredQty: 0, rid: "u1" }]);
   const B8 = j8(REPO, "test", ".v430.json"), M8 = j8(REPO, "test", ".v430.html");
   wf8(B8, JSON.stringify(bk8, null, 1));
   wf8(M8, rf8(j8(REPO, "master", "salt_command.html"), "utf8"));
@@ -5661,7 +5661,7 @@ await (async () => {
   const { execSync: exB } = await import("node:child_process");
   const { join: jB } = await import("node:path");
 
-  const seed = { rid: "y1", date: null, qty: 2, total: 200, customer: "CN6-WM", unpriced: true };
+  const seed = { rid: "y1", date: null, qty: 2, total: 200, customer: "CN3-WM", unpriced: true };
   const lot = { rid: "y2", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0, cash: 100 };
   const settled = { rid: "y3", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
   const bkB = JSON.parse(rfB(jB(REPO, "ledger", "book.json"), "utf8"));
@@ -5733,7 +5733,7 @@ await (async () => {
      builds the states. It also drives them through the DESK, because an engine that is right and a
      desk that never asks it is the shape this round keeps finding. */
   const { default: PEc } = await import("../engine/position.mjs");
-  const mk = (o) => Object.assign({ rid: "k1", date: "2026-08-01", customer: "CN6-WM", qty: 1, total: 100, cancelled: true }, o);
+  const mk = (o) => Object.assign({ rid: "k1", date: "2026-08-01", customer: "CN3-WM", qty: 1, total: 100, cancelled: true }, o);
 
   ok(PEc.txStat(mk({ cash: 100 })).pay === "Refund due", "a cancelled order paid in cash is a refund due");
   ok(PEc.txStat(mk({ settledRM: 100 })).pay === "Refund due",
@@ -9637,18 +9637,18 @@ await (async () => {
     version: "vA", pricing: { v: "vA", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
     purchases: [{ date: "2026-08-13", supplier: "SA5-BTR", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
     sales: [
-      { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
-      { date: "2026-08-08", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
-      { date: "2026-08-10", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
-      { date: "2026-08-11", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
+      { date: "2026-08-01", customer: "CC9-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+      { date: "2026-08-08", customer: "CC9-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+      { date: "2026-08-10", customer: "CC9-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
+      { date: "2026-08-11", customer: "CC9-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
       { date: "2026-08-12", customer: "CH4-MAL", qty: 1, total: 110, delivery: 10, cash: 110, deliveredQty: 1, rid: "s-del" }
     ],
-    state: { roster: ["CC5-OKR", "CH4-MAL", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+    state: { roster: ["CC9-OKR", "CH4-MAL", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const ent = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
 
   /* the drafter */
-  const cut = draftRow(ent({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), bookA);
+  const cut = draftRow(ent({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), bookA);
   ok(cut.flags.some((f) => /has paid RM 90/.test(f)), "two DATED pending RM 80 rows are not history: the standing rate still reads RM 90 (v540 dated every pending row)");
   const twin = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 110, delivery: 10, cash: 110, kg: 1, date: "2026-08-12" }), bookA);
   ok(twin.flags.some((f) => /matches s-del/.test(f)), "a twin with delivery inside its total is matched on the FULL total, as the fold matches it");
@@ -9662,7 +9662,7 @@ await (async () => {
     ok(!!d.skip && why.test(d.skip), "the gate refuses " + JSON.stringify(p) + ": " + (d.skip || "drafted"));
   }
   const lot = draftRow(ent({ direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 500, cash: 500, kg: 12.5, date: "2026-08-16" }),
-    { ...bookA, sales: bookA.sales.concat([{ date: "2026-08-13", customer: "CC5-OKR", qty: 1, total: 100, cash: 100, deliveredQty: 1 }]) });
+    { ...bookA, sales: bookA.sales.concat([{ date: "2026-08-13", customer: "CC9-OKR", qty: 1, total: 100, cash: 100, deliveredQty: 1 }]) });
   ok(!lot.skip && !lot.flags.some((f) => /less than half/.test(f)), "a RM 40 lot is not measured against the lowest SALE rate on the book");
   const transit = { ...bookA, pricing: { v: "vA", byProduct: { salt: { stockCost: null, replCost: null, floors: {} } } },
     purchases: bookA.purchases.concat([{ date: "2026-08-20", supplier: "SA5-BTR", qty: 25, total: 1500, inTransit: true, receivedQty: 0 }]) };
@@ -9713,7 +9713,7 @@ await (async () => {
     return self;
   };
   const db = mirror(bookA), kvA = new KV();
-  await kvA.put("q:phone", JSON.stringify({ queue: [ent({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-13" }, "2026-08-13T01:00:00.000Z")] }));
+  await kvA.put("q:phone", JSON.stringify({ queue: [ent({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-13" }, "2026-08-13T01:00:00.000Z")] }));
   const run1 = await runDrafter({ SALT_QUEUE: kvA, SALT_LEDGER: db });
   ok(run1.ok && run1.drafted === 1 && run1.committed === 0 && db.drafts.has("2026-08-13T01:00:00.000Z"),
     `an entry stamped before the watermark that no draft knows is drafted for a decision, not counted as committed (drafted ${run1.drafted}, committed ${run1.committed}, refused ${[...db.refused.values()].join("; ")})`);
@@ -9747,10 +9747,10 @@ await (async () => {
   }
 
   /* the fold */
-  const cx = { rid: "c1", customer: "CC5-OKR", date: "2026-08-01", qty: 1, total: 90, cash: 0, deliveredQty: 0 };
+  const cx = { rid: "c1", customer: "CC9-OKR", date: "2026-08-01", qty: 1, total: 90, cash: 0, deliveredQty: 0 };
   amendA(cx, { date: "2026-08-05", kind: "Cancellation", cash: 0, kg: 0 }, "SELL");
   ok(cx.cancelled === true && cx.cancelledOn === "2026-08-05", "a cancellation through the trail stamps cancelledOn on the row as well as the step");
-  const cq = { rid: "c2", customer: "CC5-OKR", date: "2026-08-01", qty: 1, total: 110, cost: 48, cash: 0, deliveredQty: 1 };
+  const cq = { rid: "c2", customer: "CC9-OKR", date: "2026-08-01", qty: 1, total: 110, cost: 48, cash: 0, deliveredQty: 1 };
   amendA(cq, { date: "2026-08-05", kind: "Correction", cash: 0, kg: 0, fields: { qty: 2, total: 220 } }, "SELL");
   ok(cq.qty === 2 && cq.cost === 96, `a qty correction scales the order's absolute cost with it (cost ${cq.cost})`);
   const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
@@ -11484,9 +11484,9 @@ await (async () => {
      appears under the associate. Every check here runs on FORCED state, a fixture associate CX9-AA
      and their bucket CX9-AA-R, so none of it passes merely because the live book cooperates. */
   const PEb = (await import("../engine/position.mjs")).default;
-  ok(PEb.isBucket("CS6-BS-R") && !PEb.isBucket("CS6-BS") && !PEb.isBucket("-R") && PEb.ownerCode("CN6-WM-R") === "CN6-WM" && PEb.ownerCode("CN6-WM") === "CN6-WM",
+  ok(PEb.isBucket("CS6-BS-R") && !PEb.isBucket("CS6-BS") && !PEb.isBucket("-R") && PEb.ownerCode("CN3-WM-R") === "CN3-WM" && PEb.ownerCode("CN3-WM") === "CN3-WM",
     "the engine knows a bucket by its -R and names the associate it belongs to");
-  ok(PEb.ownsCode("CN6-WM", "CN6-WM") && PEb.ownsCode("CN6-WM", "CN6-WM-R") && !PEb.ownsCode("CN6-WM", "CN6-WM-RX") && !PEb.ownsCode("CN6", "CN6-WM-R") && !PEb.ownsCode(null, "-R"),
+  ok(PEb.ownsCode("CN3-WM", "CN3-WM") && PEb.ownsCode("CN3-WM", "CN3-WM-R") && !PEb.ownsCode("CN3-WM", "CN6-WM-RX") && !PEb.ownsCode("CN6", "CN3-WM-R") && !PEb.ownsCode(null, "-R"),
     "and an associate owns their code and their bucket, and nothing that merely starts with it");
 
   const fx = (rid, date, customer, total, extra) => Object.assign({ rid, date, customer, product: "salt", qty: 1, total, cost: 44, cash: total, deliveredQty: 1 }, extra || {});
@@ -11574,13 +11574,13 @@ await (async () => {
      is known is noted, never credited. Every road that books an R2 reads the engine's bookR2: the drafter's
      entry, the fold's correction, the desk's queue branch and its correction preview. Forced fixtures only. */
   const PE11 = (await import("../engine/position.mjs")).default;
-  const b11a = PE11.bookR2({}, "customer", "CN6-WM", null), b11b = PE11.bookR2({}, "customer", "CN6-WM", "CM4-MK"),
-    b11c = PE11.bookR2({ downstream: "X" }, "customer", "CN6-WM", "CN6-WM-R"), b11d = PE11.bookR2({}, "customer", "CN6-WM-R", "CN6-WM");
-  ok(b11a.customer === "CN6-WM-R" && b11a.rev === "R2" && !("downstream" in b11a) && b11b.customer === "CN6-WM-R" && b11b.downstream === "CM4-MK"
-    && b11c.customer === "CN6-WM-R" && !("downstream" in b11c) && b11d.customer === "CN6-WM-R" && !("downstream" in b11d),
+  const b11a = PE11.bookR2({}, "customer", "CN3-WM", null), b11b = PE11.bookR2({}, "customer", "CN3-WM", "CM4-MK"),
+    b11c = PE11.bookR2({ downstream: "X" }, "customer", "CN3-WM", "CN3-WM-R"), b11d = PE11.bookR2({}, "customer", "CN3-WM-R", "CN3-WM");
+  ok(b11a.customer === "CN3-WM-R" && b11a.rev === "R2" && !("downstream" in b11a) && b11b.customer === "CN3-WM-R" && b11b.downstream === "CM4-MK"
+    && b11c.customer === "CN3-WM-R" && !("downstream" in b11c) && b11d.customer === "CN3-WM-R" && !("downstream" in b11d),
     "bookR2 puts the row in the associate's bucket, notes a named buyer, and never keeps the associate or the bucket as the buyer, whichever of the two it is handed");
-  const at11a = PE11.attributionOf({ customer: "CN6-WM-R", rev: "R2" }), at11b = PE11.attributionOf({ customer: "CN6-WM", rev: "R2", downstream: "CN6-WM-R" });
-  ok(at11a.assoc === "CN6-WM" && at11a.stream === "R2" && at11b.assoc === "CN6-WM" && at11b.downstream === "CN6-WM-R",
+  const at11a = PE11.attributionOf({ customer: "CN3-WM-R", rev: "R2" }), at11b = PE11.attributionOf({ customer: "CN3-WM", rev: "R2", downstream: "CN3-WM-R" });
+  ok(at11a.assoc === "CN3-WM" && at11a.stream === "R2" && at11b.assoc === "CN3-WM" && at11b.downstream === "CN3-WM-R",
     "a row in the bucket and a row still filed on the plain code both name the associate, and the old row's downstream reads as stored, so a correction can clear it");
 
   /* THE DRAFTER'S ENTRY, queued the way the Enter tab queues it: the associate as party, no end buyer */
@@ -11684,7 +11684,7 @@ await (async () => {
         `${p15}: every introduction declared on the book reaches the map`);
       const st15 = rd15("sales.filter(function(s){return s.ref;}).map(function(s){return [s.ref,s.customer];})");
       ok(st15.length > 0 && st15.every(([a, c]) => has15(a, c)), `${p15}: every stamped introduction reaches it too, whichever book its row is on`);
-      ok(has15("CS6-BS", "CM4-MK") && ["CG5-SB", "CC5-OKR", "CJ4-BJ", "CE4-CHE", "CS6-PER"].every((c) => has15("CJ4-OKR", c)),
+      ok(has15("CS6-BS", "CM4-MK") && ["CG5-SB", "CC9-OKR", "CJ4-BJ", "CE4-CHE", "CS6-PER"].every((c) => has15("CJ4-OKR", c)),
         `${p15}: CM4-MK sits under CS6-BS, and CJ4-OKR's stamped referral and declared network are one list`);
       const par15 = {};
       Object.entries(in15).forEach(([a, cs]) => cs.forEach((c) => (par15[c] = par15[c] || []).push(a)));
@@ -12132,7 +12132,7 @@ await (async () => {
 
 section("v626: the drafter's ADVANCE is the engine's, and a correction is measured as the row will stand");
 await (async () => {
-  /* HIS REPORT OF 14 SEP 2026: CS6-BS and CN6-WM each showed a unit on advance. CS6-BS held none and CN6-WM one, on
+  /* HIS REPORT OF 14 SEP 2026: CS6-BS and CN3-WM each showed a unit on advance. CS6-BS held none and CN3-WM one, on
      30 Aug; the rest was the drafter counting cash alone, on cards built from the row before its correction.
      Fixture rows, no live book. Each assertion was proved red by mutation. */
   const { draftRow: dr26, flagsFor: ff26 } = await import("../src/drafter.js");
@@ -12153,7 +12153,7 @@ await (async () => {
 
   const noAdv = (flags) => flags.every((f) => !/ADVANCE|SKIP/.test(f));
   const f31 = fix26({ rid: "z626a", qty: 0.5, total: 50, cash: 0, settledRM: 50, rebate: true, deliveredQty: 0.5 }, { rebate: false, goodwill: true });
-  ok(noAdv(f31), "CN6-WM's case: re-marking a half unit settled in kind raises no advance: " + JSON.stringify(f31));
+  ok(noAdv(f31), "CN3-WM's case: re-marking a half unit settled in kind raises no advance: " + JSON.stringify(f31));
   const f139 = fix26({ rid: "z626b", qty: 1, total: 110, delivery: 7.5, cash: 7.5, deliveredQty: 1 }, { settledRM: 110, rebate: true, rebateKg: 1 });
   ok(noAdv(f139), "CS6-BS's case: the correction that settles an advance in kind is not flagged as that advance: " + JSON.stringify(f139));
   const f152 = fix26({ rid: "z626c", date: "2026-09-12", deliveredOn: "2026-09-12", qty: 0.06, total: 2.64, cost: 2.64, cash: 0, settledRM: 2.64, rebate: true, rebateKg: 0.06, goodwill: true, deliveredQty: 0.06 },
@@ -22471,7 +22471,7 @@ await (async () => {
     "keyed, a set reaches the site's own store through the binding");
   r = await J(await desk("GET", null, "k-fixture"));
   ok(r.b.ok && JSON.stringify(r.b.lines) === JSON.stringify(["Closed Friday"]) && r.b.mode === "run", "and a keyed read comes back through the relay");
-  for (const [line, word] of [["Salt Command is shut", "the desk"], ["ask CS6-BS about it", "a roster code"], ["Gold members welcome", "a level"], ["see CN6-WM-R", "a roster code"]]) {
+  for (const [line, word] of [["Salt Command is shut", "the desk"], ["ask CS6-BS about it", "a roster code"], ["Gold members welcome", "a level"], ["see CN3-WM-R", "a roster code"]]) {
     const bad = await J(await desk("POST", { lines: ["fine", line] }, "k-fixture"));
     ok(bad.status === 400 && bad.b.error.includes(word) && JSON.stringify(JSON.parse(await skv.get("bulletin")).lines) === JSON.stringify(["Closed Friday"]),
       "a line that names " + word + " is refused on the desk and the site is unchanged: " + JSON.stringify(bad.b));
@@ -22503,7 +22503,7 @@ await (async () => {
       && cloud.indexOf('id="bullCard"') < cloud.indexOf('id="ordAlert"') && !/bullText/.test(laptop),
       "the cloud desk's Site orders page carries the Bulletin card (folded below the list since S11 11.4), and the laptop copy has none");
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
-    ok(g("Salt Command says hi").refuse && g("ask CS6-BS").refuse && g("see CN6-WM-R").refuse && g("Gold members").refuse
+    ok(g("Salt Command says hi").refuse && g("ask CS6-BS").refuse && g("see CN3-WM-R").refuse && g("Gold members").refuse
       && g("the salt is in").warn && !g("the salt is in").refuse && !g("Closed Friday").refuse && !g("Closed Friday").warn,
       "the phone refuses the desk's name, a code and a level, warns on a product's name, and lets plain words through");
     const box = w.document.createElement("div"); box.innerHTML = cloud; w.document.body.appendChild(box);
@@ -26200,8 +26200,8 @@ await (async () => {
   /* ---- THE KEY IS WHAT THEY AGREED TO PAY, and that is what stops a collision ---- */
   ok(E.ovKey(row) === "CX0-AA|2026-09-19|220",
     "the order key is the goods and the carriage together, because it is written onto a LIVE order: " + E.ovKey(row));
-  const a = { customer: "CN6-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 0 };
-  const b = { customer: "CN6-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 20 };
+  const a = { customer: "CN3-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 0 };
+  const b = { customer: "CN3-WM-R", date: "2026-09-12", qty: 1, total: 110, delivery: 20 };
   ok(E.txGoods(a) === E.txGoods(b) && E.ovKey(a) !== E.ovKey(b),
     "s155 and s157 have the same GOODS and must not have the same key: " + JSON.stringify([E.ovKey(a), E.ovKey(b)]));
 
@@ -26477,10 +26477,10 @@ await (async () => {
     + "average, which is what costOf does for every uncosted row: the fallback is stated, not hidden");
   /* the two that DO bite: read here, and proved by TAKING THE GIFT AWAY at the foot of this
      section rather than by pinning a pool figure their next order moves (v758) */
-  const okr = rd("customerRewards().find(function(r){return r.id==='CC5-OKR';})");
-  const wm = rd("networkStats().find(function(r){return r.id==='CN6-WM';})");
+  const okr = rd("customerRewards().find(function(r){return r.id==='CC9-OKR';})");
+  const wm = rd("networkStats().find(function(r){return r.id==='CN3-WM';})");
   ok(!!okr && !!wm && typeof okr.margin === "number" && typeof wm.marginTotal === "number",
-    "CC5-OKR holds a customer's pool and CN6-WM an associate's: " + JSON.stringify({ okr: okr.margin, wm: wm.marginTotal }));
+    "CC9-OKR holds a customer's pool and CN3-WM an associate's: " + JSON.stringify({ okr: okr.margin, wm: wm.marginTotal }));
   /* real codes only: the CZ9 fixtures above include a redemption against nothing earned, which is a
      negative holding by design (the engine carries one and the next unit absorbs it). */
   const negHold = rd("customerRewards().filter(function(r){return r.free<-0.005&&!/^CZ9/.test(r.id);}).map(function(r){return {id:r.id,margin:r.margin,earned:r.earned,taken:r.taken,free:r.free};})");
@@ -26488,7 +26488,7 @@ await (async () => {
     "and no holding anywhere on the book goes negative: nobody has taken more than the new figure earns: " + JSON.stringify(negHold));
 
   /* ---- THE CHARGE IS PROVED BY TAKING THE GIFT AWAY (v758) ----------------------------------
-     This section pinned three live pool figures: CE4-CHE at RM1,017, CC5-OKR at RM163 and CN6-WM
+     This section pinned three live pool figures: CE4-CHE at RM1,017, CC9-OKR at RM163 and CN3-WM
      at RM1,009.20. They are facts about a book that keeps moving, and his sales of 19 September
      took CE4-CHE to RM1,147, so a version that had changed nothing went red at the last step of a
      live run. A CHARGE IS A DIFFERENCE, so it is measured as one: drop the row, recompute, and
@@ -26505,16 +26505,16 @@ await (async () => {
   drop(["s181"]);
   ok(Math.abs(pool("CE4-CHE") - cheWas) < 0.005,
     "the withdrawn gift charges CE4-CHE nothing: dropping s181 leaves their pool where it stood, at RM" + cheWas);
-  const okrWas = pool("CC5-OKR"), okrCost = costOf(["s176"]);
+  const okrWas = pool("CC9-OKR"), okrCost = costOf(["s176"]);
   drop(["s176"]);
-  ok(okrCost > 0.009 && Math.abs((pool("CC5-OKR") - okrWas) - okrCost) < 0.011,
-    "and a LIVE gift charges its cost: dropping s176 gives CC5-OKR back RM" + (pool("CC5-OKR") - okrWas).toFixed(2)
+  ok(okrCost > 0.009 && Math.abs((pool("CC9-OKR") - okrWas) - okrCost) < 0.011,
+    "and a LIVE gift charges its cost: dropping s176 gives CC9-OKR back RM" + (pool("CC9-OKR") - okrWas).toFixed(2)
     + ", which is s176's own RM" + okrCost);
-  const wmWas = net("CN6-WM"), wmCost = costOf(["s031", "s056"]);
+  const wmWas = net("CN3-WM"), wmCost = costOf(["s031", "s056"]);
   drop(["s031", "s056"]);
-  ok(wmCost > 0.009 && Math.abs((net("CN6-WM") - wmWas) - wmCost) < 0.011,
+  ok(wmCost > 0.009 && Math.abs((net("CN3-WM") - wmWas) - wmCost) < 0.011,
     "and it reaches an ASSOCIATE'S pooled figure and not only a customer table: dropping s031 and s056 "
-    + "gives CN6-WM back RM" + (net("CN6-WM") - wmWas).toFixed(2) + ", their own RM" + wmCost);
+    + "gives CN3-WM back RM" + (net("CN3-WM") - wmWas).toFixed(2) + ", their own RM" + wmCost);
 
   /* ---- THE TAP, IN A WINDOW OF ITS OWN ----
      The fixture rows above are pushed straight onto `sales` with a party that is on no roster, which
@@ -29830,8 +29830,8 @@ await (async () => {
   const bookN = {
     version: "vN", pricing: { v: "vN", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
     purchases: [{ date: "2026-08-13", supplier: "SA5-BTR", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
-    sales: [{ date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
-    state: { roster: ["CC5-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+    sales: [{ date: "2026-08-01", customer: "CC9-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    state: { roster: ["CC9-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const mirrorN = (b) => {
     const self = { drafts: new Map(), refused: new Map() };
@@ -29862,7 +29862,7 @@ await (async () => {
     };
     return self;
   };
-  const queued = (at) => JSON.stringify({ queue: [{ at, payload: { mode: "new", direction: "SELL", party: "CC5-OKR",
+  const queued = (at) => JSON.stringify({ queue: [{ at, payload: { mode: "new", direction: "SELL", party: "CC9-OKR",
     qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16", product: "salt" } }] });
   const road = async (how) => {
     const kvR = new KV(), db = mirrorN(bookN);
@@ -31092,7 +31092,7 @@ await (async () => {
     VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test",
     VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp2.privateKey)),
     STMT_SITE: { fetch: (url, init) => stmtW2.fetch(new Request(url, init), senv2) } };
-  await dkv2.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC5-OKR" }));
+  await dkv2.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC9-OKR" }));
   await dkv2.put("push:his", JSON.stringify({ endpoint: "https://push.example/his-phone", topics: ["orders", "approve", "salt"] }));
   const o2 = (await placeOrder(senv2, "abcd-efgh", { product: "salt", qty: 2, mode: "deliver", unit: 100, total: 200, week: "", place: "Bangsar" })).order;
 
@@ -31113,7 +31113,7 @@ await (async () => {
   ok(ack.ok && ack.queue.length === 1,
     "his acknowledgement queues the pending row inside the same request, with no minute to wait: " + JSON.stringify(ack.queue.map((e) => e.at)));
   const ent2 = ack.queue[0];
-  ok(ent2 && ent2.payload && ent2.payload.party === "CC5-OKR" && ent2.payload.total === 200 && ent2.payload.delivery === 15,
+  ok(ent2 && ent2.payload && ent2.payload.party === "CC9-OKR" && ent2.payload.total === 200 && ent2.payload.delivery === 15,
     "and it is the row the reconcile has always written, goods and carriage apart: " + JSON.stringify(ent2 && ent2.payload));
   ok(ack.logs.some((l) => /^orders reconcile \(on the tap\)/.test(l)),
     "the road it took is named in the log, so a failure on it is not silent: " + JSON.stringify(ack.logs));
@@ -31172,7 +31172,7 @@ await (async () => {
       "and a second tap puts it back: " + JSON.stringify(asked));
 
     /* ---- A CLOSED ORDER'S CARD: everything but a move ---- */
-    w63.eval("ORD_OPEN=[{id:'zz1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,paid:200,moved:2,"
+    w63.eval("ORD_OPEN=[{id:'zz1',u:'abcd-efgh',code:'CC9-OKR',product:'salt',qty:2,total:200,delivery:0,paid:200,moved:2,"
       + "status:'done',mode:'collect',at:'2026-09-10T02:00:00.000Z',history:[{at:'2026-09-10T02:00:00.000Z',status:'done',by:'desk'}],"
       + "msgs:[{at:'2026-09-12T02:00:00.000Z',by:'customer',text:'was that the same batch as last time'}],queued:{ack:'x',paid:200,moved:2}}];ordDraw();");
     const shut = w63.document.getElementById("ordBox").innerHTML;
@@ -33103,7 +33103,7 @@ await (async () => {
   const calls = [];
   const denv4 = { SALT_QUEUE: dkv4, STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (url, init) => { calls.push(new URL(url).pathname); return stmtW4.fetch(new Request(url, init), senv4); } } };
-  await dkv4.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC5-OKR" }));
+  await dkv4.put("stmt-users", JSON.stringify({ "abcd-efgh": "CC9-OKR" }));
 
   /* the mirror: one sale, and a version that moves when a fold lands */
   let VER = "vA", SALE = null, refuse = false;
@@ -33117,13 +33117,13 @@ await (async () => {
 
   const o4 = (await placeOrder(senv4, "abcd-efgh", { product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, week: "" })).order;
   await deskMove(senv4, "abcd-efgh", o4.id, { status: "acknowledged", mode: "collect" });
-  await deskMove(senv4, "abcd-efgh", o4.id, { mark: { ledgerKey: "CC5-OKR|2026-09-21|200", ack: "2026-09-21T01:00:00.000Z" } });
+  await deskMove(senv4, "abcd-efgh", o4.id, { mark: { ledgerKey: "CC9-OKR|2026-09-21|200", ack: "2026-09-21T01:00:00.000Z" } });
   const read = async () => (await skv4.get("order:abcd-efgh:" + o4.id, "json"));
 
   /* HE TAKES THE CASH AND TYPES IT ON THE DESK: the row is settled in full, and settled rows are
      exactly the ones that have left the open list, which is why the row is looked for among all of
      them and not in OPEN.byKey. */
-  SALE = { rid: "s900", customer: "CC5-OKR", date: "2026-09-21", qty: 2, total: 200, cash: 200, deliveredQty: 2, deliveredOn: "2026-09-21" };
+  SALE = { rid: "s900", customer: "CC9-OKR", date: "2026-09-21", qty: 2, total: 200, cash: 200, deliveredQty: 2, deliveredOn: "2026-09-21" };
   const relay = [];
   const spy = async (fn) => { const realF = globalThis.fetch, hit = [];
     globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
@@ -33162,9 +33162,9 @@ await (async () => {
      customer's own word is a claim and never counted, so the figure here is his, cash he recorded on the card */
   const o5 = (await placeOrder(senv4, "abcd-efgh", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   await deskMove(senv4, "abcd-efgh", o5.id, { status: "acknowledged", mode: "collect" });
-  await deskMove(senv4, "abcd-efgh", o5.id, { mark: { ledgerKey: "CC5-OKR|2026-09-22|100", ack: "2026-09-22T01:00:00.000Z" } });
+  await deskMove(senv4, "abcd-efgh", o5.id, { mark: { ledgerKey: "CC9-OKR|2026-09-22|100", ack: "2026-09-22T01:00:00.000Z" } });
   await deskMove(senv4, "abcd-efgh", o5.id, { cash: { amount: 100 } });
-  SALE = { rid: "s901", customer: "CC5-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 40, deliveredQty: 0 };
+  SALE = { rid: "s901", customer: "CC9-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 40, deliveredQty: 0 };
   VER = "vB";
   await spy(() => tellSite(denv4));
   const five = await skv4.get("order:abcd-efgh:" + o5.id, "json");
@@ -33179,7 +33179,7 @@ await (async () => {
 
   /* A REFUSAL LEAVES THE MARK WHERE IT WAS, so it is tried again next minute and not next fold */
   VER = "vC";
-  SALE = { rid: "s902", customer: "CC5-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 100, deliveredQty: 1 };
+  SALE = { rid: "s902", customer: "CC9-OKR", date: "2026-09-22", qty: 1, total: 100, cash: 100, deliveredQty: 1 };
   const broken = Object.assign({}, denv4, { STMT_SITE: { fetch: async (url, init) => (/\/desk\/orders\/[^/]+\/[^/]+$/.test(new URL(url).pathname) && init && init.method === "POST"
     ? new Response(JSON.stringify({ ok: false, error: "no" }), { status: 500, headers: { "content-type": "application/json" } })
     : stmtW4.fetch(new Request(url, init), senv4)) } });
@@ -33263,7 +33263,7 @@ await (async () => {
     let tick = null;
     w111.setInterval = (fn) => { tick = fn; return 91; };
     w111.clearInterval = () => { tick = null; };
-    const orders = [{ id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
+    const orders = [{ id: "p1", u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
       status: "placed", mode: "deliver", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] },
     { id: "a1", u: "wxyz-1234", code: "CE4-CHE", product: "salt", qty: 3, total: 300, delivery: 0, paid: 0, moved: 0,
       status: "acknowledged", mode: "collect", at: "2026-09-23T02:00:00.000Z", history: [], msgs: [], queued: { ack: "x" } }];
@@ -33331,7 +33331,7 @@ await (async () => {
      DRIVEN ON THE BUILT FILE, because the master alone never becomes the cloud desk at all. */
   const { JSDOM, VirtualConsole } = await import("jsdom");
   const built112 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
-  const order112 = { id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
+  const order112 = { id: "p1", u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0,
     status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] };
   const cold = async (hash, key) => {
     const asked = [];
@@ -33416,7 +33416,7 @@ await (async () => {
   } };
   const dkv = new KV();
   const u = "abcd-efgh";
-  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0",
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const o1 = (await O.placeOrder(senv, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
@@ -33426,7 +33426,7 @@ await (async () => {
   ok(e1 && e1.status === "Pending" && e1.orderId === o1.id && !JSON.stringify(e1).includes(u),
     "the entry the reconcile queues says which order made it, and still names no username: " + JSON.stringify(e1 && e1.orderId));
   const draftOf = (e) => ({ id: e.at, status: "pending", collection: "sales", entry: JSON.stringify(e), row: "{}", reasoning: "", flags: "[]",
-    party: "CC5-OKR", product: "salt", date: null, qty: e.qty, total: e.total, cost: null, amends: null, amend_kind: null,
+    party: "CC9-OKR", product: "salt", date: null, qty: e.qty, total: e.total, cost: null, amends: null, amend_kind: null,
     drafter: "cloud-drafter", drafted_at: e.at, decided_at: null, decided_by: null, committed_at: null, live_at: null });
   drafts.set(e1.at, draftOf(e1));
   const reject = async (id) => {
@@ -33452,7 +33452,7 @@ await (async () => {
     "a payment after the rejection waits behind it, and the order still says its row was rejected: " + JSON.stringify({ rc: rcPay, sync: paidOn.sync }));
 
   /* a row typed on the desk has no order behind it, and its rejection writes nothing anywhere */
-  const eDesk = { at: "2026-09-24T03:00:00.000Z", type: "SELL", party: "CC5-OKR", qty: 1, total: 100, status: "Pending", raw: "SELL CC5-OKR 1 salt RM 100", payload: {} };
+  const eDesk = { at: "2026-09-24T03:00:00.000Z", type: "SELL", party: "CC9-OKR", qty: 1, total: 100, status: "Pending", raw: "SELL CC9-OKR 1 salt RM 100", payload: {} };
   drafts.set(eDesk.at, draftOf(eDesk));
   const r2 = await reject(eDesk.at);
   ok(r2.status === 200 && !("order" in r2.j), "a row with no order behind it is rejected as it always was: " + JSON.stringify(r2.j.order));
@@ -33512,7 +33512,7 @@ await (async () => {
     return api;
   } };
   const dkv = new KV(), u = "abcd-efgh";
-  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const last = async () => ordersQueue(dkv).slice(-1)[0];
@@ -33598,7 +33598,7 @@ await (async () => {
     w148.SALT_CLOUD = true;
     const frag = (html) => { const d = w148.document.createElement("div"); d.innerHTML = html; w148.document.body.appendChild(d); return d; };
     const hexIn = (root) => [...root.querySelectorAll("[style]")].map((e) => e.getAttribute("style")).filter((s) => /#[0-9a-fA-F]{3,8}\b/.test(s));
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect",
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect",
       at: "2026-09-24T02:00:00.000Z", history: [], msgs: [] };
     const cards = frag(String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "p1", status: "placed" }, base)) + ")"))
       + String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "a1", status: "acknowledged", queued: { ack: "x" } }, base)) + ")")));
@@ -33609,8 +33609,8 @@ await (async () => {
       && [dec, can].every((b) => b && b.classList.contains("salt-ghost") && b.classList.contains("salt-ghost--danger") && !b.classList.contains("salt-pill") && !b.hasAttribute("style")),
       "Acknowledge is the system's pill as it stands, and Decline and Cancel its danger ghost: " + JSON.stringify([ack && ack.outerHTML.slice(0, 90), dec && dec.className, can && can.className]));
 
-    const ap = frag(String(w148.eval("apCard({id:'d1',collection:'sales',party:'CC5-OKR',flags:['a rate under the floor'],"
-      + "row:{customer:'CC5-OKR',product:'salt',qty:2,total:200,cost:120,cash:0,deliveredQty:0,date:'2026-09-24'}})")));
+    const ap = frag(String(w148.eval("apCard({id:'d1',collection:'sales',party:'CC9-OKR',flags:['a rate under the floor'],"
+      + "row:{customer:'CC9-OKR',product:'salt',qty:2,total:200,cost:120,cash:0,deliveredQty:0,date:'2026-09-24'}})")));
     const yes = ap.querySelector('button[data-ap="approve"]'), no = ap.querySelector('button[data-ap="reject"]');
     ok(hexIn(ap).length === 0 && yes && yes.classList.contains("salt-pill") && !yes.hasAttribute("style")
       && no && no.classList.contains("salt-ghost") && !no.hasAttribute("style"),
@@ -33692,7 +33692,7 @@ await (async () => {
   const deskW = (await import("../src/worker.js")).default;
   const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
   const u = "abcd-efgh";
-  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
   const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
@@ -33712,7 +33712,7 @@ await (async () => {
   ok(bad.status === 400 && /note says something that names a level/.test(bad.j.error)
     && after.status === "placed" && !after.history.some((h) => /Gold/.test(h.note || "")),
     "a decline whose note names a level is refused on the desk, and the order is untouched: " + JSON.stringify({ status: bad.status, error: bad.j.error, st: after.status }));
-  const code = await move(o.id, { status: "declined", note: "held for CC5-OKR" });
+  const code = await move(o.id, { status: "declined", note: "held for CC9-OKR" });
   ok(code.status === 400 && /roster code/.test(code.j.error), "and so is one carrying a roster code: " + JSON.stringify(code.j.error));
   const fine = await move(o.id, { status: "declined", note: "out of stock until Monday" });
   const done = await rec(o.id);
@@ -33734,7 +33734,7 @@ await (async () => {
   try {
     w.SALT_CLOUD = true;
     const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
     const o = (x) => Object.assign({}, base, x);
     const fixture = [
       o({ id: "n1", status: "placed", at: "2026-09-24T02:00:00.000Z" }),
@@ -33801,13 +33801,13 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 92; w.clearInterval = () => {};
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
       status: "placed", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T02:00:00.000Z" }, base),
       Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T03:00:00.000Z" }, base)];
     /* the preview's own shapes, as src/orders.js previewAck answers */
-    let pv = { ok: true, row: { customer: "CC5-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: { unit: 56, total: 140, source: "stockCost" },
-      margin: { rm: 110, pct: 44 }, floor: { rm: 152, at: 2.5, exact: true }, usual: { who: "CC5-OKR", rate: 104, orders: 3 }, card: 250, cardNote: "", told: "x",
+    let pv = { ok: true, row: { customer: "CC9-OKR", qty: 2.5, total: 250, delivery: 0 }, flags: [], cost: { unit: 56, total: 140, source: "stockCost" },
+      margin: { rm: 110, pct: 44 }, floor: { rm: 152, at: 2.5, exact: true }, usual: { who: "CC9-OKR", rate: 104, orders: 3 }, card: 250, cardNote: "", told: "x",
       pricing: { v: "p1", digest: "d1" }, hash: "h1" };
     const calls = [];
     w.fetch = async (path, init) => {
@@ -33835,7 +33835,7 @@ await (async () => {
       "their card today matches the quote, the margin on its cost, the floor cleared, and a rate under their usual toned by that direction: " + JSON.stringify(t1));
     ok(/drafted now and stored nowhere\. The drafter raises no flag\./.test(card("n1").textContent), "and it says the row is the drafter's, and that it flags nothing");
 
-    pv = Object.assign({}, pv, { card: 280, usual: { who: "CC5-OKR", rate: 96, orders: 3 }, flags: ["a rate under their held tier"] });
+    pv = Object.assign({}, pv, { card: 280, usual: { who: "CC9-OKR", rate: 96, orders: 3 }, flags: ["a rate under their held tier"] });
     await w.eval("ordLoad(true)");
     await settle();
     const t2 = tiles();
@@ -33879,7 +33879,7 @@ await (async () => {
   const { openMaster: om115 } = await import("../tools/payload.mjs");
   const { w } = await om115();
   try {
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, msgs: [], payments: [] };
     const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
       const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
     const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
@@ -33954,7 +33954,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 93; w.clearInterval = () => {};
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2.5, total: 250, delivery: 0, paid: 0, moved: 0,
       status: "placed", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({ id: "n2", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" }, base),
       Object.assign({ id: "n1", mode: "collect", at: "2026-09-24T03:00:00.000Z" }, base)];
@@ -34055,7 +34055,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 94; w.clearInterval = () => {};
-    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], payments: [] };
+    const base = { u, code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], payments: [] };
     const orders = [Object.assign({ id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-24T01:00:00.000Z", by: "customer", text: "thanks" }] }, base),
       Object.assign({ id: "q2", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", msgs: [] }, base)];
     const calls = [];
@@ -34110,7 +34110,7 @@ await (async () => {
   const { cancelEntry } = await import("../src/orders.js");
   const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
   const u = "abcd-efgh";
-  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
   const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
@@ -34134,7 +34134,7 @@ await (async () => {
   const dR = await rec(dec.id), cR = await rec(can.id);
   ok(dR.history.slice(-1)[0].note === "Out of stock this week" && cR.history.slice(-1)[0].note === "Prices have changed" && cR.history.slice(-1)[0].by === "desk",
     "his reason rides on the event that ended the order, as one line: " + JSON.stringify([dR.history.slice(-1)[0], cR.history.slice(-1)[0]]));
-  const e = cancelEntry(cR, "CC5-OKR", "desk", new Date("2026-09-24T03:00:00Z"));
+  const e = cancelEntry(cR, "CC9-OKR", "desk", new Date("2026-09-24T03:00:00Z"));
   ok(!/Prices have changed/.test(JSON.stringify(e)) && /Withdrawn on the statements site by the desk/.test(e.payload.note),
     "and the Cancellation the reconcile queues says who ended it in fixed words, never the reason: " + e.payload.note);
 
@@ -34187,7 +34187,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 95; w.clearInterval = () => {};
-    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u, code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({ id: "p1", status: "placed", at: "2026-09-24T02:00:00.000Z" }, base)];
     const calls = [];
     w.fetch = async (path, init) => {
@@ -34258,8 +34258,8 @@ await (async () => {
     "they are told it is complete, and his cash never marks a move of theirs");
   const placed = (await O.placeOrder(env, u, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
   ok((await O.deskMove(env, u, placed.id, { cash: { amount: 50 } })).status === 409, "and an order not yet agreed takes no cash");
-  const his = payEntry(paid, "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"), true);
-  const theirs = payEntry(Object.assign({}, paid, { method: "transfer", account: "maybank", payments: [{ at: "x", amount: 100, method: "transfer" }] }), "CC5-OKR", 100, new Date("2026-09-24T03:00:00Z"));
+  const his = payEntry(paid, "CC9-OKR", 100, new Date("2026-09-24T03:00:00Z"), true);
+  const theirs = payEntry(Object.assign({}, paid, { method: "transfer", account: "maybank", payments: [{ at: "x", amount: 100, method: "transfer" }] }), "CC9-OKR", 100, new Date("2026-09-24T03:00:00Z"));
   ok(his.by === "desk" && /Cash received at the handover, recorded on the desk/.test(his.payload.note) && theirs.by === "customer" && /Paid on the statements site/.test(theirs.payload.note),
     "the Fulfilment says whose money it is, his cash being the desk's own entry: " + JSON.stringify([his.by, his.payload.note, theirs.by]));
 
@@ -34269,7 +34269,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 96; w.clearInterval = () => {};
-    const base = { u, code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u, code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base),
       Object.assign({ id: "d1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 1, paid: 40,
         payments: [{ at: "2026-09-24T02:00:00.000Z", amount: 40, method: "cod", by: "desk" }] }, base)];
@@ -34316,7 +34316,7 @@ await (async () => {
   const u = "abcd-efgh";
   const o = (await O.placeOrder(senv, u, { product: "salt", qty: 5, mode: "collect", unit: 100, total: 500, week: "" })).order;
   await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
-  const K0 = "CC5-OKR|2026-09-24|500";
+  const K0 = "CC9-OKR|2026-09-24|500";
   await O.deskMove(senv, u, o.id, { mark: { ledgerKey: K0, ack: "2026-09-24T01:00:00.000Z" } });
   const zero = await O.deskMove(senv, u, o.id, { handover: { units: 0, close: true } });
   ok(zero.status === 400 && /cancel it instead/.test(zero.error), "a close at nothing is refused: " + zero.error);
@@ -34329,7 +34329,7 @@ await (async () => {
     "the ledger is owed one close, which states the handover with it, and their page is handed the size it was: " + JSON.stringify(O.orderWork(c)));
 
   /* ---- THE RECONCILE: one Correction against the row the acknowledgement made, then the row's new name ---- */
-  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CC5-OKR" }));
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
   const STATE = { OPEN: { v: "v119", byKey: { [K0]: { rid: "s119" } } } }, D1 = {
     prepare(q) {
       const run = async () => ({});
@@ -34346,10 +34346,10 @@ await (async () => {
     && f.qty === 2 && f.total === 200 && f.deliveredQty === 2 && f.handover === "collected" && /^\d{4}-\d{2}-\d{2}$/.test(f.deliveredOn),
     "the reconcile queues one Correction naming the row as it stands, stating the size, the total and the handover: " + JSON.stringify({ n: q.length, st: e.status, key: e.payload && e.payload.orderKey, f }));
   const after = JSON.parse(await skv.get("order:" + u + ":" + o.id));
-  ok(after.ledgerKey === "CC5-OKR|2026-09-24|200" && closedKey(c) === after.ledgerKey && after.queued.close && after.queued.moved === 2
+  ok(after.ledgerKey === "CC9-OKR|2026-09-24|200" && closedKey(c) === after.ledgerKey && after.queued.close && after.queued.moved === 2
     && (await reconcileOrders(denv)).queued === 0,
     "the order then names the row by the total the close leaves, is marked told, and a second pass queues nothing: " + JSON.stringify({ key: after.ledgerKey, q: after.queued }));
-  ok(!/CC5-OKR\|/.test(closeEntry(c, "CC5-OKR", new Date()).payload.note), "and the note is fixed words and figures");
+  ok(!/CC9-OKR\|/.test(closeEntry(c, "CC9-OKR", new Date()).payload.note), "and the note is fixed words and figures");
 
   /* ---- THEIR PAGE ---- */
   const { landingPage } = await import("../stmt/page.js");
@@ -34395,7 +34395,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 97; w.clearInterval = () => {};
-    const base = { u, code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 500, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u, code: "CC9-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 500, mode: "collect", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", moved: 0 }),
       Object.assign({}, base, { id: "a2", status: "ready", at: "2026-09-21T02:00:00.000Z", moved: 2 })];
     const calls = [];
@@ -34451,7 +34451,7 @@ await (async () => {
   const { w } = await omFx();
   try {
     w.SALT_CLOUD = true;
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, history: [], msgs: [], payments: [] };
     const D = w.document, box = D.createElement("div");
     box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "n1", status: "placed", mode: "deliver", place: "Taman Rekaan", at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='n1';ORD_WHY.n1={st:'declined',pick:'stock'};ordDraw();");
@@ -34829,7 +34829,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 97; w.clearInterval = () => {};
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
     const c1 = Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
     const n1 = Object.assign({ id: "n1", status: "acknowledged", at: "2026-09-21T02:00:00.000Z", moved: 0, paid: 0 }, base);
     let orders = [c1, n1];
@@ -34847,7 +34847,7 @@ await (async () => {
     D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click();
     for (let i = 0; i < 30 && !D.querySelector('.ordlist [data-msg="c1"]'); i++) await new Promise((r) => setTimeout(r, 30));
     const said = D.querySelector('.ordlist [data-msg="c1"]');
-    ok(said && /^CC5-OKR, 1 unit salt of 20 Sep, RM 100\. Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
+    ok(said && /^CC9-OKR, 1 unit salt of 20 Sep, RM 100\. Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
       && !D.querySelector('.ordcard[data-id="c1"]'),
       "the order it closed has left the list, and its answer heads the list naming the order, the phone back on it: " + JSON.stringify({ said: said && said.textContent, opened: w.eval("ORD_OPENED") }));
   } finally {
@@ -35260,7 +35260,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 95; w.clearInterval = () => {};
-    const ord = { id: "p1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+    const ord = { id: "p1", u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
       status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
     let hold = null, n = 0;
     const accepts = [];
@@ -35438,7 +35438,7 @@ await (async () => {
     Object.defineProperty(w, "scrollY", { configurable: true, get: () => 40 });
     const to = [];
     w.scrollTo = (o) => to.push(o);
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z", msgs: [{ at: "2026-09-21T02:00:00.000Z", by: "customer", text: "When?" }] })]) + ";ordDraw();");
     D.querySelector('button[data-row="a1"]').click();
     ok(to.length === 1 && to[0].top === 40 + 261 - 74 - 8,
@@ -35461,7 +35461,7 @@ await (async () => {
     w.setInterval = () => 92; w.clearInterval = () => {};
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 0, moved: 0, mode: "deliver", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 5, total: 500, delivery: 0, paid: 0, moved: 0, mode: "deliver", history: [], msgs: [], payments: [] };
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "d1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='d1';ordDraw();");
     D.querySelector('button[data-partopen="d1"]').click();
     const card = () => D.querySelector('.ordcard[data-id="d1"]');
@@ -35491,7 +35491,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 91; w.clearInterval = () => {};
-    const ord = { id: "b1", u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
+    const ord = { id: "b1", u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect",
       status: "placed", at: "2026-09-24T02:00:00.000Z", history: [], msgs: [], payments: [] };
     let release = null;
     w.fetch = async (path, init) => {
@@ -35527,7 +35527,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     const D = w.document;
     const html = (js) => { const x = D.createElement("div"); x.innerHTML = String(w.eval(js)); return x; };
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
     w.eval("ORD_PV.p1={d:0,gen:0,st:'ok',j:{ok:true,row:{qty:2,total:200},flags:[],card:200,usual:{rate:93.6}}}");
     const pv = html("ordPvBlock(" + JSON.stringify(Object.assign({}, base, { id: "p1", status: "placed" })) + ")");
     const ag = html("ordCard(" + JSON.stringify(Object.assign({}, base, { id: "a1", status: "acknowledged", at: "2026-09-24T01:00:00.000Z" })) + ")");
@@ -35554,7 +35554,7 @@ await (async () => {
     w.localStorage.setItem("saltQuickReplies", JSON.stringify(["Goes out tomorrow morning."]));
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", history: [], msgs: [], payments: [] };
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "q1", status: "acknowledged", at: "2026-09-20T02:00:00.000Z" })]) + ";ORD_SEL='q1';ordDraw();");
     const keep = () => D.querySelector('button[data-keep="q1"]').textContent;
     const first = keep();
@@ -35596,7 +35596,7 @@ await (async () => {
     w.SALT_CLOUD = true;
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     w.setInterval = () => 89; w.clearInterval = () => {};
-    const base = { u: "abcd-efgh", code: "CC5-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", history: [], msgs: [], payments: [] };
     const orders = [Object.assign({}, base, { id: "old1", at: "2026-09-24T01:00:00.000Z" }), Object.assign({}, base, { id: "new2", total: 110, at: "2026-09-24T03:00:00.000Z" })];
     w.fetch = async (path, init) => { const p = String(path), post = !!(init && init.method === "POST");
       return { ok: true, status: 200, json: async () => (p.startsWith("orders") && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) }; };
@@ -35625,7 +35625,7 @@ await (async () => {
       + "both land here: " + JSON.stringify(quiet));
     const nowWas = rd66("actions().filter(function(a){return a.sev==='now';}).length");
 
-    w66.eval("ORD_OPEN=[{id:'a1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:15,status:'placed',mode:'deliver',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]},"
+    w66.eval("ORD_OPEN=[{id:'a1',u:'abcd-efgh',code:'CC9-OKR',product:'salt',qty:2,total:200,delivery:15,status:'placed',mode:'deliver',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]},"
       + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
       + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
     const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
@@ -35639,7 +35639,7 @@ await (async () => {
       "the rail's Now count, which is this same list, picks it up: nothing counts it twice");
 
     /* AN ACKNOWLEDGED ORDER IS A ROW, and the book's own readings carry it from there */
-    w66.eval("ORD_OPEN=[{id:'b1',u:'abcd-efgh',code:'CC5-OKR',product:'salt',qty:2,total:200,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]}];");
+    w66.eval("ORD_OPEN=[{id:'b1',u:'abcd-efgh',code:'CC9-OKR',product:'salt',qty:2,total:200,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-21T02:00:00.000Z',history:[],msgs:[]}];");
     ok(rd66("actions().filter(function(a){return a.kind==='orders';})").length === 0,
       "an order already agreed says nothing here: it is a row, and saying it again would be the same money twice");
 

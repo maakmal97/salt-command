@@ -1,6 +1,6 @@
 {
- "v": "v857",
- "stamped": "26 Sep 2026, 00:44 KL",
+ "v": "v865",
+ "stamped": "26 Sep 2026, 03:33 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 25.5,
+  "STATED_STOCK": 13,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-24",
@@ -927,7 +927,7 @@
    },
    {
     "date": "2026-07-09",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 64,
@@ -1149,7 +1149,7 @@
    },
    {
     "date": "2026-07-15",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 56,
@@ -1249,7 +1249,7 @@
    },
    {
     "date": "2026-07-20",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cash": 0,
@@ -1323,7 +1323,7 @@
    },
    {
     "date": "2026-07-21",
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 0.5,
     "total": 50,
     "cost": 28,
@@ -1763,7 +1763,7 @@
    },
    {
     "date": "2026-08-03",
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 6.5,
     "total": 440,
     "cost": 305.5,
@@ -1777,7 +1777,7 @@
    },
    {
     "date": "2026-08-04",
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 0.5,
     "total": 50,
     "cost": 23.5,
@@ -1864,7 +1864,7 @@
    },
    {
     "date": "2026-08-06",
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 2,
     "total": 250,
     "cost": 94,
@@ -1877,7 +1877,7 @@
    },
    {
     "date": "2026-08-06",
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 1,
     "total": 80,
     "cost": 47,
@@ -2019,7 +2019,7 @@
    },
    {
     "date": "2026-08-08",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 47,
@@ -2191,7 +2191,7 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-12",
     "paidOn": "2026-08-12",
-    "ref": "CN6-WM",
+    "ref": "CN3-WM",
     "refKg": 1,
     "rid": "s080"
    },
@@ -2210,7 +2210,7 @@
    },
    {
     "date": "2026-08-14",
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 1.5,
     "total": 175,
     "cost": 81.3,
@@ -2277,7 +2277,7 @@
    },
    {
     "date": "2026-08-17",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 80,
     "cost": 56,
@@ -2604,7 +2604,7 @@
    },
    {
     "date": "2026-08-21",
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 2,
     "total": 150,
     "cost": 88,
@@ -2701,7 +2701,7 @@
     "rid": "s101"
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 1.5,
     "total": 185,
     "cash": 0,
@@ -3185,7 +3185,7 @@
     "note": "<b>DATED 28 AUG on his word, 04 Sep.</b> The order carried agreedOn 2026-08-28 and no date, so it read as undated everywhere the desk asks for one. v396 records the order that day and v486 answered the 31 Aug query against this row and upheld the book, so 28 Aug is the agreed date twice over. No figure moves: nothing was paid and nothing was delivered. "
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 1,
     "total": 110,
     "cost": 50,
@@ -3771,7 +3771,7 @@
     "mod": "corrected on 2026-09-10: total 450 to 430; cash 450 to 430; cost (unset) to 350; delivery (unset) to 15; handover collected to delivered"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cash": 0,
@@ -3906,7 +3906,7 @@
     ]
    },
    {
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -3970,7 +3970,7 @@
     "cost": 44
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cash": 0,
@@ -4140,7 +4140,7 @@
     "paidOn": "2026-09-16"
    },
    {
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 1,
     "total": 110,
     "cost": 44,
@@ -4186,7 +4186,7 @@
     "rid": "s156"
    },
    {
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 1,
     "total": 110,
     "cost": 44,
@@ -4219,7 +4219,7 @@
     ]
    },
    {
-    "customer": "CN6-WM-R",
+    "customer": "CN3-WM-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -4312,7 +4312,7 @@
     "rid": "s161"
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 1,
     "total": 110,
     "cost": 44,
@@ -4326,7 +4326,7 @@
     "rid": "s162"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 48,
@@ -4498,7 +4498,7 @@
     "rev": "R2"
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 1,
     "total": 110,
     "cost": 48,
@@ -4545,7 +4545,7 @@
     "rid": "s171"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 48,
@@ -4561,7 +4561,7 @@
    },
    {
     "rid": "s176",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 48,
     "cost": 48,
@@ -4832,7 +4832,7 @@
     "cost": 48
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN3-WM",
     "qty": 2.5,
     "total": 250,
     "cost": 120,
@@ -5219,7 +5219,7 @@
     "rid": "s197"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 4,
     "total": 20,
     "cost": 12.8,
@@ -5234,7 +5234,7 @@
     "rid": "s198"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 10,
     "total": 130,
     "cost": 76,
@@ -5264,7 +5264,7 @@
     "rid": "s200"
    },
    {
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
     "cost": 48,
@@ -5312,10 +5312,28 @@
     "cost": 600,
     "cash": 750,
     "date": "2026-09-25",
-    "deliveredQty": 0,
+    "deliveredQty": 12.5,
     "paidOn": "2026-09-25",
     "note": "<b>SALT SELL DATED 25 SEP, PAID IN FULL AND WHOLLY UNDELIVERED.</b> Booked to CA2-SEN, 12.5 unit for RM750 at RM60 a unit, RM750 cash in on 25 Sep 2026 and 0 of 12.5 unit out, so the delivery stands open. Costed at RM48 a unit from the desk's own inventory cost, RM150 on the goods at 20%. The total clears the RM729.98 floor for 12.5 unit and sits under the RM1,090 ask, ceiling RM1,970. On one prior order their median rate is RM60, range RM60 to RM60, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1. Not an associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
-    "rid": "s203"
+    "rid": "s203",
+    "amend": [
+     {
+      "date": "2026-09-25",
+      "kind": "Fulfilment",
+      "cash": 750,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 12.5,
+      "cost": 600,
+      "note": "<b>FULFILMENT ON S203: CASH 750.</b> Fulfilment 12.5 unit on 2026-09-26 against order s203. It applies to s203, 12.5 unit for RM750 with RM750 paid on 25 Sep 2026. CA2-SEN: 2 orders on the book, median RM60 a unit, range RM60 to RM60, RM0 outstanding before this row. The drafter flagged: This SETTLES the order in full: nothing is left outstanding after it. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."
+     }
+    ],
+    "deliveredOn": "2026-09-26"
    },
    {
     "customer": "CM6-PJ",
@@ -5351,7 +5369,7 @@
    },
    {
     "date": "2026-08-06",
-    "party": "CC5-OKR",
+    "party": "CC9-OKR",
     "how": "message",
     "outcome": "later",
     "next": null,
@@ -5462,7 +5480,7 @@
    "CS6-PER",
    "CN5-TAI",
    "CJ4-OKR",
-   "CC5-OKR",
+   "CC9-OKR",
    "CA4-DAM",
    "CE4-CHE",
    "CM6-HCM",
@@ -5472,8 +5490,8 @@
    "CM4-MK",
    "CH5-KLC",
    "CI4-OKR",
-   "CN6-WM",
-   "CN6-WM-R",
+   "CN3-WM",
+   "CN3-WM-R",
    "CZ6-WM",
    "CR4-PJ",
    "CD4-CS",
@@ -5512,7 +5530,7 @@
    "CS6-BS",
    "CJ4-OKR",
    "CS6-PER",
-   "CN6-WM",
+   "CN3-WM",
    "CI4-OKR",
    "CE4-AD",
    "CR3-DAM"
@@ -5551,7 +5569,7 @@
   "INTRODUCTIONS": [
    {
     "by": "CJ4-OKR",
-    "customer": "CC5-OKR",
+    "customer": "CC9-OKR",
     "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
    },
    {
@@ -5601,11 +5619,6 @@
     101.74,
     "Ampang"
    ],
-   "CC5-OKR": [
-    3.09,
-    101.67,
-    "Old Klang Rd"
-   ],
    "CD4-CS": [
     3.06,
     101.75,
@@ -5638,8 +5651,8 @@
    ],
    "CG5-SB": [
     3.05,
-    101.71,
-    "Sg Besi"
+    101.7,
+    "Sungai Besi"
    ],
    "CH4-KS": [
     3.13,
@@ -5657,24 +5670,24 @@
     "KLCC"
    ],
    "CH6-SET": [
-    3.2,
-    101.72,
+    3.21,
+    101.73,
     "Setapak"
    ],
    "CI4-OKR": [
     3.09,
     101.67,
-    "Old Klang Rd"
+    "Old Klang Road"
    ],
    "CJ4-BJ": [
-    3.06,
-    101.69,
-    "Bkt Jalil"
+    3.05,
+    101.68,
+    "Bukit Jalil"
    ],
    "CJ4-OKR": [
     3.09,
     101.67,
-    "Old Klang Rd"
+    "Old Klang Road"
    ],
    "CK4-SEN": [
     3.18,
@@ -5706,19 +5719,14 @@
     100.74,
     "Taiping"
    ],
-   "CN6-WM": [
-    3.21,
-    101.74,
-    "Wangsa Maju"
-   ],
    "CR3-DAM": [
-    3.15,
-    101.66,
+    3.07,
+    101.55,
     "Damansara"
    ],
    "CR3-PUD": [
-    3.14,
-    101.71,
+    3.13,
+    101.72,
     "Pudu"
    ],
    "CR4-PJ": [
@@ -5754,7 +5762,7 @@
    "SA5-BTR": [
     3.09,
     101.71,
-    "Bdr Tun Razak"
+    "Bandar Tun Razak"
    ],
    "SF6-KLC": [
     3.16,
@@ -5767,8 +5775,8 @@
     "Kepong"
    ],
    "SP7-PUD": [
-    3.14,
-    101.71,
+    3.13,
+    101.72,
     "Pudu"
    ],
    "CZ5-TM": [
@@ -5795,15 +5803,32 @@
     3.08,
     101.69,
     "Kuchai"
+   ],
+   "CB7-BJ": [
+    3.05,
+    101.68,
+    "Bukit Jalil"
+   ],
+   "CS6-DAM": [
+    3.07,
+    101.55,
+    "Damansara"
+   ],
+   "CC9-OKR": [
+    2.57,
+    101.96,
+    "Old Klang Road"
+   ],
+   "CN3-WM": [
+    3.21,
+    101.74,
+    "Wangsa Maju"
    ]
   },
   "TIER_OF": {
    "CS6-BS": {
     "salt": "Platinum",
     "oil": "Platinum"
-   },
-   "CN6-WM": {
-    "salt": "Platinum"
    },
    "CK4-SEN": {
     "salt": "Platinum"
@@ -5874,13 +5899,6 @@
    "CA7-AMP": {
     "salt": "Gold"
    },
-   "CC5-OKR": {
-    "salt": {
-     "small": "Titanium",
-     "mid": "Titanium",
-     "big": "Platinum"
-    }
-   },
    "CH4-KS": {
     "salt": "Titanium"
    },
@@ -5930,6 +5948,16 @@
     "salt": "Titanium"
    },
    "CS6-DAM": {
+    "salt": "Platinum"
+   },
+   "CC9-OKR": {
+    "salt": {
+     "small": "Titanium",
+     "mid": "Titanium",
+     "big": "Platinum"
+    }
+   },
+   "CN3-WM": {
     "salt": "Platinum"
    }
   },
@@ -6067,9 +6095,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T16:39:07.549Z",
+  "QUEUE_COMMITTED": "2026-09-25T19:32:31.487Z",
   "PRICING": {
-   "takenAt": "2026-09-25T16:44:04.848Z",
+   "takenAt": "2026-09-25T19:33:28.475Z",
    "sizes": [
     0.5,
     1,
@@ -6120,7 +6148,7 @@
     "CM4-TO": {
      "salt": "Titanium"
     },
-    "CN6-WM": {
+    "CN3-WM": {
      "salt": "Platinum"
     },
     "CZ4-MK": {
@@ -6158,7 +6186,7 @@
     "CM4-SK": {
      "salt": "Titanium"
     },
-    "CC5-OKR": {
+    "CC9-OKR": {
      "salt": {
       "small": "Titanium",
       "mid": "Titanium",
@@ -6409,7 +6437,7 @@
       "lateTwice": false
      }
     },
-    "CN6-WM": {
+    "CN3-WM": {
      "salt": {
       "name": "consistent mid",
       "orders": 11,
@@ -6621,7 +6649,7 @@
       "lateTwice": false
      }
     },
-    "CC5-OKR": {
+    "CC9-OKR": {
      "salt": {
       "name": "small and often",
       "orders": 7,
@@ -7270,9 +7298,9 @@
        "attrib": 1,
        "shrinkRate": 0.07471789611116293,
        "avgDel": {
-        "n": 171,
-        "kg": 431.95,
-        "mean": 2.526
+        "n": 172,
+        "kg": 444.45,
+        "mean": 2.584
        }
       },
       "policy": {
@@ -7806,7 +7834,7 @@
         810
        ]
       ],
-      "CN6-WM": [
+      "CN3-WM": [
        [
         0.5,
         60
@@ -8306,7 +8334,7 @@
         820
        ]
       ],
-      "CC5-OKR": [
+      "CC9-OKR": [
        [
         0.5,
         40
@@ -9876,7 +9904,7 @@
         450
        ]
       ],
-      "CN6-WM": [
+      "CN3-WM": [
        [
         10,
         130
@@ -10096,7 +10124,7 @@
         450
        ]
       ],
-      "CC5-OKR": [
+      "CC9-OKR": [
        [
         10,
         130
@@ -10975,7 +11003,7 @@
         1500
        ]
       ],
-      "CN6-WM": [
+      "CN3-WM": [
        [
         1,
         60
@@ -11195,7 +11223,7 @@
         1500
        ]
       ],
-      "CC5-OKR": [
+      "CC9-OKR": [
        [
         1,
         60
@@ -11992,7 +12020,7 @@
         60
        ]
       ],
-      "CN6-WM": [
+      "CN3-WM": [
        [
         1,
         8
@@ -12132,7 +12160,7 @@
         60
        ]
       ],
-      "CC5-OKR": [
+      "CC9-OKR": [
        [
         1,
         8
@@ -12631,15 +12659,15 @@
      "cards": {}
     }
    },
-   "v": "v857"
+   "v": "v865"
   },
   "OPEN": {
-   "at": "2026-09-25T16:44:05.061Z",
-   "count": 9,
+   "at": "2026-09-25T19:33:28.775Z",
+   "count": 8,
    "byKey": {
-    "CC5-OKR|2026-09-25|90": {
+    "CC9-OKR|2026-09-25|90": {
      "d": "2026-09-25",
-     "p": "CC5-OKR",
+     "p": "CC9-OKR",
      "dir": "S",
      "q": 1,
      "t": 90,
@@ -12649,7 +12677,7 @@
      "oweRM": 90,
      "rid": "s201",
      "deliveredOn": "2026-09-25",
-     "key": "CC5-OKR|2026-09-25|90",
+     "key": "CC9-OKR|2026-09-25|90",
      "age": 1,
      "exp": 90
     },
@@ -12670,20 +12698,6 @@
      "age": 1,
      "exp": 130
     },
-    "CA2-SEN|2026-09-25|750": {
-     "d": "2026-09-25",
-     "p": "CA2-SEN",
-     "dir": "S",
-     "q": 12.5,
-     "t": 750,
-     "cash": 750,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 12.5,
-     "rid": "s203",
-     "paidOn": "2026-09-25",
-     "key": "CA2-SEN|2026-09-25|750"
-    },
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
      "p": "CM4-TO",
@@ -12700,9 +12714,9 @@
      "handover": "collected",
      "key": "CM4-TO|2026-09-23|750"
     },
-    "CN6-WM|2026-09-19|250": {
+    "CN3-WM|2026-09-19|250": {
      "d": "2026-09-19",
-     "p": "CN6-WM",
+     "p": "CN3-WM",
      "dir": "S",
      "q": 2.5,
      "t": 250,
@@ -12713,7 +12727,7 @@
      "rid": "s182",
      "deliveredOn": "2026-09-19",
      "handover": "collected",
-     "key": "CN6-WM|2026-09-19|250",
+     "key": "CN3-WM|2026-09-19|250",
      "age": 7,
      "exp": 157.5
     },
@@ -12784,13 +12798,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25.5,
+     "onHand": 13,
      "free": 3.5,
-     "owedOut": 22,
+     "owedOut": 9.5,
      "coverDays": 1,
      "rate": 5.89,
      "owedToYou": 480,
-     "promised": 22,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -12845,7 +12859,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v857"
+   "v": "v865"
   }
  }
 }

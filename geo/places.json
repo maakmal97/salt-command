@@ -137,7 +137,6 @@
   "CN5-TAI": "TAI",
   "CS6-PER": "PER",
   "SA5-BTR": "BTR",
-  "CC5-OKR": "OKR",
   "CA4-DAM": "DAM",
   "CS6-BS": "BS",
   "CM4-SK": "SK",
@@ -146,7 +145,6 @@
   "CH5-KLC": "KLC",
   "CE4-CHE": "CHE",
   "CI4-OKR": "OKR",
-  "CN6-WM": "WM",
   "CZ6-WM": "WM",
   "CR4-PJ": "PJ",
   "CD4-CS": "CS",
@@ -157,7 +155,9 @@
   "CR3-PUD": "PUD",
   "CH4-MAL": "MLR",
   "CM6-PJ": "PJ",
-  "CA2-SEN": "SEN"
+  "CA2-SEN": "SEN",
+  "CC9-OKR": "OKR",
+  "CN3-WM": "WM"
  },
  "NOTES": {
   "PLACES": [
