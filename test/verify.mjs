@@ -35348,6 +35348,102 @@ await (async () => {
     "and the old line, which excused a run that was still going to deploy, is gone");
 })();
 
+section("No stamp-only commits: two builds of one master are byte-identical, and an idle update run ships nothing");
+await (async () => {
+  /* WHAT IT COST, to 25 Sep 2026. tools/build.mjs stamped rev.json's `built` afresh on every build, so
+     every tools/update.mjs run left public/rev.json dirty and its step 7 committed and pushed it: 12 of
+     60 laptop commits changed that stamp and nothing else, and each push started CI, a cloud-commit run
+     (the re-seed, the publish, the Counter's deploy and the suite) and a Workers Build, about ten runner
+     minutes for nothing shipped. The stamp now moves only with the id, and the chain says when there is
+     nothing to ship. update.mjs runs on import, so the verdict is driven here, in tools/preflight.mjs. */
+  const { idleVerdict } = await import("../tools/preflight.mjs");
+  const ID = "abc0123456789def";
+  const level = { revId: ID, deployedId: ID, liveId: ID, dirty: "", ahead: "0", pending: 0 };
+  const all = idleVerdict(level);
+  ok(all.idle === true && all.text.includes(ID) && !all.text.includes("\n")
+    && idleVerdict({ ...level, ahead: 0, pending: [] }).idle === true,
+    "built, deployed and live on one id, clean, level and nothing queued is idle, in one line, whether git's count "
+    + "arrives as a string or a number: " + JSON.stringify(all));
+
+  /* EACH CONDITION ON ITS OWN. Every case differs from the idle state in exactly one input, so a verdict
+     that forgot one condition reads that case as idle and goes red here alone. */
+  for (const [what, delta, why] of [
+    ["the phone serving another id", { liveId: "fff0123456789def" }, /the phone serves fff0123456789def/],
+    ["a dirty tree", { dirty: " M public/rev.json\n?? ledger/x.json" }, /2 file\(s\) changed/],
+    ["one commit ahead of origin", { ahead: "1" }, /1 commit\(s\) ahead of origin/],
+    ["a pending entry", { pending: 1 }, /1 entry queued/],
+    ["a stale deploy on record", { deployedId: "c2cf75e8dd3ec9f9" }, /the deploy on record is c2cf75e8dd3ec9f9/]
+  ]) {
+    const v = idleVerdict({ ...level, ...delta });
+    ok(v.idle === false && why.test(v.text) && !v.text.includes("\n"),
+      what + " is not idle, and the one line says why: " + JSON.stringify(v));
+  }
+
+  /* WHAT IT COULD NOT READ IS NEVER AGREEMENT. A /rev that did not answer, a git count that failed and
+     printed an error, no build id at all: each ships as a run always did, rather than stopping on a guess. */
+  const unknown = [
+    ["no live answer", { liveId: null }],
+    ["a failed count", { ahead: "fatal: bad revision" }],
+    ["an empty count", { ahead: "" }],
+    ["no tree read", { dirty: undefined }],
+    ["no queue read", { pending: undefined }],
+    ["three empty ids", { revId: "", deployedId: "", liveId: "" }]
+  ].filter(([, d]) => idleVerdict({ ...level, ...d }).idle !== false).map(([w]) => w);
+  ok(unknown.length === 0 && idleVerdict().idle === false,
+    "an input that could not be read is never taken as agreement: " + JSON.stringify(unknown));
+
+  /* ---- THE BUILD KEEPS ITS STAMP WHILE THE ID STANDS ----
+     Driven on a copy of the build's own tree (tools/build.mjs, src/*.js, public/sw.js), so nothing here
+     writes the repo's public/. The copy of build.mjs is taken from the repo, so a change to it is what runs. */
+  const T = join(REPO, "test", "tmp", "idle-stamp");
+  rmSync(T, { recursive: true, force: true });
+  try {
+    for (const d of ["tools", "src", join("public", "assets")]) mkdirSync(join(T, d), { recursive: true });
+    writeFileSync(join(T, "tools", "build.mjs"), readFileSync(join(REPO, "tools", "build.mjs")));
+    writeFileSync(join(T, "public", "sw.js"), readFileSync(join(REPO, "public", "sw.js")));
+    writeFileSync(join(T, "public", "assets", "chart.umd.js"), "/* stand-in: the build only proves it is there */\n");
+    for (const f of readdirSync(join(REPO, "src")).filter((n) => n.endsWith(".js")))
+      writeFileSync(join(T, "src", f), readFileSync(join(REPO, "src", f)));
+    const M = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+    const REVT = join(T, "public", "rev.json"), DESKT = join(T, "public", "desk.html");
+    const build = () => spawnSync(process.execPath, [join(T, "tools", "build.mjs")],
+      { cwd: T, env: { ...process.env, SALT_MASTER: M }, encoding: "utf8" }).status;
+    /* a build that died leaves nothing to read, and that is an assertion's red, not the section's crash */
+    const rd = (p) => { try { return readFileSync(p); } catch (e) { return Buffer.alloc(0); } };
+
+    const s1 = build(); const rev1 = rd(REVT); const desk1 = rd(DESKT);
+    const s2 = build(); const rev2 = rd(REVT); const desk2 = rd(DESKT);
+    ok(s1 === 0 && s2 === 0 && rev1.length > 0 && desk1.length > 0 && rev1.equals(rev2) && desk1.equals(desk2),
+      "two builds of one master leave public/rev.json and public/desk.html byte-identical, so an idle build "
+      + "leaves the tree clean: " + JSON.stringify([s1, s2, rev1.toString().trim(), rev2.toString().trim()]));
+
+    let r1 = {}; try { r1 = JSON.parse(rev1.toString()); } catch (e) { /* the assertion above is already red */ }
+    const OLD = "2026-01-02T03:04:05.000Z";
+    const kept = JSON.stringify({ ok: true, v: r1.v, id: r1.id, built: OLD }) + "\n";
+    writeFileSync(REVT, kept);
+    const s3 = build();
+    ok(s3 === 0 && rd(REVT).toString() === kept,
+      "a rev.json on the same id keeps its stamp to the byte, however old: " + rd(REVT).toString().trim());
+
+    writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0000000000000000", built: OLD }) + "\n");
+    const s4 = build(); let r4 = {}; try { r4 = JSON.parse(rd(REVT).toString()); } catch (e) { /* red below */ }
+    ok(s4 === 0 && r4.id === r1.id && r4.built !== OLD && Math.abs(Date.parse(r4.built) - Date.now()) < 5 * 60e3,
+      "a new id is stamped afresh, so the stamp still says when something last changed: " + JSON.stringify(r4));
+
+    writeFileSync(REVT, "{ not json");
+    const s5 = build(); let r5 = null; try { r5 = JSON.parse(rd(REVT).toString()); } catch (e) { /* stays null */ }
+    ok(s5 === 0 && r5 && r5.id === r1.id && r5.built !== OLD && !Number.isNaN(Date.parse(r5.built)),
+      "an unreadable rev.json is stamped afresh and never stops the build: " + JSON.stringify([s5, r5]));
+  } finally { rmSync(T, { recursive: true, force: true }); }
+
+  /* AND THE CHAIN ASKS IT. A source pin, the weak kind, because update.mjs runs its chain on import; the
+     behaviour is carried by the assertions above. */
+  const upI = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+  ok(/import \{ idleVerdict \} from "\.\/preflight\.mjs";/.test(upI) && /IDLE = v\.idle;/.test(upI)
+    && /else if \(IDLE\) ok\("skipped: nothing to ship"\);\nelse if \(sh\("npm", \["test"\]\)/.test(upI.replace(/\r\n/g, "\n")),
+    "update.mjs reads the verdict after the build and skips the suite on it");
+})();
+
 section("v772: the monthly issue is retired, and a sealed one is made only when it is asked for");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026, after v769: "retire the monthly routine". The account is one live

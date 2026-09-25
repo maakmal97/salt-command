@@ -9,11 +9,16 @@
  *   1  preflight   git locks, the master, its version and its watermark
  *   2  drain       KV -> 10_Data/salt_queue_cloud.json          (skip with --no-drain)
  *   3  queues      what is still pending, on BOTH queues, and the replay check
- *   4  build       master -> public/index.html
+ *   4  build       master -> public/desk.html, then whether there is anything to ship
  *   5  test        the smoke suite
  *   6  deploy      only when rev.json's id differs from .deployed.json's
+ *   6b mirror      the D1 store against the desk's version       (skip with --no-mirror)
  *   7  version     git add, commit, push                        (skip with --no-push)
  *   8  verify      master == rev.json == live /rev, origin level, no locks left
+ *
+ * AN IDLE RUN STOPS AT THE BUILD (26 Sep 2026): when the build, the deploy on record and the phone
+ * carry one id, the tree is clean, nothing is ahead of origin and nothing is queued, it prints
+ * "nothing to ship" and skips 5, 6 and 7; 6b and 8 still run (`idleVerdict`, tools/preflight.mjs).
  *
  * WHAT IT DELIBERATELY WILL NOT DO: fold a queued entry into the ledger. Writing a
  * transaction row is a judgement (which product, whose bucket, what cost, what the note
@@ -38,6 +43,7 @@ import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
 import { messageFrom } from "./commitmsg.mjs";
 import { aheadVerdict } from "./preflight.mjs";
+import { idleVerdict } from "./preflight.mjs";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -268,8 +274,28 @@ step(4, "build");
 if (DRY) ok("skipped (dry run)");
 else if (sh("npm", ["run", "build"]).code !== 0) { fail("build failed"); process.exit(1); }
 
+/* NOTHING TO SHIP, NOTHING TO DO (26 Sep 2026). The build keeps its stamp while the id stands, so an
+   idle build leaves the tree clean, and a run that finds every surface on one id with nothing waiting
+   skips the suite, the deploy and the commit rather than spending runner minutes proving it again.
+   The mirror (6b) and the proof (8) still run: a stale mirror is the silent fault this tool exists for. */
+let IDLE = false;
+if (!DRY) {
+  const live4 = await liveRev();
+  const v = idleVerdict({
+    revId: readJson(resolve(REPO, "public", "rev.json"), {}).id,
+    deployedId: readJson(resolve(REPO, ".deployed.json"), {}).id,
+    liveId: live4 && live4.id,
+    dirty: git("status", "--porcelain"),
+    ahead: git("rev-list", "--count", "origin/master..HEAD"),
+    pending: pending.length
+  });
+  IDLE = v.idle;
+  if (IDLE) ok("nothing to ship: " + v.text);
+}
+
 step(5, "test");
 if (DRY) ok("skipped (dry run)");
+else if (IDLE) ok("skipped: nothing to ship");
 else if (sh("npm", ["test"]).code !== 0) { fail("tests failed"); process.exit(1); }
 
 /* ---- 6. deploy -------------------------------------------------------------------- */
@@ -306,6 +332,8 @@ function recordDeploy(r) {
 
 if (NO_DEPLOY) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
+} else if (IDLE) {
+  ok(`skipped: nothing to ship (${rev.v} ${rev.id} is deployed and live)`);
 } else if (rev.id && deployed.id === rev.id) {
   ok(`already deployed (${rev.v} ${rev.id})`);
 } else {
@@ -367,6 +395,10 @@ step(7, "version");
    holding the push is a choice. --dry still touches nothing at all. */
 if (DRY) {
   ok("skipped (dry run)");
+} else if (IDLE && !git("status", "--porcelain")) {
+  /* Idle found nothing ahead of origin, and nothing since has committed. The tree is read again
+     because 6b's re-seed rewrites ledger/ledger.json, and a refreshed extract is committed as ever. */
+  ok("skipped: nothing to ship");
 } else {
   const dirty = git("status", "--porcelain");
   if (dirty) {

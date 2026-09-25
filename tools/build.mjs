@@ -277,7 +277,16 @@ try { VER = (src.match(/const evolution=\[\{\s*"?v"?\s*:\s*['"](v\d+)['"]/) || [
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, src);
-writeFileSync(REV, JSON.stringify({ ok: true, v: VER, id: BUILD_ID, built: new Date().toISOString() }) + "\n");
+/* THE STAMP MOVES ONLY WITH THE ID (26 Sep 2026). `built` was stamped afresh on every build, so a
+   build of an unchanged master still dirtied rev.json, and tools/update.mjs committed and pushed it:
+   12 of 60 laptop commits changed that stamp and nothing else, each one starting CI, a cloud-commit
+   run and a Workers Build for nothing shipped. Kept while the id stands, two builds of one master
+   leave public/ byte-identical, and ship-check's seven-day warning reads the last build that
+   changed anything, which is what it was written to ask. */
+let prevRev = null;
+try { prevRev = JSON.parse(readFileSync(REV, "utf8")); } catch (e) { /* none yet, or unreadable: stamp afresh */ }
+const BUILT = prevRev && prevRev.id === BUILD_ID && typeof prevRev.built === "string" ? prevRev.built : new Date().toISOString();
+writeFileSync(REV, JSON.stringify({ ok: true, v: VER, id: BUILD_ID, built: BUILT }) + "\n");
 const kb = (Buffer.byteLength(src) / 1024).toFixed(0);
 /* THE DESK'S ONE RUNTIME ASSET, AND IT IS NOW SOURCE RATHER THAN A COPY.
    ensureChart() loads `assets/chart.umd.js` from the same origin rather than a CDN, which is

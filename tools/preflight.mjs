@@ -26,3 +26,34 @@ export function aheadVerdict(behind, opts = {}) {
     + "        Nothing here may deploy or take a version while this tree is behind.";
   return opts.dry ? { level: "warn", stop: false, text } : { level: "fail", stop: true, text };
 }
+
+/* WHETHER A RUN HAS ANYTHING TO SHIP (26 Sep 2026). An update run on a tree that had nothing new
+ * still built, ran the whole suite and committed public/rev.json for its fresh `built` stamp alone:
+ * 12 of 60 laptop commits changed nothing else, and each push started CI, a cloud-commit run (the
+ * re-seed, the publish, the Counter's deploy and the suite) and a Workers Build, about ten runner
+ * minutes for nothing shipped. build.mjs now keeps the stamp while the id stands, so an idle build
+ * leaves the tree clean, and this says when the run may stop at the build.
+ * IDLE ONLY WHEN EVERY SURFACE AGREES AND NOTHING WAITS: the build on disk, the deploy on record and
+ * the phone carry one id, the tree is clean, nothing is ahead of origin and nothing is queued. A
+ * count or an id this could not read is never taken as agreement; such a run ships as it always did. */
+export function idleVerdict({ revId, deployedId, liveId, dirty, ahead, pending } = {}) {
+  const why = [];
+  const id = typeof revId === "string" && revId ? revId : null;
+  if (!id) why.push("no build id on disk");
+  else {
+    if (deployedId !== id) why.push("the deploy on record is " + (deployedId || "none") + ", the build is " + id);
+    if (liveId !== id) why.push("the phone serves " + (liveId || "nothing readable") + ", the build is " + id);
+  }
+  const d = dirty == null ? null : String(dirty).trim();
+  if (d === null) why.push("the tree's state is unknown");
+  else if (d) why.push(d.split("\n").length + " file(s) changed in the tree");
+  const a = String(ahead ?? "").trim();
+  if (!/^\d+$/.test(a)) why.push("the count ahead of origin is unknown");
+  else if (+a > 0) why.push(+a + " commit(s) ahead of origin");
+  const p = Array.isArray(pending) ? pending.length : pending;
+  if (typeof p !== "number" || !(p >= 0)) why.push("the queue's count is unknown");
+  else if (p > 0) why.push(p + " entr" + (p === 1 ? "y" : "ies") + " queued");
+  return why.length
+    ? { idle: false, text: why.join("; ") }
+    : { idle: true, text: id + " is built, deployed and live; the tree is clean and level with origin, and nothing is queued" };
+}

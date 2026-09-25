@@ -223,7 +223,9 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   against live `/rev`.
 - **"Update" means `node tools/update.mjs`, the whole chain, with no step left for him**: drains (a
   pull only), reports both queues, mints any missing account, builds, tests, deploys on an id
-  change, commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree. **A tree
+  change, commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree. An idle run
+  (one id built, recorded and live, the tree clean and level, nothing queued) prints nothing to ship
+  and skips the suite, deploy and commit; `built` moves only with the id, so no stamp is left to commit. **A tree
   behind origin stops it dead** (`aheadVerdict` in `tools/preflight.mjs`); `--no-push` still
   deploys, so only `--dry` touches nothing. Also `--no-deploy`, `--no-drain`, `-m`. It never folds.
   The replay check refuses to ship while an entry above `QUEUE_COMMITTED` matches a ledger row by
@@ -399,7 +401,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |
 | `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record, never touching an existing one; `--pool` tops up the spare accounts (`tools/stmt-pool.mjs`) |
 | `tools/foldnotes.mjs` | The fold's prose with no model: same notes object, same `checkNotes`, no judgement; `scrub` makes the API error safe |
-| `tools/preflight.mjs` | `aheadVerdict`: level, warn or STOP; outside `update.mjs` so the suite can drive it |
+| `tools/preflight.mjs` | `aheadVerdict`: level, warn or STOP; `idleVerdict`: nothing to ship; outside `update.mjs` so the suite can drive it |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `test/verify.mjs` | No network or browser; one assertion per behavioural change, **proved red by mutation before its green is trusted**, each on its own |
