@@ -1115,9 +1115,11 @@ async function signOutEverywhere(env, u, keep) {
   return { devices: devs.length, links, phones, ended: devs.length + links + phones };
 }
 
-async function handleRefs(request, env, p, m, origin) {
+/* `who` is the /all gate's own verdict on this request (the plan's 2.6): the token is verified once
+   there, and refused here again if the gate ever lets nobody through, without a second verify. */
+async function handleRefs(request, env, p, m, origin, who) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
-  if (!(await identity(request, env))) return json({ ok: false, error: "Access required" }, 401);
+  if (!who) return json({ ok: false, error: "Access required" }, 401);
 
   if (p === "/all/refs") {
     /* v696, his instruction of 18 Sep 2026: five links, one per tier. They are ENSURED on the
@@ -1308,7 +1310,7 @@ export default {
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
           "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
       }
-      if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
+      if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin, who);
       if (p === "/all/sheet") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
         return json(await ownerSheet(env, url.origin));

@@ -30,6 +30,38 @@ function b64url(s) {
   return out;
 }
 
+/* THE TEAM'S KEYS ARE KEPT FOR AN HOUR, per issuer and key id, in this isolate (the plan's 2.6,
+ * 26 Sep 2026). Only the public key is remembered: every request still verifies its own signature
+ * and checks the issuer, the audience and the expiry, so a kept key admits nothing a fresh fetch
+ * would refuse. Access rotates its signing key every six weeks and honours the previous one for
+ * seven days after, so an hour opens no window the platform does not already leave. A key id not
+ * kept, or kept past the hour, fetches the certs once and keeps every RSA key in them, so the
+ * previous key is warm too; a key id still missing after that fetch is nobody. */
+const KEY_TTL_MS = 60 * 60 * 1000;
+const KEYS = new Map();   /* issuer + "|" + kid -> { key: CryptoKey, at: ms } */
+
+async function teamKey(iss, kid) {
+  const now = Date.now();
+  const kept = KEYS.get(iss + "|" + kid);
+  if (kept && now - kept.at < KEY_TTL_MS) return kept.key;
+  const certs = await (await fetch(iss + "/cdn-cgi/access/certs")).json();
+  for (const [id, e] of KEYS) if (now - e.at >= KEY_TTL_MS) KEYS.delete(id);
+  let found = null;
+  for (const jwk of (certs && certs.keys) || []) {
+    if (!jwk || jwk.kty !== "RSA" || !jwk.kid) continue;
+    let key;
+    try {
+      key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e },
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    } catch (e) {
+      continue;   /* one malformed key in the list spoils none of the others */
+    }
+    KEYS.set(iss + "|" + jwk.kid, { key, at: now });
+    if (jwk.kid === kid) found = key;
+  }
+  return found;
+}
+
 function cookie(request, name) {
   const all = request.headers.get("cookie") || "";
   for (const part of all.split(";")) {
@@ -56,11 +88,9 @@ export async function identity(request, env) {
     const auds = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
     if (header.alg !== "RS256" || claims.iss !== iss || !auds.includes(aud)) return null;
     if (typeof claims.exp !== "number" || claims.exp <= Date.now() / 1000) return null;
-    const certs = await (await fetch(iss + "/cdn-cgi/access/certs")).json();
-    const jwk = (certs.keys || []).find((k) => k.kid === header.kid && k.kty === "RSA");
-    if (!jwk) return null;
-    const key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e },
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    if (typeof header.kid !== "string" || !header.kid) return null;
+    const key = await teamKey(iss, header.kid);
+    if (!key) return null;
     const good = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64url(parts[2]),
       new TextEncoder().encode(parts[0] + "." + parts[1]));
     return good ? { email: String(claims.email || "") } : null;

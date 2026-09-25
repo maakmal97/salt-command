@@ -7780,6 +7780,113 @@ await (async () => {
   }
 })();
 
+/* ---- THE ACCESS KEYS KEPT AN HOUR, AND ONE VERIFY A REQUEST (the plan's 2.6, 26 Sep 2026) ----------
+   stmt/access.js keeps the team's public keys per issuer and key id for an hour instead of fetching the
+   certs on every request, and /all/refs takes the gate's verdict instead of verifying the token again.
+   The fetches are counted through a stand-in for the team's key server, the RSA verifies through a spy
+   on crypto.subtle.verify, and the hour passes on test/kvsim.mjs's clock. The teams and key ids are
+   invented and used by no other section, since the kept keys live as long as the module does. Each
+   assertion was proved red by its own mutation of stmt/access.js or stmt/worker.js. */
+section("Statements: the Access keys kept an hour per key id, and /all/refs verifies once (2.6)");
+await (async () => {
+  const realFetch = globalThis.fetch, subtle = crypto.subtle;
+  const realVerify = subtle.verify, ownVerify = Object.hasOwn(subtle, "verify");
+  const SIM = await import("../test/kvsim.mjs");
+  const clockWas = SIM.clock.now();
+  try {
+    SIM.clock.install();
+    const TEAM = "keepteam", TEAM2 = "keepteam-two", AUD = "aud-keep";
+    const KA = "kid-keep-a", KB = "kid-keep-b", KC = "kid-keep-c", KZ = "kid-keep-z";
+    const ISS = "https://" + TEAM + ".cloudflareaccess.com", ISS2 = "https://" + TEAM2 + ".cloudflareaccess.com";
+    const gen = () => subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const [kpA, kpB, kpC, kpX] = [await gen(), await gen(), await gen(), await gen()];
+    const cert = async (kp, kid) => ({ ...(await subtle.exportKey("jwk", kp.publicKey)), kid, kty: "RSA" });
+    let published = [await cert(kpA, KA), await cert(kpB, KB)];
+    const published2 = [await cert(kpX, KB)];
+    const fetched = { [ISS]: 0, [ISS2]: 0 };
+    globalThis.fetch = async (u) => {
+      const s = String(u);
+      if (s === ISS + "/cdn-cgi/access/certs") { fetched[ISS]++; return new Response(JSON.stringify({ keys: published })); }
+      if (s === ISS2 + "/cdn-cgi/access/certs") { fetched[ISS2]++; return new Response(JSON.stringify({ keys: published2 })); }
+      throw new Error("the Access gate reached for something other than a team's key server: " + s);
+    };
+    let verifies = 0;
+    subtle.verify = function (alg, ...rest) {
+      if (((alg && alg.name) || alg) === "RSASSA-PKCS1-v1_5") verifies++;
+      return realVerify.call(this, alg, ...rest);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    /* a token minted on the section's clock, so it is still in date after the clock moves an hour */
+    const mint = async (kp, kid, iss = ISS, extra = {}) => {
+      const claims = { iss, aud: [AUD], email: "owner@keep.example", exp: Math.floor(Date.now() / 1000) + 7200, ...extra };
+      const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      const sig = await subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u(new Uint8Array(sig));
+    };
+    const env1 = { STMT: new KV(), ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const env2 = { STMT: new KV(), ACCESS_TEAM: TEAM2, ACCESS_AUD: AUD };
+    const MAN = "/all/manifest.webmanifest";
+    const st = async (path, tok, env = env1) => (await stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
+      { headers: tok ? { "cf-access-jwt-assertion": tok } : {} }), env)).status;
+
+    /* one fetch for two requests under one key id */
+    const f0 = fetched[ISS];
+    const pair = [await st(MAN, await mint(kpA, KA)), await st(MAN, await mint(kpA, KA))];
+    ok(pair[0] === 200 && pair[1] === 200 && fetched[ISS] - f0 === 1,
+      "two requests under one key id fetch the team's certs once, and both open: " + JSON.stringify({ pair, fetches: fetched[ISS] - f0 }));
+    /* every key in that one fetch is kept, so the other published key needs no second */
+    const f1 = fetched[ISS];
+    ok(await st(MAN, await mint(kpB, KB)) === 200 && fetched[ISS] === f1,
+      "and the other key the team publishes opens from that same fetch, so the previous key after a rotation is warm too");
+
+    /* a kept key is a public key, never a pass: the signature, the audience and the expiry are still checked */
+    ok(await st(MAN, await mint(kpX, KA)) === 401,
+      "a token under a kept key id but signed by another key is refused: the key is kept, the verify is not skipped");
+    ok(await st(MAN, await mint(kpA, KA, ISS, { exp: Math.floor(Date.now() / 1000) - 5 })) === 401
+      && await st(MAN, await mint(kpA, KA, ISS, { aud: ["another-app"] })) === 401,
+      "and an expired token, or one for another application, is refused under a kept key id");
+
+    /* /all/refs takes the gate's verdict: one RSA verify a request, not two */
+    const v0 = verifies;
+    const refsSt = await st("/all/refs", await mint(kpA, KA));
+    ok(refsSt === 200 && verifies - v0 === 1,
+      "/all/refs verifies the token once, at the /all gate: " + JSON.stringify({ status: refsSt, verifies: verifies - v0 }));
+
+    /* a rotation: a key id not kept fetches the certs again, once, and a key id nobody publishes is nobody */
+    published = [await cert(kpB, KB), await cert(kpC, KC)];
+    const f2 = fetched[ISS];
+    ok(await st(MAN, await mint(kpC, KC)) === 200 && fetched[ISS] - f2 === 1,
+      "a key id not kept fetches the certs once more, so a new key opens as soon as the team publishes it");
+    const f3 = fetched[ISS];
+    ok(await st(MAN, await mint(kpA, KZ)) === 401 && fetched[ISS] - f3 === 1,
+      "a key id the team does not publish is refused after exactly one fetch: " + (fetched[ISS] - f3));
+
+    /* the hour: held at 59 minutes, fetched again past 60, and a key the team dropped stops opening */
+    SIM.clock.add(59 * 60 * 1000);
+    const f4 = fetched[ISS];
+    ok(await st(MAN, await mint(kpB, KB)) === 200 && fetched[ISS] === f4,
+      "the kept key is held for the hour: at 59 minutes the certs are not fetched");
+    SIM.clock.add(2 * 60 * 1000);
+    const f5 = fetched[ISS];
+    ok(await st(MAN, await mint(kpB, KB)) === 200 && fetched[ISS] - f5 === 1,
+      "and past the hour they are fetched again: " + (fetched[ISS] - f5));
+    ok(await st(MAN, await mint(kpA, KA)) === 401,
+      "so a key the team has stopped publishing stops opening once its hour is out");
+
+    /* keyed by the issuer as well: one team's kept key never answers for another's key id */
+    ok(await st(MAN, await mint(kpB, KB, ISS2), env2) === 401,
+      "a key kept for one team does not open a token of another team under the same key id");
+    ok(await st(MAN, await mint(kpX, KB, ISS2), env2) === 200 && fetched[ISS2] === 1,
+      "while that team's own key opens it, from that team's own certs");
+  } finally {
+    globalThis.fetch = realFetch;
+    if (ownVerify) subtle.verify = realVerify; else delete subtle.verify;
+    SIM.clock.uninstall();
+    SIM.clock.set(clockWas);
+  }
+})();
+
 /* ---- THE GUEST REFERRAL LINKS (his instruction, 10 Sep 2026) --------------------------------
    A link is minted behind Access, pinned to a tier, and opens ONE board and nothing else. The tier
    is the load-bearing part, so it is proved from both ends: the page carries the figures its own

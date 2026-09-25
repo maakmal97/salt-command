@@ -996,7 +996,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
   that never went out says so and leaves the page. **Its own icon** (S9 9.7) is the Counter's ring with a
   keyhole for the dot, `ADMIN_ICON_PNG_B64` from `tools/stmt-icon.mjs`, served at `/icon-key.png` outside
-  `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
+  `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie.
+  It keeps the team's public keys per issuer and key id for an hour, and a key id it lacks fetches the
+  certs once; the signature, issuer, audience and expiry are checked on every request, and `/all/refs`
+  takes the gate's verdict rather than verifying twice (the plan's 2.6). `roster` (codes
   beside usernames, never names) is written by the publish.
 - **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
   with no custom domain; the precedent is QR Command's application, and the verifier to copy is
