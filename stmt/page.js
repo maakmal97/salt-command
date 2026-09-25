@@ -1183,9 +1183,14 @@ const CLIENT_JS = `
   /* a note a tap leaves to be drawn in a part outside the slice (the order sheet, the order's cancel, the limit, Rewards' links)
      is worded in English as it is made, since the tap runs after inEn has handed the reader's language back */
   var twE=inEn(tw), wErrE=inEn(wErr);
+  /* LANGUAGE OF PARTS (S13-L1 of the review): a part drawn in English on a page in another language says lang="en", so a
+     screen reader voices it in English, and a part of the slice inside it says the reader's; both clear on English */
+  function enLang(x){ if(x){ if(READER!=='en') x.setAttribute('lang','en'); else x.removeAttribute('lang'); } return x; }
+  function rdLang(x){ if(x){ if(READER!=='en') x.setAttribute('lang',READER); else x.removeAttribute('lang'); } return x; }
   function langSet(L){
     READER=LANG=!OWNER&&langOk(L)?L:'en';
     document.documentElement.lang=READER;
+    [].forEach.call(document.querySelectorAll('#pPrices,#pCard,.acct__main'),enLang);
     [].forEach.call(document.querySelectorAll('[data-l]'),function(b){ var on=b.getAttribute('data-l')===READER;
       b.classList.toggle('salt-tabs__pill--active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
     try{ if(!OWNER&&window.caches) caches.open('lang').then(function(c){ return c.put('/lang',new Response(READER)); }).catch(function(){}); }
@@ -2467,7 +2472,7 @@ const CLIENT_JS = `
   function sheetDraw(){
     if(!osh) return;
     var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
-    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
+    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent=''; enLang(osh.box);
     if(draft.step==='limit'&&oLive().length<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     osh.foot.hidden=!osh.foot.firstChild;
@@ -2757,11 +2762,11 @@ const CLIENT_JS = `
        order beside it starts at the top of the place, its money, Pay and messages in view */
     var top=el('div','otop'); top.id='oTop'; oTopEl=top;
     /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
-    if(hold) top.appendChild(el('h2',null,tw('ord.due')));
+    if(hold) top.appendChild(rdLang(el('h2',null,tw('ord.due'))));
     if(view) top.appendChild(el('p','lead',tw('ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=el('div','pane'), od=payDue.overdue, left=odLeft();
+      var dueBox=rdLang(el('div','pane')), od=payDue.overdue, left=odLeft();
       dueBox.appendChild(kpiTile('ember',tw('pay.overdue'),rm(left),odNote(od)));
       dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){
@@ -3178,7 +3183,7 @@ const CLIENT_JS = `
   function oPart(id,k){
     var s=pOrder.querySelector('.oscreen[data-order="'+id+'"]'), o=oFind(id); if(!s||!o) return;
     var was=[].filter.call(s.children,function(c){ return c.getAttribute('data-part')===k; })[0]; if(!was) return;
-    var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; was.replaceWith(n);
+    was.replaceWith(oPartOf(k,o));
   }
   async function oSend(id,x){
     var mine=ticket; x.state='sending'; x.why=''; oPart(id,'thread');
@@ -3232,13 +3237,17 @@ const CLIENT_JS = `
     return f;
   }
   var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
+  /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
+     that says English (S13-L1) */
+  var OSLICE={money:1, act:1, thread:1, say:1};
+  function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return OSLICE[k]?rdLang(n):n; }
   function oScreen(o){
     var s=el('section','oscreen salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'); s.setAttribute('data-order',o.id);
-    s.setAttribute('aria-label',twE('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)}));
+    s.setAttribute('aria-label',twE('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)})); enLang(s);
     var back=el('button','salt-ghost salt-ghost--tight oback',twE('ord.yours')); back.type='button';
     back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
     s.appendChild(back);
-    Object.keys(OPARTS).forEach(function(k){ var p=OPARTS[k](o); p.setAttribute('data-part',k); p.hidden=!p.childNodes.length; s.appendChild(p); });
+    Object.keys(OPARTS).forEach(function(k){ s.appendChild(oPartOf(k,o)); });
     return s;
   }
   /* on a phone the open order is the whole tab, with the way back at its head */
@@ -3252,7 +3261,7 @@ const CLIENT_JS = `
     draft.oStale='';
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
-    var col=el('div','olistcol'); if(oTopEl) col.appendChild(oTopEl);
+    var col=enLang(el('div','olistcol')); if(oTopEl) col.appendChild(oTopEl);
     col.appendChild(el('h2',null,twE('ord.yours'))); col.appendChild(oList(id));
     place.appendChild(col);
     if(o) place.appendChild(oScreen(o));
@@ -3276,7 +3285,7 @@ const CLIENT_JS = `
       Object.keys(OPARTS).forEach(function(k){
         var p=[].filter.call(scr.children,function(c){ return c.getAttribute('data-part')===k; })[0];
         if(!p) return;
-        var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length;
+        var n=oPartOf(k,o);
         if(n.outerHTML===p.outerHTML) return;
         if(p.contains(ae)) draft.oStale=sid; else p.replaceWith(n);
       });

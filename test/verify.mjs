@@ -21005,8 +21005,10 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#oArea [data-row]"); i++) await wait(25);
     await wait(50);
-    const slice = {}, outside = {};
-    const look = (tag, q, want) => { const x = D.querySelector(q), b = x ? scan(x, want) : ["(not drawn)"]; if (b.length) (want ? slice : outside)[tag + " " + q] = b; };
+    const slice = {}, outside = {}, langOff = [];
+    /* S13-L1 of the review: and each part says its language, the one a screen reader voices it in */
+    const look = (tag, q, want) => { const x = D.querySelector(q), b = x ? scan(x, want) : ["(not drawn)"]; if (b.length) (want ? slice : outside)[tag + " " + q] = b;
+      const l = x && x.closest("[lang]"); if (!l || l.getAttribute("lang") !== (want ? "ms" : "en")) langOff.push(tag + " " + q + ": " + (l ? l.getAttribute("lang") : "none")); };
     look("home", "#pHome", true); look("home", ".chead", true);
     const homeWords = D.getElementById("pHome").textContent;
     D.querySelector('.salt-appbar button[data-t="stmt"]').click(); await wait(80);
@@ -21030,6 +21032,7 @@ await (async () => {
       "drawn on a Malay phone, every word of Home, This device, an order's money, Pay and messages, the pay sheet and Did you send is the Malay table's: " + JSON.stringify(slice));
     ok(!Object.keys(outside).length && !(osAria || "").includes(M) && /units/.test(D.querySelector(".olistcol").textContent),
       "and nothing outside the slice is: Prices, the statement's foot, the Orders list and an order's head, steps, history and cancel stay English, sizes and dates included: " + JSON.stringify(outside));
+    ok(!langOff.length, "and each part says its language, lang en on what is drawn in English and ms on the slice inside it: " + JSON.stringify(langOff));
     /* ---- the site's own lists read the whole Malay page, as a customer would see it ---- */
     const all = seen(D.body).join(" | ").split(M).join(""), named = O.wordsIn(all.replace(/Salt Counter/g, ""), O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS));
     ok(all.length > 2000 && !named.length && O.siteWords(all.replace(/Salt Counter/g, "")) === "",
@@ -21041,8 +21044,35 @@ await (async () => {
     D.querySelector('#thisDevice [data-l="en"]').click(); await wait(80);
     const back = { lang: D.documentElement.lang, kept: W.localStorage.getItem("salt-lang"), marked: seen(D.body, true).some((t) => t.includes(M)), home: D.getElementById("pHome").textContent.includes(WD.EN["pay.now"]) };
     back.left = seen(D.body, true).filter((t) => t.includes(M)).slice(0, 12);
-    ok(back.lang === "en" && back.kept === "en" && !back.marked && back.home, "This device's switch turns the whole page to English, Home included, and keeps it: " + JSON.stringify(back));
+    back.parts = [...D.querySelectorAll("[lang]")].filter((x) => x !== D.documentElement && !x.hasAttribute("data-l")).map((x) => x.tagName + "." + x.className + ":" + x.getAttribute("lang")).slice(0, 8);
+    ok(back.lang === "en" && back.kept === "en" && !back.marked && back.home && !back.parts.length,
+      "This device's switch turns the whole page to English, Home included, keeps it, and leaves no part saying a language of its own: " + JSON.stringify(back));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  /* ---- S13-L1: over RM 100 past its term, Orders is the payment page, whose head and overdue box are the slice's, in the
+     list's column that says English ---- */
+  const late = { product: "salt", qty: 3, rm: 150, whole: 150, date: "2026-08-01", gotOn: "2026-08-02", due: "2026-08-31", late: true };
+  const holdB = Object.assign({}, openB, { live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 150,
+    pay: { now: { rm: 150, due: "2026-08-31", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } })) });
+  const WH = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      Object.defineProperty(win.navigator, "languages", { get: () => ["ms-MY"], configurable: true });
+      win.scrollTo = () => {};
+      win.fetch = async (p) => { p = String(p);
+        if (p === "/open") return { ok: true, status: 200, json: async () => holdB };
+        if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [] }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    } }).window;
+  let held;
+  try {
+    WH.document.getElementById("pw").value = pass;
+    WH.document.getElementById("f").dispatchEvent(new WH.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !WH.document.querySelector("#oTop > .pane:not(#oPush)"); i++) await wait(25);
+    const lg = (q) => { const x = WH.document.querySelector(q), l = x && x.closest("[lang]"); return l ? l.getAttribute("lang") : "none"; };
+    held = { head: lg("#oTop > h2"), box: lg("#oTop > .pane:not(#oPush)"), push: lg("#oPush"), col: lg(".olistcol") };
+  } finally { try { WH.close(); } catch (e) { /* best effort */ } }
+  ok(JSON.stringify(held) === JSON.stringify({ head: "ms", box: "ms", push: "en", col: "en" }),
+    "and on the payment page the head and the overdue box say ms inside the list's column, which says en: " + JSON.stringify(held));
 })();
 
 section("S13 13.4: a banner is worded in the language the page last recorded on the phone, English where it recorded none");
@@ -21349,6 +21379,8 @@ await (async () => {
     D.getElementById("oPlace").click();
     await until(() => text("#osheet .salt-sheet__foot p.msg") && text("#osheet .salt-sheet__foot p.msg") !== sheet);
     const dropped = text("#osheet .salt-sheet__foot p.msg");
+    const sheetLang = (D.querySelector("#osheet .salt-sheet").closest("[lang]") || { getAttribute: () => "none" }).getAttribute("lang");
+    ok(sheetLang === "en", "and the order sheet, drawn in English, says lang en on this Malay phone (S13-L1): " + sheetLang);
     D.querySelector("#osheet .salt-sheet-scrim").click(); await wait(10);
     D.querySelector('#oArea [data-row="20260925000000-b2"]').click(); await wait(30);
     D.querySelector('.oscreen [data-part="foot"] button').click();
