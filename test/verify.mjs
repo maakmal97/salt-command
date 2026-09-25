@@ -30302,6 +30302,82 @@ await (async () => {
       "a re-read that changes the form draws the tab: the Pay page stands where the form was, the order is still open and the line still in its box");
   } finally { await new Promise((r) => setTimeout(r, 100)); W.close(); }
 })();
+section("5.4: the Counter skips its poll while the page is hidden, the bulletin with it, and a return still re-reads");
+await (async () => {
+  /* 26 Sep 2026, fold 5.4 of the streamlining plan (C8). The ten-second poll read the orders, and every sixth tick the
+     bulletin, whether or not the page could be seen: a session read and a book read for a phone in a pocket. A hidden
+     page's tick now reads nothing; the return re-reads the account and the orders as before, so a skipped tick loses
+     nothing. */
+  const { landingPage: lpH } = await import("../stmt/page.js");
+  const CH = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JDH } = await import("jsdom");
+  const uH = "aaaa-hhhh", devH = "h".repeat(32), ckH = await CH.contentKey("6".repeat(64), uH);
+  const env = await CH.encryptWith(ckH, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Statement</p>" }] }));
+  const list = await CH.encryptWith(ckH, JSON.stringify({ at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
+  const ticks = [], asked = [];
+  let shown = "visible", n = 0;
+  const dom = new JDH(lpH("", "nH", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      const store = new Map([["salt-stmt-remember", JSON.stringify({ t: "t".repeat(32), k: Buffer.from(devH).toString("base64"), u: uH })]]);
+      Object.defineProperty(win, "localStorage", { configurable: true, value: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+      Object.defineProperty(win.document, "visibilityState", { configurable: true, get: () => shown });
+      Object.defineProperty(win.document, "hidden", { configurable: true, get: () => shown !== "visible" });
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      /* the poll is captured rather than waited for, so every tick is one the test chose */
+      const si = win.setInterval.bind(win);
+      win.setInterval = (fn, ms) => { if (ms === 10000) { ticks.push(fn); return 0; } return si(fn, ms); };
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        asked.push(m + " " + p);
+        const ans = (j) => ({ ok: true, status: 200, json: async () => j });
+        if (p === "/remember/open") return ans({ ok: true, u: uH, remembered: true, wrap: await CH.wrapKey(devH, ckH), env, prices: list, live: null,
+          session: "sessHd" + (++n) + "0000000000000000000" });
+        if (p === "/account") return ans({ ok: true, u: uH, env, prices: list, live: null });
+        if (p === "/orders" && m === "GET") return ans({ ok: true, orders: [] });
+        if (p === "/bulletin") return ans({ ok: true, lines: [] });
+        return ans({ ok: true });
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await nap(25); return f(); };
+  /* until no request has started for 120 ms, so a phase counts only its own */
+  const settle = async () => { for (let i = 0, k = -1; i < 40 && k !== asked.length; i++) { k = asked.length; await nap(120); } };
+  const count = (from, what) => asked.slice(from).filter((x) => x === what).length;
+  try {
+    await until(() => !D.getElementById("barw").hidden && ticks.length > 0);
+    await settle();
+    const tick = ticks[ticks.length - 1];
+    ok(typeof tick === "function" && !D.getElementById("barw").hidden,
+      "the fixture: a remembered phone signed in, its ten-second poll captured: " + JSON.stringify(asked));
+
+    /* in a pocket: six ticks, the sixth being the bulletin's, and not one request */
+    shown = "hidden"; D.dispatchEvent(new W.Event("visibilitychange")); await settle();
+    const h0 = asked.length;
+    for (let i = 0; i < 6; i++) await tick();
+    await settle();
+    const pocket = asked.slice(h0);
+    ok(pocket.length === 0, "a hidden page's poll makes no request: six ticks read neither the orders nor the bulletin: " + JSON.stringify(pocket));
+
+    /* the return re-reads the account and the orders, so the ticks it skipped lose nothing */
+    const r0 = asked.length;
+    shown = "visible"; D.dispatchEvent(new W.Event("visibilitychange"));
+    await until(() => count(r0, "GET /orders") > 0); await settle();
+    ok(count(r0, "GET /account") === 1 && count(r0, "GET /orders") === 1,
+      "coming back to the page re-reads the account and the orders, once each: " + JSON.stringify(asked.slice(r0)));
+
+    /* on screen the poll reads as it did, so the pocket's silence above is the guard's and not a dead timer */
+    const v0 = asked.length;
+    for (let i = 0; i < 6; i++) await tick();
+    await settle();
+    ok(count(v0, "GET /orders") === 6 && count(v0, "GET /bulletin") === 1,
+      "a page on screen reads the orders every tick and the bulletin on the sixth: " + JSON.stringify(asked.slice(v0)));
+  } finally { await nap(100); W.close(); }
+})();
 section("S5 fix: an order a desk opened by itself is not a tapped one");
 await (async () => {
   /* 25 SEP 2026, the stage 5 review. From 1080px an order opens beside the list without a tap, and it was then held

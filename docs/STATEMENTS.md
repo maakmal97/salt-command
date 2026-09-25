@@ -848,7 +848,8 @@ wrote, A customer says they paid (their word until he checks it), A customer can
 `src/orders.js`, carried in the summary while fresh); a placement clears older news, so a new order is
 never titled by a payment's, and `public/sw.js` takes news as a title only in letters and spaces.
 
-**Notifications.** The page polls the customer's orders every ten seconds while it is open.
+**Notifications.** The page polls the customer's orders every ten seconds while it is on screen;
+a hidden page's tick reads nothing, and its return re-reads the account and the orders.
 For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12
 12.2, his decision D4 of 24 Sep 2026): each move sends `{k, o}`, a kind and the order's id, derived
 by `wakes` in `stmt/orders.js` off the event and the order it folded into, so the KV road and the order

@@ -3830,6 +3830,7 @@ const CLIENT_JS = `
     if(changed.length||gone){ oSync(changed); drawHome(); if(osh&&draft.step==='limit') sheetDraw(); }
   }
   async function refresh(){
+    if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */
     await oReread();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
