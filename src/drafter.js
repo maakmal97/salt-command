@@ -1740,7 +1740,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   if (lastCommit && lastCommit.t)
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE (id LIKE 'fold:%' OR id LIKE 'suite:%') AND seen_at<?1").bind(lastCommit.t).run();
 
-  const out = { ok: true, at: now(), considered: 0, drafted: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
+  const out = { ok: true, at: now(), considered: 0, drafted: 0, raced: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
@@ -1775,7 +1775,12 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     /* If this id was refused on an earlier pass and now drafts, the refusal is stale the
        moment the row exists. Clearing it here keeps one entry from appearing in both lists. */
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();
-    out.drafted++;
+    /* A ROW IS COUNTED ONLY WHEN THIS PASS MADE IT. Another pass (a tap and the quarter-hour, or the
+       minute cron at another location reading a stale queue) can insert the same id between this
+       pass's SELECT above and this INSERT; D1 ignores the second, and counting it anyway woke him
+       with "1 row waiting" for a row his own tap had just made. It is `raced`, so the log shows it. */
+    if (made && made.meta && made.meta.changes) out.drafted++;
+    else out.raced++;
     /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
        spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
        leaves the row pending, as every row was before. */

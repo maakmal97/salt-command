@@ -29767,6 +29767,92 @@ await (async () => {
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
 })();
 
+section("Fold 1.4: a draft is counted only when this pass made its row, so a row another pass made first wakes nobody");
+await (async () => {
+  /* D4 OF THE STREAMLINING PLAN (26 Sep 2026). runDrafter counted every INSERT OR IGNORE as drafted, made or not.
+     Another pass can insert the same id between this pass's SELECT id FROM draft and its INSERT: a tap and the
+     quarter-hour, or the minute cron at another location reading a queue up to a minute stale. D1 ignored the
+     second insert, the count still said 1, and the net woke him for a row his own tap had just made. Driven on the
+     real migrations in node:sqlite, the one stand-in whose INSERT reports what it really changed (the regex mocks
+     answer every insert as made), with the race planted behind the pass's own snapshot. Invented codes only. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the drafter's count was not driven against the real schema"); return; }
+  const { runDrafter } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default;
+  const book = {
+    pricing: { v: "vQ", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    purchases: [{ date: "2026-08-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    sales: [{ date: "2026-08-01", customer: "CQ7-ZUV", qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    state: { roster: ["CQ7-ZUV", "SQ2-VOX"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+  };
+  const sale = (at, qty, date) => ({ at, payload: { mode: "new", direction: "SELL", party: "CQ7-ZUV", qty, total: 90, cash: 90, kg: qty, date, product: "salt" } });
+  const fresh = sale("2026-08-16T01:00:01.000Z", 1, "2026-08-16"), raced = sale("2026-08-16T01:00:02.000Z", 1, "2026-08-17"),
+    zero = sale("2026-08-16T01:00:03.000Z", 0, "2026-08-18");
+  const world = async (entries, plant) => {
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    for (const c of ["sales", "purchases"]) book[c].forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run(c, i, c + i, JSON.stringify(r)));
+    for (const [k, v] of Object.entries(Object.assign({ PRICING: book.pricing }, book.state))) db.prepare("INSERT INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(v));
+    db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'vQ',NULL)").run();
+    /* THE RACE: the other pass's row lands the moment this pass has read which ids exist, and not before */
+    const waiting = (plant || []).slice();
+    const D1 = { prepare(sql) { const st = db.prepare(sql), snap = sql.trim() === "SELECT id FROM draft";
+      const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a); return r === undefined ? null : r; },
+        all() { const results = st.all(...a);
+          if (snap) for (const id of waiting.splice(0)) db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) "
+            + "VALUES (?,'pending','sales','{}','{}','made by the other pass','other-pass',?)").run(id, id);
+          return { results }; } });
+      const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+    const kv = new KV();
+    await kv.put("q:phone", JSON.stringify({ device: "phone", queue: entries }));
+    return { db, D1, kv,
+      by: (id) => { const x = db.prepare("SELECT drafter FROM draft WHERE id=?").get(id); return x ? x.drafter : null; },
+      refused: (id) => !!db.prepare("SELECT id FROM refused WHERE id=?").get(id) };
+  };
+  const pass = async (entries, plant) => { const w = await world(entries, plant); return Object.assign(w, { r: await runDrafter({ SALT_QUEUE: w.kv, SALT_LEDGER: w.D1 }) }); };
+  const say = (r) => JSON.stringify({ drafted: r.drafted, raced: r.raced, skipped: r.skipped.length, considered: r.considered });
+
+  const a = await pass([fresh]);
+  ok(a.r.ok && a.r.drafted === 1 && a.r.raced === 0 && a.r.skipped.length === 0 && a.by(fresh.at) === "cloud-drafter",
+    "a row this pass inserts is drafted, once: " + say(a.r));
+  const b = await pass([raced], [raced.at]);
+  ok(b.r.ok && b.r.drafted === 0 && b.r.raced === 1 && b.by(raced.at) === "other-pass",
+    "a row another pass inserted behind this pass's snapshot is not drafted but raced, and the other pass's row stands: " + say(b.r));
+  const c = await pass([zero]);
+  ok(c.r.ok && c.r.drafted === 0 && c.r.raced === 0 && c.r.skipped.length === 1 && c.refused(zero.at) && c.by(zero.at) === null,
+    "a refusal is skipped and filed refused, never counted as drafted: " + say(c.r));
+  const d = await pass([fresh, raced, zero], [raced.at]);
+  ok(d.r.ok && d.r.considered === 3 && d.r.drafted === 1 && d.r.raced === 1 && d.r.skipped.length === 1,
+    "and one pass holding all three counts each where it belongs: " + say(d.r));
+
+  /* THE WAKE, through the quarter-hour net itself, with the push service stubbed */
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const vapid = { VAPID_PUBLIC_KEY: "pub", VAPID_SUBJECT: "mailto:a@b.test", VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey)) };
+  const net = async (entries, plant) => {
+    const w = await world(entries, plant);
+    await w.kv.put("push:desk", JSON.stringify({ endpoint: "https://push.example/desk", topics: ["approve"] }));
+    const env = Object.assign({ SALT_QUEUE: w.kv, SALT_LEDGER: w.D1, REQUIRE_ACCESS: "0" }, vapid);
+    const realF = globalThis.fetch, realL = console.log, hit = [], logs = [];
+    globalThis.fetch = async (u) => { hit.push(String(u)); return new Response("", { status: 201 }); };
+    console.log = (...x) => logs.push(x.join(" "));
+    try {
+      const waits = [];
+      await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-21T02:15:00Z") }, env, { waitUntil: (p) => waits.push(p) });
+      await Promise.all(waits);
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    const line = logs.find((l) => l.startsWith("drafter: "));
+    return { pushed: hit.filter((u) => u === "https://push.example/desk").length, ran: line ? JSON.parse(line.slice(9)) : null };
+  };
+  const nRaced = await net([raced], [raced.at]), nFresh = await net([fresh]), nMixed = await net([fresh, raced, zero], [raced.at]);
+  ok(nRaced.ran && nRaced.ran.raced === 1 && nRaced.ran.drafted === 0 && nRaced.pushed === 0,
+    "the quarter-hour net that finds only a row another pass made wakes nobody: " + JSON.stringify({ ran: nRaced.ran && say(nRaced.ran), pushed: nRaced.pushed }));
+  ok(nFresh.ran && nFresh.ran.drafted === 1 && nFresh.pushed === 1 && nMixed.ran && nMixed.ran.drafted === 1 && nMixed.ran.raced === 1 && nMixed.pushed === 1,
+    "while a row it made itself wakes him once, alone or beside a race and a refusal: "
+    + JSON.stringify({ fresh: nFresh.pushed, mixed: nMixed.pushed, ran: nMixed.ran && say(nMixed.ran) }));
+})();
+
 section("S12 12.1: a subscription keeps its two encryption keys, and a pair that is not one is dropped, never refused");
 await (async () => {
   /* 24 SEP 2026, his decision D4: a banner may say what kind of news it is, encrypted so only the phone can
