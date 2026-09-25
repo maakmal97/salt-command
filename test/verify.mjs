@@ -29288,6 +29288,62 @@ await (async () => {
   } finally { clock.uninstall(); console.log = realLog; }
 })();
 
+section("Streamlining 5.2: the order book's road check backs off with the instance's age, and a new instance still reads at once");
+await (async () => {
+  /* A moved-in book read KV orderbook:road once a minute for as long as it lived, and an open page keeps it alive
+     all day: about 1,440 reads, the only KV order traffic left once ORDER_STORE is "object" (review C4). Now a new
+     instance reads at once, every minute while younger than fifteen minutes (a rollout's tail), then every fifteen.
+     KV here is a Map that counts the reads of the mark; the clock is test/kvsim.mjs's; every value is invented. */
+  const SIM = await import("../test/kvsim.mjs");
+  const H = await import("../test/orderbook-harness.mjs");
+  const O = await import("../stmt/orders.js");
+  const { clock } = SIM;
+  const T0 = Date.UTC(2026, 8, 25, 2, 0, 0), S = 1000, M = 60 * S;
+  const store = (reads) => {
+    const m = new Map();
+    return { m, kv: { get: async (k) => { if (k === O.ROAD_KEY) reads.n++; return m.has(k) ? m.get(k) : null; },
+      list: async () => ({ keys: [], list_complete: true }), put: async (k, v) => { m.set(k, v); }, delete: async (k) => { m.delete(k); } } };
+  };
+  const ask = (bk) => bk.ns.get().fetch("https://book/orders", { method: "POST", body: "{}" }).then((r) => r.json());
+  const realLog = console.log;
+  clock.install(); console.log = (...x) => { if (!/^orderbook: /.test(x.join(" "))) realLog(...x); };
+  try {
+    clock.set(T0);
+    const reads = { n: 0 }, { kv } = store(reads);
+    const bk = H.orderBook({ STMT: kv, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+    /* young: the first request reads, one 30 s later does not, then every request 61 s apart reads */
+    await ask(bk); const first = reads.n;
+    clock.set(T0 + 30 * S); await ask(bk); const soon = reads.n;
+    const young = [];
+    for (let k = 1; k <= 14; k++) { clock.set(T0 + k * 61 * S); const b = reads.n; await ask(bk); young.push(reads.n - b); }
+    ok(first === 1 && soon === 1 && young.every((d) => d === 1),
+      "a new instance reads the mark on its first request and then once a minute while younger than fifteen minutes: " + JSON.stringify({ first, soon, young }));
+    /* old: the last read was at 854 s; requests 61 s apart from 915 s read nothing until fifteen minutes past it */
+    const old = [];
+    for (let k = 15; k <= 29; k++) { clock.set(T0 + k * 61 * S); const b = reads.n; await ask(bk); old.push(reads.n - b); }
+    ok(old.slice(0, 14).every((d) => d === 0) && old[14] === 1,
+      "past fifteen minutes the instance reads once in fifteen minutes, not every minute: " + JSON.stringify(old));
+    /* a deploy is a new instance over the same storage: it reads at once, and is young again */
+    clock.set(T0 + 30 * M); bk.restart();
+    let b = reads.n; await ask(bk); const fresh = reads.n - b;
+    clock.set(T0 + 30 * M + 61 * S); b = reads.n; await ask(bk); const again = reads.n - b;
+    ok(fresh === 1 && again === 1, "a restarted instance reads at once and a minute later: " + JSON.stringify({ fresh, again }));
+    /* the switch rule kept: a mark the kv road writes while the instance is old is taken at the widened read */
+    clock.set(T0);
+    const r2 = { n: 0 }, s2 = store(r2);
+    const bk2 = H.orderBook({ STMT: s2.kv, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+    const want = () => (bk2.db.prepare("SELECT v FROM meta WHERE k = 'movein:want'").get() || {}).v || null;
+    await ask(bk2);
+    clock.set(T0 + 20 * M); await ask(bk2);
+    const mark = new Date(T0 + 20 * M + S).toISOString(); s2.m.set(O.ROAD_KEY, mark);
+    const early = [];
+    for (let k = 1; k <= 14; k++) { clock.set(T0 + 20 * M + k * M); await ask(bk2); early.push(want()); }
+    clock.set(T0 + 35 * M); await ask(bk2);
+    ok(early.every((w) => w === null) && want() === "1@" + mark,
+      "a mark written on an old instance is taken fifteen minutes after its last read, the book moving in again: " + JSON.stringify({ early: early.filter(Boolean).length, want: want() }));
+  } finally { clock.uninstall(); console.log = realLog; }
+})();
+
 section("S10 fix P3: a return takes KV's later marks, and his test account unmade on the kv road is gone from the book as well");
 await (async () => {
   /* Coming back after a rollback took KV's orders but not its word on what had gone: a copy only adds or replaces,

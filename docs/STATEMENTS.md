@@ -564,7 +564,9 @@ A copy's id names `ORDER_MOVE_IN`'s generation, the pass and the order, so eithe
 nothing; raise the generation by one only to come back from `kv`, and it takes what the `kv` road wrote.
 **Forgetting that is safe**: every order the `kv` road writes while the book is bound marks KV
 `orderbook:road`, and the book's first request that finds a mark later than its own move-in moves in again,
-a round of the same generation (`<gen>@<mark>`). A KV record the book has already held is behind it, so the
+a round of the same generation (`<gen>@<mark>`). The book looks for the mark at once in a new instance, which
+every deploy makes, then once a minute while the instance is under fifteen minutes old (a rollout's tail),
+then once in fifteen minutes (`roadCheck`), so only a laptop's `wrangler dev` on the `kv` road is seen late. A KV record the book has already held is behind it, so the
 book keeps its own and writes it behind. Either pass takes the later of KV's and the book's shared and chase
 marks, and his test account unmade on the `kv` road is dropped from the book as well, so a return does not
 bring its orders back.

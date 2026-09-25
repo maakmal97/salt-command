@@ -74,9 +74,14 @@ export const FREEZE_MS = 60000;
    served from this location's cache for a minute after THAT read, so an end inside the minute reads the start
    pass's own value back and misses what the old code wrote since */
 export const FREEZE_SPARE_MS = 5000;
-/* how often a moved-in book looks for the KV road's mark: once a minute, and at once in a new instance, which
-   is what a deploy (the flip back included) makes */
+/* how often a moved-in book looks for the KV road's mark: at once in a new instance, which is what a deploy (the
+   flip back included) makes; then once a minute while the instance is younger than ROAD_YOUNG_MS, which covers a
+   rollout's tail of old code writing KV; then once in ROAD_OLD_MS, since only a laptop's wrangler dev on the kv
+   road (it binds the live KV) can mark it then. About 100 reads a day on a long-lived instance, not 1,440; a mark
+   written then is seen up to fifteen minutes later instead of one */
 const ROAD_MS = 60000;
+const ROAD_YOUNG_MS = 15 * 60000;
+const ROAD_OLD_MS = 15 * 60000;
 /* a write behind waits past KV's one write a second per key */
 export const BEHIND_MS = 1100;
 /* a KV record as this book would write it, or null */
@@ -93,6 +98,7 @@ export class OrderBook {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+    this.born = Date.now();   /* the instance's age sets how often it looks for the KV road's mark (roadCheck) */
     const sql = state.storage.sql;
     sql.exec("CREATE TABLE IF NOT EXISTS ev (seq INTEGER PRIMARY KEY AUTOINCREMENT, eid TEXT NOT NULL UNIQUE, u TEXT NOT NULL, oid TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, body TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS ord (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
@@ -198,9 +204,10 @@ export class OrderBook {
   want() { const w = this.meta("movein:want"), g = this.gen(); return w && w.split("@")[0] === g ? w : g; }
   frozen() { return this.meta("movein:done") !== this.want(); }
   async roadCheck() {
-    const kv = this.env && this.env.STMT;
-    if (!kv || (this.roadAt && Date.now() - this.roadAt < ROAD_MS)) return;
-    this.roadAt = Date.now();
+    const kv = this.env && this.env.STMT, now = Date.now();
+    const every = now - this.born < ROAD_YOUNG_MS ? ROAD_MS : ROAD_OLD_MS;
+    if (!kv || (this.roadAt && now - this.roadAt < every)) return;
+    this.roadAt = now;
     let road = null;
     try { road = await kv.get(ROAD_KEY); } catch (e) { return; }
     if (road && road > (this.meta("movein:at") || "")) this.setMeta("movein:want", this.gen() + "@" + road);
