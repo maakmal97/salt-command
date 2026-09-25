@@ -327,7 +327,7 @@ export const OWNER_JS = `
   }
   function acctCard(a){
     var u=a.username, none=a.account===false, why='No account behind this username yet';
-    var c=el('section','acct scard'); c.setAttribute('data-acct', u);
+    var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
     var h=el('div','ahead srow');
     h.appendChild(el('h2',null,a.test?'Test account':(a.code||u)));
     h.appendChild(el('span','un',u));

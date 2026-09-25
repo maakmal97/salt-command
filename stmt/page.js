@@ -225,8 +225,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
-   a word in mono with a hairline, and the chosen one is brass: no filled badge. */
-.mos{max-width:620px;margin:0 auto 22px;display:flex;flex-wrap:wrap;gap:8px}
+   a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
+   inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
+.mos{max-width:620px;margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px}
 .mos button{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.06em;
   color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
   border-radius:var(--salt-radius-pill);padding:7px 14px;cursor:pointer;
@@ -295,6 +296,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
+/* S7 polish: two columns read left to right stand apart, as the live statement's do (UX10): at 320 the card's date ran
+   into the next column ("2026-09-Through"). Only these, so a row that fits a 390 phone on one line still does */
+.pane td.l+td.l,.pane th.l+th.l{padding-left:10px}
 /* an order's state is the system's .salt-status (22 Sep 2026): a mono word in its colour with a hairline */
 .quote{font-family:var(--salt-font-mono);font-size:var(--salt-text-xl);color:var(--salt-text);margin:8px 0 2px;font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:8px}
@@ -426,22 +430,24 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
 .mtest .btn{margin-top:0}
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
    filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
-   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost. */
-.acct{display:flex;flex-direction:column;gap:12px}
-.acct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
-.acct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+   Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost.
+   S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
+   after it, took that Account's two columns from 1080px when the stages were merged */
+.oacct{display:flex;flex-direction:column;gap:12px}
+.oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
+.oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}
-.acct .achips{margin:0}
-.acct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.acct .apill{width:100%;margin-top:4px}
+.oacct .achips{margin:0}
+.oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.oacct .apill{width:100%;margin-top:4px}
 .agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .agrid .salt-ghost{width:100%;text-align:center}
 .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .anote:empty{display:none}
 .anote.bad{color:var(--salt-ember)}
-.acct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
+.oacct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.acct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.oacct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
 .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
@@ -3245,13 +3251,14 @@ const CLIENT_JS = `
     return tw('due.'+(first?'first':'')+(n<0?'Late':n===0?'Today':n===1?'Tomorrow':'InN'),{d:Dd(dayName,due), n:n});
   }
   function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
-  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part to come says when it was ordered */
+  /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part not yet
+     received says when it was ordered. A part to come is Coming up's own row (partRow, S7 polish) */
   /* S13: the mark as a slot, so the sentence round it is one of the table's; {mark} is the symbol with its shape's name */
   function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML; }
-  function partSpan(p,coming){
-    var k=(!coming&&+p.whole>+p.rm+0.004?'part.rest':'part.')+(!coming&&p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
+  function partSpan(p){
+    var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,15), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
-      d:function(L){ return dayName(!coming&&p.gotOn?p.gotOn:p.date,L); }});
+      d:function(L){ return dayName(p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   function kpiTile(tone,label,value,note){
@@ -3639,13 +3646,26 @@ const CLIENT_JS = `
       var c=oClaimed(o), t=o.status==='placed'?tw('hc.placed'):oToPay(o)>0.004?tw('hc.still'+payWhenKey(o),{rm:rm(oToPay(o))}):tw('hc.paid');
       box.appendChild(homeRow(o,t+(c>0?'. '+tw('hc.sent',{rm:rm(c)}):'')));
     });
-    if(more.length){
-      var C=el('div','salt-ledger salt-ledger--plain');
-      /* S6 fix: its due day, never an offer to pay now that Home has no control for */
-      more.forEach(function(p){ C.appendChild(lrowN(partSpan(p,true),rm(p.rm),tw('hc.dueOnReceipt'))); });
-      box.appendChild(C);
-    }
+    more.forEach(function(p){ box.appendChild(partRow(p)); });
     return box;
+  }
+  /* S7 polish: ONE LIST, ONE ROW. A part no order of theirs accounts for (a row he entered on the desk) is a row of the
+     same Coming up, the system's Inbox row as every order above it is: its mark and size, then (S6 fix) its due day and
+     never an offer to pay now, which Home has no control for; the day and the figure at the side. There is no order to
+     open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
+  function partRow(p){
+    var b=el('button','salt-inbox-row hpart'); b.type='button';
+    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
+    t.appendChild(withMark(p.product,unitsOf(p.qty,unitFor(p.product)),18));
+    main.appendChild(t);
+    main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
+    b.appendChild(main);
+    var side=el('span','salt-inbox-row__side');
+    side.appendChild(el('span','salt-inbox-row__age',p.date?oDay(p.date):''));
+    side.appendChild(el('span','salt-inbox-row__action',rm(p.rm)));
+    b.appendChild(side);
+    b.addEventListener('click',function(){ placeShow('stmt',true); });
+    return b;
   }
   /* S7 7.4: ORDER AGAIN. A tile for each thing they have ordered (a size, a way and a place), newest first, while that size
      is still on their list, at TODAY'S price, read off the list: a tap opens the check with the same size, way and place,

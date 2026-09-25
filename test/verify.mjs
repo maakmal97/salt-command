@@ -35877,6 +35877,144 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("S7 polish: Account stands the statement beside This device from 1080px, and stacks them below it");
+await (async () => {
+  /* The plan's f06w family, fold 7.2: from 1080px Account is two columns, the statement on the left and This device on
+     the right. Salt Admin's account card (S9 9.3) was also .acct, and its column of one came later in the sheet, so after
+     the three-way merge Account stacked at every width. The page's CSS is resolved at a width (an @media kept when its
+     min-width and max-width hold, dropped when they do not or when it asks anything but a width), and jsdom's cascade
+     then says what #acct is and where its two parts land: the computed structure, not a rule's text. */
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const page = landingPage("", "npol2", null);
+  const css = (page.match(/<style nonce="npol2">([\s\S]*?)<\/style>/) || ["", ""])[1];
+  const FEAT = /\(\s*(min-width|max-width)\s*:\s*([0-9.]+)px\s*\)/g;
+  const at = (w) => {
+    let out = "", i = 0;
+    for (;;) {
+      const m = css.indexOf("@media", i);
+      if (m < 0) { out += css.slice(i); break; }
+      out += css.slice(i, m);
+      const open = css.indexOf("{", m), cond = css.slice(m + 6, open);
+      let depth = 0, end = css.length - 1;
+      for (let k = open; k < css.length; k++) { if (css[k] === "{") depth++; else if (css[k] === "}" && --depth === 0) { end = k; break; } }
+      const rest = cond.replace(FEAT, "").replace(/\band\b|\bscreen\b|\ball\b|\s/g, "");
+      if (!rest && [...cond.matchAll(FEAT)].every(([, f, v]) => (f === "min-width" ? w >= +v : w <= +v))) out += css.slice(open + 1, end);
+      i = end + 1;
+    }
+    return out;
+  };
+  const shape = (w) => {
+    const dom = new JSDOM(page.replace(css, () => at(w)), { url: "https://site.test/" });
+    try {
+      const W = dom.window, a = W.document.getElementById("acct"), cs = W.getComputedStyle(a);
+      return { display: cs.display, tracks: cs.gridTemplateColumns.split(/\s+(?![^(]*\))/).filter(Boolean).length,
+        kids: [...a.children].map((n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "." + n.className.split(" ")[0])).join(" "),
+        /* jsdom keeps a shorthand as written, so each road to a column is read, and order, which moves auto-placement */
+        placed: [...a.children].map((n) => { const c = W.getComputedStyle(n);
+          return (c.gridArea || c.gridColumn || (c.gridColumnStart !== "auto" && c.gridColumnStart) || "auto") + "/" + (c.order || "0"); }).join(" ") };
+    } finally { dom.window.close(); }
+  };
+  ok(css.length > 1000 && /@media \(min-width:1080px\)\{/.test(css) && /@media print\{/.test(css)
+    && [1280, 390].every((w) => !/@media/.test(at(w)) && !at(w).includes("background:#fff;color:#111")),
+    "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
+  const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div.acct__main section#thisDevice" && s.placed === "auto/0 auto/0"),
+    "from 1080px Account is a grid of two columns, the statement first and This device placed by the grid into the second, beside it: " + JSON.stringify(wide));
+  ok(narrow.every((s) => s.display === "block" && s.kids === "div.acct__main section#thisDevice"),
+    "below 1080px it is one column, This device under the statement: " + JSON.stringify(narrow));
+})();
+
+section("S7 polish: Home's Coming up is one list, a part he entered the same row as an order's");
+await (async () => {
+  /* After the three-way merge Coming up drew stage 7's orders as Inbox rows and then stage 6's part with no order of
+     theirs (a row he entered on the desk) as a bare Ledger line under them. homeComing owns Coming up; it now draws every
+     entry as the one Inbox row, a part that an order accounts for (its row's day, mark, size and bucket) is drawn once, as
+     that order, and a part's row opens Account, where the statement carries it. Forced state: two orders, one of them
+     the site's copy of a sealed part, and two parts with no order, one on behalf of a friend. */
+  const { landingPage, MON3 } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-pol1", ck = await C.contentKey("test-secret", u);
+  const coming = [{ date: "2026-09-16", rm: 250, product: "salt", qty: 2.5, toCome: 2.5, resale: false },
+    { date: "2026-09-17", rm: 120, product: "salt", qty: 1, toCome: 1, resale: true },
+    { date: "2026-09-18", rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }];
+  const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 480, parts: coming } };
+  const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+    products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 250 }] }], soon: [] }));
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, total: 110, history: [], msgs: [] };
+  const orders = [{ ...base, id: "oA", status: "acknowledged", at: "2026-09-18T03:00:00Z", rowOn: "2026-09-18" },
+    { ...base, id: "oP", status: "placed", at: "2026-09-23T03:00:00Z" }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-pol1", prices: list,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay })) };
+  const dom = new JSDOM(landingPage(u, "npol1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document, t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    const box = D.getElementById("hComing"), kids = [...box.children];
+    const rows = kids.slice(1).map((r) => ({ tag: r.tagName, row: r.classList.contains("salt-inbox-row"), id: r.getAttribute("data-row") || "",
+      mark: !!r.querySelector(".salt-inbox-row__title svg.psym"), bits: ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s))) }));
+    ok(kids.length > 0 && t(kids[0]) === "Coming up" && kids[0].tagName === "H2" && box.querySelectorAll("h2, h3").length === 1 && !box.querySelector(".salt-ledger"),
+      "Coming up is one heading over one list, with no Ledger line beside the rows: " + JSON.stringify(kids.map((k) => k.tagName + "." + k.className.split(" ")[0])));
+    ok(rows.length === 4 && rows.every((r) => r.tag === "BUTTON" && r.row && r.mark && r.bits[0] && r.bits[2] && r.bits[3]),
+      "every entry is the system's Inbox row, a tap, with its mark and size, its day and its figure: " + JSON.stringify(rows));
+    ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8]).length === 1,
+      "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
+    ok(JSON.stringify(rows.slice(2).map((r) => r.bits)) === JSON.stringify([["2.5 unitsCube", "Due when you receive it", "16 " + MON3[8], "RM 250"],
+      ["1 unitCube", "On behalf of a friend. Due when you receive it", "17 " + MON3[8], "RM 120"]]) && !/salt|Gold|Silver/i.test(t(box)),
+      "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => r.bits)));
+    box.querySelectorAll(".salt-inbox-row")[2].click();
+    ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
+      "a part's row opens Account, where the statement carries the row: " + ["pHome", "pStmt"].map((id) => id + ":" + D.getElementById(id).hidden).join(","));
+  } finally { W.close(); }
+})();
+
+section("S7 polish: Rewards' card sets its date apart from what the line was");
+await (async () => {
+  /* At 320 the card's table ran its date into the next column ("2026-09-Through"): the pane sets every cell's side
+     padding to nothing, and the live statement's column gap (UX10) is .tblw's alone. The two columns read left to right
+     now stand 10px apart, and only those, so the row that fits a 390 phone on one line still does (the rig's measure:
+     287px of words in a 312px table). Driven: an associate's card as the page draws it, read through jsdom's cascade. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-pol3", ck = await C.contentKey("test-secret", u);
+  const card = { products: [{ product: "salt", unit: "unit", summary: { bought: 270 }, lines: [{ date: "2026-09-12", kind: "through", qty: 2.5, rm: 270 }] }] };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "", assoc: true,
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    card: await C.encryptWith(ck, JSON.stringify(card)) };
+  const dom = new JSDOM(landingPage(u, "npol3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const j = String(path) === "/open" ? body : null; return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && !D.querySelector("#pCard .pane tbody td"); i++) await new Promise((r) => setTimeout(r, 50));
+    const pad = (sel) => [...D.querySelectorAll(sel)].map((c) => c.textContent + ":" + W.getComputedStyle(c).paddingLeft).join(" | ");
+    const head = pad("#pCard .pane thead th"), line = pad("#pCard .pane tbody td");
+    ok(head === "Date:0px | What:10px | Size:0px | RM:0px" && line === "2026-09-12:0px | Through you:10px | 2.5 units:0px | RM 270:0px",
+      "the card's date and what the line was stand 10px apart, heading and row, and no other column is pushed: " + JSON.stringify([head, line]));
+  } finally { W.close(); }
+})();
+
 section("23 Sep 2026: a statement reads newest first");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: the statement of account in the inverse order of entry date. Read
@@ -36512,6 +36650,8 @@ await (async () => {
         tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
         pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
+        /* S7 polish: Coming up's part is the Inbox row its orders are */
+        coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))),
         marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
     } finally { dom.window.close(); }
   };
@@ -36525,11 +36665,12 @@ await (async () => {
     && one.pill === "Pay RM 70" && one.pills === 1,
     "To pay now heads Home: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
     + JSON.stringify([one.first, one.tile, one.pill]));
-  ok(one.heads.join() === "Coming up" && one.rows.length === 1
-    && one.rows[0].join("|") === "Cube 1 unit, ordered " + said(kl(-1)) + "|RM 110|Due when you receive it"
+  const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1];
+  ok(one.heads.join() === "Coming up" && one.rows.length === 0 && one.coming.length === 1
+    && one.coming[0].join("|") === "1 unitCube|Due when you receive it|" + age(kl(-1)) + "|RM 110"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
-    + JSON.stringify([one.heads, one.rows]));
+    + JSON.stringify([one.heads, one.rows, one.coming]));
   const two = await open({ term: 10,
     now: { rm: 300, due: kl(-10), parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
       part({ date: kl(-7), due: kl(3), rm: 120, qty: 1, got: 1, gotOn: kl(-7), resale: true })] },

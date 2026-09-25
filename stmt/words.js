@@ -567,6 +567,7 @@ export const EN = {
   "hc.stillNowCollect": "{rm} still to pay, now or when you collect",
   "hc.sent": "{rm} sent, waiting for us to confirm",
   "hc.dueOnReceipt": "Due when you receive it",
+  "hc.dueOnReceiptF": "On behalf of a friend. Due when you receive it",
   "ha.again": "Order again",
   "ha.first": "Start your first order",
   "ha.start": "Start an order",
