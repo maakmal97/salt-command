@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-25T12:01:53.130Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CR3-DAM",
+    "qty": 1.5,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-09-25",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260925115016-gqlz1q, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1.5 unit of salt to CR3-DAM for RM 130, RM 86.67/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 58 on the goods at 44.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-25 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T12:01:53.130Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 1.5,
+    "total": 130,
+    "status": "Pending",
+    "raw": "SELL CR3-DAM 1.5 salt RM 130, nothing paid, nothing moved (order 20260925115016-gqlz1q)",
+    "orderKey": "CR3-DAM|2026-09-25|130",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "newId": null,
+     "date": "2026-09-25",
+     "qty": 1.5,
+     "total": 130,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260925115016-gqlz1q, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260925115016-gqlz1q"
+   },
+   "decidedAt": "2026-09-25T12:01:55.168Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
