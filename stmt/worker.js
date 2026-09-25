@@ -117,6 +117,14 @@ const b64d = (s) => {
   for (let i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
   return a;
 };
+/* C5: a font or icon is decoded once per isolate, on its first request and never at import, and the
+   same bytes answer every later request (a Response copies its body, so the array is never spent). */
+const BYTES = new Map();
+function bytesOf(name, b64) {
+  let b = BYTES.get(name);
+  if (!b) { b = b64d(b64); BYTES.set(name, b); }
+  return b;
+}
 const b64e = (buf) => {
   let s = ""; const a = new Uint8Array(buf);
   for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
@@ -1490,7 +1498,7 @@ export default {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const b64 = FONTS[p.slice(7)];
       if (!b64) return notFound();
-      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const bytes = bytesOf(p, b64);
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
     }
@@ -1498,7 +1506,7 @@ export default {
        fetches an icon without the Access cookie, and a ring names nothing. */
     if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-      const bytes = Uint8Array.from(atob(p === "/icon.png" ? ICON_PNG_B64 : ADMIN_ICON_PNG_B64), (c) => c.charCodeAt(0));
+      const bytes = bytesOf(p, p === "/icon.png" ? ICON_PNG_B64 : ADMIN_ICON_PNG_B64);
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "image/png", "cache-control": "public, max-age=86400" }) });
     }

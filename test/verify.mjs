@@ -40507,6 +40507,34 @@ await (async () => {
     "the page carries the same @font-face rules, first, on both pages the Worker serves");
 })();
 
+section("C5: the Counter decodes each face and icon once per isolate, never at import");
+await (async () => {
+  /* Every GET /fonts/<face>, /icon.png and /icon-key.png decoded its base64 afresh, a few ms of CPU a
+     request. The Worker now keeps the bytes in a module Map filled on first use. Counted through atob
+     by the string it is handed, on a fresh copy of the Worker so no earlier section has filled its Map;
+     each body is checked against an independent decoder, twice, so a spent or crossed array is red. */
+  const { FONTS: F5 } = await import("../stmt/fonts.js");
+  const { ICON_PNG_B64: I5, ADMIN_ICON_PNG_B64: A5 } = await import("../stmt/icons.js");
+  const assets = [["/fonts/fraunces-latin.woff2", F5["fraunces-latin.woff2"]], ["/fonts/jetbrains-mono-latin.woff2", F5["jetbrains-mono-latin.woff2"]],
+    ["/icon.png", I5], ["/icon-key.png", A5]];
+  const seen = new Map(assets.map(([p]) => [p, 0]));
+  const realAtob = globalThis.atob;
+  globalThis.atob = function (s) { for (const [p, b] of assets) if (s === b) seen.set(p, seen.get(p) + 1); return realAtob.call(this, s); };
+  try {
+    const W5 = (await import("../stmt/worker.js?c5=" + Date.now())).default;
+    ok([...seen.values()].every((n) => n === 0), "importing the Worker decodes nothing: " + JSON.stringify([...seen]));
+    const body = async (p) => {
+      try { const r = await W5.fetch(new Request("https://site.test" + p), { STMT: new KV() }); return r.status === 200 ? Buffer.from(await r.arrayBuffer()) : null; }
+      catch (e) { return null; }
+    };
+    for (const [p, b] of assets) {
+      const want = Buffer.from(b, "base64"), b1 = await body(p), b2 = await body(p);
+      ok(want.length > 1000 && !!b1 && !!b2 && b1.equals(want) && b2.equals(want), p + " answers its own file byte for byte, twice");
+      ok(seen.get(p) === 1, p + " is decoded once across two requests: " + seen.get(p));
+    }
+  } finally { globalThis.atob = realAtob; }
+})();
+
 section("v789: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
