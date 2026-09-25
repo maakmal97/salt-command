@@ -11089,15 +11089,20 @@ await (async () => {
     /* ---- TODAY. One synthetic breach, so the old formula and the new one must differ by it. ---- */
     wB.eval(`window.__realScan = boundaryScan;
       boundaryScan = function(){ return [{sev:'breach', rule:'Test rule', who:'CZ9-TST', what:'forced', why:'forced'}]; };`);
-    wB.eval("navCounts();");
-    const nowN = rdB("actions().filter(function(x){return x.sev==='now';}).length");
+    /* 26 Sep 2026 (plan fold 4.3): THE NOW LIST THE PAGE SHOWS is counted off Today as drawn, the rows under its Now
+       heading, and never off actions() on the book in view: since v794 the badge counts every book, so a Now item oil
+       raised on its own read here as a fault on the fold that booked it (4 and then 5 against 3, 24 Sep). */
+    wB.eval("switchTab('today');navCounts();");
+    const nowN = rdB("(function(){var h=[].find.call(document.querySelectorAll('.sec.on .sevh'),function(x){var t=x.querySelector('h2');return !!t&&t.textContent.trim()==='Now';});"
+      + "if(!h)return -1;var n=h.nextElementSibling;return n&&n.classList.contains('acts')?n.querySelectorAll('.act').length:0;})()");
     const breachN = rdB("boundaryScan().filter(function(x){return x.sev==='breach';}).length");
     const tb = dB.querySelector('.tab[data-s="today"] .navct');
     const shown = tb ? +tb.textContent : 0;
     ok(breachN === 1, "the forced state really holds one breach, or this section proves nothing");
+    ok(nowN >= 1, `Today draws a Now list carrying the forced breach, or the count below proves nothing (${nowN})`);
     ok(rdB("actions().some(function(x){return x.sev==='now'&&x.kind==='rule'&&/CZ9-TST/.test(x.title);})"),
       "the breach is already in the NOW list as a rule row, which is why adding it again was a double count");
-    ok(shown === nowN, `the Today badge reads the NOW list the page shows (${shown} against ${nowN} items)`);
+    ok(shown === nowN, `the Today badge reads the NOW list the page shows, every book's (${shown} against ${nowN} items drawn)`);
     ok(shown !== nowN + breachN, `and not the NOW list plus the breaches again (${nowN + breachN})`);
     wB.eval("boundaryScan = window.__realScan; delete window.__realScan;");
 
