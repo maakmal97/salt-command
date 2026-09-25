@@ -9407,7 +9407,10 @@ await (async () => {
   rmG(dirG, { recursive: true, force: true });
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const gateAt = wf.indexOf("- name: Gate\n"), deployAt = wf.indexOf("- name: Deploy\n"), suiteAt = wf.indexOf("- name: The full suite, after the phone is live"), stmtAt = wf.indexOf("- name: Publish the statements, live");
-  ok(gateAt > 0 && deployAt > gateAt && /- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: node tools\/gate\.mjs/.test(wf), "the gate stands before the deploy, on the deploy's own condition");
+  /* since 26 Sep 2026 its shell stands down on a tree the Fold step's gate passed (the fold 3.4 section drives it) */
+  const gateStep = gateAt > 0 && deployAt > gateAt ? wf.slice(gateAt, deployAt) : "";
+  ok(/^- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: \|\n/.test(gateStep) && /\n\s+node tools\/gate\.mjs\n/.test(gateStep),
+    "the gate stands before the deploy, on the deploy's own condition");
   /* 10 Sep 2026: the suite no longer stands down when the phone already has the build. It used to
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
@@ -9519,11 +9522,12 @@ await (async () => {
      && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
     "job suite needs chain, runs only when chain succeeded and deployed, checks out the sha chain proved, and takes no lock");
 
-  /* WHAT CHAIN HANDS ON, TAKEN WHERE IT IS TRUE: after the proof, before the clear's pull can bring in another push */
+  /* WHAT CHAIN HANDS ON, TAKEN WHERE IT IS TRUE: after the proof, before the clear's pull can bring in another push.
+     Since fold 3.4 the banner stands between, and it moves no commit. */
   const cs = stepsOf(chain);
   const iServe = cs.indexOf("The phone is serving it"), iTip = cs.indexOf("The tree the phone is serving"),
     iMark = cs.indexOf("Mark the folded rows committed"), iClear = cs.indexOf("Clear the handoff files");
-  ok(iServe >= 0 && iTip === iServe + 1 && iMark === iTip + 1 && iClear > iMark
+  ok(iServe >= 0 && iTip > iServe && cs.slice(iServe + 1, iTip).every((n) => n === "Wake the phone") && iMark === iTip + 1 && iClear > iMark
      && /^    outputs:\n      deploy: \$\{\{ steps\.plan\.outputs\.deploy \}\}\n      sha: \$\{\{ steps\.tip\.outputs\.sha \}\}\n      rev: \$\{\{ steps\.tip\.outputs\.rev \}\}$/m.test(chain)
      && /^        id: tip\n        if: steps\.plan\.outputs\.deploy == '1'$/m.test(stepIn(chain, "The tree the phone is serving")),
     "chain hands on its deploy and the tree it proved, taken straight after the proof and before the clear: " + cs.slice(Math.max(0, iServe), iClear + 1).join(" > "));
@@ -9613,6 +9617,139 @@ await (async () => {
      && /node tools\/d1\.mjs --seed/.test(chain) && /npx wrangler deploy -c wrangler\.stmt\.jsonc/.test(chain) && /node tools\/stmt-publish\.mjs/.test(chain)
      && !/npm test|--refused-note "suite:|--clear-suite-notices/.test(chain),
     "job suite reads the repository and writes only its notice, while the re-seed, the Counter and the publish stay in chain, which runs no suite");
+})();
+
+section("26 Sep 2026: the banner follows the proof, the proof reads /rev every 2 s for a minute, and a gated tree is not gated twice");
+await (async () => {
+  /* Fold 3.4 of the streamlining plan. The banner waited behind the marks (5 to 26 s) though it reads only
+     master/_folded.json; the proof slept 10 s between six tries, and one run spent 51 s in five; and every folding run
+     gated one tree twice, in the Fold step and in the Gate step, about 5 s apart. The shells run in Git's bash as GitHub
+     runs them, in fixture repositories with a bare origin: curl, npm and sleep are shell functions, sleep moving bash's
+     own SECONDS so a minute passes in no time, and the tools are stubs that log. Each assertion was proved red by its
+     own mutation, one at a time. */
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const jobsAt = wf.search(/^jobs:[ \t]*$/m), jobsBody = jobsAt < 0 ? "" : wf.slice(jobsAt);
+  const heads = [...jobsBody.matchAll(/^  ([A-Za-z0-9_-]+):[^\n]*$/gm)], k = heads.findIndex((h) => h[1] === "chain");
+  const chain = k < 0 ? "" : jobsBody.slice(heads[k].index, k + 1 < heads.length ? heads[k + 1].index : undefined);
+  const cs = [...chain.matchAll(/^      - name: ([^\n]+)$/gm)].map((m) => m[1]);
+  const shellOf = (name) => {
+    const at = chain.indexOf("      - name: " + name + "\n");
+    if (at < 0) return "";
+    const next = chain.indexOf("\n      - ", at + 1);
+    const lines = chain.slice(at, next < 0 ? undefined : next).split("\n"), r = lines.findIndex((l) => /^\s+run: \|$/.test(l));
+    return r < 0 ? "" : lines.slice(r + 1).join("\n");
+  };
+
+  /* THE BANNER, STRAIGHT AFTER THE PROOF, and the proof after the gate and the deploy as rule 8 has it */
+  const iGate = cs.indexOf("Gate"), iDeploy = cs.indexOf("Deploy"), iServe = cs.indexOf("The phone is serving it"),
+    iWake = cs.indexOf("Wake the phone"), iMark = cs.indexOf("Mark the folded rows committed");
+  ok(iGate >= 0 && iDeploy === iGate + 1 && iServe === iDeploy + 1 && iWake === iServe + 1 && iMark > iWake,
+    "the banner is sent straight after the proof, before any mark: " + cs.slice(Math.max(0, iGate), iMark + 1).join(" > "));
+
+  const bash = process.platform !== "win32" ? "bash"
+    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k2]) => !/^(GIT_|GITHUB_|LIVE_AT$|GATED_TREE$|PUSH_KEY$)/.test(k2)));
+  const root = mkdtempSync(join(tmpdir(), "fold34-")), fwd = (p) => p.replace(/\\/g, "/");
+  const log = fwd(join(root, "log.txt")), reads = fwd(join(root, "reads.txt")), sleeps = fwd(join(root, "sleeps.txt"));
+  const stubs = [
+    /* curl answers the nth read with the nth entry of STUB_SEQ, the last repeating; down is a failed read */
+    "curl() { echo \"$*\" >> " + JSON.stringify(log) + "; local n a v; n=$(( $(cat " + JSON.stringify(reads) + ") + 1 )); echo $n > " + JSON.stringify(reads) + ";",
+    "  IFS=, read -ra a <<< \"${STUB_SEQ:-200}\"; if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
+    "  if [ \"$v\" = down ]; then return 22; fi; if [ \"$v\" = 200 ]; then printf 200; else printf '{\"id\":\"%s\"}' \"$v\"; fi; }",
+    "sleep() { echo \"$1\" >> " + JSON.stringify(sleeps) + "; SECONDS=$((SECONDS + $1)); }",
+    "npm() { echo \"npm $*\" >> " + JSON.stringify(log) + "; }", ""].join("\n");
+  const run = (w, name, ctx = {}, more = {}) => {
+    const out = join(root, "out.txt"), envf = join(root, "env.txt");
+    writeFileSync(out, ""); writeFileSync(envf, ""); writeFileSync(reads, "0"); writeFileSync(sleeps, "");
+    const body = shellOf(name);
+    const script = stubs + body.replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, key) => (key in ctx ? ctx[key] : ""));
+    const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script],
+      { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: fwd(out), GITHUB_ENV: fwd(envf) }, encoding: "utf8", timeout: 120000 });
+    const kv = (f) => Object.fromEntries(readFileSync(f, "utf8").split("\n").filter((l) => l.indexOf("=") > 0).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
+    return { ran: body !== "", code: r.status, o: kv(out), e: kv(envf), text: String(r.stdout || "") + String(r.stderr || ""),
+      reads: +readFileSync(reads, "utf8"), sleeps: readFileSync(sleeps, "utf8").split("\n").filter(Boolean) };
+  };
+  const logLines = (re) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n").filter((l) => re.test(l)).length;
+  const gitIn = (cwd, ...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd, env, encoding: "utf8", stdio: "pipe" });
+  const tool = (body) => "import { appendFileSync, writeFileSync } from 'node:fs';\n" + body + "\n";
+  /* one fixture: a checkout with the Fold step's tools as stubs that log, pushed to a bare origin */
+  const fixture = (name) => {
+    const dir = join(root, name), w = join(dir, "w");
+    for (const d of ["master", "tools", "ledger", "public"]) mkdirSync(join(w, d), { recursive: true });
+    writeFileSync(join(w, "master", "changelog.json"), JSON.stringify([{ v: "v999", t: "A fixture fold" }]));
+    writeFileSync(join(w, "ledger", "book.json"), "[]\n");
+    writeFileSync(join(w, "public", "rev.json"), JSON.stringify({ id: "c".repeat(64) }));
+    writeFileSync(join(w, "tools", "foldcall.mjs"), tool("appendFileSync(" + JSON.stringify(log) + ", 'foldcall\\n');\n"
+      + "writeFileSync('ledger/book.json', '[{\"row\":1}]\\n'); writeFileSync('master/_folded.json', JSON.stringify({ ids: ['A1', 'A2'] }));"));
+    writeFileSync(join(w, "tools", "ledger.mjs"), tool("appendFileSync(" + JSON.stringify(log) + ", 'ledger\\n');"));
+    writeFileSync(join(w, "tools", "gate.mjs"), tool("appendFileSync(" + JSON.stringify(log) + ", 'gate\\n'); process.exit(process.env.GATE_FAIL ? 1 : 0);"));
+    gitIn(dir, "init", "-q", "--bare", "-b", "master", "origin.git");
+    gitIn(w, "init", "-q", "-b", "master"); gitIn(w, "add", "-A"); gitIn(w, "commit", "-q", "-m", "fixture");
+    gitIn(w, "remote", "add", "origin", "../origin.git"); gitIn(w, "push", "-q", "-u", "origin", "master");
+    return { dir, w };
+  };
+  try {
+    /* THE BANNER NEEDS NOTHING A MARK MAKES: run where the fold left the tree, before any mark */
+    const q = fixture("quiet");
+    writeFileSync(log, "");
+    const fold = run(q.w, "Fold");
+    const tree = gitIn(q.w, "rev-parse", "HEAD^{tree}").trim(), pushed = gitIn(q.dir, "--git-dir", "origin.git", "rev-parse", "master^{tree}").trim();
+    writeFileSync(log, "");
+    const wake = run(q.w, "Wake the phone", { "inputs.test_push": "false" }, { PUSH_KEY: "k" });
+    ok(wake.ran && wake.code === 0 && logLines(/-X POST .*\{"tag":"folded"\} https:\/\/salt-command\.qyts8mh72kyg\.workers\.dev\/push\/send$/) === 1
+       && /push\/send -> 200 for 2 folded row\(s\)/.test(wake.text),
+      "the banner goes out once for the folded rows on the tree the fold left, before any mark: " + wake.text.trim().slice(-200));
+
+    /* THE PROOF: every 2 s, for a minute, a failed read a miss */
+    const P = "c".repeat(64), OLD = "d".repeat(64);
+    const soon = run(q.w, "The phone is serving it", {}, { STUB_SEQ: [OLD, OLD, OLD, P].join(",") });
+    ok(soon.ran && soon.code === 0 && soon.reads === 4 && soon.sleeps.join(",") === "2,2,2" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(soon.e.LIVE_AT || ""),
+      "the proof reads /rev every 2 s and stops at the first read of the build, stamping the moment: " + JSON.stringify({ reads: soon.reads, sleeps: soon.sleeps, live: soon.e.LIVE_AT }));
+    const never = run(q.w, "The phone is serving it", {}, { STUB_SEQ: OLD });
+    const slept = never.sleeps.reduce((s, x) => s + +x, 0);
+    ok(never.code === 1 && /::error::the Worker is not serving/.test(never.text) && never.sleeps.every((x) => x === "2")
+       && slept >= 40 && slept <= 60 && never.reads === never.sleeps.length + 1 && !never.e.LIVE_AT,
+      "a Worker that never switches is read for a minute, 2 s apart, then fails the run: " + JSON.stringify({ reads: never.reads, slept }));
+    const flaky = run(q.w, "The phone is serving it", {}, { STUB_SEQ: ["down", "down", P].join(",") });
+    ok(flaky.code === 0 && flaky.reads === 3 && !!flaky.e.LIVE_AT,
+      "a read that fails is a miss to try again, never the end of the proof: " + flaky.text.trim().slice(-200));
+
+    /* THE GATE, ONCE A TREE */
+    const gated = fold.e.GATED_TREE || "";
+    ok(fold.ran && fold.code === 0 && gated === tree && pushed === tree,
+      "the Fold step names the tree its gate passed, which is the tree it pushed: " + JSON.stringify({ gated, tree, pushed }) + " " + fold.text.trim().slice(-200));
+    writeFileSync(log, "");
+    const again = run(q.w, "Gate", {}, { GATED_TREE: gated });
+    ok(again.ran && again.code === 0 && logLines(/^gate$/) === 0 && /not gated twice/.test(again.text),
+      "and the Gate step does not gate that tree a second time: " + again.text.trim().slice(-200));
+
+    /* a push that lands while the fold runs is brought in by its rebase, and that tree is gated */
+    const m = fixture("moved"), other = join(m.dir, "other");
+    gitIn(m.dir, "clone", "-q", "origin.git", "other");
+    writeFileSync(join(other, "laptop.txt"), "a push meanwhile\n");
+    gitIn(other, "add", "-A"); gitIn(other, "commit", "-q", "-m", "meanwhile"); gitIn(other, "push", "-q", "origin", "master");
+    const foldM = run(m.w, "Fold");
+    writeFileSync(log, "");
+    const gateM = run(m.w, "Gate", {}, { GATED_TREE: foldM.e.GATED_TREE || "" });
+    ok(foldM.code === 0 && existsSync(join(m.w, "laptop.txt")) && !!foldM.e.GATED_TREE && gateM.code === 0 && logLines(/^gate$/) === 1,
+      "a tree a rebase brought a push into is gated again: " + JSON.stringify({ gated: foldM.e.GATED_TREE, gate: logLines(/^gate$/) }) + " " + gateM.text.trim().slice(-200));
+
+    /* no fold, or anything on disk beside the tree, is gated; and a gate that fails still fails the step */
+    writeFileSync(log, "");
+    const none = run(q.w, "Gate");
+    const n1 = logLines(/^gate$/);
+    writeFileSync(join(q.w, "stray.txt"), "x\n");
+    const dirty = run(q.w, "Gate", {}, { GATED_TREE: gated });
+    rmSync(join(q.w, "stray.txt"), { force: true });
+    ok(none.code === 0 && n1 === 1 && dirty.code === 0 && logLines(/^gate$/) === 2,
+      "a run that folded nothing is gated, and so is a gated tree with anything else on disk: " + JSON.stringify({ none: n1, both: logLines(/^gate$/) }));
+    const red = run(q.w, "Gate", {}, { GATE_FAIL: "1" });
+    ok(red.code !== 0, "and a gate that fails fails the step, so nothing deploys: exit " + red.code);
+  } finally {
+    try { rmSync(root, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
 })();
 
 section("One suite run per laptop push: CI's Tests stand down when cloud-commit tests the same push");

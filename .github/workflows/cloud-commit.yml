@@ -283,6 +283,10 @@ jobs:
           node tools/gate.mjs
           v=$(node -p "require('./master/changelog.json')[0].v + ': ' + require('./master/changelog.json')[0].t.toLowerCase()")
           git add -A
+          # THE TREE THIS GATE PASSED, as a content hash, so the Gate step below does not run it twice
+          # (26 Sep 2026). Taken after staging and before the rebase: a rebase that brings anything in
+          # changes HEAD's tree, and the Gate step then gates it.
+          echo "GATED_TREE=$(git write-tree)" >> "$GITHUB_ENV"
           git commit -q -m "$v"
           # master can move while this runs; rebase onto its tip, then push as the runner, which
           # starts no second run.
@@ -306,8 +310,8 @@ jobs:
       # fault this job exists to end, and this was a road straight to one.
       # So the guard now holds back only the two steps that are about deploying: Gate and Deploy.
       # The six below it run on deploy == '1' alone. Each is already safe without a deploy: the
-      # proof step confirms the phone is serving the build whoever put it there, and the marks,
-      # the wake and the handoff clear all no-op without master/_folded.json. The fold path never
+      # proof step confirms the phone is serving the build whoever put it there, and the wake,
+      # the marks and the handoff clear all no-op without master/_folded.json. The fold path never
       # took this road anyway, because a fold leaves _folded.json in HEAD and the second clause
       # below forces live=0; the exposure was the hand push, which is the one a person makes.
       # The cost is a suite run and a re-seed on a push that deployed nothing.
@@ -328,9 +332,20 @@ jobs:
       # checks in about ten seconds. The full suite runs in job `suite` below, after the phone is
       # live, and fails the run loudly if it fails; it never pulls a correct ledger back off the
       # phone, because its post-fold failures have been its own fixtures moving with the book.
+      # A TREE IS GATED ONCE (26 Sep 2026). Every folding run logged GATE OK twice, about 5 s apart,
+      # on identical bytes: the Fold step's gate, then this one. The Fold step names the tree its
+      # gate passed in GATED_TREE; this step stands down only while HEAD's tree is that tree and
+      # nothing on disk differs from it. A rebase that brought a push in, or no fold at all, gates.
       - name: Gate
         if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
-        run: node tools/gate.mjs
+        run: |
+          set -euo pipefail
+          tree=$(git rev-parse 'HEAD^{tree}')
+          if [ -n "${GATED_TREE:-}" ] && [ "$tree" = "$GATED_TREE" ] && [ -z "$(git status --porcelain)" ]; then
+            echo "The Fold step's gate passed this very tree ($tree), and nothing has changed since; it is not gated twice."
+            exit 0
+          fi
+          node tools/gate.mjs
 
       - name: Deploy
         if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
@@ -339,19 +354,50 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
+      # IT POLLS EVERY 2 S FOR UP TO 60 (26 Sep 2026). Six tries 10 s apart spent 51 s in five
+      # retries on one run, mostly asleep after the Worker had switched. A read that fails is a miss
+      # to try again, never the end of the proof.
       - name: The phone is serving it
         if: steps.plan.outputs.deploy == '1'
         run: |
           set -euo pipefail
           want=$(node -p "require('./public/rev.json').id")
-          for i in 1 2 3 4 5 6; do
-            got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id")
-            [ "$got" = "$want" ] && { echo "live at $got"; echo "LIVE_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"; exit 0; }
-            echo "attempt $i: live=$got want=$want"
-            sleep 10
+          end=$((SECONDS + 60))
+          i=0
+          while :; do
+            i=$((i + 1))
+            got=$(curl -fsS --max-time 10 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+            [ "$got" = "$want" ] && { echo "live at $got, read $i"; echo "LIVE_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"; exit 0; }
+            echo "read $i: live=$got want=$want"
+            [ "$SECONDS" -ge "$end" ] && break
+            sleep 2
           done
-          echo "::error::the Worker is not serving $want after the deploy reported success"
+          echo "::error::the Worker is not serving $want a minute after the deploy reported success"
           exit 1
+
+      # THE BANNER GOES STRAIGHT AFTER THE PROOF (26 Sep 2026). It reads only master/_folded.json,
+      # which the fold wrote and no mark touches, so it waits for none: the marks took 5 to 26 s in
+      # front of it. It is no step of rule 8's order, which stands: gate, deploy, prove, mark.
+      # OPTIONAL BY DESIGN: SALT_PUSH_KEY opens POST /push/send and nothing else. The secret is
+      # tested in the shell, never in `if:`, because the secrets context there rejects the file.
+      - name: Wake the phone
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        env:
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
+          TEST="${{ inputs.test_push }}"
+          if [ "$TEST" = "true" ]; then
+            n="test"
+          else
+            if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
+            n=$(node -p "(require('./master/_folded.json').ids||[]).length")
+            [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
+          fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
+          echo "push/send -> $code for $n folded row(s)"
 
       # THE TREE THE SUITE TESTS (26 Sep 2026): the commit the proof just saw live, taken before
       # `Clear the handoff files`, whose pull can bring in a laptop push landed meanwhile.
@@ -380,27 +426,6 @@ jobs:
           ids=$(node -p "(require('./master/_folded.json').ids||[]).join(' ')")
           if [ -z "$ids" ]; then echo "_folded.json names no ids."; exit 0; fi
           node tools/drafts.mjs --committed $ids --live "${LIVE_AT:-}"
-
-      # OPTIONAL BY DESIGN: SALT_PUSH_KEY opens POST /push/send and nothing else. The secret is
-      # tested in the shell, never in `if:`, because the secrets context there rejects the file.
-      - name: Wake the phone
-        if: steps.plan.outputs.deploy == '1'
-        continue-on-error: true
-        env:
-          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
-          TEST="${{ inputs.test_push }}"
-          if [ "$TEST" = "true" ]; then
-            n="test"
-          else
-            if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
-            n=$(node -p "(require('./master/_folded.json').ids||[]).length")
-            [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
-          fi
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
-          echo "push/send -> $code for $n folded row(s)"
 
       # A DEPLOY THAT FOLDED NOTHING MUST NOT UNSTAGE A WAITING BATCH (24 Aug 2026):
       # _folded.json is the proof a fold happened in this build; without it only _folded is
