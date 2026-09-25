@@ -1,0 +1,587 @@
+{
+ "ok": true,
+ "count": 14,
+ "approved": [
+  {
+   "id": "2026-09-25T19:20:22.260Z",
+   "collection": "sales",
+   "row": {
+    "qty": 12.5,
+    "total": 750,
+    "cash": 750,
+    "date": "2026-09-25",
+    "customer": "CA2-SEN"
+   },
+   "reasoning": "Fulfilment against CA2-SEN's order of 12.5 unit for RM 750 agreed 2026-09-25. RM 0 and 12.5 unit move on 2026-09-26, against RM 0 and 12.5 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s203",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-25T19:20:22.260Z",
+    "type": "AMEND",
+    "party": "CA2-SEN",
+    "qty": 12.5,
+    "total": 0,
+    "status": "unpaid",
+    "raw": "Fulfilment on CA2-SEN s203: 12.5 unit moved, recorded 2026-09-26",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CA2-SEN",
+     "rid": "s203",
+     "orderKey": "CA2-SEN|2026-09-25|750",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-26",
+     "qty": 12.5,
+     "total": 0,
+     "cash": 0,
+     "kg": 12.5
+    }
+   },
+   "decidedAt": "2026-09-25T19:32:55.743Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:22:45.778Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CB7-BJ": [
+      3.05,
+      101.68,
+      "Bukit Jalil"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CB7-BJ. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:22:45.778Z",
+    "type": "PLACE",
+    "party": "CB7-BJ",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CB7-BJ on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CB7-BJ": [
+       3.05,
+       101.68,
+       "Bukit Jalil"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:32:57.079Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:23:05.021Z",
+   "collection": "rename",
+   "row": {
+    "from": "CC5-OKR",
+    "to": "CC9-OKR",
+    "pairs": [
+     [
+      "CC5-OKR",
+      "CC9-OKR"
+     ]
+    ],
+    "orders": 13,
+    "lots": 0,
+    "geo": [
+     2.57,
+     101.96,
+     "Old Klang Road"
+    ]
+   },
+   "reasoning": "Re-keys CC5-OKR to CC9-OKR wherever the book names it: 13 orders, 0 lots, the roster and every list that carries the code. The old code is retired outright; notes, the changelog and issued statements keep saying what was true when they were written. The statement account moves to the new code and its username stays. It moves no cash and no stock. Its place on the map moves with it, to the point the new place was found at. THE NAME AND THE PLACE ARE NOT HERE: the phone filed them in the vault, encrypted.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:23:05.021Z",
+    "type": "RENAME",
+    "party": "CC5-OKR",
+    "qty": null,
+    "total": null,
+    "status": "rename",
+    "raw": "Amend ID: re-key CC5-OKR to CC9-OKR wherever the book names it",
+    "payload": {
+     "mode": "rename",
+     "from": "CC5-OKR",
+     "to": "CC9-OKR",
+     "geo": [
+      2.57,
+      101.96,
+      "Old Klang Road"
+     ]
+    }
+   },
+   "decidedAt": "2026-09-25T19:32:58.250Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:25:11.772Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CG5-SB": [
+      3.05,
+      101.7,
+      "Sungai Besi"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CG5-SB. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CG5-SB is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:25:11.772Z",
+    "type": "PLACE",
+    "party": "CG5-SB",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CG5-SB on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CG5-SB": [
+       3.05,
+       101.7,
+       "Sungai Besi"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:32:59.171Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:26:13.048Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CH6-SET": [
+      3.21,
+      101.73,
+      "Setapak"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CH6-SET. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CH6-SET is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:26:13.048Z",
+    "type": "PLACE",
+    "party": "CH6-SET",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CH6-SET on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CH6-SET": [
+       3.21,
+       101.73,
+       "Setapak"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:32:59.852Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:26:24.966Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CI4-OKR": [
+      3.09,
+      101.67,
+      "Old Klang Road"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CI4-OKR. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CI4-OKR is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:26:24.966Z",
+    "type": "PLACE",
+    "party": "CI4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CI4-OKR on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CI4-OKR": [
+       3.09,
+       101.67,
+       "Old Klang Road"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:00.333Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:26:53.639Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CJ4-BJ": [
+      3.05,
+      101.68,
+      "Bukit Jalil"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CJ4-BJ. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CJ4-BJ is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:26:53.639Z",
+    "type": "PLACE",
+    "party": "CJ4-BJ",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CJ4-BJ on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CJ4-BJ": [
+       3.05,
+       101.68,
+       "Bukit Jalil"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:00.819Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:27:06.749Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CJ4-OKR": [
+      3.09,
+      101.67,
+      "Old Klang Road"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CJ4-OKR. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CJ4-OKR is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:27:06.749Z",
+    "type": "PLACE",
+    "party": "CJ4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CJ4-OKR on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CJ4-OKR": [
+       3.09,
+       101.67,
+       "Old Klang Road"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:01.292Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:29:07.242Z",
+   "collection": "rename",
+   "row": {
+    "from": "CN6-WM",
+    "to": "CN3-WM",
+    "pairs": [
+     [
+      "CN6-WM",
+      "CN3-WM"
+     ],
+     [
+      "CN6-WM-R",
+      "CN3-WM-R"
+     ]
+    ],
+    "orders": 17,
+    "lots": 0,
+    "geo": [
+     3.21,
+     101.74,
+     "Wangsa Maju"
+    ]
+   },
+   "reasoning": "Re-keys CN6-WM to CN3-WM wherever the book names it: 17 orders, 0 lots, the roster and every list that carries the code. The old code is retired outright; notes, the changelog and issued statements keep saying what was true when they were written. The statement account moves to the new code and its username stays. It moves no cash and no stock. Its place on the map moves with it, to the point the new place was found at. THE NAME AND THE PLACE ARE NOT HERE: the phone filed them in the vault, encrypted.",
+   "flags": [
+    "CN6-WM-R becomes CN3-WM-R with it, so the account and everything booked to it follow the party."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:29:07.242Z",
+    "type": "RENAME",
+    "party": "CN6-WM",
+    "qty": null,
+    "total": null,
+    "status": "rename",
+    "raw": "Amend ID: re-key CN6-WM to CN3-WM wherever the book names it",
+    "payload": {
+     "mode": "rename",
+     "from": "CN6-WM",
+     "to": "CN3-WM",
+     "geo": [
+      3.21,
+      101.74,
+      "Wangsa Maju"
+     ]
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:02.930Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:29:31.952Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CR3-DAM": [
+      3.07,
+      101.55,
+      "Damansara"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CR3-DAM. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CR3-DAM is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:29:31.952Z",
+    "type": "PLACE",
+    "party": "CR3-DAM",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CR3-DAM on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CR3-DAM": [
+       3.07,
+       101.55,
+       "Damansara"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:03.888Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:29:45.016Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CR3-PUD": [
+      3.13,
+      101.72,
+      "Pudu"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CR3-PUD. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "CR3-PUD is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:29:45.016Z",
+    "type": "PLACE",
+    "party": "CR3-PUD",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CR3-PUD on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CR3-PUD": [
+       3.13,
+       101.72,
+       "Pudu"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:04.552Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:30:30.107Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "CS6-DAM": [
+      3.07,
+      101.55,
+      "Damansara"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: CS6-DAM. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:30:30.107Z",
+    "type": "PLACE",
+    "party": "CS6-DAM",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place CS6-DAM on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "CS6-DAM": [
+       3.07,
+       101.55,
+       "Damansara"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:05.647Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:31:56.117Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "SA5-BTR": [
+      3.09,
+      101.71,
+      "Bandar Tun Razak"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: SA5-BTR. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "SA5-BTR is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:31:56.117Z",
+    "type": "PLACE",
+    "party": "SA5-BTR",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place SA5-BTR on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "SA5-BTR": [
+       3.09,
+       101.71,
+       "Bandar Tun Razak"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:07.234Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-25T19:32:31.487Z",
+   "collection": "place",
+   "row": {
+    "places": {
+     "SP7-PUD": [
+      3.13,
+      101.72,
+      "Pudu"
+     ]
+    }
+   },
+   "reasoning": "Files the place of 1 party as a point on the map, each to about a kilometre: SP7-PUD. It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
+   "flags": [
+    "SP7-PUD is on the map already, and moves to the new point."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T19:32:31.487Z",
+    "type": "PLACE",
+    "party": "SP7-PUD",
+    "qty": null,
+    "total": null,
+    "status": "place",
+    "raw": "Place SP7-PUD on the map at its recorded place",
+    "payload": {
+     "mode": "place",
+     "places": {
+      "SP7-PUD": [
+       3.13,
+       101.72,
+       "Pudu"
+      ]
+     }
+    }
+   },
+   "decidedAt": "2026-09-25T19:33:08.517Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
