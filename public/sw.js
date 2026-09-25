@@ -30,7 +30,8 @@ const SHELL = [
 /* /orders, /stmt-users and /draft-now join 08 Sep 2026: the desk fetches the first two by GET,
    and the page's own cache:'no-store' never reaches a service worker, whose "everything else"
    branch stored any 200 for ever. The phone's order list froze at first load. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now)(\/|$)/;
+/* /bulletin joins 26 Sep 2026 for the same reason: his editor read back the notice it first cached. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

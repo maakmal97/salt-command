@@ -822,6 +822,27 @@ await (async () => {
        happened to test it. */
     ok(rx.test("/drafts"), "sw.js never caches /drafts");
     ok(rx.test("/drafts/abc/approve"), "sw.js never caches a decision");
+    ok(rx.test("/bulletin") && rx.test("/bulletin/"), "sw.js never caches /bulletin");
+  }
+
+  /* 26 SEP 2026: THE HANDLER ITSELF, not only its pattern. public/sw.js run as it ships, with caches stubbed:
+     the desk's bullLoad GETs 'bulletin', and the "everything else" branch answered it from the cache for ever,
+     so his editor read back the first notice it saw. A request the handler leaves alone goes to the network. */
+  {
+    const vm = await import("node:vm");
+    const answered = (path) => {
+      const L = {}, told = [];
+      const ctx = { URL, console,
+        caches: { match: async () => undefined, open: async () => ({ put() {} }) },
+        self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" } },
+        fetch: async () => ({ status: 200, type: "basic", redirected: false, clone() { return this; } }) };
+      vm.createContext(ctx); vm.runInContext(sw, ctx);
+      L.fetch({ request: { method: "GET", url: "https://salt-command.example" + path, mode: "cors" }, respondWith: (p) => told.push(p) });
+      return told.length;
+    };
+    const bull = answered("/bulletin"), icon = answered("/icon-192.png");
+    ok(bull === 0 && icon === 1,
+      "a GET /bulletin passes the service worker by to the network, while an icon is still answered from the cache: " + JSON.stringify({ bull, icon }));
   }
 })();
 
