@@ -8348,7 +8348,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v857","d":"26 Sep 2026","t":"A CORRECTION THAT SENDS GOODS OUT AND LEAVES THE RM130 STANDING","n":["<b>FOLDED: ONE CORRECTION ON s202, CR3-DAM.</b> The patch sets deliveredQty from 0 to 1.5, deliveredOn from unset to 26 Sep 2026 and handover from unset to collected, preapproved by phone. No cash moves, so the order of 1.5 unit for RM130 dated 25 Sep goes from acknowledged and pending to fully handed over and fully unpaid. The rate of RM86.67 a unit sits above their median of RM80 and inside their range of RM80 to RM92.50.","<b>WHAT THE INVENTORY DID AND WHAT IS UNUSUAL.</b> The shelf rolls out 1.5 unit to CR3-DAM, the difference the correction states, leaving 27 against a reorder mark of 28.2. The drafter flagged RM48 a unit as a blend across more than one lot rate, and these figures do not settle it; replacement stands at RM51. The drafter also flagged the advance: with RM155 outstanding before, no cap figure is on file to check it against."]}];
+const evolution=[{"v":"v858","d":"26 Sep 2026","t":"A ROW ANOTHER PASS MADE FIRST NO LONGER WAKES HIM","n":["<b>THE DRAFTER COUNTS ONLY WHAT IT MADE.</b> A row is drafted only when this pass's own insert made it. A row another pass made a moment earlier, the tap against the quarter-hour net or the minute cron reading a stale queue at another location, is counted as raced, and the log shows it.","<b>ONE WAKE A ROW.</b> The quarter-hour net no longer sends 1 row waiting for a row his own tap has just drafted. A row the net did make still wakes him once."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8463,7 +8463,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 00:44 KL';
+const LAST_UPDATED='26 Sep 2026, 01:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

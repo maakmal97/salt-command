@@ -1,5 +1,14 @@
 [
  {
+  "v": "v858",
+  "d": "26 Sep 2026",
+  "t": "A ROW ANOTHER PASS MADE FIRST NO LONGER WAKES HIM",
+  "n": [
+   "<b>THE DRAFTER COUNTS ONLY WHAT IT MADE.</b> A row is drafted only when this pass's own insert made it. A row another pass made a moment earlier, the tap against the quarter-hour net or the minute cron reading a stale queue at another location, is counted as raced, and the log shows it.",
+   "<b>ONE WAKE A ROW.</b> The quarter-hour net no longer sends 1 row waiting for a row his own tap has just drafted. A row the net did make still wakes him once."
+  ]
+ },
+ {
   "v": "v857",
   "d": "26 Sep 2026",
   "t": "A CORRECTION THAT SENDS GOODS OUT AND LEAVES THE RM130 STANDING",
