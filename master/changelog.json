@@ -1,5 +1,15 @@
 [
  {
+  "v": "v862",
+  "d": "26 Sep 2026",
+  "t": "A REJECTION ON ONE DEVICE LEAVES THE OTHERS",
+  "n": [
+   "<b>A REJECTED ROW LEAVES EVERY DEVICE.</b> A row rejected on one device stayed in every other device's queue and figures. The Worker already names each entry it dropped in its answer to a post, and the desk now takes them out of its queue and stored copy, then redraws.",
+   "<b>ON THAT DEVICE'S NEXT POST.</b> Another device clears the entry the next time it posts to the cloud, not before.",
+   "<b>NOTHING IS QUEUED AGAIN.</b> The drop is written straight to storage, since the cloud already holds the queue without it, so the marks of what the cloud has taken stay the answer's. A failed redraw cannot turn a delivered post into a failed one."
+  ]
+ },
+ {
   "v": "v861",
   "d": "26 Sep 2026",
   "t": "THE TICK POSTS ONLY WHAT THE CLOUD HAS NOT TAKEN",
