@@ -137,14 +137,16 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
    (EINVAL since the 2024 argument-injection hardening), so the hand-run path died at the first
    call on the one machine it exists for: the day the deploy is down and the store has to be
    repaired by hand. With shell:true Node quotes the argv array itself, so nothing in a path or a
-   value becomes shell syntax. tools/d1.mjs and tools/drafts.mjs already do it this way. */
-function wrangler(args, opts = {}) {
-  return execFileSync("npx", ["wrangler", "-c", CONFIG, ...args],
+   value becomes shell syntax. tools/d1.mjs and tools/drafts.mjs already do it this way.
+   EVERY WRANGLER CALL IS ONE PROCESS, spawned by `run` (fold 5.5, 26 Sep 2026): execFileSync unless
+   main is handed another, which is how the suite counts the spawns against a store of its own. */
+function wrangler(args, opts = {}, run = execFileSync) {
+  return run("npx", ["wrangler", "-c", CONFIG, ...args],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
 }
 /* the desk's own config (no -c), for the two keys this publish writes to the desk's store */
-function deskWrangler(args, opts = {}) {
-  return execFileSync("npx", ["wrangler", ...args],
+function deskWrangler(args, opts = {}, run = execFileSync) {
+  return run("npx", ["wrangler", ...args],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
 }
 /* A DESK WRITE READS ITSELF BACK, the way the bulk put into the site's store already does
@@ -157,11 +159,11 @@ function deskWrangler(args, opts = {}) {
    substring test, and this key has been wrong in exactly that quiet way for a week.
    Exported so it can be driven against the real store by hand, on a throwaway key, which is the
    only place it can be proved: the suite reaches no network and --dry never writes. */
-export function deskPut(key, file, what) {
-  deskWrangler(["kv", "key", "put", key, "--path", file, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
+export function deskPut(key, file, what, run = execFileSync) {
+  deskWrangler(["kv", "key", "put", key, "--path", file, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" }, run);
   let got = "";
   /* a missing key exits non-zero, which throws; that is the failure, not an error to report */
-  try { got = String(deskWrangler(["kv", "key", "get", key, "--remote", "--binding", "SALT_QUEUE"], { stdio: ["ignore", "pipe", "ignore"] })); }
+  try { got = String(deskWrangler(["kv", "key", "get", key, "--remote", "--binding", "SALT_QUEUE"], { stdio: ["ignore", "pipe", "ignore"] }, run)); }
   catch (e) { got = ""; }
   if (got.replace(/^\uFEFF/, "").trim() !== readFileSync(file, "utf8").trim()) {
     console.error("::error::wrangler reported writing " + key + " to the desk's store and it does not read back. "
@@ -172,24 +174,52 @@ export function deskPut(key, file, what) {
   console.log("wrote " + key + " (" + what + ") to the desk's store, and read it back");
 }
 /* v658: the guest links themselves, so a board can be written for each. They live in the site's own
-   store under g:, which this tool already reads through wrangler's login. */
-function refIds() {
-  return listKeys("g:").map((k) => k.slice(2)).filter((x) => /^[a-z0-9]{4}-[a-z0-9]{4}$/.test(x));
+   store under g:, which this tool already reads through wrangler's login.
+   ONE LIST AND ONE BULK GET, NOT A GET PER LINK (fold 5.5, 26 Sep 2026): each link was a wrangler
+   process of its own, eight of the nineteen a publish spawned, and the publish runs every hour. The
+   ids go to <dir>/refs-keys.json, a hundred a call (the store's limit). `kv bulk get` is open beta in
+   wrangler, so a failure, or an answer in a shape read here as anything but text or null for every
+   key asked, falls back to one get per link with a warning: a link's board is never lost to it.
+   [id, record] pairs, a record null where it does not parse, exactly as the get per link read it. */
+export function readRefs(dir, run = execFileSync) {
+  const ids = listKeys("g:", run).map((k) => k.slice(2)).filter((x) => /^[a-z0-9]{4}-[a-z0-9]{4}$/.test(x));
+  const parse = (t) => { try { return JSON.parse(t); } catch (e) { return null; } };
+  try {
+    const out = [], file = join(dir, "refs-keys.json");
+    for (let i = 0; i < ids.length; i += 100) {
+      const part = ids.slice(i, i + 100);
+      writeFileSync(file, JSON.stringify(part.map((id) => "g:" + id)));
+      const t = String(wrangler(["kv", "bulk", "get", file, "--remote", "--binding", "STMT"], {}, run));
+      const got = JSON.parse(t.slice(t.indexOf("{")));
+      for (const id of part) {
+        /* the API answers each key's text, or null; wrangler's local store answers {value}; a key
+           missing from the answer is undefined, which is neither, and so falls back */
+        const v = got["g:" + id], text = v && typeof v === "object" ? v.value : v;
+        if (text !== null && typeof text !== "string") throw new Error("g:" + id + " is not in its answer as text");
+        out.push([id, text === null ? null : parse(text)]);
+      }
+    }
+    return out;
+  } catch (e) {
+    console.log("::warning::the links' bulk read did not answer (" + e.message + "); reading them one at a time");
+    return ids.map((id) => [id, readRef(id, run)]);
+  }
 }
-function readRef(id) {
-  try { return JSON.parse(wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "g:" + id])); }
+function readRef(id, run = execFileSync) {
+  try { return JSON.parse(wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "g:" + id], {}, run)); }
   catch (e) { return null; }
 }
-function listKeys(prefix) {
-  const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix]);
+function listKeys(prefix, run = execFileSync) {
+  const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix], {}, run);
   const i = t.indexOf("[");
   return i < 0 ? [] : JSON.parse(t.slice(i)).map(k => String(k.name));
 }
 
-async function main() {
-  const dryAt = process.argv.indexOf("--dry");
+/* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own */
+export async function main(argv = process.argv, { run = execFileSync, out = join(REPO, "statements", ".publish") } = {}) {
+  const dryAt = argv.indexOf("--dry");
   const dry = dryAt >= 0;
-  const outDir = dry ? resolve(process.argv[dryAt + 1] || join(REPO, "statements", ".publish")) : join(REPO, "statements", ".publish");
+  const outDir = dry ? resolve(argv[dryAt + 1] || out) : out;
   const root = process.env.SALT_STATEMENTS_DIR || join(REPO, "statements");
   const key = (process.env.STMT_KEY || "").trim();   /* trimmed at every door, as make_statements does (08 Sep 2026) */
 
@@ -197,11 +227,14 @@ async function main() {
     console.log("the statements store is not created yet (placeholder id in wrangler.stmt.jsonc); nothing published");
     return;
   }
+  /* the three lists feed only the retirement, so the hourly run, which retires nothing, does not
+     spawn them (fold 5.5, 26 Sep 2026); the puts never read them */
+  const noRetire = argv.includes("--no-retire");
   let existing = [], storedIssue = null;
   if (!dry) {
-    existing = [...listKeys("u:"), ...listKeys("fail:"), ...listKeys("sent:")];
+    if (!noRetire) existing = [...listKeys("u:", run), ...listKeys("fail:", run), ...listKeys("sent:", run)];
     /* absent on a fresh store, which wrangler reports as a 404 on stderr; that is not news */
-    try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }).trim() || null; }
+    try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }, run).trim() || null; }
     catch (e) { storedIssue = null; }
   }
   /* THE PRICE LIST NEEDS THE DESK'S PRICING SNAPSHOT, which only the desk can produce: pxInputs and
@@ -209,7 +242,7 @@ async function main() {
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
   let pricing = null, assoc = null; const cards = {};
-  if (!dry && !process.argv.includes("--no-prices") && key) {
+  if (!dry && !argv.includes("--no-prices") && key) {
     const { readBook, associateSnapshot } = await import("./book.mjs");
     /* v691: one window, two readings. The associates' report card comes off the same desk the
        prices do, so a card and a price can never be from different states of the book. */
@@ -230,7 +263,6 @@ async function main() {
       }
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
-  const noRetire = process.argv.includes("--no-retire");
   const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
@@ -333,8 +365,7 @@ async function main() {
        their boards on every publish, exactly as it does for the links that name an introducer. */
     const byUser = plan.users || {};
     let boards = 0, orphans = 0, standing = 0;
-    for (const id of refIds()) {
-      const rec = readRef(id);
+    for (const [id, rec] of readRefs(outDir, run)) {
       /* v698: a standing link needs nothing written under its own id; it reads its level's board.
          v709: and so does ANY link carrying a level, including one he pinned when approving an
          associate's, because the Worker keys on the level alone now. */
@@ -370,9 +401,9 @@ async function main() {
   if (plan.unmatched.length) console.log("::warning::no code in _users.json for: " + plan.unmatched.join(", "));
   if (dry) { console.log("wrote " + putFile + ", " + delFile + " and " + usersFile); return; }
 
-  wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" });
+  wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" }, run);
   /* the desk's map, so the ledger's Worker can name the account an order belongs to */
-  deskPut("stmt-users", usersFile, Object.keys(plan.users).length + " usernames");
+  deskPut("stmt-users", usersFile, Object.keys(plan.users).length + " usernames", run);
   /* ============ v564: AND THE SITE'S OWN ADDRESS, FOR THE QR ON THE BOARD SHEET ============
      The desk draws a QR to the customer's page on the sheet he hands over, so it needs the address,
      and the address MUST NOT be baked into the desk: /desk is public by his decision of 11 Aug and
@@ -385,13 +416,13 @@ async function main() {
      to code map and changing its shape would break the order relay. */
   const siteFile = join(outDir, "site.txt");
   writeFileSync(siteFile, siteBaseUrl());
-  deskPut("stmt-site", siteFile, siteBaseUrl());
+  deskPut("stmt-site", siteFile, siteBaseUrl(), run);
 
   /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
      invisible otherwise, which is the whole class of fault this file was rewritten for. */
   const probe = plan.puts.find((x) => x.key.startsWith("u:"));
   const got = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", probe.key],
-    { stdio: ["ignore", "pipe", "ignore"] });
+    { stdio: ["ignore", "pipe", "ignore"] }, run);
   if (String(got).indexOf('"u"') < 0) {
     console.error("::error::the bulk put reported success but " + probe.key + " does not read back from the store.");
     process.exit(1);
@@ -400,7 +431,7 @@ async function main() {
   console.log("published " + (plan.puts.length - 1) + " records");
 
   if (plan.deletes.length) {
-    wrangler(["kv", "bulk", "delete", delFile, "--remote", "--binding", "STMT", "--force"], { stdio: "inherit" });
+    wrangler(["kv", "bulk", "delete", delFile, "--remote", "--binding", "STMT", "--force"], { stdio: "inherit" }, run);
     console.log("retired " + plan.deletes.length + " key(s)");
   }
 

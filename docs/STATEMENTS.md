@@ -895,7 +895,11 @@ seals the live statement into each of the newest issue's records under the conte
 them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
 new set retires last month's**), and clears the attempt counters on a new issue only. Without
 `STMT_KEY` in the cloud the records go up as issued and "Now" is simply absent; the step warns.
-`node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing.
+`node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
+call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one
+list and one `kv bulk get`, falling back to a get per link, with a warning, when that open-beta
+command does not answer as text; and the three lists that feed only the retirement not at all
+under `--no-retire`. With eight links, the hourly run spawns nine where it spawned nineteen.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
 the site does not exist until the store does. The one-time setup, in **Command Prompt** from

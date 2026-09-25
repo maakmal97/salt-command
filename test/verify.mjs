@@ -22912,6 +22912,119 @@ await (async () => {
     "the retirement is behind a flag the hourly run clears");
   ok(planPublish.length === 8, "planPublish takes the options object that carries it");
 })();
+section("26 Sep 2026: the statements publish reads the links in one bulk get and lists nothing on the hourly run, publishing the same records");
+await (async () => {
+  /* Fold 5.5 of the streamlining plan (C10). Every wrangler call in the publish is one process, spawned through main's
+     `run`, so a stub store counts them. The links were read by a get each, one spawn a link every hour; they are one
+     list and one bulk get now, falling back to a get each when the bulk get (open beta in wrangler) does not answer as
+     text. The three lists feed only the retirement, so the hourly run (--no-retire) no longer spawns them. What the
+     records are compared with is the store's own content as a get per link reads it, never the code's reading of it. */
+  const P55 = await import("../tools/stmt-publish.mjs");
+  const C55 = await import("../tools/stmt-crypto.mjs");
+  const root55 = join(REPO, "test", "tmp", "pub55"), dir55 = join(root55, "2026-09"), out55 = join(root55, "out");
+  rmSync(root55, { recursive: true, force: true });
+  mkdirSync(join(dir55, "_kv"), { recursive: true });
+  mkdirSync(out55, { recursive: true });
+  try {
+    const K55 = "key-55", users55 = { "CZ9-AAA": "aaaa-bbbb", "CZ9-BBB": "cccc-dddd" };
+    writeFileSync(join(root55, "_users.json"), JSON.stringify(users55));
+    for (const u of Object.values(users55)) {
+      const pw = "pw-" + u, ck = await C55.contentKey(K55, u);
+      writeFileSync(join(dir55, "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
+        verifier: await C55.makeVerifier(pw), wrap: await C55.wrapKey(pw, ck), env: await C55.encryptWith(ck, JSON.stringify({ statements: [] })) }) + "\n");
+    }
+    /* the links as stmt/refs.js mintRef writes them: three standing, one pinned to a level on approval, two following an
+       introducer, one waiting on him, one that does not parse; and a g: key that is not a link */
+    const link = (id, o) => JSON.stringify(Object.assign({ id, tier: 2, introducer: null, level: null, standing: false, approved: true,
+      label: "", made: "2026-09-20T00:00:00.000Z", by: "", opens: 0, first: null, last: null, revoked: false }, o));
+    const site0 = () => new Map([
+      ["issue", "2026-09-01"], ["u:aaaa-bbbb", "{}"], ["u:zzzz-zzzz", "{}"], ["u:0000-0000", "{}"], ["fail:aaaa-bbbb", "3"],
+      ["sent:2026-08-01:aaaa-bbbb", "1"],
+      ["g:s1s1-2222", link("s1s1-2222", { level: 1, standing: true })], ["g:s2s2-2222", link("s2s2-2222", { level: 2, standing: true })],
+      ["g:s3s3-2222", link("s3s3-2222", { level: 3, standing: true })],
+      ["g:gaaa-2222", link("gaaa-2222", { introducer: "aaaa-bbbb" })],
+      ["g:gbbb-2222", link("gbbb-2222", { introducer: "aaaa-bbbb", by: "aaaa-bbbb", level: 2 })],
+      ["g:gccc-2222", link("gccc-2222", { introducer: "cccc-dddd" })],
+      ["g:gddd-2222", link("gddd-2222", { introducer: "cccc-dddd", by: "cccc-dddd", approved: false })],
+      ["g:geee-2222", "{not json"], ["g:nope", link("nope", { introducer: "aaaa-bbbb" })]]);
+    /* wrangler as the publish drives it: a list prints its JSON after a banner, a get prints the raw value and exits
+       non-zero on a missing key, a remote bulk get prints each key's text or null (read off the live store, 26 Sep 2026) */
+    const bare = (a) => a.slice(3).filter((x, i, r) => !x.startsWith("--") && !["--binding", "--prefix", "--path"].includes(r[i - 1]));
+    const wr55 = (site, desk, calls, bulk = "text") => (cmd, argv) => {
+      const a = argv.slice(argv[1] === "-c" ? 3 : 1), s = a.includes("SALT_QUEUE") ? desk : site, op = a.slice(0, 3).join(" "), [arg] = bare(a);
+      calls.push(op === "kv key get" ? op + " " + arg : op === "kv key list" ? op + " " + a[a.indexOf("--prefix") + 1] : op);
+      if (op === "kv key list") { const p = a[a.indexOf("--prefix") + 1]; return "banner\n" + JSON.stringify([...s.keys()].filter((k) => k.startsWith(p)).map((name) => ({ name }))); }
+      if (op === "kv key get") { if (!s.has(arg)) throw Object.assign(new Error("404"), { status: 1 }); return s.get(arg); }
+      if (op === "kv key put") { s.set(arg, readFileSync(a[a.indexOf("--path") + 1], "utf8")); return ""; }
+      const file = JSON.parse(readFileSync(arg, "utf8"));
+      if (op === "kv bulk put") { for (const x of file) s.set(x.key, x.value); return ""; }
+      if (op === "kv bulk delete") { for (const k of file) s.delete(k); return ""; }
+      if (op === "kv bulk get") {
+        if (bulk === "fails") throw Object.assign(new Error("beta"), { status: 1 });
+        if (bulk === "other") return JSON.stringify({ values: Object.fromEntries(file.map((k) => [k, s.get(k) || null])) });
+        return "\n" + JSON.stringify(Object.fromEntries(file.map((k) => [k, s.has(k) ? s.get(k) : null])), null, 2);
+      }
+      throw new Error("the stub does not know " + op);
+    };
+    const asRead = (s) => [...s.keys()].filter((k) => /^g:[a-z0-9]{4}-[a-z0-9]{4}$/.test(k))
+      .map((k) => { let r = null; try { r = JSON.parse(s.get(k)); } catch (e) { r = null; } return [k.slice(2), r]; });
+    const want = JSON.stringify(asRead(site0()));
+    const gets = (c) => c.filter((x) => x.startsWith("kv key get g:")).length;
+    const lists = (c) => c.filter((x) => x.startsWith("kv key list")).length;
+    const quietly = (fn) => { const log = console.log, said = []; console.log = (...m) => said.push(m.join(" ")); try { return [fn(), said]; } finally { console.log = log; } };
+
+    /* ---- the links: one list and one bulk get ---- */
+    const cA = [], [gotA] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cA)));
+    ok(JSON.parse(want).length === 8 && JSON.stringify(gotA) === want,
+      "the bulk read hands back every link's record exactly as a get per link reads it, an unreadable one as null: " + (gotA || []).length);
+    ok(cA.join() === "kv key list g:,kv bulk get", "the eight links are read in two spawns, one list and one bulk get, not a get each: " + cA.join());
+    const cB = [], [gotB, saidB] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cB, "fails")));
+    ok(JSON.stringify(gotB) === want && gets(cB) === 8 && saidB.some((l) => /^::warning::the links' bulk read did not answer/.test(l)),
+      "when the bulk get fails, each link is read by a get of its own, the same records, and the log says so: " + gets(cB));
+    const cC = [], [gotC] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cC, "other")));
+    ok(JSON.stringify(gotC) === want && gets(cC) === 8,
+      "and an answer in a shape it does not read is not taken for eight empty links: it reads them one at a time: " + gets(cC));
+
+    /* ---- the whole publish, driven through main against the stub ---- */
+    const run55 = async (argv, run, key) => {
+      const was = { SALT_STATEMENTS_DIR: process.env.SALT_STATEMENTS_DIR, STMT_KEY: process.env.STMT_KEY };
+      const log = console.log, err = console.error, exit = process.exit, said = [];
+      process.env.SALT_STATEMENTS_DIR = root55;
+      if (key) process.env.STMT_KEY = key; else delete process.env.STMT_KEY;
+      console.log = console.error = (...m) => said.push(m.join(" "));
+      process.exit = (c) => { throw new Error("exit " + c); };
+      try { await P55.main(["node", "stmt-publish.mjs", ...argv], { run, out: out55 }); said.push("returned"); }
+      catch (e) { said.push("threw " + e.message); }
+      finally {
+        console.log = log; console.error = err; process.exit = exit;
+        for (const k of Object.keys(was)) if (was[k] === undefined) delete process.env[k]; else process.env[k] = was[k];
+      }
+      return said;
+    };
+    const sR = site0(), cR = [], saidR = await run55(["--no-prices"], wr55(sR, new Map(), cR));
+    const putR = readFileSync(join(out55, "put.json"), "utf8");
+    const sH = site0(), cH = [], saidH = await run55(["--no-prices", "--no-retire"], wr55(sH, new Map(), cH));
+    const putH = readFileSync(join(out55, "put.json"), "utf8");
+    ok(saidR.includes("returned") && lists(cR) === 3 && cR.includes("kv bulk delete") && !sR.has("u:zzzz-zzzz") && sR.has("u:0000-0000"),
+      "a deploy's publish lists the store three times and retires the account the issue does not carry, never the test account: " + cR.join());
+    ok(saidH.includes("returned") && lists(cH) === 0 && !cH.includes("kv bulk delete") && sH.has("u:zzzz-zzzz"),
+      "the hourly run, which retires nothing, lists nothing: " + cH.join() + " " + saidH.slice(-1));
+    const norm = (t) => JSON.stringify(JSON.parse(t).map((x) => x.key === "sheet" ? { key: x.key, value: Object.assign(JSON.parse(x.value), { at: null }) } : x));
+    ok(norm(putH) === norm(putR) && JSON.parse(putH).some((x) => x.key === "u:aaaa-bbbb") && JSON.parse(putH).some((x) => x.key === "roster"),
+      "and it writes the very put.json the deploy's run writes, the sheet's minute apart");
+
+    /* ---- the hourly run with prices, which is the one that reads the links ---- */
+    const sP = site0(), cP = [], saidP = await run55(["--no-retire"], wr55(sP, new Map(), cP), K55);
+    const boards = [...sP.keys()].filter((k) => k.startsWith("gboard:")).sort();
+    const intro = (k) => { try { return JSON.parse(sP.get(k)).introducer; } catch (e) { return null; } };
+    ok(saidP.includes("returned") && boards.join() === "gboard:gaaa-2222,gboard:gccc-2222"
+      && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
+      "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
+      + boards.join() + " " + saidP.slice(-1));
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 9,
+      "in nine spawns where it took nineteen: the links in one bulk get, no get per link, and no list but the links': " + cP.join());
+  } finally { rmSync(root55, { recursive: true, force: true }); }
+})();
 section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "the customer will be notified every hour to pay if it is an
