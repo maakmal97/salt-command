@@ -1103,12 +1103,16 @@ export async function queueSale(env, entry) {
  * A MINUTE IS NOT A DELAY THAT MATTERS: the entry still has to be drafted and then approved under
  * Approve, and the customer's card says so while it waits.
  */
-export async function reconcileOrders(env) {
-  const r = await site(env, "/desk/orders?work=1");
-  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
-  const b = await r.json().catch(() => ({}));
-  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
-  const owing = b.orders || [];
+export async function reconcileOrders(env, read) {
+  /* fold 5.6: the minute's one read carries the owed orders (tickRead); any other caller, or a Counter that sent none, asks */
+  let owing = read && read.ok && Array.isArray(read.owing) ? read.owing : null;
+  if (!owing) {
+    const r = await site(env, "/desk/orders?work=1");
+    if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+    owing = b.orders || [];
+  }
   if (!owing.length) return { ok: true, queued: 0 };
   const users = await usersMap(env);
   /* AN AMENDMENT WAITS FOR ITS ROW. The pending row reaches the book by the long road: queued,
@@ -1380,15 +1384,31 @@ export async function tellWaiting(env, n, age) {
   return { ok: true, n };
 }
 
+/* ---- ONE QUESTION TO THE SITE A MINUTE (fold 5.6, 26 Sep 2026) ---------------------------------
+ * The minute asked the site twice, the marks for the nudge and the owed orders for the reconcile, and from
+ * 24 Sep 22:00 UTC each trip took about 165 ms where it had taken 10, while the order book's own time stayed
+ * at 1 to 10 ms. The marks now come with the owed orders (/desk/orders/last?work=1), so a quiet minute is one
+ * trip. A Counter still on the old code answers that path with the marks alone, and the reconcile asks for
+ * the orders itself: the desk deploys first, so that is the minute between the two deploys. A read that
+ * failed leaves each step to ask for its own, as they did before. */
+async function siteMarks(env, work) {
+  const r = await site(env, "/desk/orders/last" + (work ? "?work=1" : ""));
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  return { ok: true, marks: b, owing: work && Array.isArray(b.orders) ? b.orders : null };
+}
+export const tickRead = (env) => siteMarks(env, true);
+
 /* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had
    subscribed since v387, so an order arrived in silence). The site cannot reach this Worker, so a
    new order is noticed here, by asking the site for the moment of its newest placement: one read,
    not a listing. Anything newer than the mark wakes the phones that asked for orders, once. */
-export async function nudgeOrders(env) {
-  const r = await site(env, "/desk/orders/last");
-  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
-  const b = await r.json().catch(() => ({}));
-  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+export async function nudgeOrders(env, read) {
+  /* fold 5.6: the marks of the minute's one read (tickRead); without them, or when it failed, the marks alone are asked for */
+  const got = read && read.ok ? read : await siteMarks(env, false);
+  if (!got.ok) return { ok: false, error: got.error };
+  const b = got.marks;
   const newest = b.last || null, said = b.said || null, theirs = b.theirs || null;
   const mark = (await env.SALT_QUEUE.get(MARK)) || "", saidMark = (await env.SALT_QUEUE.get(SAID_MARK)) || "";
   const theirsMark = (await env.SALT_QUEUE.get(THEIRS_MARK)) || "";

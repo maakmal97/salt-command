@@ -34147,6 +34147,107 @@ await (async () => {
     "a site that will not take it leaves the mark where it was, so the next minute tries again rather than the next fold: " + JSON.stringify({ failed: t3.failed, told: told3 }));
 })();
 
+section("Fold 5.6: the minute asks the site one question, its marks and the owed orders together, after the return leg, and a Counter on the old code is asked as before");
+await (async () => {
+  /* From 24 Sep 2026 22:00 UTC each trip from the desk's minute to the site took about 165 ms where it had taken 10, and
+     the minute made two: the marks for the nudge, the owed orders for the reconcile. Driven through the schedule itself
+     over the real site Worker, on the KV road and in the order book, with the binding writing down every request. The
+     Counter before this fold is the same Worker asked the same path with the query dropped, which is what its old code
+     answers; one that does not know the question answers 404. Usernames and codes invented. */
+  const { placeOrder, deskMove } = await import("../stmt/orders.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const U = "qw7r-t2zx", CODE = "ZQ5-FIC", realLog = console.log;
+  const stand = (store, counter, ledger) => {
+    const skv = new KV(), dkv = new KV(), asked = [];
+    const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: H.orderBook({}).ns, ORDER_STORE: store } : {});
+    const denv = Object.assign({ SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => {
+      const u = new URL(url);
+      asked.push(((init && init.method) || "GET") + " " + u.pathname + u.search);
+      if (counter !== "new" && u.pathname === "/desk/orders/last" && u.search) {
+        if (counter === "404") return new Response("not found", { status: 404 });
+        return stmtW.fetch(new Request("https://stmt/desk/orders/last", init), senv);
+      }
+      return stmtW.fetch(new Request(url, init), senv);
+    } } }, ledger ? { SALT_LEDGER: ledger } : {});
+    return { dkv, senv, denv, asked };
+  };
+  const tick = async (denv, iso) => {
+    const w = [], logs = [];
+    console.log = (...x) => logs.push(x.join(" "));
+    try { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, denv, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { console.log = realLog; }
+    return logs;
+  };
+  const J = async (S, p) => (await stmtW.fetch(new Request("https://stmt" + p, { headers: { "X-Stmt-Desk": "desk-key" } }), S.senv)).json();
+  const rec = async (S, id) => (await J(S, "/desk/orders?all=1")).orders.find((x) => x.id === id);
+  const gets = (S) => S.asked.filter((a) => a.startsWith("GET "));
+  const agreed = async (S, qty, total) => {
+    await S.dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+    const o = (await placeOrder(S.senv, U, { product: "salt", qty, mode: "collect", unit: 120, total, week: "" })).order;
+    await deskMove(S.senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    return o;
+  };
+
+  /* ---- 1. ONE TRIP: the site answers both in one, and the minute asks nothing else ---- */
+  for (const store of [null, "object"]) {
+    const road = store ? "in the order book" : "on the KV road", S = stand(store, "new");
+    const o = await agreed(S, 1, 120);
+    const both = await J(S, "/desk/orders/last?work=1"), marks = await J(S, "/desk/orders/last"), work = await J(S, "/desk/orders?work=1");
+    ok(both.ok && !("orders" in marks) && work.orders.length === 1 && JSON.stringify(both) === JSON.stringify(Object.assign({}, marks, { orders: work.orders })),
+      road + ", asked with ?work=1 the site answers its marks and the owed orders in one, each as its own path gives them, and without it the marks alone as before: "
+      + JSON.stringify({ both: Object.keys(both), marks: Object.keys(marks) }));
+    const logs1 = await tick(S.denv, "2026-09-25T02:07:00Z");
+    const pend = ordersQueue(S.dkv).filter((e) => e.orderId === o.id);
+    ok(JSON.stringify(gets(S)) === '["GET /desk/orders/last?work=1"]' && pend.length === 1 && pend[0].status === "Pending"
+      && (await S.dkv.get("orders:nudged")) === o.at && !!((await rec(S, o.id)).queued || {}).ack,
+      road + ", a minute with a new order owed its row reads the site once, and from that one answer the nudge marks the order and the reconcile queues its row: "
+      + JSON.stringify({ asked: S.asked, pend: pend.length, logs1 }));
+    S.asked.length = 0;
+    await tick(S.denv, "2026-09-25T02:08:00Z");
+    ok(JSON.stringify(S.asked) === '["GET /desk/orders/last?work=1"]', road + ", and a quiet minute is one request to the site in all: " + JSON.stringify(S.asked));
+  }
+
+  /* ---- 2. THE MINUTE BETWEEN THE TWO DEPLOYS: a Counter on the old code, and one that does not know the question ---- */
+  for (const counter of ["old", "404"]) {
+    const S = stand(null, counter);
+    const o = await agreed(S, 1, 120);
+    const logs2 = await tick(S.denv, "2026-09-25T02:07:00Z");
+    const pend = ordersQueue(S.dkv).filter((e) => e.orderId === o.id);
+    const want = counter === "old" ? ["GET /desk/orders/last?work=1", "GET /desk/orders?work=1"]
+      : ["GET /desk/orders/last?work=1", "GET /desk/orders/last", "GET /desk/orders?work=1"];
+    ok(JSON.stringify(gets(S)) === JSON.stringify(want) && pend.length === 1 && pend[0].status === "Pending"
+      && (await S.dkv.get("orders:nudged")) === o.at && !!((await rec(S, o.id)).queued || {}).ack,
+      (counter === "old" ? "a Counter answering the marks alone has the reconcile ask for the owed orders itself"
+        : "a Counter answering 404 has the nudge and the reconcile each ask their own question, as before this fold")
+      + ", and the order is still marked and its row still queued: " + JSON.stringify({ asked: S.asked, pend: pend.length, logs2 }));
+  }
+
+  /* ---- 3. THE RETURN LEG FIRST: after a fold, a handover the row already carries is not queued again at the smaller figure ---- */
+  {
+    const K = CODE + "|2026-09-25|240";
+    const SALE = { rid: "s561", customer: CODE, date: "2026-09-25", qty: 2, total: 240, cash: 0, deliveredQty: 2, deliveredOn: "2026-09-25" };
+    const d1 = { prepare(q) {
+      const all = async (b) => ({ results: /FROM entry/.test(q) ? (b === "sales" ? [{ doc: JSON.stringify(SALE) }] : [])
+        : /FROM state/.test(q) ? [{ key: "OPEN", doc: JSON.stringify({ byKey: { [K]: { key: K } } }) }] : [] });
+      const first = async () => (/FROM snapshot/.test(q) ? { v: "vF56", stamped: null } : null);
+      return { bind: (...a) => ({ all: () => all(a[0]), first, run: async () => ({}) }), all: () => all(null), first, run: async () => ({}) };
+    } };
+    const S = stand(null, "new", d1);
+    const o = await agreed(S, 2, 240);
+    await deskMove(S.senv, U, o.id, { mark: { ledgerKey: K, ack: "2026-09-25T01:00:00.000Z" } });
+    await deskMove(S.senv, U, o.id, { handover: { units: 1 } });
+    const owedBefore = ((await J(S, "/desk/orders?work=1")).orders.find((x) => x.id === o.id) || {}).work;
+    const logs3 = await tick(S.denv, "2026-09-25T02:07:00Z");
+    const after = await rec(S, o.id), mine = ordersQueue(S.dkv).filter((e) => e.orderId === o.id);
+    ok(JSON.stringify(owedBefore) === '["move"]' && mine.length === 0 && after.moved === 2 && (after.queued || {}).moved === 2
+      && (await S.dkv.get("orders:told")) === "vF56",
+      "a fold's minute tells the order what the row holds and only then reads what the orders owe, so the handover of 1 unit the row "
+      + "already carries as 2 is not queued as a Correction to 1: " + JSON.stringify({ owedBefore, queued: mine.map((e) => e.status), moved: after.moved, asked: S.asked, logs3 }));
+  }
+})();
+
 section("v765: Approve keeps itself current while it is on screen, and neither card polls a pocket");
 await (async () => {
   /* HIS INSTRUCTION OF 21 SEP 2026. Site orders has followed the site at the phone's own pace since

@@ -734,7 +734,11 @@ async function handleDesk(request, env, p, m) {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     /* v752: and when a customer last wrote on one; v760: and when one last paid or took one back.
        S10: from wherever the orders live (orderMarks), the shared marks moving with them */
-    return json(Object.assign({ ok: true }, await orderMarks(env)));
+    const marks = await orderMarks(env);
+    /* fold 5.6: with ?work=1, the orders owing a stage beside the marks, as /desk/orders?work=1 lists them, so the
+       desk's minute is one trip here and not two; without it the answer is the marks alone, as it was */
+    if (new URL(request.url).searchParams.get("work") === "1") return json(Object.assign({ ok: true }, marks, { orders: await ordersOwing(env) }));
+    return json(Object.assign({ ok: true }, marks));
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();

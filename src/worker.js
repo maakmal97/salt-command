@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -722,24 +722,32 @@ export default {
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
           return;
         }
-        /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, one read of the site, and
-           it goes first so a drafter failure cannot swallow it. A customer order placed since the last
+        /* v764: what the book already holds, back the other way, before the read of what the orders owe:
+           an order brought level here owes nothing for the reconcile to queue. A cheap read of the book's
+           version on a quiet minute; the site is asked only after a fold. */
+        try {
+          const ts = await tellSite(env);
+          if (!ts.ok || ts.told || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
+        } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
+        /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
+           leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
+        let read = null;
+        try {
+          read = await tickRead(env);
+          if (!read.ok) console.log("orders read: " + JSON.stringify(read));
+        } catch (e) { console.log("orders read FAILED: " + String((e && e.stack) || e)); }
+        /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, and it goes before the
+           reconcile so a drafter failure cannot swallow it. A customer order placed since the last
            minute wakes the phones that asked for orders, once. */
         try {
-          const n = await nudgeOrders(env);
+          const n = await nudgeOrders(env, read);
           if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
         } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
         /* v694: and the stages the ledger has not been told about. THE ONE PLACE THAT QUEUES them,
            so no two roads can queue the same stage; it drafts what it queued rather than waiting
            for the quarter-hour, because he is looking at Approve. */
         try {
-          /* v764: what the book already holds, back the other way, before the pass that reads the
-             order: an order brought level here owes nothing for the reconcile to queue. */
-          try {
-            const ts = await tellSite(env);
-            if (!ts.ok || ts.told || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
-          } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
-          const rc = await reconcileOrders(env);
+          const rc = await reconcileOrders(env, read);
           /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
           if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped) console.log("orders reconcile: " + JSON.stringify(rc));
           /* S11: and what the desk queued itself, beside it */
