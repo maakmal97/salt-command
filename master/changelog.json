@@ -1,5 +1,15 @@
 [
  {
+  "v": "v859",
+  "d": "26 Sep 2026",
+  "t": "A REOPENED DESK REVALIDATES INSTEAD OF DOWNLOADING AGAIN",
+  "n": [
+   "<b>AN UNCHANGED DESK IS NOT SENT AGAIN.</b> /desk and / pass the browser's If-None-Match and HEAD through to the store, so reopening an unchanged desk answers 304 with no body instead of the whole page.",
+   "<b>ONE HOP TO THE STORE.</b> The store is asked for /desk, where it serves desk.html. It redirects /desk.html there, and a request arriving at the Worker does not follow redirects.",
+   "<b>ONLY GET AND HEAD ARE THE DESK.</b> Any other method on / or /desk answers not found."
+  ]
+ },
+ {
   "v": "v858",
   "d": "26 Sep 2026",
   "t": "A ROW ANOTHER PASS MADE FIRST NO LONGER WAKES HIM",
