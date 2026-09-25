@@ -8881,6 +8881,42 @@ await (async () => {
   ok(nokey.code === 0 && rowN && afterN.QUEUE_COMMITTED === id9, "v791: with no key the fold LANDS on the tool's own notes rather than leaving the batch staged");
   ok(rowN && /no judgement is recorded/.test(rowN.note) && /WRITTEN BY THE TOOL, NOT A MODEL/.test(rf9(MN, "utf8")), "and the row note and the version entry both say no judgement is in them");
   rm9(dirN, { recursive: true, force: true });
+  /* 26 Sep 2026: AN API THAT NEVER ANSWERS IS CUT, and the fold still lands. A local server takes the
+     request and says nothing; foldcall is pointed at it with a 300 ms bound and no retries, on its own
+     copies, and must land on the tool's notes inside 10 s. The SDK's own bound is ten minutes an attempt. */
+  {
+    const { createServer } = await import("node:http");
+    const { spawn: sp9 } = await import("node:child_process");
+    const hits = [];
+    const srv = createServer((req) => { hits.push(req.method + " " + req.url); });
+    await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+    const silentEnv = { ANTHROPIC_BASE_URL: "http://127.0.0.1:" + srv.address().port, ANTHROPIC_API_KEY: "sk-fixture-not-a-key", ANTHROPIC_AUTH_TOKEN: "",
+      SALT_FOLD_TIMEOUT_MS: "300", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", CLOUDFLARE_API_TOKEN: "" };
+    const timed = (args) => new Promise((res) => {
+      const t0 = Date.now(); let out = "";
+      const c = sp9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args], { cwd: REPO, env: { ...process.env, ...silentEnv }, stdio: ["ignore", "pipe", "pipe"] });
+      c.stdout.on("data", (b) => { out += b; }); c.stderr.on("data", (b) => { out += b; });
+      const kill = setTimeout(() => c.kill(), 20000);
+      c.on("close", (code) => { clearTimeout(kill); res({ code, out, ms: Date.now() - t0 }); });
+    });
+    const dirT = j9(REPO, "test", "tmp", "foldcall-silent-" + Date.now());
+    mk9(dirT, { recursive: true });
+    const BT = j9(dirT, "book.json"), MT = j9(dirT, "salt_command.html"), ST = j9(dirT, "_to_fold.json");
+    cp9(j9(REPO, "ledger", "book.json"), BT); cp9(j9(REPO, "master", "salt_command.html"), MT); cp9(j9(REPO, "master", "changelog.json"), j9(dirT, "changelog.json")); cp9(S9, ST);
+    const tm = await timed(["--staged", ST, "--book", BT, "--master", MT, "--notes", j9(dirT, "_fold_notes.json"), "--folded", j9(dirT, "_folded.json"), "--today", "2099-01-02"]);
+    const foldHits = hits.splice(0);
+    const afterT = existsSync(BT) ? JSON.parse(rf9(BT, "utf8")) : null;
+    const rowT = afterT && afterT.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
+    ok(tm.code === 0 && tm.ms < 10000 && rowT && afterT.QUEUE_COMMITTED === id9,
+      "a fold call to an API that never answers is cut at SALT_FOLD_TIMEOUT_MS and the fold lands inside 10 s (took " + (tm.ms / 1000).toFixed(1) + " s, exit " + tm.code + ")");
+    ok(foldHits.length === 1 && /^POST \/v1\/messages/.test(foldHits[0]) && rowT && /no judgement is recorded/.test(rowT.note) && /could not be called/.test(tm.out),
+      "with SALT_FOLD_RETRIES=0 the silent API is asked once, and the row lands on the tool's notes saying no judgement is recorded: " + JSON.stringify(foldHits));
+    const pr = await timed(["--probe"]);
+    ok(pr.code === 1 && pr.ms < 10000 && /FAIL\s+the call was refused/.test(pr.out) && hits.length === 1,
+      "the key probe takes the same bound: a silent API fails it inside 10 s (took " + (pr.ms / 1000).toFixed(1) + " s, exit " + pr.code + ", " + hits.length + " request)");
+    srv.closeAllConnections(); srv.close();
+    rm9(dirT, { recursive: true, force: true });
+  }
   /* a fake reply that breaks the rules is refused, and nothing is folded */
   wf9(FAKE9, JSON.stringify({ ...good, version: dd.version.next, rows: { [id9]: { note: "<b>ONE UNIT.</b> A note with an em-dash \u2014 which the house never writes, at length enough to pass.", rowNote: null, cost: null } } }));
   const bad9 = run9({ SALT_FOLD_FAKE: FAKE9 });
@@ -8893,6 +8929,39 @@ await (async () => {
   ok(good9.code === 0 && row9 && /RM 130/.test(row9.note) && after9.QUEUE_COMMITTED === id9, "a good reply folds the row into the book with its note and moves the watermark");
   ok(existsSync(FD9) && JSON.parse(rf9(FD9, "utf8")).ids[0] === id9 && new RegExp('const evolution=\\[\\{"v":"' + dd.version.next + '"').test(rf9(M9, "utf8")), "names the id in _folded.json and stamps the master with the next version");
   rm9(dir9, { recursive: true, force: true });
+})();
+
+section("26 Sep 2026: every workflow job is bounded, and the lint refuses one that is not");
+await (async () => {
+  /* Read by the suite's own pattern, not the lint's parser: a job is a key two spaces under jobs:,
+     its own keys four spaces in, so a step's timeout-minutes does not count for the job. */
+  const wfDir = join(REPO, ".github", "workflows");
+  const BOUND = { "cloud-commit.yml:chain": 30, "ci.yml:verify": 20, "ship-check.yml:level": 10 };
+  const seen = {};
+  for (const f of readdirSync(wfDir).filter((n) => /\.ya?ml$/.test(n))) {
+    const t = readFileSync(join(wfDir, f), "utf8").replace(/\r\n/g, "\n");
+    const body = (/^jobs:[^\n]*\n([\s\S]*?)(?=^\S|$(?![\s\S]))/m.exec(t) || [])[1] || "";
+    const heads = [...body.matchAll(/^  ([A-Za-z0-9_-]+):[^\n]*$/gm)];
+    heads.forEach((h, k) => {
+      const block = body.slice(h.index + h[0].length, k + 1 < heads.length ? heads[k + 1].index : body.length);
+      const m = /^    timeout-minutes: *(\d+) *(#.*)?$/m.exec(block);
+      seen[f + ":" + h[1]] = m ? +m[1] : null;
+    });
+  }
+  const over = Object.entries(seen).filter(([k, v]) => !(v > 0 && v <= (BOUND[k] || 30)));
+  ok(Object.keys(BOUND).every((k) => k in seen) && !over.length,
+    "every workflow job carries timeout-minutes within its bound (chain 30, verify 20, level 10): " + JSON.stringify(seen));
+  /* the lint, driven on fixture directories: a job without one fails it, a step's own does not count */
+  const dirL = join(REPO, "test", "tmp", "lintwf-" + Date.now());
+  const head = "name: Fixture\non:\n  workflow_dispatch:\njobs:\n  bounded:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - run: echo ok\n";
+  const open = "  open:\n    runs-on: ubuntu-latest\n    steps:\n      - name: a step with its own bound\n        timeout-minutes: 3\n        run: echo ok\n";
+  mkdirSync(join(dirL, "bad"), { recursive: true }); mkdirSync(join(dirL, "good"), { recursive: true });
+  writeFileSync(join(dirL, "bad", "f.yml"), head + open); writeFileSync(join(dirL, "good", "f.yml"), head);
+  const lint = (dir) => spawnSync(process.execPath, [join(REPO, "tools", "lint-workflows.mjs"), ...(dir ? [dir] : [])], { cwd: REPO, encoding: "utf8" });
+  const bad = lint(join(dirL, "bad")), good = lint(join(dirL, "good")), real = lint(null);
+  ok(bad.status === 1 && /job `open` has no `timeout-minutes`/.test(bad.stdout) && !/job `bounded`/.test(bad.stdout) && good.status === 0 && real.status === 0,
+    "the lint fails a job with no timeout-minutes, a step's own not counting, and passes the bounded fixture and the real workflows: " + (bad.stdout.split("\n").find((l) => /FAIL/.test(l)) || "").trim());
+  rmSync(dirL, { recursive: true, force: true });
 })();
 
 section("v791: the fold's prose without a model");
@@ -9493,7 +9562,12 @@ await (async () => {
   /* a customer's wrong password does not count against the owner's override brake: proved by behaviour
      in "S1 1.23", since this read the source and passed over the hyphens the page sends (24 Sep 2026) */
   ok(/\(process\.env\.STMT_KEY \|\| ""\)\.trim\(\)/.test(readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8")), "the publish trims STMT_KEY as the generator does");
-  ok(/new Anthropic\(\{ maxRetries: 6 \}\)/.test(readFileSync(join(REPO, "tools", "foldcall.mjs"), "utf8")), "the fold's call retries six times on 529 before leaving the batch staged");
+  /* 26 Sep 2026: the six retries became three with a 90 s bound an attempt; the silent-API run in
+     "v521: the fold as one call" proves the client takes these options */
+  { const { sdkOptions } = await import("../tools/foldcall.mjs");
+    const d = sdkOptions({}), set = sdkOptions({ SALT_FOLD_RETRIES: "0", SALT_FOLD_TIMEOUT_MS: "300" }), junk = sdkOptions({ SALT_FOLD_RETRIES: "-1", SALT_FOLD_TIMEOUT_MS: "x" });
+    ok(d.maxRetries === 3 && d.timeout === 90000 && set.maxRetries === 0 && set.timeout === 300 && junk.maxRetries === 3 && junk.timeout === 90000,
+      "the fold's call retries three times at 90 s an attempt, about 6.1 min at most, and the env sets both, zero retries included: " + JSON.stringify([d, set, junk])); }
   ok(!/JSON\.stringify\("(UPDATE|INSERT)/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "no write in drafts.mjs goes to wrangler by --command, where a shell reads the text");
 
   /* the drain: update.mjs pulls and keeps; only the hand mode clears (09 Sep 2026) */

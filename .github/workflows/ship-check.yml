@@ -24,6 +24,8 @@ on:
 jobs:
   level:
     runs-on: ubuntu-latest
+    # BOUNDED (26 Sep 2026): it runs in seconds; GitHub's default is six hours.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5      # v5 runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
 

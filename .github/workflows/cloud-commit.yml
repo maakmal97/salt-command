@@ -65,6 +65,10 @@ concurrency:
 jobs:
   chain:
     runs-on: ubuntu-latest
+    # BOUNDED (26 Sep 2026). GitHub's default is six hours of the one concurrency slot. The
+    # longest run seen took 17.6 min, and tools/foldcall.mjs bounds the fold's two calls at about
+    # 12.2 min, so a run past 30 is already broken. tools/lint-workflows.mjs refuses a job without one.
+    timeout-minutes: 30
     permissions:
       contents: write
       id-token: write

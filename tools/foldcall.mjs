@@ -214,13 +214,25 @@ Reply with the notes JSON only: version "${d.version.next}", the title, the note
   return { model: MODEL, max_tokens: 4000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor(ids) } } };
 }
 
+/* THE CALL IS BOUNDED, SO THE FOLD NEVER WAITS ON IT (26 Sep 2026). The client used to keep the
+   SDK's ten-minute wait an attempt with six retries: seven attempts, two calls, about 2 h 20 min
+   holding the chain's one concurrency slot. Measured fold calls took 13.4 to 33.0 s over 18 folds,
+   so 90 s an attempt is about three times the slowest. The SDK retries a timeout as it does 429,
+   529 and 5xx, backing off from 0.5 s doubling to 8 s, so three retries sleep at most 3.5 s: a call
+   is bounded at 4 x 90 s + 3.5 s, about 6.1 min, and the call with its one correction at about
+   12.2 min, under the chain job's 30 minutes. Six retries (08 Sep 2026, after three runs failed on
+   http 529 inside twenty seconds) slept at most 23.5 s, not the two minutes once written here; a
+   529 burst now costs the judgement more often, never the fold, which lands on the tool's notes.
+   SALT_FOLD_RETRIES and SALT_FOLD_TIMEOUT_MS override both; the suite drives them. */
+export function sdkOptions(env = process.env) {
+  const num = (v) => (v == null || String(v).trim() === "" ? NaN : +v);
+  const r = num(env.SALT_FOLD_RETRIES), t = num(env.SALT_FOLD_TIMEOUT_MS);
+  return { maxRetries: Number.isInteger(r) && r >= 0 ? r : 3, timeout: t > 0 ? t : 90_000 };
+}
+
 async function callClaude(req) {
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  /* SIX RETRIES, NOT THE SDK'S TWO (08 Sep 2026). Three dispatched runs in a row failed on
-     http 529 "Overloaded" inside twenty seconds and left the batch to the hourly net. The SDK
-     already backs off on 429, 529 and 5xx; it just gives up too soon for a job nobody is
-     watching. Six retries is about two minutes of patience before the batch is left staged. */
-  const client = new Anthropic({ maxRetries: 6 });
+  const client = new Anthropic(sdkOptions());
   const res = await client.messages.create(req);
   if (res.stop_reason === "refusal") throw new Error("the model declined: " + JSON.stringify(res.stop_details || null));
   const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -243,7 +255,7 @@ if (isMain) {
        account with none; the first real fold then failed with "credit balance is too low". One
        five-token message proves what the fold will actually need. */
     try {
-      const client = new Anthropic();
+      const client = new Anthropic(sdkOptions());   /* the fold's bound, so a silent API fails the probe too */
       const m = await client.models.retrieve(MODEL);
       const r = await client.messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: "user", content: "Reply with the single word: ok" }] });
       console.log(`  ok    the key answers and the account is funded: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
