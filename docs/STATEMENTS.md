@@ -217,8 +217,8 @@ opened statement to a translation service. The Counter's script then sets `lang`
 language lacks is English's, never its name. A figure, a date or a username is a `{n}` slot, and no sentence is
 joined from translated halves. A refusal a customer can meet is `e.<code>` there: the Worker answers
 `{error, code}` through `refusal()`, the order book passing the code and its slots on, and the page words the
-code, the Worker's English standing for one it does not know. Salt Admin and a guest's board stay English and
-unkeyed; `stmt/send.js` is unkeyed.
+code, the Worker's English standing for one it does not know. Salt Admin stays English and unkeyed; a guest's board
+and a shut link are keyed but English only (no script); `stmt/send.js` is unkeyed.
 
 **The first Malay slice** (his D12, the plan's 13.4): the `MS` table words the welcome, the door and its refusals,
 saving the app (the keep card and Sheets, One step to finish), Home, paying (To pay now, the pay Sheet, Did you send,
