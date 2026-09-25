@@ -67,8 +67,13 @@ document.addEventListener('visibilitychange',function(){
    the old build. Nothing is lost by reloading with a queue, because saveQueue() writes
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
-   without waiting for the next open. */
-var SALT_BUILD_ID="ca4052df6aa08cb2";
+   without waiting for the next open.
+   IT POSTS ONLY WHAT THE CLOUD HAS NOT TAKEN, from 26 Sep 2026: an entry newer than the
+   acknowledged mark, or a change the mark cannot see (qDirty, set by saveQueue). It used to post
+   whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
+   seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
+   cannot answer the question still posts, because a post is idempotent. */
+var SALT_BUILD_ID="77b6b0ef105d92fa";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -86,9 +91,14 @@ var SALT_REV_MS=10000;
     chip.onclick=function(){location.reload();};
     document.body.appendChild(chip);
   }
+  function unsent(){
+    if(typeof qDirty!=='undefined'&&qDirty)return true;
+    if(typeof qNewestAt!=='function'||typeof qSentThrough==='undefined')return true;
+    return qNewestAt()>qSentThrough;
+  }
   function tick(){
     if(!window.SALT_CLOUD||document.visibilityState!=='visible')return;
-    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function')qPost();}catch(e){}
+    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}
     fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
       if(!j||!j.id||j.id===SALT_BUILD_ID)return;
       if(idle())location.reload(); else offer(j.v);
@@ -8434,7 +8444,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v860","d":"26 Sep 2026","t":"THE BULLETIN EDITOR READS BACK WHAT HE JUST SET","n":["<b>THE BULLETIN IS NEVER CACHED.</b> The desk's service worker passes /bulletin to the network, so the editor shows the notice as it stands after his own Set, and a change made on another device shows too.","<b>ONLY HIS EDITOR WAS STALE.</b> Customers read the bulletin on the Counter, which caches nothing, and were unaffected."]}];
+const evolution=[{"v":"v861","d":"26 Sep 2026","t":"THE TICK POSTS ONLY WHAT THE CLOUD HAS NOT TAKEN","n":["<b>NO REPOST EVERY TEN SECONDS.</b> The tick posted the whole queue whenever it held anything. It now posts only an entry newer than the acknowledged mark, or a change the mark cannot see, so an acknowledged, refused or stuck entry is not posted again.","<b>UNDO STILL REACHES THE CLOUD.</b> Undo, Clear queued and a withdrawal mark the queue as owed, and only the answer to the post that carried the change clears it.","<b>A STUCK ENTRY GOES TO APPROVE.</b> The notice no longer says to re-record the sale, which would make a twin. The drafter still drafts the entry: decide it under Approve, then Undo the copy held here once its row is in the book."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8549,7 +8559,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 02:13 KL';
+const LAST_UPDATED='26 Sep 2026, 02:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17527,10 +17537,13 @@ function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if
 function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const txq=qTx();
   const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically &mdash; already in the ledger.</div>`:'';
-  /* v485: A STUCK ENTRY IS NAMED, because it is the one case here that nothing else will
-     resolve. It never reached the cloud, the fold has since passed its stamp, and the drafter
-     skips anything at or below the watermark, so it can never become a row on its own. */
-  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y':'ies'} never reached the cloud</b>, and the ledger has since been folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and folded into the figures below, but ${queueStuck===1?'it':'they'} cannot be committed automatically. Re-record the ${queueStuck===1?'sale':'sales'} to put ${queueStuck===1?'it':'them'} in the book, then Undo the copy held here.</div>`:'';
+  /* v485: A STUCK ENTRY IS NAMED, because it is the one case here that asks for his hand: this
+     device never saw it acknowledged and the fold has since passed its stamp, so the flag is never
+     lifted and the copy held here stays in the figures. Corrected 26 Sep 2026: since 08 Sep the
+     drafter drafts an entry below the watermark that the draft table does not know, so once it
+     reaches the cloud it is put to him under Approve like any entry. The old line told him to
+     re-record the sale, which would have made a twin of a row the drafter was already drafting. */
+  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in the figures below. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} under Approve, and once ${queueStuck===1?'its row is':'their rows are'} in the book, Undo the copy held here, or the figures count ${queueStuck===1?'it':'them'} twice.</div>`:'';
   if(!txq.length){b.innerHTML=cleared+stuck;return;}
   b.innerHTML=cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
@@ -22862,6 +22875,14 @@ let qSentThrough=(function(){
   try{localStorage.setItem('saltQueueSent',seed);}catch(e){}
   return seed;})();
 function qSentMark(v){qSentThrough=v;try{localStorage.setItem('saltQueueSent',v);}catch(e){}}
+/* 26 Sep 2026: A CHANGE THE CLOUD HAS NOT ACKNOWLEDGED. The ten-second tick used to post the whole queue
+   whenever it held anything, so an entry already acknowledged, a refused one and a stuck one were each
+   posted every ten seconds for as long as the desk was on screen, and every post ran the drafter over the
+   book. It now posts only what the cloud has not taken: an entry newer than the mark, or a change the mark
+   cannot see. Undo, Clear queued and a withdrawal SHORTEN the queue, so qNewestAt() is no newer than the
+   mark, and without qDirty a shortened queue whose post failed would wait for the next open. saveQueue()
+   counts the change (qGen); a 2xx clears qDirty only when no save landed while that post was in flight. */
+let qDirty=false,qGen=0;
 /* the newest stamp the queue is carrying, which is what a payload delivers */
 function qNewestAt(){return queue.reduce((m,q)=>(q&&q.at&&q.at>m)?q.at:m,'');}
 /* AN ENTRY GOES ONLY WHEN BOTH ARE TRUE: the ledger has folded past it, and this device saw
@@ -22981,15 +23002,16 @@ function qHeaders(){
 async function qPost(){
   /* what THIS payload carries, read BEFORE the await: an entry recorded while the request is
      in flight is not covered by its answer, so it must not be marked by it. */
-  let sending=qNewestAt();
+  let sending=qNewestAt(),gen=qGen;                      // the change this payload carries, read beside it
   try{ let r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()});
     /* 401 means the gate is armed and this device has no key, or the wrong one. Ask, then
        try once more. Once only: a wrong key looping would just ask for ever. */
-    if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(); r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
+    if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(); gen=qGen; r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
     if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b> &mdash; the entry is held on this device. Reopen the desk to try again.'); return false; }
     if(!r.ok)throw new Error('server replied '+r.status);
     const j=await r.json();
     if(sending&&sending>qSentThrough)qSentMark(sending);   // it is on the server; the load may now clear it once the fold passes it
+    if(gen===qGen)qDirty=false;                            // a save while this was in flight is still owed to the cloud
     qStatus(window.SALT_CLOUD?('Pushed to the cloud queue &mdash; '+j.entries+' queued, drafted within seconds, folded on approval.'):('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.'));
     return true;
   }catch(e){
@@ -23030,6 +23052,7 @@ function qFlush(){ return qSyncState==='server'?qPost():qDownload(); }
 function saveQueue(){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}
   // ALWAYS write, even an emptied queue: the newest file wins, so a stale earlier
   // download must be superseded or cleared entries would be re-committed at 9pm.
+  qGen++;qDirty=true;                                    // owed to the cloud until a post of it is acknowledged
   return qFlush();}
 /* ============ RENDER A TAB ONCE PER PRODUCT (v262) ============
    THE SWITCHER WAS A FILTER AND THAT WAS THE FAULT. A inventory, a cost basis and a price board
@@ -23701,10 +23724,10 @@ if(QUEUE_COMMITTED&&queue.length){
   /* AND WHAT SURVIVED WHILE THE FOLD HAS ALREADY PASSED IT IS STUCK, PERMANENTLY.
      Retaining it for one load is not enough and the browser showed why: qInit posts the held
      queue on the next open, the server takes it, the mark advances over it, and the load after
-     that clears it. Meanwhile the drafter skips everything at or below the watermark by
-     design, so that post can never become a row. The entry would have been lost anyway, one
-     load later and just as quietly. Flagged once, kept for ever, and shown: only a person can
-     settle it, by re-recording the sale or withdrawing it with drain.mjs --forget. */
+     that clears it. The entry would have been lost anyway, one load later and just as quietly.
+     Flagged once, kept for ever, and shown. Since 08 Sep 2026 the drafter drafts an entry below the
+     watermark that the draft table does not know, so the post puts it to him under Approve; once
+     its row is in the book he Undoes the copy held here, or withdraws it with drain.mjs --forget. */
   const newlyStuck=qFlagStuck(queue,QUEUE_COMMITTED,refusedAts);
   if(newlyStuck){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}
 }

@@ -8348,7 +8348,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v860","d":"26 Sep 2026","t":"THE BULLETIN EDITOR READS BACK WHAT HE JUST SET","n":["<b>THE BULLETIN IS NEVER CACHED.</b> The desk's service worker passes /bulletin to the network, so the editor shows the notice as it stands after his own Set, and a change made on another device shows too.","<b>ONLY HIS EDITOR WAS STALE.</b> Customers read the bulletin on the Counter, which caches nothing, and were unaffected."]}];
+const evolution=[{"v":"v861","d":"26 Sep 2026","t":"THE TICK POSTS ONLY WHAT THE CLOUD HAS NOT TAKEN","n":["<b>NO REPOST EVERY TEN SECONDS.</b> The tick posted the whole queue whenever it held anything. It now posts only an entry newer than the acknowledged mark, or a change the mark cannot see, so an acknowledged, refused or stuck entry is not posted again.","<b>UNDO STILL REACHES THE CLOUD.</b> Undo, Clear queued and a withdrawal mark the queue as owed, and only the answer to the post that carried the change clears it.","<b>A STUCK ENTRY GOES TO APPROVE.</b> The notice no longer says to re-record the sale, which would make a twin. The drafter still drafts the entry: decide it under Approve, then Undo the copy held here once its row is in the book."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8463,7 +8463,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 02:13 KL';
+const LAST_UPDATED='26 Sep 2026, 02:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
