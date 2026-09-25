@@ -14180,11 +14180,16 @@ await (async () => {
       + "var q=Math.max(0.5,avgDelivery('salt').mean||1),C=pxCost(),P=pxPolicy();"
       + "var row=PRICING_ENGINE.fiveTierAt(q,C,P),toSell=(delShare('salt').v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);"
       /* guarded so that a policy carrying no rule FAILS here with its figures rather than throwing and taking the rest of the section with it */
-      + "if(!row||!row.prices)return {rate:F.nrvRate,tit:null,bronze:null,tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost};"
+      + "if(!row||!row.prices)return {rate:F.nrvRate,tit:null,bronze:null,tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost,units:currentStock};"
       + "return {rate:F.nrvRate,tit:+(row.prices[1]/q-toSell).toFixed(4),bronze:+(row.prices[row.prices.length-1]/q-toSell).toFixed(4),"
-      + "tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost};})()");
-    ok(nrv56.tested && Math.abs(nrv56.rate - nrv56.tit) < 0.01 && nrv56.rate < nrv56.bronze - 0.01 && nrv56.carrying === nrv56.atCost,
-      "the shelf is valued at Titanium less costs to sell, not at the stranger's Bronze: " + JSON.stringify(nrv56));
+      + "tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost,units:currentStock};})()");
+    /* 26 Sep 2026 (plan fold 4.3): THE CARRYING AMOUNT IS THE LOWER of cost and the shelf's own count at Titanium, worked out
+       here, and never pinned to cost: an oversold shelf (19 Sep, -0.1 unit) carries at the NRV, the lower of two negatives,
+       and the check read that as a fault on the fold that moved the count. */
+    const low56 = nrv56.tit == null ? null : Math.min(nrv56.atCost, +(nrv56.units * nrv56.tit).toFixed(2));
+    ok(nrv56.tested && Math.abs(nrv56.rate - nrv56.tit) < 0.01 && nrv56.rate < nrv56.bronze - 0.01 && low56 != null && Math.abs(nrv56.carrying - low56) < 0.011,
+      "the shelf is valued at Titanium less costs to sell, not at the stranger's Bronze, and carried at the lower of that and cost: "
+      + JSON.stringify(Object.assign({ lower: low56 }, nrv56)));
     /* 6. AND THE DRAFTER REFUSES A PRICE, because a phone left on an older build can still queue one and a folded figure
        nothing reads is worse than a refusal. */
     const D56 = await import("../src/drafter.js");
