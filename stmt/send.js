@@ -68,7 +68,19 @@ export function signInMessage(row) {
     + "Your username is " + row.user + ". The link works once and keeps this phone signed in.\n\n"
     + INSIDE + "\n\n"
     + "Open it yourself and do not pass it on: anybody holding it can open your account until you "
-    + "have used it. It stops working after three days; if it has, ask me for a new link.";
+    + "have used it. It stops working after three days; if it has, ask me for a new link.\n\n"
+    + signInMalay(row);
+}
+/* S13 13.4, HIS D12 OF 24 SEP 2026: THE MESSAGE IS ENGLISH AND BAHASA MELAYU IN ONE (the plan's 13.4, from the design's
+ * "the message, EN and BM in one"): it goes before the phone's language is known, so both halves travel, the English
+ * first, which is where a paste into the door finds the username. The same words, the link above it, and no password. */
+function signInMalay(row) {
+  return "Akaun Salt Counter anda sudah sedia. Ketik pautan di atas untuk membukanya di telefon ini.\n\n"
+    + "Nama pengguna anda ialah " + row.user + ". Pautan ini berfungsi sekali sahaja dan telefon ini kekal log masuk.\n\n"
+    + "Di dalamnya ada penyata akaun anda, yang dikemas kini mengikut pesanan anda, harga terkini, dan borang untuk "
+    + "membuat pesanan. Jika ada soalan, tulis pada pesanan itu dan saya akan jawab di situ.\n\n"
+    + "Buka sendiri dan jangan kongsikan: sesiapa yang ada pautan ini boleh membuka akaun anda sehingga anda "
+    + "menggunakannya. Pautan ini tamat selepas tiga hari; jika sudah tamat, minta pautan baharu daripada saya.";
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

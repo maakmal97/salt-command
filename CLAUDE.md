@@ -392,8 +392,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 |---|---|
 | `engine/qr.mjs` | The ONE QR encoder (byte mode, level M, versions 1 to 10), inlined into the master; `tools/qr.mjs` re-exports it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; never edit it |
-| `stmt/send.js` | The one copy of the words a customer is sent |
-| `stmt/words.js` | Every word the Counter shows, by key, a table a language; a customer's refusal is `e.<code>` there, answered `{error, code}` by `refusal()` |
+| `stmt/send.js` | The one copy of the words a customer is sent; the sign-in message is English then Bahasa Melayu |
+| `stmt/words.js` | Every word the Counter shows, by key, a table a language; a customer's refusal is `e.<code>` there, answered `{error, code}` by `refusal()`. Malay (`MS`) is a slice: the page follows the phone, a switch kept as `salt-lang`, the rest drawn English (`inEn`), and `/lang` in the Cache words the banner |
 | `stmt/signin.js` | The one-time link; the two limits it cannot promise away are in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |
 | `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record, never touching an existing one; `--pool` tops up the spare accounts (`tools/stmt-pool.mjs`) |

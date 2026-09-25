@@ -1,8 +1,9 @@
 /* stmt/sw.js: THE CUSTOMER'S SERVICE WORKER, as a string the Worker serves at /sw.js.
  *
- * It exists for one thing: to show a banner when a push wakes it. It caches nothing and handles
- * no fetch, so the page a customer opens is still fetched from the Worker every time and nothing
- * about a statement is ever held in a cache on the phone. It holds no session.
+ * It exists for one thing: to show a banner when a push wakes it. It handles no fetch, so the page a
+ * customer opens is still fetched from the Worker every time and nothing about a statement is ever
+ * held in a cache on the phone. It holds no session. The one thing it reads from the Cache is /lang,
+ * the language the page last recorded on this phone (S13 13.4), which no fetch is ever answered from.
  *
  * THE BANNER NAMES THE KIND OF NEWS (S12 12.2, his decision D4 of 24 Sep 2026). A wake for a phone
  * whose keys are on file carries { k, o }, encrypted for that phone (stmt/push.js), and the words
@@ -36,6 +37,14 @@ export const SW_JS = `
 var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LANG = 'en';
 /* a word in the language this phone last chose, else English's */
 function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
+/* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
+   service worker cannot read the page); English where there is none, or one this script has no words for */
+function langOf(){
+  try {
+    return self.caches.open('lang').then(function(c){ return c.match('/lang'); }).then(function(r){ return r ? r.text() : ''; })
+      .then(function(t){ return Object.prototype.hasOwnProperty.call(W, t) ? t : 'en'; }, function(){ return 'en'; });
+  } catch (x) { return Promise.resolve('en'); }
+}
 self.addEventListener('install', function(){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
 self.addEventListener('push', function(e){
@@ -44,23 +53,24 @@ self.addEventListener('push', function(e){
   try { n = e.data ? e.data.json() : null; } catch (x) { n = null; }
   var o = n && typeof n.o === 'string' && /^[0-9]{14}-[a-z0-9]{1,8}$/.test(n.o) ? n.o : '';
   var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : ''), order: o };
-  if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k)) {
-    e.waitUntil(self.registration.showNotification(nw(n.k), { body: nw('tap'), tag: o ? 'order-' + o : 'order-update', renotify: true, data: to }));
-    return;
-  }
-  e.waitUntil(fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
-    .catch(function(){ return null; })
-    .then(function(b){
-      var fresh = b && b.at && b.lines && b.lines.length && (Date.now() - Date.parse(b.at) < 120000);
-      if (fresh) return self.registration.showNotification(String(b.lines[0]).slice(0, 120), {
-        body: b.lines.length > 1 ? String(b.lines[1]).slice(0, 120) : nw('open'),
-        tag: 'notice', renotify: true, data: to
+  e.waitUntil(langOf().then(function(L){
+    LANG = L;
+    if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
+      return self.registration.showNotification(nw(n.k), { body: nw('tap'), tag: o ? 'order-' + o : 'order-update', renotify: true, data: to });
+    return fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; })
+      .then(function(b){
+        var fresh = b && b.at && b.lines && b.lines.length && (Date.now() - Date.parse(b.at) < 120000);
+        if (fresh) return self.registration.showNotification(String(b.lines[0]).slice(0, 120), {
+          body: b.lines.length > 1 ? String(b.lines[1]).slice(0, 120) : nw('open'),
+          tag: 'notice', renotify: true, data: to
+        });
+        return self.registration.showNotification(nw('order'), {
+          body: nw('update'),
+          tag: 'order-update', renotify: true, data: to
+        });
       });
-      return self.registration.showNotification(nw('order'), {
-        body: nw('update'),
-        tag: 'order-update', renotify: true, data: to
-      });
-    }));
+  }));
 });
 self.addEventListener('notificationclick', function(e){
   e.notification.close();

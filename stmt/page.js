@@ -248,7 +248,12 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
    the earlier statements close the statement; This device follows it, and stands beside it from 1080px */
 .acct{max-width:620px;margin:0 auto}
-.mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+.mfil .salt-tabs__pill,.lang .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+/* S13 13.4: the language switch is the same tab strip: at the head of the door, the welcome and one step to finish, and
+   under its label in This device; not inside the signed-out Sheet, which carries the door's form alone */
+.gate>.lang{justify-content:flex-end;margin:0 0 18px}
+#outForm .lang{display:none}
+.devcard .lang{margin:8px 0 2px}
 .stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
 .stmtback p{flex:1 1 220px;margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
@@ -589,6 +594,13 @@ const wt = (tag, attrs, k, px) => "<" + tag + (attrs ? " " + attrs : "") + ' dat
 const wl = (k) => ' aria-label="' + esc(EN[k]) + '" data-wl="' + k + '"';
 /* whose account it is: the username is a slot, filled by the script (data-who) */
 const whoAs = () => '<span data-whoas data-w="who.as">' + fillHtml(EN["who.as"], Object.assign(slotsAt(22), { u: '<span class="mono" data-who></span>' }), "en") + "</span>";
+/* S13 13.4 (his D12): ENGLISH OR BAHASA MELAYU, each named in its own words and its own language, the system's tab strip;
+   the script presses the pill of the language in use and keeps a tap's choice on this phone */
+function langSwitch() {
+  return '<div class="salt-tabs lang" role="group"' + wl("lang.h") + ">" + ["en", "ms"].map((L) => wt("button",
+    'type="button" class="salt-tabs__pill' + (L === "en" ? " salt-tabs__pill--active" : "") + '" data-l="' + L + '" lang="' + L + '" aria-pressed="' + (L === "en") + '"',
+    "lang." + L)).join("") + "</div>";
+}
 
 /* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
    remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
@@ -640,6 +652,9 @@ function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
+    /* S13 13.4: the language, under its label, the door's own switch */
+    + '<div class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + wt("span", 'class="salt-ledger__label"', "lang.h") + '</div><div class="salt-ledger__flag">' + langSwitch() + "</div></div></div>"
     + '<div id="devSlot"></div>'
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
@@ -699,7 +714,7 @@ function devSheet() {
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
    eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
 function codeScreen() {
-  return '<div id="codeBox" class="gate" hidden>'
+  return '<div id="codeBox" class="gate" hidden>' + langSwitch()
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", 'id="codeH"', "code.h")
     + wt("p", 'class="lead" id="codeLead"', "code.lead")
@@ -719,7 +734,7 @@ function codeScreen() {
 function linkScreen() {
   const row = (g, k) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
     + glyphSvg(g, 20) + wt("span", "", k) + "</span></div></div>";
-  return '<div id="link" class="gate" hidden>'
+  return '<div id="link" class="gate" hidden>' + langSwitch()
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", "", "link.h")
     + wt("p", 'class="lead" id="linkLead"', "link.lead")
@@ -952,7 +967,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">Sign in again to carry on.</p>'
         + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
       : "")
-    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
+    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">" + (owner ? "" : langSwitch())
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
@@ -1144,7 +1159,52 @@ const CLIENT_JS = `
   function Dd(f,x){ return function(L){ return f(x,L); }; }
   function Uq(q,u){ return function(L){ return unitsOf(q,u,L); }; }
   function Wk(k){ return function(L){ return wordIn(L,k); }; }
-  [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=devIn(LANG); });
+  /* a note kept to be shown later (draft.pushNote) is kept unworded, so it is said in the language of the place it shows in */
+  function noteSaid(x){ return typeof x==='function'?x(LANG):(x||''); }
+  /* ---- S13 13.4 (his D12 of 24 Sep 2026): THE FIRST MALAY SLICE FOLLOWS THE PHONE, WITH A SWITCH ----------------------
+     The reader's language is the one chosen on this phone (the switch on the door and in This device, kept as salt-lang),
+     else the first of the phone's languages the Counter speaks (ms, ms-MY, ms-BN or zsm; en), else English. The Malay
+     table is a slice (stmt/words.js), a key it lacks being English's, and what lies outside the slice is drawn in English
+     whatever was chosen (inEn), so a word it shares with the slice, a state, a size or a date, reads English there too.
+     html lang follows and translate="no" stays; the choice is left in this browser's Cache as /lang, where the service
+     worker reads it to word a banner (stmt/sw.js). His own page is English. */
+  var LANG_KEY='salt-lang', READER='en';
+  function langOk(L){ return Object.prototype.hasOwnProperty.call(WORDS,L); }
+  function langKept(){ try{ var v=localStorage.getItem(LANG_KEY); return langOk(v)?v:''; }catch(e){ return ''; } }
+  function langOfPhone(){
+    var l=[].concat(navigator.languages||[],navigator.language||[]);
+    for(var i=0;i<l.length;i++){ var p=String(l[i]||'').toLowerCase().split(/[-_]/)[0]; if(p==='ms'||p==='zsm') return 'ms'; if(p==='en') return 'en'; }
+    return 'en';
+  }
+  function inEn(f){ return function(){ var was=LANG; LANG='en'; try{ return f.apply(this,arguments); }finally{ LANG=was; } }; }
+  var twE=inEn(tw);
+  function langSet(L){
+    READER=LANG=!OWNER&&langOk(L)?L:'en';
+    document.documentElement.lang=READER;
+    [].forEach.call(document.querySelectorAll('[data-l]'),function(b){ var on=b.getAttribute('data-l')===READER;
+      b.classList.toggle('salt-tabs__pill--active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
+    try{ if(!OWNER&&window.caches) caches.open('lang').then(function(c){ return c.put('/lang',new Response(READER)); }).catch(function(){}); }
+    catch(e){ /* the banner stays in English */ }
+  }
+  langSet(langKept()||langOfPhone());
+  /* the markup is served in English: in Malay it is worded again, device words and all; in English only the device's word */
+  if(READER!=='en') rewd();
+  else [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=devIn(LANG); });
+  /* a tap on a switch: kept on this phone (or for this visit, where storage throws), the page worded again, and what is
+     drawn from the account drawn again */
+  document.addEventListener('click',function(ev){
+    var b=ev.target&&ev.target.closest?ev.target.closest('[data-l]'):null; if(!b||OWNER) return;
+    var L=b.getAttribute('data-l');
+    try{ localStorage.setItem(LANG_KEY,L); }catch(e){ /* this visit only */ }
+    if(L===READER) return;
+    langSet(L); rewd();
+    if(session){ drawOrder(); drawDevice(); drawDev(); placeTitle(); }
+  });
+  /* OUTSIDE THE FIRST SLICE, ENGLISH: Prices, the statement and its months, Rewards, the order sheet, the Orders list, and an
+     order's head, steps, where it stands, history and cancel (OPARTS); the lines Orders leads with are said through twE */
+  drawPrices=inEn(drawPrices); pickStmt=inEn(pickStmt); drawFoot=inEn(drawFoot); drawMonths=inEn(drawMonths); applyMonths=inEn(applyMonths);
+  drawCard=inEn(drawCard); drawMyLinks=inEn(drawMyLinks); sheetDraw=inEn(sheetDraw); noOrderLine=inEn(noOrderLine); limitLine=inEn(limitLine);
+  oList=inEn(oList); oHead=inEn(oHead); oSteps=inEn(oSteps); oWhen=inEn(oWhen); oHist=inEn(oHist); oFoot=inEn(oFoot);
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
@@ -1477,6 +1537,12 @@ const CLIENT_JS = `
     return r;
   }
   function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month?p.hour+':'+p.minute:+p.day+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  /* S13 13.4: a device as the site filed it ("Android phone, Chrome", deviceOf), its kind in the reader's words; a maker's
+     and a browser's own names (iPhone, Mac, Chrome) are names, and a name this does not know is shown as filed */
+  function devName(l){
+    var s=String(l||''), m=/^(Android|Windows|Linux) (phone|tablet|computer)(, .+)?$/.exec(s), a=/^A (phone|computer)(, .+)?$/.exec(s);
+    return m?tw('dname.'+m[2],{os:m[1]})+(m[3]||''):a?tw(a[1]==='phone'?'dname.aPhone':'dname.aComputer')+(a[2]||''):s;
+  }
   function devQuiet(t){ var b=el('button','btn salt-ghost',t); b.type='button'; return b; }
   async function drawDev(){
     if(!devSlot) return;
@@ -1493,7 +1559,7 @@ const CLIENT_JS = `
     var list=el('div','salt-ledger salt-ledger--plain');
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
     devs.forEach(function(d){
-      list.appendChild(devLine(d.label||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
+      list.appendChild(devLine(devName(d.label)||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
         d.kept?tw('dev.kept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):tw('dev.visit',{a:Dd(devDay,d.at)})));
     });
     if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
@@ -1952,7 +2018,7 @@ const CLIENT_JS = `
     devEl.hidden=!session||view||OWNER;
     if(devEl.hidden) return;
     devRows.textContent='';
-    var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||draft.pushNote||'';
+    var on=!!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone), said=devNote||noteSaid(draft.pushNote);
     if(!pushCan()) devRows.appendChild(devRow(tw('push.h'),tw(IOS&&!STANDALONE?'push.devIos':'push.devNo')));
     else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devBtn(tw('push.off'),devPushOff)));
     else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devBtn(tw('push.on'),devPushOn)));
@@ -2657,7 +2723,7 @@ const CLIENT_JS = `
         var no=el('button','salt-ghost',tw('sh.buzzNot')); no.type='button'; no.setAttribute('data-k','nobuzz');
         no.addEventListener('click',function(){ draft.buzzNo=true; sheetDraw(); });
         bx.appendChild(yes); bx.appendChild(no);
-        if(draft.pushNote) bx.appendChild(statusLine(draft.pushNote));
+        if(draft.pushNote) bx.appendChild(statusLine(noteSaid(draft.pushNote)));
       }
       B.appendChild(bx);
     }
@@ -2717,11 +2783,11 @@ const CLIENT_JS = `
       top.appendChild(el('p','lead',noOrderLine()));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
-      top.appendChild(el('p','lead',tw('ord.lead')));
+      top.appendChild(el('p','lead',twE('ord.lead')));
       var full=oLive().length>=OMAX;
       if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oLive().length)); lim.id='oLimit'; top.appendChild(lim); }
       else {
-        var nb=el('button','btn salt-pill salt-pill--md',tw('sh.new')); nb.type='button'; nb.id='oNew';
+        var nb=el('button','btn salt-pill salt-pill--md',twE('sh.new')); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
         top.appendChild(nb);
       }
@@ -2730,18 +2796,18 @@ const CLIENT_JS = `
     /* notifications: a wake on the phone when the order moves, so the page need not stay open.
        Not on his read-only view: those are not his phones. */
     var np=el('div','pane'); np.id='oPush';
-    np.appendChild(el('h3',null,tw('push.h')));
+    np.appendChild(el('h3',null,twE('push.h')));
     var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
     if(!canPush){
-      np.appendChild(el('p','sub2',tw('push.no')));
+      np.appendChild(el('p','sub2',twE('push.no')));
     } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
-      np.appendChild(el('p','sub2',tw('push.onAll')));
+      np.appendChild(el('p','sub2',twE('push.onAll')));
     } else {
-      np.appendChild(el('p','sub2',tw('push.ask')));
+      np.appendChild(el('p','sub2',twE('push.ask')));
       /* S7 7.2: nothing says phone on a computer */
-      var nb=el('button','btn quiet salt-ghost',tw('push.notify')); nb.type='button';
+      var nb=el('button','btn quiet salt-ghost',twE('push.notify')); nb.type='button';
       nb.addEventListener('click', subscribePush); np.appendChild(nb);
-      if(draft.pushNote) np.appendChild(el('p','msg',draft.pushNote));
+      if(draft.pushNote) np.appendChild(el('p','msg',inEn(noteSaid)(draft.pushNote)));
     }
     if(!view) top.appendChild(np);
     pOrder.appendChild(oPlace());
@@ -3163,8 +3229,8 @@ const CLIENT_JS = `
   var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
   function oScreen(o){
     var s=el('section','oscreen salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'); s.setAttribute('data-order',o.id);
-    s.setAttribute('aria-label',tw('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)}));
-    var back=el('button','salt-ghost salt-ghost--tight oback',tw('ord.yours')); back.type='button';
+    s.setAttribute('aria-label',twE('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)}));
+    var back=el('button','salt-ghost salt-ghost--tight oback',twE('ord.yours')); back.type='button';
     back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
     s.appendChild(back);
     Object.keys(OPARTS).forEach(function(k){ var p=OPARTS[k](o); p.setAttribute('data-part',k); p.hidden=!p.childNodes.length; s.appendChild(p); });
@@ -3182,7 +3248,7 @@ const CLIENT_JS = `
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
     var col=el('div','olistcol'); if(oTopEl) col.appendChild(oTopEl);
-    col.appendChild(el('h2',null,tw('ord.yours'))); col.appendChild(oList(id));
+    col.appendChild(el('h2',null,twE('ord.yours'))); col.appendChild(oList(id));
     place.appendChild(col);
     if(o) place.appendChild(oScreen(o));
     return place;
@@ -3785,12 +3851,12 @@ const CLIENT_JS = `
     draft.pushNote='';   /* S9 fix: a refusal from before is not this try's */
     try{
       var k=await (await fetch('/push/key',{cache:'no-store'})).json();
-      if(!k.key||!k.configured){ draft.pushNote=tw('push.siteOff'); drawOrder(); return; }
+      if(!k.key||!k.configured){ draft.pushNote=Wk('push.siteOff'); drawOrder(); return; }
       /* v693: THE ASK COMES FIRST. Registering a service worker before it meant a browser that
          refuses the registration never got as far as the question, which only a tap puts (S4), so
          that silence would waste the one tap. Nothing is installed on a phone whose reader says no. */
       var perm=await Notification.requestPermission();
-      if(perm!=='granted'){ draft.pushNote=tw('push.denied'); drawOrder(); return; }
+      if(perm!=='granted'){ draft.pushNote=Wk('push.denied'); drawOrder(); return; }
       await navigator.serviceWorker.register('/sw.js?u='+encodeURIComponent(user));
       /* S1 1.9, 24 SEP 2026: a registration is not yet an active worker, and Chromium refuses to subscribe
          until there is one ("no active Service Worker"); ready resolves once there is */
@@ -3804,8 +3870,8 @@ const CLIENT_JS = `
       var j=sub.toJSON?sub.toJSON():null;
       var r=await api('/push/subscribe',{endpoint:sub.endpoint, keys:j&&j.keys?{p256dh:j.keys.p256dh, auth:j.keys.auth}:null});
       if(mine!==ticket) return;
-      if(r.body.ok){ draft.pushed=true; draft.pushDone=true; pushOffSet(false); } else draft.pushNote=wErr(r.body,'push.notRecorded');
-    }catch(e){ draft.pushNote=tw('push.fail'); }
+      if(r.body.ok){ draft.pushed=true; draft.pushDone=true; pushOffSet(false); } else { var rb=r.body; draft.pushNote=function(){ return wErr(rb,'push.notRecorded'); }; }
+    }catch(e){ draft.pushNote=Wk('push.fail'); }
     drawOrder();
   }
 

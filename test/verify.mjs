@@ -8027,12 +8027,16 @@ await (async () => {
      wake sent because a notice was set can say what the notice says; a push carries no payload, so
      there is no other way for it to know. What has not changed is the posture this assertion exists
      for: it installs no fetch handler, so every page a customer opens is still fetched from the
-     Worker, and it caches nothing, so nothing about a statement is ever held on the phone. */
-  const swFetches = (swTxt.match(/fetch\(/g) || []).length;
+     Worker, and it caches nothing, so nothing about a statement is ever held on the phone.
+     S13 13.4: IT READS ONE CACHE ENTRY AND WRITES NONE. The page leaves its language, en or ms, as /lang in a cache named
+     lang, so a banner is worded in it; the script opens that one cache to match that one entry, and puts nothing. */
+  const swFetches = (swTxt.match(/fetch\(/g) || []).length, swCache = swTxt.match(/caches[^;]*/g) || [];
   ok(sw.status === 200 && /javascript/.test(sw.headers.get("content-type")) && /showNotification/.test(swTxt)
-    && swFetches === 1 && /fetch\('bulletin'/.test(swTxt) && !/addEventListener\('fetch'/.test(swTxt) && !/caches/.test(swTxt),
+    && swFetches === 1 && /fetch\('bulletin'/.test(swTxt) && !/addEventListener\('fetch'/.test(swTxt)
+    && swCache.length === 1 && /^caches[.]open\('lang'\)[.]then\(function\(c\)\{ return c[.]match\('[/]lang'\)$/.test(swCache[0])
+    && !/[.](put|add|addAll)\(/.test(swTxt),
     "/sw.js is served as script, shows a banner on a push, reads the public notice and nothing else, "
-    + "handles no fetch event and caches nothing: " + JSON.stringify({ swFetches }));
+    + "handles no fetch event and caches nothing, reading only the page's /lang: " + JSON.stringify({ swFetches, swCache }));
   let r = await stmtWorker.fetch(sj("/open", { u: un, password: pw }), senv);
   let b = await r.json();
   ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",
@@ -20858,6 +20862,257 @@ await (async () => {
     ok(went.every(Boolean) && !!D.querySelector(".oscreen") && !D.getElementById("paySheet").hidden && marked.size > 100 && !left.size,
       "every word drawn on Home, Prices, Account, Rewards, Orders, an order and the pay sheet is the table's: " + JSON.stringify({ went, marked: marked.size, left: [...left] }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("S13 13.4: a phone set to Malay opens the Counter in Malay, a choice kept on the phone wins, either switch words the page again and is kept, html lang follows, and his page stays English");
+await (async () => {
+  /* HIS D12 OF 24 SEP 2026, the plan's 13.4: the first Malay slice follows the phone (navigator.languages: ms, ms-MY,
+     ms-BN, zsm), with a switch, English or Bahasa Melayu, on the door and in This device, remembered on the phone and
+     rendering without storage. The page as served, driven in jsdom on phones set to each language. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const html = P.landingPage("abcd-efgh", "n134a", null);
+  const open = (langs, opt) => {
+    opt = opt || {};
+    const dom = new JSDOM(opt.html || html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        Object.defineProperty(win.navigator, "languages", { get: () => langs, configurable: true });
+        Object.defineProperty(win.navigator, "language", { get: () => langs[0], configurable: true });
+        if (opt.kept) win.localStorage.setItem("salt-lang", opt.kept);
+        if (opt.noStore) Object.defineProperty(win, "localStorage", { get() { throw new Error("storage denied"); }, configurable: true });
+        win.scrollTo = () => {};
+        win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) });
+      } });
+    return dom.window;
+  };
+  const said = (W) => ({ lang: W.document.documentElement.lang, no: W.document.documentElement.getAttribute("translate"),
+    h: W.document.querySelector("#gate h1").textContent, pressed: [...W.document.querySelectorAll('#gate [data-l]')].map((b) => b.getAttribute("data-l") + ":" + b.getAttribute("aria-pressed")).join(" ") });
+  const MS = WD.MS["door.h"], EN = WD.EN["door.h"];
+  const phones = [[["ms-MY", "ms"], "ms"], [["ms-BN"], "ms"], [["zsm"], "ms"], [["ms"], "ms"], [["zh-CN", "ms-MY"], "ms"],
+    [["en-GB"], "en"], [["en-US", "ms-MY"], "en"], [["zh-CN"], "en"], [["ta-IN", "en-GB"], "en"]];
+  const got = [];
+  for (const [langs, want] of phones) { const W = open(langs); try { got.push([langs.join(","), want, said(W)]); } finally { W.close(); } }
+  const off = got.filter(([, want, s]) => s.lang !== want || s.no !== "no" || s.h !== (want === "ms" ? MS : EN) || s.pressed !== (want === "ms" ? "en:false ms:true" : "en:true ms:false"));
+  ok(MS && MS !== EN && !off.length,
+    "the page follows the phone: Malay for ms, ms-MY, ms-BN and zsm, or Malay ahead of English, English otherwise, html lang said and translate=no kept: " + JSON.stringify(off));
+  /* a choice kept on this phone wins over the phone's languages; a choice the page does not know is no choice */
+  const kept = [];
+  for (const [langs, k, want] of [[["ms-MY"], "en", "en"], [["en-GB"], "ms", "ms"], [["ms-MY"], "zz", "ms"]]) {
+    const W = open(langs, { kept: k }); try { kept.push([k, want, said(W).lang, said(W).h]); } finally { W.close(); }
+  }
+  ok(kept.every(([, want, l, h]) => l === want && h === (want === "ms" ? MS : EN)), "a choice kept on the phone wins, and one the page does not know is passed over: " + JSON.stringify(kept));
+  /* the door's switch: words the page again, presses its pill, says html lang, and keeps the choice */
+  const W1 = open(["en-GB"]), D1 = W1.document;
+  let tap;
+  try {
+    D1.querySelector('#gate [data-l="ms"]').click();
+    const a = Object.assign(said(W1), { kept: W1.localStorage.getItem("salt-lang"), help: D1.querySelector("#link h1").textContent, code: D1.getElementById("codeH").textContent });
+    D1.querySelector('#gate [data-l="en"]').click();
+    tap = [a, Object.assign(said(W1), { kept: W1.localStorage.getItem("salt-lang") })];
+  } finally { W1.close(); }
+  ok(tap[0].lang === "ms" && tap[0].h === MS && tap[0].kept === "ms" && tap[0].pressed === "en:false ms:true" && tap[0].help === WD.MS["link.h"] && tap[0].code === WD.MS["code.h"]
+    && tap[1].lang === "en" && tap[1].h === EN && tap[1].kept === "en" && tap[1].pressed === "en:true ms:false",
+    "the door's switch words the door, the welcome and one step to finish again, presses its pill, says html lang and keeps the choice, both ways: " + JSON.stringify(tap));
+  /* storage refused (a private window): the page still follows the phone, and the switch still words it for the visit */
+  const W2 = open(["ms-MY"], { noStore: true });
+  let bare;
+  try { const b = said(W2); W2.document.querySelector('#gate [data-l="en"]').click(); bare = [b, said(W2)]; } finally { W2.close(); }
+  ok(bare[0].lang === "ms" && bare[0].h === MS && bare[1].lang === "en" && bare[1].h === EN,
+    "with storage refused the page still opens in the phone's language and the switch still works for the visit: " + JSON.stringify(bare));
+  /* his own page is English on any phone, and carries no switch */
+  const W3 = open(["ms-MY"], { html: P.landingPage("", "n134b", { master: "m134", accounts: [] }) });
+  let his;
+  try { his = { lang: W3.document.documentElement.lang, switches: W3.document.querySelectorAll("[data-l]").length, admin: /Needs you/.test(W3.document.body.textContent) }; } finally { W3.close(); }
+  ok(his.lang === "en" && his.switches === 0 && his.admin, "Salt Admin stays English on a Malay phone and has no switch: " + JSON.stringify(his));
+})();
+
+section("S13 13.4: on a Malay phone every word the slice draws is the Malay table's, everything outside it stays English, and the page names no product or level in either");
+await (async () => {
+  /* HIS D12 (the plan's 13.4): the welcome, the door, saving the app, Home, paying, the message, and This device where the
+     switch lives, in Malay; Prices, the statement, the Orders list and an order's head, steps, history and cancel in
+     English. Served with each Malay word marked, drawn on a Malay phone over a fixture account: every word in the slice
+     carries the mark and nothing outside it does, a date or a size included. Then the site's own word lists read the
+     whole Malay page, and This device's switch turns it back to English. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const O = await import("../src/orders.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const MS = WD.MS, saved = Object.assign({}, MS), LISTS = ["mon3", "day3", "months"], M = "¤";
+  let html;
+  try {
+    for (const k of Object.keys(MS)) MS[k] = LISTS.includes(k) ? MS[k].split(" ").map((w) => M + w).join(" ") : M + MS[k];
+    html = P.landingPage("abcd-efgh", "n134m", null);
+  } finally { for (const k of Object.keys(saved)) MS[k] = saved[k]; }
+  ok(MS["door.h"] === saved["door.h"] && html.includes(M + saved["door.h"]), "the Malay table is itself again, and the page was served with it marked");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
+  const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-10-06", due: "2026-10-30", resale: false };
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 25, parts: [more] } } })),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }, { issued: "2026-08-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
+  const orders = [
+    { id: "20260925000000-a1", product: "salt", qty: 3, unit: 11, total: 33, delivery: 5, paid: 10, moved: 1, movedOn: "2026-09-24", mode: "deliver", place: "PLACEQ", status: "ready", at: now,
+      history: [{ at: now, status: "placed" }, { at: now, status: "acknowledged", by: "desk" }, { at: now, status: "acknowledged", note: "paid 10.00", method: "transfer" }, { at: now, status: "ready", note: "1 unit delivered" }],
+      msgs: [{ by: "customer", text: "SAIDQ", at: now }, { by: "desk", text: "SAIDQ", at: now }] },
+    { id: "20260925000000-a2", product: "salt", qty: 3, unit: 11, total: 33, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", at: now, history: [{ at: now, status: "placed" }], msgs: [] }];
+  const devices = [{ label: "Android phone, Chrome", kind: "phone", here: true, kept: true, at: now, last: now }, { label: "Windows computer, Edge", kind: "computer", kept: false, at: now, last: now }];
+  const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      Object.defineProperty(win.navigator, "languages", { get: () => ["ms-MY", "ms", "en"], configurable: true });
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (p) => { p = String(p);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders, claims: [] }) };
+        if (p === "/devices") return { ok: true, status: 200, json: async () => ({ ok: true, devices }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    } });
+  const W = dom.window, D = W.document;
+  const PAYN = new Set(JSON.stringify((await import("../stmt/pay.js")).PAY_ACCOUNTS).match(/"[^"]*"/g).map((x) => JSON.parse(x))
+    .concat(["DuitNow Transfer", "DuitNow QR", "JomPAY", "Touch 'n Go Business"]));
+  /* the account's own data, the app's name, a code's placeholder, and each language named in its own words on the switch */
+  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter|X+ X+)$/.test(t) || PAYN.has(t);
+  /* what in a region is not marked (slice) or is marked (outside), text and labels alike */
+  const scan = (root, want) => { const bad = []; const w = (n) => { for (const c of n.childNodes) {
+    if (c.nodeType === 3) { const t = c.textContent.trim(), k = c.parentNode.closest("[data-w]");
+      if (!/[A-Za-z]{2,}/.test(t) || DATA(t) || c.parentNode.closest("[data-l]")) continue;
+      const has = t.includes(M) || (want && !!k && k.textContent.includes(M));
+      if (has !== want) bad.push(t.slice(0, 70)); }
+    else if (c.nodeType === 1 && !/^(SCRIPT|STYLE)$/.test(c.tagName)) {
+      for (const a of ["aria-label", "placeholder", "alt"]) { const v = c.getAttribute(a); if (v && /[A-Za-z]{2,}/.test(v) && !DATA(v.trim()) && v.includes(M) !== want) bad.push(a + "=" + v.slice(0, 70)); }
+      w(c); } } };
+    if (root) { for (const a of ["aria-label", "placeholder"]) { const v = root.getAttribute(a); if (v && /[A-Za-z]{2,}/.test(v) && !DATA(v.trim()) && v.includes(M) !== want) bad.push(a + "=" + v.slice(0, 70)); } w(root); }
+    return bad; };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  /* the words a customer can meet: every text node and label outside a script or a style */
+  const seen = (root, shown) => { const out = []; const w = (n) => { for (const c of n.childNodes) {
+    if (c.nodeType === 3) { if (c.textContent.trim()) out.push(c.textContent.trim()); }
+    else if (c.nodeType === 1 && !/^(SCRIPT|STYLE|TEMPLATE)$/.test(c.tagName) && !(shown && c.hidden)) {
+      for (const a of ["aria-label", "placeholder", "alt", "title"]) { const v = c.getAttribute(a); if (v) out.push(v); } w(c); } } }; w(root); return out; };
+  try {
+    /* ---- the slice's own markup as it is served, before anything opens: the door, the welcome, one step to finish, the
+       signed-out Sheet, the keep card and Sheet, the pay Sheet's head, This device and its Sheet, the places ---- */
+    const statics = ["#gate", "#link", "#codeBox", "#outSheet", "#askRep", "#keepCard", "#keepSheet", "#paySheet", "#devSheet", "#thisDevice", ".salt-appbar", ".salt-rail__group"];
+    const s0 = {}; for (const q of statics) { const b = scan(D.querySelector(q), true); if (b.length || !D.querySelector(q)) s0[q] = b; }
+    ok(D.documentElement.lang === "ms" && !Object.keys(s0).length, "served on a Malay phone, every word of the slice's markup is the Malay table's: " + JSON.stringify(s0));
+    /* ---- signed in: Home, an order's money, Pay and messages, the pay sheet and Did you send, This device ---- */
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#oArea [data-row]"); i++) await wait(25);
+    await wait(50);
+    const slice = {}, outside = {};
+    const look = (tag, q, want) => { const x = D.querySelector(q), b = x ? scan(x, want) : ["(not drawn)"]; if (b.length) (want ? slice : outside)[tag + " " + q] = b; };
+    look("home", "#pHome", true); look("home", ".chead", true);
+    const homeWords = D.getElementById("pHome").textContent;
+    D.querySelector('.salt-appbar button[data-t="stmt"]').click(); await wait(80);
+    look("account", "#thisDevice", true); look("account", "#stmtFoot", false);
+    D.querySelector('.salt-appbar button[data-t="prices"]').click(); await wait(30);
+    look("prices", "#pPrices", false);
+    D.querySelector('#oArea [data-row="20260925000000-a1"]').click(); await wait(30);
+    for (const k of ["money", "act", "thread", "say"]) look("order", '.oscreen [data-part="' + k + '"]', true);
+    for (const k of ["head", "steps", "when", "hist", "foot"]) look("order", '.oscreen [data-part="' + k + '"]', false);
+    look("order", ".oscreen .oback", false); look("orders", ".olistcol", false);
+    const osAria = D.querySelector(".oscreen").getAttribute("aria-label");
+    D.getElementById("payNow").click(); await wait(30);
+    const how = D.querySelector('#paySheet input[name="payHow"][value="transfer"]'); how.checked = true; how.dispatchEvent(new W.Event("change", { bubbles: true }));
+    const into = D.querySelector('#paySheet input[name="payInto"]'); into.checked = true; into.dispatchEvent(new W.Event("change", { bubbles: true }));
+    look("pay", "#paySheet", true);
+    const go = D.getElementById("payGo"); go.addEventListener("click", (e) => e.preventDefault()); go.click();
+    W.dispatchEvent(new W.Event("blur")); W.dispatchEvent(new W.Event("focus")); await wait(30);
+    const asked = D.getElementById("paySheet").textContent;
+    look("did you send", "#paySheet", true);
+    ok(!Object.keys(slice).length && asked.includes(M + saved["pay.did"].replace("{rm}", "RM 40")) && homeWords.includes(M + saved["hc.h"]),
+      "drawn on a Malay phone, every word of Home, This device, an order's money, Pay and messages, the pay sheet and Did you send is the Malay table's: " + JSON.stringify(slice));
+    ok(!Object.keys(outside).length && !(osAria || "").includes(M) && /units/.test(D.querySelector(".olistcol").textContent),
+      "and nothing outside the slice is: Prices, the statement's foot, the Orders list and an order's head, steps, history and cancel stay English, sizes and dates included: " + JSON.stringify(outside));
+    /* ---- the site's own lists read the whole Malay page, as a customer would see it ---- */
+    const all = seen(D.body).join(" | ").split(M).join(""), named = O.wordsIn(all.replace(/Salt Counter/g, ""), O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS));
+    ok(all.length > 2000 && !named.length && O.siteWords(all.replace(/Salt Counter/g, "")) === "",
+      "and the Malay page names no product and no level, in either language: " + JSON.stringify(named));
+    /* ---- This device's switch: English, kept, and what the account drew worded again (a closed Sheet is drawn afresh as
+       it opens, so what it held is not read) ---- */
+    D.getElementById("payX").click();
+    D.querySelector('.salt-appbar button[data-t="stmt"]').click(); await wait(30);
+    D.querySelector('#thisDevice [data-l="en"]').click(); await wait(80);
+    const back = { lang: D.documentElement.lang, kept: W.localStorage.getItem("salt-lang"), marked: seen(D.body, true).some((t) => t.includes(M)), home: D.getElementById("pHome").textContent.includes(WD.EN["pay.now"]) };
+    back.left = seen(D.body, true).filter((t) => t.includes(M)).slice(0, 12);
+    ok(back.lang === "en" && back.kept === "en" && !back.marked && back.home, "This device's switch turns the whole page to English, Home included, and keeps it: " + JSON.stringify(back));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("S13 13.4: a banner is worded in the language the page last recorded on the phone, English where it recorded none");
+await (async () => {
+  /* The service worker cannot read the page, so the page leaves its language in this origin's Cache as /lang on every
+     open and every switch, and stmt/sw.js reads it before it words a banner. The page as served, then the worker's
+     script run as a phone runs it, against a Cache holding each answer. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { SW_JS } = await import("../stmt/sw.js");
+  const { JSDOM } = await import("jsdom");
+  const vm = await import("node:vm");
+  /* ---- the page records ---- */
+  const puts = [];
+  const cachesFor = (sink) => ({ open: async (name) => ({ put: async (k, r) => { sink.push([name, String(k), await r.text()]); }, match: async () => null }) });
+  const page = (langs, owner) => {
+    const dom = new JSDOM(owner ? P.landingPage("", "n134c", { master: "m", accounts: [] }) : P.landingPage("abcd-efgh", "n134c", null),
+      { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+        beforeParse(win) {
+          Object.defineProperty(win.navigator, "languages", { get: () => langs, configurable: true });
+          win.caches = cachesFor(puts); win.Response = Response; win.scrollTo = () => {};
+          win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) });
+        } });
+    return dom.window;
+  };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const W1 = page(["ms-MY"]);
+  let rec;
+  try { await wait(20); const first = puts.slice(); W1.document.querySelector('#gate [data-l="en"]').click(); await wait(20); rec = [first, puts.slice(first.length)]; } finally { W1.close(); }
+  puts.length = 0;
+  const W2 = page(["ms-MY"], true); try { await wait(20); } finally { W2.close(); }
+  ok(JSON.stringify(rec) === '[[["lang","/lang","ms"]],[["lang","/lang","en"]]]' && !puts.length,
+    "the page records its language in the Cache as it opens and again on a switch, and his page records nothing: " + JSON.stringify({ rec, his: puts }));
+  /* ---- the worker reads ---- */
+  const show = async (data, held) => {
+    const L = {}, shown = [], waits = [];
+    const self = { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+      registration: { scope: "https://site.test/", showNotification: async (t, o) => { shown.push([t, o.body]); } }, clients: {} };
+    if (held !== undefined) self.caches = { open: async (n) => ({ match: async (k) => (n === "lang" && k === "/lang" && held !== null ? new Response(held) : undefined) }) };
+    const ctx = { URL, Date, console, Response, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }), self };
+    vm.createContext(ctx); vm.runInContext(SW_JS, ctx);
+    L.push({ data: data && { json: () => data }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return shown[0];
+  };
+  const o = "20260925101500-ab12";
+  const got = { ms: await show({ k: "ready", o }, "ms"), en: await show({ k: "ready", o }, "en"), unknown: await show({ k: "ready", o }, "zz"),
+    none: await show({ k: "ready", o }, null), noCache: await show({ k: "ready", o }), bare: await show(null, "ms") };
+  const want = (L, k, b) => JSON.stringify([WD.WORDS[L]["news." + k], WD.WORDS[L]["news." + b]]);
+  ok(WD.MS["news.ready"] && JSON.stringify(got.ms) === want("ms", "ready", "tap") && JSON.stringify(got.en) === want("en", "ready", "tap")
+    && JSON.stringify(got.unknown) === want("en", "ready", "tap") && JSON.stringify(got.none) === want("en", "ready", "tap")
+    && JSON.stringify(got.noCache) === want("en", "ready", "tap") && JSON.stringify(got.bare) === want("ms", "order", "update"),
+    "a banner is in Malay where the page last recorded Malay, the payload-free wake too, and in English where it recorded English, nothing, or a language the worker has no words for: " + JSON.stringify(got));
+})();
+
+section("S13 13.4: the sign-in message is English and Bahasa Melayu in one, the English first, the username in both, and no password or product word in either");
+await (async () => {
+  /* The plan's 13.4 names stmt/send.js, and D12's slice "the message": it goes before the phone's language is known, so
+     both halves travel. A paste of the whole message into the door still keeps the username (S3), which the English
+     half, first, carries. */
+  const S = await import("../stmt/send.js");
+  const O = await import("../src/orders.js");
+  const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw", pw: "never-in-here" };
+  const m = S.signInMessage(row), en = m.indexOf("Your Salt Counter account is ready"), ms = m.indexOf("Akaun Salt Counter anda sudah sedia");
+  const users = m.split(row.user).length - 1, t = m.replace(/Salt Counter/g, "");
+  ok(en === 0 && ms > m.indexOf("ask me for a new link") && users === 2 && m.split(row.url).length === 2
+    && /Pautan ini berfungsi sekali sahaja dan telefon ini kekal log masuk/.test(m) && /jangan kongsikan/.test(m) && /tiga hari/.test(m)
+    && !m.includes(row.pw) && !/kata laluan/i.test(m) && O.siteWords(t) === "" && !O.wordsIn(t, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS)).length,
+    "the message carries its Malay half after the English, once, naming the username, the one use, keeping the phone signed in, not passing it on and the three days, and no password, product or level: "
+    + JSON.stringify({ en, ms, users }));
 })();
 
 section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");

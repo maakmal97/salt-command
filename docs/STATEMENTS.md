@@ -210,15 +210,28 @@ checks that no statement does either.
 **Never offered to a translator** (his decision D12, 24 Sep 2026): every page the site serves, a
 guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with Google's
 `notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
-opened statement to a translation service.
+opened statement to a translation service. The Counter's script then sets `lang` to the language it reads (13.4).
 
 **Every word by key** (his D12, the plan's 13.3): the Counter's page, its sheets and places, the banner
 (`stmt/sw.js`) and every refusal read ONE table a language, `stmt/words.js`: English complete, and a key a
 language lacks is English's, never its name. A figure, a date or a username is a `{n}` slot, and no sentence is
 joined from translated halves. A refusal a customer can meet is `e.<code>` there: the Worker answers
 `{error, code}` through `refusal()`, the order book passing the code and its slots on, and the page words the
-code, the Worker's English standing for one it does not know. Salt Admin, a guest's board and `stmt/send.js`
-stay English and unkeyed.
+code, the Worker's English standing for one it does not know. Salt Admin and a guest's board stay English and
+unkeyed; `stmt/send.js` is unkeyed.
+
+**The first Malay slice** (his D12, the plan's 13.4): the `MS` table words the welcome, the door and its refusals,
+saving the app (the keep card and Sheets, One step to finish), Home, paying (To pay now, the pay Sheet, Did you send,
+a claim), an order's money and its messages, and This device. The page follows the phone (`navigator.languages`, the
+first of `ms`, `ms-MY`, `ms-BN`, `zsm` or `en`, else English); a switch, English or Bahasa Melayu, on the door, the
+welcome, One step to finish and This device overrides it and is kept on the phone as `salt-lang`, the page drawing the
+same without storage. Outside the slice (Prices, the statement, Rewards, the order sheet, the Orders list, and an
+order's head, steps, history and cancel) is drawn in English whatever is chosen (`inEn`), a state, size or date the
+slice shares included, so an order's screen is mixed until its slice comes. The page leaves its language in the
+origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
+none. Salt Admin is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
+since it goes before the phone's language is known. The suite reads the Malay table and a Malay served page for a
+product or level word.
 
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
