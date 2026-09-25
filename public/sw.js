@@ -191,15 +191,29 @@ async function banner() {
   };
 }
 
+/* A PUSH WAKES AN OPEN DESK (26 Sep 2026). The banner reached only this worker, so a desk already on
+   screen learnt of a new build at its next ten-second /rev tick and of a new row at Approve's thirty-second
+   poll, or at a reload. So every desk this worker controls is told as well, beside the banner and not after
+   it, since the banner waits on a read of its own. The worker only says so: `{salt:'wake'}` carries no code,
+   name or amount, and the page decides what to read, under its own busy, hidden and focus guards
+   (tools/build.mjs, the PWA block). A desk that cannot be told never stops the banner or the others. */
+function wakeDesks() {
+  try {
+    return clients.matchAll({ type: "window" })
+      .then((list) => { for (const c of list) { try { c.postMessage({ salt: "wake" }); } catch (x) { /* the next desk */ } } })
+      .catch(() => {});
+  } catch (x) { return Promise.resolve(); }
+}
+
 self.addEventListener("push", (e) => {
-  e.waitUntil(banner().then((b) => self.registration.showNotification(b.title, {
+  e.waitUntil(Promise.all([wakeDesks(), banner().then((b) => self.registration.showNotification(b.title, {
     body: b.body,
     tag: b.tag,
     renotify: true,
     icon: "./icon-192.png",
     badge: "./icon-192.png",
     data: { url: b.url || "./" },
-  })));
+  }))]));
 });
 
 /* Focus the desk if it is already open rather than opening a second copy of it, and take it to

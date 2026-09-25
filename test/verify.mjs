@@ -33956,6 +33956,149 @@ await (async () => {
   }
 })();
 
+section("Fold 3.2: a push wakes an open desk, and the desk decides what to read under its own guards");
+await (async () => {
+  /* 26 Sep 2026 (plan fold 3.2, C2). A push reached only the service worker, which showed the banner: an open desk
+     learnt of a new build at its next /rev tick and of a new row at Approve's thirty-second poll, and the rail's counts
+     not until a reload. The worker now posts {salt:'wake'} to every desk it controls, and the PWA block reads again. */
+  const vm = await import("node:vm");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const push = async (list) => {
+    const L = {}, shown = [], asked = [], waits = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async (o) => { asked.push(JSON.parse(JSON.stringify(o || null))); return list; }, openWindow: async () => {} },
+      fetch: async () => ({ ok: true, json: async () => ({ ok: true, pending: 1, refused: 0, countDue: [], orders: 0 }) }) };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return { shown, asked };
+  };
+  const deskAt = () => { const c = { url: "https://salt-command.example/desk", told: [] }; c.postMessage = (m) => c.told.push(JSON.parse(JSON.stringify(m))); return c; };
+  {
+    const a = deskAt(), b = deskAt(), sw = await push([a, b]);
+    ok(JSON.stringify([a.told, b.told]) === '[[{"salt":"wake"}],[{"salt":"wake"}]]' && sw.shown.length === 1
+      && JSON.stringify(sw.asked) === '[{"type":"window"}]',
+      "a push tells every desk the worker controls {salt:'wake'} and nothing more, and still shows the banner: "
+      + JSON.stringify({ told: [a.told, b.told], shown: sw.shown.length, asked: sw.asked }));
+  }
+  {
+    const a = deskAt(), b = deskAt(); a.postMessage = () => { throw new Error("gone"); };
+    const sw = await push([a, b]);
+    ok(b.told.length === 1 && sw.shown.length === 1,
+      "a desk that cannot be told stops neither the next desk nor the banner: " + JSON.stringify({ b: b.told, shown: sw.shown.length }));
+  }
+
+  /* THE PAGE, the built desk run whole with its service worker stubbed as an event target. The ten- and thirty-second
+     pollers are stood down, so every read counted here is the wake's own. */
+  const { JSDOM, VirtualConsole } = await import("jsdom");
+  const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const draft = { id: "d1", collection: "sales", party: "CC9-OKR", flags: [],
+    row: { customer: "CC9-OKR", product: "salt", qty: 2, total: 200, cost: 120, cash: 0, deliveredQty: 0, date: "2026-09-26" } };
+  let drafts = [], sw = null, shown = "visible";
+  const asked = [];
+  const dom = new JSDOM(built, { url: "https://salt-command.example/desk#approve", runScripts: "dangerously", pretendToBeVisual: true,
+    virtualConsole: new VirtualConsole(),
+    beforeParse(w) {
+      const store = new Map([["saltWriteKey", "k-fixture"]]);
+      const stub = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k), clear: () => store.clear(), key: (i) => [...store.keys()][i] ?? null, get length() { return store.size; } };
+      Object.defineProperty(w, "localStorage", { value: stub, configurable: true });
+      Object.defineProperty(w, "sessionStorage", { value: stub, configurable: true });
+      Object.defineProperty(w.document, "visibilityState", { configurable: true, get: () => shown });
+      Object.defineProperty(w.document, "hidden", { configurable: true, get: () => shown !== "visible" });
+      w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+      w.scrollTo = () => {};
+      w.HTMLCanvasElement.prototype.getContext = () => null;
+      const every = w.setInterval.bind(w);
+      w.setInterval = (f, ms, ...rest) => (ms >= 10000 ? 0 : every(f, ms, ...rest));
+      sw = new w.EventTarget();
+      sw.register = async () => ({ update() {} }); sw.getRegistration = async () => null; sw.controller = null;
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: sw });
+      w.fetch = async (path) => {
+        const p = String(path); asked.push(p);
+        const j = (b) => ({ ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) });
+        if (p.startsWith("queue/ping")) return j({ ok: true, cloud: true });
+        if (p === "rev") return j({ ok: true, id: w.SALT_BUILD_ID, v: "v0" });
+        if (p === "orders") return j({ ok: true, orders: [] });
+        if (p.startsWith("drafts")) return j({ ok: true, drafts, refused: [], clock: null });
+        return { ok: false, status: 404, json: async () => ({ ok: false }), text: async () => "" };
+      };
+    } });
+  const w = dom.window;
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  /* until no read has started for 120 ms, so a phase counts only its own reads on a loaded machine */
+  const settle = async () => { for (let i = 0, n = -1; i < 50 && n !== asked.length; i++) { n = asked.length; await nap(120); } };
+  const wakeUp = (data) => sw.dispatchEvent(new w.MessageEvent("message", { data }));
+  const reads = () => { const n = (p) => asked.filter((x) => x === p).length;
+    return { rev: n("rev"), drafts: n("drafts?status=pending"), orders: n("orders") }; };
+  const fresh = () => { asked.length = 0; };
+  try {
+    for (let i = 0; i < 80 && !(w.SALT_CLOUD && asked.includes("orders") && asked.includes("drafts?status=pending")); i++) await nap(50);
+    await nap(150);
+    const box0 = w.document.getElementById("apBox");
+    ok(w.SALT_CLOUD === true && !!box0 && !/CC9-OKR/.test(box0.innerHTML),
+      "the fixture: a cloud desk open on Approve, with nothing waiting when it loaded: " + JSON.stringify(asked));
+
+    /* a burst: two wakes a second apart, at the shipped pace, are one refresh */
+    drafts = [draft]; await settle(); fresh();
+    wakeUp({ salt: "wake" }); await nap(1000); wakeUp({ salt: "wake" });
+    await nap(Number(w.SALT_WAKE_MS) + 800); await settle();
+    const burst = reads(), box1 = w.document.getElementById("apBox");
+    const badge = (w.document.querySelector('.tab[data-s="enter"] .navct') || {}).textContent || "";
+    ok(JSON.stringify(burst) === '{"rev":1,"drafts":1,"orders":1}' && !!box1 && /data-id="d1"/.test(box1.innerHTML)
+      && /CC9-OKR/.test(box1.innerHTML) && badge === "1",
+      "a push wakes the open desk: one refresh for a burst reads the build, the drafts and the orders once each, the row "
+      + "drafted since the load is on Approve by its code, and the rail counts it: " + JSON.stringify({ burst, badge }));
+
+    w.SALT_WAKE_MS = 40;
+    /* a decision in flight: Approve is not redrawn under the thumb, and the rest still reads */
+    w.eval("apBusy.d1=1"); await settle(); fresh();
+    wakeUp({ salt: "wake" }); await nap(250); await settle();
+    const busy = reads(); w.eval("delete apBusy.d1");
+    ok(JSON.stringify(busy) === '{"rev":1,"drafts":0,"orders":1}',
+      "a wake while a decision is in flight leaves the drafts alone and reads the rest: " + JSON.stringify(busy));
+
+    /* hidden: nothing is read into a pocket, and the wake is kept for the return (going hidden locks the vault and
+       redraws, which reads Approve once on its own: that settles before the count starts) */
+    shown = "hidden"; w.document.dispatchEvent(new w.Event("visibilitychange")); await settle(); fresh();
+    wakeUp({ salt: "wake" }); await nap(250); await settle();
+    const pocket = reads();
+    ok(JSON.stringify(pocket) === '{"rev":0,"drafts":0,"orders":0}',
+      "a wake into a hidden desk reads nothing: " + JSON.stringify(pocket));
+    fresh(); shown = "visible"; w.document.dispatchEvent(new w.Event("visibilitychange")); await nap(250); await settle();
+    const back = reads();
+    ok(JSON.stringify(back) === '{"rev":1,"drafts":1,"orders":1}',
+      "and it reads once the desk is back on screen, the wake it missed kept for it: " + JSON.stringify(back));
+
+    /* a field being typed on Site orders: the orders are not redrawn under it */
+    w.eval("switchTab('orders')"); await nap(300); await settle();
+    const obox = w.document.getElementById("ordBox"), field = w.document.createElement("input");
+    if (obox) { obox.appendChild(field); field.focus(); }
+    fresh(); wakeUp({ salt: "wake" }); await nap(250); await settle();
+    const typing = reads(), held = w.document.activeElement === field;
+    try { field.blur(); field.remove(); } catch (e) { /* best effort */ }
+    ok(!!obox && held && JSON.stringify(typing) === '{"rev":1,"drafts":1,"orders":0}',
+      "a wake while a field on Site orders is being typed in leaves the orders alone: " + JSON.stringify({ typing, held }));
+
+    /* only the worker's own word wakes it */
+    await settle(); fresh(); wakeUp({ salt: "news", order: "x" }); wakeUp(null); wakeUp("wake"); await nap(250); await settle();
+    const other = reads();
+    ok(JSON.stringify(other) === '{"rev":0,"drafts":0,"orders":0}',
+      "a message that is not {salt:'wake'} reads nothing: " + JSON.stringify(other));
+
+    /* no write key: a stranger's open desk is served nothing new, as on load */
+    w.localStorage.removeItem("saltWriteKey"); await settle(); fresh();
+    wakeUp({ salt: "wake" }); await nap(250); await settle();
+    const stranger = reads();
+    ok(JSON.stringify(stranger) === '{"rev":1,"drafts":0,"orders":0}',
+      "and a desk holding no write key checks the build and reads nothing keyed: " + JSON.stringify(stranger));
+  } finally {
+    await nap(200);
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("S1 1.14: Approve asks before rejecting a row a site order made, and the rejection is told to the order");
 await (async () => {
   /* 24 Sep 2026 (H14, the fallback he has not yet replaced). A rejection drops the entry from every
