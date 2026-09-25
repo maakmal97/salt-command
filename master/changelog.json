@@ -1,5 +1,15 @@
 [
  {
+  "v": "v871",
+  "d": "26 Sep 2026",
+  "t": "THE DRAFTER READS THE DRAFT TABLE BY ID",
+  "n": [
+   "<b>THE DRAFTER READS BY ID.</b> A pass asks the draft table only about the entries in its queue, by primary key, a hundred to a query, where it read every draft ever made. The dry run reads the same way.",
+   "<b>TWO INDEXES ON THE DRAFT TABLE.</b> migrations/0012 indexes draft on committed_at and on status with committed_at: the newest commit and the Approve clock read one entry, and the minute cron's re-dispatch ladder reads only approved rows not yet committed. Applied alone to the live D1 before this deploy; a later rebuild of draft must create both again.",
+   "<b>THE SAME ANSWERS, PROVED.</b> A suite section plans each read on the real schema and holds every answer to the old whole-table read, pruning included, and fold 1.4's race hook follows the read by id."
+  ]
+ },
+ {
   "v": "v870",
   "d": "26 Sep 2026",
   "t": "THE RETIRED LEAK CHECK IS DELETED AND THE BUILD ID'S SEPARATORS ARE WRITTEN AS ESCAPES",
