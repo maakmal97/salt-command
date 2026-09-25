@@ -1,0 +1,104 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-25T09:51:18.763Z",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 160,
+    "cash": 80,
+    "date": "2026-09-18",
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Fulfilment against CR3-DAM's order of 2 unit for RM 160 agreed 2026-09-18. RM 80 and 0 unit move on 2026-09-25, against RM 80 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s179",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-25T09:51:18.763Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 80,
+    "status": "Payment",
+    "by": "customer",
+    "claim": true,
+    "claimId": "a20260925095118-jauyvw",
+    "raw": "Payment of RM 80 on CR3-DAM, against the account (claim a20260925095118-jauyvw), by qr via tngbiz",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s179",
+     "orderKey": "CR3-DAM|2026-09-18|160",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-25",
+     "qty": 0,
+     "total": 0,
+     "cash": 80,
+     "kg": 0,
+     "note": "Paid on the statements site against the account, by qr via tngbiz."
+    }
+   },
+   "decidedAt": "2026-09-25T10:32:40.279Z",
+   "decidedBy": "preapproved by phone"
+  },
+  {
+   "id": "2026-09-25T09:51:18.764Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-09-22",
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Fulfilment against CR3-DAM's order of 1 unit for RM 90 agreed 2026-09-22. RM 90 and 0 unit move on 2026-09-25, against RM 90 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s193",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-25T09:51:18.764Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 90,
+    "status": "Payment",
+    "by": "customer",
+    "claim": true,
+    "claimId": "a20260925095118-jauyvw",
+    "raw": "Payment of RM 90 on CR3-DAM, against the account (claim a20260925095118-jauyvw), by qr via tngbiz",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s193",
+     "orderKey": "CR3-DAM|2026-09-22|90",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-25",
+     "qty": 0,
+     "total": 0,
+     "cash": 90,
+     "kg": 0,
+     "note": "Paid on the statements site against the account, by qr via tngbiz."
+    }
+   },
+   "decidedAt": "2026-09-25T10:32:40.378Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
