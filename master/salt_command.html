@@ -8359,7 +8359,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v871","d":"26 Sep 2026","t":"THE DRAFTER READS THE DRAFT TABLE BY ID","n":["<b>THE DRAFTER READS BY ID.</b> A pass asks the draft table only about the entries in its queue, by primary key, a hundred to a query, where it read every draft ever made. The dry run reads the same way.","<b>TWO INDEXES ON THE DRAFT TABLE.</b> migrations/0012 indexes draft on committed_at and on status with committed_at: the newest commit and the Approve clock read one entry, and the minute cron's re-dispatch ladder reads only approved rows not yet committed. Applied alone to the live D1 before this deploy; a later rebuild of draft must create both again.","<b>THE SAME ANSWERS, PROVED.</b> A suite section plans each read on the real schema and holds every answer to the old whole-table read, pruning included, and fold 1.4's race hook follows the read by id."]}];
+const evolution=[{"v":"v872","d":"26 Sep 2026","t":"ONE SITE CALL A MINUTE","n":["<b>MARKS AND OWED ORDERS IN ONE READ.</b> The minute tick asks the Counter for its marks and the orders owing a stage together, through /desk/orders/last?work=1, where it asked twice. A quiet minute is one trip.","<b>THE RETURN LEG GOES FIRST.</b> What the book already holds goes back to the orders before that read, so the owed orders are read as the return leg left them and a settled stage is not queued again.","<b>AN OLD COUNTER IS ASKED AS BEFORE.</b> A Counter answering the marks alone, or not at all, has the nudge and the reconcile each ask their own question. The desk deploys first, so that is the minute between the two deploys."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8474,7 +8474,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 07:28 KL';
+const LAST_UPDATED='26 Sep 2026, 07:38 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

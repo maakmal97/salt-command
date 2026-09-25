@@ -1,5 +1,15 @@
 [
  {
+  "v": "v872",
+  "d": "26 Sep 2026",
+  "t": "ONE SITE CALL A MINUTE",
+  "n": [
+   "<b>MARKS AND OWED ORDERS IN ONE READ.</b> The minute tick asks the Counter for its marks and the orders owing a stage together, through /desk/orders/last?work=1, where it asked twice. A quiet minute is one trip.",
+   "<b>THE RETURN LEG GOES FIRST.</b> What the book already holds goes back to the orders before that read, so the owed orders are read as the return leg left them and a settled stage is not queued again.",
+   "<b>AN OLD COUNTER IS ASKED AS BEFORE.</b> A Counter answering the marks alone, or not at all, has the nudge and the reconcile each ask their own question. The desk deploys first, so that is the minute between the two deploys."
+  ]
+ },
+ {
   "v": "v871",
   "d": "26 Sep 2026",
   "t": "THE DRAFTER READS THE DRAFT TABLE BY ID",
