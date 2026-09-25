@@ -49,7 +49,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
 
 | When | Who | What |
 |---|---|---|
-| on a tap, and hourly | `cloud-commit.yml`, one job | reads the approved rows out of D1 into `master/_to_fold.json`, commits, then folds with the agent, deploys, proves the phone is serving it, marks the ids committed with the clock, re-seeds the mirror and publishes the statements |
+| on a tap, and hourly | `cloud-commit.yml`, job `chain`, then job `suite` | `chain`, holding the lock: reads the approved rows out of D1 into `master/_to_fold.json`, commits, then folds with the agent, deploys, proves the phone is serving it, marks the ids committed with the clock, re-seeds the mirror and publishes the statements; `suite`, outside the lock and only after a deploy: runs the suite on the sha chain proved |
 | on demand | **the agent, asked to fold** | folds with the tool, builds, tests, commits, pushes; the push runs the deploy steps alone |
 | 11:00 MYT | `ship-check.yml` | proves the repo and the live Worker agree |
 

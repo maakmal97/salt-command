@@ -44,7 +44,8 @@ measurement of the desk.
   `evolution`, `LAST_UPDATED`, `changelog.json`, `ledger/*.json` and `public/` conflict every time
   (take the fold's side and regenerate). Refused at the push: `git reset --hard origin/master` on
   your own branch, `git diff <base> <commit> -- <files> | git apply --3way`, re-bump, gate, push.
-  A running cloud job pushes again when it clears `_folded.json`: wait for it first.
+  A running cloud job pushes again when it clears `_folded.json`: wait for it first. A run whose
+  job `suite` alone is still going pushes nothing more; that job only reads the repository.
 - **Another clone's push skips the sync tools.** When origin moves with a commit that is neither the
   laptop's nor the fold's, run the four checks first (`engine.mjs`, `booksync.mjs`, `geosync.mjs`,
   `designsync.mjs`, each without `--sync`) and offer the sync as its own version: until it lands,

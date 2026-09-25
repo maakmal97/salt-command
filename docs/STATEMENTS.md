@@ -878,7 +878,7 @@ exists the page says notifications are not switched on.
 
 ### Publishing, and the one-time setup
 
-Statements reach the site through the two steps at the foot of the `deploy` job in
+Statements reach the site through the two steps at the foot of job `chain` in
 `cloud-commit.yml`. **`Deploy the statements site` uploads the site's CODE** and runs on a push
 touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on every fold.
 **`Publish the statements, live` writes the site's CONTENT and runs on every deploy** (16 Sep

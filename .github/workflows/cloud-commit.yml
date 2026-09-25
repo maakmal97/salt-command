@@ -19,6 +19,12 @@
 # starts no second run. "Already serving?" below stays as a guard: a push of the statements
 # alone deploys nothing, and a build the phone already has is never deployed twice.
 #
+# THE SUITE IS ITS OWN JOB, OUTSIDE THE LOCK (26 Sep 2026). The lock is on job `chain`, not the
+# workflow, and the post-live suite runs in job `suite` once chain has deployed. Inside the
+# locked run it held the lock for its two to five minutes: from 19 to 24 Sep, 22 of 59 folding
+# runs queued, 20 of them behind a suite. The suite job takes no lock, checks out the sha chain
+# proved the phone serving, and writes or clears its notice only while the phone still serves it.
+#
 # SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
 #   gh secret set CLOUDFLARE_API_TOKEN     Workers Scripts:Edit, Workers KV:Edit, D1:Edit
 #   gh secret set ANTHROPIC_API_KEY          (the fold's one call; CLAUDE_CODE_OAUTH_TOKEN is no longer read here)
@@ -58,10 +64,6 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: cloud-commit
-  cancel-in-progress: false
-
 jobs:
   chain:
     runs-on: ubuntu-latest
@@ -69,9 +71,20 @@ jobs:
     # longest run seen took 17.6 min, and tools/foldcall.mjs bounds the fold's two calls at about
     # 12.2 min, so a run past 30 is already broken. tools/lint-workflows.mjs refuses a job without one.
     timeout-minutes: 30
+    # THE LOCK IS THIS JOB'S, NOT THE WORKFLOW'S (26 Sep 2026): one chain at a time, and a newer
+    # pending chain replaces an older pending one, which is harmless because a chain reads D1 when
+    # it starts. The suite job below takes no lock, so an approval never waits for a suite.
+    concurrency:
+      group: cloud-commit
+      cancel-in-progress: false
     permissions:
       contents: write
       id-token: write
+    # What the suite job needs: whether this run deployed, and the tree it proved the phone serving.
+    outputs:
+      deploy: ${{ steps.plan.outputs.deploy }}
+      sha: ${{ steps.tip.outputs.sha }}
+      rev: ${{ steps.tip.outputs.rev }}
     steps:
       - uses: actions/checkout@v5      # v5 runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
         with: { ref: master }
@@ -307,9 +320,9 @@ jobs:
 
       # THE GATE, NOT THE SUITE, STANDS BEFORE THE DEPLOY (v522). What must hold before a build
       # reaches the phone is mechanical and ci.yml already names it: tools/gate.mjs runs those
-      # checks in about ten seconds. The full suite runs at the foot of this job, after the phone
-      # is live, and fails the run loudly if it fails; it never pulls a correct ledger back off
-      # the phone, because its post-fold failures have been its own fixtures moving with the book.
+      # checks in about ten seconds. The full suite runs in job `suite` below, after the phone is
+      # live, and fails the run loudly if it fails; it never pulls a correct ledger back off the
+      # phone, because its post-fold failures have been its own fixtures moving with the book.
       - name: Gate
         if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         run: node tools/gate.mjs
@@ -334,6 +347,16 @@ jobs:
           done
           echo "::error::the Worker is not serving $want after the deploy reported success"
           exit 1
+
+      # THE TREE THE SUITE TESTS (26 Sep 2026): the commit the proof just saw live, taken before
+      # `Clear the handoff files`, whose pull can bring in a laptop push landed meanwhile.
+      - name: The tree the phone is serving
+        id: tip
+        if: steps.plan.outputs.deploy == '1'
+        run: |
+          set -euo pipefail
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "rev=$(node -p "require('./public/rev.json').id")" >> "$GITHUB_OUTPUT"
 
       # ONLY NOW. A draft marked committed is never offered to the fold again, so it is marked
       # only once the row it became is demonstrably on the phone. The proof time rides with
@@ -394,7 +417,7 @@ jobs:
           git config user.email "noreply@github.com"
           git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
           # master can move while this runs; rebase onto its tip first. --autostash because the
-          # suite rebuilds public/ and leaves it dirty, which refuses a rebase outright.
+          # gate rebuilds public/ in place and can leave it dirty, which refuses a rebase outright.
           git pull -q --rebase --autostash origin master
           git push
 
@@ -475,17 +498,59 @@ jobs:
       # long gone; the step's work was done on its first run. The publish now reads both keys back,
       # which catches a write that fails but NOT a later step that undoes it, so this stays absent.
 
-      # ---- THE FULL SUITE, AFTER THE PHONE IS LIVE (v522) --------------------------------
-      # Off the critical path: the clock has stopped by now. A failure turns the run red, which
-      # emails, and is written where the phone shows refusals under a synthetic id above the
-      # watermark, so it is seen on the Approve view until someone clears it.
+  # ---- THE FULL SUITE, AFTER THE PHONE IS LIVE (v522), IN ITS OWN JOB (26 Sep 2026) -----------
+  # Off the critical path: the clock has stopped by now, and this job takes NO LOCK, so the next
+  # approval's chain starts while it runs; nothing cancels or queues it, and two in flight are two
+  # runners. It tests the sha chain proved the phone serving, never master, and writes nothing but
+  # its notice. A failure turns the run red, which emails, and is written where the phone shows
+  # refusals under a synthetic id above the watermark, seen on the Approve view until a suite passes.
+  suite:
+    needs: chain
+    # A job-level `if` drops the implied success(), so chain's own success is named.
+    if: needs.chain.result == 'success' && needs.chain.outputs.deploy == '1'
+    runs-on: ubuntu-latest
+    # BOUNDED: a checkout, npm ci and a suite of 146 to 301 s; ci.yml's `verify` has the same 20.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: "${{ needs.chain.outputs.sha }}" }
+      - uses: actions/setup-node@v5
+        with: { node-version: '24', cache: npm }
+      - run: npm ci
+
+      - name: This is the tree the phone was proved to serve
+        run: |
+          set -euo pipefail
+          have=$(node -p "require('./public/rev.json').id")
+          if [ "$have" != "${{ needs.chain.outputs.rev }}" ]; then
+            echo "::error::this tree builds $have, but chain proved the phone serving ${{ needs.chain.outputs.rev }}"
+            exit 1
+          fi
+          echo "testing ${{ needs.chain.outputs.sha }}, served as $have"
+
       - name: The full suite, after the phone is live
         id: suite
-        if: steps.plan.outputs.deploy == '1'
         run: npm test
 
+      # A SUITE SPEAKS TO THE PHONE ONLY ABOUT THE BUILD THE PHONE SERVES. Two suites can be in
+      # flight and both notices are keyed on the version, and the clear deletes every suite notice:
+      # an older pass finishing late would clear a newer failure, and an older failure would post
+      # about a build the phone no longer has.
+      - name: Is the phone still on this build?
+        id: live
+        if: always()
+        run: |
+          set -euo pipefail
+          got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+          same=0
+          if [ "$got" = "${{ needs.chain.outputs.rev }}" ]; then same=1; fi
+          echo "same=$same" >> "$GITHUB_OUTPUT"
+          echo "same=$same (phone on $got, this suite tested ${{ needs.chain.outputs.rev }})"
+
       - name: Say so on the phone if the suite failed
-        if: always() && steps.suite.outcome == 'failure'
+        if: always() && steps.suite.outcome == 'failure' && steps.live.outputs.same == '1'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -498,7 +563,7 @@ jobs:
       # so one raised by a failing suite stayed on the phone through every green run after it, as suite:v791 did through
       # six. It goes the moment a later run's suite passes, which is the thing it was about.
       - name: Clear a test notice once the suite passes
-        if: steps.suite.outcome == 'success'
+        if: steps.suite.outcome == 'success' && steps.live.outputs.same == '1'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

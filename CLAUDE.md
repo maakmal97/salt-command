@@ -92,7 +92,8 @@ means `/desk` at desktop width. Public by his decision, no sign-in.
    ```
 8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
    deploys, proves the phone serves the build, marks the folded rows committed, re-seeds the D1
-   mirror, publishes the statements, deploys the Counter, then runs the suite. **The statements
+   mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
+   then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
    never a list of triggers. The hourly run passes `--no-retire`. `tools/update.mjs` is the laptop
    half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
@@ -151,7 +152,8 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; hourly as the net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
-| Gate, deploy, prove, mark, re-seed D1, publish, Counter, suite | same job; a suite failure after the phone is live is red and written to the phone's refusals, never rolled back | same job; or on push |
+| Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
+| Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 
 - **Every task starts level with GitHub.** Before any task: `git fetch` and fast-forward to

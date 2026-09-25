@@ -9315,7 +9315,7 @@ await (async () => {
   /* Read by the suite's own pattern, not the lint's parser: a job is a key two spaces under jobs:,
      its own keys four spaces in, so a step's timeout-minutes does not count for the job. */
   const wfDir = join(REPO, ".github", "workflows");
-  const BOUND = { "cloud-commit.yml:chain": 30, "ci.yml:verify": 20, "ship-check.yml:level": 10 };
+  const BOUND = { "cloud-commit.yml:chain": 30, "cloud-commit.yml:suite": 20, "ci.yml:verify": 20, "ship-check.yml:level": 10 };
   const seen = {};
   for (const f of readdirSync(wfDir).filter((n) => /\.ya?ml$/.test(n))) {
     const t = readFileSync(join(wfDir, f), "utf8").replace(/\r\n/g, "\n");
@@ -9329,7 +9329,7 @@ await (async () => {
   }
   const over = Object.entries(seen).filter(([k, v]) => !(v > 0 && v <= (BOUND[k] || 30)));
   ok(Object.keys(BOUND).every((k) => k in seen) && !over.length,
-    "every workflow job carries timeout-minutes within its bound (chain 30, verify 20, level 10): " + JSON.stringify(seen));
+    "every workflow job carries timeout-minutes within its bound (chain 30, suite 20, verify 20, level 10): " + JSON.stringify(seen));
   /* the lint, driven on fixture directories: a job without one fails it, a step's own does not count */
   const dirL = join(REPO, "test", "tmp", "lintwf-" + Date.now());
   const head = "name: Fixture\non:\n  workflow_dispatch:\njobs:\n  bounded:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - run: echo ok\n";
@@ -9411,8 +9411,10 @@ await (async () => {
   /* 10 Sep 2026: the suite no longer stands down when the phone already has the build. It used to
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
-     asks who deployed. */
-  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, and runs whoever deployed");
+     asks who deployed. Since 26 Sep 2026 it is its own job, on the chain's deploy (the section below). */
+  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test\n/.test(wf.replace(/\r\n/g, "\n"))
+     && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'\n/.test(wf.replace(/\r\n/g, "\n")),
+     "the full suite comes after the statements, in its own job on the chain's deploy, and runs whoever deployed");
   /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
      ran next listed the prefix "stmt" and deleted what it found. Both keys begin with it, so both
      were gone about five seconds after they were written, on every deploy since 03 Sep. The step is
@@ -9477,6 +9479,140 @@ await (async () => {
      && /deskWrangler\(\["kv", "key", "get"/.test(pubSrc), "both desk-store writes in the publish go through deskPut, which reads the key back");
   ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
+})();
+
+section("26 Sep 2026: the post-live suite is its own job, outside the chain's lock, on the build the chain proved live");
+await (async () => {
+  /* Fold 3.1 of the streamlining plan. The lock was the workflow's, so an approval tapped while the run before was in
+     its two-to-five-minute suite waited for it: 20 of the 22 runs that queued from 19 to 24 Sep. The lock is job chain's
+     now, and job suite needs chain, takes no lock, checks out the sha chain proved the phone serving, and writes or
+     clears its notice only while the phone still serves that build, so an older suite finishing late can neither
+     clear a newer failure nor post about a build the phone has left. The jobs are read by indentation, as
+     tools/lint-workflows.mjs reads them; the three shells run in Git's bash with stubs, and the notice steps' if:
+     conditions are evaluated over the four outcomes. Each assertion was proved red by its own mutation, one at a time. */
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const jobsAt = wf.search(/^jobs:[ \t]*$/m), jobsBody = jobsAt < 0 ? "" : wf.slice(jobsAt);
+  const job = (name) => {
+    const heads = [...jobsBody.matchAll(/^  ([A-Za-z0-9_-]+):[^\n]*$/gm)], k = heads.findIndex((h) => h[1] === name);
+    return k < 0 ? "" : jobsBody.slice(heads[k].index, k + 1 < heads.length ? heads[k + 1].index : undefined);
+  };
+  const chain = job("chain"), suite = job("suite");
+  const stepsOf = (block) => [...block.matchAll(/^      - name: ([^\n]+)$/gm)].map((m) => m[1]);
+  const stepIn = (block, name) => {
+    const at = block.indexOf("      - name: " + name + "\n");
+    if (at < 0) return "";
+    const next = block.indexOf("\n      - ", at + 1);
+    return block.slice(at, next < 0 ? undefined : next);
+  };
+  const shellOf = (block, name) => {
+    const lines = stepIn(block, name).split("\n"), r = lines.findIndex((l) => /^\s+run: \|$/.test(l));
+    return r < 0 ? "" : lines.slice(r + 1).join("\n");
+  };
+  const ifOf = (block, name) => ((/^        if: ([^\n]+)$/m.exec(stepIn(block, name)) || [])[1] || "").trim();
+
+  /* THE LOCK */
+  ok(chain !== "" && !/^concurrency:/m.test(wf) && /^    concurrency:\n      group: cloud-commit\n      cancel-in-progress: false$/m.test(chain),
+    "the lock is job chain's, group cloud-commit, never cancelling a chain in progress, and the workflow holds none");
+  ok(suite !== "" && /^    needs: chain$/m.test(suite) && /^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(suite)
+     && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
+    "job suite needs chain, runs only when chain succeeded and deployed, checks out the sha chain proved, and takes no lock");
+
+  /* WHAT CHAIN HANDS ON, TAKEN WHERE IT IS TRUE: after the proof, before the clear's pull can bring in another push */
+  const cs = stepsOf(chain);
+  const iServe = cs.indexOf("The phone is serving it"), iTip = cs.indexOf("The tree the phone is serving"),
+    iMark = cs.indexOf("Mark the folded rows committed"), iClear = cs.indexOf("Clear the handoff files");
+  ok(iServe >= 0 && iTip === iServe + 1 && iMark === iTip + 1 && iClear > iMark
+     && /^    outputs:\n      deploy: \$\{\{ steps\.plan\.outputs\.deploy \}\}\n      sha: \$\{\{ steps\.tip\.outputs\.sha \}\}\n      rev: \$\{\{ steps\.tip\.outputs\.rev \}\}$/m.test(chain)
+     && /^        id: tip\n        if: steps\.plan\.outputs\.deploy == '1'$/m.test(stepIn(chain, "The tree the phone is serving")),
+    "chain hands on its deploy and the tree it proved, taken straight after the proof and before the clear: " + cs.slice(Math.max(0, iServe), iClear + 1).join(" > "));
+
+  /* THE THREE SHELLS, RUN: each ${{ }} rendered from ctx, as GitHub runs them (bash -e, pipefail), curl a stub */
+  const bash = process.platform !== "win32" ? "bash"
+    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(GIT_|GITHUB_|LIVE_AT$)/.test(k)));
+  const root = mkdtempSync(join(tmpdir(), "suitejob-")), w = join(root, "w");
+  const run = (block, name, ctx, pre = "", more = {}) => {
+    const out = join(root, "out.txt");
+    writeFileSync(out, "");
+    const body = shellOf(block, name);
+    const script = pre + body.replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, k) => (k in ctx ? ctx[k] : ""));
+    const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script], { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: out.replace(/\\/g, "/") }, encoding: "utf8" });
+    const o = {};
+    for (const l of readFileSync(out, "utf8").split("\n")) { const i = l.indexOf("="); if (i > 0) o[l.slice(0, i)] = l.slice(i + 1).trim(); }
+    return { ran: body !== "", code: r.status, o, text: String(r.stdout || "") + String(r.stderr || "") };
+  };
+  try {
+    const git = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd: w, env, encoding: "utf8", stdio: "pipe" });
+    const REV = "a".repeat(64), OTHER = "b".repeat(64);
+    mkdirSync(join(w, "public"), { recursive: true });
+    git("init", "-q", "-b", "master");
+    writeFileSync(join(w, "public", "rev.json"), JSON.stringify({ id: OTHER, built: "2099-01-01T00:00:00Z" }));
+    git("add", "-A"); git("commit", "-q", "-m", "first");
+    writeFileSync(join(w, "public", "rev.json"), JSON.stringify({ id: REV, built: "2099-01-01T00:01:00Z" }));
+    git("add", "-A"); git("commit", "-q", "-m", "second");
+    const head = git("rev-parse", "HEAD").trim();
+
+    const tip = run(chain, "The tree the phone is serving", {});
+    ok(tip.ran && tip.code === 0 && tip.o.sha === head && tip.o.rev === REV,
+      "the tip step hands on the commit checked out and the id its rev.json names: " + JSON.stringify(tip.o) + " " + tip.text.slice(-200));
+
+    const pinned = run(suite, "This is the tree the phone was proved to serve", { "needs.chain.outputs.rev": REV, "needs.chain.outputs.sha": head });
+    const moved = run(suite, "This is the tree the phone was proved to serve", { "needs.chain.outputs.rev": OTHER, "needs.chain.outputs.sha": head });
+    const ss = stepsOf(suite);
+    ok(pinned.ran && pinned.code === 0 && moved.code !== 0 && /::error::/.test(moved.text)
+       && ss.indexOf("This is the tree the phone was proved to serve") >= 0
+       && ss.indexOf("This is the tree the phone was proved to serve") < ss.indexOf("The full suite, after the phone is live")
+       && ifOf(suite, "This is the tree the phone was proved to serve") === "",
+      "before the suite, job suite fails on a tree whose rev.json is not the build chain proved live, and passes on the one it is: " + moved.text.trim().slice(-160));
+
+    /* curl is a shell function here, so nothing leaves the machine: it logs its arguments and answers /rev as told */
+    const curlLog = join(root, "curl.txt").replace(/\\/g, "/");
+    const stub = "curl() { echo \"$*\" >> " + JSON.stringify(curlLog) + "; if [ \"$STUB\" = down ]; then return 22; fi; printf '{\"id\":\"%s\"}' \"$STUB\"; }\n";
+    const live = (answer) => run(suite, "Is the phone still on this build?", { "needs.chain.outputs.rev": REV }, stub, { STUB: answer });
+    writeFileSync(curlLog, "");
+    const onIt = live(REV), moved2 = live(OTHER), down = live("down");
+    ok(onIt.ran && onIt.code === 0 && onIt.o.same === "1" && moved2.code === 0 && moved2.o.same === "0" && down.code === 0 && down.o.same === "0"
+       && readFileSync(curlLog, "utf8").split("\n").filter((l) => /https:\/\/salt-command\.qyts8mh72kyg\.workers\.dev\/rev$/.test(l)).length === 3,
+      "the live check reads /rev and says same only while the phone serves the build this suite tested; a moved phone or no answer is not same, and never fails the step: "
+      + JSON.stringify({ onIt: onIt.o, moved: moved2.o, down: down.o, code: down.code }) + " " + down.text.slice(-200));
+
+    /* THE NOTICES, BY THEIR if: CONDITIONS. `&&` of always(), success(), failure() and == or != against a quoted
+       string, which is all the steps use; anything else reads as unknown and fails. No status function is an
+       implied success(), as GitHub reads it. */
+    const cond = (expr, ctx) => {
+      if (!expr) return ctx.status === "success";
+      let status = null, val = true;
+      for (const p of expr.split(/\s*&&\s*/)) {
+        let m;
+        if (p === "always()") status = true;
+        else if (p === "success()" || p === "failure()") { status = true; val = val && ctx.status === p.slice(0, -2); }
+        else if ((m = /^([\w.]+) (==|!=) '([^']*)'$/.exec(p))) { const v = ctx[m[1]] ?? ""; val = val && (m[2] === "==" ? v === m[3] : v !== m[3]); }
+        else return null;
+      }
+      return status ? val : val && ctx.status === "success";
+    };
+    const LIVE = "Is the phone still on this build?", FAIL = "Say so on the phone if the suite failed", CLEAR = "Clear a test notice once the suite passes";
+    const fires = (suiteOut, phoneSame) => {
+      const ctx = { status: suiteOut, "steps.suite.outcome": suiteOut };
+      ctx["steps.live.outputs.same"] = cond(ifOf(suite, LIVE), ctx) === true ? phoneSame : "";
+      return [FAIL, CLEAR].filter((n) => cond(ifOf(suite, n), ctx) === true).map((n) => (n === FAIL ? "note" : "clear"));
+    };
+    const table = { failSame: fires("failure", "1"), failMoved: fires("failure", "0"), passSame: fires("success", "1"), passMoved: fires("success", "0") };
+    ok(JSON.stringify(table) === JSON.stringify({ failSame: ["note"], failMoved: [], passSame: ["clear"], passMoved: [] })
+       && ss.indexOf(LIVE) > ss.indexOf("The full suite, after the phone is live") && ss.indexOf(FAIL) > ss.indexOf(LIVE) && ss.indexOf(CLEAR) > ss.indexOf(LIVE)
+       && /--refused-note "suite:\$v"/.test(stepIn(suite, FAIL)) && /--clear-suite-notices/.test(stepIn(suite, CLEAR)),
+      "a failed suite notes the phone and a passing one clears, each only while the phone serves the build it tested: " + JSON.stringify(table));
+  } finally {
+    try { rmSync(root, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
+
+  /* WHAT EACH JOB MAY DO */
+  ok(/^    permissions:\n      contents: read$/m.test(suite) && !/contents: write|id-token|git push|wrangler deploy|d1\.mjs --seed|stmt-publish|--committed/.test(suite)
+     && /node tools\/d1\.mjs --seed/.test(chain) && /npx wrangler deploy -c wrangler\.stmt\.jsonc/.test(chain) && /node tools\/stmt-publish\.mjs/.test(chain)
+     && !/npm test|--refused-note "suite:|--clear-suite-notices/.test(chain),
+    "job suite reads the repository and writes only its notice, while the re-seed, the Counter and the publish stay in chain, which runs no suite");
 })();
 
 section("One suite run per laptop push: CI's Tests stand down when cloud-commit tests the same push");

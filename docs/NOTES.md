@@ -221,7 +221,10 @@ what to fire by hand if the fold job fails; a fold from a Code session still wor
 hourly stage folds as well, in the same way, so nothing approved waits longer than an hour
 even if the Worker's dispatch is lost. Why inside the workflow and not a routine webhook: the
 routine API fires on pull request and release events only, never a push, and the chain is
-one run in one place this way, serialised by the concurrency group it already had.
+one run in one place this way, serialised by the concurrency group it already had. Since 26 Sep
+2026 that group is job `chain`'s alone, and the post-live suite runs as job `suite` outside it, on
+the sha chain proved: inside the locked run it held the lock for its two to five minutes, and 20
+of the 22 folding runs that queued from 19 to 24 Sep were waiting behind a suite.
 
 **THE STAGE STANDS DOWN RATHER THAN TRAMPLING AN UNFOLDED BATCH,** and the clock is not what
 makes that safe. The stage was first offset to clear the fold, and the routine API then jittered
