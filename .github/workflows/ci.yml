@@ -87,7 +87,34 @@ jobs:
       - name: The site's fonts are design/fonts, as bytes
         run: node tools/stmt-fonts.mjs --check
 
+      # ONE SUITE RUN PER LAPTOP PUSH (26 Sep 2026). cloud-commit.yml runs the same `npm test` on the
+      # same runner image after the phone is live, on every push touching its paths, so on such a
+      # push this suite was a second run of the same thing. This step asks the compare API what the
+      # push changed and says whether cloud-commit is testing it; Tests alone stands down. Every
+      # other check here still runs, because they are the net when cloud-commit is refused. The
+      # pattern is cloud-commit's on.push.paths exactly (`**` is `.*`), and the suite holds the two
+      # lists together. It fails toward running: a first push, a compare that errors, or a push of
+      # 300 files or more (the API's cap) reads as not covered. The token is the run's own, read only.
+      - name: Is cloud-commit testing this push?
+        id: chain
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          covered=0
+          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --paginate --jq '.files[]?.filename') || files=""
+            n=$(grep -c . <<< "$files" || true)
+            if [ "$n" -lt 300 ] && grep -Eq '^(public/rev\.json|statements/.*|stmt/.*|wrangler\.stmt\.jsonc|tools/stmt-publish\.mjs|tools/make_statements\.mjs)$' <<< "$files"; then covered=1; fi
+          fi
+          echo "covered=$covered" >> "$GITHUB_OUTPUT"
+          echo "cloud-commit tests this push: $covered"
+
       - name: Tests
+        if: steps.chain.outputs.covered != '1'
         run: npm test
 
       # THE COMMITTED BUILD MATCHES THE MASTER, JUDGED BY THE ID AND NOT BY THE BYTES.

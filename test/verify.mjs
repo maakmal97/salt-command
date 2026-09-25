@@ -9100,6 +9100,55 @@ await (async () => {
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 })();
 
+section("One suite run per laptop push: CI's Tests stand down when cloud-commit tests the same push");
+await (async () => {
+  /* 26 Sep 2026. cloud-commit.yml runs `npm test` after the phone is live on every push touching its
+     paths, and ci.yml ran the same suite on the same push: two runs of one thing. ci.yml now asks the
+     compare API what the push changed and skips Tests alone when cloud-commit is testing it. Its
+     pattern restates cloud-commit's on.push.paths, so the two lists are held together here: a path on
+     cloud-commit's side alone doubles the run again, silently, and one on CI's side alone skips CI's
+     suite on a push nothing else tests. */
+  const cc = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const ci = readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8").replace(/\r\n/g, "\n");
+  const onBlock = cc.slice(cc.indexOf("\non:\n"), cc.search(/\n(?:concurrency|jobs):/));
+  const globs = [];
+  let inPaths = false;
+  for (const l of onBlock.slice(onBlock.indexOf("\n  push:\n") + 1).split("\n").slice(1)) {
+    if (!l.trim() || /^\s*#/.test(l)) continue;
+    const ind = l.match(/^ */)[0].length;
+    if (ind <= 2) break;                                  /* the next trigger */
+    if (ind === 4) { inPaths = /^    paths:\s*$/.test(l); continue; }
+    if (inPaths) { const m = l.match(/^\s+- (['"]?)(.+?)\1\s*$/); globs.push(m ? m[2] : "UNREAD " + l.trim()); }
+  }
+  /* GitHub's filter: `**` is anything, `*` anything but a slash, the rest literal, the whole path */
+  const globRe = (g) => g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*|\*/g, (s) => (s === "**" ? ".*" : "[^/]*"));
+  const guardAt = ci.indexOf("- name: Is cloud-commit testing this push?"), testsAt = ci.indexOf("- name: Tests\n");
+  const guard = guardAt > 0 && testsAt > guardAt ? ci.slice(guardAt, testsAt) : "";
+  const pat = (guard.match(/grep -Eq '([^']+)' <<< "\$files"/) || [])[1] || "";
+  const alts = ((pat.match(/^\^\((.+)\)\$$/) || [])[1] || "").split("|").filter(Boolean);
+  const want = globs.map(globRe).sort(), have = [...alts].sort();
+  ok(globs.length >= 6 && !globs.some((g) => g.startsWith("UNREAD")) && !/paths-ignore/.test(onBlock) && JSON.stringify(want) === JSON.stringify(have),
+     "CI's guard names exactly cloud-commit's push paths: " + globs.join(", ") + (JSON.stringify(want) === JSON.stringify(have) ? "" : "; the guard reads " + (alts.join(", ") || "nothing")));
+  /* and the pattern is run as a pattern, against paths GitHub's filter on cloud-commit would and would not take */
+  let ciRe = null;
+  try { ciRe = new RegExp(pat); } catch { ciRe = null; }
+  const ghTakes = (f) => globs.some((g) => new RegExp("^" + globRe(g) + "$").test(f));
+  const samples = globs.map((g) => g.replace(/\*\*|\*/g, "a/b.json"));
+  const corpus = [...samples, ...samples.map((s) => "x/" + s), ...samples.map((s) => s + ".bak"), ...samples.map((s) => s.replace("/", "x/")),
+    "src/worker.js", "master/salt_command.html", "public/desk.html", "ledger/book.json", "tools/stmt-send.mjs", "wrangler.jsonc", ".github/workflows/ci.yml"];
+  const disagree = ciRe && pat ? corpus.filter((f) => ghTakes(f) !== ciRe.test(f)) : corpus;
+  ok(pat !== "" && samples.every((s) => ghTakes(s)) && disagree.length === 0,
+     "and the guard decides " + corpus.length + " paths as GitHub decides them for cloud-commit" + (disagree.length ? "; it differs on " + disagree.join(", ") : ""));
+  const tests = testsAt > 0 ? ci.slice(testsAt, ci.indexOf("\n\n", testsAt)) : "";
+  ok(/^- name: Tests\n\s+if: steps\.chain\.outputs\.covered != '1'\n\s+run: npm test$/.test(tests),
+     "CI's Tests stand down only when the guard says cloud-commit is testing the push");
+  ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
+     && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
+     && guard.includes('[ "$BEFORE" != "0000000000000000000000000000000000000000" ]')
+     && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
+     "the guard asks on a push alone, starts from not covered, never compares from a zero base, and Tests is the one step it stands down");
+})();
+
 section("v524: roster-only parties on the phone");
 await (async () => {
   const { openMaster: omB } = await import("../tools/payload.mjs");
