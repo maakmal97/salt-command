@@ -14066,28 +14066,47 @@ await (async () => {
     /* four orders of 1 unit at 90, 100, 110 and 200: the middle is 105, the best is 200, and a fifth older one is out of the window */
     const sale55 = (rid, c, date, qty, total) => ({ rid, customer: c, product: "salt", date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
     const fx55 = [sale55("z655a", "CZ9-BR", "2026-06-01", 1, 400), sale55("z655b", "CZ9-BR", "2026-07-01", 1, 90), sale55("z655c", "CZ9-BR", "2026-07-02", 1, 100),
-      sale55("z655d", "CZ9-BR", "2026-07-03", 1, 110), sale55("z655e", "CZ9-BR", "2026-07-04", 1, 200),
-      /* CZ9-SM buys half a unit at RM120 a unit and nothing else: at that size the level is Titanium, at 12.5 unit it would be
-         Silver and summed over the whole board Gold. RM100 until 23 Sep 2026, when the pricing_v2 board stopped telling the three
-         apart at that rate (it had stopped on 22 Sep already, when the salt board moved under it). */
-      sale55("z655f", "CZ9-SM", "2026-07-01", 0.5, 60), sale55("z655g", "CZ9-SM", "2026-07-08", 0.5, 60), sale55("z655h", "CZ9-SM", "2026-07-15", 0.5, 60)];
+      sale55("z655d", "CZ9-BR", "2026-07-03", 1, 110), sale55("z655e", "CZ9-BR", "2026-07-04", 1, 200)];
     w55.eval("(function(){['CZ9-BR','CZ9-SM'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx55) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
+    /* CZ9-SM buys half a unit and nothing else, at a rate where the level nearest it at half a unit is neither the level
+       nearest it at 12.5 unit nor the level nearest it summed over the whole board. 26 SEP 2026: THAT RATE IS READ OFF THE
+       BOARD IT IS PROPOSED ON, NEVER TYPED. It was RM100, then RM120 once the pricing_v2 board stopped telling the three apart
+       at RM100 on 23 Sep (the salt board had moved under it on 22 Sep already): a typed rate holds only while the live cost
+       keeps the board where it stood the day it was typed, so a fold that moves the quote turned a version that changed
+       nothing red. The half-unit row's own level rates are tried first, then every RM10 across the board, and the first that
+       tells the three apart, each reading with one nearest level and no tie, is the fixture's rate. The readings are the
+       test's own, off the board's rows; tierProposal's answer is only ever compared with them. */
+    const lad55 = rd55("tierBoards().salt.map(function(r){return {q:r.q,prices:r.prices};})"), names55 = rd55("TIER_NAMES");
+    const pick55 = (score) => { const s = names55.map((n, k) => (k ? score(k) : Infinity)); const lo = Math.min(...s);
+      return s.filter((x) => Math.abs(x - lo) < 1e-6).length === 1 ? names55[s.indexOf(lo)] : null; };
+    const nearAt55 = (row, R) => (row ? pick55((k) => Math.abs(row.prices[k] / row.q - R)) : null);
+    const wholeAt55 = (R) => pick55((k) => lad55.reduce((a, r) => a + Math.abs(r.prices[k] / r.q - R), 0));
+    const half55 = lad55.find((r) => Math.abs(r.q - 0.5) < 0.009), big55 = lad55.find((r) => Math.abs(r.q - 12.5) < 0.009);
+    const rates55 = lad55.flatMap((r) => r.prices.map((p) => p / r.q)), grid55 = [];
+    for (let R = Math.ceil(Math.min(...rates55) / 10) * 10; R <= Math.max(...rates55); R += 10) grid55.push(R);
+    const R55 = (half55 ? half55.prices.slice(1).map((p) => +(p / 0.5).toFixed(2)) : []).concat(grid55).find((R) => {
+      const h = nearAt55(half55, R), b = nearAt55(big55, R), a = wholeAt55(R);
+      return h && b && a && h !== b && h !== a; });
+    const at55 = R55 == null ? null : { half: nearAt55(half55, R55), big: nearAt55(big55, R55), whole: wholeAt55(R55) };
+    if (R55 != null) w55.eval("BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(["z655f", "z655g", "z655h"].map((rid, i) =>
+      sale55(rid, "CZ9-SM", "2026-07-" + String(1 + 7 * i).padStart(2, "0"), 0.5, +(R55 / 2).toFixed(2)))) + ");queue=[];applyOverlay();setProd('salt');recompute();");
     const r55 = rd55("(function(){return {rate:pbOwnRate('CZ9-BR').rate,orders:pbOwnRate('CZ9-BR').orders,window:pbOrders('CZ9-BR').map(function(s){return s.rid;})};})()");
     ok(r55.rate === 200 && r55.orders === 4 && JSON.stringify(r55.window) === '["z655b","z655c","z655d","z655e"]',
       "their own rate is the best of the last four priced orders, not the middle one, and the fifth and older is out of the window: " + JSON.stringify(r55));
     const tool55 = PL55.ownRate(rd55("sales"), "CZ9-BR", "salt", "2026-09-01");
     ok(tool55.rate === 200 && tool55.orders === 4, "and the customer's own page reads the same rate off the same four: " + JSON.stringify(tool55));
-    /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM pays RM120 a unit and buys half a unit only; the level nearest RM90 a unit at
-       half a unit is not the level nearest it across the whole board, because the board's big rungs ask far less a unit. */
-    const p55 = rd55("(function(){var b=tierBoards(),lad=b.salt,got=tierProposal('CZ9-SM','salt',b);"
+    /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM buys half a unit only; the level nearest their rate at half a unit is not the
+       level nearest it across the whole board, because the board's big rungs ask far less a unit. The board is read again
+       beside the proposal, so the three readings are the ones the proposal was made against. */
+    const p55 = R55 == null ? null : rd55("(function(){var b=tierBoards(),got=tierProposal('CZ9-SM','salt',b);"
       + "var keep=PRICE_ENGINE.sizesBy.salt.slice();PRICE_ENGINE.sizesBy.salt=keep.filter(function(q){return q<=2.5;});recompute();"
       + "var cut=tierProposal('CZ9-SM','salt',tierBoards());PRICE_ENGINE.sizesBy.salt=keep;recompute();"
-      + "var half=lad.find(function(r){return Math.abs(r.q-0.5)<0.009;}),big=lad.find(function(r){return Math.abs(r.q-12.5)<0.009;});"
-      + "var near=function(row){var t=1;for(var k=2;k<TIER_NAMES.length;k++)if(Math.abs(row.prices[k]/row.q-120)<Math.abs(row.prices[t]/row.q-120))t=k;return TIER_NAMES[t];};"
-      + "var whole=function(){var t=1,g=function(k){return lad.reduce(function(a,r){return a+Math.abs(r.prices[k]/r.q-120);},0);};for(var k=2;k<TIER_NAMES.length;k++)if(g(k)<g(t))t=k;return TIER_NAMES[t];};"
-      + "return {got:got,cut:cut,whole:whole(),atHalf:near(half),atBig:near(big),rate:pbOwnRate('CZ9-SM').rate};})()");
-    ok(p55.rate === 120 && p55.got === p55.atHalf && p55.got === p55.cut && p55.got !== p55.whole && p55.atHalf !== p55.atBig,
-      "a tier is proposed at the sizes they buy: half a unit gives " + p55.atHalf + " where the biggest rung would give " + p55.atBig + ", the whole board would give " + p55.whole + ", and taking every rung above 2.5 unit off the board does not move it");
+      + "return {got:got,cut:cut,same:JSON.stringify(b.salt.map(function(r){return {q:r.q,prices:r.prices};})),rate:pbOwnRate('CZ9-SM').rate};})()");
+    ok(!!p55 && p55.same === JSON.stringify(lad55) && p55.rate === R55 && p55.got === at55.half && p55.got === p55.cut
+      && p55.got !== at55.whole && at55.half !== at55.big,
+      "a tier is proposed at the sizes they buy: at RM" + R55 + " a unit, off this board, half a unit gives " + (at55 && at55.half)
+      + " where the biggest rung would give " + (at55 && at55.big) + " and the whole board " + (at55 && at55.whole)
+      + ", the proposal is " + (p55 && p55.got) + ", and taking every rung above 2.5 unit off the board leaves it at " + (p55 && p55.cut));
     /* AND WHAT IT IS WORTH: the card of a customer whose best is above their middle rises to the best, never past their tier */
     const card55 = rd55("(function(){TIER_OF['CZ9-BR']={salt:'Silver'};recompute();var lad=fiveTiersNow(),t=TIER_NAMES.indexOf('Silver');"
       + "var one=lad.find(function(r){return Math.abs(r.q-1)<0.009;});var mid=Math.round(105/5)*5,best=Math.round(200/5)*5;"
