@@ -17,7 +17,8 @@ lands, recording no judgement and saying so in every row note and in the version
 to do, and what any agent asked to fold by hand still does** (CLAUDE.md, "The chain: tap to deploy"). The routine is kept, disabled,
 as the manual backup. Whoever folds: if `master/_to_fold.json` is not in master, nothing is
 staged, say so in one line and stop; if `master/_folded.json` is present, the last batch is
-folded and waiting for its deploy to clear it, stop likewise.
+folded and waiting for its deploy to clear it, stop likewise: the next cloud run stages nothing,
+deploys it, marks its rows and clears both files (26 Sep 2026), never reading it as a replay.
 This procedure is unchanged and still what any agent follows, whether that is the Fold step, a
 Code session asked to fold, or the routine fired by hand. The laptop-era procedure is
 kept verbatim beside this as `DAILY_FOLD.md` for its context; where the two disagree, this file

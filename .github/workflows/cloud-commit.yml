@@ -102,6 +102,15 @@ jobs:
       # batch the fold refused as a replay clears its own handoff (v512): the rows ARE on the
       # book, so the drafts are marked committed, each refusal recorded where the phone shows
       # refusals, and staging carries on.
+      # A FOLD WHOSE DEPLOY DID NOT FINISH IS DEPLOYED, NEVER REFUSED (26 Sep 2026). With
+      # master/_folded.json in HEAD the last fold was pushed and its run stopped before the clear:
+      # a runner that died, a timeout, a failed deploy or proof. Its rows are all on the book, so
+      # the v512 road read the batch as a replay: it marked them committed with no proof
+      # the phone had them and told him the fold had refused them. And a run that staged nothing
+      # did not deploy, so _folded.json stood; the next run that staged a batch stood the Fold
+      # down on it and then cleared that batch unfolded with the old handoff. So _folded.json is
+      # asked first: nothing new is staged, and the plan takes the deploy road (the gate, the
+      # deploy, the proof, then the marks and the clear). The next tick stages as usual.
       - name: Stand down if the last batch is still unfolded
         id: guard
         if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)
@@ -111,7 +120,12 @@ jobs:
         run: |
           set -euo pipefail
           echo "staged=0" >> "$GITHUB_OUTPUT"
-          if git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
+          echo "folded=0" >> "$GITHUB_OUTPUT"
+          if git cat-file -e HEAD:master/_folded.json 2>/dev/null; then
+            echo "::notice::master/_folded.json is in HEAD: the last fold was pushed and its deploy did not finish. Deploying it, marking its rows and clearing the handoff; nothing new is staged on this run."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "folded=1" >> "$GITHUB_OUTPUT"
+          elif git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
             n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
             if ids=$(node tools/fold.mjs --replays); then
               echo "::notice::The staged batch of $n row(s) is a replay of rows already on the book ($ids): clearing it."
@@ -181,7 +195,8 @@ jobs:
 
       # ---- THE PLAN FOR THE REST OF THE JOB ---------------------------------------------
       # fold:    something is staged, by this tick or a previous one.
-      # deploy:  a push; a dispatch that did not ask to stage only; or any run that folded.
+      # deploy:  a push; a dispatch that did not ask to stage only; any run that folded; or a
+      #          fold already in HEAD whose deploy did not finish (the guard's folded).
       # publish: EVERY RUN BUT THE PROBE (v701, his question of 18 Sep 2026: can the publish be on
       #          any trigger?). It can, because it needs nothing this job produces: it reads
       #          ledger/book.json and the master out of the checkout, never public/, and the
@@ -201,6 +216,7 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ] && [ "${{ inputs.probe_key }}" != "true" ]; then deploy=1; fi
           if [ "$fold" = "1" ]; then deploy=1; fi
+          if [ "${{ steps.guard.outputs.folded }}" = "1" ]; then deploy=1; fi
           publish=1
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.probe_key }}" = "true" ]; then publish=0; fi
           echo "fold=$fold" >> "$GITHUB_OUTPUT"

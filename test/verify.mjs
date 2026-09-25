@@ -8571,6 +8571,99 @@ await (async () => {
   ok(/--refused-note/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "drafts.mjs can record a refusal the fold made");
 })();
 
+section("A fold whose deploy did not finish is deployed, never refused as a replay");
+await (async () => {
+  /* 26 Sep 2026. With master/_folded.json in HEAD the last fold was pushed and its run stopped before the clear. Its
+     rows are all on the book, so the guard read the batch as a replay: it marked them committed with no proof the phone
+     had them and wrote a refusal onto each, and a run that staged nothing left _folded.json standing. The guard's, the
+     plan's, the marks' and the clear's own shell, lifted out of cloud-commit.yml, run here in a fixture repository with
+     a bare origin, fold.mjs stubbed to call every batch a replay and drafts.mjs to log what it is asked. The control is
+     the same harness with _to_fold.json alone, where the replay road must still run and the refusal must be seen.
+     Each assertion was proved red by its own mutation, one at a time, and the first three by the workflow before it. */
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const stepRun = (name) => {
+    const at = wf.indexOf("      - name: " + name + "\n");
+    const next = wf.indexOf("\n      - name: ", at + 1);
+    const lines = (at < 0 ? "" : wf.slice(at, next < 0 ? undefined : next)).split("\n");
+    const r = lines.findIndex((l) => /^\s+run: \|$/.test(l));
+    return r < 0 ? "" : lines.slice(r + 1).join("\n");
+  };
+  const bash = process.platform !== "win32" ? "bash"
+    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  ok(bash === "bash" || existsSync(bash), "Git's own bash is found to run the workflow's shell: " + bash);
+  /* hermetic: no GIT_ variable may point git at this checkout, and cloud-commit's own run, which runs this suite last,
+     carries GITHUB_ and the LIVE_AT its proof step exported */
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(GIT_|GITHUB_|LIVE_AT$)/.test(k)));
+  const root = mkdtempSync(join(tmpdir(), "folded-"));
+  const A = "2099-01-01T00:00:00.000Z";
+  const log = join(root, "log.txt").replace(/\\/g, "/");
+  const git = (cwd, ...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd, env, encoding: "utf8", stdio: "pipe" });
+  const onOrigin = (dir, f) => spawnSync("git", ["--git-dir", join(dir, "origin.git"), "cat-file", "-e", "master:" + f], { env }).status === 0;
+  /* one fixture: the handoff files named, stubs that log, pushed to a bare origin the steps push to */
+  const fixture = (name, files) => {
+    const dir = join(root, name), w = join(dir, "w");
+    mkdirSync(join(w, "master"), { recursive: true }); mkdirSync(join(w, "tools"), { recursive: true });
+    writeFileSync(join(w, "tools", "fold.mjs"), "import { readFileSync, appendFileSync } from 'node:fs';\n"
+      + "appendFileSync(" + JSON.stringify(log) + ", 'fold ' + process.argv.slice(2).join(' ') + '\\n');\n"
+      + "console.log(JSON.parse(readFileSync('master/_to_fold.json', 'utf8')).approved.map((r) => r.id).join(' '));\n");
+    writeFileSync(join(w, "tools", "drafts.mjs"), "import { appendFileSync } from 'node:fs';\n"
+      + "appendFileSync(" + JSON.stringify(log) + ", 'drafts ' + process.argv.slice(2).join(' ') + '\\n');\n");
+    if (files.includes("_to_fold.json")) writeFileSync(join(w, "master", "_to_fold.json"), JSON.stringify({ ok: true, count: 1, approved: [{ id: A, collection: "sales" }] }));
+    if (files.includes("_folded.json")) writeFileSync(join(w, "master", "_folded.json"), JSON.stringify({ ids: [A] }));
+    git(dir, "init", "-q", "--bare", "-b", "master", "origin.git");
+    git(w, "init", "-q", "-b", "master"); git(w, "add", "-A"); git(w, "commit", "-q", "-m", "fixture");
+    git(w, "remote", "add", "origin", "../origin.git"); git(w, "push", "-q", "-u", "origin", "master");
+    return { dir, w };
+  };
+  /* one step: its shell as GitHub runs it (bash -e, pipefail), each ${{ }} rendered from ctx or empty, its outputs read back */
+  const step = (w, name, ctx, more = {}) => {
+    const out = join(w, "..", "out-" + name.replace(/\W+/g, "") + ".txt");
+    writeFileSync(out, "");
+    const script = stepRun(name).replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, k) => (k in ctx ? ctx[k] : ""));
+    const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script], { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: out.replace(/\\/g, "/") }, encoding: "utf8" });
+    const o = {};
+    for (const l of readFileSync(out, "utf8").split("\n")) { const i = l.indexOf("="); if (i > 0) o[l.slice(0, i)] = l.slice(i + 1).trim(); }
+    return { code: r.status, o, text: String(r.stdout || "") + String(r.stderr || "") };
+  };
+  const readLog = () => (existsSync(log) ? readFileSync(log, "utf8") : "");
+  try {
+    const plan = (w, g, event, stageOnly) => step(w, "What this run does", {
+      "github.event_name": event, "inputs.stage_only": stageOnly, "inputs.probe_key": event === "schedule" ? "" : "false",
+      "steps.guard.outputs.staged": g.o.staged || "", "steps.guard.outputs.folded": g.o.folded || "", "steps.commit.outputs.staged": "" }).o;
+
+    /* THE STATE THE FIX IS FOR: the folded batch and its _folded.json both in HEAD */
+    const s = fixture("stuck", ["_to_fold.json", "_folded.json"]);
+    writeFileSync(log, "");
+    const g = step(s.w, "Stand down if the last batch is still unfolded", {});
+    const afterGuard = readLog();
+    ok(g.code === 0 && !/--refused-note|--committed|--replays/.test(afterGuard) && onOrigin(s.dir, "master/_to_fold.json"),
+      "with _folded.json in HEAD the guard asks no replay question, marks nothing and writes no refusal: " + JSON.stringify(afterGuard) + " " + g.text.slice(-300));
+    ok(g.o.skip === "1" && g.o.staged === "0", "and nothing new is staged on that run: " + JSON.stringify(g.o));
+    const ps = plan(s.w, g, "schedule", ""), pd = plan(s.w, g, "workflow_dispatch", "true");
+    ok(ps.deploy === "1" && ps.fold === "0" && pd.deploy === "1" && pd.fold === "0",
+      "the plan takes the deploy road on the hourly tick and on a stage-only dispatch, folding nothing: " + JSON.stringify({ ps, pd }));
+    const m = step(s.w, "Mark the folded rows committed", {}, { LIVE_AT: "2099-01-01T00:05:00Z" });
+    ok(m.code === 0 && readLog().slice(afterGuard.length).trim() === "drafts --committed " + A + " --live 2099-01-01T00:05:00Z",
+      "the marks then name the folded rows, with no refusal beside them: " + JSON.stringify(readLog().slice(afterGuard.length)));
+    const c = step(s.w, "Clear the handoff files", {});
+    ok(c.code === 0 && !onOrigin(s.dir, "master/_folded.json") && !onOrigin(s.dir, "master/_to_fold.json"),
+      "and the clear leaves neither handoff file on origin, so the next tick stages as usual: " + c.text.slice(-300));
+
+    /* THE CONTROL: _to_fold.json alone, a batch wholly on the book, still takes the v512 replay road in this harness */
+    const r = fixture("replay", ["_to_fold.json"]);
+    writeFileSync(log, "");
+    const gr = step(r.w, "Stand down if the last batch is still unfolded", {});
+    const lr = readLog();
+    ok(gr.code === 0 && /^fold --replays$/m.test(lr) && new RegExp("^drafts --refused-note " + A + " The fold refused this as a replay", "m").test(lr)
+      && !onOrigin(r.dir, "master/_to_fold.json") && gr.o.skip === "0" && plan(r.w, gr, "schedule", "").deploy === "0",
+      "while with _to_fold.json alone the replay road still marks, notes and clears the batch, and the tick deploys nothing: " + JSON.stringify(lr) + " " + gr.text.slice(-300));
+  } finally {
+    try { rmSync(root, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("Statements: the pay link opens QR Command at the account, the rail and the amount (S6)");
 await (async () => {
   /* THE ONE LINK INTO THE PAY PAGE (the owner's D8, 24 Sep 2026): stmt/pay.js builds QR Command's
