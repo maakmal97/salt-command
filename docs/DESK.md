@@ -127,9 +127,13 @@
   amendment the party's own code counts as free.
 - **The queue on load** (`qKeepOnLoad`): an entry clears only when the fold has passed it, this
   device saw it acknowledged (`qSentThrough`, seeded from the watermark), and the last good read
-  of the drafts did not list it refused (`saltRefusedAts`, stored only on `r.ok`). An entry that
-  never reached the cloud is flagged `stuck` and never cleared by itself. `q.at > null` is false,
-  so a missing watermark must never drop an entry.
+  of the drafts did not list it refused (`saltRefusedAts`, stored only on `r.ok`). An entry this
+  device never saw acknowledged, once the fold has passed it, is flagged `stuck` and never cleared
+  by itself; the drafter still drafts it, so he decides it under Approve, then Undoes the copy.
+  `q.at > null` is false, so a missing watermark must never drop an entry.
+- **The ten-second tick posts only what the cloud has not taken**: an entry newer than
+  `qSentThrough`, or `qDirty` (set by `saveQueue`, cleared by a 2xx only when no save landed while
+  that post was in flight). An emptied queue is not posted by the tick.
 - **Loans** are rows `{date, party, direction:'in'|'out', valueKg, valueRM, status, settledOn,
   product, note}`. Borrowed in counts (`loanInUnits`) only while open; lent out counts
   (`loanOutUnits`, the Inventory walk) whatever its status, so a repayment road must add that

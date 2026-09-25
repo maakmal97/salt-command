@@ -705,6 +705,37 @@ await (async () => {
       ok(runIdle([], null) === false, "and a throw reads as not idle, never as idle");
     }
 
+    /* THE TICK POSTS ONLY WHAT THE CLOUD HAS NOT TAKEN (26 Sep 2026). It posted the whole queue
+       whenever it held anything, so an acknowledged, refused or stuck entry went every ten seconds
+       while the desk was on screen: about 369 posts a day against a handful of entries, each a
+       drafter run over the book. Run, not read: the shipped block is run over stubs, its load
+       listener fired (which ticks once), and qPost counted. */
+    const tickSrc = (html.match(/\(function\(\)\{\s*var chip=null,timer=null;[\s\S]*?\n\}\)\(\);/) || [])[0];
+    ok(!!tickSrc && tickSrc.includes("function tick(){"), "the built desk carries the freshness tick");
+    if (tickSrc) {
+      const AT = "2026-09-25T01:00:00.000Z";
+      const runTick = (queue, sent, dirty, newest = () => queue.reduce((m, q) => (q.at > m ? q.at : m), "")) => {
+        let posts = 0, onLoad = null;
+        const win = { SALT_CLOUD: true, addEventListener: (t, f) => { if (t === "load") onLoad = f; } };
+        const doc = { visibilityState: "visible", addEventListener() { }, activeElement: null, querySelector: () => null };
+        new Function("window", "document", "fetch", "setInterval", "location", "SALT_REV_MS", "SALT_BUILD_ID",
+          "queue", "qSyncState", "qPost", "qNewestAt", "qSentThrough", "qDirty", tickSrc)(
+          win, doc, () => new Promise(() => { }), () => 1, { reload() { } }, 10000, "x",
+          queue, "server", () => { posts++; }, newest, sent, dirty);
+        if (onLoad) onLoad();
+        return posts;
+      };
+      ok(runTick([{ at: AT }], AT, false) === 0,
+        "an acknowledged queue with no change since is not posted again on the tick");
+      ok(runTick([{ at: AT }], "2026-09-25T00:59:59.000Z", false) === 1,
+        "an entry newer than the acknowledged mark is posted, so a held entry is still retried every ten seconds");
+      ok(runTick([{ at: AT }], AT, true) === 1,
+        "a change the mark cannot see (an Undo, a withdrawal) is posted until the cloud acknowledges it");
+      ok(runTick([{ at: AT }], "", false) === 1, "an empty mark reads as nothing acknowledged");
+      ok(runTick([{ at: AT }], AT, false, null) === 1,
+        "a desk that cannot say what was acknowledged still posts, because a post is idempotent");
+    }
+
     /* THE LOAD MAY NOT CLEAR WHAT THE CLOUD NEVER TOOK (v485). v482 freed the reload to happen
        with an entry held, which made the load's self-clearing rule reachable far more often.
        That rule asked only the watermark, which says what the FOLD has taken and nothing about
@@ -759,8 +790,8 @@ await (async () => {
       "an entry that survived while the fold had passed it is flagged stuck at load, unless the drafter refused it (v586)");
     ok(html.includes("queueStuck=qStuckCount(queue,refusedAts);"),
       "the notice counts what IS stuck, not what just became stuck, or it shows once and never again; a refused entry is not stuck (v586)");
-    ok(html.includes("never reached the cloud</b>, and the ledger has since been folded past"),
-      "and a stuck entry is named on screen, because only a person can settle it");
+    ok(html.includes("not confirmed by the cloud</b> before the ledger was folded past") && !html.includes("cannot be committed automatically"),
+      "and a stuck entry is named on screen, sent to Approve rather than re-recorded, since the drafter still drafts it (26 Sep 2026)");
 
     /* the id must actually move when the master does, or the poll can never fire. Round six:
        the old check hashed a mutated copy of the built desk alone and compared it to an id
@@ -782,6 +813,47 @@ await (async () => {
       .digest("hex").slice(0, 16);
     ok(recomputed === rev.id, "rev.id reproduces from the build's own inputs by the build's own recipe");
   }
+})();
+
+section("The queue: what the cloud has taken, and what it is still owed (26 Sep 2026)");
+await (async () => {
+  /* The tick now posts only an entry newer than qSentThrough or a change qDirty names, so both
+     marks are proved on the master's own qPost and saveQueue: the mark moves only on an answer
+     that was read, and a change stays owed until a post of it (not an older one) is acknowledged. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (e) => JSON.parse(w.eval("JSON.stringify(" + e + ")"));
+  const A = "2026-09-25T01:00:00.000Z", B = "2026-09-25T02:00:00.000Z";
+  const EARLY = "2026-09-24T00:00:00.000Z", FOLDED = "2026-09-25T03:00:00.000Z";
+  const J = JSON.stringify;
+  const answer = (json) => `fetch=function(){return Promise.resolve({ok:true,status:200,json:${json}});};`;
+  const good = "function(){return Promise.resolve({ok:true,entries:2});}";
+  w.eval(`qStatus=function(){};renderQueue=function(){};queue=[{at:${J(A)}},{at:${J(B)}}];`);
+
+  w.eval(`qSyncState='server';qSentMark(${J(EARLY)});` + answer(good));
+  await w.eval("qPost()");
+  ok(rd("qSentThrough") === B, `a 200 marks the newest entry its payload carried (${rd("qSentThrough")})`);
+
+  w.eval(`qSyncState='server';qSentMark(${J(EARLY)});` + answer("function(){return Promise.reject(new Error('cut off'));}"));
+  await w.eval("qPost()");
+  ok(rd("qSentThrough") === EARLY, "a 200 whose body was never read leaves the mark where it was");
+  ok(rd(`qKeepOnLoad({at:${J(B)}},${J(FOLDED)},qSentThrough,[])`) === true,
+    "so the load keeps that entry though the fold has passed it, and the tick posts it again");
+
+  w.eval("qSyncState='server';qDirty=false;fetch=function(){return Promise.reject(new Error('no signal'));};");
+  await w.eval("saveQueue()");
+  ok(rd("qDirty") === true, "a save whose post failed is still owed, though no entry is newer than the mark");
+
+  w.eval("qSyncState='server';" + answer(good));
+  await w.eval("saveQueue()");
+  ok(rd("qDirty") === false, "a save the cloud acknowledged is owed nothing, so the tick stays quiet");
+
+  w.eval("qSyncState='server';window.__rel=[];fetch=function(){return new Promise(function(res){__rel.push(function(){res({ok:true,status:200,json:" + good + "});});});};");
+  const first = w.eval("saveQueue()"), second = w.eval("saveQueue()");
+  w.eval("__rel[0]()"); await first;
+  ok(rd("qDirty") === true, "an older post's answer does not clear a change saved while it was in flight");
+  w.eval("__rel[1]()"); await second;
+  ok(rd("qDirty") === false, "and the answer to the post that carried it does");
 })();
 
 /* ---- 7. Worker: /rev serves the manifest, uncached ------------------------------- */
