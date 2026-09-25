@@ -37229,9 +37229,8 @@ await (async () => {
      list typed into this test said "empty" about books that trade. Rule 2 of the parity scan is
      about a book with NOTHING on it, whichever that is today, and tomorrow it may be none at all.
      Registration is still asserted for all three, because that does not change. */
-  const rowsOf = (id) => book.sales.filter((r) => (r.product || "salt") === id).length
-    + book.purchases.filter((r) => (r.product || "salt") === id).length;
-  const empties = opened.filter((id) => rowsOf(id) === 0);
+  const rowsOf = (bk, id) => bk.sales.filter((r) => (r.product || "salt") === id).length
+    + bk.purchases.filter((r) => (r.product || "salt") === id).length;
 
   ok(opened.every((id) => MAPS6.every((k) => book[k] && id in book[k]) && book.PROD_ORDER.includes(id)),
     "candy, rice and spare are registered in all six per-product maps and the order");
@@ -37255,18 +37254,6 @@ await (async () => {
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
   ok(ids.length === 5 && opened.every((id) => ids.includes(id)), "the desk carries five books");
-
-  const ps = JSON.parse(w.eval("JSON.stringify(parityScan())"));
-  const kinds = ps.rows.map((r) => r.k);
-  ok(!kinds.includes("commit"),
-    "the parity scan reports no identical commitment across books, so nothing behind Today and Forward reads every order and calls it one book's");
-  ok(!kinds.includes("empty"),
-    "and no book with nothing sold reports a commitment or a receivable of its own: rule 2 fires for the first time since v275 and finds the product split clean");
-  ok(empties.length > 0 && empties.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
-    `every book with nothing on it reports zero revenue, zero receivable, zero inventory and zero promised out (${empties.join(", ") || "none left"})`);
-  const declared = ps.rows.filter((r) => r.k === "declared").map((r) => r.pr);
-  ok(empties.every((id) => declared.includes(id)) && !opened.filter((id) => !empties.includes(id)).some((id) => declared.includes(id)),
-    `and the Whiteboard says "declared but nothing on the books" of exactly those and no others (${declared.join(", ") || "none"})`);
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
@@ -37295,6 +37282,38 @@ await (async () => {
   ok(capless.every((id) => new RegExp(id, "i").test(after)) && /no cap of (their|its) own/.test(after),
     "saying instead which books borrow one, so the borrowing is stated rather than hidden");
   try { w.close(); } catch (e) { }
+
+  /* 26 Sep 2026, test only: THE EMPTY BOOK THE SCAN READS IS OPENED FOR IT, NOT WAITED FOR. The book decided which books were
+     empty, but the check still asked that at least one was: spare is the last with nothing on it, and its first row would
+     leave rule 2 nothing to fire on and turn a version that changed nothing red. So the scan runs on a copy of the book and
+     the master with one more book opened by the one road, tools/product.mjs, which opens it empty by construction (v778's),
+     beside whichever books the live book leaves empty. Which books those are is still asked of the copy's own rows. */
+  const dir80 = join(REPO, "test", "tmp", "v780-" + Date.now());
+  mkdirSync(dir80, { recursive: true });
+  const bk80 = join(dir80, "book.json"), ms80 = join(dir80, "master.html");
+  writeFileSync(bk80, readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  writeFileSync(ms80, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  const add80 = spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), "--add", "zz", "--name", "Zed"],
+    { env: Object.assign({}, process.env, { SALT_BOOK: bk80, SALT_MASTER: ms80 }), encoding: "utf8" });
+  const book80 = JSON.parse(readFileSync(bk80, "utf8"));
+  const empties = Object.keys(book80.PRODUCTS).filter((id) => !book80.PRODUCTS[id].retired && rowsOf(book80, id) === 0);
+  const { w: w80 } = await openMaster(ms80);
+  try {
+    const ids80 = JSON.parse(w80.eval("JSON.stringify(PROD_IDS)"));
+    const ps = JSON.parse(w80.eval("JSON.stringify(parityScan())"));
+    const kinds = ps.rows.map((r) => r.k);
+    ok(add80.status === 0 && empties.includes("zz") && ids80.includes("zz"),
+      "a book opened for the scan by the one road is empty and on the desk, so rule 2 always has a book to read: " + JSON.stringify({ status: add80.status, empties }));
+    ok(!kinds.includes("commit"),
+      "the parity scan reports no identical commitment across books, so nothing behind Today and Forward reads every order and calls it one book's");
+    ok(!kinds.includes("empty"),
+      "and no book with nothing sold reports a commitment or a receivable of its own: rule 2 fires for the first time since v275 and finds the product split clean");
+    ok(empties.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
+      `every book with nothing on it reports zero revenue, zero receivable, zero inventory and zero promised out (${empties.join(", ")})`);
+    const declared = ps.rows.filter((r) => r.k === "declared").map((r) => r.pr);
+    ok(empties.every((id) => declared.includes(id)) && !ids80.filter((id) => !empties.includes(id)).some((id) => declared.includes(id)),
+      `and the Whiteboard says "declared but nothing on the books" of exactly those and no others (${declared.join(", ") || "none"})`);
+  } finally { try { w80.close(); } catch (e) { } rmSync(dir80, { recursive: true, force: true }); }
 })();
 
 section("v781: who earns is a field on the book, not a string comparison");
