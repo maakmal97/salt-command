@@ -856,6 +856,47 @@ await (async () => {
   ok(rd("qDirty") === false, "and the answer to the post that carried it does");
 })();
 
+section("The queue: a rejection decided on another device leaves this one too (26 Sep 2026)");
+await (async () => {
+  /* The Worker drops a rejected entry from every queue it holds and names the stamps it dropped from a
+     post in droppedAts. Driven on the master's own qPost with a stubbed answer: the entry leaves this
+     queue, its stored copy, and the overlay's count, and the acknowledgement marks are left to the answer. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (e) => JSON.parse(w.eval("JSON.stringify(" + e + ")"));
+  const J = JSON.stringify;
+  const X = "2026-09-25T01:00:00.000Z", Y = "2026-09-25T02:00:00.000Z";
+  const entry = (at) => ({ at, type: "CONTACT", raw: "contact ZQ7-VRN " + at,
+    payload: { mode: "contact", date: "2026-09-25", party: "ZQ7-VRN", how: "call", outcome: "noreply" } });
+  const answer = (body) => `fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(${J(body)});}});};`;
+  const load = () => w.eval(`queue=${J([entry(X), entry(Y)])};localStorage.setItem('saltQueue',JSON.stringify(queue));applyOverlay();window.__draws=0;`);
+  w.eval("qStatus=function(){};renderQueue=function(){};render=function(){__draws++;};");
+
+  load();
+  ok(rd("provCount") === 2, `both held entries count in the figures before the answer (${rd("provCount")})`);
+  w.eval("qSyncState='server';qDirty=true;" + answer({ ok: true, entries: 1, droppedAts: [X] }));
+  const gen = rd("qGen");
+  await w.eval("qPost()");
+  ok(J(rd("queue.map(function(q){return q.at;})")) === J([Y]), `a stamp the Worker dropped leaves this queue (${J(rd("queue.map(function(q){return q.at;})"))})`);
+  ok(J(rd("JSON.parse(localStorage.getItem('saltQueue')).map(function(q){return q.at;})")) === J([Y]),
+    "and its stored copy, so the next open does not bring it back");
+  ok(rd("provCount") === 1 && rd("__draws") === 1, `its figures leave with it and the desk is redrawn (count ${rd("provCount")}, draws ${rd("__draws")})`);
+  ok(rd("qGen") === gen && rd("qDirty") === false && rd("qSyncState") === "server",
+    "nothing new is owed to the cloud, which already holds the queue without it, and the post still reads as delivered");
+
+  load();
+  w.eval("qSyncState='server';" + answer({ ok: true, entries: 2 }));
+  await w.eval("qPost()");
+  ok(rd("queue.length") === 2 && rd("provCount") === 2 && rd("__draws") === 0,
+    "an answer naming nothing drops nothing and redraws nothing, as the laptop's server answers");
+
+  load();
+  w.eval("qSyncState='server';render=function(){throw new Error('draw');};" + answer({ ok: true, entries: 1, droppedAts: [X] }));
+  const went = await w.eval("qPost()");
+  ok(went === true && rd("qSyncState") === "server" && rd("queue.length") === 1,
+    "a redraw that throws does not turn a delivered post into a failed one");
+})();
+
 /* ---- 7. Worker: /rev serves the manifest, uncached ------------------------------- */
 section("Worker — /rev");
 await (async () => {

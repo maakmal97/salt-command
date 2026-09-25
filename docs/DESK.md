@@ -134,6 +134,9 @@
 - **The ten-second tick posts only what the cloud has not taken**: an entry newer than
   `qSentThrough`, or `qDirty` (set by `saveQueue`, cleared by a 2xx only when no save landed while
   that post was in flight). An emptied queue is not posted by the tick.
+- **A rejection decided on another device leaves this one on its next post**: the Worker names
+  each rejected stamp it dropped in `droppedAts`, and `qDropRejected` takes them out of the queue
+  and its stored copy and redraws, straight to storage, so `qGen` and `qDirty` stay the answer's.
 - **Loans** are rows `{date, party, direction:'in'|'out', valueKg, valueRM, status, settledOn,
   product, note}`. Borrowed in counts (`loanInUnits`) only while open; lent out counts
   (`loanOutUnits`, the Inventory walk) whatever its status, so a repayment road must add that

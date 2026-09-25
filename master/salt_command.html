@@ -22903,6 +22903,20 @@ function qHeaders(){
   if(k)h['X-Salt-Key']=k;
   return h;
 }
+/* 26 Sep 2026: A REJECTION DECIDED ON ANOTHER DEVICE. The Worker drops a rejected entry from every queue it
+   holds and names each stamp it dropped from this post in droppedAts; only the device that rejected it used to
+   forget it, so this one kept the sale in its queue and every figure until a fold happened to pass the stamp.
+   Written straight to storage, not through saveQueue(): the cloud already holds this queue without them, so
+   nothing new is owed and qGen and qDirty are left to the answer. A throw in the redraw must not read as a
+   failed post, so it is caught here. */
+function qDropRejected(ats){
+  const gone=Array.isArray(ats)?ats.filter(a=>typeof a==='string'&&a):[];
+  if(!gone.length)return 0;
+  const n=queue.length;queue=queue.filter(q=>!(q&&gone.indexOf(q.at)>=0));
+  if(queue.length===n)return 0;
+  try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}
+  try{applyOverlay();render();}catch(e){}
+  return n-queue.length;}
 async function qPost(){
   /* what THIS payload carries, read BEFORE the await: an entry recorded while the request is
      in flight is not covered by its answer, so it must not be marked by it. */
@@ -22916,6 +22930,7 @@ async function qPost(){
     const j=await r.json();
     if(sending&&sending>qSentThrough)qSentMark(sending);   // it is on the server; the load may now clear it once the fold passes it
     if(gen===qGen)qDirty=false;                            // a save while this was in flight is still owed to the cloud
+    qDropRejected(j.droppedAts);                            // a rejection decided on another device leaves this one too
     qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');
     return true;
   }catch(e){
