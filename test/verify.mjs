@@ -31326,7 +31326,7 @@ await (async () => {
     const over = await O.customerMove(senv, U, o.id, "pay", { amount: 50 });
     const rest = await O.customerMove(senv, U, o.id, "pay", { amount: 40 });
     const full = await O.customerMove(senv, U, o.id, "pay", { amount: 5 });
-    ok(over.status === 400 && /40\.00 outstanding/.test(over.error) && cod.status === 409 && /recorded by us/.test(cod.error)
+    ok(over.status === 400 && /the RM 40\.00 outstanding/.test(over.error) && cod.status === 409 && /recorded by us/.test(cod.error)
       && !rest.error && full.status === 409 && /sent already/.test(full.error) && (await mine(o.id)).claimed === 100,
       store + " road: a claim may not pass what is owed less what already waits, and cash is never theirs to declare: "
       + JSON.stringify({ over: over.error, cod: cod.error, rest: rest.error, full: full.error }));
