@@ -1,6 +1,6 @@
 {
- "v": "v853",
- "stamped": "25 Sep 2026, 23:06 KL",
+ "v": "v854",
+ "stamped": "25 Sep 2026, 23:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 15.5,
+  "STATED_STOCK": 28,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-24",
@@ -704,6 +704,22 @@
     "paidOn": "2026-09-24",
     "note": "<b>CANDY PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SM4-KEP, 15 unit for RM630, RM42 a unit on the drafter's working, RM630 cash out and 15 unit received on 24 Sep, with no delivery and no freight, so nothing stays open. His word of 23 Sep 2026 quotes 10 unit at RM55 and 20 unit at RM47, then 30 unit at RM38 and 50 unit at RM30; 15 unit falls between tiers, so no quoted rate answers this size. Across 3 orders his median rate is RM7.67 with a range of RM3.20 to RM38, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised.",
     "rid": "p031"
+   },
+   {
+    "qty": 12.5,
+    "total": 700,
+    "cash": 700,
+    "handover": "collected",
+    "supplier": "SA5-BTR",
+    "freight": 20,
+    "status": "paid",
+    "date": "2026-09-25",
+    "receivedOn": "2026-09-25",
+    "receivedQty": 12.5,
+    "paidOn": "2026-09-25",
+    "cost": 700,
+    "note": "<b>SALT BUY DATED 25 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700 at RM56 a unit, collected, RM700 cash out and 12.5 unit received on 25 Sep, with RM20 freight beside it, so nothing stays open. The total is the 23 Sep tier to the ringgit: on his word, multiples of 12.5 unit at RM700 each. Across 18 orders their median rate is RM56, range RM44 to RM64, RM0 outstanding, none defaulted, no credit taken, on the roster and not an associate. The drafter flagged RM48 a unit as an inventory average across more than one lot rate rather than this lot; these figures do not settle it.",
+    "rid": "p032"
    }
   ],
   "sales": [
@@ -6005,9 +6021,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T15:04:51.547Z",
+  "QUEUE_COMMITTED": "2026-09-25T15:09:05.392Z",
   "PRICING": {
-   "takenAt": "2026-09-25T15:06:35.645Z",
+   "takenAt": "2026-09-25T15:14:36.363Z",
    "sizes": [
     0.5,
     1,
@@ -7072,43 +7088,43 @@
    "byProduct": {
     "salt": {
      "stockCost": 48,
-     "replCost": 49.43,
+     "replCost": 51,
      "floors": {
       "1": {
-       "floor": 56.71
+       "floor": 58.4
       },
       "2": {
-       "floor": 113.42
+       "floor": 116.8
       },
       "3": {
-       "floor": 170.14
+       "floor": 175.19
       },
       "4": {
-       "floor": 226.85
+       "floor": 233.59
       },
       "5": {
-       "floor": 283.56
+       "floor": 291.99
       },
       "0.5": {
-       "floor": 28.36
+       "floor": 29.2
       },
       "1.5": {
-       "floor": 85.07
+       "floor": 87.6
       },
       "2.5": {
-       "floor": 141.78
+       "floor": 146
       },
       "3.5": {
-       "floor": 198.49
+       "floor": 204.39
       },
       "4.5": {
-       "floor": 255.2
+       "floor": 262.79
       },
       "6.25": {
-       "floor": 354.45
+       "floor": 364.99
       },
       "12.5": {
-       "floor": 708.9
+       "floor": 729.98
       }
      },
      "inputs": {
@@ -7138,10 +7154,10 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 25,
-         "total": 1400,
+         "qty": 12.5,
+         "total": 700,
          "rate": 56,
-         "date": "2026-09-22",
+         "date": "2026-09-25",
          "sup": "SA5-BTR"
         },
         "days": 50,
@@ -7172,16 +7188,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 25,
-        "total": 1400,
+        "qty": 12.5,
+        "total": 700,
         "rate": 56,
-        "date": "2026-09-22",
+        "date": "2026-09-25",
         "sup": "SA5-BTR"
        },
-       "meanLot": 25.9375,
+       "meanLot": 25.297619047619047,
        "quoteRate": 56,
-       "repl": 49.43,
-       "freightRate": 1.36,
+       "repl": 51,
+       "freightRate": 1.3,
        "leak": {
         "ratio": 0.1166,
         "leak": 6.5,
@@ -7206,7 +7222,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07650147999618066,
+       "shrinkRate": 0.07471789611116293,
        "avgDel": {
         "n": 169,
         "kg": 429.45,
@@ -12569,10 +12585,10 @@
      "cards": {}
     }
    },
-   "v": "v853"
+   "v": "v854"
   },
   "OPEN": {
-   "at": "2026-09-25T15:06:35.948Z",
+   "at": "2026-09-25T15:14:36.625Z",
    "count": 8,
    "byKey": {
     "CC5-OKR|2026-09-25|90": {
@@ -12705,10 +12721,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 15.5,
-     "free": 6,
+     "onHand": 28,
+     "free": 18.5,
      "owedOut": 9.5,
-     "coverDays": 1.5,
+     "coverDays": 4.1,
      "rate": 5.53,
      "owedToYou": 350,
      "promised": 11,
@@ -12766,7 +12782,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v853"
+   "v": "v854"
   }
  }
 }
