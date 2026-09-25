@@ -560,9 +560,10 @@ jobs:
           fi
           echo "testing ${{ needs.chain.outputs.sha }}, served as $have"
 
+      # Three shards packed by test/suite-costs.json, as ci.yml's Tests (26 Sep 2026).
       - name: The full suite, after the phone is live
         id: suite
-        run: npm test
+        run: npm test -- --jobs 3
 
       # A SUITE SPEAKS TO THE PHONE ONLY ABOUT THE BUILD THE PHONE SERVES. Two suites can be in
       # flight and both notices are keyed on the version, and the clear deletes every suite notice:

@@ -113,9 +113,12 @@ jobs:
           echo "covered=$covered" >> "$GITHUB_OUTPUT"
           echo "cloud-commit tests this push: $covered"
 
+      # THREE SHARDS, PACKED BY test/suite-costs.json (26 Sep 2026): the runner has no timings of its
+      # own, so the committed costs pack it. Three is what four cores and 16 GB carry at a 4 GB heap a
+      # shard; tools/suite-split.mjs runs no more than the cores less one, so a two-core runner runs two.
       - name: Tests
         if: steps.chain.outputs.covered != '1'
-        run: npm test
+        run: npm test -- --jobs 3
 
       # THE COMMITTED BUILD MATCHES THE MASTER, JUDGED BY THE ID AND NOT BY THE BYTES.
       # public/desk.html, public/data.json and public/rev.json are committed on purpose so the

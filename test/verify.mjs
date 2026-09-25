@@ -9552,7 +9552,7 @@ await (async () => {
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
      asks who deployed. Since 26 Sep 2026 it is its own job, on the chain's deploy (the section below). */
-  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test\n/.test(wf.replace(/\r\n/g, "\n"))
+  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --jobs 3\n/.test(wf.replace(/\r\n/g, "\n"))
      && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'\n/.test(wf.replace(/\r\n/g, "\n")),
      "the full suite comes after the statements, in its own job on the chain's deploy, and runs whoever deployed");
   /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
@@ -9929,13 +9929,61 @@ await (async () => {
   ok(pat !== "" && samples.every((s) => ghTakes(s)) && disagree.length === 0,
      "and the guard decides " + corpus.length + " paths as GitHub decides them for cloud-commit" + (disagree.length ? "; it differs on " + disagree.join(", ") : ""));
   const tests = testsAt > 0 ? ci.slice(testsAt, ci.indexOf("\n\n", testsAt)) : "";
-  ok(/^- name: Tests\n\s+if: steps\.chain\.outputs\.covered != '1'\n\s+run: npm test$/.test(tests),
+  ok(/^- name: Tests\n\s+if: steps\.chain\.outputs\.covered != '1'\n\s+run: npm test -- --jobs 3$/.test(tests),
      "CI's Tests stand down only when the guard says cloud-commit is testing the push");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
      && guard.includes('[ "$BEFORE" != "0000000000000000000000000000000000000000" ]')
      && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
      "the guard asks on a push alone, starts from not covered, never compares from a zero base, and Tests is the one step it stands down");
+})();
+
+section("26 Sep 2026: a runner packs the suite by the committed costs, three shards, never more than its cores less one");
+await (async () => {
+  /* Fold 5.8 of the streamlining plan. tools/suite-split.mjs packed by last run's timings, which are the laptop's and
+     gitignored, so a runner packed by text length. test/suite-costs.json is the laptop's timings by section title,
+     committed; a section it lacks is costed by its length at the rate the costed ones run, and a machine's own last run
+     wins over it. Both packings are weighed here against the file, read and costed by this section, not by the tool.
+     Each assertion was proved red by its own mutation, one at a time. */
+  const S = await import("../tools/suite-split.mjs");
+  const file = JSON.parse(readFileSync(join(REPO, "test", "suite-costs.json"), "utf8"));
+  const has = (t) => Object.prototype.hasOwnProperty.call(file, t) && Number.isFinite(file[t]);
+  const inp = S.inputs({ own: false });
+  const blocks = (S.readSuite(inp.text) || { blocks: [] }).blocks;
+  let ms = 0, chars = 0;
+  for (const b of blocks) if (has(b.title)) { ms += file[b.title]; chars += b.text.length; }
+  const truth = (b) => (has(b.title) ? file[b.title] : b.text.length * (ms / chars));
+  const heaviest = (p) => (p ? Math.max(...p.shards.map((s) => s.blocks.reduce((a, b) => a + truth(b), 0))) : NaN);
+  const at = (jobs) => ({ file: heaviest(S.plan(inp.text, { jobs, past: inp.past, costs: inp.costs })), length: heaviest(S.plan(inp.text, { jobs, past: {}, costs: {} })) });
+  const three = at(3), two = at(2), sec = (x) => (x / 1000).toFixed(1) + " s";
+  const covered = blocks.filter((b) => has(b.title)).length;
+  ok(blocks.length > 0 && covered > 0 && three.file < three.length,
+    `with no timings of its own, a runner packs the heaviest of three shards lighter by the committed costs than by text length: ${sec(three.file)} against ${sec(three.length)}`
+    + ` (two shards: ${sec(two.file)} against ${sec(two.length)}; ${covered} of ${blocks.length} sections costed; laptop seconds)`);
+
+  /* a section the file lacks, and a machine's own last run */
+  const syn = [{ title: "a", text: "x".repeat(1000) }, { title: "b", text: "x".repeat(3000) }, { title: "fresh", text: "x".repeat(2000) }];
+  const c = S.coster(syn, {}, { a: 500, b: 1500 });
+  ok(c(syn[2]) === 1000 && c.from(syn[2]) === "length" && c(syn[0]) === 500 && c.from(syn[0]) === "file",
+    "a section the file lacks is costed by its length at the rate the costed sections run: " + c(syn[2]));
+  const own = S.coster(syn, { a: 900 }, { a: 500, b: 1500 });
+  ok(own(syn[0]) === 900 && own.from(syn[0]) === "run" && own(syn[1]) === 1500 && own.from(syn[1]) === "file",
+    "a machine's own last run wins over the committed cost, which still costs the rest");
+
+  /* the writer: sections verify.mjs has, in its order, whole tens of milliseconds, nothing else */
+  const w = S.costsFrom(syn, { gone: 50, fresh: 1234.4, a: 3, b: "slow" });
+  ok(JSON.stringify(w) === JSON.stringify({ a: 10, fresh: 1230 }), "--write-costs keeps only the sections verify.mjs has, in its order, in whole tens of milliseconds: " + JSON.stringify(w));
+
+  /* the shard count: three asked, three on four cores and two on two; the laptop's own counts as they were */
+  const got = { four: S.jobsFor(["--jobs", "3"], 4), two: S.jobsFor(["--jobs", "3"], 2), laptop12: S.jobsFor(["--jobs", "12"], 16), laptop: S.jobsFor([], 16), runner: S.jobsFor([], 4) };
+  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 8, runner: 2 }),
+    "three shards asked run three on four cores and two on two, and the laptop's own counts are unchanged: " + JSON.stringify(got));
+
+  /* both suite steps ask for three, and the file reaches the runner */
+  const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());
+  const ignored = spawnSync("git", ["check-ignore", "-q", "test/suite-costs.json"], { cwd: REPO }).status;
+  ok(JSON.stringify(runs("ci.yml")) === '["run: npm test -- --jobs 3"]' && JSON.stringify(runs("cloud-commit.yml")) === '["run: npm test -- --jobs 3"]' && ignored === 1,
+    "ci.yml and cloud-commit.yml each run the suite once, as three shards, and git does not ignore the cost file: " + JSON.stringify([runs("ci.yml"), runs("cloud-commit.yml"), ignored]));
 })();
 
 section("v524: roster-only parties on the phone");
