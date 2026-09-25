@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="a9472cbb339fcbfa";
+var SALT_BUILD_ID="ca4052df6aa08cb2";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8434,7 +8434,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v859","d":"26 Sep 2026","t":"A REOPENED DESK REVALIDATES INSTEAD OF DOWNLOADING AGAIN","n":["<b>AN UNCHANGED DESK IS NOT SENT AGAIN.</b> /desk and / pass the browser's If-None-Match and HEAD through to the store, so reopening an unchanged desk answers 304 with no body instead of the whole page.","<b>ONE HOP TO THE STORE.</b> The store is asked for /desk, where it serves desk.html. It redirects /desk.html there, and a request arriving at the Worker does not follow redirects.","<b>ONLY GET AND HEAD ARE THE DESK.</b> Any other method on / or /desk answers not found."]}];
+const evolution=[{"v":"v860","d":"26 Sep 2026","t":"THE BULLETIN EDITOR READS BACK WHAT HE JUST SET","n":["<b>THE BULLETIN IS NEVER CACHED.</b> The desk's service worker passes /bulletin to the network, so the editor shows the notice as it stands after his own Set, and a change made on another device shows too.","<b>ONLY HIS EDITOR WAS STALE.</b> Customers read the bulletin on the Counter, which caches nothing, and were unaffected."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8549,7 +8549,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 02:04 KL';
+const LAST_UPDATED='26 Sep 2026, 02:13 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

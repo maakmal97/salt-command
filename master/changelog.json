@@ -1,5 +1,14 @@
 [
  {
+  "v": "v860",
+  "d": "26 Sep 2026",
+  "t": "THE BULLETIN EDITOR READS BACK WHAT HE JUST SET",
+  "n": [
+   "<b>THE BULLETIN IS NEVER CACHED.</b> The desk's service worker passes /bulletin to the network, so the editor shows the notice as it stands after his own Set, and a change made on another device shows too.",
+   "<b>ONLY HIS EDITOR WAS STALE.</b> Customers read the bulletin on the Counter, which caches nothing, and were unaffected."
+  ]
+ },
+ {
   "v": "v859",
   "d": "26 Sep 2026",
   "t": "A REOPENED DESK REVALIDATES INSTEAD OF DOWNLOADING AGAIN",
