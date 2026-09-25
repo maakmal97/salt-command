@@ -1,6 +1,6 @@
 {
- "v": "v850",
- "stamped": "25 Sep 2026, 18:33 KL",
+ "v": "v851",
+ "stamped": "25 Sep 2026, 19:34 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 16.5,
+  "STATED_STOCK": 15.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-24",
@@ -5238,6 +5238,18 @@
     "paidOn": "2026-09-24",
     "note": "<b>CANDY SELL DATED 24 SEP, COLLECTED AND PAID IN FULL ON THE DAY.</b> Booked to CZ4-MK, 4 unit for RM200, RM50 a unit, RM200 cash in and 4 unit moved on 24 Sep 2026, with no delivery or freight, so nothing stays open. Costed at RM38 a unit from the desk's own inventory cost, RM152 on the goods, though the drafter's working reads RM48 at 24%. The RM200 sits on the floor's right side at RM152 and RM40 under the ask of RM240 for 4 unit, ceiling RM456. No flag was raised. Across 5 orders their median rate is RM84 with a range of RM13 to RM92, nothing outstanding, none defaulted, and no unit on credit against a cap of 1. On the roster, not an associate.",
     "rid": "s200"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 1,
+    "total": 90,
+    "cost": 48,
+    "cash": 0,
+    "date": "2026-09-25",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-25",
+    "note": "<b>SALT SELL DATED 25 SEP, DELIVERED IN FULL AND WHOLLY UNPAID: AN ADVANCE.</b> Booked to CC5-OKR, 1 unit for RM90, no delivery or freight, RM0 cash in and 1 unit moved on 25 Sep 2026, so RM90 stays open on the row. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The total clears the RM56.71 floor for 1 unit and sits RM50 under the ask of RM140, ceiling RM160. Across 12 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit already on credit against a cap of 1. The drafter flagged the advance against that cap and flagged RM48 as a blended average across more than one lot rate; neither is settled by these figures. On the roster, not an associate.",
+    "rid": "s201"
    }
   ],
   "contacts": [
@@ -5975,9 +5987,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T09:51:18.764Z",
+  "QUEUE_COMMITTED": "2026-09-25T11:33:59.919Z",
   "PRICING": {
-   "takenAt": "2026-09-25T10:33:27.389Z",
+   "takenAt": "2026-09-25T11:34:53.897Z",
    "sizes": [
     0.5,
     1,
@@ -6063,15 +6075,15 @@
     "CM4-SK": {
      "salt": "Titanium"
     },
-    "CJ2-KUC": {
-     "salt": "Silver"
-    },
     "CC5-OKR": {
      "salt": {
       "small": "Titanium",
       "mid": "Titanium",
       "big": "Platinum"
      }
+    },
+    "CJ2-KUC": {
+     "salt": "Silver"
     },
     "CG5-SB": {
      "salt": "Titanium"
@@ -6511,31 +6523,13 @@
       "lateTwice": false
      }
     },
-    "CJ2-KUC": {
-     "candy": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 3,
-      "sinceLastDays": 3,
-      "perMonth": 1.01,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CC5-OKR": {
      "salt": {
       "name": "small and often",
-      "orders": 6,
+      "orders": 7,
       "tenureDays": 78,
-      "sinceLastDays": 8,
-      "perMonth": 2.34,
+      "sinceLastDays": 0,
+      "perMonth": 2.73,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
@@ -6567,6 +6561,24 @@
       "orders": 1,
       "tenureDays": 1,
       "sinceLastDays": 1,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CJ2-KUC": {
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 3,
+      "sinceLastDays": 3,
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
@@ -7178,9 +7190,9 @@
        "attrib": 1,
        "shrinkRate": 0.07650147999618066,
        "avgDel": {
-        "n": 168,
-        "kg": 428.45,
-        "mean": 2.5503
+        "n": 169,
+        "kg": 429.45,
+        "mean": 2.5411
        }
       },
       "policy": {
@@ -8164,56 +8176,6 @@
         820
        ]
       ],
-      "CJ2-KUC": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        210
-       ],
-       [
-        2,
-        270
-       ],
-       [
-        2.5,
-        330
-       ],
-       [
-        3,
-        390
-       ],
-       [
-        3.5,
-        440
-       ],
-       [
-        4,
-        490
-       ],
-       [
-        4.5,
-        540
-       ],
-       [
-        5,
-        590
-       ],
-       [
-        6.25,
-        700
-       ],
-       [
-        12.5,
-        1090
-       ]
-      ],
       "CC5-OKR": [
        [
         0.5,
@@ -8262,6 +8224,56 @@
        [
         12.5,
         1070
+       ]
+      ],
+      "CJ2-KUC": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        330
+       ],
+       [
+        3,
+        390
+       ],
+       [
+        3.5,
+        440
+       ],
+       [
+        4,
+        490
+       ],
+       [
+        4.5,
+        540
+       ],
+       [
+        5,
+        590
+       ],
+       [
+        6.25,
+        700
+       ],
+       [
+        12.5,
+        1090
        ]
       ],
       "CG5-SB": [
@@ -9982,7 +9994,7 @@
         450
        ]
       ],
-      "CJ2-KUC": [
+      "CC5-OKR": [
        [
         10,
         130
@@ -10004,7 +10016,7 @@
         450
        ]
       ],
-      "CC5-OKR": [
+      "CJ2-KUC": [
        [
         10,
         130
@@ -11081,7 +11093,7 @@
         1500
        ]
       ],
-      "CJ2-KUC": [
+      "CC5-OKR": [
        [
         1,
         60
@@ -11103,7 +11115,7 @@
         1500
        ]
       ],
-      "CC5-OKR": [
+      "CJ2-KUC": [
        [
         1,
         60
@@ -12026,7 +12038,7 @@
         60
        ]
       ],
-      "CJ2-KUC": [
+      "CC5-OKR": [
        [
         1,
         8
@@ -12040,7 +12052,7 @@
         60
        ]
       ],
-      "CC5-OKR": [
+      "CJ2-KUC": [
        [
         1,
         8
@@ -12539,12 +12551,28 @@
      "cards": {}
     }
    },
-   "v": "v850"
+   "v": "v851"
   },
   "OPEN": {
-   "at": "2026-09-25T10:33:27.670Z",
-   "count": 7,
+   "at": "2026-09-25T11:34:54.081Z",
+   "count": 8,
    "byKey": {
+    "CC5-OKR|2026-09-25|90": {
+     "d": "2026-09-25",
+     "p": "CC5-OKR",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 90,
+     "rid": "s201",
+     "deliveredOn": "2026-09-25",
+     "key": "CC5-OKR|2026-09-25|90",
+     "age": 0,
+     "exp": 90
+    },
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
      "p": "CM4-TO",
@@ -12662,12 +12690,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 16.5,
-     "free": 7,
+     "onHand": 15.5,
+     "free": 6,
      "owedOut": 9.5,
-     "coverDays": 1.9,
-     "rate": 5.41,
-     "owedToYou": 260,
+     "coverDays": 1.5,
+     "rate": 5.46,
+     "owedToYou": 350,
      "promised": 9.5,
      "short": 0
     },
@@ -12723,7 +12751,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v850"
+   "v": "v851"
   }
  }
 }

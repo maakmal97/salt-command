@@ -1,5 +1,15 @@
 [
  {
+  "v": "v851",
+  "d": "25 Sep 2026",
+  "t": "AN ADVANCE THAT PUTS A THIRD UNIT ON A CAP OF ONE",
+  "n": [
+   "<b>FOLDED: ONE SALT SELL TO CC5-OKR, 1 UNIT AT RM90, GOODS OUT AND NOTHING PAID.</b> The row went in as an advance dated 25 Sep 2026: 1 unit moved the same day, RM0 of RM90 received. The total clears the RM56.71 floor for 1 unit and sits RM50 under the ask of RM140, ceiling RM160, and matches the party's own median rate of RM90 exactly, so the pricing is unremarkable against both ladder and habit.",
+   "<b>UNUSUAL: THE CREDIT SIDE, NOT THE PRICE.</b> CC5-OKR already carried RM138 outstanding and 2 unit on credit against a cap of 1, and this row adds a third unit and RM90 more with nothing in. The drafter flagged that, and flagged that RM48 a unit is the inventory average across more than one lot rate, not the lot this row draws. Neither flag is answered by the figures here, so both stay open for the desk.",
+   "<b>THE INVENTORY:</b> 1 unit of salt left the book on the sell, costed at the desk's own inventory rate of RM48 a unit, so no separate cost was carried against the row and the basis is untouched. Stated stock holds at 16.5 unit against a reorder mark of 32.2 and RM18.5 owed out, with the salt count standing at 23 Sep 2026. Replacement cost remains RM49.43 a unit, above the RM48 basis."
+  ]
+ },
+ {
   "v": "v850",
   "d": "25 Sep 2026",
   "t": "TWO ADVANCES CLOSED BY QR IN ONE CLAIM",
