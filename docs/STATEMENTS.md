@@ -984,7 +984,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
   opens into `sheet`, written by `tools/stmt-publish.mjs` from each statement's own rows through
   `partyTotals`, so the laptop's review sheet and the phone cannot say different things. A bucket
-  is never listed: `usersMap` maps it to nothing.
+  is never listed: `usersMap` maps it to nothing. It reads in two rounds (2.5): every head at once,
+  then each account's `seen:` and `sent:` keys in KV's bulk form, `get(keys[])`, at most 100 keys a
+  call; each card's QR is encoded once an isolate (`cardQr`), and the read writes nothing.
 - **`/all`** (v566) serves the customer's own page with the roster where the gate is; a tap
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,

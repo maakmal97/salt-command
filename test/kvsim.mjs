@@ -40,6 +40,13 @@ export class World {
 class LocKV {
   constructor(w, loc) { this.w = w; this.loc = loc; }
   async get(k, type) {
+    /* the bulk form, get(keys[]): at most 100 keys, a Map, null for a missing key, each key through its own cache */
+    if (Array.isArray(k)) {
+      if (k.length > 100) throw new Error("KV GET_BULK failed: 400 too many keys (" + k.length + ", the limit is 100)");
+      const out = new Map();
+      for (const x of k) out.set(x, await LocKV.prototype.get.call(this, x, type));
+      return out;
+    }
     const c = this.w.cache(this.loc), e = c.get(k), now = clock.now();
     let v;
     if (e && now - e.t < CACHE_MS) v = e.v;

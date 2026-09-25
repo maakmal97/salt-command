@@ -71,6 +71,11 @@ class KV {
   /* Real KV takes a type argument and "json" parses for you. The statement route uses it, so
      the stand-in has to as well, or a call that works here fails in production. */
   async get(k, type) {
+    /* 2.5: and the bulk form, get(keys[]), as real KV answers it: at most 100 keys, a Map, null for a missing key */
+    if (Array.isArray(k)) {
+      if (k.length > 100) throw new Error("KV GET_BULK failed: 400 too many keys (" + k.length + ", the limit is 100)");
+      return new Map(await Promise.all(k.map(async (x) => [x, await KV.prototype.get.call(this, x, type)])));
+    }
     if (!this.m.has(k)) return null;
     const raw = this.m.get(k);
     return type === "json" ? JSON.parse(raw) : raw;
@@ -17403,7 +17408,7 @@ await (async () => {
     /* a stranger's misses on made-up usernames from many addresses, as the brake writes them */
     for (let i = 0; i < 400; i++) await kv.put("fail:203.0.113." + (i % 250) + ":zz" + String(i).padStart(2, "0") + "-zzzz", "1", { expirationTtl: 900, metadata: { n: 1 } });
     const gets = [], get = kv.get.bind(kv);
-    kv.get = async (k, t) => { gets.push(k); return get(k, t); };
+    kv.get = async (k, t) => { gets.push(...[].concat(k)); return get(k, t); };   /* 2.5: a bulk read counts its keys */
     const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
     kv.get = get;
     const lk = sj.accounts.find((a) => a.username === uL);
@@ -17411,6 +17416,92 @@ await (async () => {
     ok(!gets.some((k) => k.startsWith("fail:")) && gets.length < 20,
       "and /all/sheet reads no fail: key, so four hundred of them cost it nothing: " + JSON.stringify({ reads: gets.length, fail: gets.filter((k) => k.startsWith("fail:")).length }));
   } finally { globalThis.fetch = realFetch; }
+})();
+section("2.5: Salt Admin opens in two rounds of reads: the heads at once, every account's keys in bulk, no tick rewrite, each QR encoded once");
+await (async () => {
+  /* The account list read two keys an account one after another (84 for 41 codes) and listed every sent: tick before
+     it began, so it opened in 3 to 7 s. Sixty invented codes and an issue make 120 keys, over the bulk form's 100, so
+     the chunks are forced: the stand-in refuses more than 100 as real KV does. Every read waits a timer, and each
+     records how many had finished when it began, so reads begun together share that count: a round each. */
+  const W = (await import("../stmt/worker.js")).default;
+  const QR = (await import("../stmt/qr.js")).default;
+  class Count extends KV {
+    constructor() { super(); this.log = null; this.done = 0; }
+    async op(e, run) {
+      if (!this.log) return run();
+      e.after = this.done; this.log.push(e);
+      await new Promise((r) => setTimeout(r, 2));
+      try { return await run(); } finally { this.done++; }
+    }
+    async get(k, t) { return this.op({ op: Array.isArray(k) ? "bulk" : "get", k }, () => super.get(k, t)); }
+    async list(o) { return this.op({ op: "list", prefix: (o && o.prefix) || "" }, () => super.list(o)); }
+    async put(k, v, o) { if (this.log) this.log.push({ op: "put", k }); return super.put(k, v, o); }
+    async delete(k) { if (this.log) this.log.push({ op: "delete", k }); return super.delete(k); }
+  }
+  const kv = new Count(), ISSUE = "2026-09-01";
+  const us = Array.from({ length: 60 }, (_, i) => "zq" + String(i).padStart(2, "0") + "-wxyz");
+  await kv.put("roster", JSON.stringify(us.map((u, i) => ({ code: "QZ" + i + "-XV", username: u }))));
+  await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: ISSUE,
+    accounts: us.map((u, i) => ({ code: "QZ" + i + "-XV", username: u, issued: ISSUE, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" })) }));
+  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  await kv.put("seen:" + us[0], JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-20T01:00:00Z", opens: 3, how: "link" }));
+  await kv.put("seen:" + us[59], JSON.stringify({ first: "2026-09-03T01:00:00Z", last: "2026-09-03T01:00:00Z", opens: 1 }));
+  await kv.put("sent:" + ISSUE + ":" + us[1], JSON.stringify({ at: "2026-09-04T01:00:00Z" }));
+  await kv.put("sent:" + ISSUE + ":" + us[59], JSON.stringify({ at: "2026-09-05T01:00:00Z" }));
+  /* a tick carrying the old 61-day lapse: nothing writes one now, and the read leaves it as it stands */
+  await kv.put("sent:" + ISSUE + ":" + us[2], JSON.stringify({ at: "2026-09-06T01:00:00Z" }), { expirationTtl: 61 * 24 * 3600 });
+  await kv.put("push:" + us[3] + ":e1", "{}");
+  const TEAM = "maakmal", AUD = "aud-p2-25", KID = "kid-p2-25";
+  const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  const b64u = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+  const env = { STMT: kv, STMT_MASTER: "mp-p2-25", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+  const realFetch = globalThis.fetch, realQr = QR.qrMatrix;
+  let encodes = 0;
+  globalThis.fetch = async (x) => {
+    if (String(x) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+    throw new Error("the Access gate reached for " + x);
+  };
+  QR.qrMatrix = (...a) => { encodes++; return realQr(...a); };
+  try {
+    const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+    const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    /* a read that throws is answered as one, so its assertion is what fails */
+    const sheet = async () => {
+      kv.log = []; kv.done = 0;
+      try {
+        const r = await W.fetch(new Request("https://p2q5r7.example/all/sheet", { headers: { "cf-access-jwt-assertion": tok } }), env);
+        return { status: r.status, j: r.status === 200 ? await r.json() : await r.text(), log: kv.log };
+      } catch (e) { return { status: "threw", j: String((e && e.message) || e), log: kv.log }; }
+      finally { kv.log = null; }
+    };
+    const e0 = encodes, one = await sheet(), e1 = encodes, two = await sheet(), e2 = encodes;
+    const A = one.j && one.j.accounts ? one.j.accounts : [], by = (u) => A.find((a) => a.username === u) || {};
+    const url0 = "https://p2q5r7.example/?u=" + encodeURIComponent(us[0]);
+    ok(one.status === 200 && A.length === 60 && A.every((a, i) => a.username === us[i] && a.code === "QZ" + i + "-XV")
+      && JSON.stringify(by(us[0]).seen) === JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-20T01:00:00Z", opens: 3, how: "link" })
+      && by(us[59]).seen && by(us[59]).seen.opens === 1 && by(us[1]).sent === "2026-09-04T01:00:00Z"
+      && by(us[59]).sent === "2026-09-05T01:00:00Z" && by(us[2]).sent === "2026-09-06T01:00:00Z" && by(us[4]).seen === null && by(us[4]).sent === null
+      && by(us[3]).alerts === 1 && one.j.stranger === "Silver" && one.j.desk === null
+      && JSON.stringify(by(us[0]).qr) === JSON.stringify(realQr(url0).map((l) => l.join(""))),
+      "the list reads as before across both chunks of keys: seen and sent from the first and the last account, the old-lapse tick, alerts, the stranger's level, the QR: "
+      + JSON.stringify({ status: one.status, n: A.length, s0: by(us[0]).seen, t59: by(us[59]).sent, t2: by(us[2]).sent, err: A.length ? null : one.j }));
+    const count = (log, op) => log.filter((e) => e.op === op).length;
+    const perKey = one.log.filter((e) => e.op === "get" && /^(seen|sent):/.test(e.k)).length;
+    ok(one.log.length <= 10 && count(one.log, "bulk") === 2 && perKey === 0 && !one.log.some((e) => e.op === "list" && e.prefix === "sent:")
+      && !one.log.some((e) => e.op === "put" || e.op === "delete") && !!(kv.opts.get("sent:" + ISSUE + ":" + us[2]) || {}).expirationTtl,
+      "120 keys cost two bulk reads and nothing a key; no tick is listed or rewritten, and the read writes nothing: "
+      + JSON.stringify({ ops: one.log.length, bulk: count(one.log, "bulk"), perKey, lists: one.log.filter((e) => e.op === "list").map((e) => e.prefix), writes: count(one.log, "put") + count(one.log, "delete") }));
+    const rounds = new Set(one.log.map((e) => e.after)).size;
+    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 7,
+      "the heads are read at once and the accounts' keys after them: two rounds, seven reads in the first: "
+      + JSON.stringify({ rounds, first: one.log.filter((e) => e.after === 0).map((e) => e.op + " " + (e.prefix || e.k)) }));
+    ok(e1 - e0 === 60 && e2 - e1 === 0 && two.status === 200 && JSON.stringify(two.j.accounts.map((a) => a.qr)) === JSON.stringify(A.map((a) => a.qr)),
+      "each account's QR is encoded once an isolate: sixty on the first open, none on the second, and the same codes: "
+      + JSON.stringify({ first: e1 - e0, second: e2 - e1 }));
+  } finally { globalThis.fetch = realFetch; QR.qrMatrix = realQr; }
 })();
 section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
 await (async () => {
@@ -18824,12 +18915,8 @@ await (async () => {
     ok((await (await call88("/all/sheet")).json()).accounts[0].sent === tick88.sent, "and the next read shows it");
     const untick = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: false }) });
     ok(untick.status === 200 && !kv88.m.has("sent:2026-09-01:aaaa-bbbb"), "and it can be taken back");
-    /* A TICK WRITTEN BEFORE 23 SEP 2026 CARRIES THE OLD 61-DAY LAPSE, and reading the list keeps it */
-    await kv88.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-19T01:00:00Z" }), { expirationTtl: 61 * 24 * 3600 });
-    const kept88 = (await (await call88("/all/sheet")).json()).accounts[0].sent;
-    ok(kept88 === "2026-09-19T01:00:00Z" && !(kv88.opts.get("sent:2026-09-01:aaaa-bbbb") || {}).expirationTtl,
-      "a tick written with the old lapse is rewritten without it the next time the list is read, and keeps its moment");
-    await kv88.delete("sent:2026-09-01:aaaa-bbbb");
+    /* 2.5: the rewrite of a tick carrying the old 61-day lapse is retired (the store held none); the read writes
+       nothing, which the section "2.5: Salt Admin opens in two rounds of reads" holds */
     const stale = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-08-01", sent: true }) });
     const unknown = await call88("/all/sent/zzzz-zzzz", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const notJson = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "text/plain" }, body: "sent" });

@@ -759,10 +759,10 @@ async function handleDesk(request, env, p, m) {
  * not been published since this shipped has no such key, so the usernames are listed from the store
  * itself and the codes are simply absent. Neither path reads a single sealed document. */
 async function roster(env) {
-  const named = await env.STMT.get("roster", "json");
   /* v689: the test account is on the list so he can open it, and marked so every count leaves it
-     out. The publish never writes it into `roster`, so it is added here or not at all. */
-  const test = (await env.STMT.get("u:" + TEST_USER)) ? [{ code: "TEST", username: TEST_USER, test: true }] : [];
+     out. The publish never writes it into `roster`, so it is added here or not at all. Both are read at once. */
+  const [named, made] = await Promise.all([env.STMT.get("roster", "json"), env.STMT.get("u:" + TEST_USER)]);
+  const test = made ? [{ code: "TEST", username: TEST_USER, test: true }] : [];
   if (Array.isArray(named) && named.length) return named.concat(test);
   const out = [];
   let cursor;
@@ -880,19 +880,43 @@ async function alertsOn(env) {
   } while (cursor);
   return out;
 }
+/* 2.5: SALT ADMIN OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
+   codes, 3 to 7 s). Every head at once, then every account's seen: and sent: keys in KV's bulk form, get(keys[]),
+   which takes at most 100 keys a call and answers a Map with null for a missing key: so the keys go in chunks. */
+const BULK_KEYS = 100;
+async function getMany(env, keys) {
+  const chunks = [];
+  for (let i = 0; i < keys.length; i += BULK_KEYS) chunks.push(keys.slice(i, i + BULK_KEYS));
+  const out = new Map();
+  for (const got of await Promise.all(chunks.map((c) => env.STMT.get(c, "json")))) for (const [k, v] of got) out.set(k, v);
+  return out;
+}
+/* The QR is most of the sheet's CPU (42 encodes measured 55 ms), and an account's address does not move, so each is
+   encoded once an isolate. Keyed by the address itself, so the roster bounds it; the cap is only a backstop. */
+const QR_MEMO = new Map();
+function cardQr(url) {
+  let q = QR_MEMO.get(url);
+  if (!q) {
+    if (QR_MEMO.size >= 1000) QR_MEMO.clear();
+    q = QR.qrMatrix(url).map((line) => line.join(""));
+    QR_MEMO.set(url, q);
+  }
+  return q;
+}
 async function ownerSheet(env, origin) {
-  const sheet = await env.STMT.get("sheet", "json");
+  const [sheet, accounts, locks, alerts, desk, names] = await Promise.all([env.STMT.get("sheet", "json"), roster(env),
+    lockedOut(env), alertsOn(env), env.STMT.get(DESK_WAITING, "json"), env.STMT.get("tiers", "json")]);
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
   const byUser = new Map(rows.map((a) => [a.username, a]));
   const issue = sheet ? sheet.issue || null : null;
   const month = monthNameOf(issue);
-  await keepTicks(env);
-  const locks = await lockedOut(env), alerts = await alertsOn(env);
+  const keys = [...new Set(accounts.flatMap((a) => (issue ? [SKEY(a.username), SENT_KEY(issue, a.username)] : [SKEY(a.username)])))];
+  const [got, marks] = await Promise.all([getMany(env, keys), desk ? orderMarks(env) : null]);
   const out = [];
-  for (const a of await roster(env)) {
+  for (const a of accounts) {
     const s = byUser.get(a.username) || null;
-    const seen = await env.STMT.get("seen:" + a.username, "json");
-    const sent = issue ? await env.STMT.get(SENT_KEY(issue, a.username), "json") : null;
+    const seen = got.get(SKEY(a.username)) || null;
+    const sent = issue ? got.get(SENT_KEY(issue, a.username)) || null : null;
     /* v688: everything one card needs. The address is this request's own origin, so nothing has
        to be configured twice, and the message is built from stmt/send.js, the one copy of the
        words the laptop's send sheet uses. The QR is a matrix of 0s and 1s, drawn on the card's
@@ -909,19 +933,18 @@ async function ownerSheet(env, origin) {
       code: a.code, username: a.username, test: !!a.test, account,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
-      qr: QR.qrMatrix(url).map((line) => line.join("")),
+      qr: cardQr(url),
       pwMaster: s ? s.pwMaster || null : null,
       seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0, how: seen.how || null } : null,
       sent: sent ? sent.at || null : null, locked: locks.get(a.username) || null, alerts: alerts.get(a.username) || 0
     });
   }
-  /* S9 9.8: the desk's own count of what waits there, as it last told this site. S9 fix: and whether an order has moved
-     since that reading (the `touched` mark, which every move writes), for the desk page may not have been open since */
-  const desk = await env.STMT.get(DESK_WAITING, "json");
-  const touched = desk ? (await orderMarks(env)).touched : null;
-  /* D15: the level a stranger is quoted, the ladder's last, so the card of an ID still waiting for its
-     account can say which standing link to show. Named by the book through the publish, never here. */
-  const names = await env.STMT.get("tiers", "json");
+  /* S9 9.8: the desk's own count of what waits there (`desk`, read with the heads), as it last told this site. S9 fix:
+     and whether an order has moved since that reading (the `touched` mark, which every move writes), for the desk page
+     may not have been open since */
+  const touched = marks ? marks.touched : null;
+  /* D15: the level a stranger is quoted, the ladder's last (`names`, read with the heads), so the card of an ID still
+     waiting for its account can say which standing link to show. Named by the book through the publish, never here. */
   const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
   return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger,
     desk: desk ? { n: +desk.n || 0, at: desk.at || null, moved: !!(touched && desk.at && String(touched) > String(desk.at)) } : null };
@@ -936,22 +959,10 @@ async function ownerSheet(env, origin) {
    document now and no new issue is sealed (v772), so the issue key never moves and the lapse
    would only have unticked accounts he had handed over, two months after he did. A tick is kept
    until he takes it back; a new sealed issue, which does need sending again, is still a new key,
-   and the publish clears the old issue's ticks when one is sealed. */
+   and the publish clears the old issue's ticks when one is sealed. The rewrite that took the old
+   lapse off a tick on every read of the list is gone (2.5): the store held no tick with a lapse,
+   and nothing writes one. */
 const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
-/* The ticks written before this carry the old 61-day lapse, and only a put without one removes
-   it. A listing says which do, so each is rewritten once and a listing after that finds none. */
-async function keepTicks(env) {
-  let cursor;
-  do {
-    const page = await env.STMT.list({ prefix: "sent:", cursor });
-    for (const k of page.keys) {
-      if (!k.expiration) continue;
-      const v = await env.STMT.get(k.name);
-      if (v != null) await env.STMT.put(k.name, v);
-    }
-    cursor = page.list_complete ? null : page.cursor;
-  } while (cursor);
-}
 
 /* ---- MAKING AND UNMAKING THE TEST ACCOUNT (v689) ---------------------------------------------
  * The record is built here, with a key made here, so nothing real is behind it: a bundle of one
