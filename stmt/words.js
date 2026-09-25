@@ -991,7 +991,7 @@ export const MS = {
   "msg.reply": "Balasan, {t}",
   "msg.you": "Anda, {t}",
   "msg.retry": "Ketik untuk cuba lagi",
-  "msg.ph": "Tulis tentang pesanan ini",
+  "msg.ph": "Tulis mesej",
   "msg.send": "Hantar",
   "msg.notSent": "Ia tidak dihantar.",
   /* ---- THE BANNER (stmt/sw.js), in the language the page last recorded on this phone ---- */
