@@ -1,5 +1,14 @@
 [
  {
+  "v": "v852",
+  "d": "25 Sep 2026",
+  "t": "AN ORDER ACKNOWLEDGED, NOTHING MOVED AND NOTHING IN",
+  "n": [
+   "<b>ONE ROW FOLDED, A PENDING SALT SELL TO CR3-DAM.</b> Taken from the statements site as order 20260925115016-gqlz1q, 1.5 unit for RM130 dated 25 Sep 2026, acknowledged and to collect, preapproved by phone. No cash in and no stock out, so the row draws nothing and books nothing until something moves. The total clears the RM85.07 floor for 1.5 unit and sits well under the RM210 ask.",
+   "<b>WHAT THE INVENTORY DID: NOTHING.</b> Stock stays at 15.5 unit, cost basis unchanged at RM48 a unit against replacement of RM49.43, and the reorder mark of 31.2 is untouched by a row that has not drawn. The drafter's flag that RM48 is a blend across more than one lot rate is carried forward unanswered, and the collection itself stays outstanding."
+  ]
+ },
+ {
   "v": "v851",
   "d": "25 Sep 2026",
   "t": "AN ADVANCE THAT PUTS A THIRD UNIT ON A CAP OF ONE",

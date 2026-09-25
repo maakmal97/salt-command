@@ -1,6 +1,6 @@
 {
- "v": "v851",
- "stamped": "25 Sep 2026, 19:34 KL",
+ "v": "v852",
+ "stamped": "25 Sep 2026, 20:02 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5250,6 +5250,16 @@
     "deliveredOn": "2026-09-25",
     "note": "<b>SALT SELL DATED 25 SEP, DELIVERED IN FULL AND WHOLLY UNPAID: AN ADVANCE.</b> Booked to CC5-OKR, 1 unit for RM90, no delivery or freight, RM0 cash in and 1 unit moved on 25 Sep 2026, so RM90 stays open on the row. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The total clears the RM56.71 floor for 1 unit and sits RM50 under the ask of RM140, ceiling RM160. Across 12 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit already on credit against a cap of 1. The drafter flagged the advance against that cap and flagged RM48 as a blended average across more than one lot rate; neither is settled by these figures. On the roster, not an associate.",
     "rid": "s201"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1.5,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-09-25",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 25 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID, NOTHING MOVED.</b> Booked to CR3-DAM from the statements site, order 20260925115016-gqlz1q, 1.5 unit for RM130 at RM86.67 a unit, to collect, RM0 in and 0 unit out, so the whole RM130 stands open. Costed at RM48 a unit from the desk's own inventory cost, RM58 on the goods at 44.6%. The total clears the RM85.07 floor for 1.5 unit and sits RM80 under the RM210 ask, ceiling RM230. Across 16 orders their median rate is RM80, range RM80 to RM92.50, RM25 outstanding, none defaulted, 0.27 unit on credit against a cap of 2. An associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
+    "rid": "s202"
    }
   ],
   "contacts": [
@@ -5987,9 +5997,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T11:33:59.919Z",
+  "QUEUE_COMMITTED": "2026-09-25T12:01:53.130Z",
   "PRICING": {
-   "takenAt": "2026-09-25T11:34:53.897Z",
+   "takenAt": "2026-09-25T12:02:32.306Z",
    "sizes": [
     0.5,
     1,
@@ -12551,11 +12561,11 @@
      "cards": {}
     }
    },
-   "v": "v851"
+   "v": "v852"
   },
   "OPEN": {
-   "at": "2026-09-25T11:34:54.081Z",
-   "count": 8,
+   "at": "2026-09-25T12:02:32.516Z",
+   "count": 9,
    "byKey": {
     "CC5-OKR|2026-09-25|90": {
      "d": "2026-09-25",
@@ -12572,6 +12582,20 @@
      "key": "CC5-OKR|2026-09-25|90",
      "age": 0,
      "exp": 90
+    },
+    "CR3-DAM|2026-09-25|130": {
+     "d": "2026-09-25",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1.5,
+     "t": 130,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 130,
+     "oweUnits": 1.5,
+     "rid": "s202",
+     "key": "CR3-DAM|2026-09-25|130"
     },
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -12694,9 +12718,9 @@
      "free": 6,
      "owedOut": 9.5,
      "coverDays": 1.5,
-     "rate": 5.46,
+     "rate": 5.53,
      "owedToYou": 350,
-     "promised": 9.5,
+     "promised": 11,
      "short": 0
     },
     "oil": {
@@ -12751,7 +12775,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v851"
+   "v": "v852"
   }
  }
 }
