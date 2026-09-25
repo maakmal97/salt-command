@@ -2098,6 +2098,9 @@ const CLIENT_JS = `
   /* an associate's alone: a place built before anybody signs in reads nothing (the links read needs a session) */
   function drawRewards(el){ if(el) rewardsEl=el; if(assoc) drawCard(); }
   function drawCard(){
+    /* Rewards' links are read after it is drawn (loadMyLinks), and a page closed before they land has no document: the draw
+       stands down, as drawOrder, drawHome and drawDevice do (the S7 merge), or it throws into whatever runs next */
+    if(!docLive()) return;
     var box=rewardsEl;
     box.textContent='';
     drawMyLinks(box);

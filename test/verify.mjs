@@ -21436,6 +21436,46 @@ await (async () => {
     ms1359: "Selamat tengah hari", ms1400: WD.MS["home.afternoon"], en1230: "Good afternoon", en1400: "Good afternoon" }),
     "Home says Selamat tengah hari from 12:00 to 13:59 and Selamat petang from 14:00 on a Malay phone, and Good afternoon from noon in English: " + JSON.stringify(got));
 })();
+section("S13 fix: an associate's page closed while Rewards' links are on their way draws nothing and throws nothing after it");
+await (async () => {
+  /* 25 SEP 2026: S8 8.3 closed its associate's page while loadMyLinks was still reading /my/refs, and the answer drew
+     Rewards on a window with no document; the throw took the whole shard down in the next section's time (twice in this
+     stage's suite runs). drawCard stands down on a page that has gone, as the S7 merge's draws do. Forced state: the
+     site's answer to the links held back until the page has closed. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("s13-links", u);
+  const body = { ok: true, assoc: true, wrap: await C.wrapKey(pass, ck), session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const st = { asked: false, release: null, errs: [] };
+  const onErr = (e) => st.errs.push(String((e && e.message) || e));
+  process.on("unhandledRejection", onErr); process.on("uncaughtException", onErr);
+  const dom = new JSDOM(landingPage(u, "n13l", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      if (p === "/my/refs") { st.asked = true; await new Promise((r) => { st.release = r; }); }
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/my/refs" ? { ok: true, refs: [], max: 3 } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 400 && !st.asked; i++) await new Promise((r) => setTimeout(r, 20));
+    ok(st.asked, "signed in as an associate, Rewards reads its links from the site");
+    W.close();
+    st.release();
+    await new Promise((r) => setTimeout(r, 300));
+    ok(!st.errs.length, "and the page closed before the links came back draws nothing and throws nothing after it: " + JSON.stringify(st.errs));
+  } finally {
+    if (st.release) st.release();
+    try { W.close(); } catch (e) { /* closed above */ }
+    process.off("unhandledRejection", onErr); process.off("uncaughtException", onErr);
+  }
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five
