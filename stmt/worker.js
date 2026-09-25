@@ -81,8 +81,8 @@ const notFound = () => new Response("Not found", {
  * One account he can open anywhere, that counts nowhere, and that he can destroy with one tap.
  * ITS NAME IS THE POINT: zeros are not in the alphabet a real username is drawn from, so this one
  * cannot collide with an account and cannot be arrived at by mistyping one. Both are the exception
- * stated here and nowhere else. It is made by the Worker, with its own random key, so no statement,
- * no price list and no laptop secret is involved in it. */
+ * stated here and nowhere else. It is made with a random key of its own, so no statement, no price
+ * list and no laptop secret is involved in it; his page makes the key and its wraps (makeTest). */
 export const TEST_USER = "0000-0000";
 export const TEST_PASS = "0000-0000-0000-0000";
 const TEST_REC = "u:" + TEST_USER;
@@ -965,7 +965,7 @@ async function ownerSheet(env, origin) {
 const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
 
 /* ---- MAKING AND UNMAKING THE TEST ACCOUNT (v689) ---------------------------------------------
- * The record is built here, with a key made here, so nothing real is behind it: a bundle of one
+ * The record is built here, under a key his page makes, so nothing real is behind it: a bundle of one
  * plain statement, a small price list, and the two wraps a page expects. It opens with the fixed
  * password like any account, orders like any account, and is deleted with everything it wrote:
  * its orders, its opens, its ticks and any phone it subscribed. It is marked `test`, which is how
@@ -987,22 +987,31 @@ function testPrices() {
       rate: null, orders: 0, sizes: [{ q: 1, price: 120 }, { q: 2.5, price: 280 }, { q: 5, price: 540 }] }],
     soon: [] };
 }
-async function makeTest(env) {
-  const raw = crypto.getRandomValues(new Uint8Array(32));
-  const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+/* FOLD 2.7 (26 Sep 2026): THE WRAPS ARE MADE ON HIS PAGE, AND THIS WORKER NEVER DERIVES ABOVE 100,000 ROUNDS.
+   Both wraps take PBKDF2 at 150,000, which the production runtime refuses above 100,000 and the local one does not,
+   so the tap that makes this account could break at a deploy with no red run. His page already derives at 150,000
+   for every account it opens: it makes the key, wraps it under the zeros and under the master (stmt/owner.js
+   testKeys), and sends the key and the wraps. The key is the one this Worker used to make itself, so it sees nothing
+   new, and the master is not sent with them. Here the shape is checked, the record sealed under the key as
+   before, and only the 10,000-round verifier derived. A page from before this sends {make: true} alone and is
+   refused with a reason, never a throw. */
+const TEST_SHAPE = { salt: 16, iv: 12, ct: 48 };
+const b64Len = (s) => {
+  if (typeof s !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(s)) return -1;
+  try { return b64d(s).length; } catch (e) { return -1; }
+};
+const testWrap = (w) => (w && typeof w === "object" && w.v === 2 && Object.keys(TEST_SHAPE).every((k) => b64Len(w[k]) === TEST_SHAPE[k])
+  ? { v: 2, salt: w.salt, iv: w.iv, ct: w.ct } : null);
+const TEST_STALE = "This page is older than the site. Reload it and tap again.";
+async function makeTest(env, body) {
+  const b = body || {};
+  const wrap = testWrap(b.wrap), wrapMaster = env.STMT_MASTER ? testWrap(b.wrapMaster) : null;
+  if (b64Len(b.key) !== 32 || !wrap || (env.STMT_MASTER && !wrapMaster)) return { error: TEST_STALE };
+  const ck = await crypto.subtle.importKey("raw", b64d(b.key), { name: "AES-GCM" }, false, ["encrypt"]);
   const sealed = async (obj) => {
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, ck, new TextEncoder().encode(JSON.stringify(obj)));
     return { v: 2, iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
-  };
-  const wrapUnder = async (pass) => {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
-    const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
-      base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, kek, raw);
-    return { v: 2, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
   };
   const vsalt = crypto.getRandomValues(new Uint8Array(16));
   const vbase = await crypto.subtle.importKey("raw", new TextEncoder().encode(TEST_PASS), "PBKDF2", false, ["deriveBits"]);
@@ -1011,11 +1020,11 @@ async function makeTest(env) {
   const rec = {
     u: TEST_USER, test: true, issued: bundle.issued, issues: [bundle.issued],
     verifier: { salt: b64e(vsalt), hash: b64e(new Uint8Array(vbits)), rounds: 10000 },
-    wrap: await wrapUnder(TEST_PASS), env: await sealed(bundle),
+    wrap, env: await sealed(bundle),
     live: Object.assign({ at: new Date().toISOString() }, await sealed({ at: new Date().toISOString(), body: bundle.statements[0].body })),
     prices: Object.assign({ at: new Date().toISOString(), week: testPrices().week.monday }, await sealed(testPrices()))
   };
-  if (env.STMT_MASTER) rec.wrapMaster = await wrapUnder(String(env.STMT_MASTER));
+  if (wrapMaster) rec.wrapMaster = wrapMaster;
   await env.STMT.put(TEST_REC, JSON.stringify(rec));
   return rec;
 }
@@ -1433,7 +1442,8 @@ export default {
         const b = await readJson(request);
         if (!b) return json({ ok: false, error: "send JSON" }, 400);
         if (b.make === false) return json({ ok: true, made: false, removed: await unmakeTest(env) });
-        await makeTest(env);
+        const made = await makeTest(env, b);
+        if (made.error) return json({ ok: false, error: made.error }, 400);
         return json({ ok: true, made: true, username: TEST_USER, password: TEST_PASS });
       }
       /* the tick, so both his devices agree on what has gone out */

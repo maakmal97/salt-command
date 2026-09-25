@@ -961,6 +961,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
 - **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
   system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
+- **The test account is wrapped on his page** (fold 2.7): Make a test account makes the key and wraps it under the
+  zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`), and
+  `POST /all/test` takes `{make: true, key, wrap, wrapMaster}`, checks their shape and seals under the key. The
+  Worker never derives above 100,000: the production runtime refuses PBKDF2 above that and the local one does not,
+  so only the suite's spy on SubtleCrypto sees it. A bare `{make: true}` answers 400 with a reason.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No

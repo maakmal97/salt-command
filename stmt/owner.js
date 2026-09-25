@@ -982,7 +982,17 @@ export const OWNER_JS = `
   }
   /* ---- THE TEST ACCOUNT (v689) --------------------------------------------------------------
      One tap makes it, one tap takes it away with everything it wrote. It is his own, so the item
-     says what it is for and names the two things he types. */
+     says what it is for and names the two things he types.
+     FOLD 2.7: ITS KEY AND WRAPS ARE MADE HERE, at the 150,000 rounds every account's wraps take, because
+     the Worker's runtime refuses PBKDF2 above 100,000 (stmt/worker.js makeTest). The page's own wrapUnder
+     does the wrapping, so these open under the same unwrap a customer's page runs; the master stays here. */
+  async function testKeys(){
+    var raw=crypto.getRandomValues(new Uint8Array(32));
+    var ck=await crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['encrypt','decrypt']);
+    var body={make:true, key:b64e(raw), wrap:await wrapUnder(new TextEncoder().encode('0000-0000-0000-0000'), ck)};
+    if(OWNER.master) body.wrapMaster=await wrapUnder(new TextEncoder().encode(OWNER.master), ck);
+    return body;
+  }
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;
     var on=sheetRows.some(function(a){ return a.test; });
@@ -994,7 +1004,7 @@ export const OWNER_JS = `
     b.addEventListener('click', async function(){
       b.disabled=true; say(on?'Deleting...':'Making...','wait');
       try{
-        await refs('/all/test', {make:!on});
+        await refs('/all/test', on?{make:false}:await testKeys());
         sheet=null; await loadSheet();
         say(on?'Gone, with everything it wrote.':'Made. Username 0000-0000, password 0000-0000-0000-0000.');
       }catch(e){ say(e.message,'bad'); }

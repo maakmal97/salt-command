@@ -19006,8 +19006,11 @@ await (async () => {
     const post89 = (path, body, tok = tok89) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
       { method: "POST", headers: Object.assign({ "content-type": "application/json" }, tok ? { "cf-access-jwt-assertion": tok } : {}), body: JSON.stringify(body) }), env89);
 
-    ok((await post89("/all/test", { make: true }, null)).status === 401, "making one needs Access");
-    const made = await (await post89("/all/test", { make: true })).json();
+    /* fold 2.7: his page makes the key and its two wraps, as the laptop's wrapKey does, and the Worker seals under it */
+    const C89 = await import("../tools/stmt-crypto.mjs"), key89 = crypto.getRandomValues(new Uint8Array(32));
+    const make89 = { make: true, key: Buffer.from(key89).toString("base64"), wrap: await C89.wrapKey(TP89, key89), wrapMaster: await C89.wrapKey("mp89", key89) };
+    ok((await post89("/all/test", make89, null)).status === 401, "making one needs Access");
+    const made = await (await post89("/all/test", make89)).json();
     const rec89 = await kv89.get("u:0000-0000", "json");
     ok(made.ok && made.made && made.username === TU89 && made.password === TP89 && rec89 && rec89.test === true
       && rec89.verifier && rec89.wrap && rec89.wrapMaster && rec89.env && rec89.live && rec89.prices,
@@ -19064,6 +19067,141 @@ await (async () => {
       headers: { "content-type": "application/json" }, body: JSON.stringify({ u: TU89, password: TP89 }) }), env89);
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
+})();
+section("Fold 2.7: the test account is wrapped on his page, the Worker never derives above 100,000 rounds, and unmaking it empties the order book");
+await (async () => {
+  /* THE PLAN'S FOLD 2.7 (26 Sep 2026). The Worker wrapped the test account's key at 150,000 rounds, which the
+     production runtime refuses above 100,000 and this one does not, so the tap could break at a deploy with no red
+     run. A spy on the one SubtleCrypto every realm here shares records each PBKDF2's rounds and whose it was: the
+     Worker's while its fetch runs, a page's otherwise. His page is driven against the Worker itself, and a customer's
+     door opens what it made. Every username is invented; the test account is his. */
+  const { TEST_USER: TU27, TEST_PASS: TP27 } = await import("../stmt/worker.js");
+  const C27 = await import("../tools/stmt-crypto.mjs");
+  const H27 = await import("../test/orderbook-harness.mjs");
+  const O27 = await import("../stmt/orders.js");
+  const { landingPage: lp27 } = await import("../stmt/page.js");
+  const { JSDOM: JD27 } = await import("jsdom");
+  const S27 = globalThis.crypto.subtle, realDK27 = S27.deriveKey, realDB27 = S27.deriveBits;
+  const own27 = ["deriveKey", "deriveBits"].filter((k) => Object.prototype.hasOwnProperty.call(S27, k));
+  /* whose a derivation is, by the async context it runs in: a counter of Worker calls in flight tagged a page's
+     derivation as the Worker's whenever one of the page's other reads was still running */
+  const { AsyncLocalStorage: ALS27 } = await import("node:async_hooks");
+  const inWorker27 = new ALS27(), rounds27 = [];
+  const note27 = (alg) => { if (alg && alg.name === "PBKDF2") rounds27.push({ who: inWorker27.getStore() ? "worker" : "page", n: alg.iterations }); };
+  S27.deriveKey = function (alg, ...r) { note27(alg); return realDK27.call(S27, alg, ...r); };
+  S27.deriveBits = function (alg, ...r) { note27(alg); return realDB27.call(S27, alg, ...r); };
+  const until27 = async (f, ms = 8000) => { const end = Date.now() + ms; while (!f() && Date.now() < end) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const realFetch27 = globalThis.fetch;
+  const wins27 = [];
+  try {
+    const TEAM27 = "maakmal", AUD27 = "aud-f27", KID27 = "kid-f27";
+    const kp27 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub27 = await crypto.subtle.exportKey("jwk", kp27.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM27 + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub27, kid: KID27, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u27 = (b) => Buffer.from(b).toString("base64").replace(/[+]/g, "-").replace(/[/]/g, "_").replace(/[=]+$/, "");
+    const h27 = b64u27(JSON.stringify({ alg: "RS256", kid: KID27, typ: "JWT" }));
+    const c27 = b64u27(JSON.stringify({ iss: "https://" + TEAM27 + ".cloudflareaccess.com", aud: [AUD27], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 }));
+    const A27 = { "cf-access-jwt-assertion": h27 + "." + c27 + "." + b64u27(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp27.privateKey, new TextEncoder().encode(h27 + "." + c27)))) };
+    const MASTER27 = "mp-f27", kv27 = new KV(), bk27 = H27.orderBook({});
+    await kv27.put("u:aaaa-bbbb", "{}");
+    await kv27.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    await kv27.put("issue", "2026-09-01");
+    const env27 = { STMT: kv27, STMT_MASTER: MASTER27, ACCESS_TEAM: TEAM27, ACCESS_AUD: AUD27, ORDERBOOK: bk27.ns, ORDER_STORE: "object" };
+    /* a throw is the runtime's 500, as it is in production, so a refusal lost is a failed assertion and not a crash */
+    const site27 = (path, init) => inWorker27.run(true, async () => {
+      try { return await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, init), env27); }
+      catch (e) { return new Response(JSON.stringify({ ok: false, error: String(e && e.message) }), { status: 500 }); }
+    });
+    const post27 = async (path, body, h) => { const r = await site27(path, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h || A27), body: JSON.stringify(body) });
+      return { status: r.status, j: await r.json().catch(() => null) }; };
+
+    /* a page from before the fold sends {make: true} alone: a reason, never a throw, and nothing written */
+    const k27 = crypto.getRandomValues(new Uint8Array(32)), kb27 = Buffer.from(k27).toString("base64");
+    const w27 = await C27.wrapKey(TP27, k27), wm27 = await C27.wrapKey(MASTER27, k27);
+    const bare27 = await post27("/all/test", { make: true });
+    const noMaster27 = await post27("/all/test", { make: true, key: kb27, wrap: w27 });
+    const short27 = await post27("/all/test", { make: true, key: kb27, wrap: Object.assign({}, w27, { ct: Buffer.alloc(32).toString("base64") }), wrapMaster: wm27 });
+    ok(bare27.status === 400 && /Reload it and tap again/.test(bare27.j && bare27.j.error) && noMaster27.status === 400 && short27.status === 400
+      && !(await kv27.get("u:" + TU27)),
+      "a bare make, a make with no master's wrap, and a wrap of the wrong length are each refused with a reason, and nothing is written: "
+      + JSON.stringify([bare27.status, noMaster27.status, short27.status]));
+    await kv27.delete("u:" + TU27);   /* so what follows stands on its own, whatever a refusal let through */
+
+    /* HIS PAGE: Make a test account, against the Worker */
+    const posted27 = [];
+    const dom27 = new JD27(lp27("", "n27", { master: MASTER27, accounts: [{ code: "CX0-AA", username: "aaaa-bbbb" }] }),
+      { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: globalThis.crypto, configurable: true }); } catch (e) { win.crypto = globalThis.crypto; }
+        win.scrollTo = () => {};
+        win.fetch = async (path, init) => {
+          if (String(path) === "/all/test" && init && init.body) posted27.push(JSON.parse(init.body));
+          return site27(String(path), { method: (init && init.method) || "GET", headers: Object.assign({}, (init && init.headers) || {}, A27), body: init && init.body });
+        };
+      } });
+    wins27.push(dom27.window);
+    const D27 = dom27.window.document;
+    const makeBtn27 = () => [...D27.querySelectorAll("#mTest button")].find((b) => b.textContent === "Make a test account");
+    await until27(() => makeBtn27());
+    const pageBefore27 = rounds27.length;
+    const mb27 = makeBtn27();
+    if (mb27) mb27.dispatchEvent(new dom27.window.Event("click", { bubbles: true }));
+    await until27(() => [...D27.querySelectorAll("#mTest button")].some((b) => b.textContent === "Delete the test account"));
+    const rec27 = await kv27.get("u:" + TU27, "json"), sent27 = posted27[0] || {};
+    ok(posted27.length === 1 && !!rec27 && rec27.test === true && typeof sent27.key === "string" && Buffer.from(sent27.key, "base64").length === 32
+      && JSON.stringify(rec27.wrap) === JSON.stringify(sent27.wrap) && JSON.stringify(rec27.wrapMaster) === JSON.stringify(sent27.wrapMaster),
+      "his page's one tap makes the account from a key and two wraps it made itself, and the record carries those wraps as sent: "
+      + JSON.stringify({ posted: posted27.length, rec: !!rec27, fields: Object.keys(sent27) }));
+    const made27 = rounds27.slice(pageBefore27);
+    ok(made27.filter((x) => x.who === "page" && x.n === 150000).length === 2 && made27.some((x) => x.who === "worker" && x.n === 10000)
+      && Math.max(...made27.filter((x) => x.who === "worker").map((x) => x.n)) <= 100000,
+      "the two wraps are derived on his page at 150,000 rounds, and the Worker derives only the 10,000-round verifier: " + JSON.stringify(made27));
+    const opened27 = rec27 && rec27.wrapMaster ? await C27.unwrapKey(MASTER27, rec27.wrapMaster).catch(() => null) : null;
+    ok(!!opened27 && Buffer.from(opened27).equals(Buffer.from(sent27.key, "base64")),
+      "and the master's wrap opens, under the master, to the key the Worker sealed under");
+
+    /* A CUSTOMER'S DOOR opens it with the zeros, through the page's own unwrap */
+    const html27 = await (await site27("/")).text();
+    const door27 = new JD27(html27, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: globalThis.crypto, configurable: true }); } catch (e) { win.crypto = globalThis.crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => site27(String(path), { method: (init && init.method) || "GET",
+        headers: Object.assign({ "content-type": "application/json" }, (init && init.headers) || {}), body: init && init.body });
+    } });
+    wins27.push(door27.window);
+    const DD27 = door27.window.document;
+    DD27.getElementById("un").value = "0000-0000"; DD27.getElementById("pw").value = "0000-0000-0000-0000";
+    DD27.getElementById("f").dispatchEvent(new door27.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until27(() => DD27.getElementById("gate").hidden && /for trying the page out/.test(DD27.body.textContent));
+    ok(DD27.getElementById("gate").hidden && /for trying the page out/.test(DD27.body.textContent),
+      "a customer's door opens the account his page made, with the zeros, and shows its statement: " + JSON.stringify(DD27.getElementById("msg").textContent));
+    ok(rounds27.filter((x) => x.who === "worker").every((x) => x.n <= 100000) && rounds27.some((x) => x.who === "page" && x.n === 150000),
+      "and across the section no derivation of the Worker's is above 100,000 rounds: " + JSON.stringify(rounds27.filter((x) => x.who === "worker").map((x) => x.n)));
+    for (const w of wins27.splice(0)) { try { w.close(); } catch (e) { /* best effort */ } }
+
+    /* UNMADE ON THE ORDER BOOK'S ROAD, its orders go from the book, and another account's stay */
+    const sT27 = await O27.mintSession(env27, TU27), sO27 = await O27.mintSession(env27, "aaaa-bbbb");
+    const one27 = { product: "salt", qty: 1, mode: "collect", unit: 12, total: 12 };
+    const pT27 = await post27("/orders", Object.assign({}, one27, { rid: "rf27t" }), { "X-Stmt-Session": sT27 });
+    const pO27 = await post27("/orders", Object.assign({}, one27, { rid: "rf27o" }), { "X-Stmt-Session": sO27 });
+    const inBook27 = (u) => bk27.db.prepare("SELECT COUNT(*) AS n FROM ord WHERE u = ?").get(u).n + bk27.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE u = ?").get(u).n;
+    const had27 = [inBook27(TU27), inBook27("aaaa-bbbb")];
+    await kv27.put("seen:" + TU27, JSON.stringify({ opens: 2 }));
+    await kv27.put("sent:2026-09-01:" + TU27, JSON.stringify({ at: "2026-09-26T01:00:00Z" }));
+    const gone27 = await post27("/all/test", { make: false });
+    ok(pT27.status === 200 && pO27.status === 200 && had27[0] > 0 && had27[1] > 0 && gone27.status === 200 && gone27.j.made === false
+      && inBook27(TU27) === 0 && inBook27("aaaa-bbbb") === had27[1] && !(await kv27.get("u:" + TU27))
+      && !(await kv27.get("seen:" + TU27)) && !(await kv27.get("sent:2026-09-01:" + TU27)),
+      "unmaking it on the order book's road takes its record, its opens, its ticks and its orders from the book, and leaves another account's: "
+      + JSON.stringify({ placed: [pT27.status, pO27.status], had: had27, after: [inBook27(TU27), inBook27("aaaa-bbbb")] }));
+  } finally {
+    for (const w of wins27) { try { w.close(); } catch (e) { /* best effort */ } }
+    if (own27.length) Object.assign(S27, { deriveKey: realDK27, deriveBits: realDB27 }); else { delete S27.deriveKey; delete S27.deriveBits; }
+    globalThis.fetch = realFetch27;
+  }
 })();
 section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, the earlier statements at its foot, and This device");
 await (async () => {
@@ -20119,7 +20257,10 @@ await (async () => {
     throw new Error("reached for " + x);
   };
   try {
-    await post("/all/test", { make: true }, { "cf-access-jwt-assertion": jwt });
+    /* fold 2.7: his page makes the key and its wraps, as the laptop's wrapKey does */
+    const tkey = crypto.getRandomValues(new Uint8Array(32));
+    await post("/all/test", { make: true, key: Buffer.from(tkey).toString("base64"), wrap: await C.wrapKey("0000-0000-0000-0000", tkey),
+      wrapMaster: await C.wrapKey(MASTER, tkey) }, { "cf-access-jwt-assertion": jwt });
     const t = await post("/open", { u: "0000-0000", password: "0000-0000-0000-0000" });
     const tr = await post("/remember", { wrap: { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" } }, { "X-Stmt-Session": t.j.session });
     const had = (await kv.list({ prefix: "dev:0000-0000:" })).keys.length;
