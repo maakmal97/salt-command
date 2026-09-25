@@ -1,0 +1,62 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-25T15:10:48.426Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA2-SEN",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 600,
+    "cash": 750,
+    "date": "2026-09-25",
+    "deliveredQty": 0,
+    "paidOn": "2026-09-25"
+   },
+   "reasoning": "Sold 12.5 unit of salt to CA2-SEN for RM 750, RM 60/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 150 on the goods at 20%. Paid in full and 0 of 12.5 unit moved on 2026-09-25. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "The inventory spans more than one lot rate, so RM 48/unit is the inventory average rather than the lot this row draws. Check the blend before approving."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-25T15:10:48.426Z",
+    "type": "SELL",
+    "party": "CA2-SEN",
+    "qty": 12.5,
+    "total": 750,
+    "status": "paid",
+    "raw": "Sell 12.5 unit to CA2-SEN for RM 750 on 2026-09-25, RM 750 cash, 0 unit moved → Open · Deferred",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA2-SEN",
+     "newId": null,
+     "date": "2026-09-25",
+     "qty": 12.5,
+     "total": 750,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 750,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-25T15:43:12.649Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
