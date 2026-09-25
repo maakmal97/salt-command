@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bbc60cc5c7aefeeb";
+var SALT_BUILD_ID="cc09a05487844c0c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8444,7 +8444,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v862","d":"26 Sep 2026","t":"A REJECTION ON ONE DEVICE LEAVES THE OTHERS","n":["<b>A REJECTED ROW LEAVES EVERY DEVICE.</b> A row rejected on one device stayed in every other device's queue and figures. The Worker already names each entry it dropped in its answer to a post, and the desk now takes them out of its queue and stored copy, then redraws.","<b>ON THAT DEVICE'S NEXT POST.</b> Another device clears the entry the next time it posts to the cloud, not before.","<b>NOTHING IS QUEUED AGAIN.</b> The drop is written straight to storage, since the cloud already holds the queue without it, so the marks of what the cloud has taken stay the answer's. A failed redraw cannot turn a delivered post into a failed one."]}];
+const evolution=[{"v":"v863","d":"26 Sep 2026","t":"THE MIRROR IS SEEDED ONLY WHEN THE BOOK MOVES","n":["<b>AN UNCHANGED BOOK IS NOT SEEDED AGAIN.</b> Every deploy re-seeded the D1 mirror, because its hash carried the moment the book was extracted. The hash is now the book itself, so a push that moves no rows leaves the mirror answering throughout.","<b>NO SNAPSHOT MEANS A SEED IN PROGRESS.</b> The seed takes the snapshot row out first and puts it back last.","<b>NOTHING DRAFTS DURING A SEED.</b> While the mirror has no snapshot the drafter drafts and refuses nothing, and the next pass drafts those entries against the whole book. An Accept preview asked for then answers try again in a minute.","<b>A DAMAGED MIRROR IS SEEDED BY HAND.</b> <code>node tools/d1.mjs --seed --force</code> seeds regardless, for a mirror damaged while its book stayed the same."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8559,7 +8559,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 03:00 KL';
+const LAST_UPDATED='26 Sep 2026, 03:12 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

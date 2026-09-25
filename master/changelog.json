@@ -1,5 +1,16 @@
 [
  {
+  "v": "v863",
+  "d": "26 Sep 2026",
+  "t": "THE MIRROR IS SEEDED ONLY WHEN THE BOOK MOVES",
+  "n": [
+   "<b>AN UNCHANGED BOOK IS NOT SEEDED AGAIN.</b> Every deploy re-seeded the D1 mirror, because its hash carried the moment the book was extracted. The hash is now the book itself, so a push that moves no rows leaves the mirror answering throughout.",
+   "<b>NO SNAPSHOT MEANS A SEED IN PROGRESS.</b> The seed takes the snapshot row out first and puts it back last.",
+   "<b>NOTHING DRAFTS DURING A SEED.</b> While the mirror has no snapshot the drafter drafts and refuses nothing, and the next pass drafts those entries against the whole book. An Accept preview asked for then answers try again in a minute.",
+   "<b>A DAMAGED MIRROR IS SEEDED BY HAND.</b> <code>node tools/d1.mjs --seed --force</code> seeds regardless, for a mirror damaged while its book stayed the same."
+  ]
+ },
+ {
   "v": "v862",
   "d": "26 Sep 2026",
   "t": "A REJECTION ON ONE DEVICE LEAVES THE OTHERS",
