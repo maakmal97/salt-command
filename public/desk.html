@@ -73,8 +73,12 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="cfebd5dc43830dc5";
+var SALT_BUILD_ID="f448cb7c38c3d38e";
 var SALT_REV_MS=10000;
+/* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
+   One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
+   the first wake waits this long and the rest ride on it. */
+var SALT_WAKE_MS=3000;
 (function(){
   var chip=null,timer=null;
   function idle(){try{
@@ -105,7 +109,29 @@ var SALT_REV_MS=10000;
     }).catch(function(){});
   }
   window.addEventListener('load',function(){if(!timer){timer=setInterval(tick,SALT_REV_MS);tick();}});
-  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')tick();});
+  /* The wake reads what the load and the pollers read: the build first, then Approve's drafts and the site's orders,
+   which the rail's counts need with neither part on screen. Under the pollers' own guards: never into a hidden page
+   (the wake is kept for its return), never over a decision in flight, never over a field being typed on Site orders,
+   and never for a desk holding no write key. It touches nothing else, so a locked vault still draws codes. */
+  var wakeT=null,wakeOwed=false;
+  function wake(){
+    wakeT=null;
+    if(!window.SALT_CLOUD)return;
+    if(document.visibilityState!=='visible'){wakeOwed=true;return;}
+    wakeOwed=false;
+    tick();
+    try{
+      if(typeof saltWriteKey!=='function'||!saltWriteKey())return;
+      if(typeof apLoad==='function'&&!(typeof apBusy!=='undefined'&&apBusy&&Object.keys(apBusy).length))apLoad(true);
+      var b=document.getElementById('ordBox'),a=document.activeElement;
+      if(typeof ordLoad==='function'&&!(typeof ordBusy!=='undefined'&&ordBusy&&Object.keys(ordBusy).length)&&!(b&&a&&b.contains(a)&&a.tagName==='INPUT'))ordLoad(true);
+    }catch(e){}
+  }
+  try{if(navigator.serviceWorker&&navigator.serviceWorker.addEventListener)navigator.serviceWorker.addEventListener('message',function(e){
+    if(!e||!e.data||e.data.salt!=='wake'||wakeT)return;
+    wakeT=setTimeout(wake,SALT_WAKE_MS);
+  });}catch(e){}
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;if(wakeOwed&&!wakeT)wake();else tick();});
 })();
 </script>
 <!-- END cloud/PWA -->
@@ -8455,7 +8481,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v865","d":"26 Sep 2026","t":"14 ROWS FOLDED, 26 SEP 2026","n":["<b>14 ROWS FOLDED FROM THE PHONE.</b> Fulfilment on s203: cash 750; PLACE CB7-BJ on the map; RENAME CC5-OKR to CC9-OKR; PLACE CG5-SB on the map; PLACE CH6-SET on the map; PLACE CI4-OKR on the map; PLACE CJ4-BJ on the map; PLACE CJ4-OKR on the map; RENAME CN6-WM to CN3-WM; PLACE CR3-DAM on the map; PLACE CR3-PUD on the map; PLACE CS6-DAM on the map; PLACE SA5-BTR on the map; PLACE SP7-PUD on the map. The stated salt shelf stands at 25.5 unit, counted 23 Sep 2026, and this fold rolls it only for what physically moved.","<b>WRITTEN BY THE TOOL, NOT A MODEL.</b> The model could not be called: http 400, 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Schemas contains too many parameters with union types (29 parameters with type arrays or anyOf). This causes The figures are the dossier's own and the prose is tools/foldnotes.mjs, so every row here carries its terms, its party's history and the drafter's flags, and none of them carries a judgement on those flags. Each row note says as much on its own line, because a reader holding one row should not have to come here to learn it."]}];
+const evolution=[{"v":"v866","d":"26 Sep 2026","t":"A PUSH WAKES AN OPEN DESK","n":["<b>AN OPEN DESK LOOKS AGAIN ON A PUSH.</b> Beside the banner, the service worker tells every open desk to look again. Within about 3 seconds the desk checks for a new build and re-reads Approve's drafts and the site's orders, so a new row and the rail's counts show without the 30-second poll or a reload.","<b>ONE REFRESH A BURST.</b> A tick's two pushes, the customer's act and then its drafted row, are read together.","<b>THE POLLERS' GUARDS HOLD.</b> The re-read waits while a decision is in flight or a field on Site orders is being typed in. A hidden desk reads nothing until it is back on screen, and a desk with no write key reads nothing keyed.","<b>THE WAKE CARRIES NOTHING.</b> No code, name or amount travels with it, and a locked vault still draws codes."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8570,7 +8596,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 03:33 KL';
+const LAST_UPDATED='26 Sep 2026, 05:02 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

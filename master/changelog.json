@@ -1,5 +1,16 @@
 [
  {
+  "v": "v866",
+  "d": "26 Sep 2026",
+  "t": "A PUSH WAKES AN OPEN DESK",
+  "n": [
+   "<b>AN OPEN DESK LOOKS AGAIN ON A PUSH.</b> Beside the banner, the service worker tells every open desk to look again. Within about 3 seconds the desk checks for a new build and re-reads Approve's drafts and the site's orders, so a new row and the rail's counts show without the 30-second poll or a reload.",
+   "<b>ONE REFRESH A BURST.</b> A tick's two pushes, the customer's act and then its drafted row, are read together.",
+   "<b>THE POLLERS' GUARDS HOLD.</b> The re-read waits while a decision is in flight or a field on Site orders is being typed in. A hidden desk reads nothing until it is back on screen, and a desk with no write key reads nothing keyed.",
+   "<b>THE WAKE CARRIES NOTHING.</b> No code, name or amount travels with it, and a locked vault still draws codes."
+  ]
+ },
+ {
   "v": "v865",
   "d": "26 Sep 2026",
   "t": "14 ROWS FOLDED, 26 SEP 2026",
