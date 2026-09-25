@@ -3351,6 +3351,42 @@ await (async () => {
   try { w.close(); } catch (e) { }
 })();
 
+section("Restock keeps the plan in view across another book's read, and the week's Monday is worked out once");
+await (async () => {
+  /* Reading another book's plan swaps PROD and recomputes twice; the plans already held are put back, so
+     the one in view is not computed again. Counted at the engine's restockPlan, and every cached plan is
+     compared with the same book's plan read fresh with that book in view. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const live = read("liveBooks().filter(function(p){return obsDemandRows(p).length>0;})");
+  ok(live.length >= 2, "at least two books carry demand, so one can be read from another: " + live.join(", "));
+  const fresh = {};
+  for (const p of live) fresh[p] = w.eval("setProdView(" + JSON.stringify(p) + ");restockFor._c=null;JSON.stringify(restockFor(PROD))");
+  const inView = live[0], others = live.slice(1), q = (p) => JSON.stringify(p);
+  w.eval("setProdView(" + q(inView) + ");restockFor(PROD);window.__rp={n:0,f:POSITION_ENGINE.restockPlan};"
+    + "POSITION_ENGINE.restockPlan=function(){__rp.n++;return __rp.f.apply(this,arguments);};");
+  const held = read("currentStock");
+  for (const o of others) w.eval("restockFor(" + q(o) + ");restockFor(PROD);");
+  for (const o of others) w.eval("restockFor(" + q(o) + ");");
+  ok(read("__rp.n") === others.length,
+    "each other book is planned once and the one in view not again, however the reads interleave: " + read("__rp.n") + " plans for " + others.length + " other books");
+  ok(read("PROD") === inView && read("currentStock") === held, "the book in view is put back as it was");
+  for (const p of live) ok(w.eval("JSON.stringify(restockFor(" + q(p) + "))") === fresh[p],
+    p + ": the plan held from " + inView + "'s view is the plan read fresh with " + p + " in view");
+  w.eval("POSITION_ENGINE.restockPlan=__rp.f;");
+  /* pbWeekMonday: TODAY is a const, so the Monday is worked out on the first call and kept */
+  w.eval("pbWeekMonday();window.__tl={n:0};TODAY.toLocaleString=function(){__tl.n++;return Date.prototype.toLocaleString.apply(this,arguments);};"
+    + "window.__pm={n:0,f:pbWeekMonday};pbWeekMonday=function(){__pm.n++;return __pm.f.apply(this,arguments);};switchTab('today');");
+  ok(read("__pm.n") > 0 && read("__tl.n") === 0,
+    "a Today render reads the week's Monday " + read("__pm.n") + " times and works it out " + read("__tl.n") + " times");
+  const mon = read("pbWeekMonday()"), day = read("TODAY.toISOString().slice(0,10)");
+  const gap = (Date.parse(day + "T00:00:00Z") - Date.parse(mon + "T00:00:00Z")) / 864e5;
+  ok(/^\d{4}-\d\d-\d\d$/.test(mon) && new Date(mon + "T00:00:00Z").getUTCDay() === 1 && gap >= 0 && gap <= 6,
+    "the Monday kept is the Monday of the week TODAY falls in: " + mon + " for " + day);
+  try { w.close(); } catch (e) { }
+})();
+
 section("Oil — the ladder at every size, lawful between (round 5 his call 5, restated at v656)");
 await (async () => {
   /* HIS STATED BOARD IS RETIRED. It was 13, 12, 11, 10 and 9 ringgit a unit down the five sizes he

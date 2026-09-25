@@ -15017,11 +15017,14 @@ function restockSignal(R){
    receipt on his lots, the median, never under a day; review days are the median gap between his lots.
    A named customer overdue by more than their own gap has lapsed and is not counted as due.
    Cached per recompute(), which drops it; a book other than the one in view is read with PROD switched
-   and put back, as eachBook does. Returns the engine's plan, {empty:true} for a book with no demand. */
+   and put back, as eachBook does. Returns the engine's plan, {empty:true} for a book with no demand.
+   The swap's two recomputes change no row, so the plans already held (the one in view's among them) are
+   put back beside the other book's rather than read again: the in-view plan was being computed twice a
+   read of another book. */
 function restockFor(prod){
   const p=prod||PROD;
   if(restockFor._c&&restockFor._c[p])return restockFor._c[p];
-  if(p!==PROD){const keep=PROD;let r;try{PROD=p;recompute();r=restockFor(p);}finally{PROD=keep;recompute();}
+  if(p!==PROD){const keep=PROD,held=restockFor._c;let r;try{PROD=p;recompute();r=restockFor(p);}finally{PROD=keep;recompute();restockFor._c=held;}
     (restockFor._c=restockFor._c||{})[p]=r;return r;}
   const MS=86400000, med=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
   const lots=pPurch(p).filter(x=>poLive(x)&&x.date);
@@ -20290,8 +20293,12 @@ function pxHead(){
    desk's store; the laptop copy has no road to it and prints a blank line for it. */
 let PB_USERS=null;
 let PB_SITE=null;   /* v564: the statements site, learned from the keyed /stmt-users; never baked in */
-function pbWeekMonday(){const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
-  return kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0');}
+/* TODAY is a const, so the week's Monday is worked out on the first call and kept: it was a fresh
+   toLocaleString Date on every call, about 190 on one Today render. */
+let PB_MONDAY=null;
+function pbWeekMonday(){if(PB_MONDAY)return PB_MONDAY;
+  const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
+  return (PB_MONDAY=kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0'));}
 /* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
    tools/pricelist.mjs. Pending, cancelled and defaulted rows and awards with no cash are not. */
 function pbPriced(s){const st=txStat(s).order;
