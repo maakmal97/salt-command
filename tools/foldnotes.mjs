@@ -78,7 +78,7 @@ function rowNoteFor(it) {
   ]);
 }
 
-/* THE WHOLE NOTES OBJECT, in the shape schemaFor() names and checkNotes() enforces. */
+/* THE WHOLE NOTES OBJECT, in the shape checkNotes() enforces: a model's reply to schemaFor() after fromReply(). */
 export function toolNotes(d, ids, why) {
   const items = ids.map((id) => (d.items || []).find((it) => it.id === id) || { id });
   const rows = {};

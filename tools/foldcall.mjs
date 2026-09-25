@@ -157,10 +157,16 @@ export function dossier(book, staged, p, w) {
 export function nextVersion(v) { const n = parseInt(String(v || "").replace(/^v/, ""), 10); return Number.isFinite(n) ? "v" + (n + 1) : null; }
 
 /* ---- the contract: what the reply must look like ----------------------------------------- */
+/* A ROW'S OPTIONAL FIELDS ARE STRINGS, EMPTY WHEN NONE (26 Sep 2026). rowNote and cost were each
+   ["x", "null"], two union-typed parameters a row, and run 36180354574 sent 14 rows: 29 unions, which
+   the API refused with http 400 ("too many parameters with union types") before the model ever read
+   the dossier, so the fold landed on the tool's notes. The schema's unions no longer grow with the
+   batch: stockCost is the one left. fromReply turns the empties back into the nulls checkNotes and
+   fold.mjs have always read, so neither changes. */
 export function schemaFor(ids) {
   const rowProps = {};
   for (const id of ids) rowProps[id] = { type: "object", additionalProperties: false, required: ["note", "rowNote", "cost"],
-    properties: { note: { type: "string" }, rowNote: { type: ["string", "null"] }, cost: { type: ["number", "null"] } } };
+    properties: { note: { type: "string" }, rowNote: { type: "string" }, cost: { type: "string" } } };
   return { type: "object", additionalProperties: false,
     required: ["version", "title", "notes", "rows", "stockNote", "stockCost", "stockCostNote"],
     properties: {
@@ -169,6 +175,20 @@ export function schemaFor(ids) {
       rows: { type: "object", additionalProperties: false, required: ids, properties: rowProps },
       stockNote: { type: "string" }, stockCost: { type: ["number", "null"] }, stockCostNote: { type: "string" },
     } };
+}
+
+/* The reply as checkNotes reads it: an empty rowNote or cost is null, and a cost in digits is the
+   number. Anything else is left as sent, so checkNotes refuses it exactly as it always has. */
+export function fromReply(reply) {
+  if (!reply || typeof reply !== "object" || !reply.rows || typeof reply.rows !== "object") return reply;
+  const rows = {};
+  for (const [id, r] of Object.entries(reply.rows)) {
+    if (!r || typeof r !== "object") { rows[id] = r; continue; }
+    const blank = (v) => typeof v === "string" && !v.trim();
+    rows[id] = { ...r, rowNote: blank(r.rowNote) ? null : r.rowNote,
+      cost: blank(r.cost) ? null : (typeof r.cost === "string" && /^\s*\d+(\.\d+)?\s*$/.test(r.cost) ? +r.cost : r.cost) };
+  }
+  return { ...reply, rows };
 }
 
 export function checkNotes(notes, expectVersion, ids) {
@@ -200,7 +220,7 @@ House style, not optional: plain British English; no em-dashes or en-dashes (use
 
 LENGTH, and it is a rule: a row note is 60 to 120 words; each version note is one paragraph of 50 to 90 words; two version notes for a batch of one or two rows, three at most for a larger batch. Say each fact once. The first live fold wrote 4,700 tokens in 60 seconds, and the chain is measured in seconds.
 
-The version entry: "version" is exactly the next version given; "title" in CAPITALS, a short line; "notes" an array of HTML paragraphs, each opening with a bold lead, saying what was folded, what was unusual, and what the inventory did. "stockNote" is one or two sentences appended to the roll sentence the tool writes (empty string when nothing moved). "stockCost" is null unless a lot landed and the cost basis moves, then RM per unit with "stockCostNote" saying why. "rows.<id>.rowNote" is null unless a short bold line should be prepended to an amended row's own note. "rows.<id>.cost" is null unless the dossier shows the draft's cost is not the inventory's own rate, then the RM for the whole order.`;
+The version entry: "version" is exactly the next version given; "title" in CAPITALS, a short line; "notes" an array of HTML paragraphs, each opening with a bold lead, saying what was folded, what was unusual, and what the inventory did. "stockNote" is one or two sentences appended to the roll sentence the tool writes (empty string when nothing moved). "stockCost" is null unless a lot landed and the cost basis moves, then RM per unit with "stockCostNote" saying why. "rows.<id>.rowNote" is an empty string unless a short bold line should be prepended to an amended row's own note. "rows.<id>.cost" is an empty string unless the dossier shows the draft's cost is not the inventory's own rate, then the RM for the whole order in digits alone, like 312.50.`;
 
 function requestFor(d, ids) {
   const skeleton = {};
@@ -239,7 +259,7 @@ async function callClaude(req) {
   /* v540: an empty reply used to surface as "Unexpected end of JSON input", which names the parser
      and not the cause; say what came back and why it stopped. */
   if (!text.trim()) throw new Error(`the model returned no text (stop_reason ${res.stop_reason}, ${res.content.length} block(s), ${res.usage && res.usage.output_tokens} tokens out)`);
-  return { notes: JSON.parse(text), usage: res.usage, stop: res.stop_reason };
+  return { notes: fromReply(JSON.parse(text)), raw: text, usage: res.usage, stop: res.stop_reason };
 }
 
 /* ---- main ----------------------------------------------------------------------------------- */
@@ -254,11 +274,16 @@ if (isMain) {
     /* THE BALANCE, NOT ONLY THE KEY (08 Sep 2026). models.retrieve needs no credit and answered on an
        account with none; the first real fold then failed with "credit balance is too low". One
        five-token message proves what the fold will actually need. */
+    /* AND THE SCHEMA (26 Sep 2026). A bare message proved the key while the fold's own schema was
+       refused at 14 rows (run 36180354574), so the message carries schemaFor at 40 rows: a schema
+       the API will not compile fails here, not on a fold. */
     try {
       const client = new Anthropic(sdkOptions());   /* the fold's bound, so a silent API fails the probe too */
       const m = await client.models.retrieve(MODEL);
-      const r = await client.messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: "user", content: "Reply with the single word: ok" }] });
-      console.log(`  ok    the key answers and the account is funded: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
+      const ids = Array.from({ length: 40 }, (_, i) => `2099-01-01T00:00:${String(i).padStart(2, "0")}.000Z`);
+      const r = await client.messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: "user", content: "Reply with the notes JSON." }],
+        output_config: { format: { type: "json_schema", schema: schemaFor(ids) } } });
+      console.log(`  ok    the key answers, the account is funded and the fold's schema compiles at 40 rows: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
     }
     catch (e) { console.log("  FAIL  the call was refused: " + (e && e.status ? "http " + e.status + " " : "") + String((e && e.message) || e).slice(0, 220)); process.exit(1); }
   }
@@ -301,7 +326,7 @@ if (isMain) {
   if (process.env.SALT_FOLD_FAKE) {
     /* THE FAKE IS AN INSTRUMENT AND STAYS STRICT. It says use this reply, so a reply against the
        house rules folds nothing and the suite can still prove the checker gates the model. */
-    notes = JSON.parse(readFileSync(process.env.SALT_FOLD_FAKE, "utf8"));
+    notes = fromReply(JSON.parse(readFileSync(process.env.SALT_FOLD_FAKE, "utf8")));
     problems = checkNotes(notes, d.version.next, ids);
   } else if (noModel) {
     why = "The tool's own notes were asked for outright, with --no-model.";
@@ -332,7 +357,7 @@ if (isMain) {
       if (problems.length) {
         /* ONE RETRY, with the problems named. A second failure takes the tool's own notes. */
         console.log("  retry " + problems.join("; "));
-        const again = { ...req, messages: req.messages.concat([{ role: "assistant", content: JSON.stringify(notes) }, { role: "user", content: "That reply was refused for these reasons; send the corrected notes JSON:\n- " + problems.join("\n- ") }]) };
+        const again = { ...req, messages: req.messages.concat([{ role: "assistant", content: got.raw },{ role: "user", content: "That reply was refused for these reasons; send the corrected notes JSON:\n- " + problems.join("\n- ") }]) };
         try { got = await callClaude(again); notes = got.notes; problems = checkNotes(notes, d.version.next, ids); }
         catch (e) { problems = ["the retry could not be sent: " + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 120)]; }
         if (problems.length) { why = "The model answered twice against the house rules: " + problems.join("; ") + ". The tool wrote these notes instead."; console.log("  WARN  " + why); problems = []; }

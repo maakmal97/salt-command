@@ -9285,6 +9285,22 @@ await (async () => {
   ok(F.nextVersion("v520") === "v521" && F.nextVersion("junk") === null, "the next version is the master's plus one");
   const sch = F.schemaFor(ids);
   ok(sch.additionalProperties === false && sch.required.includes("rows") && sch.properties.rows.required[0] === ids[0] && sch.properties.rows.properties[ids[0]].required.includes("note"), "the schema names every id and forbids anything else");
+  /* 26 Sep 2026: THE SCHEMA STAYS UNDER THE API'S UNION LIMIT AT ANY BATCH SIZE. Run 36180354574 sent
+     14 rows with rowNote and cost each ["x","null"], 29 union-typed parameters, and the API refused the
+     call with http 400 before the model read a word; the fold landed on the tool's notes. The limit
+     is 16 (refused at 29). Counted by the suite's own walk, which is proved on a literal first. */
+  const UNION_LIMIT = 16;
+  const unionsIn = (s) => (s && typeof s === "object") ? Object.values(s).reduce((a, v) => a + unionsIn(v), (Array.isArray(s.type) && s.type.length > 1) || Array.isArray(s.anyOf) ? 1 : 0) : 0;
+  ok(unionsIn({ type: "object", properties: { a: { type: ["string", "null"] }, b: { anyOf: [{ type: "number" }, { type: "null" }] }, c: { type: "string" }, d: { type: ["number"] } } }) === 2, "the union count reads a type array and an anyOf, and nothing else");
+  const idsN = (n) => Array.from({ length: n }, (_, i) => "2099-01-01T00:00:00." + String(i).padStart(3, "0") + "Z");
+  const uc = [1, 14, 60].map((n) => unionsIn(F.schemaFor(idsN(n))));
+  ok(uc.every((c) => c <= UNION_LIMIT) && uc[2] === uc[0], "the reply schema's union-typed parameters stay under the API's " + UNION_LIMIT + " and do not grow with the batch (1, 14, 60 rows: " + uc.join(", ") + ")");
+  const rowOf = (r) => F.fromReply({ ...good, rows: { [ids[0]]: { ...good.rows[ids[0]], ...r } } });
+  ok(F.checkNotes(rowOf({ rowNote: "", cost: "" }), "v999", ids).length === 0 && rowOf({ rowNote: " ", cost: "" }).rows[ids[0]].rowNote === null && rowOf({ rowNote: "", cost: "" }).rows[ids[0]].cost === null,
+    "an empty rowNote and cost, the schema's none, read as the nulls checkNotes and fold.mjs have always read");
+  ok(rowOf({ cost: "312.50" }).rows[ids[0]].cost === 312.5 && F.checkNotes(rowOf({ cost: "312.50" }), "v999", ids).length === 0, "a cost in digits is the number");
+  ok(["0", "RM 120", "-5"].every((c) => F.checkNotes(rowOf({ cost: c }), "v999", ids).some((x) => /cost/.test(x))), "a cost of nothing, in words or below zero is still refused");
+  ok(F.checkNotes(rowOf({ rowNote: null, cost: null }), "v999", ids).length === 0 && rowOf({ rowNote: "<b>AMENDED.</b>" }).rows[ids[0]].rowNote === "<b>AMENDED.</b>", "and nulls, as the tool's notes and the fakes carry, and a rowNote with words pass unchanged");
 
   /* END TO END ON A FIXTURE, through a fake reply: the tool plans, builds the dossier off the real
      master, takes the notes, and folds with fold.mjs into copies of the book and the master. */
@@ -9363,6 +9379,59 @@ await (async () => {
       "the key probe takes the same bound: a silent API fails it inside 10 s (took " + (pr.ms / 1000).toFixed(1) + " s, exit " + pr.code + ", " + hits.length + " request)");
     srv.closeAllConnections(); srv.close();
     rm9(dirT, { recursive: true, force: true });
+  }
+  /* 26 Sep 2026: A REPLY IN THE SCHEMA'S SHAPE LANDS AS THE MODEL'S. A local API answers the call with
+     rowNote and cost empty, as the schema asks; the row folds on that note with the draft's own cost,
+     and the request it was sent carries a schema under the union limit. */
+  {
+    const { createServer } = await import("node:http");
+    const { spawn: sp9 } = await import("node:child_process");
+    let sent = null;
+    const reply = { version: dd.version.next, title: "ONE UNIT TO " + party9, notes: ["<b>ONE ROW FOLDED.</b> A paragraph that says what was folded and what the inventory did, long enough to pass."],
+      rows: { [id9]: { note: "<b>1 UNIT COLLECTED AND PAID, RM 130.</b> Written by the fixture model, clear of the floor for 1 unit on the desk's own ladder.", rowNote: "", cost: "" } },
+      stockNote: "", stockCost: null, stockCostNote: "" };
+    const srv = createServer((req, res) => {
+      let b = ""; req.on("data", (c) => { b += c; });
+      req.on("end", () => {
+        /* closed after each answer: a keep-alive socket still closing when the probe calls
+           process.exit trips a libuv assertion on Windows, exit 0xC0000409 after "ok" */
+        res.writeHead(200, { "content-type": "application/json", connection: "close" });
+        if (req.method === "GET") return res.end(JSON.stringify({ type: "model", id: "claude-fixture", display_name: "Fixture", created_at: "2099-01-01T00:00:00Z" }));
+        sent = JSON.parse(b);
+        res.end(JSON.stringify({ id: "msg_fixture", type: "message", role: "assistant", model: sent.model, content: [{ type: "text", text: JSON.stringify(reply) }],
+          stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } }));
+      });
+    });
+    await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+    const dirM = j9(REPO, "test", "tmp", "foldcall-model-" + Date.now());
+    mk9(dirM, { recursive: true });
+    const BM = j9(dirM, "book.json"), MM = j9(dirM, "salt_command.html"), SM = j9(dirM, "_to_fold.json");
+    cp9(j9(REPO, "ledger", "book.json"), BM); cp9(j9(REPO, "master", "salt_command.html"), MM); cp9(j9(REPO, "master", "changelog.json"), j9(dirM, "changelog.json")); cp9(S9, SM);
+    const env = { ...process.env, ANTHROPIC_BASE_URL: "http://127.0.0.1:" + srv.address().port, ANTHROPIC_API_KEY: "sk-fixture-not-a-key", ANTHROPIC_AUTH_TOKEN: "",
+      SALT_FOLD_TIMEOUT_MS: "10000", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", CLOUDFLARE_API_TOKEN: "" };
+    const call = (args) => new Promise((res) => {
+      let out = "";
+      const c = sp9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args], { cwd: REPO, env, stdio: ["ignore", "pipe", "pipe"] });
+      c.stdout.on("data", (x) => { out += x; }); c.stderr.on("data", (x) => { out += x; });
+      const kill = setTimeout(() => c.kill(), 30000);
+      c.on("close", (code) => { clearTimeout(kill); res({ code, out }); });
+    });
+    const mo = await call(["--staged", SM, "--book", BM, "--master", MM, "--notes", j9(dirM, "_fold_notes.json"), "--folded", j9(dirM, "_folded.json"), "--today", "2099-01-02"]);
+    const foldSent = sent; sent = null;
+    const po = await call(["--probe"]);
+    const probeSchema = sent && sent.output_config && sent.output_config.format && sent.output_config.format.schema;
+    ok(po.code === 0 && probeSchema && Object.keys(probeSchema.properties.rows.properties).length === 40 && unionsIn(probeSchema) <= UNION_LIMIT,
+      "the key probe sends the fold's own schema at 40 rows, so a schema the API refuses fails the probe (exit " + po.code + ", " + (probeSchema ? Object.keys(probeSchema.properties.rows.properties).length + " rows" : "no schema sent") + ")");
+    sent = foldSent;
+    srv.closeAllConnections(); srv.close();
+    const afterM = existsSync(BM) ? JSON.parse(rf9(BM, "utf8")) : null;
+    const rowM = afterM && afterM.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
+    ok(mo.code === 0 && rowM && /Written by the fixture model/.test(rowM.note) && !/no judgement is recorded/.test(rowM.note) && rowM.cost === 48 && afterM.QUEUE_COMMITTED === id9,
+      "a reply with rowNote and cost empty folds on the model's own note and keeps the draft's cost (exit " + mo.code + ", cost " + (rowM && rowM.cost) + ")" + (mo.code ? ": " + mo.out.slice(-300) : ""));
+    const sentSchema = sent && sent.output_config && sent.output_config.format && sent.output_config.format.schema;
+    ok(sentSchema && unionsIn(sentSchema) <= UNION_LIMIT && sentSchema.properties.rows.properties[id9].properties.cost.type === "string",
+      "the schema the call sent is under the union limit (" + (sentSchema ? unionsIn(sentSchema) : "no request") + ")");
+    rm9(dirM, { recursive: true, force: true });
   }
   /* a fake reply that breaks the rules is refused, and nothing is folded */
   wf9(FAKE9, JSON.stringify({ ...good, version: dd.version.next, rows: { [id9]: { note: "<b>ONE UNIT.</b> A note with an em-dash \u2014 which the house never writes, at length enough to pass.", rowNote: null, cost: null } } }));
