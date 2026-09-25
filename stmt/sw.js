@@ -22,24 +22,20 @@
  * opens the page with it filled in, the way the QR does. A string rather than a file because the
  * site has no assets and every byte it serves is generated per request.
  */
-export const NEWS = {
-  confirmed: "Your order is confirmed",
-  ready: "Your order is ready",
-  reply: "A reply on your order",
-  paid: "Payment received",
-  notfound: "Payment not found yet",   /* S6 11.14: his Not found on what they say they sent */
-  due: "A payment is due",
-  delivered: "Your order was delivered",
-  collected: "Your order was collected",
-  "part-delivered": "Part of your order was delivered",
-  "part-collected": "Part of your order was collected",
-  complete: "Your order is complete",
-  declined: "Your order could not be taken",
-  cancelled: "Your order was cancelled",
-};
+import { WORDS } from "./words.js";
+
+/* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
+   English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
+const KINDS = ["confirmed", "ready", "reply", "paid", "notfound", "due", "delivered", "collected", "part-delivered",
+  "part-collected", "complete", "declined", "cancelled"];
+export const NEWS = Object.fromEntries(KINDS.map((k) => [k, WORDS.en["news." + k]]));
+const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
+  Object.fromEntries(Object.keys(WORDS[L]).filter((k) => k.startsWith("news.")).map((k) => [k.slice(5), WORDS[L][k]]))]));
 
 export const SW_JS = `
-var NEWS = ${JSON.stringify(NEWS)};
+var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LANG = 'en';
+/* a word in the language this phone last chose, else English's */
+function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
 self.addEventListener('install', function(){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
 self.addEventListener('push', function(e){
@@ -49,7 +45,7 @@ self.addEventListener('push', function(e){
   var o = n && typeof n.o === 'string' && /^[0-9]{14}-[a-z0-9]{1,8}$/.test(n.o) ? n.o : '';
   var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : ''), order: o };
   if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k)) {
-    e.waitUntil(self.registration.showNotification(NEWS[n.k], { body: 'Tap to open it.', tag: o ? 'order-' + o : 'order-update', renotify: true, data: to }));
+    e.waitUntil(self.registration.showNotification(nw(n.k), { body: nw('tap'), tag: o ? 'order-' + o : 'order-update', renotify: true, data: to }));
     return;
   }
   e.waitUntil(fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
@@ -57,11 +53,11 @@ self.addEventListener('push', function(e){
     .then(function(b){
       var fresh = b && b.at && b.lines && b.lines.length && (Date.now() - Date.parse(b.at) < 120000);
       if (fresh) return self.registration.showNotification(String(b.lines[0]).slice(0, 120), {
-        body: b.lines.length > 1 ? String(b.lines[1]).slice(0, 120) : 'Open the page to read it.',
+        body: b.lines.length > 1 ? String(b.lines[1]).slice(0, 120) : nw('open'),
         tag: 'notice', renotify: true, data: to
       });
-      return self.registration.showNotification('Your order', {
-        body: 'Your order has an update. Open your statement page to see it.',
+      return self.registration.showNotification(nw('order'), {
+        body: nw('update'),
         tag: 'order-update', renotify: true, data: to
       });
     }));

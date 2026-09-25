@@ -48,6 +48,7 @@ import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
+import { refusal } from "./words.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -147,8 +148,14 @@ const DUMMY_VERIFIER = { salt: "c2FsdC1jb21tYW5kLW51bGw=", hash: "AAAAAAAAAAAAAA
 
 /* ONE ANSWER FOR EVERY REFUSAL. An unknown username, a wrong password and a malformed
    username all say the same thing, with the same status, after the same counter tick, so
-   nothing about which usernames exist can be read off the responses. */
-const REFUSED = "That username and password were not accepted.";
+   nothing about which usernames exist can be read off the responses. S13 13.3: every refusal a customer can meet
+   carries its code (stmt/words.js), the words the page shows in the reader's language; the English stays beside it. */
+const REFUSED = refusal("refused").error;
+const refused = () => json(Object.assign({ ok: false }, refusal("refused")), 401);
+const tooManyNow = () => json(Object.assign({ ok: false }, refusal("tooMany")), 429);
+/* a refusal from the order book's rules (stmt/orders.js), with its code and slots where it has them */
+const refuse = (r, extra) => json(Object.assign({ ok: false, error: r.error }, r.code ? { code: r.code } : {}, r.vars ? { vars: r.vars } : {}, extra || {}), r.status || 400);
+const signinAgain = (code) => json(Object.assign({ ok: false }, refusal(code), { session: false }), 401);
 
 /* EVERY OPEN IS AN OPEN (24 Sep 2026). `seen:` was written on a password open alone, so a customer who
    signed in once from his link and then came back on a remembered phone read "Not opened" on his list,
@@ -195,7 +202,7 @@ async function handleOpen(request, env) {
      the attacker ever reading the reply. Demanding application/json forces a preflight, which this
      Worker answers for nobody. */
   const ctype = String(request.headers.get("content-type") || "");
-  if (!/^application\/json\b/i.test(ctype)) return json({ ok: false, error: REFUSED }, 401);
+  if (!/^application\/json\b/i.test(ctype)) return refused();
 
   let body = {};
   try { body = await request.json(); } catch (e) { body = {}; }
@@ -220,11 +227,11 @@ async function handleOpen(request, env) {
   /* the count rides on the key's metadata as well, so lockedOut reads it off the listing (S9 fix) */
   const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL, metadata: { n: n + 1 } });
   const uKey = FKEY(who + ":" + u), ipKey = IPKEY(who), mKey = MKEY(who);
-  const tooMany = () => json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+  const tooMany = tooManyNow;
 
   const ipFails = await readN(ipKey);
   if (ipFails >= MAX_IP_FAILS) return tooMany();
-  if (!u) { await bump(ipKey, ipFails); return json({ ok: false, error: REFUSED }, 401); }
+  if (!u) { await bump(ipKey, ipFails); return refused(); }
 
   /* D15: A SPARE ACCOUNT IS NOBODY'S YET. The publish marks one the laptop minted ahead of need and the
      fold has not bound to a code, and the door treats it as no account at all, his override included:
@@ -269,7 +276,7 @@ async function handleOpen(request, env) {
        still counted here; the test password's sixteen zeros are a password's shape too. */
     const shaped = String(master).toLowerCase().replace(/[^a-z0-9]/g, "");
     if (master && masterKey && !ctEq(master, masterKey) && !PASS_RE.test(shaped) && !/^0{16}$/.test(shaped)) await bump(mKey, mFails);
-    return json({ ok: false, error: REFUSED }, 401);
+    return refused();
   }
 
   if (uFails) await env.STMT.delete(uKey);
@@ -328,13 +335,13 @@ async function handleCustomer(request, env, p, m) {
   /* S1 1.42: Log out is answered with or without a live session. Behind the check, a phone logging out after
      its fifteen minutes got a 401 and left its remembered wrap on the site for the rest of thirty days. */
   if (p === "/logout") return logOut(request, env, m, u);
-  if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+  if (!u) return signinAgain("signinOrders");
   /* S3 3.5: THE PAGE RE-READS ON EVERY RETURN, on its session: the sealed documents as an open hands them over,
      and never a wrap, because the page still holds the key it opened them with */
   if (p === "/account") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const acct = await env.STMT.get("u:" + u, "json");
-    if (!acct) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+    if (!acct) return signinAgain("signinOrders");
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
   }
@@ -343,7 +350,7 @@ async function handleCustomer(request, env, p, m) {
   if (p === "/account/claim" || p === "/claims") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await claimAccount(env, u, await readJson(request));
-    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, claim: claimView(r.claim) });
+    return r.error ? refuse(r) : json({ ok: true, claim: claimView(r.claim) });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
      others out. The list carries no id and no address: the kind of device, when it came and was last used, whether it
@@ -368,7 +375,7 @@ async function handleCustomer(request, env, p, m) {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
-    if (r.error) return json(Object.assign({ ok: false, error: r.error }, "prices" in r ? { prices: r.prices } : {}), r.status || 400);
+    if (r.error) return refuse(r, "prices" in r ? { prices: r.prices } : {});
     return json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
@@ -414,7 +421,7 @@ async function handleCustomer(request, env, p, m) {
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
-  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: customerView(r.order) });
+  return r.error ? refuse(r) : json({ ok: true, order: customerView(r.order) });
 }
 
 /* v692: LOGGING OUT IS A DEPARTURE. The session goes, the remembered wrap goes, and since S1 1.42 so does this
@@ -460,7 +467,7 @@ const mineOut = (origin, r) => ({ id: r.id, url: refUrl(origin, r.id), qr: refQr
 async function handleMyRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
-  if (!u) return json({ ok: false, error: "Sign in again to see your links.", session: false }, 401);
+  if (!u) return signinAgain("signinLinks");
   let acct = null;
   try { acct = await env.STMT.get("u:" + u, "json"); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
@@ -471,11 +478,11 @@ async function handleMyRefs(request, env, p, m, origin) {
     const mine = await refsBy(env, u);
     /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
     if (mine.filter((r) => !r.revoked).length >= MAX_PER_ASSOC)
-      return json({ ok: false, error: "you already have " + MAX_PER_ASSOC + " links; withdraw one to make another" }, 409);
+      return json(Object.assign({ ok: false }, refusal("linksMax", { n: MAX_PER_ASSOC })), 409);
     /* NO LABEL FROM A CUSTOMER: a note typed here would be the first plaintext anybody but him has
        put into this store, and a label is his note. He can write one when he approves it. */
     const rec = await mintRef(env, { introducer: u, by: u, label: "" });
-    if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
+    if (!rec) return json(Object.assign({ ok: false }, refusal("mintFailed")), 500);
     return json({ ok: true, ref: mineOut(origin, rec) });
   }
   const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
@@ -499,9 +506,9 @@ async function handleRemember(request, env) {
   const b = await readJson(request);
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
   const { key, rec, raw } = tok ? await readRem(env, tok) : {};
-  if (!rec || !rec.u) return json({ ok: false, error: REFUSED }, 401);
+  if (!rec || !rec.u) return refused();
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
+  if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return refused(); }
   await markSeen(env, rec.u, acct, "remembered", request);
   /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
      so a customer who uses the page is never signed out by a calendar. Every open files the record again for thirty
@@ -515,7 +522,7 @@ async function handleRemember(request, env) {
      used; the phone signs in again at that end, and the record it then makes is filed under a hash and slides. */
   if (raw && !rec.end) rec.end = new Date(Date.parse(rec.at || now) + REM_TTL * 1000).toISOString();
   const left = rec.end ? Math.floor((Date.parse(rec.end) - Date.now()) / 1000) : REM_TTL;
-  if (!(left > 0)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return json({ ok: false, error: REFUSED }, 401); }
+  if (!(left > 0)) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return refused(); }
   const ttl = Math.max(60, left);
   try {
     await env.STMT.put(key, JSON.stringify(rec), { expirationTtl: ttl });
@@ -555,13 +562,13 @@ async function handleSignin(request, env) {
   /* S3 3.3: the page asks which account first, and that spends nothing; a spent link is refused alike */
   if (b && b.peek === true) {
     const live = tok ? await peekSignin(env, tok, b.nonce) : null;
-    if (!live || !(await env.STMT.get("u:" + live.u))) return json({ ok: false, error: REFUSED }, 401);
+    if (!live || !(await env.STMT.get("u:" + live.u))) return refused();
     return json({ ok: true, u: live.u });
   }
   const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
-  if (!rec) return json({ ok: false, error: REFUSED }, 401);
+  if (!rec) return refused();
   const acct = await env.STMT.get("u:" + rec.u, "json");
-  if (!acct) return json({ ok: false, error: REFUSED }, 401);
+  if (!acct) return refused();
   await markSeen(env, rec.u, acct, "link", request);
   const session = await openSession(env, rec.u, "link", request);
   return json({
@@ -595,35 +602,35 @@ function netOf(ip) {
   return g.slice(0, 4).map((x) => (parseInt(x, 16) || 0).toString(16)).join(":") + "::/64";
 }
 const MAX_HO_FAILS = 10, MAX_HO_SITE = 100;
-const noHandover = () => json({ ok: false, error: "Signing in with a code is not switched on here." }, 503);
+const noHandover = () => json(Object.assign({ ok: false }, refusal("codeOff")), 503);
 async function handleHandover(request, env, p, m) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!env.STMT_HANDOVER_KEY) return noHandover();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (p === "/handover") {
     const u = await sessionUser(request, env);
-    if (!u) return json({ ok: false, error: "Sign in again to make a code.", session: false }, 401);
+    if (!u) return signinAgain("signinCode");
     const b = await readJson(request);
     const made = await mintHandover(env, u, b && b.token, b && b.wrap);
     /* S9 9.9: with a QR of the site's own /app for the other device's camera, the address alone and never the key */
     return made ? json(Object.assign({ ok: true, qr: appQr(new URL(request.url).origin) }, made)) : json({ ok: false, error: "send the key and the wrap" }, 400);
   }
   const b = await readJson(request);
-  if (!b) return json({ ok: false, error: REFUSED }, 401);
+  if (!b) return refused();
   const byKey = typeof b.token === "string" && SIGNIN_RE.test(b.token);
   const who = netOf(String(request.headers.get("CF-Connecting-IP") || "local"));
   const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
   const ipN = byKey ? 0 : await readN(HO_FAIL(who)), siteN = byKey ? 0 : await readN(HO_SITE);
-  if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+  if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return tooManyNow();
   const rec = await burnHandover(env, b);
   const acct = rec ? await env.STMT.get("u:" + rec.u, "json") : null;
-  if (!acct && byKey) return json({ ok: false, error: REFUSED }, 401);
+  if (!acct && byKey) return refused();
   if (!acct) {
     /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
        lags, never an open that fails */
     try { await env.STMT.put(HO_FAIL(who), String(ipN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
     try { await env.STMT.put(HO_SITE, String(siteN + 1), { expirationTtl: FAIL_TTL }); } catch (e) { /* the next miss counts */ }
-    return json({ ok: false, error: REFUSED }, 401);
+    return refused();
   }
   await markSeen(env, rec.u, acct, rec.by, request);
   const session = await openSession(env, rec.u, rec.by, request);

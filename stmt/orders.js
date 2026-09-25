@@ -58,6 +58,7 @@
 import { PAY_ACCOUNTS } from "./pay.js";
 import { wakeCustomer } from "./push.js";
 import { sessKey } from "./signin.js";
+import { refusal } from "./words.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -144,10 +145,12 @@ export const readsBoth = (env) => onBook(env) && env.ORDER_STORE === "object+kv"
 export const ROAD_KEY = "orderbook:road";
 const markRoad = (env) => (env.ORDERBOOK && !onBook(env) ? putSoft(env, ROAD_KEY, new Date().toISOString()) : null);
 /* the words while the book is moving in (stmt/orderbook.js): a minute, once, at the deploy that moves it */
-export const FROZEN = "Orders are being moved and are paused for a minute. Try again in a minute.";
+export const FROZEN = refusal("frozen").error;
 /* the object's own words for a store it cannot reach, and nothing else: a move is never answered as
    stored when it was not, and never retried here, because a retry is the page's, carrying its own id */
-export const BOOK_BUSY = "Orders could not be reached just now. Try again in a minute.";
+export const BOOK_BUSY = refusal("busy").error;
+/* S13 13.3: a refusal carries its code and its slots on from the book to the route, and the route to the page */
+const coded = (r, status) => Object.assign({ error: r.error, status }, r.code ? { code: r.code } : {}, r.vars ? { vars: r.vars } : {});
 async function book(env, op, a) {
   const stub = env.ORDERBOOK.get(env.ORDERBOOK.idFromName(BOOK_NAME));
   const r = await stub.fetch("https://orderbook/" + op, {
@@ -160,8 +163,8 @@ async function book(env, op, a) {
 async function bookMove(env, op, a) {
   let r;
   try { r = await book(env, op, a); }
-  catch (e) { console.log("orders: the order book did not answer " + op + ": " + String((e && e.message) || e)); return { error: BOOK_BUSY, status: 503 }; }
-  if (!r || !r.ok) return { error: (r && r.error) || BOOK_BUSY, status: (r && r.status) || 503 };
+  catch (e) { console.log("orders: the order book did not answer " + op + ": " + String((e && e.message) || e)); return Object.assign(refusal("busy"), { status: 503 }); }
+  if (!r || !r.ok) return r && r.error ? coded(r, r.status || 503) : Object.assign(refusal("busy"), { status: 503 });
   return r;
 }
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */
@@ -418,7 +421,7 @@ export function checkPlacement(body, open) {
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
   const place = String(body.place || "").replace(/\s+/g, " ").trim().slice(0, 60);
-  if (mode === "deliver" && place.length < 2) return { error: "say roughly where it is going, so the delivery can be quoted" };
+  if (mode === "deliver" && place.length < 2) return refusal("placeWhere");
   /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
      friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
      CHECKED BY NOBODY HERE: this site holds no roster and knows no codes, so it records the claim
@@ -428,7 +431,7 @@ export function checkPlacement(body, open) {
   const forFriend = body.forFriend === true;
   /* v751: and anything they want to say with it, optional on every order, collect or deliver */
   const note = cleanMsg(body.note, NOTE_MAX);
-  if (open.length >= MAX_OPEN) return { error: "you already have " + open.length + " orders open; wait for one to be completed" };
+  if (open.length >= MAX_OPEN) return refusal("openMax", { n: open.length });
   return { order: { product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
     place: mode === "deliver" ? place : "", forFriend }, note };
 }
@@ -489,36 +492,36 @@ export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
    all is a page loaded before the stamp existed (the Counter's page sends one on every Place since S4, empty included): it has nothing to re-quote
    with, so a refusal would hold it until a reload it has no way to ask for, and it places as it did, the desk's
    acknowledgement the check behind its total, as for every quoted total. */
-export const PRICES_MOVED = "prices moved";
+export const PRICES_MOVED = refusal("pricesMoved").error;
 
 /** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }. */
 export function decidePlace(u, body, open, at, digest) {
   const c = checkPlacement(body, open);
-  if (c.error) return { error: c.error };
-  if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return { error: PRICES_MOVED };
+  if (c.error) return c;
+  if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
     history: [{ at, status: "placed", by: "customer" }] }, c.order);
   return { ev: { kind: "place", at, order } };
 }
 
-const SAID_AS = { done: "complete", cancelled: "cancelled", declined: "not taken" };
+const SAID_AS = { done: "cancelDone", cancelled: "cancelCancelled", declined: "cancelDeclined" };
 /** The customer's own moves: a rail, a payment, a line, or a withdrawal before anything is on the road.
  *  `mine` is their orders, which the cash rule reads. Returns { ev } or { error, status }. */
 export function decideCustomer(order, action, body, mine, at) {
-  if (!order) return { error: "no such order", status: 404 };
+  if (!order) return Object.assign(refusal("noOrder"), { status: 404 });
   if (action === "cancel") {
     /* v694: either side may withdraw at any stage UNTIL THE GOODS MOVE (his rule, 18 Sep 2026).
        What was paid is refunded, which the ledger raises when the cancellation folds. */
     /* S5 5.3 (D11): the refusals the page shows are in the customer's words, never the desk's states */
-    if (["done", "cancelled", "declined"].includes(order.status)) return { error: "this order is " + SAID_AS[order.status] + ", so it cannot be cancelled here", status: 409 };
-    if ((+order.moved || 0) > 0) return { error: "the goods are already with you, so this cannot be cancelled here", status: 409 };
+    if (["done", "cancelled", "declined"].includes(order.status)) return Object.assign(refusal(SAID_AS[order.status]), { status: 409 });
+    if ((+order.moved || 0) > 0) return Object.assign(refusal("cancelMoved"), { status: 409 });
     /* S6 fix: NOT WHILE A CLAIM WAITS. A cancelled order is off his card, so nothing could answer it and it waited for good */
-    if (claimWaits(order)) return { error: "we are checking the RM " + claimedOf(order).toFixed(2) + " you sent, so this can be cancelled once we have answered it", status: 409 };
+    if (claimWaits(order)) return Object.assign(refusal("cancelClaim", { rm: claimedOf(order).toFixed(2) }), { status: 409 });
     return { ev: { kind: "status", at, status: "cancelled", by: "customer" } };
   }
   if (action === "method") {
-    if (!PAYABLE.includes(order.status)) return { error: "payment is chosen once the order is confirmed", status: 409 };
+    if (!PAYABLE.includes(order.status)) return Object.assign(refusal("methodEarly"), { status: 409 });
     const r = pickRail(order, body, mine);
     if (r.error) return r;
     return { ev: { kind: "method", at, method: r.method, account: r.account } };
@@ -527,21 +530,21 @@ export function decideCustomer(order, action, body, mine, at) {
     /* v694: THE CUSTOMER TYPES WHAT THEY SENT (his instruction, 18 Sep 2026). The site takes no money
        and no rail tells it anything, so what is recorded is their word. S6 6.5 (D7): it is a CLAIM,
        never paid, until his Received; claims accumulate, and together they may not pass what is owed. */
-    if (!PAYABLE.includes(order.status)) return { error: "payment is recorded once the order is confirmed", status: 409 };
+    if (!PAYABLE.includes(order.status)) return Object.assign(refusal("payEarly"), { status: 409 });
     const amount = body && body.amount;
-    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much you paid", status: 400 };
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return Object.assign(refusal("payHowMuch"), { status: 400 });
     const due = +(dueOf(order) - claimedOf(order)).toFixed(2);
-    if (due <= 0.004) return { error: "what is owed on this order is sent already and waiting for us to confirm it", status: 409 };
-    if (amount > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
+    if (due <= 0.004) return Object.assign(refusal("paySent"), { status: 409 });
+    if (amount > due + 0.004) return Object.assign(refusal("payOver", { rm: due.toFixed(2) }), { status: 400 });
     let method = order.method || null, account = order.account || null;
     if (body && body.method) {
       const r = pickRail(order, body, mine);
       if (r.error) return r;
       method = r.method; account = r.account;
     }
-    if (!method) return { error: "choose how you are paying first", status: 400 };
+    if (!method) return Object.assign(refusal("payHow"), { status: 400 });
     /* cash is his to record when he takes it (S11 11.8), so it can never count twice */
-    if (method === "cod") return { error: "cash is recorded by us when we take it, so there is nothing to send here", status: 409 };
+    if (method === "cod") return Object.assign(refusal("payCash"), { status: 409 });
     return { ev: { kind: "claim", at, amount: +amount.toFixed(2), method, account } };
   }
   if (action === "say") {
@@ -549,8 +552,8 @@ export function decideCustomer(order, action, body, mine, at) {
        completed is still a question about that order, and sending them somewhere else to ask it
        is how a conversation leaves the record it belongs to. */
     const text = cleanMsg(body && body.text, MSG_MAX);
-    if (!text) return { error: "write something first", status: 400 };
-    if (saidBy(order, "customer") >= MSG_CAP) return { error: "there are already " + MSG_CAP + " of your messages on this order", status: 409 };
+    if (!text) return Object.assign(refusal("sayEmpty"), { status: 400 });
+    if (saidBy(order, "customer") >= MSG_CAP) return Object.assign(refusal("sayCap", { n: MSG_CAP }), { status: 409 });
     return { ev: { kind: "say", at, by: "customer", text } };
   }
   return { error: "not found", status: 404 };
@@ -857,7 +860,7 @@ export async function dropOrders(env, u) {
 export async function placeOrder(env, u, body) {
   /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
   const rec = await env.STMT.get("u:" + u, "json"), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";
-  const moved = (r) => (r.error === PRICES_MOVED ? { error: r.error, status: 409, prices } : r);
+  const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   if (onBook(env)) {
     const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest });
     if (r.error) return moved(r);
@@ -869,7 +872,7 @@ export async function placeOrder(env, u, body) {
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
   const d = decidePlace(u, body, open, new Date().toISOString(), digest);
-  if (d.error) return moved({ error: d.error });
+  if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
   await markRoad(env);
@@ -912,18 +915,18 @@ export async function customerMove(env, u, id, action, body) {
 /* The rail, checked against the pay master, with the one rail his rule withholds. */
 function pickRail(order, body, mine) {
   const method = String((body && body.method) || "");
-  if (!METHODS.includes(method)) return { error: "that is not a way to pay this site offers", status: 400 };
+  if (!METHODS.includes(method)) return Object.assign(refusal("railNone"), { status: 400 });
   if (method === "cod" && hasUnpaidAdvance(mine))
-    return { error: "cash on handover is not offered while goods you already hold are unpaid", status: 409 };
+    return Object.assign(refusal("cashWithheld"), { status: 409 });
   let account = null;
   if (method === "transfer" || method === "qr" || method === "jompay") {
     const key = String((body && body.account) || "");
     const a = PAY_ACCOUNTS.find((x) => x.key === key && !x.maintenance);
-    if (!a || !a[method]) return { error: "that account does not take that rail", status: 400 };
+    if (!a || !a[method]) return Object.assign(refusal("railAccount"), { status: 400 });
     account = a.key;
   } else if (method === "tngbiz") {
     const a = PAY_ACCOUNTS.find((x) => x.key === "tngbiz" && !x.maintenance && x.qr);
-    if (!a) return { error: "the Touch 'n Go Business code is not available", status: 400 };
+    if (!a) return Object.assign(refusal("tngOff"), { status: 400 });
     account = a.key;
   }
   return { method, account };
@@ -981,11 +984,11 @@ const MAX_CLAIMS = 5;
 /** Their claim against the account, checked. `waiting` is their claims still waiting. Returns { ev } or { error, status }. */
 export function decideAccountClaim(u, body, waiting, at) {
   const amount = body && body.amount;
-  if (!isNum(amount) || amount <= 0 || amount > 1000000) return { error: "say how much you sent", status: 400 };
-  if (String((body && body.method) || "") === "cod") return { error: "cash is recorded by us when we take it, so there is nothing to send here", status: 409 };
+  if (!isNum(amount) || amount <= 0 || amount > 1000000) return Object.assign(refusal("claimHowMuch"), { status: 400 });
+  if (String((body && body.method) || "") === "cod") return Object.assign(refusal("payCash"), { status: 409 });
   const r = pickRail(null, body, []);
   if (r.error) return r;
-  if (waiting.length >= MAX_CLAIMS) return { error: "there are already " + waiting.length + " payments of yours waiting for us to confirm", status: 409 };
+  if (waiting.length >= MAX_CLAIMS) return Object.assign(refusal("claimsMax", { n: waiting.length }), { status: 409 });
   const claim = { id: "a" + mintOrderId(at), u, kind: "account", at, amount: +amount.toFixed(2), method: r.method, account: r.account,
     state: "waiting", history: [{ at, by: "customer", note: "sent " + amount.toFixed(2) }] };
   return { ev: { kind: "aclaim", at, claim } };

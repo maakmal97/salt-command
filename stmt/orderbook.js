@@ -67,6 +67,8 @@ import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEI
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
+/* S13 13.3: a refusal of the rules keeps its code and its slots, for the page to word (stmt/words.js) */
+const no = (d, status) => Object.assign({ ok: false, error: d.error, status }, d.code ? { code: d.code } : {}, d.vars ? { vars: d.vars } : {});
 export const FREEZE_MS = 60000;
 /* past KV's cache life, counted from the END of the start copy (S10 fix DS3): a key the start pass read is
    served from this location's cache for a minute after THAT read, so an end inside the minute reads the start
@@ -164,7 +166,7 @@ export class OrderBook {
 
   /* ---- the hourly check (S10 10.3; fixes DS1, R2, P2, DS2, P1) ---- */
   async check() {
-    if (this.frozen()) return { ok: false, frozen: true, error: FROZEN, status: 503 };
+    if (this.frozen()) return { ok: false, frozen: true, error: FROZEN, code: "frozen", status: 503 };
     const kv = this.env && this.env.STMT;
     if (!kv) return { ok: false, error: "no KV", status: 500 };
     const seen = new Set(), repaired = [], kvAhead = [], kvOnly = [], bookOnly = [];
@@ -278,7 +280,7 @@ export class OrderBook {
   /* every answer is { ok, ... } or { ok: false, error, status }, and nothing here awaits */
   run(op, a) {
     const at = new Date().toISOString();
-    if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, status: 503, frozen: true };
+    if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, code: "frozen", status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
     /* S6 6.6: the account claims, one customer's or all, newest first */
     if (op === "claims") return { ok: true, claims: this.state.storage.sql.exec("SELECT doc FROM acl" + (a.u ? " WHERE u = ?" : "") + " ORDER BY at DESC", ...(a.u ? [String(a.u)] : [])).toArray().map((r) => JSON.parse(r.doc)) };
@@ -288,7 +290,7 @@ export class OrderBook {
       if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
       const waiting = this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ?", u).toArray().map((r) => JSON.parse(r.doc)).filter((c) => c.state === "waiting");
       const d = decideAccountClaim(u, a.body, waiting, at);
-      if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
+      if (d.error) return no(d, d.status || 400);
       return this.append(eid, u, d.ev.claim.id, d.ev, null);
     }
     /* his Received or Not found on one, as one event (S6 11.14) */
@@ -309,7 +311,7 @@ export class OrderBook {
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
       const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at, a.digest);
-      if (d.error) return { ok: false, error: d.error, status: 400 };
+      if (d.error) return no(d, 400);
       return this.append(eid, u, d.ev.order.id, d.ev, null);
     }
     if (op === "customer") {
@@ -317,7 +319,7 @@ export class OrderBook {
       const order = this.order(u, id);
       if (eid && order && this.event(eid)) return { ok: true, order, again: true };
       const d = decideCustomer(order, a.action, a.body, this.ordersOf(u), at);
-      if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
+      if (d.error) return no(d, d.status || 400);
       return this.append(eid, u, id, d.ev, order);
     }
     if (op === "desk") {

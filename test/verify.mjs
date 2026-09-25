@@ -7336,7 +7336,7 @@ await (async () => {
   ok(html.includes('value="' + un + '"'), "and fills in the username the QR carried, normalised");
   ok(!html.includes(pw) && !html.includes(envB.ct) && !html.includes("CX0-AA"),
     "the page carries no password, no ciphertext and no account code");
-  ok(html.includes("Keep me signed in on this") && html.includes('type="submit">Sign in</button>') && html.includes('id="un"') && html.includes('id="pw"'),
+  ok(html.includes("Keep me signed in on this") && html.includes('type="submit" data-w="door.go">Sign in</button>') && html.includes('id="un"') && html.includes('id="pw"'),
     "it asks for a username and a password, offers to keep them signed in, and the button says Sign in (v692; S3 3.7)");
   ok(/nonce-/.test(csp) && !/unsafe-inline/.test(csp) && /connect-src 'self'/.test(csp),
     "and declares a nonce CSP rather than allowing inline script wholesale");
@@ -14165,7 +14165,9 @@ await (async () => {
   const cells = [...board.matchAll(/<td class="l">([^<]*)<[/]td>/g)].map((m) => m[1]);
   ok(cells.join("|") === "0.5 unit|1 unit|2.5 units", "a guest's board says units above one and unit at one: " + JSON.stringify(cells));
   const page = PG.landingPage("abcd-efgh", "nf9", null);
-  ok(page.includes(String(PG.unitsOf)) && !page.includes("__UNITS_OF__"), "and the page's own script carries that same function");
+  /* S13 13.3: both say it through words.js's unitsIn, each with its table's words */
+  const WD = await import("../stmt/words.js");
+  ok(page.includes(String(WD.unitsIn)) && String(PG.unitsOf).includes("unitsIn(") && !page.includes("__UNITS_OF__"), "and the page's own script carries that same function");
 })();
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
 await (async () => {
@@ -16211,7 +16213,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const cust = await (await site("/")).text();
-    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" data-w="dev.out">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
@@ -19861,7 +19863,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit">Sign in</button>') && door92.includes('id="lock">Sign out of this ')
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" data-w="dev.out">Sign out of this ')
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
@@ -20258,7 +20260,8 @@ await (async () => {
   ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /select\.fld option\{background:var\(--salt-well\)/.test(page94)
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
-  ok(page94.includes("'Review'") && page94.includes("'Check your order'") && page94.includes("'Place order'")
+  /* S13 13.3: the words are the table's, served as its JSON */
+  ok(page94.includes('"Review"') && page94.includes('"Check your order"') && page94.includes('"Place order"')
     && page94.includes("a neighbourhood or a landmark") && page94.includes("Part of it")
     && page94.includes("Your order is now complete. Thank you for your loyalty."),
     "the page reviews before it places, asks roughly where it is going, takes the amount paid, and says his closing words");
@@ -20577,6 +20580,168 @@ await (async () => {
     "a row's $ patterns, a placeholder's name and a closing tag in it land as typed, the issue where its placeholder was, and the script parses: "
     + JSON.stringify([rows && rows[0] && rows[0].url, keyAt && keyAt[1], parses]));
 })();
+section("S13 13.3: every word the Counter draws is its table's, each key it names is in English, and no sentence is left in its script or markup");
+await (async () => {
+  /* HIS D12 OF 24 SEP 2026, the plan's 13.3: one table a language (stmt/words.js), English complete. Read off the page as
+     it is served: the script's own string tokens (the table's JSON and the other data splices taken out), the markup's
+     text and labels, then the page drawn on a fixture account, where no slot may show unfilled and no key's name show. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const EN = WD.EN;
+  /* the string tokens of a script, its comments and regular expressions stepped over */
+  const lits = (src) => {
+    const out = []; let i = 0, last = ""; const n = src.length;
+    const reOk = () => !last || /[(,=:[!&|?{};+\-*%<>~^]$/.test(last) || /\b(return|typeof|case|in|of|new|delete|void)$/.test(last);
+    while (i < n) {
+      const c = src[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (c === "/" && src[i + 1] === "*") { i = src.indexOf("*/", i + 2) + 2; continue; }
+      if (c === "/" && src[i + 1] === "/") { const e = src.indexOf("\n", i); i = e < 0 ? n : e; continue; }
+      if (c === "'" || c === '"' || c === "`") {
+        let j = i + 1, s = "";
+        while (j < n && src[j] !== c) { if (src[j] === "\\") { s += src[j + 1]; j += 2; continue; } s += src[j]; j++; }
+        out.push(s); i = j + 1; last = "x"; continue;
+      }
+      if (c === "/" && reOk()) {
+        let j = i + 1, cls = false;
+        while (j < n) { const d = src[j]; if (d === "\\") { j += 2; continue; } if (d === "[") cls = true; else if (d === "]") cls = false; else if (d === "/" && !cls) break; else if (d === "\n") break; j++; }
+        j++; while (/[a-z]/.test(src[j] || "")) j++; i = j; last = "x"; continue;
+      }
+      if (/[\w$]/.test(c)) { let j = i; while (j < n && /[\w$.]/.test(src[j])) j++; last = src.slice(i, j); i = j; continue; }
+      last = c; i++;
+    }
+    return out;
+  };
+  const html = P.landingPage("abcd-efgh", "n133", null);
+  const js = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+  const own = lits(js.replace(/^\s*var (WORDS|PAY_SITE|GL|GLS|BULL)=.*$/gm, ""));
+  const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+  const classes = new Set([...css.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]).concat([...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(" "))));
+  /* the rails' own names and the currency, which no table words, and the Worker's English for a moved list, which the page
+     matches on an answer carrying no code */
+  const NAMES = new Set(["DuitNow Transfer", "DuitNow QR", "Touch 'n Go Business", "RM ", "prices moved"]);
+  const left = [...new Set(own)].filter((s) => / /.test(s) && /[A-Za-z]{2,}/.test(s) && !/^[.(<]|[=<>{}[\]]/.test(s) && !NAMES.has(s)
+    && !(s.trim().split(/ +/).every((t) => /^[a-z][\w-]*$/.test(t)) && s.trim().split(/ +/).some((t) => /[-_]/.test(t) || classes.has(t))));
+  ok(own.length > 1500 && js.includes("var WORDS=") && !left.length,
+    "no sentence is written in the page's script: every word it draws is a key's, the rails' names apart: " + JSON.stringify(left));
+  /* the markup: every word on the page as served stands in a keyed element, and every label and placeholder has its key */
+  const D = new JSDOM(html).window.document, bare = [], unlabelled = [];
+  const walk = (x) => { for (const c of x.childNodes) {
+    if (c.nodeType === 3) { if (/[A-Za-z]{2,}/.test(c.textContent) && !c.parentNode.closest("[data-w]") && c.textContent.trim() !== "Salt Counter") bare.push(c.textContent.trim()); }
+    else if (c.nodeType === 1 && !/^(SCRIPT|STYLE)$/.test(c.tagName)) walk(c); } };
+  walk(D.body);
+  for (const [a, k] of [["aria-label", "data-wl"], ["placeholder", "data-wp"], ["alt", "data-wa"]])
+    D.querySelectorAll("[" + a + "]").forEach((x) => { const v = x.getAttribute(a); if (/[A-Za-z]{2,}/.test(v) && v !== "Salt Counter" && !/^X+ X+$/.test(v) && !x.hasAttribute(k)) unlabelled.push(a + "=" + v); });
+  const attrKeys = new Set(); for (const a of ["data-w", "data-wl", "data-wp", "data-wa"]) D.querySelectorAll("[" + a + "]").forEach((x) => attrKeys.add(x.getAttribute(a)));
+  ok(D.querySelectorAll("[data-w]").length > 60 && !bare.length && !unlabelled.length && [...attrKeys].every((k) => typeof EN[k] === "string"),
+    "and the markup's every word is a key's, on the element that holds it, each label's too, and each such key is in English: "
+    + JSON.stringify({ bare, unlabelled, missing: [...attrKeys].filter((k) => typeof EN[k] !== "string") }));
+  /* the keys the script names: whole, or put together from their parts, and every one in English */
+  const pre = new Set(Object.keys(EN).map((k) => k.split(".")[0]));
+  const named = [...new Set(own.filter((s) => /^[a-z]+\.[A-Za-z0-9-]+$/.test(s) && pre.has(s.split(".")[0])))];
+  const x = (a, ...rest) => rest.reduce((acc, b) => acc.flatMap((p) => b.map((q) => p + q)), a);
+  const built = [].concat(x(["dev."], ["phone", "computer"]), x(["place."], ["home", "prices", "order", "stmt", "card"]),
+    x(["rew."], ["held", "ask", "none"], ["", "P"]), x(["lnk.opened"], ["1", "N"], ["", "Last"]),
+    x(["hist."], ["paid", "sent", "chose"], ["", "By"]), ["hist.delivered", "hist.collected"],
+    x(["oh."], ["deliverTo", "deliver", "collect"], ["", "F"]), x(["pw.", "hc.still"], ["WithYou", "Part", "CashArrives", "CashCollect", "NowArrives", "NowCollect"]),
+    x(["due."], ["", "first"], ["Late", "Today", "Tomorrow", "InN"]), x(["part.", "part.rest"], ["Got", "Ordered", "Bare"], ["", "F"]),
+    x(["ha."], ["deliv", "coll"], ["", "F"]), x(["pr."], ["asAt", "week"], ["", "Tap"]));
+  const miss = named.concat(built).filter((k) => typeof EN[k] !== "string" && !/^(lnk\.opened|hc\.still|part\.rest)$/.test(k));
+  ok(named.length > 300 && !miss.length, "every key the script names, whole or from its parts, has its English: " + JSON.stringify(miss));
+  /* drawn on a fixture account: Home, Prices, Orders, an order's own screen and the pay sheet */
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 0, parts: [] } } })),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const orders = [
+    { id: "20260925000000-a1", product: "salt", qty: 3, unit: 11, total: 33, delivery: 5, paid: 10, moved: 1, movedOn: "2026-09-24", mode: "deliver", place: "Kampung Q", status: "ready", at: now,
+      history: [{ at: now, status: "placed" }, { at: now, status: "acknowledged", by: "desk" }, { at: now, status: "acknowledged", note: "paid 10.00", method: "transfer" }, { at: now, status: "ready", note: "1 unit delivered" }],
+      msgs: [{ by: "customer", text: "hello", at: now }, { by: "desk", text: "thanks", at: now }] },
+    { id: "20260925000000-a2", product: "salt", qty: 1, unit: 12, total: 12, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", at: now, history: [{ at: now, status: "placed" }], msgs: [] }];
+  const dom = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (p) => { p = String(p);
+        if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+        if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders, claims: [] }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    } });
+  const W = dom.window, Dm = W.document;
+  const shown = () => { const t = []; const w = (n) => { for (const c of n.childNodes) { if (c.nodeType === 3) t.push(c.textContent);
+    else if (c.nodeType === 1 && !/^(SCRIPT|STYLE)$/.test(c.tagName)) { for (const a of ["aria-label", "placeholder", "alt"]) if (c.hasAttribute(a)) t.push(c.getAttribute(a)); w(c); } } }; w(Dm.body); return t.join(" "); };
+  try {
+    Dm.getElementById("pw").value = pass;
+    Dm.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !Dm.querySelector("#oArea [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+    Dm.querySelector('#oArea [data-row="20260925000000-a1"]').click();
+    const pn = Dm.getElementById("payNow"); if (pn) pn.click();
+    const t = shown(), keysShown = Object.keys(EN).filter((k) => k.includes(".") && t.includes(k)), slots = t.match(/[{][A-Za-z0-9]+[}]/g) || [];
+    ok(!!Dm.querySelector(".oscreen") && !Dm.getElementById("paySheet").hidden && /To pay now/.test(t) && /Did you send|How you pay/.test(t) && /What happened, step by step/.test(t)
+      && !keysShown.length && !slots.length,
+      "drawn, Home, the order's own screen and the pay sheet show words: no key's name and no slot left unfilled: " + JSON.stringify({ keysShown, slots }));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("S13 13.3: a refusal the Worker gives a customer carries a code the table words, and the page words it, the Worker's English standing for a code it does not know");
+await (async () => {
+  /* The plan's 13.3: each refusal a customer can meet is { error: <English>, code }. The codes are listed once, as the
+     table's "e.<code>" keys, and refusal() throws for one the table lacks; every code the site's scripts name is read
+     here off their source. Then the Worker answering, and the page wording what it answered. */
+  const WD = await import("../stmt/words.js");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const P = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const codes = new Set();
+  for (const f of readdirSync(join(REPO, "stmt")).filter((f) => f.endsWith(".js"))) {
+    const t = readFileSync(join(REPO, "stmt", f), "utf8");
+    for (const m of t.matchAll(/(?:refusal|signinAgain)\(\s*"([A-Za-z]+)"/g)) codes.add(m[1]);
+    for (const m of t.matchAll(/code: "([a-z][A-Za-z]+)"/g)) codes.add(m[1]);
+    for (const m of t.matchAll(/SAID_AS = \{([^}]*)\}/g)) for (const q of m[1].matchAll(/: "([A-Za-z]+)"/g)) codes.add(q[1]);
+  }
+  let threw = false; try { WD.refusal("noSuchCode133"); } catch (e) { threw = true; }
+  const missing = [...codes].filter((c) => typeof WD.EN["e." + c] !== "string");
+  ok(codes.size >= 30 && !missing.length && threw, "every code the site's scripts can answer with has English in the table, and one it lacks cannot be answered: "
+    + JSON.stringify({ n: codes.size, missing }));
+  const env = { STMT: new KV() };
+  const post = (p, b, h) => SW.fetch(new Request("https://k7m3p2.example" + p, { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h || {}), body: JSON.stringify(b) }), env);
+  const r1 = await post("/open", { u: "abcd-efgh", password: "2345-6789-abcd-efgh" }), j1 = await r1.json();
+  const s = await O.mintSession(env, "abcd-efgh");
+  const r2 = await post("/orders/20260925000000-zz/cancel", { rid: "r133" }, { "X-Stmt-Session": s }), j2 = await r2.json();
+  const r3 = await SW.fetch(new Request("https://k7m3p2.example/orders", { headers: { "X-Stmt-Session": "sessNzzzzzzzzzzzzzzzzzzzzzzz" } }), env), j3 = await r3.json();
+  ok(r1.status === 401 && j1.code === "refused" && j1.error === WD.EN["e.refused"] && r2.status === 404 && j2.code === "noOrder" && j2.error === WD.EN["e.noOrder"]
+    && r3.status === 401 && j3.code === "signinOrders" && j3.error === WD.EN["e.signinOrders"] && j3.session === false,
+    "the Worker answers a refusal with its code and the table's English for it, at the door, on an order and on a lapsed session: " + JSON.stringify([j1, j2, j3]));
+  /* the door: a known code is worded from the table, never from the Worker's words; an unknown one shows the Worker's */
+  const door = async (body) => {
+    const dom = new JSDOM(P.landingPage("abcd-efgh", "n133b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        win.scrollTo = () => {};
+        win.fetch = async () => ({ ok: false, status: 401, json: async () => body });
+      } });
+    const W = dom.window, D = W.document;
+    try {
+      D.getElementById("pw").value = "2345-6789-abcd-efgh";
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 100 && !/bad/.test(D.getElementById("msg").className); i++) await new Promise((r) => setTimeout(r, 10));
+      return D.getElementById("msg").textContent;
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const said = [await door({ ok: false, error: "the worker's own words", code: "refused" }), await door({ ok: false, error: "the worker's own words", code: "zzUnknown" }),
+    await door({ ok: false })];
+  ok(said[0] === WD.EN["e.refused"] && said[1] === "the worker's own words" && said[2] === WD.EN["e.refused"],
+    "and the page words a code from its table, shows the Worker's English for a code it does not know, and its own refusal for none: " + JSON.stringify(said));
+})();
+
 section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");
 await (async () => {
   /* 24 SEP 2026, his decision D12: on a Malay or Chinese phone Chrome offers to translate the page, and accepting
@@ -21596,7 +21761,8 @@ await (async () => {
   /* ---- the page draws the tick only for an associate ---- */
   const page2 = await (await stmtW2.fetch(new Request("https://k7m3p2.example/"), { STMT: kv2 })).text();
   /* S4 4.7: the tick became the sheet's first question, Who is it for? Me / A friend, asked of an associate alone */
-  ok(page2.includes("'Who is it for?'") && page2.includes("['friend','A friend']") && page2.includes("if(assoc) B.appendChild(oChoice('Who is it for?'"),
+  /* S13 13.3: its words are the table's, served as its JSON, and the script names their keys */
+  ok(page2.includes('"sh.whoFor":"Who is it for?"') && page2.includes("['friend',tw('sh.friend')]") && page2.includes("if(assoc) B.appendChild(oChoice(tw('sh.whoFor')"),
     "the question is on the page and behind the mark, so nobody else is asked it");
   ok(/forFriend:!!\(assoc&&c\.forFriend\)/.test(page2),
     "and the placement cannot send the tick unless the account carries the mark");
@@ -22770,8 +22936,10 @@ await (async () => {
   /* S8 8.1: from the state words, which lead the panel, to the end of its drawing */
   const panel9 = page9.slice(page9.indexOf("var LINK_STATE="), page9.indexOf("async function loadMyLinks()"));
   const WL9 = await import("../src/orders.js");
-  ok(page9.indexOf("var LINK_STATE=") > 0 && /'Waiting'/.test(panel9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9)
-    && WL9.wordsIn(panel9, WL9.LEVEL_WORDS_MS).length === 0,
+  /* S13 13.3: the panel names its words by key, so its words are read off the table's lnk. keys with it */
+  const lw9 = Object.entries((await import("../stmt/words.js")).EN).filter(([k]) => /^lnk\./.test(k)).map(([, v]) => v).join(" | ");
+  ok(page9.indexOf("var LINK_STATE=") > 0 && /'lnk\.waiting'/.test(panel9) && /Waiting/.test(lw9) && !/Titanium|Platinum|Gold|Silver|Bronze|Ambassador/.test(panel9 + lw9)
+    && WL9.wordsIn(panel9 + " | " + lw9, WL9.LEVEL_WORDS_MS).length === 0,
     "it tells them it is waiting and names no tier, in English or Malay, which a customer's page never does");
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
@@ -30042,13 +30210,15 @@ await (async () => {
      off the page's own source, and every sentence the desk quotes must open a string the page writes. */
   const page = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   const fnW = /function oWord\(st,o,by\)\{[\s\S]*?\n  \}/.exec(page);
-  const oWordP = fnW ? Function("return " + fnW[0])() : null;
+  /* S13 13.3: its words are the table's (stmt/words.js), so it is run with the table's English */
+  const EN111 = (await import("../stmt/words.js")).EN, inEN111 = (l) => Object.values(EN111).some((v) => v.startsWith(l));
+  const oWordP = fnW ? Function("tw", "return " + fnW[0])((k) => EN111[k]) : null;
   const cases = [["placed", "collect", "customer"], ["acknowledged", "collect", "desk"], ["ready", "collect", "desk"], ["ready", "deliver", "desk"],
     ["done", "collect", "site"], ["declined", "collect", "desk"], ["cancelled", "collect", "customer"], ["cancelled", "deliver", "desk"]];
   const W = cases.map(([s, mode, by]) => [s, mode, by, oWordP ? oWordP(s, { mode }, by) : null, (/^They see (.+?)(?::|[.]$)/.exec(toldOf({ status: s, mode, history: [{ status: s, by }] })) || [])[1]]);
   const lines = Object.values(CUSTOMER_SEES).flatMap((x) => x.filter((_, i) => i % 2 === 1));
-  ok(!!oWordP && W.every((x) => x[3] && x[3] === x[4]) && Object.keys(CUSTOMER_SEES).length === 6 && lines.every((l) => page.includes("'" + l)),
-    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ off: W.filter((x) => x[3] !== x[4]), missing: lines.filter((l) => !page.includes("'" + l)) }));
+  ok(!!oWordP && W.every((x) => x[3] && x[3] === x[4]) && Object.keys(CUSTOMER_SEES).length === 6 && lines.every(inEN111),
+    "what the card says they see is the page's own state words and lines: " + JSON.stringify({ off: W.filter((x) => x[3] !== x[4]), missing: lines.filter((l) => !inEN111(l)) }));
 
   /* THE CARDS THE PREVIEW READS ARE THE DESK'S OWN, BOOK BY BOOK: the extract takes each product's with that
      product in view, as every other per-product figure in the snapshot is taken (v407) */
@@ -37446,7 +37616,9 @@ await (async () => {
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
-  ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit">/.test(pgY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
+  /* S13 13.3: the door's words are the table's, keyed on the element (data-w), so it is read off the page as served */
+  const doorY = (await import("../stmt/page.js")).landingPage("", "n22y", null);
+  ok(/<button class="btn salt-pill salt-pill--md" id="go" type="submit" data-w="door.go">/.test(doorY) && /<input class="fld salt-field__input salt-field__input--mono" id="rq"/.test(pgY),
     "the door's field is the system's field, in mono for a code, and Log in is the system's pill");
   /* S7 7.1: the tabs are places on the system's App bar and rail, and the open one carries aria-current, which both draw */
   ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
