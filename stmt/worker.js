@@ -42,7 +42,7 @@ import { landingPage, boardPage, shutPage } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
-import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC } from "./refs.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
 import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
@@ -237,24 +237,26 @@ async function handleOpen(request, env) {
   const uKey = FKEY(who + ":" + u), ipKey = IPKEY(who), mKey = MKEY(who);
   const tooMany = tooManyNow;
 
-  const ipFails = await readN(ipKey);
+  /* 5.3: THE FOUR READS GO AT ONCE, not one after another: the address's count, the record, the override's count
+     and the account's count. Each is a pure read and every write below comes after every check, so no check sees
+     a different value; the checks keep their order (address, empty username, override, account lockout). An
+     empty username reads no record, as before. */
+  const [ipFails, got, mFails, uFails] = await Promise.all([
+    readN(ipKey), u ? env.STMT.get(UKEY(u), "json") : null, readN(mKey), readN(uKey)]);
   if (ipFails >= MAX_IP_FAILS) return tooMany();
   if (!u) { await bump(ipKey, ipFails); return refused(); }
 
   /* D15: A SPARE ACCOUNT IS NOBODY'S YET. The publish marks one the laptop minted ahead of need and the
      fold has not bound to a code, and the door treats it as no account at all, his override included:
      nobody has been handed its password, and an open would be counted as a customer's. */
-  const got = await env.STMT.get(UKEY(u), "json");
   const rec = got && got.spare === true ? null : got;
   const masterKey = String(env.STMT_MASTER || "");
 
   /* THE OVERRIDE IS WEIGHED BEFORE THE CUSTOMER'S LOCKOUT, on its own counter. It is the
      break-glass: the one moment it is needed is the moment a customer cannot get in, which under
      a shared counter was exactly when it had also stopped working. */
-  const mFails = await readN(mKey);
   const byMaster = !!(rec && rec.env && master && masterKey && mFails < MAX_FAILS && ctEq(master, masterKey));
 
-  const uFails = await readN(uKey);
   if (!byMaster && uFails >= MAX_FAILS) return tooMany();
 
   /* THE SAME WORK FOR A NAME THAT EXISTS AND ONE THAT DOES NOT (08 Sep 2026). The verifier ran only
@@ -893,16 +895,8 @@ async function alertsOn(env) {
   return out;
 }
 /* 2.5: SALT ADMIN OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
-   codes, 3 to 7 s). Every head at once, then every account's seen: and sent: keys in KV's bulk form, get(keys[]),
-   which takes at most 100 keys a call and answers a Map with null for a missing key: so the keys go in chunks. */
-const BULK_KEYS = 100;
-async function getMany(env, keys) {
-  const chunks = [];
-  for (let i = 0; i < keys.length; i += BULK_KEYS) chunks.push(keys.slice(i, i + BULK_KEYS));
-  const out = new Map();
-  for (const got of await Promise.all(chunks.map((c) => env.STMT.get(c, "json")))) for (const [k, v] of got) out.set(k, v);
-  return out;
-}
+   codes, 3 to 7 s). Every head at once, then every account's seen: and sent: keys in KV's bulk form, through
+   getMany (stmt/refs.js, which reads the guest links the same way), 100 keys a chunk. */
 /* The QR is most of the sheet's CPU (42 encodes measured 55 ms), and an account's address does not move, so each is
    encoded once an isolate. Keyed by the address itself, so the roster bounds it; the cap is only a backstop. */
 const QR_MEMO = new Map();

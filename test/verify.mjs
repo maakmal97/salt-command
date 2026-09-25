@@ -17978,6 +17978,84 @@ await (async () => {
       + JSON.stringify({ first: e1 - e0, second: e2 - e1 }));
   } finally { globalThis.fetch = realFetch; QR.qrMatrix = realQr; }
 })();
+section("5.3: POST /open reads its four brakes at once, and the guest links are read in bulk, 100 keys a chunk, in the order they always came");
+await (async () => {
+  /* The door read the address's count, the record, the override's count and the account's count one after another,
+     four round trips before the verifier began, and listRefs read the links one key at a time. Every read here waits
+     a timer and records how many had finished when it began, so reads begun together share that count: a round
+     each; `peak` is the most in flight at once. The order of the checks is proved by the lockout sections. */
+  const W = (await import("../stmt/worker.js")).default;
+  const RF = await import("../stmt/refs.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  class Count extends KV {
+    constructor() { super(); this.log = null; this.done = 0; this.live = 0; this.peak = 0; }
+    async op(e, run) {
+      if (!this.log) return run();
+      e.after = this.done; this.log.push(e); this.live++; this.peak = Math.max(this.peak, this.live);
+      await new Promise((r) => setTimeout(r, 2));
+      try { return await run(); } finally { this.done++; this.live--; }
+    }
+    async get(k, t) { return this.op({ op: Array.isArray(k) ? "bulk" : "get", k }, () => super.get(k, t)); }
+    async list(o) { return this.op({ op: "list", prefix: (o && o.prefix) || "" }, () => super.list(o)); }
+  }
+  const watch = async (kv, run) => {
+    kv.log = []; kv.done = 0; kv.live = 0; kv.peak = 0;
+    try { return Object.assign({ out: await run() }, { log: kv.log, peak: kv.peak }); }
+    catch (e) { return { out: "threw: " + String((e && e.message) || e), log: kv.log, peak: kv.peak }; }
+    finally { kv.log = null; }
+  };
+
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un), IP = "10.53.0.1";
+  const kv = new Count();
+  await kv.put("u:" + un, JSON.stringify({ u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw),
+    wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
+  const senv = { STMT: kv, STMT_MASTER: "mp-p5-53" };
+  const open = (body) => watch(kv, async () => (await W.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+    headers: { "content-type": "application/json", "CF-Connecting-IP": IP }, body: JSON.stringify(body) }), senv)).status);
+  const firstRound = (log) => log.filter((e) => e.after === 0).map((e) => e.k).sort();
+  const four = ["fail:" + IP + ":" + un, "ipfail:" + IP, "mfail:" + IP, "u:" + un].sort();
+  const bad = await open({ u: un, password: "zzzz-zzzz-zzzz-zzzz" });
+  ok(bad.out === 401 && JSON.stringify(firstRound(bad.log)) === JSON.stringify(four) && bad.peak >= 4
+    && kv.m.get("fail:" + IP + ":" + un) === "1" && kv.m.get("ipfail:" + IP) === "1" && !kv.m.has("mfail:" + IP),
+    "a wrong password reads the address's count, the record, the override's count and the account's count at once, then is refused and counted as before: "
+    + JSON.stringify({ status: bad.out, first: firstRound(bad.log), peak: bad.peak, fail: kv.m.get("fail:" + IP + ":" + un), ip: kv.m.get("ipfail:" + IP) }));
+  const good = await open({ u: un, password: pw });
+  ok(good.out === 200 && !kv.m.has("fail:" + IP + ":" + un),
+    "and the right password still opens, clearing the account's count: " + JSON.stringify({ status: good.out }));
+  const none = await open({ u: "", password: pw });
+  ok(none.out === 401 && kv.m.get("ipfail:" + IP) === "2" && !none.log.some((e) => String(e.k).startsWith("u:")),
+    "an empty username is refused on the address's count and reads no record, as before: "
+    + JSON.stringify({ status: none.out, ip: kv.m.get("ipfail:" + IP), reads: none.log.map((e) => e.k) }));
+
+  /* Eight links and one key with no id, written out of date order with a tie on `made`, so the sort and the listing's
+     order both show; then 130, over the bulk form's 100, so the chunks are forced. */
+  const lk = new Count(), lenv = { STMT: lk }, BY = "qz53-assc";
+  const link = (c, made, by) => ({ id: "p53" + c + "-wxyz", level: "Gold", standing: false, approved: true, label: "Link " + c,
+    made: "2026-09-" + made + "T01:00:00.000Z", by, opens: 0, first: null, last: null, revoked: false });
+  const L = [link("2", "03", BY), link("3", "10", "standing"), link("4", "01", "standing"), link("5", "10", BY),
+    link("6", "07", "standing"), link("7", "05", BY), link("8", "12", "standing"), link("9", "02", "standing")];
+  for (const r of L) await lk.put("g:" + r.id, JSON.stringify(r));
+  await lk.put("g:p53z-wxyz", JSON.stringify({ label: "no id" }));
+  const want = ["8", "3", "5", "6", "7", "2", "9", "4"].map((c) => "p53" + c + "-wxyz");
+  const got8 = await watch(lk, () => RF.listRefs(lenv));
+  const ids8 = Array.isArray(got8.out) ? got8.out.map((r) => r.id) : got8.out;
+  ok(JSON.stringify(ids8) === JSON.stringify(want)
+    && JSON.stringify(got8.out.find((r) => r.id === "p535-wxyz")) === JSON.stringify(L[3]),
+    "listRefs gives the same links as before, newest first, a tie in the listing's order, the key with no id left out: " + JSON.stringify(ids8));
+  ok(got8.log.length <= 2 && got8.log.filter((e) => e.op === "bulk").length === 1 && !got8.log.some((e) => e.op === "get"),
+    "eight links cost one list and one bulk read, nothing a key: " + JSON.stringify(got8.log.map((e) => e.op)));
+  const mine = await RF.refsBy(lenv, BY.toUpperCase());
+  ok(JSON.stringify(mine.map((r) => r.id)) === JSON.stringify(["p535-wxyz", "p537-wxyz", "p532-wxyz"]),
+    "and refsBy, which reads it, still gives one username's links, newest first: " + JSON.stringify(mine.map((r) => r.id)));
+  const big = new Count();
+  for (let i = 0; i < 130; i++) await big.put("g:m" + String(i).padStart(3, "0") + "-wxyz",
+    JSON.stringify({ id: "m" + String(i).padStart(3, "0") + "-wxyz", made: new Date(Date.UTC(2026, 8, 1) + i * 60000).toISOString(), by: "standing" }));
+  const got130 = await watch(big, () => RF.listRefs({ STMT: big }));
+  ok(Array.isArray(got130.out) && got130.out.length === 130 && got130.out[0].id === "m129-wxyz" && got130.out[129].id === "m000-wxyz"
+    && got130.log.filter((e) => e.op === "bulk").length === 2 && got130.log.every((e) => e.op !== "bulk" || e.k.length <= 100),
+    "130 links are read in two chunks of at most 100 keys and all come back: "
+    + JSON.stringify({ n: Array.isArray(got130.out) ? got130.out.length : got130.out, bulk: got130.log.filter((e) => e.op === "bulk").map((e) => e.k.length) }));
+})();
 section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
 await (async () => {
   /* Needs you named the level off /all/refs while stage 14 names it off /all/sheet: two sources, and until the links

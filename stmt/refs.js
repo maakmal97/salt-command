@@ -154,15 +154,29 @@ export async function readRef(env, id) {
   try { return await env.STMT.get(RKEY(k), "json"); } catch (e) { return null; }
 }
 
-/** Every link, newest first. Forty of these at most, so one list and one read each is the whole
- *  cost and there is no index to keep in step with the records. */
+/** Many keys in KV's bulk form, get(keys[]), which takes at most 100 keys a call and answers a Map with null
+ *  for a missing key: so the keys go in chunks of 100, all at once. Salt Admin's sheet reads every account's
+ *  keys through it (2.5), and listRefs every link (5.3). */
+const BULK_KEYS = 100;
+export async function getMany(env, keys) {
+  const chunks = [];
+  for (let i = 0; i < keys.length; i += BULK_KEYS) chunks.push(keys.slice(i, i + BULK_KEYS));
+  const out = new Map();
+  for (const got of await Promise.all(chunks.map((c) => env.STMT.get(c, "json")))) for (const [k, v] of got) out.set(k, v);
+  return out;
+}
+
+/** Every link, newest first. One list a page and one bulk read of its keys (5.3), not a read a key one after
+ *  another, and there is no index to keep in step with the records. Taken in the listing's order, so a tie on
+ *  `made` sorts as it always did. */
 export async function listRefs(env) {
   const out = [];
   let cursor;
   do {
     const page = await env.STMT.list({ prefix: "g:", cursor });
+    const got = await getMany(env, page.keys.map((k) => k.name));
     for (const k of page.keys) {
-      const r = await env.STMT.get(k.name, "json");
+      const r = got.get(k.name);
       if (r && r.id) out.push(r);
     }
     cursor = page.list_complete ? null : page.cursor;
