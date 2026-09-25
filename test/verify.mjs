@@ -21269,7 +21269,7 @@ await (async () => {
       "and a refused line is refused before any ask: " + JSON.stringify(refused));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
-section("S13 fix: on a Malay phone a refusal the Worker words by code reads as a sentence, its slots filled");
+section("S13 fix: on a Malay phone a refusal the Worker words by code reads as a sentence, its slots filled, and one met outside the slice is said in English");
 await (async () => {
   /* 25 SEP 2026, the stage 13 review (MY12): the Worker's refusals are clauses, lower case with no stop, and the pay sheet
      drew them as they came, where the thread raised the first letter. Every refusal the page words is a sentence now. The
@@ -21292,6 +21292,7 @@ await (async () => {
       history: [{ at: now, status: "placed" }, { at: now, status: "acknowledged", by: "desk" }], msgs: [{ by: "customer", text: "SAIDQ", at: now }] },
     { id: "20260925000000-b2", product: "salt", qty: 3, unit: 11, total: 33, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", at: now, history: [{ at: now, status: "placed" }], msgs: [] }];
   const answer = (status, body) => ({ ok: status === 200, status, json: async () => body });
+  let placed = 0;
   const dom = new JSDOM(P.landingPage(un, "n13f", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -21303,7 +21304,8 @@ await (async () => {
         if (p === "/devices") return answer(200, { ok: true, devices: [] });
         if (p === "/account/claim" || /^[/]orders[/][^/]+[/]pay$/.test(p)) return answer(400, { ok: false, error: "the worker's own words", code: "claimsMax", vars: { n: 5 } });
         if (/^[/]orders[/][^/]+[/]say$/.test(p)) return answer(409, { ok: false, error: "the worker's own words", code: "sayCap", vars: { n: 20 } });
-        if (p === "/orders" && m === "POST") return answer(400, { ok: false, error: "the worker's own words", code: "openMax", vars: { n: 5 } });
+        if (p === "/orders" && m === "POST") { if (++placed > 1) throw new TypeError("Failed to fetch"); return answer(400, { ok: false, error: "the worker's own words", code: "openMax", vars: { n: 5 } }); }
+        if (/^[/]orders[/][^/]+[/]cancel$/.test(p)) return answer(503, { ok: false, error: "the worker's own words", code: "busy" });
         return answer(200, { ok: true }); };
     } });
   const W = dom.window, D = W.document;
@@ -21342,6 +21344,18 @@ await (async () => {
     ok(thread === S(WD.fill(WD.MS["e.sayCap"], { n: 20 })) && /20/.test(thread) && sheet === S(WD.fill(WD.EN["e.openMax"], { n: 5 })) && /5/.test(sheet)
       && !/[{}]/.test(thread + sheet),
       "a refusal with a slot is worded with the slot filled, in Malay in the thread and in English in the order sheet: " + JSON.stringify([thread, sheet]));
+    /* ---- S13-R2 of the review: a note a tap leaves in a part drawn in English (Place dropped by the network, a refused
+       Cancel) is English too, where it was worded in the reader's language as the tap came back and drawn beside English ---- */
+    D.getElementById("oPlace").click();
+    await until(() => text("#osheet .salt-sheet__foot p.msg") && text("#osheet .salt-sheet__foot p.msg") !== sheet);
+    const dropped = text("#osheet .salt-sheet__foot p.msg");
+    D.querySelector("#osheet .salt-sheet-scrim").click(); await wait(10);
+    D.querySelector('#oArea [data-row="20260925000000-b2"]').click(); await wait(30);
+    D.querySelector('.oscreen [data-part="foot"] button').click();
+    await until(() => text('.oscreen [data-part="foot"] p.msg'));
+    const cancel = text('.oscreen [data-part="foot"] p.msg');
+    ok(placed === 2 && WD.MS["x.notSent"] && WD.MS["e.busy"] && dropped === WD.EN["x.notSent"] && cancel === S(WD.EN["e.busy"]),
+      "a Place the network dropped and a refused Cancel are said in English beside their English controls, on a Malay phone: " + JSON.stringify([dropped, cancel]));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");

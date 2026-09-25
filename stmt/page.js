@@ -1157,7 +1157,7 @@ const CLIENT_JS = `
   /* a refusal stands alone beside its control, so it is said as a sentence: the Worker's words are a clause, lower case
      with no stop, in either language (MY12 of the stage 13 review) */
   function sentence(t){ t=String(t||''); if(!t) return t; t=t.charAt(0).toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; }
-  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):(b&&b.error)||(fb?tw(fb,s):'')); }
+  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):b&&b.said?tw(b.said):(b&&b.error)||(fb?tw(fb,s):'')); }
   /* a date or a size in a sentence, said in the sentence's language */
   function Dd(f,x){ return function(L){ return f(x,L); }; }
   function Uq(q,u){ return function(L){ return unitsOf(q,u,L); }; }
@@ -1180,7 +1180,9 @@ const CLIENT_JS = `
     return 'en';
   }
   function inEn(f){ return function(){ var was=LANG; LANG='en'; try{ return f.apply(this,arguments); }finally{ LANG=was; } }; }
-  var twE=inEn(tw);
+  /* a note a tap leaves to be drawn in a part outside the slice (the order sheet, the order's cancel, the limit, Rewards' links)
+     is worded in English as it is made, since the tap runs after inEn has handed the reader's language back */
+  var twE=inEn(tw), wErrE=inEn(wErr);
   function langSet(L){
     READER=LANG=!OWNER&&langOk(L)?L:'en';
     document.documentElement.lang=READER;
@@ -2238,7 +2240,7 @@ const CLIENT_JS = `
         wd.addEventListener('click', async function(){
           if(!confirm(tw('lnk.withdrawAsk'))) return;
           var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          if(mine!==ticket) return; if(rv.status===0) myNote=wErr(rv.body,'x.notSent'); await loadMyLinks();
+          if(mine!==ticket) return; if(rv.status===0) myNote=wErrE(rv.body,'x.notSent'); await loadMyLinks();
         });
         acts.appendChild(wd);
       }
@@ -2255,7 +2257,7 @@ const CLIENT_JS = `
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
         if(mine!==ticket) return;
-        myNote=r.body.ok?'':wErr(r.body,'lnk.notMade');
+        myNote=r.body.ok?'':wErrE(r.body,'lnk.notMade');
         await loadMyLinks();
       });
       box.appendChild(mk);
@@ -2354,14 +2356,14 @@ const CLIENT_JS = `
         headers:Object.assign({'X-Stmt-Session':session}, body?{'content-type':'application/json'}:{}),
         body:body?JSON.stringify(body):undefined}); };
     var r;
-    try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:tw('x.notSent'), lost:true}}; }
+    try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, said:'x.notSent', lost:true}}; }
     /* S3 3.5: a lapse reopens from the remembered phone and the request goes again, once */
     if(r.status===401&&session&&await reopen()){
-      try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, error:tw('x.notSent'), lost:true}}; }
+      try{ r=await send(); }catch(e){ return {status:0, body:{ok:false, said:'x.notSent', lost:true}}; }
     }
     /* UX5, 24 Sep 2026: ONE LAPSE, ONE VOICE. The Sheet and the bar say it; beside the tapped control each
        caller says whatever the answer's error is, which is a pointer to them */
-    if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, error:tw('x.notSent'), lost:true}:{ok:false, error:tw('lapse.notSent')}}; }
+    if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, said:'x.notSent', lost:true}:{ok:false, said:'lapse.notSent'}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
     return {status:r.status, body:j||{}};
   }
@@ -2600,7 +2602,7 @@ const CLIENT_JS = `
     c.digest=fresh.digest||'';
     if(!z){ c.gone=true; c.was=null; return; }
     if(Math.abs(z.price-c.total)>0.004){ c.total=z.price; c.rate=+(z.price/z.q).toFixed(2); c.rid=mintRid(); }
-    else draft.snote=tw('sh.stillAt',{rm:rm(c.total)});
+    else draft.snote=twE('sh.stillAt',{rm:rm(c.total)});
     c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
   }
   /* S4 4.6: FIVE OPEN ORDERS ARE SAID BEFORE THE FORM, not after it. The Worker refuses a sixth (MAX_OPEN in
@@ -2638,7 +2640,7 @@ const CLIENT_JS = `
     var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
     if(mine!==ticket) return;
     if(r.body.ok) ridDone(o.id+':cancel');
-    draft.limTap=r.body.ok?null:{id:o.id, t:wErr(r.body,'ord.notCancelled')};
+    draft.limTap=r.body.ok?null:{id:o.id, t:wErrE(r.body,'ord.notCancelled')};
     await loadOrders(); if(mine!==ticket) return;
     drawOrder(); sheetDraw();
   }
@@ -2683,7 +2685,7 @@ const CLIENT_JS = `
     draft.busy=false;
     if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
     if(!r.body.ok){
-      draft.snote=wErr(r.body,'sh.notPlaced');
+      draft.snote=wErrE(r.body,'sh.notPlaced');
       /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
       if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
         if(oLive().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
@@ -3221,7 +3223,7 @@ const CLIENT_JS = `
         var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
         if(mine!==ticket) return;
         if(r.body.ok) ridDone(o.id+':cancel');
-        tapSaid(o,'withdraw',r.body.ok?'':wErr(r.body,'ord.notCancelled'));
+        tapSaid(o,'withdraw',r.body.ok?'':wErrE(r.body,'ord.notCancelled'));
         await loadOrders(); if(mine!==ticket) return; oDraw();
       });
       f.appendChild(wb);

@@ -227,7 +227,7 @@ first of `ms`, `ms-MY`, `ms-BN`, `zsm` or `en`, else English); a switch, English
 welcome, One step to finish and This device overrides it and is kept on the phone as `salt-lang`, the page drawing the
 same without storage. Outside the slice (Prices, the statement, Rewards, the order sheet, the Orders list, and an
 order's head, steps, history and cancel) is drawn in English whatever is chosen (`inEn`), a state, size or date the
-slice shares included, so an order's screen is mixed until its slice comes. The page leaves its language in the
+slice shares included, and so is a note a tap leaves there (`wErrE`), so an order's screen is mixed until its slice comes. The page leaves its language in the
 origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
 none. Salt Admin is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
 since it goes before the phone's language is known. The suite reads the Malay table and a Malay served page for a
