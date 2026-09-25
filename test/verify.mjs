@@ -94,6 +94,7 @@ class KV {
    (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
    seen waits here first, so the state it proves is forced and never the runner's speed. */
 const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
+const DESK_TAG = '"desk-e1"';
 const assets = {
   async fetch(req) {
     const p = new URL(req.url).pathname;
@@ -103,6 +104,15 @@ const assets = {
        has neither, and /app is no longer a route: all three land on the SPA fallback. */
     if (p === "/index.html" || p === "/data.json" || p === "/app") return new Response("nope", { status: 404 });
     if (p === "/") return new Response("nope", { status: 404 });
+    /* THE DESK AS THE STORE ANSWERS IT LIVE (measured 26 Sep 2026). desk.html is served at
+       /desk with an ETag; a matching If-None-Match gets 304 and no body, and HEAD no body. A
+       request naming /desk.html is sent to /desk with a 307, which the runtime follows only
+       under redirect "follow": a request arriving at the Worker carries "manual". */
+    if (p === "/desk.html" && req.redirect === "manual") return new Response(null, { status: 307, headers: { location: "/desk" } });
+    if (p === "/desk" || p === "/desk.html") {
+      if (req.headers.get("if-none-match") === DESK_TAG) return new Response(null, { status: 304, headers: { etag: DESK_TAG } });
+      return new Response(req.method === "HEAD" ? null : "ASSET:/desk.html", { status: 200, headers: { etag: DESK_TAG } });
+    }
     return new Response("ASSET:" + p, { status: 200 });
   }
 };
@@ -409,6 +419,22 @@ await (async () => {
   ok((await r.text()) === "ASSET:/desk.html", "and it serves desk.html");
   r = await worker.fetch(req("/"), env);
   ok(r.status === 200 && (await r.text()) === "ASSET:/desk.html", "and so does the root");
+  /* A BROWSER'S REVALIDATION GETS 304, NOT THE WHOLE PAGE. The route used to ask the store
+     with a bare GET, so If-None-Match never arrived, and it rewrapped every answer as 200.
+     Requests here carry redirect "manual", as one arriving at the Worker does, so a route
+     asking for /desk.html with the request forwarded gets the store's 307 and is caught. */
+  const inbound = (path, opts = {}) => req(path, { redirect: "manual", ...opts });
+  const revalidate = { headers: { "If-None-Match": DESK_TAG } };
+  for (const path of ["/desk", "/"]) {
+    r = await worker.fetch(inbound(path, revalidate), env);
+    ok(r.status === 304 && (await r.text()) === "", `a matching If-None-Match on ${path} answers 304 with no body`);
+    r = await worker.fetch(inbound(path), env);
+    ok(r.status === 200 && (await r.text()) === "ASSET:/desk.html", `${path} without it, arriving as the Worker sees it, serves the desk`);
+  }
+  r = await worker.fetch(inbound("/desk", { method: "HEAD" }), env);
+  ok(r.status === 200 && r.headers.get("etag") === DESK_TAG && (await r.text()) === "", "HEAD /desk answers 200 and its ETag with no body");
+  r = await worker.fetch(inbound("/", { method: "POST", body: "x" }), env);
+  ok(r.status === 404 && !(await r.text()).includes("ASSET:"), "a POST to the root is not the desk");
   /* THE APP IS RETIRED (v387, his instruction). v376 kept it at /app as the escape hatch,
      to be retired when a week had passed without it. Both the route and the file are gone,
      and the file is archived beside the repo rather than deleted. A route serving a surface

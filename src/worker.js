@@ -794,9 +794,16 @@ export default {
      * answers so every link and bookmark holds, and /app is gone rather than left to rot:
      * a route serving a surface nobody maintains is worse than no route. public/index.html
      * is archived beside the repo, not deleted. */
-    if (p === "/desk" || p === "/") {
-      const res = await env.ASSETS.fetch(new Request(new URL("/desk.html", url), { method: "GET" }));
-      if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
+    /* THE BROWSER'S OWN REVALIDATION REACHES THE STORE, AND A 304 COMES BACK. The request is
+     * forwarded whole, so If-None-Match and HEAD arrive; a matching ETag answers 304 with no
+     * body instead of the whole page on every open. The store is asked for /desk, where it
+     * serves desk.html: it sends /desk.html there with a 307 (measured live), and a request
+     * arriving at the Worker carries redirect "manual", so asking for /desk.html with the
+     * request forwarded would get the 307 back and answer 404 here. Only GET and HEAD are
+     * the desk; anything else falls through to the not found at the end. */
+    if ((p === "/desk" || p === "/") && (m === "GET" || m === "HEAD")) {
+      const res = await env.ASSETS.fetch(new Request(new URL("/desk", url), request));
+      if (res && (res.ok || res.status === 304)) return res;
       return json({ ok: false, error: "the desk is not built" }, 404);
     }
 
