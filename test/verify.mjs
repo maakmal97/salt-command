@@ -39985,37 +39985,48 @@ await (async () => {
   const bodyOf = (who) => { const s = M.liveStatement(who, at); return String((s && (s.body || s.html)) || s); };
 
   /* who actually holds more than one book, asked of the book rather than assumed */
-  const owns = (await import("../engine/position.mjs")).default.ownsCode;
-  const booksOf = (party) => new Set(bk.sales.filter((s) => !s.cancelled && owns(party, s.customer)).map((s) => s.product || "salt"));
+  const POS82 = (await import("../engine/position.mjs")).default, owns = POS82.ownsCode;
+  /* THE ROWS THE STATEMENT STRUCK AT `at` CARRIES, a book at a time: stmtRows drops a row dated after it unless it is Pending,
+     and a cancelled row is counted apart. Counting every row pinned this to the day the check was written (CS6-PER's 23 Sep
+     order broke it), and choosing the account off every row did the same one step earlier: an account whose second book was
+     bought after `at` was chosen and then held one book on the statement (26 Sep 2026, plan fold 4.3). */
+  const stmtQty = (party) => {
+    const q = {};
+    for (const s of bk.sales) {
+      if (s.cancelled || !owns(party, s.customer)) continue;
+      const st = POS82.txStat(s).order;
+      if (st === "Cancelled" || (st !== "Pending" && s.date && s.date > "2026-09-22")) continue;
+      q[s.product || "salt"] = (q[s.product || "salt"] || 0) + s.qty;
+    }
+    return q;
+  };
+  const booksOf = (party) => new Set(Object.keys(stmtQty(party)));
   const many = (bk.roster || []).filter((c) => booksOf(c).size > 1);
-  ok(many.length > 0, `at least one account holds more than one book, or this section proves nothing (${many.length})`);
+  ok(many.length > 0, `at least one account holds more than one book on the statement, or this section proves nothing (${many.length})`);
 
   const who = many[0];
   const b = bodyOf(who), t = text(b);
   const foot = t.slice(t.indexOf(" orders,"));
 
-  /* the footer keeps them apart: one figure a book, and their sum is NOT printed */
-  const qty = {};
-  for (const s of bk.sales.filter((s) => !s.cancelled && owns(who, s.customer))) {
-    const st = (await import("../engine/position.mjs")).default.txStat(s).order;
-    if (st === "Cancelled") continue;
-    /* the statement is struck at `at`, and stmtRows drops a row dated after it unless it is Pending;
-       counting every row pinned this to the day the check was written (CS6-PER's 23 Sep order broke it) */
-    if (st !== "Pending" && s.date && s.date > "2026-09-22") continue;
-    qty[s.product || "salt"] = (qty[s.product || "salt"] || 0) + s.qty;
-  }
+  /* the footer keeps them apart: one figure a book, and their sum is NOT printed. A figure is read whole, so 5 unit is not
+     found inside 35 unit, and against its own book's mark, whose shape is the one word the mark carries. */
+  const qty = stmtQty(who);
+  const { PSHAPE: SHAPE82 } = await import("../stmt/page.js");
+  const num82 = (n) => String(+(+n).toFixed(2)).replace(".", "\\.");
+  const unitRe = (n) => new RegExp("(^|[^0-9.,])" + num82(n) + "\\s*unit");
+  const bookRe = (p) => new RegExp("(^|[^A-Za-z])" + (SHAPE82[p] || SHAPE82._) + "\\s+" + num82(qty[p]) + "\\s*unit");
   const each = Object.keys(qty);
   ok(each.length > 1, `${who} holds ${each.length} books on the statement`);
-  ok(each.every((p) => new RegExp(String(qty[p]).replace(".", "\\.") + "\\s*unit").test(foot)),
+  ok(each.every((p) => bookRe(p).test(foot)),
     `each book's own quantity is printed (${each.map((p) => p + " " + qty[p]).join(", ")}): ${foot.slice(0, 120)}`);
   const summed = each.reduce((a, p) => a + qty[p], 0);
-  ok(!new RegExp("\\b" + String(summed).replace(".", "\\.") + "\\s*unit").test(foot),
+  ok(!unitRe(summed).test(foot),
     `and their sum ${summed} is nowhere on it, because units of different books do not add`);
 
   /* SALT LEADS, his standing instruction of 11 Aug restated on the 13th. The first draft of the
      footer sorted the ids alphabetically, which put oil first. */
   const order = bk.PROD_ORDER || ["salt"];
-  const seen = each.slice().sort((a, b2) => foot.indexOf(String(qty[a])) - foot.indexOf(String(qty[b2])));
+  const seen = each.slice().sort((a, b2) => foot.search(bookRe(a)) - foot.search(bookRe(b2)));
   ok(order.indexOf(seen[0]) < order.indexOf(seen[1]),
     `the books come out in the book's own order, salt first (${seen.join(" then ")})`);
 
@@ -40418,6 +40429,8 @@ await (async () => {
   const { w } = await openMaster();
   function probe() {
     const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
+    /* each book's own shelf, read one book at a time before the page is drawn */
+    const held = {}; liveBooks().forEach((p) => { PROD = p; recompute(); held[PRODUCTS[p].name] = currentStock; });
     setProdView("oil");
     const d = document.createElement("div"); d.innerHTML = tabOverview();
     const kpi = (l) => [].find.call(d.querySelectorAll(".kpi"), (k) => T(k.querySelector(".l")) === l);
@@ -40427,19 +40440,43 @@ await (async () => {
       bnd: [].map.call(tables[0].querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[0]), tags: [].map.call(r.cells[0].querySelectorAll(".prodtag"), (x) => x.title) })),
       def: [].map.call(d.querySelectorAll(".pend h3"), T).find((h) => /Supplier default/.test(h)) || "",
       srAmount: supplierReceivable ? supplierReceivable.amount : null,
-      ledgerTags: [].map.call(tables[tables.length - 1].querySelectorAll("tbody tr .prodtag"), (x) => x.title),
-      live: liveBooks().map((p) => PRODUCTS[p].name) };
+      held, live: liveBooks().map((p) => PRODUCTS[p].name) };
+  }
+  /* 26 Sep 2026 (plan fold 4.3): whether the book's five newest rows span two books is the day's business, so two rows are
+     forced newest, one salt and one oil, a day after every dated row on the book, and taken off again */
+  function probeLedger() {
+    const last = BASE_SALES.filter((s) => s.date).map((s) => s.date).sort().pop();
+    const next = new Date(Date.parse(last) + 864e5).toISOString().slice(0, 10), n0 = BASE_SALES.length;
+    BASE_SALES.push({ rid: "zLG1", customer: "CZ9-LGA", qty: 1, total: 100, cash: 100, deliveredQty: 1, date: next },
+      { rid: "zLG2", customer: "CZ9-LGB", product: "oil", qty: 1, total: 13, cash: 13, deliveredQty: 1, date: next });
+    try {
+      queue = []; applyOverlay(); setProdView("oil");
+      const d = document.createElement("div"); d.innerHTML = tabOverview();
+      const tables = d.querySelectorAll("table");
+      return { prod: PROD, rows: [].map.call(tables[tables.length - 1].querySelectorAll("tbody tr"), (r) => ({ fx: (/CZ9-LG[AB]/.exec(r.textContent) || [""])[0],
+        tags: [].map.call(r.querySelectorAll(".prodtag"), (x) => x.title) })) };
+    } finally { BASE_SALES.length = n0; applyOverlay(); recompute(); }
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  const lg = JSON.parse(w.eval("JSON.stringify((" + probeLedger.toString() + ")())"));
   const fmtRM = (n) => "RM " + n.toLocaleString("en-US");
   ok(v.rev === fmtRM(v.conso), "revenue is added across the books and agrees with the Financials head: " + JSON.stringify([v.rev, v.conso]));
-  ok(v.live.length > 1 && v.live.every((n) => new RegExp("(^|· )" + n + " [0-9.]+ unit").test(v.inv)) && /^RM /.test(v.invV),
-    "units stay with their book: the inventory figure is money, and its note gives every live book its own count: " + JSON.stringify([v.invV, v.inv]));
+  /* 26 Sep 2026 (plan fold 4.3): each count is held to that book's own shelf, and a book holding nothing is left off rather
+     than demanded: this read every live book and went red on the fold that took oil's shelf to nought (24 Sep) */
+  const noted = v.inv.split(" · ").map((s) => /^(.+) (-?[0-9.,]+) unit$/.exec(s));
+  const onHand = Object.keys(v.held).filter((n) => Math.abs(v.held[n]) > 0.009);
+  ok(/^RM /.test(v.invV) && (onHand.length
+      ? noted.every((m) => m && onHand.includes(m[1]) && Math.abs(+m[2].replace(/,/g, "") - v.held[m[1]]) < 0.01)
+        && new Set(noted.map((m) => m[1])).size === onHand.length && noted.length === onHand.length
+      : v.inv === "nothing on hand"),
+    "units stay with their book: the inventory figure is money, and its note gives each book holding stock its own count: " + JSON.stringify([v.invV, v.inv, v.held]));
   ok(v.bnd.some((r) => /^Breach Credit cap/.test(r.t) && JSON.stringify(r.tags) === '["Salt"]') && v.bnd.filter((r) => /^Watch Margin floor/.test(r.t)).every((r) => r.tags.length === 1),
     "salt's breach is on Rules with oil in view, and a row one book raised names that book: " + JSON.stringify(v.bnd.map((r) => r.t)));
   ok(v.srAmount > 0 && v.def.includes(fmtRM(v.srAmount)), "the supplier default reads salt's figure whichever book is in view: " + JSON.stringify([v.def, v.srAmount]));
-  ok(new Set(v.ledgerTags).size > 1 && v.prod === "oil" && /Every book/.test(v.scope),
-    "the latest ledger mixes the books, each tagged, and the book in view is left as it was: " + JSON.stringify({ tags: v.ledgerTags, prod: v.prod }));
+  const fx = (c) => lg.rows.find((r) => r.fx === c) || { tags: [] };
+  ok(JSON.stringify(fx("CZ9-LGA").tags) === '["Salt"]' && JSON.stringify(fx("CZ9-LGB").tags) === '["Oil"]' && lg.rows.every((r) => r.tags.length === 1)
+      && lg.prod === "oil" && v.prod === "oil" && /Every book/.test(v.scope),
+    "the latest ledger mixes the books, each tagged, and the book in view is left as it was: " + JSON.stringify({ rows: lg.rows, prod: [v.prod, lg.prod] }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
