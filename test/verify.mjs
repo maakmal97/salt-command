@@ -21269,7 +21269,7 @@ await (async () => {
       "and a refused line is refused before any ask: " + JSON.stringify(refused));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
-section("S13 fix: on a Malay phone a refusal the Worker words by code reads as a sentence");
+section("S13 fix: on a Malay phone a refusal the Worker words by code reads as a sentence, its slots filled");
 await (async () => {
   /* 25 SEP 2026, the stage 13 review (MY12): the Worker's refusals are clauses, lower case with no stop, and the pay sheet
      drew them as they came, where the thread raised the first letter. Every refusal the page words is a sentence now. The
@@ -21302,6 +21302,8 @@ await (async () => {
         if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders, claims: [] });
         if (p === "/devices") return answer(200, { ok: true, devices: [] });
         if (p === "/account/claim" || /^[/]orders[/][^/]+[/]pay$/.test(p)) return answer(400, { ok: false, error: "the worker's own words", code: "claimsMax", vars: { n: 5 } });
+        if (/^[/]orders[/][^/]+[/]say$/.test(p)) return answer(409, { ok: false, error: "the worker's own words", code: "sayCap", vars: { n: 20 } });
+        if (p === "/orders" && m === "POST") return answer(400, { ok: false, error: "the worker's own words", code: "openMax", vars: { n: 5 } });
         return answer(200, { ok: true }); };
     } });
   const W = dom.window, D = W.document;
@@ -21324,6 +21326,22 @@ await (async () => {
     const pay = text("#paySheet .paysaid");
     ok(pay === S(WD.fill(WD.MS["e.claimsMax"], { n: 5 })) && pay !== WD.fill(WD.MS["e.claimsMax"], { n: 5 }),
       "the pay sheet says a refusal as a sentence, its first letter raised and a stop closing it: " + JSON.stringify(pay));
+    D.getElementById("payX").click(); await wait(30);
+    /* ---- S13-R1 of the review: a coded refusal's slots are filled by the page, in the slice (the thread, Malay) and outside
+       it (the order sheet, English on this phone); a slot left as it came reads {n} ---- */
+    D.querySelector('#oArea [data-row="20260925000000-b1"]').click(); await wait(30);
+    const box = D.querySelector(".oscreen input[data-say]"); box.value = "a line";
+    box.closest("form").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => text('.oscreen [data-said]'));
+    const thread = text('.oscreen [data-said]');
+    D.getElementById("oNew").click(); await wait(30);
+    D.getElementById("oGo").click(); await wait(10);
+    D.getElementById("oPlace").click();
+    await until(() => text("#osheet .salt-sheet__foot p.msg"));
+    const sheet = text("#osheet .salt-sheet__foot p.msg");
+    ok(thread === S(WD.fill(WD.MS["e.sayCap"], { n: 20 })) && /20/.test(thread) && sheet === S(WD.fill(WD.EN["e.openMax"], { n: 5 })) && /5/.test(sheet)
+      && !/[{}]/.test(thread + sheet),
+      "a refusal with a slot is worded with the slot filled, in Malay in the thread and in English in the order sheet: " + JSON.stringify([thread, sheet]));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
