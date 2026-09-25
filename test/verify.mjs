@@ -34099,6 +34099,103 @@ await (async () => {
   }
 })();
 
+section("Fold 3.3: an approval still uncommitted is dispatched again at 15, 30 and 60 minutes after the newest, the mark written first, then silence");
+await (async () => {
+  /* S2 AND C3 OF THE STREAMLINING PLAN (26 Sep 2026). The tap's dispatch is one POST with no retry, so a lost one
+     waited for the hourly net. The desk Worker's minute cron now rings the stage again on a ladder read from the
+     NEWEST approval's age, once per rung, three rungs, then leaves it to the hourly net; the KV mark is written before
+     the dispatch, so a lapsed token or a thrown fetch still counts, and a batch the fold refuses never rings for ever.
+     Driven through scheduled() itself on the real migrations in node:sqlite, so the SQL's predicate is run rather than
+     matched, with the suite's KV and a captured fetch. Invented ids only. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the re-dispatch ladder was not driven against the real schema"); return; }
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "stage:redispatch", T0 = "2026-09-21T02:02:00.000Z";   /* every tick below falls off the quarter-hour */
+  const at = (min) => new Date(Date.parse(T0) + min * 60000).toISOString();
+  const world = async (rows, mark, token = "ghp-test") => {
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    for (const r of rows) db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at,decided_at,committed_at) "
+      + "VALUES (?,?,'sales','{}','{}','fixture','cloud-drafter',?,?,?)").run(r.id, r.status, T0, r.decided === undefined ? T0 : r.decided, r.committed || null);
+    const D1 = { prepare(sql) { const st = db.prepare(sql);
+      const mk = (a) => ({ run() { const x = st.run(...a); return { meta: { changes: Number(x.changes || 0) } }; },
+        first() { const x = st.get(...a); return x === undefined ? null : x; },
+        all() { return { results: st.all(...a) }; } });
+      const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+    const kv = new KV();
+    if (mark) await kv.put(KEY, JSON.stringify(mark));
+    const env = { SALT_LEDGER: D1, SALT_QUEUE: kv, REQUIRE_ACCESS: "0" };
+    if (token) env.SALT_GITHUB_TOKEN = token;
+    return { kv, env };
+  };
+  /* one tick of the cron; the stand-in reads the mark AT THE MOMENT the dispatch is sent, and answers or throws */
+  const tick = async (w, min, how = {}) => {
+    const hits = [], logs = [], realF = globalThis.fetch, realL = console.log, waits = [];
+    globalThis.fetch = async (u, o) => {
+      if (!/\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/dispatches$/.test(String(u))) return new Response("{}", { status: 404 });
+      hits.push({ markThen: await w.kv.get(KEY, "json"), body: JSON.parse(o.body) });
+      if (how.throws) throw new Error("github is down");
+      return new Response(null, { status: how.status || 204 });
+    };
+    console.log = (...x) => logs.push(x.join(" "));
+    try {
+      await deskW.scheduled({ cron: how.cron || "* * * * *", scheduledTime: Date.parse(at(min)) }, w.env, { waitUntil: (p) => waits.push(p) });
+      for (let n = -1; n !== waits.length;) { n = waits.length; await Promise.allSettled(waits); }
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    return { n: hits.length, hits, rung: logs.filter((l) => /^stage re-dispatch/.test(l)), failed: logs.filter((l) => /stage dispatch FAILED/.test(l)), mark: await w.kv.get(KEY, "json") };
+  };
+  const say = (t) => JSON.stringify({ n: t.n, mark: t.mark, rung: t.rung });
+
+  /* ---- the ladder, walked minute by minute over one approval ---- */
+  const L = await world([{ id: "D-LADDER-1", status: "approved" }]);
+  const walk = {};
+  for (const m of [14, 15, 16, 29, 30, 31, 59, 60, 90, 91, 1440]) walk[m] = await tick(L, m);
+  ok(walk[14].n === 0 && walk[14].mark === null,
+    "fourteen minutes after the approval nothing is dispatched and nothing is marked: a chain is about 8 minutes and its queue: " + say(walk[14]));
+  ok(walk[15].n === 1 && walk[15].hits[0].body.ref === "master" && walk[15].hits[0].body.inputs.stage_only === "true"
+    && JSON.stringify(walk[15].mark) === JSON.stringify({ newest: T0, tries: 1, at: at(15) }) && walk[15].rung.length === 1 && /^stage re-dispatch 1 of 3 /.test(walk[15].rung[0]),
+    "at fifteen minutes the stage is dispatched once, stage only, and the mark names the newest approval with one try: " + say(walk[15]));
+  ok(walk[16].n === 0 && walk[29].n === 0 && walk[29].mark && walk[29].mark.tries === 1,
+    "and the minutes after it ring nothing until the next rung: " + JSON.stringify([say(walk[16]), say(walk[29])]));
+  ok(walk[30].n === 1 && walk[30].mark && walk[30].mark.tries === 2 && walk[31].n + walk[59].n === 0 && walk[60].n === 1 && walk[60].mark && walk[60].mark.tries === 3
+    && walk[60].rung.length === 1 && /^stage re-dispatch 3 of 3 .*: the last; the hourly net stands$/.test(walk[60].rung[0]),
+    "at thirty and sixty minutes one more each, three in all, the third saying it is the last: " + JSON.stringify([say(walk[30]), say(walk[60])]));
+  ok(walk[90].n + walk[91].n + walk[1440].n === 0 && walk[90].rung.length + walk[91].rung.length + walk[1440].rung.length === 0 && walk[1440].mark && walk[1440].mark.tries === 3,
+    "after the third nothing rings and nothing is logged, a day later included, however long the batch stays uncommitted: " + JSON.stringify([say(walk[90]), say(walk[91]), say(walk[1440])]));
+
+  /* ---- a newer approval starts the ladder again, and the ladder keys on the newest ---- */
+  const older = "2026-09-20T20:00:00.000Z";
+  const N = await world([{ id: "D-OLD-1", status: "approved", decided: older }, { id: "D-NEW-1", status: "approved" }], { newest: older, tries: 3, at: "2026-09-20T21:00:00.000Z" });
+  const n14 = await tick(N, 14), n15 = await tick(N, 15);
+  ok(n14.n === 0 && n15.n === 1 && n15.mark && n15.mark.newest === T0 && n15.mark.tries === 1,
+    "an older approval spent all three tries, and a newer one rings again at fifteen minutes after ITS decision, the mark moving to it: " + JSON.stringify([say(n14), say(n15)]));
+
+  /* ---- only an approved row not yet committed counts ---- */
+  const C = await world([{ id: "D-DONE-1", status: "approved", committed: at(9) }, { id: "D-NO-1", status: "rejected" }, { id: "D-WAIT-1", status: "pending", decided: null }]);
+  const c15 = await tick(C, 15), c30 = await tick(C, 30), c60 = await tick(C, 60);
+  ok(c15.n + c30.n + c60.n === 0 && c60.mark === null,
+    "a committed approval, a rejection and a pending row ring nothing and mark nothing: " + JSON.stringify([say(c15), say(c60)]));
+
+  /* ---- the mark is written before the dispatch, so a dispatch that fails is still a try ---- */
+  const F = await world([{ id: "D-DOWN-1", status: "approved" }]), R = await world([{ id: "D-LAPSED-1", status: "approved" }]);
+  const f15 = await tick(F, 15, { throws: true }), f16 = await tick(F, 16, { throws: true });
+  const r15 = await tick(R, 15, { status: 401 }), r16 = await tick(R, 16, { status: 401 });
+  ok(f15.n === 1 && f15.hits[0].markThen && f15.hits[0].markThen.newest === T0 && f15.hits[0].markThen.tries === 1 && f15.failed.length === 1
+    && f15.mark && f15.mark.tries === 1 && f16.n === 0 && r15.n === 1 && r15.mark && r15.mark.tries === 1 && r16.n === 0,
+    "the mark is in KV when the dispatch is sent, so a thrown fetch or a lapsed token counts as the try and the next minute rings nothing: "
+    + JSON.stringify({ then: f15.hits[0] && f15.hits[0].markThen, thrown: [say(f15), say(f16)], lapsed: [say(r15), say(r16)] }));
+
+  /* ---- no token, or the daily cron: nothing ---- */
+  const U = await world([{ id: "D-BARE-1", status: "approved" }], null, null);
+  const u15 = await tick(U, 15), u60 = await tick(U, 60);
+  ok(u15.n + u60.n === 0 && u60.mark === null,
+    "with no SALT_GITHUB_TOKEN the ladder stands down before it marks, so the secret can arrive later and start clean: " + JSON.stringify([say(u15), say(u60)]));
+  const Y = await world([{ id: "D-DAWN-1", status: "approved" }]);
+  const y15 = await tick(Y, 15, { cron: "0 1 * * *" });
+  ok(y15.n === 0 && y15.mark === null, "the morning cron is the nudge alone and never rings the stage: " + say(y15));
+})();
+
 section("S1 1.14: Approve asks before rejecting a row a site order made, and the rejection is told to the order");
 await (async () => {
   /* 24 Sep 2026 (H14, the fallback he has not yet replaced). A rejection drops the entry from every

@@ -35,7 +35,12 @@ on:
   schedule:
     # HOURLY NET. Stages and folds anything an approval's dispatch missed. The clock is not
     # the guard: the guard is in the job, which refuses to overwrite an unfolded batch.
-    - cron: '5 * * * *'
+    # MINUTE 23, NOT 5 (26 Sep 2026). GitHub names the start of every hour as its high load, when a
+    # scheduled run is delayed or dropped: at :05 this ran 3 to 7 times a day of 24 (15 to 24 Sep).
+    # 23 is not a round minute, where schedules crowd, and is clear of the desk's quarter-hour
+    # drafter net. The desk Worker's minute cron re-dispatches a stale approval first (15, 30 and
+    # 60 minutes after it); this is the last net.
+    - cron: '23 * * * *'
   push:
     branches: [master]
     paths:

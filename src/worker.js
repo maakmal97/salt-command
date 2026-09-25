@@ -530,8 +530,11 @@ async function handleDraftPost(request, env) {
  * waitUntil, not await, for the reason the drafter gives: the phone must get its 200 for the
  * DECISION at once, and a dispatch fault must never undo one. Silent when SALT_GITHUB_TOKEN is
  * unset, so the gate is safe to deploy before the secret exists: the hourly stage still runs,
- * and a fold on request still works. Five taps in a row are five dispatches; the workflow's
- * concurrency group queues them and the stage's own guard stands the extras down. */
+ * and a fold on request still works. Five taps in a row are five dispatches; the lock on job
+ * `chain` runs one and holds one pending (a newer pending run replaces an older, and a chain reads
+ * D1 when it starts), and the stage's own guard stands the extras down. The suite is its own job
+ * and takes no lock, so no dispatch waits behind one. A dispatch that is lost is rung again by
+ * redispatchStale below, on the minute cron. */
 const STAGE_REPO = "maakmal97/salt-command";
 function stageOnApproval(env, ctx) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_GITHUB_TOKEN) return;
@@ -552,6 +555,35 @@ function stageOnApproval(env, ctx) {
       console.log("stage dispatch FAILED, the hourly stage will catch it: " + String((e && e.message) || e));
     }
   })());
+}
+
+/* THE RE-DISPATCH LADDER (26 Sep 2026, plan fold 3.3). The dispatch on a tap is one POST with no
+ * retry: GitHub down, a lapsed token or a run dropped under load, and the approval waited for the
+ * hourly net. The minute cron now rings the stage again while an approved row is uncommitted, at
+ * 15, 30 and 60 minutes after the NEWEST approval, once per rung, then leaves it to the hourly net.
+ * The rung is read from the approval's age, not the last try, so a KV read up to a minute stale
+ * costs at most one extra dispatch, which the stage's guard stands down. The mark is written
+ * BEFORE the dispatch, so a lapsed token, a 4xx or a thrown fetch all count as tries: a batch the
+ * fold refuses stays approved and uncommitted for good, and nothing may ring for ever over it.
+ * A newer approval starts the ladder again. The healthy chain takes about 8 minutes plus its
+ * queue, so the first rung at 15 seldom rings a chain that is merely slow; if it does, the extra
+ * run waits behind it on the lock, finds nothing to stage and deploys nothing. */
+const REDISPATCH_KEY = "stage:redispatch";
+const REDISPATCH_MIN = [15, 30, 60];
+async function redispatchStale(env, ctx, now) {
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE || !env.SALT_GITHUB_TOKEN) return { waiting: 0 };
+  const r = await env.SALT_LEDGER.prepare(
+    "SELECT COUNT(*) AS n, MAX(decided_at) AS newest FROM draft WHERE status='approved' AND committed_at IS NULL").first();
+  if (!r || !r.n || !r.newest) return { waiting: 0 };
+  let mark = null;
+  try { mark = await env.SALT_QUEUE.get(REDISPATCH_KEY, "json"); } catch (e) { mark = null; }   /* unreadable: start again */
+  const tries = mark && mark.newest === r.newest ? (mark.tries || 0) : 0;
+  if (tries >= REDISPATCH_MIN.length) return { waiting: r.n, newest: r.newest, tries, silent: true };
+  const age = (now.getTime() - Date.parse(r.newest)) / 60000;
+  if (!Number.isFinite(age) || age < REDISPATCH_MIN[tries]) return { waiting: r.n, newest: r.newest, tries };
+  await env.SALT_QUEUE.put(REDISPATCH_KEY, JSON.stringify({ newest: r.newest, tries: tries + 1, at: now.toISOString() }));
+  stageOnApproval(env, ctx);
+  return { did: true, waiting: r.n, newest: r.newest, tries: tries + 1, last: tries + 1 === REDISPATCH_MIN.length };
 }
 
 async function handleDraftDecide(request, env, ctx, id, decision) {
@@ -713,6 +745,12 @@ export default {
           await afterApproval(env, ctx, dp.approved);
           if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
+        /* fold 3.3: an approval still uncommitted is rung again on the ladder; one line a try, none after the last */
+        try {
+          const rd = await redispatchStale(env, ctx, new Date(event.scheduledTime || Date.now()));
+          if (rd.did) console.log("stage re-dispatch " + rd.tries + " of " + REDISPATCH_MIN.length + " for " + rd.waiting + " approved row(s) up to " + rd.newest
+            + (rd.last ? ": the last; the hourly net stands" : ""));
+        } catch (e) { console.log("stage re-dispatch FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
           const r = await runDrafter(env);
