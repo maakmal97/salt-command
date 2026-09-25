@@ -1,6 +1,6 @@
 {
- "v": "v854",
- "stamped": "25 Sep 2026, 23:14 KL",
+ "v": "v855",
+ "stamped": "25 Sep 2026, 23:43 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5284,6 +5284,18 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 25 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID, NOTHING MOVED.</b> Booked to CR3-DAM from the statements site, order 20260925115016-gqlz1q, 1.5 unit for RM130 at RM86.67 a unit, to collect, RM0 in and 0 unit out, so the whole RM130 stands open. Costed at RM48 a unit from the desk's own inventory cost, RM58 on the goods at 44.6%. The total clears the RM85.07 floor for 1.5 unit and sits RM80 under the RM210 ask, ceiling RM230. Across 16 orders their median rate is RM80, range RM80 to RM92.50, RM25 outstanding, none defaulted, 0.27 unit on credit against a cap of 2. An associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
     "rid": "s202"
+   },
+   {
+    "customer": "CA2-SEN",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 600,
+    "cash": 750,
+    "date": "2026-09-25",
+    "deliveredQty": 0,
+    "paidOn": "2026-09-25",
+    "note": "<b>SALT SELL DATED 25 SEP, PAID IN FULL AND WHOLLY UNDELIVERED.</b> Booked to CA2-SEN, 12.5 unit for RM750 at RM60 a unit, RM750 cash in on 25 Sep 2026 and 0 of 12.5 unit out, so the delivery stands open. Costed at RM48 a unit from the desk's own inventory cost, RM150 on the goods at 20%. The total clears the RM729.98 floor for 12.5 unit and sits under the RM1,090 ask, ceiling RM1,970. On one prior order their median rate is RM60, range RM60 to RM60, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1. Not an associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
+    "rid": "s203"
    }
   ],
   "contacts": [
@@ -6021,9 +6033,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T15:09:05.392Z",
+  "QUEUE_COMMITTED": "2026-09-25T15:10:48.426Z",
   "PRICING": {
-   "takenAt": "2026-09-25T15:14:36.363Z",
+   "takenAt": "2026-09-25T15:44:00.858Z",
    "sizes": [
     0.5,
     1,
@@ -6100,6 +6112,9 @@
       "big": "Platinum"
      }
     },
+    "CA2-SEN": {
+     "salt": "Titanium"
+    },
     "CE4-AD": {
      "salt": "Titanium"
     },
@@ -6163,9 +6178,6 @@
     },
     "CH5-KLC": {
      "salt": "Silver"
-    },
-    "CA2-SEN": {
-     "salt": "Titanium"
     },
     "CD4-CS": {
      "salt": "Silver"
@@ -6498,6 +6510,24 @@
       "frequent": true,
       "small": true,
       "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CA2-SEN": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 39,
+      "sinceLastDays": 0,
+      "perMonth": 1.56,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
       "loyal": false,
       "rare": false,
       "lateTwice": false
@@ -6922,24 +6952,6 @@
       "frequent": false,
       "small": true,
       "bigger": false,
-      "loyal": false,
-      "rare": true,
-      "lateTwice": false
-     }
-    },
-    "CA2-SEN": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 39,
-      "sinceLastDays": 39,
-      "perMonth": 0.78,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
       "loyal": false,
       "rare": true,
       "lateTwice": false
@@ -8060,6 +8072,56 @@
         1070
        ]
       ],
+      "CA2-SEN": [
+       [
+        0.5,
+        30
+       ],
+       [
+        1,
+        60
+       ],
+       [
+        1.5,
+        90
+       ],
+       [
+        2,
+        120
+       ],
+       [
+        2.5,
+        150
+       ],
+       [
+        3,
+        180
+       ],
+       [
+        3.5,
+        210
+       ],
+       [
+        4,
+        240
+       ],
+       [
+        4.5,
+        270
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        6.25,
+        370
+       ],
+       [
+        12.5,
+        750
+       ]
+      ],
       "CE4-AD": [
        [
         0.5,
@@ -9060,56 +9122,6 @@
         1090
        ]
       ],
-      "CA2-SEN": [
-       [
-        0.5,
-        30
-       ],
-       [
-        1,
-        60
-       ],
-       [
-        1.5,
-        90
-       ],
-       [
-        2,
-        120
-       ],
-       [
-        2.5,
-        150
-       ],
-       [
-        3,
-        180
-       ],
-       [
-        3.5,
-        210
-       ],
-       [
-        4,
-        240
-       ],
-       [
-        4.5,
-        270
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        6.25,
-        370
-       ],
-       [
-        12.5,
-        750
-       ]
-      ],
       "CD4-CS": [
        [
         0.5,
@@ -9962,6 +9974,28 @@
         450
        ]
       ],
+      "CA2-SEN": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CE4-AD": [
        [
         10,
@@ -10403,28 +10437,6 @@
        ]
       ],
       "CH5-KLC": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CA2-SEN": [
        [
         10,
         130
@@ -11061,6 +11073,28 @@
         1500
        ]
       ],
+      "CA2-SEN": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CE4-AD": [
        [
         1,
@@ -11502,28 +11536,6 @@
        ]
       ],
       "CH5-KLC": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CA2-SEN": [
        [
         1,
         60
@@ -12030,6 +12042,20 @@
         60
        ]
       ],
+      "CA2-SEN": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CE4-AD": [
        [
         1,
@@ -12324,20 +12350,6 @@
         60
        ]
       ],
-      "CA2-SEN": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
       "CD4-CS": [
        [
         1,
@@ -12585,11 +12597,11 @@
      "cards": {}
     }
    },
-   "v": "v854"
+   "v": "v855"
   },
   "OPEN": {
-   "at": "2026-09-25T15:14:36.625Z",
-   "count": 8,
+   "at": "2026-09-25T15:44:01.154Z",
+   "count": 9,
    "byKey": {
     "CC5-OKR|2026-09-25|90": {
      "d": "2026-09-25",
@@ -12620,6 +12632,20 @@
      "oweUnits": 1.5,
      "rid": "s202",
      "key": "CR3-DAM|2026-09-25|130"
+    },
+    "CA2-SEN|2026-09-25|750": {
+     "d": "2026-09-25",
+     "p": "CA2-SEN",
+     "dir": "S",
+     "q": 12.5,
+     "t": 750,
+     "cash": 750,
+     "mv": 0,
+     "st": "oweStock",
+     "oweUnits": 12.5,
+     "rid": "s203",
+     "paidOn": "2026-09-25",
+     "key": "CA2-SEN|2026-09-25|750"
     },
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
@@ -12722,12 +12748,12 @@
     "salt": {
      "name": "Salt",
      "onHand": 28,
-     "free": 18.5,
-     "owedOut": 9.5,
-     "coverDays": 4.1,
-     "rate": 5.53,
+     "free": 6,
+     "owedOut": 22,
+     "coverDays": 1.3,
+     "rate": 6.14,
      "owedToYou": 350,
-     "promised": 11,
+     "promised": 23.5,
      "short": 0
     },
     "oil": {
@@ -12782,7 +12808,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v854"
+   "v": "v855"
   }
  }
 }
