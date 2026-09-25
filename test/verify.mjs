@@ -21390,6 +21390,52 @@ await (async () => {
       "a Place the network dropped and a refused Cancel are said in English beside their English controls, on a Malay phone: " + JSON.stringify([dropped, cancel]));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
+section("S13 fix: Home greets a Malay phone Selamat tengah hari from noon until two, and Selamat petang after");
+await (async () => {
+  /* 25 SEP 2026, the stage 13 review (MY8): a Malaysian says Selamat tengah hari until about two, so Selamat petang from
+     noon read as a slip. English keeps Good afternoon from noon. The page as served, signed in over a fixture account, its
+     clock held at each hour. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const nil = { rm: 0, parts: [] };
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 0, pay: { now: nil, overdue: nil, coming: nil } })),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
+  const html = P.landingPage(un, "n13g", null);
+  const words = ["morning", "noon", "afternoon", "evening"].flatMap((k) => [WD.EN["home." + k], WD.MS["home." + k]]);
+  const greet = async (langs, h, m) => {
+    const W = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        Object.defineProperty(win.navigator, "languages", { get: () => langs, configurable: true });
+        const RD = win.Date, held = new RD(2026, 8, 25, h, m).getTime();
+        win.Date = class extends RD { constructor(...a) { if (a.length) super(...a); else super(held); } static now() { return held; } };
+        win.scrollTo = () => {};
+        win.fetch = async (p) => { p = String(p);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+          if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [] }) };
+          return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+      } }).window;
+    try {
+      W.document.getElementById("pw").value = pass;
+      W.document.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      const t = () => W.document.getElementById("placeT").textContent;
+      for (let i = 0; i < 200 && !words.includes(t()); i++) await new Promise((r) => setTimeout(r, 25));
+      return t();
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const got = { ms1159: await greet(["ms-MY"], 11, 59), ms1200: await greet(["ms-MY"], 12, 0), ms1359: await greet(["ms-MY"], 13, 59),
+    ms1400: await greet(["ms-MY"], 14, 0), en1230: await greet(["en-GB"], 12, 30), en1400: await greet(["en-GB"], 14, 0) };
+  ok(WD.MS["home.noon"] === "Selamat tengah hari" && JSON.stringify(got) === JSON.stringify({ ms1159: WD.MS["home.morning"], ms1200: "Selamat tengah hari",
+    ms1359: "Selamat tengah hari", ms1400: WD.MS["home.afternoon"], en1230: "Good afternoon", en1400: "Good afternoon" }),
+    "Home says Selamat tengah hari from 12:00 to 13:59 and Selamat petang from 14:00 on a Malay phone, and Good afternoon from noon in English: " + JSON.stringify(got));
+})();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five

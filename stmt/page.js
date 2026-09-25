@@ -2289,7 +2289,8 @@ const CLIENT_JS = `
   /* S13: the greeting's key */
   function hail(){
     var h=new Date().getHours();
-    return h<12?'home.morning':(h<18?'home.afternoon':'home.evening');
+    /* Malay says Selamat tengah hari until about two, Selamat petang after (MY8 of the stage 13 review); English says Good afternoon for both */
+    return h<12?'home.morning':h<14?'home.noon':h<18?'home.afternoon':'home.evening';
   }
   /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
   function pricesAt(iso,L){

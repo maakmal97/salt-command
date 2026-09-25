@@ -224,6 +224,7 @@ export const EN = {
   /* ---- HOME ---- */
   "home.welcome": "Welcome",
   "home.morning": "Good morning",
+  "home.noon": "Good afternoon",
   "home.afternoon": "Good afternoon",
   "home.evening": "Good evening",
   "home.stay": "This {dev} stays signed in.",
@@ -834,6 +835,7 @@ export const MS = {
   /* ---- HOME ---- */
   "home.welcome": "Selamat datang",
   "home.morning": "Selamat pagi",
+  "home.noon": "Selamat tengah hari",
   "home.afternoon": "Selamat petang",
   "home.evening": "Selamat malam",
   "home.stay": "Kekal log masuk di {dev} ini.",
