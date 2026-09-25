@@ -1154,7 +1154,10 @@ const CLIENT_JS = `
     [].forEach.call(document.querySelectorAll('[data-wp]'),function(x){ x.setAttribute('placeholder',tw(x.getAttribute('data-wp'))); });
     [].forEach.call(document.querySelectorAll('[data-wa]'),function(x){ x.setAttribute('alt',tw(x.getAttribute('data-wa'))); });
   }
-  function wErr(b,fb,s){ var c=b&&b.code; return c&&has('en','e.'+c)?tw('e.'+c,b.vars):(b&&b.error)||(fb?tw(fb,s):''); }
+  /* a refusal stands alone beside its control, so it is said as a sentence: the Worker's words are a clause, lower case
+     with no stop, in either language (MY12 of the stage 13 review) */
+  function sentence(t){ t=String(t||''); if(!t) return t; t=t.charAt(0).toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; }
+  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):(b&&b.error)||(fb?tw(fb,s):'')); }
   /* a date or a size in a sentence, said in the sentence's language */
   function Dd(f,x){ return function(L){ return f(x,L); }; }
   function Uq(q,u){ return function(L){ return unitsOf(q,u,L); }; }
@@ -3185,7 +3188,7 @@ const CLIENT_JS = `
       oPart(id,'thread');
     } else {
       /* S13: a line the network lost says only to check the connection (the bubble says Not sent); a refusal is worded from its code */
-      var e=r.body&&r.body.lost?tw('x.checkConn'):wErr(r.body,'msg.notSent'), why=e&&e.charAt(0).toUpperCase()+e.slice(1);
+      var why=r.body&&r.body.lost?tw('x.checkConn'):wErr(r.body,'msg.notSent');
       if(r.status&&r.status<500){ oRefused(id,x,why); return; }
       x.state='failed'; x.why=why; oPart(id,'thread');
     }

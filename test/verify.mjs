@@ -20754,7 +20754,7 @@ await (async () => {
   };
   const said = [await door({ ok: false, error: "the worker's own words", code: "refused" }), await door({ ok: false, error: "the worker's own words", code: "zzUnknown" }),
     await door({ ok: false })];
-  ok(said[0] === WD.EN["e.refused"] && said[1] === "the worker's own words" && said[2] === WD.EN["e.refused"],
+  ok(said[0] === WD.EN["e.refused"] && said[1] === "The worker's own words." && said[2] === WD.EN["e.refused"],
     "and the page words a code from its table, shows the Worker's English for a code it does not know, and its own refusal for none: " + JSON.stringify(said));
 })();
 
@@ -21268,6 +21268,63 @@ await (async () => {
     ok(refused.asked.length === 0 && refused.posted.length === 0 && /Nothing was sent/.test(refused.msg),
       "and a refused line is refused before any ask: " + JSON.stringify(refused));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+section("S13 fix: on a Malay phone a refusal the Worker words by code reads as a sentence");
+await (async () => {
+  /* 25 SEP 2026, the stage 13 review (MY12): the Worker's refusals are clauses, lower case with no stop, and the pay sheet
+     drew them as they came, where the thread raised the first letter. Every refusal the page words is a sentence now. The
+     page as served, on a Malay phone over a fixture account, each road answered by the fixture. */
+  const P = await import("../stmt/page.js");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const S = (t) => { t = t.charAt(0).toUpperCase() + t.slice(1); return /[.!?]$/.test(t) ? t : t + "."; };
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
+  const orders = [
+    { id: "20260925000000-b1", product: "salt", qty: 3, unit: 11, total: 33, delivery: 5, paid: 10, moved: 1, movedOn: "2026-09-24", mode: "deliver", place: "PLACEQ", status: "ready", at: now,
+      history: [{ at: now, status: "placed" }, { at: now, status: "acknowledged", by: "desk" }], msgs: [{ by: "customer", text: "SAIDQ", at: now }] },
+    { id: "20260925000000-b2", product: "salt", qty: 3, unit: 11, total: 33, delivery: 0, paid: 0, moved: 0, mode: "collect", status: "placed", at: now, history: [{ at: now, status: "placed" }], msgs: [] }];
+  const answer = (status, body) => ({ ok: status === 200, status, json: async () => body });
+  const dom = new JSDOM(P.landingPage(un, "n13f", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      Object.defineProperty(win.navigator, "languages", { get: () => ["ms-MY", "ms", "en"], configurable: true });
+      win.scrollTo = () => {}; win.open = () => null; win.confirm = () => true;
+      win.fetch = async (p, init) => { p = String(p); const m = (init && init.method) || "GET";
+        if (p === "/open") return answer(200, openB);
+        if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders, claims: [] });
+        if (p === "/devices") return answer(200, { ok: true, devices: [] });
+        if (p === "/account/claim" || /^[/]orders[/][^/]+[/]pay$/.test(p)) return answer(400, { ok: false, error: "the worker's own words", code: "claimsMax", vars: { n: 5 } });
+        return answer(200, { ok: true }); };
+    } });
+  const W = dom.window, D = W.document;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await wait(25); return f(); };
+  const text = (q) => ((D.querySelector(q) || {}).textContent || "");
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => D.querySelector("#oArea [data-row]") && D.getElementById("payNow"));
+    ok(D.documentElement.lang === "ms" && !!D.getElementById("payNow"), "the fixture opens signed in, on a Malay phone, with To pay now's Pay");
+    /* ---- the pay sheet: Did you send it, then Yes, refused with a clause that has a slot ---- */
+    D.getElementById("payNow").click(); await wait(30);
+    const how = D.querySelector('#paySheet input[name="payHow"][value="transfer"]'); how.checked = true; how.dispatchEvent(new W.Event("change", { bubbles: true }));
+    const into = D.querySelector('#paySheet input[name="payInto"]'); into.checked = true; into.dispatchEvent(new W.Event("change", { bubbles: true }));
+    const go = D.getElementById("payGo"); go.addEventListener("click", (e) => e.preventDefault()); go.click();
+    W.dispatchEvent(new W.Event("blur")); W.dispatchEvent(new W.Event("focus")); await wait(30);
+    D.getElementById("paySent").click();
+    await until(() => text("#paySheet .paysaid"));
+    const pay = text("#paySheet .paysaid");
+    ok(pay === S(WD.fill(WD.MS["e.claimsMax"], { n: 5 })) && pay !== WD.fill(WD.MS["e.claimsMax"], { n: 5 }),
+      "the pay sheet says a refusal as a sentence, its first letter raised and a stop closing it: " + JSON.stringify(pay));
+  } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
 await (async () => {
@@ -37245,7 +37302,7 @@ await (async () => {
     const refused = { open: !sh.hidden, said: t(d.querySelector("#payFoot .paysaid")), yes: !!d.getElementById("paySent") };
     tap("paySent");
     await until(() => st.sent.length === 2 && sh.hidden && scr() && /sent, waiting/.test(t(scr())));
-    ok(once && refused.open && refused.said === "Refused by the fixture" && refused.yes
+    ok(once && refused.open && refused.said === "Refused by the fixture." && refused.yes
       && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
       && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
       "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
