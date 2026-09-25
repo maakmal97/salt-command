@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="991eb250493e9049";
+var SALT_BUILD_ID="b4b303f8a1d29306";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5548,7 +5548,7 @@ function ledgerRow(t,dir,defaultProd){
      which is why this costs 2 KB across 125 rows: most rows carry none of them.
 
      TWO ARE DELIBERATELY ABSENT AND MUST STAY ABSENT. `cost` is a per-unit cost, which is the
-     one figure phonePayloadLeaks() bans outright. `note` is prose that quotes lot costs and
+     one figure the phone app's leak gate banned outright. `note` is prose that quotes lot costs and
      margins in words, which is the same ban in a longer form. The phone therefore cannot edit
      those two, and its sheet says so rather than leaving it a mystery: it will not offer to
      replace a value it is not allowed to show you. */
@@ -8481,7 +8481,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v869","d":"26 Sep 2026","t":"THE PLAN IN VIEW IS KEPT AND THE WEEK'S MONDAY IS WORKED OUT ONCE","n":["<b>THE PLAN IN VIEW IS KEPT.</b> Reading another book's restock plan puts back the plans already held once the book in view returns, so the plan in view is not worked out again. Three other books read between reads of the one in view take 3 plans where they took 9, each identical to the plan read fresh.","<b>MONDAY IS WORKED OUT ONCE.</b> The week's Monday, read by the price sheet and each customer's own rate, is worked out from today's date on the first read and kept. A Today render made about 190 date conversions for it and now makes none, and the Monday does not change.","<b>NO RULE MOVES.</b> The reorder point is still the engine's, from measured demand, and no price moves."]}];
+const evolution=[{"v":"v870","d":"26 Sep 2026","t":"THE RETIRED LEAK CHECK IS DELETED AND THE BUILD ID'S SEPARATORS ARE WRITTEN AS ESCAPES","n":["<b>THE RETIRED LEAK CHECK IS DELETED.</b> phonePayloadLeaks() had no caller once the phone app retired, and it leaves the master with every comment that named it. phonePayload still builds with names off, since the D1 OPEN key is filed from it.","<b>THE NAMES-OFF GUARD HAS ITS OWN SECTION.</b> With names on screen and an action titled through ID() forced first on the list, phonePayload carries the code and no name, and leaves the screen showing names as it was.","<b>THE SEPARATORS READ AS WHAT THEY ARE.</b> The build id's NUL separators are written as escapes in tools/build.mjs and the suite, where raw bytes printed as nothing or a space. The id does not move."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8596,7 +8596,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 06:36 KL';
+const LAST_UPDATED='26 Sep 2026, 07:16 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -14359,9 +14359,11 @@ function tabFinancials(){
      NO REAL NAMES. Codes only. The repo that serves this is private but the app is
      public by decision, so a name here would be a name on the open internet.
      NO COST, MARGIN OR LEAK. Everything the leak test bans from a statement is banned
-     here for the same reason and by the same list.
+     here for the same reason.
    What it carries is what a seller needs standing in front of a buyer: the board, the
-   parties, and the position. */
+   parties, and the position. The app is retired and its leak gate went with it; what reads
+   this now is tools/book.mjs openSnapshot, which files its open rows and position in the
+   keyed D1 mirror as OPEN for the drafter and the reconcile. */
 function phonePayload(){
   /* NAMES OFF, ALWAYS, WHATEVER THE SCREEN IS DOING. `revealed` defaults to TRUE since
      v217 so the directory opens readable, and ID() therefore returns a real name whenever
@@ -14437,8 +14439,8 @@ function phonePayloadBuild(){
   /* ---- THE LEDGER, FOR READING ON THE PHONE (20 Aug 2026) --------------------------
      WHAT IS HERE AND WHAT IS DELIBERATELY NOT. Every row the book carries, with the facts
      of the trade: when, who, how much, what was paid, what moved. NO COST AND NO MARGIN,
-     and that is not an oversight. phonePayloadLeaks() bans every per-unit cost in the book
-     from this payload because the app it feeds is public by decision, and a margin is a
+     and that is not an oversight. The phone app's leak gate banned every per-unit cost in the
+     book from this payload because the app it fed was public by decision, and a margin is a
      cost stated the other way round. So the phone answers "what did I trade and what am I
      owed", and the laptop answers "what did it earn". Notes are omitted too, for size: the
      book is 968 KB and almost all of that is prose.
@@ -14569,7 +14571,7 @@ function phonePayloadBuild(){
        what each has made, brought and earned (networkStats), the customer rewards (their band
        and units, never the margin that set the band), and the map's
        heat by locality with the frame the desk draws it in. NO COST, NO MARGIN, NO PROFIT and
-       no prose from the book; the leak test reads this payload like every other part of it. */
+       no prose from the book. */
     people:(function(){
       const out={approach:[],network:[],rewards:[],map:{places:[],unplaced:0,far:0}};
       try{
@@ -14605,41 +14607,6 @@ function phonePayloadBuild(){
     forward:fwd,
     today:TODAY.toISOString().slice(0,10)
   };
-}
-/* The leak test, turned on the payload itself. Same banned vocabulary as
-   05_Pricing/leak_test.js, plus every per-unit cost in the book in its money form. The
-   build calls this and refuses to write data.json if it returns anything. */
-function phonePayloadLeaks(){
-  /* the generated timestamp is scrubbed before scanning. An ISO stamp carries digits and
-     a dot, so ":17.00Z" reads as the money form of a RM7 cost and the check failed on one
-     run in sixty for no reason at all. leak_test.js learned the same lesson about dates
-     and font sizes: a test that cries wolf teaches you to skim past the real one. */
-  const p=JSON.stringify(phonePayload()).replace(/"generated":"[^"]*"/,'').toLowerCase();
-  const TERMS=['markup','mark-up','cost per','unit cost','per-unit cost','wavg','weighted average',
-    'shrinkage','walk-away','walkaway','floor price','breakeven','break-even','gross profit',
-    'gross margin','bad debt','provision','free-to-sell','effective cost','/unit effective'];
-  const hits=TERMS.filter(t=>p.indexOf(t)>=0);
-  /* every real name the desk can currently see, checked against the payload. This is the
-     check that would have caught both of them, and it only works while the directory is
-     loaded, which is exactly when the risk exists. */
-  try{
-    Object.keys(vaultNames||{}).forEach(code=>{
-      const nm=nameOnly(String(vaultNames[code]||'')).trim();
-      if(nm.length>2 && p.indexOf(nm.toLowerCase())>=0) hits.push('REAL NAME '+nm);
-    });
-  }catch(e){}
-  const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const costs=new Set();
-  sales.forEach(s=>{if(s.cost!=null&&+s.cost>0)costs.add(money(+s.cost));});
-  /* v381: A COST MATCHES ON A VALUE BOUNDARY, NOT AS A BARE SUBSTRING. indexOf('7.67') is
-     satisfied by the '7.67' sitting inside a inventory projection of 17.67 unit, so an oil cost of
-     RM7.67 was reported as leaking by a salt QUANTITY, which carries no cost and cannot leak
-     one. Same fault as the ISO stamp above and the same cure: a check that fires when nothing
-     is wrong teaches you to skim past the one that means something. A digit or a dot before the
-     figure, or a digit after it, means this is part of a longer number and not the cost. */
-  const bound=c=>new RegExp('(^|[^0-9.])'+c.replace(/[.*+?^${}()|[\]\\]/g,m=>'\\'+m)+'(?![0-9])');
-  costs.forEach(c=>{if(bound(c.toLowerCase()).test(p))hits.push('cost figure '+c);});
-  return hits;
 }
 function costPanel(){
   const c=pxCost(), R=riskRates(), dl=deliveryCost();

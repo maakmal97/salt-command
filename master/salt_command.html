@@ -8359,7 +8359,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v869","d":"26 Sep 2026","t":"THE PLAN IN VIEW IS KEPT AND THE WEEK'S MONDAY IS WORKED OUT ONCE","n":["<b>THE PLAN IN VIEW IS KEPT.</b> Reading another book's restock plan puts back the plans already held once the book in view returns, so the plan in view is not worked out again. Three other books read between reads of the one in view take 3 plans where they took 9, each identical to the plan read fresh.","<b>MONDAY IS WORKED OUT ONCE.</b> The week's Monday, read by the price sheet and each customer's own rate, is worked out from today's date on the first read and kept. A Today render made about 190 date conversions for it and now makes none, and the Monday does not change.","<b>NO RULE MOVES.</b> The reorder point is still the engine's, from measured demand, and no price moves."]}];
+const evolution=[{"v":"v870","d":"26 Sep 2026","t":"THE RETIRED LEAK CHECK IS DELETED AND THE BUILD ID'S SEPARATORS ARE WRITTEN AS ESCAPES","n":["<b>THE RETIRED LEAK CHECK IS DELETED.</b> phonePayloadLeaks() had no caller once the phone app retired, and it leaves the master with every comment that named it. phonePayload still builds with names off, since the D1 OPEN key is filed from it.","<b>THE NAMES-OFF GUARD HAS ITS OWN SECTION.</b> With names on screen and an action titled through ID() forced first on the list, phonePayload carries the code and no name, and leaves the screen showing names as it was.","<b>THE SEPARATORS READ AS WHAT THEY ARE.</b> The build id's NUL separators are written as escapes in tools/build.mjs and the suite, where raw bytes printed as nothing or a space. The id does not move."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8474,7 +8474,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 06:36 KL';
+const LAST_UPDATED='26 Sep 2026, 07:16 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

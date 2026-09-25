@@ -1,5 +1,15 @@
 [
  {
+  "v": "v870",
+  "d": "26 Sep 2026",
+  "t": "THE RETIRED LEAK CHECK IS DELETED AND THE BUILD ID'S SEPARATORS ARE WRITTEN AS ESCAPES",
+  "n": [
+   "<b>THE RETIRED LEAK CHECK IS DELETED.</b> phonePayloadLeaks() had no caller once the phone app retired, and it leaves the master with every comment that named it. phonePayload still builds with names off, since the D1 OPEN key is filed from it.",
+   "<b>THE NAMES-OFF GUARD HAS ITS OWN SECTION.</b> With names on screen and an action titled through ID() forced first on the list, phonePayload carries the code and no name, and leaves the screen showing names as it was.",
+   "<b>THE SEPARATORS READ AS WHAT THEY ARE.</b> The build id's NUL separators are written as escapes in tools/build.mjs and the suite, where raw bytes printed as nothing or a space. The id does not move."
+  ]
+ },
+ {
   "v": "v869",
   "d": "26 Sep 2026",
   "t": "THE PLAN IN VIEW IS KEPT AND THE WEEK'S MONDAY IS WORKED OUT ONCE",
