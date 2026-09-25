@@ -10474,11 +10474,17 @@ await (async () => {
       ok(st.empty === st.says, `${p}: and the card says "empty already" exactly when it is (${st.empty})`);
     }
     /* forced to nought and put back, so the empty branch is exercised on every run */
+    const oilWas = state("oil");
     const forced = JSON.parse(w.eval("(function(){setProd('oil');recompute();var k=PROD_OPENING.oil,was=k.stated;k.stated=0;recompute();var x=currentLot();var h=tabSourcing();k.stated=was;recompute();return JSON.stringify({empty:x?x.empty:null,free:x?x.free:null,says:h.indexOf('empty already')>=0,dated:/Inventory runs dry<\\/div><div class=\"v\"[^>]*>20\\d\\d-/.test(h)});})()"));
     ok(forced.empty === true, `forced to nought, the book reads empty (free ${forced.free})`);
     ok(forced.says === true, "and the card says empty already");
     ok(forced.dated === false, "and prints no dry date at all, rather than one in the past");
-    ok(state("oil").empty === false, "and the forced state is put back, so nothing downstream reads a nought inventory");
+    /* 26 Sep 2026: PUT BACK MEANS AS IT WAS, NOT "NOT EMPTY". This asked that oil read not empty after the force, which is a
+       claim about the live book and not about the put-back: on 24 Sep 2026 oil had genuinely run out and the check went red
+       over a restore that had worked. The book is read before the force and again after it, and the two must agree. */
+    const oilNow = state("oil");
+    ok(oilNow.empty === oilWas.empty && Math.abs(oilNow.free - oilWas.free) < 1e-9 && oilNow.says === oilWas.says,
+      "and the forced state is put back, so nothing downstream reads a nought inventory the book does not hold: " + JSON.stringify({ before: oilWas, after: oilNow }));
     w.eval("setProd('salt');recompute();");
     w.eval("setProd('salt');recompute();switchTab('sourcing');");
     const txt = String(w.eval("document.querySelector('.sec.on').textContent"));
