@@ -40814,6 +40814,55 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("Fold 4.1: one render reads allActions once and approachSplit once a book, and nothing it keeps outlives it");
+await (async () => {
+  /* One Today render ran allActions twice (tabToday, then the badge) and approachSplit twenty times over four books,
+     measured in jsdom on 26 Sep 2026. render() now opens RENDER_MEMO and closes it in a finally. Counted by wrapping the
+     compute functions, so a memo hit is not a call. Each assertion was proved red by its own mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval(`JSON.stringify((function(){
+    var n={all:0,allNow:0,act:0,split:0,splitNow:0},keys={},keep={};
+    var wrap=function(name,k,also){var o=window[name];if(typeof o!=='function'){n[k]=-1;return;}keep[name]=o;window[name]=function(){n[k]++;if(also)also();return o.apply(this,arguments);};};
+    wrap('allActions','all');wrap('allActionsNow','allNow');wrap('actions','act');wrap('approachSplit','split');
+    wrap('approachSplitNow','splitNow',function(){keys[PROD]=(keys[PROD]||0)+1;});
+    switchTab('today');
+    var after=typeof RENDER_MEMO!=='undefined'&&RENDER_MEMO===null;
+    Object.keys(keep).forEach(function(k){window[k]=keep[k];});
+    return {n:n,keys:keys,live:liveBooks(),after:after};})())`));
+  ok(v.n.allNow === 1 && v.n.all >= 2 && v.n.act === v.live.length,
+    "one Today render walks every book's actions once, though tabToday and the badge each ask: " + JSON.stringify({ n: v.n, live: v.live }));
+  const ks = Object.keys(v.keys);
+  ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1 && v.live.indexOf(p) >= 0) && v.n.split > v.n.splitNow,
+    "and approachSplit is made once a book inside it, however many readers ask: " + JSON.stringify({ split: v.n.split, made: v.keys }));
+  /* the memo is closed when render returns, and when a builder throws out of it */
+  const t = JSON.parse(w.eval(`(function(){var b=builders.today,msg='';
+    builders.today=function(){approachSplit();throw new Error('fold 4.1 probe');};
+    try{render();}catch(e){msg=e.message;}finally{builders.today=b;}
+    return JSON.stringify({msg:msg,closed:typeof RENDER_MEMO!=='undefined'&&RENDER_MEMO===null});})()`));
+  ok(v.after && t.msg === "fold 4.1 probe" && t.closed,
+    "RENDER_MEMO is null once a render returns, and once a render throws: " + JSON.stringify({ after: v.after, thrown: t }));
+  /* inside one render each book gets its own split, the one a fresh read outside any render gives */
+  const s = JSON.parse(w.eval(`(function(){var b=builders.today,inR={};
+    builders.today=function(){liveBooks().forEach(function(p){inR[p]=pxScope(p,function(){return JSON.stringify(approachSplit());});});return b();};
+    try{switchTab('today');}finally{builders.today=b;}
+    var fresh=eachBook(function(){return JSON.stringify(approachSplit());});
+    return JSON.stringify({inR:inR,fresh:fresh});})()`));
+  const books = Object.keys(s.fresh);
+  ok(books.length >= 2 && new Set(books.map((p) => s.fresh[p])).size === books.length && books.every((p) => s.inR[p] === s.fresh[p]),
+    "two books read inside one render give two different splits, each the book's own: " + JSON.stringify(books.map((p) => [p, s.inR[p] === s.fresh[p]])));
+  /* rule 2: the phone's lock is lockVault(); render(), and the second render draws no name the first one did */
+  const FIX = "Qelvornix Tamberlune";
+  const p = JSON.parse(w.eval(`(function(){RENDER_MEMO=null;
+    var codes={};sales.forEach(function(x){if(x.customer)codes[x.customer]=1;});
+    vaultNames={};Object.keys(codes).forEach(function(c){vaultNames[c]=${JSON.stringify(FIX)};});revealed=true;
+    switchTab('today');var open=document.getElementById('sec-today').innerHTML.split(${JSON.stringify(FIX)}).length-1;
+    lockVault();render();var shut=document.getElementById('sec-today').innerHTML.split(${JSON.stringify(FIX)}).length-1;
+    return JSON.stringify({open:open,shut:shut});})()`));
+  ok(p.open > 0 && p.shut === 0, "a name Today drew while the vault was open is gone from the render after the lock: " + JSON.stringify(p));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

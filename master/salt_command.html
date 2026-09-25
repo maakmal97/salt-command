@@ -10898,7 +10898,18 @@ function tabOverview(){
 /* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (spare, 23 Sep) */
 function liveBooks(){return PROD_IDS.filter(p=>pSales(p).length||pPurch(p).length);}
 function eachBook(fn){const keep=PROD,out={};try{liveBooks().forEach(p=>{PROD=p;recompute();out[p]=fn(p);});}finally{PROD=keep;recompute();}return out;}
-function allActions(){
+/* THE RENDER'S MEMO (fold 4.1, 26 Sep 2026). One Today render ran allActions twice (tabToday, then navCounts for the
+   badge) and approachSplit twenty times across four books: 2 and 20 calls, about 170 of its 230 ms, measured in jsdom.
+   render() opens RENDER_MEMO and closes it in a finally, so a read inside one render is made once and reused, and a
+   read outside a render (a tap, apLoad's or ordLoad's continuation, a chart drawn after the script loads, the suite, a
+   tool) computes fresh. Nothing inside a render changes the book, the vault, a filter or storage, and render() is
+   synchronous, so there is nothing to invalidate. NOTHING SURVIVES THE RENDER, because actions() carries ID() text:
+   names while the vault is open, and the lock is lockVault(); render(). A reader whose answer moves with the book in
+   view keys by PROD, as approachSplit does; allActions walks every book and puts PROD back, so it needs no key. */
+let RENDER_MEMO=null;
+function renderMemo(k,f){if(!RENDER_MEMO)return f();return (k in RENDER_MEMO)?RENDER_MEMO[k]:(RENDER_MEMO[k]=f());}
+function allActions(){return renderMemo('all',allActionsNow);}
+function allActionsNow(){
   const per=eachBook(()=>actions()),ids=Object.keys(per),seen={},list=[];
   ids.forEach(p=>per[p].forEach(x=>{const k=[x.sev,x.kind,x.title,x.rm,x.why].join('|');
     if(seen[k])seen[k].books.push(p);else{seen[k]=Object.assign({},x,{books:[p]});list.push(seen[k]);}}));
@@ -17881,7 +17892,9 @@ function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;co
    An associate and their -R bucket are one person (the 13 Sep ruling): owner codes, nextBest(id,true), and a bucket's debt
    is added to its owner's. A party written off, banned or departed is not approached. The RM sums are made here once, so
    no reader adds its own. */
-function approachSplit(){
+/* read once per book in view inside a render (RENDER_MEMO), since it reads arList and outstandingOf, which recompute() sets per PROD */
+function approachSplit(){return renderMemo('split|'+PROD,approachSplitNow);}
+function approachSplitNow(){
   const MS=86400000, iso=d=>d.toISOString().slice(0,10), plus=(s,n)=>new Date(new Date(s).getTime()+n*MS);
   const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
   const sum=(l,f)=>+l.reduce((a,x)=>a+f(x),0).toFixed(2);
@@ -23373,7 +23386,8 @@ function railSubs(){
     const cur=partOf(V.id);
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
-function render(){recompute();
+function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
+function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const part=partOf(V.id), all=[V.lead].concat(V.parts);

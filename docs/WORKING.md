@@ -230,6 +230,10 @@ Each of these stayed green, or read clean, through a real fault.
   class="obsec">`; a fact beside a chart goes on the chart.
 - **`perProduct` draws one book** since the one-product rule: a test that uses it as an iterator
   checks only the book in view. Loop `PROD_IDS` with `PROD=p; recompute()`.
+- **Inside `render()`, `allActions` and `approachSplit` answer from `RENDER_MEMO`**, made once a
+  render (`approachSplit` once a book in view) and dropped in a `finally`. A probe that changes
+  state from inside a builder and reads either again gets the first answer; read outside a render.
+  Count the work by wrapping `allActionsNow` and `approachSplitNow`, since a memo hit is a call.
 - **`evolution` sits in the middle of the master**, not at the end: `slice(0,
   indexOf("const evolution=["))` searches only the first third. Use `slice(0, evAt) +
   slice(stampAt)`.
