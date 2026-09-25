@@ -1,5 +1,16 @@
 [
  {
+  "v": "v867",
+  "d": "26 Sep 2026",
+  "t": "A LOST STAGE DISPATCH IS RUNG AGAIN",
+  "n": [
+   "<b>A LOST DISPATCH IS RUNG AGAIN.</b> While an approved row waits uncommitted, the desk's minute cron dispatches the stage again at 15, 30 and 60 minutes after the newest approval, once a rung.",
+   "<b>THE TRY IS MARKED FIRST.</b> The mark is written before each dispatch, so a failed or refused dispatch still counts. After the third the cron is silent and the hourly net stands.",
+   "<b>A NEWER APPROVAL STARTS AGAIN.</b> Committed, rejected and pending rows never ring it, and neither does the morning cron.",
+   "<b>THE HOURLY NET MOVES TO :23.</b> Away from GitHub's top-of-hour load, where a scheduled run is delayed or dropped, and clear of the desk's quarter-hour drafter net."
+  ]
+ },
+ {
   "v": "v866",
   "d": "26 Sep 2026",
   "t": "A PUSH WAKES AN OPEN DESK",
