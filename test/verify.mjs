@@ -458,9 +458,9 @@ await (async () => {
 section("Vault crypto — desk-compatible round trip");
 await (async () => {
   const { vaultEncrypt, vaultDecrypt } = await import("../tools/seed-vault.mjs");
-  const map = { A26: "Alvin (Sentul)", G01: "Gavin (Sg Besi)" };
+  const map = { A26: "Zorvek (Talmira)", G01: "Quellin (Ul Brissa)" };
   const e1 = await vaultEncrypt("correct horse", map);
-  ok(e1.v === 1 && e1.salt && e1.iv && e1.ct && !JSON.stringify(e1).includes("Alvin"), "encrypt → envelope with no plaintext name");
+  ok(e1.v === 1 && e1.salt && e1.iv && e1.ct && !JSON.stringify(e1).includes("Zorvek"), "encrypt → envelope with no plaintext name");
   const back = await vaultDecrypt("correct horse", e1);
   ok(JSON.stringify(back) === JSON.stringify(map), "decrypt with the right pass → the exact map");
   let threw = false; try { await vaultDecrypt("wrong pass", e1); } catch (e) { threw = true; }
