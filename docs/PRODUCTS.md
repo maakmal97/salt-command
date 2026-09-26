@@ -56,7 +56,7 @@ Per-product configuration, all driven off `PROD_IDS`:
 
 | Name | What |
 |---|---|
-| `PROD_STOCK_COST` | the cost basis per product; `null` falls back to the salt roll. **Hand-written in the master, not in the book.** |
+| `stockCostFor(p)` | the inventory rate per product, **derived from that product's lots** since 26 Sep 2026: the walk's `stockCost` (engine `stockBasis`), the stock allocated newest-first onto the received lots at their goods rate, the opening beyond them. `PROD_STOCK_COST` and salt's `STOCK_COST` are gone; nothing is typed. |
 | `QUOTES` | product to a function over the two quote globals; see section 8 |
 | `LADDER_BY` | per-product overrides merged onto the base `LADDER`, read by `ladderFor` |
 | `TIER_RULE` | the five-tier multiples per product. `TIER_NAMES` is NOT per product: one shared list of level names. |

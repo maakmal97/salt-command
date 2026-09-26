@@ -84,7 +84,9 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
      `notes`: an array of HTML strings, each opening with a bold lead, saying what was folded, what
      was unusual, and what the shelf did.
    - `stockNote`: your words on the roll, appended to the sentence the tool writes.
-   - `stockCost` and `stockCostNote`: only when a lot landed and the cost basis moves.
+   - `stockCost` and `stockCostNote`: leave them null and empty. Since 26 Sep 2026 every book's
+     inventory rate is derived from its lots (the engine's `stockBasis`, read by `stockCostFor`), so
+     there is no line to roll; `fold.mjs --apply` ignores a figure here and prints a `note` saying so.
 
 4. **`node tools/fold.mjs --apply`.** It appends the new rows with their notes, applies each
    fulfilment exactly as the desk's own `ovAmend` would (cash and units added, the trail extended

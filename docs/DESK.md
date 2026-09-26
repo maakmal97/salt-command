@@ -29,6 +29,16 @@
   is the levels his customers are actually on, and the prudent end of that range is the lowest
   level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
 - **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
+- **What the inventory is carried at is DERIVED, and it is not pricing** (his instruction of 26 Sep
+  2026). Each book's stock, counted or walked, is allocated newest-first onto its received lots
+  (units leave oldest first), and the rate is the units-weighted goods rate of those allocations,
+  freight left to the readers that add it, the opening beyond every lot: the engine's `stockBasis`,
+  run by the walk as `W.stockCost` and read through `stockCostFor(p)`, which walks the book asked,
+  never the book in view. It values Financials' closing inventory, the Inventory value card, the
+  pricing snapshot's `stockCost` (the drafter's cost for a sale or gift) and the fold's cost for a
+  salt sale with none. No floor or board reads it (`replCost` reaches it only on a book with no lot,
+  where it is the opening's rate as before): COGS for pricing is the supplier's quote. Salt's
+  `STOCK_COST` and `PROD_STOCK_COST` are gone, and so is the Today note that caught a missed roll.
 - **The five tiers**, Titanium, Platinum, Gold, Silver and Bronze, are columns at multiples
   running evenly from 1.0 to 2.5 (v644: 1.0, 1.375, 1.75, 2.125, 2.5; 0.5 unit of salt starts
   them at RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160), priced by his
