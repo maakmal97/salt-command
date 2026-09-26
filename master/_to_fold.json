@@ -1,0 +1,76 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-26T17:33:34.721Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CI4-OKR": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CI4-OKR Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CI4-OKR's Salt moves from Titanium to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T17:33:34.721Z",
+    "type": "TIER",
+    "party": "CI4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CI4-OKR: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CI4-OKR": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T17:34:17.645Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T17:33:38.961Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CI4-OKR": {
+      "salt": "Titanium"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CI4-OKR Salt Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T17:33:38.961Z",
+    "type": "TIER",
+    "party": "CI4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CI4-OKR: Salt Titanium",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CI4-OKR": {
+       "salt": "Titanium"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T17:34:19.471Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
