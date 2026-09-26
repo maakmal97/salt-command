@@ -8412,7 +8412,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v873","d":"26 Sep 2026","t":"ONE ADVANCE PAID OFF, NOTHING ELSE MOVES","n":["<p><b>ONE ROW FOLDED: A FULFILMENT ON s201.</b> CC9-OKR paid RM90 cash on 26 Sep 2026 against the salt sell of 1 unit for RM90 dated 25 Sep, which had gone out in full and wholly unpaid as an advance. No unit moves with the cash, so the order now stands settled with nothing outstanding on the row. The desk decided the fold; the master applies the amendment itself, as the drafter notes.</p>","<p><b>ONE THING TO WATCH, AND THE INVENTORY STANDS STILL.</b> The dossier carries the party as CC9-OKR, while the notes on s201 and the earlier rows read CC5-OKR; the dossier does not say which is right, so this fold uses CC9-OKR and leaves the code for checking. No stock moved: the 1 unit left on 25 Sep, costed then at RM48 a unit, and the cost basis is unchanged.</p>"]}];
+const evolution=[{"v":"v874","d":"26 Sep 2026","t":"THE INVENTORY IS CARRIED AT ITS LOTS","n":["<b>NOTHING TYPED IS LEFT.</b> Every book's inventory rate is derived from its own lots, on his word: the stock, counted or walked, laid newest first on the lots that landed, at their goods rate, freight left to the lines that add it. Salt reads RM56 where RM48 stood; oil stays RM8 and rice RM3.20.","<b>SALT AND CANDY ARE WORTH MORE ON THE PAGE.</b> The Inventory value card and Financials' closing inventory rise RM104 on salt and RM40 on candy. No price moves: the floors and the boards read the supplier's quote, not this rate.","<b>THE BOOK ASKED, NOT THE BOOK IN VIEW.</b> The entry check and a gift read each book's own rate while another is on screen, so a sale of spare, which has no lot, is refused at entry. The fold costs a salt sale at the derived rate and ignores a stock cost in its notes, and the Today note that caught a missed roll retires with the roll."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8527,7 +8527,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Sep 2026, 10:30 KL';
+const LAST_UPDATED='26 Sep 2026, 10:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
