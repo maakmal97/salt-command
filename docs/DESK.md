@@ -203,6 +203,12 @@
   zero where the API reports 280.
 - The `master` trigger deploys; the other excludes master, uploads a version rather than
   deploying, is off (`previews_enabled: false`), and is still on the ungated `npm run build`.
+- **Watch paths (set 26 Sep 2026, read back through the API):** the `master` trigger
+  (`1ea7ed86-00d5-4e4e-8967-8074061264b4`) keeps `path_includes: ["*"]` and has `path_excludes:
+  ["master/_to_fold.json", "master/_folded.json", "docs/*", "test/*", "statements/*"]`, so a stage,
+  clear, docs, test or statements commit builds nothing; a commit touching any other path still
+  builds, and a push of 20 or more commits builds regardless. The Actions job deploys every
+  `rev.json` push anyway, and `ship-check.yml` proves live against the repo daily.
 
 ## Files, beyond the ones `CLAUDE.md` names
 
