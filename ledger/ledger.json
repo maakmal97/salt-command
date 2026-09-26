@@ -1,6 +1,6 @@
 {
- "v": "v878",
- "stamped": "26 Sep 2026, 20:00 KL",
+ "v": "v879",
+ "stamped": "26 Sep 2026, 21:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5392,6 +5392,18 @@
      }
     ],
     "paidOn": "2026-09-26"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 5,
+    "total": 470,
+    "cash": 0,
+    "delivery": 20,
+    "date": "2026-09-26",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "<b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR DELIVERED.</b> Booked to CS6-BS-R as R2, 5 unit for RM470 with RM20 of delivery inside it, RM450 on the goods, order 20260926123801-xcco7w, to be delivered; preapproved by phone. Costed at RM56 a unit, the desk's own inventory cost. The goods clear the RM291.99 floor for 5 unit and sit under the RM590 ask. On 15 prior orders: median RM96.67, range RM6 to RM120, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1; not an associate, on the roster. The drafter read RM470 as goods and RM490 owed, so the drafter's RM94 a unit and 40.4% do not stand. The R2 flag matches the booking set on his word on s138. It draws no stock; RM470 and 5 unit stay open.",
+    "rid": "s206"
    }
   ],
   "contacts": [
@@ -6130,9 +6142,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T11:58:35.037Z",
+  "QUEUE_COMMITTED": "2026-09-26T13:02:54.811Z",
   "PRICING": {
-   "takenAt": "2026-09-26T12:00:32.158Z",
+   "takenAt": "2026-09-26T13:03:42.549Z",
    "sizes": [
     0.5,
     1,
@@ -12735,11 +12747,11 @@
      "cards": {}
     }
    },
-   "v": "v878"
+   "v": "v879"
   },
   "OPEN": {
-   "at": "2026-09-26T12:00:32.447Z",
-   "count": 8,
+   "at": "2026-09-26T13:03:42.823Z",
+   "count": 9,
    "byKey": {
     "CS6-PER|2026-09-26|150": {
      "d": "2026-09-26",
@@ -12754,6 +12766,23 @@
      "rid": "s205",
      "paidOn": "2026-09-26",
      "key": "CS6-PER|2026-09-26|150"
+    },
+    "CS6-BS-R|2026-09-26|490": {
+     "d": "2026-09-26",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 5,
+     "t": 470,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 490,
+     "oweUnits": 5,
+     "dv": 20,
+     "rid": "s206",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "key": "CS6-BS-R|2026-09-26|490"
     },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
@@ -12876,10 +12905,10 @@
      "free": 2,
      "owedOut": 11,
      "coverDays": 0.6,
-     "rate": 5.96,
+     "rate": 6.2,
      "owedToYou": 390,
-     "promised": 11,
-     "short": 0
+     "promised": 16,
+     "short": 3
     },
     "oil": {
      "name": "Oil",
@@ -12933,7 +12962,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v878"
+   "v": "v879"
   }
  }
 }

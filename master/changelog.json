@@ -1,5 +1,14 @@
 [
  {
+  "v": "v879",
+  "d": "26 Sep 2026",
+  "t": "ONE SALT ORDER FOR CS6-BS-R, AND A TOTAL TO CHECK",
+  "n": [
+   "<b>ONE ROW FOLDED: A PENDING SALT SELL TO CS6-BS-R.</b> The order of 26 Sep, 20260926123801-xcco7w, is booked to CS6-BS-R as R2, 5 unit for RM470 with RM20 of delivery, preapproved by phone. Nothing is paid and nothing is handed over, so the row draws no stock and books no revenue. It is costed at RM56 a unit, the desk's own inventory cost, and the goods sit between the RM291.99 floor and the RM590 ask for that size.",
+   "<b>WHAT WAS UNUSUAL: THE DRAFTER'S TOTAL.</b> The queued entry read RM490 and the drafter took RM470 as goods, RM490 owed and RM94 a unit. The row and the dossier carry RM470 in all, with RM450 on the goods, so the drafter's rate and margin do not stand. The party has a credit cap of 1 unit, so delivering 5 unit unpaid would run past it. The inventory is untouched: 13 unit in stock, cost RM56 a unit."
+  ]
+ },
+ {
   "v": "v878",
   "d": "26 Sep 2026",
   "t": "CS6-PER PAYS FOR S205, THE SALT STILL WAITS",
