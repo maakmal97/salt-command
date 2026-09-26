@@ -157,36 +157,39 @@ export function dossier(book, staged, p, w) {
 export function nextVersion(v) { const n = parseInt(String(v || "").replace(/^v/, ""), 10); return Number.isFinite(n) ? "v" + (n + 1) : null; }
 
 /* ---- the contract: what the reply must look like ----------------------------------------- */
-/* A ROW'S OPTIONAL FIELDS ARE STRINGS, EMPTY WHEN NONE (26 Sep 2026). rowNote and cost were each
-   ["x", "null"], two union-typed parameters a row, and run 36180354574 sent 14 rows: 29 unions, which
-   the API refused with http 400 ("too many parameters with union types") before the model ever read
-   the dossier, so the fold landed on the tool's notes. The schema's unions no longer grow with the
-   batch: stockCost is the one left. fromReply turns the empties back into the nulls checkNotes and
-   fold.mjs have always read, so neither changes. */
-export function schemaFor(ids) {
-  const rowProps = {};
-  for (const id of ids) rowProps[id] = { type: "object", additionalProperties: false, required: ["note", "rowNote", "cost"],
-    properties: { note: { type: "string" }, rowNote: { type: "string" }, cost: { type: "string" } } };
+/* THE SCHEMA IS THE SAME FOR EVERY BATCH (26 Sep 2026). It named each row's id as a property with
+   rowNote and cost each ["x", "null"], so it grew with the batch, and the API refused it twice: at 14
+   rows for 29 union-typed parameters (run 36180354574, the fold landed on the tool's notes), and at
+   40 rows, unions cut, for a compiled grammar too large (probe run 36204519170). Now rows is an array
+   of {id, note, rowNote, cost}, with rowNote and cost empty strings when none: stockCost is the one
+   union, and no batch size changes the grammar. The ids are held to the batch by checkNotes, as they
+   always were after the call; fromReply makes the reply the object checkNotes and fold.mjs read. */
+export function schemaFor() {
   return { type: "object", additionalProperties: false,
     required: ["version", "title", "notes", "rows", "stockNote", "stockCost", "stockCostNote"],
     properties: {
       version: { type: "string" }, title: { type: "string" },
       notes: { type: "array", items: { type: "string" }, minItems: 1 },
-      rows: { type: "object", additionalProperties: false, required: ids, properties: rowProps },
+      rows: { type: "array", items: { type: "object", additionalProperties: false, required: ["id", "note", "rowNote", "cost"],
+        properties: { id: { type: "string" }, note: { type: "string" }, rowNote: { type: "string" }, cost: { type: "string" } } } },
       stockNote: { type: "string" }, stockCost: { type: ["number", "null"] }, stockCostNote: { type: "string" },
     } };
 }
 
-/* The reply as checkNotes reads it: an empty rowNote or cost is null, and a cost in digits is the
-   number. Anything else is left as sent, so checkNotes refuses it exactly as it always has. */
+/* The reply as checkNotes reads it: rows keyed by id, an empty rowNote or cost null, a cost in digits
+   the number. Anything else is left as sent, so checkNotes refuses it exactly as it always has; an id
+   given twice is keyed "<id> (twice)", which checkNotes refuses as a row not in the batch. Rows
+   already keyed by id, as a fake reply may carry them, are read the same way. */
 export function fromReply(reply) {
   if (!reply || typeof reply !== "object" || !reply.rows || typeof reply.rows !== "object") return reply;
+  const list = Array.isArray(reply.rows) ? reply.rows : Object.entries(reply.rows).map(([id, r]) => (r && typeof r === "object" ? { ...r, id } : { id }));
+  const blank = (v) => typeof v === "string" && !v.trim();
   const rows = {};
-  for (const [id, r] of Object.entries(reply.rows)) {
-    if (!r || typeof r !== "object") { rows[id] = r; continue; }
-    const blank = (v) => typeof v === "string" && !v.trim();
-    rows[id] = { ...r, rowNote: blank(r.rowNote) ? null : r.rowNote,
-      cost: blank(r.cost) ? null : (typeof r.cost === "string" && /^\s*\d+(\.\d+)?\s*$/.test(r.cost) ? +r.cost : r.cost) };
+  for (const r of list) {
+    if (!r || typeof r !== "object") continue;
+    const { id, ...rest } = r;
+    rows[Object.prototype.hasOwnProperty.call(rows, String(id)) ? id + " (twice)" : String(id)] = { ...rest, rowNote: blank(rest.rowNote) ? null : rest.rowNote,
+      cost: blank(rest.cost) ? null : (typeof rest.cost === "string" && /^\s*\d+(\.\d+)?\s*$/.test(rest.cost) ? +rest.cost : rest.cost) };
   }
   return { ...reply, rows };
 }
@@ -220,18 +223,16 @@ House style, not optional: plain British English; no em-dashes or en-dashes (use
 
 LENGTH, and it is a rule: a row note is 60 to 120 words; each version note is one paragraph of 50 to 90 words; two version notes for a batch of one or two rows, three at most for a larger batch. Say each fact once. The first live fold wrote 4,700 tokens in 60 seconds, and the chain is measured in seconds.
 
-The version entry: "version" is exactly the next version given; "title" in CAPITALS, a short line; "notes" an array of HTML paragraphs, each opening with a bold lead, saying what was folded, what was unusual, and what the inventory did. "stockNote" is one or two sentences appended to the roll sentence the tool writes (empty string when nothing moved). "stockCost" is null unless a lot landed and the cost basis moves, then RM per unit with "stockCostNote" saying why. "rows.<id>.rowNote" is an empty string unless a short bold line should be prepended to an amended row's own note. "rows.<id>.cost" is an empty string unless the dossier shows the draft's cost is not the inventory's own rate, then the RM for the whole order in digits alone, like 312.50.`;
+The version entry: "version" is exactly the next version given; "title" in CAPITALS, a short line; "notes" an array of HTML paragraphs, each opening with a bold lead, saying what was folded, what was unusual, and what the inventory did. "stockNote" is one or two sentences appended to the roll sentence the tool writes (empty string when nothing moved). "stockCost" is null unless a lot landed and the cost basis moves, then RM per unit with "stockCostNote" saying why. "rows" holds one entry for each id in the batch, its "id" copied exactly and "note" the row's note. Its "rowNote" is an empty string unless a short bold line should be prepended to an amended row's own note. Its "cost" is an empty string unless the dossier shows the draft's cost is not the inventory's own rate, then the RM for the whole order in digits alone, like 312.50.`;
 
-function requestFor(d, ids) {
-  const skeleton = {};
-  for (const it of d.items) skeleton[it.id] = { what: it.what, note: "", rowNote: null, cost: null };
+export function requestFor(d, ids) {
   const user = `Today is ${d.todayKL} (Kuala Lumpur). The master stands at ${d.version.last}; this fold is ${d.version.next}.
 
 THE DOSSIER, as JSON. Everything you may cite is in it.
 ${JSON.stringify(d, null, 1)}
 
 Reply with the notes JSON only: version "${d.version.next}", the title, the notes array, rows for exactly these ids ${JSON.stringify(ids)}, stockNote, stockCost, stockCostNote.`;
-  return { model: MODEL, max_tokens: 4000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor(ids) } } };
+  return { model: MODEL, max_tokens: 4000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor() } } };
 }
 
 /* THE CALL IS BOUNDED, SO THE FOLD NEVER WAITS ON IT (26 Sep 2026). The client used to keep the
@@ -275,15 +276,14 @@ if (isMain) {
        account with none; the first real fold then failed with "credit balance is too low". One
        five-token message proves what the fold will actually need. */
     /* AND THE SCHEMA (26 Sep 2026). A bare message proved the key while the fold's own schema was
-       refused at 14 rows (run 36180354574), so the message carries schemaFor at 40 rows: a schema
-       the API will not compile fails here, not on a fold. */
+       refused (run 36180354574), so the message carries that schema, the same for every batch: a
+       schema the API will not compile fails here, not on a fold. */
     try {
       const client = new Anthropic(sdkOptions());   /* the fold's bound, so a silent API fails the probe too */
       const m = await client.models.retrieve(MODEL);
-      const ids = Array.from({ length: 40 }, (_, i) => `2099-01-01T00:00:${String(i).padStart(2, "0")}.000Z`);
       const r = await client.messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: "user", content: "Reply with the notes JSON." }],
-        output_config: { format: { type: "json_schema", schema: schemaFor(ids) } } });
-      console.log(`  ok    the key answers, the account is funded and the fold's schema compiles at 40 rows: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
+        output_config: { format: { type: "json_schema", schema: schemaFor() } } });
+      console.log(`  ok    the key answers, the account is funded and the fold's schema compiles: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
     }
     catch (e) { console.log("  FAIL  the call was refused: " + (e && e.status ? "http " + e.status + " " : "") + String((e && e.message) || e).slice(0, 220)); process.exit(1); }
   }
