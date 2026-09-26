@@ -1,6 +1,6 @@
 {
- "v": "v865",
- "stamped": "26 Sep 2026, 03:33 KL",
+ "v": "v873",
+ "stamped": "26 Sep 2026, 10:30 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5268,12 +5268,29 @@
     "qty": 1,
     "total": 90,
     "cost": 48,
-    "cash": 0,
+    "cash": 90,
     "date": "2026-09-25",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-25",
-    "note": "<b>SALT SELL DATED 25 SEP, DELIVERED IN FULL AND WHOLLY UNPAID: AN ADVANCE.</b> Booked to CC5-OKR, 1 unit for RM90, no delivery or freight, RM0 cash in and 1 unit moved on 25 Sep 2026, so RM90 stays open on the row. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The total clears the RM56.71 floor for 1 unit and sits RM50 under the ask of RM140, ceiling RM160. Across 12 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit already on credit against a cap of 1. The drafter flagged the advance against that cap and flagged RM48 as a blended average across more than one lot rate; neither is settled by these figures. On the roster, not an associate.",
-    "rid": "s201"
+    "note": "<b>SETTLED 26 SEP: RM90 CASH IN, NOTHING LEFT OPEN.</b> <b>SALT SELL DATED 25 SEP, DELIVERED IN FULL AND WHOLLY UNPAID: AN ADVANCE.</b> Booked to CC5-OKR, 1 unit for RM90, no delivery or freight, RM0 cash in and 1 unit moved on 25 Sep 2026, so RM90 stays open on the row. Costed at RM48 a unit from the desk's own inventory cost, RM42 on the goods at 46.7%. The total clears the RM56.71 floor for 1 unit and sits RM50 under the ask of RM140, ceiling RM160. Across 12 orders their median rate is RM90 with a range of RM5 to RM90, RM138 outstanding, none defaulted, and 2 unit already on credit against a cap of 1. The drafter flagged the advance against that cap and flagged RM48 as a blended average across more than one lot rate; neither is settled by these figures. On the roster, not an associate.",
+    "rid": "s201",
+    "amend": [
+     {
+      "date": "2026-09-25",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 90,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s201, 26 SEP: RM90 CASH IN, ORDER SETTLED IN FULL.</b> CC9-OKR paid RM90 on 26 Sep 2026 against 1 unit of salt for RM90 dated 25 Sep, delivered that day with RM0 paid. No unit moves now, so RM0 and 0 unit stay open. The row was costed at RM48 a unit, the inventory's own rate. The dossier gives no floor or ask for this size. Over 13 orders their median rate is RM90, range RM5 to RM90, RM228 outstanding and 3 units on credit before this, no cap given, none defaulted. Not an associate, on the roster. The drafter flagged a full settlement and the figures bear it out. The row's own note reads CC5-OKR."
+     }
+    ],
+    "paidOn": "2026-09-26"
    },
    {
     "customer": "CR3-DAM",
@@ -6095,9 +6112,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-25T19:32:31.487Z",
+  "QUEUE_COMMITTED": "2026-09-26T02:29:38.359Z",
   "PRICING": {
-   "takenAt": "2026-09-25T19:33:28.475Z",
+   "takenAt": "2026-09-26T02:30:30.823Z",
    "sizes": [
     0.5,
     1,
@@ -12659,28 +12676,12 @@
      "cards": {}
     }
    },
-   "v": "v865"
+   "v": "v873"
   },
   "OPEN": {
-   "at": "2026-09-25T19:33:28.775Z",
-   "count": 8,
+   "at": "2026-09-26T02:30:31.078Z",
+   "count": 7,
    "byKey": {
-    "CC9-OKR|2026-09-25|90": {
-     "d": "2026-09-25",
-     "p": "CC9-OKR",
-     "dir": "S",
-     "q": 1,
-     "t": 90,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 90,
-     "rid": "s201",
-     "deliveredOn": "2026-09-25",
-     "key": "CC9-OKR|2026-09-25|90",
-     "age": 1,
-     "exp": 90
-    },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
      "p": "CR3-DAM",
@@ -12803,7 +12804,7 @@
      "owedOut": 9.5,
      "coverDays": 1,
      "rate": 5.89,
-     "owedToYou": 480,
+     "owedToYou": 390,
      "promised": 9.5,
      "short": 0
     },
@@ -12859,7 +12860,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v865"
+   "v": "v873"
   }
  }
 }
