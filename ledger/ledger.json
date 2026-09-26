@@ -1,6 +1,6 @@
 {
- "v": "v877",
- "stamped": "26 Sep 2026, 19:47 KL",
+ "v": "v878",
+ "stamped": "26 Sep 2026, 20:00 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5370,11 +5370,28 @@
     "customer": "CS6-PER",
     "qty": 1.5,
     "total": 150,
-    "cash": 0,
+    "cash": 150,
     "date": "2026-09-26",
     "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CS6-PER, 1.5 unit for RM150 at RM100 a unit, order 20260926114537-jhxzow, to collect. Costed at RM56 a unit, the desk's own inventory cost, RM66 on the goods at 44%. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. On eight prior orders: median RM70.40, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter put their habit near RM80; the dossier median is RM70.40, so the rate sits above habit, at the top of the range. It draws no stock; RM150 and 1.5 unit stay open.",
-    "rid": "s205"
+    "note": "<b>PAID IN FULL ON 26 SEP, RM150 BY QR; 1.5 UNIT STILL TO COLLECT.</b> <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CS6-PER, 1.5 unit for RM150 at RM100 a unit, order 20260926114537-jhxzow, to collect. Costed at RM56 a unit, the desk's own inventory cost, RM66 on the goods at 44%. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. On eight prior orders: median RM70.40, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter put their habit near RM80; the dossier median is RM70.40, so the rate sits above habit, at the top of the range. It draws no stock; RM150 and 1.5 unit stay open.",
+    "rid": "s205",
+    "amend": [
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 150,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S205: RM150 PAID ON 26 SEP, NOTHING COLLECTED YET.</b> Against CS6-PER's salt order of 1.5 unit for RM150 at RM100 a unit dated 26 Sep 2026, RM150 came in on 26 Sep by QR on the statements site, order 20260926114537-jhxzow; preapproved by phone. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. The order stays costed at RM56 a unit, the desk's own inventory cost. On nine orders: median RM85.52, range RM11 to RM100, RM150 outstanding before this, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter flagged nothing. It draws no stock; RM0 is owed and 1.5 unit stays to collect."
+     }
+    ],
+    "paidOn": "2026-09-26"
    }
   ],
   "contacts": [
@@ -6113,9 +6130,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T11:46:33.887Z",
+  "QUEUE_COMMITTED": "2026-09-26T11:58:35.037Z",
   "PRICING": {
-   "takenAt": "2026-09-26T11:47:29.395Z",
+   "takenAt": "2026-09-26T12:00:32.158Z",
    "sizes": [
     0.5,
     1,
@@ -6329,12 +6346,12 @@
     "CS6-PER": {
      "salt": {
       "name": "large and regular",
-      "orders": 8,
+      "orders": 9,
       "tenureDays": 80,
-      "sinceLastDays": 3,
-      "perMonth": 3.04,
-      "smallShare": 0.13,
-      "bigShare": 0.63,
+      "sinceLastDays": 0,
+      "perMonth": 3.42,
+      "smallShare": 0.11,
+      "bigShare": 0.56,
       "late": 1,
       "frequent": true,
       "small": false,
@@ -12718,10 +12735,10 @@
      "cards": {}
     }
    },
-   "v": "v877"
+   "v": "v878"
   },
   "OPEN": {
-   "at": "2026-09-26T11:47:29.638Z",
+   "at": "2026-09-26T12:00:32.447Z",
    "count": 8,
    "byKey": {
     "CS6-PER|2026-09-26|150": {
@@ -12730,12 +12747,12 @@
      "dir": "S",
      "q": 1.5,
      "t": 150,
-     "cash": 0,
+     "cash": 150,
      "mv": 0,
-     "st": "part",
-     "oweRM": 150,
+     "st": "oweStock",
      "oweUnits": 1.5,
      "rid": "s205",
+     "paidOn": "2026-09-26",
      "key": "CS6-PER|2026-09-26|150"
     },
     "CR3-DAM|2026-09-25|130": {
@@ -12856,9 +12873,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 13,
-     "free": 3.5,
-     "owedOut": 9.5,
-     "coverDays": 1,
+     "free": 2,
+     "owedOut": 11,
+     "coverDays": 0.6,
      "rate": 5.96,
      "owedToYou": 390,
      "promised": 11,
@@ -12916,7 +12933,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v877"
+   "v": "v878"
   }
  }
 }

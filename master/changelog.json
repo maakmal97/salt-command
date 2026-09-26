@@ -1,5 +1,14 @@
 [
  {
+  "v": "v878",
+  "d": "26 Sep 2026",
+  "t": "CS6-PER PAYS FOR S205, THE SALT STILL WAITS",
+  "n": [
+   "<p><b>ONE FULFILMENT FOLDED.</b> CS6-PER paid RM150 on 26 Sep against s205, the salt order of 1.5 unit for RM150 booked the same day, by QR on the statements site, order 20260926114537-jhxzow. It was preapproved by phone and the drafter raised no flags. The payment settles the money side in full: s205 now owes RM0, while 1.5 unit remains to collect. The order keeps its RM56 a unit inventory cost, so the cost column is untouched.</p>",
+   "<p><b>NOTHING UNUSUAL, NO STOCK MOVED.</b> The row moves cash only, 0 unit, so the inventory stands at 13 unit against the stated 13. The stock cost stays at RM56 a unit and the reorder point at 28.2 unit. The 1.5 unit promised to CS6-PER stays on the book until collection. CS6-PER's record keeps its shape: median RM85.52, none defaulted, and nothing now outstanding in money.</p>"
+  ]
+ },
+ {
   "v": "v877",
   "d": "26 Sep 2026",
   "t": "ONE PENDING SALT ORDER, ABOVE THEIR HABIT",
