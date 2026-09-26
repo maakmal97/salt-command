@@ -20,10 +20,7 @@ staged, say so in one line and stop; if `master/_folded.json` is present, the la
 folded and waiting for its deploy to clear it, stop likewise: the next cloud run stages nothing,
 deploys it, marks its rows and clears both files (26 Sep 2026), never reading it as a replay.
 This procedure is unchanged and still what any agent follows, whether that is the Fold step, a
-Code session asked to fold, or the routine fired by hand. The laptop-era procedure is
-kept verbatim beside this as `DAILY_FOLD.md` for its context; where the two disagree, this file
-wins. **`DAILY_FOLD.md` was RETIRED on 12 Sep 2026** and now opens by saying so: every path in
-it died when the master moved into this repo on 20 Aug, so it is history and never instruction.
+Code session asked to fold, or the routine fired by hand.
 
 ## The shape of it
 

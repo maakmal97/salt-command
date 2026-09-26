@@ -17,7 +17,7 @@ name: Ship check
 
 on:
   schedule:
-    # 03:00 UTC is 11:00 in Kuala Lumpur, an hour after the daily fold at 10:00 MYT.
+    # 03:00 UTC is 11:00 in Kuala Lumpur.
     - cron: '0 3 * * *'
   workflow_dispatch:
 

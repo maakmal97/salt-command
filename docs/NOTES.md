@@ -1,6 +1,6 @@
 # Salt Command: the reasoning behind the rules
 
-The former body of `CLAUDE.md`, moved here verbatim on 6 Sep 2026 when that file was cut to a fact sheet. Every version number, decision and its date is kept, including passages the sheet marks as superseded (the phone app, the timed drain, the Cowork daily run). Nothing here has been edited since; correct facts in `CLAUDE.md`, not here.
+The former body of `CLAUDE.md`, moved here verbatim on 6 Sep 2026 when that file was cut to a fact sheet. Every version number, decision and its date is kept, including passages the sheet marks as superseded (the phone app and the timed drain). Nothing here has been edited since; correct facts in `CLAUDE.md`, not here.
 
 The Salt Command desk, ported to a real cloud app so the ledger and the pricing engine
 are reachable on the go and a transaction can be added from the phone. **Since 20 Aug 2026 this
@@ -168,13 +168,12 @@ as dead code on 26 Sep 2026.
 
 **The claude.ai mirror is retired.** It was published from the master by Cowork
 (`update_artifact`) into `Artifacts\salt-command\index.html`, and it went when the master moved
-here on 20 Aug 2026, because Cowork is being retired for this project. `/desk` serves the same
+here on 20 Aug 2026. `/desk` serves the same
 desk and is the only mirror now.
 
-## Retiring Cowork, and what runs the commit instead
+## What runs the commit
 
-**The decision of 20 Aug 2026: Salt leaves Cowork entirely.** The daily fold used to be a
-Cowork scheduled task because the master lived on the laptop. With the master here, the whole
+With the master here, the whole
 chain is cloud-reachable and the laptop is off the critical path.
 
 | Step | Where | When |
@@ -261,7 +260,7 @@ has an owner.
   never deployed on 10 Aug, and when the master shipped but the cloud did not on 19 Aug. Both
   failures were silent and every exit code was zero.
 
-**Still on the laptop, and not Cowork's:** `secretary-desk` sweeps `Core\`, which has not
+**Still on the laptop:** `secretary-desk` sweeps `Core\`, which has not
 moved, so it cannot go to the cloud yet. `serve_desk.py` and `salt_sync.ps1` still exist for
 local work; `npm run dev` does the preview half better.
 
@@ -365,12 +364,7 @@ left for the cron to draft. Drafting on arrival closes it.
 shut. `serve_desk.py`&#39;s timed drain is REMOVED (it fed a file the daily run folded, so a phone
 entry reached the ledger unread), and the laptop&#39;s own queue now goes through
 `node tools/drafts.mjs --from-queue`, which drafts it PENDING using the same `draftRow` rather
-than a second copy. The `salt-daily-price-brief` SKILL is rewritten to fold `--approved` rows
-only and mark each id committed after.
-
-**THE SKILL EDIT IS ON DISK BUT NOT PUSHED.** Editing `SKILL.md` changes the file, not what
-fires: the stored prompt needs `update_scheduled_task` from Cowork. Until that is done the
-running task still holds the old fold-every-queue-file instruction.
+than a second copy.
 
 **WHAT THE GATE ACTUALLY COVERS, stated narrowly because the first wording overclaimed.** It
 governs NEW ROWS from queued transactions, the ones typed in a hurry at the point of sale.
@@ -701,23 +695,6 @@ node tools/drain.mjs --forget <at>     # withdraw one entry, from the file and f
 Note that a var-only edit does not change `public/rev.json`'s id, and `salt_sync.ps1` decides
 whether to deploy by comparing that id against `.deployed.json`. So a `wrangler.jsonc`-only
 change is NEVER shipped by the auto-sync leg. It must be deployed by hand.
-
-## Daily-run integration
-
-`Scheduled\salt-daily-price-brief` gains a cloud leg. After it has committed the queue and set
-`QUEUE_COMMITTED`, and before it finishes, it must (from this repo):
-
-```
-node tools/drain.mjs                                  # BEFORE committing: pull phone entries
-# ... fold salt_queue_cloud.json into the master alongside the laptop queue ...
-node tools/drain.mjs --committed <QUEUE_COMMITTED>    # prune what was just committed
-npm run build && npm run deploy                       # ship the fresh ledger to the phone
-git add -A && git commit -m "..." && git push         # version the data at github
-```
-
-`drain` uses the machine's wrangler auth; an unattended run may need `CLOUDFLARE_API_TOKEN`.
-It is race-safe: a KV key that changed mid-drain is left for the next run, and everything is
-deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 

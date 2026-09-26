@@ -1,9 +1,5 @@
 # Monthly statements, in the cloud
 
-Moved out of Cowork on 20 Aug 2026, once the master was in this repo. The laptop-era SKILL is
-`Scheduled\salt-monthly-statements\SKILL.md`; this is the part that survives a cloud run, and
-where the two disagree this file wins.
-
 ## RETIRED, 21 Sep 2026, on his instruction
 
 **There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): the publish
@@ -24,10 +20,6 @@ node tools/make_statements.mjs statements/2026-10 2026-10-01 --new-issue
 still open on the page, because a dated record is not corrected in place; `--archive` of a past month
 is not an issue and still works; and the LIVE statement, the price list, the associate's card and the
 account mint all run on every publish exactly as before.
-
-**One thing is his to do, and it is not in this repo:** the Cowork task `salt-monthly-statements`
-fires from `Scheduled\`, a registry Code cannot see or write. Remove it from Cowork, or it will keep
-waking to tell him an issue is due that this repo will refuse to make.
 
 ## The gate, first and most important
 
