@@ -783,7 +783,7 @@
       "salt": "Silver"
     },
     "CR3-PUD": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CE5-SA": {
       "salt": "Titanium"
@@ -924,7 +924,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-26T05:17:27.707Z",
+  "QUEUE_COMMITTED": "2026-09-26T05:17:45.843Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

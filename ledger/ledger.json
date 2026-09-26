@@ -1,6 +1,6 @@
 {
- "v": "v875",
- "stamped": "26 Sep 2026, 13:19 KL",
+ "v": "v876",
+ "stamped": "26 Sep 2026, 13:22 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5945,7 +5945,7 @@
     "salt": "Silver"
    },
    "CR3-PUD": {
-    "salt": "Titanium"
+    "salt": "Platinum"
    },
    "CE5-SA": {
     "salt": "Titanium"
@@ -6103,9 +6103,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T05:17:27.707Z",
+  "QUEUE_COMMITTED": "2026-09-26T05:17:45.843Z",
   "PRICING": {
-   "takenAt": "2026-09-26T05:19:58.482Z",
+   "takenAt": "2026-09-26T05:22:57.345Z",
    "sizes": [
     0.5,
     1,
@@ -6244,7 +6244,7 @@
      "salt": "Silver"
     },
     "CR3-PUD": {
-     "salt": "Titanium"
+     "salt": "Platinum"
     },
     "CE5-SA": {
      "salt": "Titanium"
@@ -9298,39 +9298,39 @@
        ],
        [
         2,
-        210
+        220
        ],
        [
         2.5,
-        260
+        270
        ],
        [
         3,
-        310
+        320
        ],
        [
         3.5,
-        350
+        360
        ],
        [
         4,
-        390
+        400
        ],
        [
         4.5,
-        430
+        440
        ],
        [
         5,
-        470
+        480
        ],
        [
         6.25,
-        550
+        560
        ],
        [
         12.5,
-        1060
+        1070
        ]
       ],
       "CE5-SA": [
@@ -12708,10 +12708,10 @@
      "cards": {}
     }
    },
-   "v": "v875"
+   "v": "v876"
   },
   "OPEN": {
-   "at": "2026-09-26T05:19:58.751Z",
+   "at": "2026-09-26T05:22:57.584Z",
    "count": 7,
    "byKey": {
     "CR3-DAM|2026-09-25|130": {
@@ -12892,7 +12892,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v875"
+   "v": "v876"
   }
  }
 }
