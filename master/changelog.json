@@ -1,5 +1,14 @@
 [
  {
+  "v": "v885",
+  "d": "27 Sep 2026",
+  "t": "ONE CORRECTION, S207 NOW READS 2 UNITS",
+  "n": [
+   "<p><b>ONE ROW FOLDED: A CORRECTION ON S207.</b> CE5-SA's salt order of 26 Sep, which read 1 unit for RM110, now reads 2 units for RM210, recorded 27 Sep and decided by the desk. The correction changes what the row says about itself. It moves no cash and no stock: 1 unit has gone out, collected, and nothing is paid. The dossier gives no floor or ask for 2 units, so the rate is not tested in this fold.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter flagged an advance of 1 unit with RM105 unpaid, to check against CE5-SA's credit cap. The dossier states no cap, so the flag stays open for the desk. CE5-SA carried RM110 outstanding and 1 unit on credit before this, none defaulted. The inventory does not move: stock stays at 5.5 units, costed at RM56 a unit against a replacement cost of RM51.</p>"
+  ]
+ },
+ {
   "v": "v884",
   "d": "27 Sep 2026",
   "t": "ONE UNIT COLLECTED, THE MONEY STILL TO COME",
