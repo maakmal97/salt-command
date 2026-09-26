@@ -1,6 +1,6 @@
 {
- "v": "v886",
- "stamped": "27 Sep 2026, 01:34 KL",
+ "v": "v887",
+ "stamped": "27 Sep 2026, 01:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -106,21 +106,23 @@
     "qty": null,
     "was": null,
     "drift": null,
-    "note": "anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing"
+    "note": "anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing Noted 27 Sep 2026: v351 did record it, 21.5 against 25.25; that drift of -3.75 is carried in the 55.2 self-use split, so this row still charges nothing."
    },
    {
     "product": "salt",
     "date": "2026-09-02",
     "qty": 10.5,
-    "was": 18.75,
-    "drift": -8.25
+    "was": 16.25,
+    "drift": -5.75,
+    "note": "Corrected 27 Sep 2026: the stated position at the count was 16.25, not 18.75. 18.75 was the roll before s127's 2 unit, which left before the count, and v366 restated s104's 0.5 unit as delivered without rolling it though s104 already counts it as sold. Walked from the 24 Aug count of 21.5, the rows close at 16.25, so the drift is -5.75. No floor moves: the leak reads the 19, 21 and 23 Sep counts."
    },
    {
     "product": "salt",
     "date": "2026-09-04",
     "qty": 9.8,
-    "was": null,
-    "drift": 0
+    "was": 10.5,
+    "drift": -0.7,
+    "note": "Corrected 27 Sep 2026: the stated position at the count was 10.5 (14.5 walked, net of s132), so the drift is -0.7, as v489 found; the zero came from the v504 seeding note misreading v489. No floor moves: the leak reads the 19, 21 and 23 Sep counts."
    },
    {
     "product": "salt",
@@ -132,9 +134,10 @@
    {
     "product": "oil",
     "date": "2026-08-23",
-    "qty": 15,
-    "was": null,
-    "drift": null
+    "qty": 0,
+    "was": 0,
+    "drift": 0,
+    "note": "Corrected 27 Sep 2026: v346 counted 0 against 0, the gap being the self-use rows of that day; 15 was the stated position of 31 Aug. Rolled from 0 the rows reach v551's 75 on 09 Sep, as the chain requires. No figure moves."
    },
    {
     "product": "salt",
@@ -1722,15 +1725,12 @@
    {
     "date": "2026-08-03",
     "customer": "CI4-OKR",
-    "qty": 2,
-    "total": 180,
-    "cost": 94,
+    "qty": 1,
+    "total": 90,
+    "cost": 47,
     "cash": 90,
     "paidOn": "2026-08-05",
-    "settledRM": 90,
-    "rebate": true,
-    "rebateKg": 1,
-    "deliveredQty": 2,
+    "deliveredQty": 1,
     "deliveredOn": "2026-08-04",
     "amend": [
      {
@@ -1743,9 +1743,16 @@
       "wasQty": 5,
       "wasTotal": 440,
       "note": "clerical correction to 2 unit / RM185"
+     },
+     {
+      "date": "2026-09-27",
+      "kind": "Modification",
+      "cash": 0,
+      "kg": 0,
+      "note": "restated from 2 unit / RM180 to 1 unit / RM90 on his word: the second unit was a gift, now its own row"
      }
     ],
-    "note": "Clerical 5/RM440 corrected to 2/RM185.",
+    "note": "Clerical 5/RM440 corrected to 2/RM185. <b>RESTATED 27 SEP 2026 ON HIS WORD.</b> One unit sold at RM90, paid in cash; the second unit was a gift given with the order, not a reward redemption, and is its own row, s208, booked as cost. The RM185 and RM180 figures above are superseded: RM90 is what was sold and paid. It no longer draws on CI4-OKR's reward.",
     "rid": "s053"
    },
    {
@@ -1774,6 +1781,20 @@
     "rev": "R2",
     "note": "First sale as associate.",
     "rid": "s055"
+   },
+   {
+    "rid": "s208",
+    "customer": "CI4-OKR",
+    "qty": 1,
+    "total": 47,
+    "cost": 47,
+    "cash": 0,
+    "settledRM": 47,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-04",
+    "date": "2026-08-03",
+    "note": "<b>ONE UNIT OF SALT GIVEN FREE TO CI4-OKR ON 03 AUG, WITH THE SALE ON s053.</b> RM47 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 27 Sep 2026: it had been folded into s053 as a reward redemption."
    },
    {
     "date": "2026-08-04",
@@ -2771,11 +2792,11 @@
    {
     "customer": "CS6-BS",
     "qty": 1,
-    "total": 0,
+    "total": 44,
     "cash": 0,
     "deliveredQty": 1,
     "agreedOn": "2026-08-24",
-    "note": "Free unit, reason unstated.",
+    "note": "Free unit, reason unstated. <b>RESTATED 27 SEP 2026 ON HIS WORD: AN ADVANCE ON AN AWARD.</b> The free unit is booked as a redemption, RM44 of goods settled by the reward and no cash, carrying rebate and goodwill as s153 does, so its cost leaves COGS for goodwill and one unit is drawn on CS6-BS's reward.",
     "amend": [
      {
       "kind": "Fulfilment",
@@ -2795,7 +2816,11 @@
     "date": "2026-08-24",
     "deliveredOn": "2026-08-24",
     "cost": 44,
-    "rid": "s103"
+    "rid": "s103",
+    "settledRM": 44,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true
    },
    {
     "customer": "CA4-DAM",
@@ -3739,7 +3764,7 @@
     "product": "oil",
     "deliveredQty": 50,
     "date": "2026-09-08",
-    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved.",
+    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding. <b>THE CARRIAGE MOVED OUT OF THE TOTAL ON 19 SEP 2026</b> (his instruction to separate the sell price from the delivery price). The figures are unchanged: RM15 of carriage that was inside this row's total now stands beside it, so the total reads the goods alone and what the customer owes is the two together. Nothing was re-priced and no order key moved. <b>NOTE CORRECTED 27 SEP 2026.</b> The goods are RM415 for 50 unit, RM8.30 a unit; the RM8.60 above was RM430 over 50, written before the carriage of RM15 moved out of the total on 19 Sep.",
     "rid": "s140",
     "amend": [
      {
@@ -6220,7 +6245,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-26T17:33:38.961Z",
   "PRICING": {
-   "takenAt": "2026-09-26T17:34:58.842Z",
+   "takenAt": "2026-09-26T18:31:02.189Z",
    "sizes": [
     0.5,
     1,
@@ -6313,11 +6338,11 @@
     "CY2-NIL": {
      "salt": "Titanium"
     },
-    "CI4-OKR": {
-     "salt": "Titanium"
-    },
     "CA7-AMP": {
      "salt": "Gold"
+    },
+    "CI4-OKR": {
+     "salt": "Titanium"
     },
     "CH4-KS": {
      "salt": "Titanium"
@@ -6867,24 +6892,6 @@
       "lateTwice": false
      }
     },
-    "CI4-OKR": {
-     "salt": {
-      "name": "occasional mid",
-      "orders": 3,
-      "tenureDays": 68,
-      "sinceLastDays": 25,
-      "perMonth": 1.34,
-      "smallShare": 0,
-      "bigShare": 0.33,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CA7-AMP": {
      "salt": {
       "name": "one-off",
@@ -6914,6 +6921,24 @@
       "frequent": true,
       "small": false,
       "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CI4-OKR": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 3,
+      "tenureDays": 68,
+      "sinceLastDays": 25,
+      "perMonth": 1.34,
+      "smallShare": 0.33,
+      "bigShare": 0.33,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
       "loyal": false,
       "rare": false,
       "lateTwice": false
@@ -7412,9 +7437,9 @@
        "attrib": 1,
        "shrinkRate": 0.07471789611116293,
        "avgDel": {
-        "n": 175,
+        "n": 176,
         "kg": 451.95,
-        "mean": 2.5826
+        "mean": 2.5679
        }
       },
       "policy": {
@@ -8648,56 +8673,6 @@
         1060
        ]
       ],
-      "CI4-OKR": [
-       [
-        0.5,
-        40
-       ],
-       [
-        1,
-        90
-       ],
-       [
-        1.5,
-        140
-       ],
-       [
-        2,
-        190
-       ],
-       [
-        2.5,
-        240
-       ],
-       [
-        3,
-        290
-       ],
-       [
-        3.5,
-        330
-       ],
-       [
-        4,
-        380
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
       "CA7-AMP": [
        [
         0.5,
@@ -8746,6 +8721,56 @@
        [
         12.5,
         1080
+       ]
+      ],
+      "CI4-OKR": [
+       [
+        0.5,
+        40
+       ],
+       [
+        1,
+        90
+       ],
+       [
+        1.5,
+        140
+       ],
+       [
+        2,
+        190
+       ],
+       [
+        2.5,
+        240
+       ],
+       [
+        3,
+        290
+       ],
+       [
+        3.5,
+        330
+       ],
+       [
+        4,
+        380
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
        ]
       ],
       "CH4-KS": [
@@ -10376,7 +10401,7 @@
         450
        ]
       ],
-      "CI4-OKR": [
+      "CA7-AMP": [
        [
         10,
         130
@@ -10398,7 +10423,7 @@
         450
        ]
       ],
-      "CA7-AMP": [
+      "CI4-OKR": [
        [
         10,
         130
@@ -11475,7 +11500,7 @@
         1500
        ]
       ],
-      "CI4-OKR": [
+      "CA7-AMP": [
        [
         1,
         60
@@ -11497,7 +11522,7 @@
         1500
        ]
       ],
-      "CA7-AMP": [
+      "CI4-OKR": [
        [
         1,
         60
@@ -12380,7 +12405,7 @@
         60
        ]
       ],
-      "CI4-OKR": [
+      "CA7-AMP": [
        [
         1,
         8
@@ -12394,7 +12419,7 @@
         60
        ]
       ],
-      "CA7-AMP": [
+      "CI4-OKR": [
        [
         1,
         8
@@ -12823,10 +12848,10 @@
      "cards": {}
     }
    },
-   "v": "v886"
+   "v": "v887"
   },
   "OPEN": {
-   "at": "2026-09-26T17:34:59.127Z",
+   "at": "2026-09-26T18:31:02.366Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-26|210": {
@@ -12968,7 +12993,7 @@
      "free": -4,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.99,
+     "rate": 6,
      "owedToYou": 495,
      "promised": 10.5,
      "short": 5
@@ -13025,7 +13050,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v886"
+   "v": "v887"
   }
  }
 }
