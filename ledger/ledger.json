@@ -1,6 +1,6 @@
 {
- "v": "v885",
- "stamped": "27 Sep 2026, 01:18 KL",
+ "v": "v886",
+ "stamped": "27 Sep 2026, 01:34 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6218,9 +6218,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T17:16:52.294Z",
+  "QUEUE_COMMITTED": "2026-09-26T17:33:38.961Z",
   "PRICING": {
-   "takenAt": "2026-09-26T17:18:05.497Z",
+   "takenAt": "2026-09-26T17:34:58.842Z",
    "sizes": [
     0.5,
     1,
@@ -12823,10 +12823,10 @@
      "cards": {}
     }
    },
-   "v": "v885"
+   "v": "v886"
   },
   "OPEN": {
-   "at": "2026-09-26T17:18:05.802Z",
+   "at": "2026-09-26T17:34:59.127Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-26|210": {
@@ -13025,7 +13025,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v885"
+   "v": "v886"
   }
  }
 }
