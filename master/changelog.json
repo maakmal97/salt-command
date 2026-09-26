@@ -1,5 +1,14 @@
 [
  {
+  "v": "v884",
+  "d": "27 Sep 2026",
+  "t": "ONE UNIT COLLECTED, THE MONEY STILL TO COME",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> Order s207 to CE5-SA, 1 unit of salt for RM110 dated 26 Sep, order 20260926131647-tg8bpq, now records the goods as collected: deliveredQty from 0 to 1, deliveredOn 2026-09-27, handover collected. It was preapproved by phone. The correction moves no cash. The row stays pending on payment, and RM110 remains open against CE5-SA.</p>",
+   "<p><b>THE SHELF GIVES UP 1 UNIT ON CREDIT.</b> The drafter flagged this as an advance, 1 unit out with RM110 unpaid. CE5-SA held 0 units on credit against a cap of 1 before this, so the unit sits within the cap. The shelf rolls 1 unit out to CE5-SA at the inventory's own RM56 a unit. No lot landed, and the cost basis does not move.</p>"
+  ]
+ },
+ {
   "v": "v883",
   "d": "27 Sep 2026",
   "t": "FIVE UNIT DELIVERED, THE RM20 OVERPAID STANDS",
