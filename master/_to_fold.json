@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-26T16:07:55.260Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s206",
+    "qty": 5,
+    "total": 470,
+    "cash": 490,
+    "date": "2026-09-26",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-09-27"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Correction against CS6-BS-R's order of 5 unit for RM 470 dated 2026-09-26 (s206). Sets deliveredQty from 0 to 5, deliveredOn from unset to 2026-09-27, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "RM 490 is recorded as paid against a row worth RM 470, so it would be RM 20 overpaid.",
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s206",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-26T16:07:55.260Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "5 unit delivered to CS6-BS-R, order 20260926123801-xcco7w, on 2026-09-27",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": null,
+     "orderKey": "CS6-BS-R|2026-09-26|490",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-27",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 5,
+      "deliveredOn": "2026-09-27",
+      "handover": "delivered"
+     },
+     "note": "5 unit delivered for order 20260926123801-xcco7w."
+    },
+    "orderId": "20260926123801-xcco7w"
+   },
+   "decidedAt": "2026-09-26T16:08:07.005Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
