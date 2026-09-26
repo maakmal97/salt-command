@@ -279,7 +279,6 @@ export function pricingSnapshot(w) {
     takenAt: new Date().toISOString(),
     sizes,
     ref: call("REF"),                       // the markup-on-cost ladder: floor, good, great, ceiling
-    floorPct: call("PRICE && PRICE.floorPct"),   // the OTHER floor, a margin on price. See v300.
     shrinkAttrib: call("SHRINK_ATTRIB"),
     tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
     /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from

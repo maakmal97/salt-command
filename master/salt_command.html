@@ -9080,19 +9080,12 @@ const PRICE={
      a leftover, and his rule is that only the margin may move a price. */
   lotFloor:{},
   retailExp:0.25,         // per-unit decay inside retail
-  bulkExp:0.10,           // gentler beyond wholesale
-  /* v300: THE SAME FLOOR AS REF.floor, SAID THE OTHER WAY ROUND. His instruction was a minimum of
-     25% OF COST, which is REF.floor=0.25 and binds through floorTotal. This constant is the older
-     lever and it is a MARGIN ON PRICE, not a markup on cost, so it cannot take 25 without meaning
-     something else entirely. A 25% markup on cost is a 20% margin on price (0.25/1.25), so 20 is
-     what expresses his line here. Both bands take it because v280 abolished the wholesale band and
-     this pair had outlived it.
-     IT IS STILL LIVE AND THAT IS WHY IT MOVES. Five readings run off it: the margin-realised line,
-     the buy simulator's bulk test, the red on the price table, the share-of-volume-below-floor
-     figure and the quote helper. Left at 15/10 the desk would have printed one refusal line from
-     REF and a different one from here, which it very nearly always did: floorPrice divided by
-     (1-0.15) for a 17.6% markup while floorTotal multiplied by 1.15. The two now agree exactly. */
-  floorPct:{retail:20,wholesale:20}
+  bulkExp:0.10
+  /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): floorPct IS RETIRED, and floorPrice with it. It was
+     a 20% margin on price per band, a second floor beside the engine's, and five readings still ran
+     off it: the margin-realised signal, the boundary register, the market segments and their buying
+     lever, and the share of volume under the line. Rule 5 has one floor, COGS plus leakage, one per
+     size: every one of them now reads floorTotal at the order's own size. */
 };
 /* ONE FLOOR, 20%, EVERY SIZE (v204). Set to 30% at v203 and lowered to 20% the same
    morning after seeing what 30% did to the printed cards: it put R under its own floor
@@ -9122,8 +9115,6 @@ const SALES_POLICY={maxLot:null,
 const capLot=()=>{try{if(pxOver&&pxOver.cap!=null&&pxOver.cap!=='')return +pxOver.cap;}catch(e){}
   return SALES_POLICY.maxLot!=null?+SALES_POLICY.maxLot:null;};
 const sizeBand=q=>q<=PRICE.retailTo+0.009?'retail':'wholesale';
-const BAND_LABEL={retail:'retail, '+PRICE.retailTo+' unit and under',wholesale:'wholesale, over '+PRICE.retailTo+' unit'};
-const floorPct=q=>PRICE.floorPct[sizeBand(q)];
 /* markup on lot cost that a tier must clear at a given size (v249). Log interpolation
    between the two stated anchors, held flat outside them rather than extrapolated: nobody
    stated a price for a 20 unit lot and the curve is not entitled to invent one. */
@@ -10367,7 +10358,7 @@ function tierBoardOLD(){
               shortBy:+(p-tf).toFixed(2)};
     });
     return {q:q,floor:+fl.toFixed(2),walk:+wk.toFixed(2),cells:cells,
-            band:sizeBand(q),floorPct:floorPct(q)};
+            band:sizeBand(q)};
   });
 }
 /* ============ BOARD HEADROOM (v207) ============
@@ -10538,10 +10529,13 @@ function boundaryScan(){
      are counted in a single line with the money attached, which says more as a pattern
      than seventeen rows say individually. */
   let closedN=0,closedRM=0;
+  /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): THE FLOOR IS THE ENGINE'S at the order's own size,
+     floorTotal on today's cost, set against the goods; the 20% margin on price per band is retired.
+     At or below the row's own cost stays a breach whatever the floor says. */
   pricedSales.forEach(s=>{const p=txPrice(s);if(!(p>0))return;
-    const c=txUnitCost(s,wavgBuy),m=(p-c)/p*100,fl=floorPct(s.qty);
-    if(m>=fl-0.009)return;
-    const gap=Math.max(0,(c/(1-fl/100)-p)*s.qty);
+    const c=txUnitCost(s,wavgBuy),m=(p-c)/p*100,need=floorTotal(s.qty),under=txGoods(s)<need-0.009;
+    if(m>=0.009&&!under)return;
+    const gap=Math.max(0,need-txGoods(s));
     const open=txStat(s).order!=='Completed'&&txStat(s).order!=='In-Kind';
     if(m>=0.009&&!open){closedN++;closedRM+=gap;return;}
     /* v176: a thin or at-cost sale that is CLOSED, with nothing owed and nothing left
@@ -10552,7 +10546,7 @@ function boundaryScan(){
        lesson about price belongs. An open one still breaches, because that CAN be acted on. */
     if(outstandingOf(s)<=0.009&&txPendUnits(s)<=0.009&&txDeferUnits(s)<=0.009)return;
     add(m<0.009?'breach':'watch','Margin floor',s.customer,fmt(p)+'/unit on '+fmt(c)+'/unit cost, '+m.toFixed(0)+'%',
-      (m<0.009?'at or below cost, and under':'still open, so still repriceable, and under')+' the '+fl+'% floor for '+BAND_LABEL[sizeBand(s.qty)]);});
+      (m<0.009?'at or below cost':'still open, so still repriceable')+(under?', and under the '+fmt0(need)+' floor at '+units(s.qty):''));});
   if(closedN)add('watch','Margin floor','&mdash;',closedN+' closed sale'+(closedN===1?'':'s')+' under floor',
     'worth about '+fmt0(closedRM)+' at today&rsquo;s floors; banked and unrepriceable, so a pattern to price against rather than an action');
   /* 2b. AGREED BUT UNMOVED, PRICED UNDER THE BOARD FLOOR (v225).
@@ -14544,13 +14538,17 @@ function phonePayloadBuild(){
 }
 function costPanel(){
   const c=pxCost(), R=riskRates(), dl=deliveryCost();
-  const tier=PRICE_TIERS.tiers.find(t=>t.code==='M')||PRICE_TIERS.tiers[0];
+  /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): THE ASK, CHOSEN BY CODE. This read tier M off PRICE_TIERS,
+     retired with the printed ladders, and fell back BY INDEX to the first tier, so the panel priced a unit of salt
+     at Tier I's RM 80 against an ask of RM 140. The engine's ladder row T2 is the ask (rule 5), priceLadder's at
+     each size, found by its code. */
   const sizes=shownSizes(PROD);
+  const tier=PRICING_ENGINE.ladderRow(sizes,c,pxPolicy()).find(r=>r.code==='T2');
   const s0=costToServe(1);
   const unknown=s0.perOrderParts.filter(p=>p.rm==null);
 
   const rows=sizes.map((q,i)=>{
-    const price=tier.prices[i]; if(price==null)return '';
+    const price=tier.prices[i]; if(!(price>0))return '';   // an ask of nothing is not priced (rule 5): the row is left out
     const cs=costToServe(q);
     const contrib=price-cs.total, perUnit=contrib/q;
     /* THE MINUTE THE ORDER STOPS PAYING. Contribution divided by what an hour of his own
@@ -14579,8 +14577,10 @@ function costPanel(){
      both books and in opposite directions. It was deleted at render from v372 until v384,
      which is why a hardcoded 2 outlived two months of trading unremarked. */
   const months=Math.max(1,finRows().length);
-  const small=sizes[0], big=sizes[sizes.length-1];
-  const pS=tier.prices[0], pB=tier.prices[sizes.length-1];
+  /* 27 Sep 2026: the two ends are the smallest and largest sizes the ask prices; a book it prices at no size says so */
+  const pi=sizes.map((q,i)=>i).filter(i=>tier.prices[i]>0), priced=pi.length>0;
+  const small=sizes[priced?pi[0]:0], big=sizes[priced?pi[pi.length-1]:sizes.length-1];
+  const pS=priced?tier.prices[pi[0]]:0, pB=priced?tier.prices[pi[pi.length-1]]:0;
   const cS=costToServe(small), cB=costToServe(big);
   const shareS=pS>0?(1/(pS-cS.total)*100):0, shareB=pB>0?(1/(pB-cB.total)*100):0;
   /* v385: THREE PARAGRAPHS OF THIS WERE NEVER ON THE PAGE. stripMethod cuts EVERY .insight
@@ -14643,8 +14643,8 @@ function costPanel(){
   </div>
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it <span class="sub" style="font-weight:400">${esc(tier.name)} card</span></h3>
-  <div class="card" style="margin-top:8px"><table><thead><tr><th class="l" style="white-space:normal">Size</th><th style="white-space:normal">${esc(tier.code)} price</th><th style="white-space:normal">Order earns</th><th style="white-space:normal">Per unit</th><th style="white-space:normal">Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
-  <div class="insight salt-insight" style="margin-top:10px">A ringgit more per order ${cS0>0.009?`is ${share(cS0)} a ${units(small)} order&rsquo;s earnings`:`is the whole of what a ${units(small)} order earns`}${both?`, and ${share(cB0)} a ${units(big)} one&rsquo;s, ${ratio} times harder at the small end`:`, and a ${units(big)} one does not cover its own cost`}.</div></div></details>`;
+  <div class="card" style="margin-top:8px"><table><thead><tr><th class="l" style="white-space:normal">Size</th><th style="white-space:normal">${esc(tier.name)} price</th><th style="white-space:normal">Order earns</th><th style="white-space:normal">Per unit</th><th style="white-space:normal">Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="insight salt-insight" style="margin-top:10px">${!priced?`<b>No ask on this book yet</b>, so no order has earnings to set a ringgit against.`:`A ringgit more per order ${cS0>0.009?`is ${share(cS0)} a ${units(small)} order&rsquo;s earnings`:`is the whole of what a ${units(small)} order earns`}${both?`, and ${share(cB0)} a ${units(big)} one&rsquo;s, ${ratio} times harder at the small end`:`, and a ${units(big)} one does not cover its own cost`}.`}</div></div></details>`;
 }
 
 /* ============ TAB: ORDER BOOK (by counterparty; open + pending positions only) ============ */
@@ -16210,11 +16210,6 @@ function replCost(){
   if(r!=null)return +r.toFixed(2);
   const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);
 }
-/* the total that clears the margin floor at replacement cost, rounded up to end in 5/0 */
-/* the total that clears the floor FOR THAT ORDER SIZE, rounded up to the nearest RM5
-   so a quote lands on a number you can say out loud. Called with no size it answers
-   for a single unit, which is the commonest question at the point of sale. */
-function floorPrice(q){return Math.ceil(replCost()/(1-floorPct(q==null?1:q)/100)/5)*5;}
 function median(a){if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 /* v409: WAS BARE `sales`, so a party's SALT history priced their OIL order. Surfaced the moment
    the Enter sheet could be on oil while the party's record was salt's: a RM 10.37/unit oil sale
@@ -16960,11 +16955,11 @@ function pxSignals(){
   const ep=grossMargin>0?exposure/grossMargin*100:0;
   const sr=ep>30?2:ep>15?1:0;
   out.push({k:'Receivables',v:sr,read:`${fmt0(exposure)} out with others, ${ep.toFixed(0)}% of the ${fmt0(grossMargin)} ever earned`});
-  // 5 margin realised against the bulk target
-  const wAnchorM=(PRICE.aWhole.total/PRICE.aWhole.q-c.eff)/(PRICE.aWhole.total/PRICE.aWhole.q)*100;
-  const gap=PRICE.floorPct.retail-marginPct;
-  const sm=gap>=10?2:gap>=5?1:gap<=-5?-1:0;
-  out.push({k:'Margin realised',v:sm,read:`book margin ${marginPct.toFixed(1)}% against the ${PRICE.floorPct.retail}% retail floor, ${gap>=0?'short by':'ahead by'} ${Math.abs(gap).toFixed(1)} points`});
+  /* 5 margin realised against the floor. 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): the engine's floor at each
+     order's own size over the units sold (pxMarket), no longer a 20% retail margin; the gap is the margin over it */
+  const A=pxMarket().all, h=(A.none||!(A.p>0))?null:(A.p-A.fl)/A.p*100;
+  const sm=h==null?0:h<=-10?2:h<=-5?1:h>=5?-1:0;
+  out.push({k:'Margin realised',v:sm,read:h==null?'nothing sold to set against the floor':`${fmt(A.p)}/unit realised against the ${fmt(A.fl)}/unit floor at the sizes sold, ${h>=0?'ahead by':'short by'} ${Math.abs(h).toFixed(1)}%`});
   const raw=out.reduce((a,x)=>a+x.v,0);
   return {rows:out,raw:+raw.toFixed(2),net:+Math.max(-PX.signalCap,Math.min(PX.signalCap,raw)).toFixed(2),capped:Math.abs(raw)>PX.signalCap,cost:c};
 }
@@ -20189,21 +20184,29 @@ function pxMarket(){
   /* v385: takes the whole row, so the one-offs-stripped segment goes through the same guard
      instead of being a second copy of the arithmetic beside it, which is how it came to be
      the one segment v379's lesson had not reached. */
+  /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): `fl` IS THE ENGINE'S FLOOR over the same units, floorTotal at
+     each order's own size on one cost stack, per unit; a segment is under its floor when p is under fl. The 20%
+     margin on price each segment was judged against is retired. */
+  const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
   const seg=f=>{const r=rows.filter(f);
     const k=+r.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s)),0).toFixed(2);
     const rm=+r.reduce((a,s)=>a+(s.total-txPendUnitsRaw(s)*txPrice(s)),0).toFixed(2);
     const none=!(k>0.009), p=none?null:rm/k;
     return {k,rm,none,thin:!none&&r.length<3,n:r.length,p:none?null:+p.toFixed(2),
-      m:(!none&&p>0)?+((p-c.eff)/p*100).toFixed(1):null};};
+      m:(!none&&p>0)?+((p-c.eff)/p*100).toFixed(1):null,fl:none?null:+flOf(r,k,c).toFixed(2)};};
   const all=seg(()=>true),small=seg(s=>s.qty<PX.bulkFrom),bulk=seg(s=>s.qty>=PX.bulkFrom);
   /* wholesale stripped of anything marked a one-off, because a single outlier at
      RM104/unit is what makes the wholesale average look survivable */
   const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer));
   const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
   /* the buying rate at which the realised bulk price would clear the floor
-     unchanged: back out the effective cost the floor allows, then strip the shrink load.
-     v385: null when wholesale has never traded, because there is no realised price to hold. */
-  const needRate=bulk.p==null?null:+(bulk.p*(1-PRICE.floorPct.wholesale/100)*(1-c.shrink)).toFixed(2);
+     unchanged. v385: null when wholesale has never traded, because there is no realised price to hold.
+     27 Sep 2026: SOLVED ON THE ENGINE'S OWN STACK, not backed out by hand. The floor is straight-line in the
+     buying rate (freight and the leak ride on it), so two probes of costStack at RM 0 and RM 1 fix the line and
+     the rate where it meets the realised price is read off it; nothing here restates the stack. */
+  const flAt=lot=>{const I=pxInputs();I.over={cost:lot,shrink:I.over.shrink};return flOf(rows.filter(s=>s.qty>=PX.bulkFrom),bulk.k,PRICING_ENGINE.costStack(I));};
+  const f0=bulk.none?null:flAt(0), f1=bulk.none?null:flAt(1);
+  const needRate=(bulk.p==null||!(f1>f0))?null:+((bulk.p-f0)/(f1-f0)).toFixed(2);
   return {c,all,small,bulk,bulkEx,excluded,needRate};
 }
 /* THE ACTIVE PRODUCT'S SUPPLY QUOTE (v228). One panel, driven by QUOTES, so a third
@@ -21211,18 +21214,20 @@ function tabPricing(){
        also read a one-order segment exactly as it reads an eighty-six-order one; oil's retail
        row IS one order. The count was already in the table and told you nothing, because
        nothing beside it changed when it said 1. */
-    const seg=(lab,s,floor,tone)=>{
+    /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): crimson when the realised rate is under the engine's floor
+       over the same units (pxMarket's fl), no longer under a 20% margin on price */
+    const seg=(lab,s,tone)=>{
       if(s.none)return `<tr style="opacity:.5"><td class="l">${lab}</td><td>0</td><td>&mdash;</td>`
         +`<td colspan="2" style="color:var(--dim)">nothing sold in this segment</td></tr>`;
-      const col=s.thin?'var(--gold)':s.m!=null&&s.m<floor?'var(--crim)':tone;
+      const col=s.thin?'var(--gold)':s.fl!=null&&s.p<s.fl-0.009?'var(--crim)':tone;
       return `<tr><td class="l">${lab}${s.thin?` <span class="tag salt-status salt-status--dashed prov">${s.n} order${s.n===1?'':'s'}</span>`:''}</td>`
         +`<td>${s.n}</td><td>${units(s.k)}</td><td${s.thin?' style="color:var(--gold)"':''}>${fmt(s.p)}/unit</td>`
         +`<td style="color:${col}">${s.m==null?'&mdash;':s.m.toFixed(1)+'%'}</td></tr>`;};
     return `<div class="card"><table><thead><tr><th class="l">Segment</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Margin at ${fmt(c.eff)}/unit</th></tr></thead><tbody>
-    ${seg('Everything sold',mk.all,PRICE.floorPct.wholesale,'var(--ink)')}
-    ${seg(`Small packs, under ${units(PX.bulkFrom)}`,mk.small,PRICE.floorPct.retail,'var(--grn)')}
-    ${seg(`Bulk, ${units(PX.bulkFrom)} and over`,mk.bulk,PRICE.floorPct.wholesale,'var(--ink)')}
-    ${mk.excluded.length?seg('Bulk, one-offs stripped',mk.bulkEx,PRICE.floorPct.wholesale,'var(--gold)'):''}
+    ${seg('Everything sold',mk.all,'var(--ink)')}
+    ${seg(`Small packs, under ${units(PX.bulkFrom)}`,mk.small,'var(--grn)')}
+    ${seg(`Bulk, ${units(PX.bulkFrom)} and over`,mk.bulk,'var(--ink)')}
+    ${mk.excluded.length?seg('Bulk, one-offs stripped',mk.bulkEx,'var(--gold)'):''}
   </tbody></table>`;})()}
   ${(mk.small.thin||mk.bulk.thin)?`<div class="dsc" style="margin-top:8px;color:var(--gold)"><b>A segment marked with a count is too small to read as a rate.</b> ${[mk.small.thin?`Retail is ${mk.small.n} order${mk.small.n===1?'':'s'}`:'',mk.bulk.thin?`wholesale is ${mk.bulk.n}`:''].filter(Boolean).join(' and ')}. The margin beside it is arithmetic on that ${mk.small.thin&&mk.small.n===1?'one sale':'handful'} and not a reading of what the trade pays.</div>`:''}
   ${(mk.excluded.length&&!mk.bulkEx.none)?`<div class="dsc" style="margin-top:8px;color:var(--gold)">${mk.excluded.map(s=>ID(s.customer)).join(', ')} ${mk.excluded.length===1?'is':'are'} marked a <b>one-off</b>, so the stripped row is the honest wholesale read. Including it lifts the wholesale average from <b>${fmt(mk.bulkEx.p)}/unit</b> to <b>${fmt(mk.bulk.p)}/unit</b>${(mk.bulkEx.m!=null&&mk.bulk.m!=null)?` and the margin from <b>${mk.bulkEx.m.toFixed(1)}%</b> to <b>${mk.bulk.m.toFixed(1)}%</b>`:''}. Price the trade off the stripped figure; the outlier was real money but it is not a benchmark.</div>`
@@ -21233,10 +21238,13 @@ function tabPricing(){
   <div class="dsc" style="margin-top:8px">${mk.all.none?`Nothing has been sold on this book yet, so there is no realised rate to set against the board.`
    :`The desk has actually been paid <b>${fmt(mk.all.p)}/unit</b> across ${units(mk.all.k)}, worth <b>${mk.all.m==null?'&mdash;':mk.all.m.toFixed(1)+'%'}</b> against today&rsquo;s effective cost, and the two halves are judged against their own floors. `
     +(mk.small.none?`<b>Retail</b> has never traded on this book. `
-      :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?'&mdash;':mk.small.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.retail}% floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.m>=PRICE.floorPct.retail?'ahead of':'under'}</b> policy. `}`)
+      :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?'&mdash;':mk.small.m.toFixed(1)+'%'}</b> against its ${fmt(mk.small.fl)}/unit floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.p>=mk.small.fl-0.009?'over':'under'}</b> the floor. `}`)
     +(mk.bulk.none?`<b>Wholesale</b> has never traded on this book, so the buying lever below cannot be worked out yet.`
-      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.wholesale}% floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.m>=PRICE.floorPct.wholesale?'ahead of':'under'}</b> policy but earning very little: at the realised ${fmt(mk.bulk.p)}/unit a ${units(PRICE.aWhole.q)} lot returns about ${fmt0((mk.bulk.p-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${units(PRICE.aRetail.q)} retail lot.`}`)
-    +(mk.needRate==null?'':`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the inventory is bought cheaper.`)}</div></div>
+      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against its ${fmt(mk.bulk.fl)}/unit floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.p>=mk.bulk.fl-0.009?'over':'under'}</b> the floor but earning very little: at the realised ${fmt(mk.bulk.p)}/unit a ${units(PRICE.aWhole.q)} lot returns about ${fmt0((mk.bulk.p-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${units(PRICE.aRetail.q)} retail lot.`}`)
+    /* 27 Sep 2026: the lever is only a lever while wholesale is under its floor; over it, the same figure is the
+       most the buying rate can reach before it is */
+    +(mk.needRate==null?'':mk.bulk.p>=mk.bulk.fl-0.009?`<br><br>The realised wholesale price clears its floor at any buying rate up to <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote.`
+      :`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the inventory is bought cheaper.`)}</div></div>
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
@@ -21440,34 +21448,33 @@ function priceBuckets(){
    THREE sentences inside one insight, so the volume-below-cost figure and the closing line have
    never been on the page at all: what showed was the superlative and nothing else. The finding is
    the insight, one sentence; the detail is a .dsc inside the same fold, which survives whole.
-   AND THE 20% LINE IS NOT THE BOARD'S FLOOR. Two different things were both called the floor on
-   one view, and since 27 Aug they are further apart than ever: this one is a percentage over
-   replacement cost, the board's is break-even and carries his time. The sentence says so. */
+   27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): THE LINE IS THE BOARD'S FLOOR NOW. It was a 20% margin
+   over replacement cost, a second floor on the same view; each order is set against floorTotal at its
+   own size, and the sentence prints that floor's rate. */
 function priceNote(){
   const pts=priceBuckets();
   if(!pts.length)return '<div class="insight salt-insight">No priced trade yet.</div>';
   const byUnits=pts.slice().sort((a,b)=>b.kg-a.kg)[0], byRM=pts.slice().sort((a,b)=>b.rm-a.rm)[0];
   const nOrd=pts.reduce((a,x)=>a+x.n,0);
-  /* judged against the BULK floor, the most forgiving of the three, so this reads as
-     a floor no trade of any size should fall under rather than an unfair single-unit
-     test applied to a 12.5 unit lot. */
-  /* 08 Sep 2026: ONE THRESHOLD FOR THE COUNT AND THE SENTENCE. The share was measured at the exact
-     line and the sentence printed floorPrice(12), the same line rounded up to the five, so a bucket
-     between the two made "14% sold below RM 65" wrong by that bucket. */
-  const rc=replCost(),flB=PRICE.floorPct.wholesale,wline=rc/(1-flB/100),under=pts.filter(x=>x.p<wline);
-  const underUnits=under.reduce((a,x)=>a+x.kg,0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
+  /* 08 Sep 2026: ONE THRESHOLD FOR THE COUNT AND THE SENTENCE. 27 Sep 2026: the threshold is the engine's
+     floor at each order's own size, on one cost stack, over the units priceBuckets counts */
+  const C=pxCost(),P=pxPolicy(),sold=pricedSales.filter(s=>s.qty-txPendUnitsRaw(s)>0&&s.total>0);
+  const flRate=s=>PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
+  const lo=Math.min.apply(null,rates), hi=Math.max.apply(null,rates);
+  const underUnits=sold.filter(s=>txGoods(s)/s.qty<flRate(s)-0.009).reduce((a,s)=>a+s.qty-txPendUnitsRaw(s),0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
+  const line=hi-lo<0.005?`the ${fmt(lo)}/unit floor`:`the floor at its size, ${fmt(lo)} to ${fmt(hi)}/unit`;
   /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
      NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this
      ran 130 characters on salt and 132 on oil against a limit of 140, which is headroom rather
      than safety: a replacement cost in three figures tips it and the bold comes off the one number
      the sentence exists for. The definition belongs beside the sentence that already explains the
      line anyway. */
-  return `<div class="insight salt-insight"><b>${(underUnits/totUnits*100).toFixed(0)}% of your volume</b> has sold below ${fmt(wline)}/unit.</div>`
+  return `<div class="insight salt-insight"><b>${(underUnits/totUnits*100).toFixed(0)}% of your volume</b> has sold under ${line}.</div>`
    +`<div class="dsc" style="margin-top:9px">${nOrd} priced order${nOrd===1?'':'s'} at ${pts.length} distinct price${pts.length===1?'':'s'}. `
    +(byUnits.n<3
       ? `Too few at any one price to call one of them busiest: the largest is ${fmt0(byUnits.p)}/unit, ${byUnits.n===1?'a single order':byUnits.n+' orders'} and ${units(byUnits.kg)}.`
       : `The busiest is <b>${fmt0(byUnits.p)}/unit</b>, ${byUnits.n} orders and ${units(byUnits.kg)}; the price earning most is <b>${fmt0(byRM.p)}/unit</b> at ${fmt0(byRM.rm)}.`)
-   +` That ${fmt(wline)}/unit is the rate clearing the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost. It is a percentage over cost and it is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
+   +` The floor is the board&rsquo;s own at each size: COGS plus leakage, on today&rsquo;s cost.</div>`;
 }
 /* ============ THE BOARD, DRAWN (v246) ============
    Two questions the tables answer badly. FIRST, the SHAPE: a table of thirty prices does not

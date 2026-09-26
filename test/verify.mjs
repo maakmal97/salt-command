@@ -3147,7 +3147,11 @@ await (async () => {
       /* a percentage OR a multiple: v401 states a ringgit as a multiple of any contribution
          under a ringgit, because "200.0% of what it earns" is not a share. Either form is a
          figure, and a figure is what the strip would have taken. */
-      ok(/\d[\d.]*\s?(%|times)/.test(t), `${pr}: and it survives the strip carrying its figures ("${t.slice(0, 60)}...")`);
+      /* 27 Sep 2026 (Rule 5 readings): the panel reads the ask, and a book the ask prices at no size (spare, with no
+         cost and no trade) has no earnings to take a share of, so it says that instead, still in bold */
+      const askPriced = read("PRICING_ENGINE.ladderRow(shownSizes(PROD),pxCost(),pxPolicy()).find(function(r){return r.code==='T2';}).prices.some(function(p){return p>0;})");
+      ok(askPriced ? /\d[\d.]*\s?(%|times)/.test(t) : /^No ask on this book yet, so no order has earnings/.test(t),
+        `${pr}: and it survives the strip carrying its figures, or says the ask prices nothing (${askPriced}: "${t.slice(0, 60)}...")`);
       /* the cut writes textContent, which destroys every child element, so surviving
          emphasis is the proof that the block stayed under NOTE_MIN and was never cut.
          Measuring the RENDERED length instead proves nothing: it is short either way. */
@@ -12176,7 +12180,8 @@ await (async () => {
   try {
     const day = rdW("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
     const ft = rdW("floorTotal(12.5)");
-    const band = rdW("(function(){var C=pxCost(),e=(C&&C.effEx!=null)?C.effEx:(C?C.eff:null);return e*12.5/(1-floorPct(12.5)/100);})()");
+    /* 27 Sep 2026: floorPct is retired from the master, so the retired band's 20% margin on price is stated here */
+    const band = rdW("(function(){var C=pxCost(),e=(C&&C.effEx!=null)?C.effEx:(C?C.eff:null);return e*12.5/(1-20/100);})()");
     ok(ft > 200, "the ladder's floor at 12.5 unit is a real figure to test against: " + ft);
     ok(band > ft + 1, `the guard: the retired band formula asks more than the ladder's floor at 12.5 unit (RM ${Math.round(band)} against RM ${Math.round(ft)}), so a sale between the two tells them apart`);
     const before = rdW(CARDS);
@@ -12201,6 +12206,82 @@ await (async () => {
     ok(nc && / no cost of their own$/.test(nc.title), "and says their own of more than one: " + (nc && nc.title));
     ok(nc && !/RM64|RM47/.test(nc.why), "and its reason states no buying rate by hand");
   } finally { try { wW.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("27 Sep 2026: Rule 5 readings, the ask by code and one floor");
+await (async () => {
+  /* HIS APPROVAL OF 27 SEP 2026. The cost panel read the retired tier M and fell back by index to Tier I (RM 80 a
+     unit against an ask of RM 140); and PRICE.floorPct, a 20% margin on price, ran a second floor under five
+     readings. Each reading is set here against the engine's own primitives (priceLadder, floorTotal) on fixture rows
+     placed between the engine floor and the retired 20% line, so the two floors give different answers. */
+  const { openMaster: omR } = await import("../tools/payload.mjs");
+  const { pricingSnapshot: psR } = await import("../tools/book.mjs");
+  const { w: wR } = await omR();
+  const rdR = (e) => JSON.parse(String(wR.eval("JSON.stringify(" + e + ")")));
+  const txt = (h) => "(function(){var d=document.createElement('div');d.innerHTML=" + h + ";return d.textContent.replace(/\\s+/g,' ');})()";
+  try {
+    /* 1. the cost panel prices each size at the ask, the ladder row found by its code */
+    const cp = rdR("(function(){var d=document.createElement('div');d.innerHTML=costPanel();"
+      + "var t=[].slice.call(d.querySelectorAll('table')).find(function(x){return /Order earns/.test(x.textContent);});"
+      + "var sz=shownSizes(PROD),row=PRICING_ENGINE.ladderRow(sz,pxCost(),pxPolicy()).find(function(r){return r.code==='T2';});"
+      + "return {shown:[].slice.call(t.querySelectorAll('tbody tr')).map(function(r){return r.children[1].textContent.trim();}),"
+      + "ask:sz.map(function(q){return fmt0(priceLadder(q).ask.total);}),head:t.querySelector('thead').textContent,name:row.name};})()");
+    ok(cp.shown.length > 3 && cp.shown.join("|") === cp.ask.join("|") && cp.head.includes(cp.name + " price"),
+      "the cost panel's price at every size is the ask, the ladder's T2 row by code, and its column is named for it: " + JSON.stringify(cp));
+
+    /* the fixture: salt at 12.5 unit, one sale just over the engine floor, one under it, one open and under it, each
+       row's own cost set so the retired 20% line would have caught the first */
+    const ft = rdR("floorTotal(12.5)"), day = rdR("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
+    const cost = +(((ft - 50) + 0.8 * (ft + 1)) / 2).toFixed(2);
+    const scan = () => rdR("(function(){var b=boundaryScan().filter(function(x){return x.rule==='Margin floor';});"
+      + "var c=b.find(function(x){return x.who==='&mdash;';});return {n:c?parseInt(c.what,10):0,rm:c?+c.why.replace(/^worth about \\D*([\\d,]+).*$/,'$1').replace(/,/g,''):0,"
+      + "open:b.filter(function(x){return x.who==='CZ9-OPN';}).map(function(x){return x.why;})};})()");
+    const b0 = scan();
+    wR.eval("(function(){sales.push({customer:'CZ7-OVR',qty:12.5,total:" + (ft + 1) + ",cash:" + (ft + 1) + ",deliveredQty:12.5,deliveredOn:'" + day + "',date:'" + day + "',cost:" + cost + "});"
+      + "sales.push({customer:'CZ8-UND',qty:12.5,total:" + (ft - 50) + ",cash:" + (ft - 50) + ",deliveredQty:12.5,deliveredOn:'" + day + "',date:'" + day + "',cost:" + cost + "});"
+      + "sales.push({customer:'CZ9-OPN',qty:12.5,total:" + (ft - 60) + ",cash:0,deliveredQty:12.5,deliveredOn:'" + day + "',date:'" + day + "',cost:" + cost + "});recompute();})()");
+    const b1 = scan();
+    /* 2. the register: the sale over the engine floor is not listed, the one under it is, by what it is under */
+    ok(cost > 0.8 * (ft + 1) && cost < ft - 60 && b1.n - b0.n === 1 && Math.abs(b1.rm - b0.rm - 50) <= 1
+      && b1.open.length === 1 && b1.open[0].endsWith("and under the " + rdR("fmt0(" + ft + ")") + " floor at 12.5 unit"),
+      "the boundary register reads the engine's floor at the order's own size: one closed sale added under it, RM 50 short, and the open one named under that floor: "
+      + JSON.stringify({ ft, cost, b0, b1 }));
+
+    /* the engine's floor over the units each segment sold, from floorTotal, and the realised rates */
+    const E = rdR("(function(){var rows=pricedSales.filter(function(s){return s.total>0&&s.qty>0;});"
+      + "function agg(rs){var k=0,f=0,rm=0;rs.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);k+=m;f+=floorTotal(s.qty)/s.qty*m;rm+=s.total-txPendUnitsRaw(s)*txPrice(s);});return {k:k,fl:+(f/k).toFixed(2),p:+(rm/k).toFixed(2)};}"
+      + "var sold=rows.filter(function(s){return s.qty-txPendUnitsRaw(s)>0;}),u=0,t=0;"
+      + "sold.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);t+=m;if(txGoods(s)/s.qty<floorTotal(s.qty)/s.qty-0.009)u+=m;});"
+      + "return {all:agg(rows),small:agg(rows.filter(function(s){return s.qty<PX.bulkFrom;})),bulk:agg(rows.filter(function(s){return s.qty>=PX.bulkFrom;})),share:(u/t*100).toFixed(0),rate:fmt(floorTotal(1))};})()");
+    const mk = rdR("pxMarket()");
+    const pricing = rdR(txt("tabPricing()"));
+    /* 3. the market segments stand against that floor, and the prose prints it */
+    ok(mk.all.fl === E.all.fl && mk.small.fl === E.small.fl && mk.bulk.fl === E.bulk.fl
+      && pricing.includes("against its " + rdR("fmt(" + mk.small.fl + ")") + "/unit floor") && pricing.includes("against its " + rdR("fmt(" + mk.bulk.fl + ")") + "/unit floor"),
+      "each market segment's floor is the engine's over the units it sold, and the page sets each half against it: " + JSON.stringify({ mk: { all: mk.all.fl, small: mk.small.fl, bulk: mk.bulk.fl }, E }));
+
+    /* 4. the buying lever: bought at needRate, the bulk floor meets the realised bulk rate */
+    const lever = rdR("(function(){var keep=pxOver.cost,m=pxMarket();pxOver.cost=m.needRate;try{var rs=pricedSales.filter(function(s){return s.total>0&&s.qty>=PX.bulkFrom;}),k=0,f=0;"
+      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=floorTotal(s.qty)/s.qty*u;});return {need:m.needRate,p:m.bulk.p,fl:f/k};}finally{pxOver.cost=keep;}})()");
+    ok(lever.need != null && Math.abs(lever.fl - lever.p) < 0.01,
+      "the buying rate the lever names is the one at which the engine's bulk floor meets the realised bulk price: " + JSON.stringify(lever));
+
+    /* 5. the share of volume under the line is the share under the engine's floor at each order's size */
+    const note = rdR(txt("priceNote()"));
+    ok(note.includes(E.share + "% of your volume has sold under the " + E.rate + "/unit floor"),
+      "the volume sentence counts the units sold under the engine's floor at their own size, and names that floor: " + JSON.stringify({ note: note.slice(0, 120), E: { share: E.share, rate: E.rate } }));
+
+    /* 6. the margin-realised signal is the margin over that floor, on the same thresholds */
+    const sg = rdR("pxSignals().rows.find(function(r){return r.k==='Margin realised';})");
+    const h = (E.all.p - E.all.fl) / E.all.p * 100, v = h <= -10 ? 2 : h <= -5 ? 1 : h >= 5 ? -1 : 0;
+    ok(sg && sg.v === v && sg.read.includes(rdR("fmt(" + E.all.fl + ")") + "/unit floor") && sg.read.endsWith((h >= 0 ? "ahead by " : "short by ") + Math.abs(h).toFixed(1) + "%"),
+      "the margin-realised signal reads the realised rate against the engine's floor at the sizes sold: " + JSON.stringify({ sg, h, v }));
+
+    /* 7. the retired floor is gone from the desk and from the drafter's snapshot */
+    const snap = psR(wR);
+    ok(rdR("typeof floorPct==='undefined'&&typeof floorPrice==='undefined'&&typeof BAND_LABEL==='undefined'&&PRICE.floorPct===undefined") === true && !("floorPct" in snap),
+      "floorPct, floorPrice and the band label are retired, and the pricing snapshot carries no second floor: " + Object.keys(snap).join(","));
+  } finally { try { wR.close(); } catch (e) { /* best effort */ } }
 })();
 
 
@@ -33057,7 +33138,7 @@ await (async () => {
   /* B. THE CARD DREW A ROW THAT NO LONGER IS: refused with the fresh one, and nothing stored or moved */
   const o2 = await place(U1, 1, 100, "collect");
   const pvOld = await call("/orders/" + o2.id + "/preview", {});
-  setState("PRICING", Object.assign({}, PRICING, { floorPct: 1 }));
+  setState("PRICING", Object.assign({}, PRICING, { probe: 1 }));
   const a2 = await call("/orders/" + o2.id + "/accept", { hash: pvOld.j.hash });
   setState("PRICING", PRICING);
   ok(a2.status === 409 && a2.j.differs === true && a2.j.preview && a2.j.preview.hash !== pvOld.j.hash && !preOf(o2.id)
