@@ -3599,9 +3599,10 @@ await (async () => {
        two cells went red. There is one tier column now and no book states a second, so the same
        three claims are made about the column that exists. The cell-by-cell read is the one that
        matters and is kept in the same shape: it is the only check that would catch a board printing
-       one level's prices under another's name. */
-    ok(L05.ask.total > 60 && L125.ask.total > 875,
-      `the ask stands above the ends the retired tier stated (${L05.ask.total} over 60, ${L125.ask.total} over 875)`);
+       one level's prices under another's name.
+       26 Sep 2026, his call: the check that the ask stands above the retired tier's two ends (RM60 at half a
+       unit, RM875 at twelve and a half) is dropped, and so is the one that the forced pair sits at or under
+       the ask; both compared a retired tier with a live ask, which a lower quote moves, so neither was a fault. */
     const boardTx = String(w.eval("(function(){var ts=document.querySelectorAll('.sec.on table.pxboard');"
       + "for(var i=0;i<ts.length;i++)if(/^COGS/.test(ts[i].rows[0].cells[1].textContent))return ts[i].textContent;return '';})()"));
     ok(boardTx.length > 0 && boardTx.indexOf("RM 875") < 0,
@@ -3636,11 +3637,10 @@ await (async () => {
     const sz = JSON.parse(w.eval("JSON.stringify(shownSizes('salt'))"));
     const POL1 = "Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875}})";
     const walked = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Walk(" + JSON.stringify(sz) + ", pxCost(), " + POL1 + "))"));
-    let fall = true, cheaper = true, clears = true;
+    let fall = true, clears = true;
     for (let i = 1; i < walked.length; i++) if (walked[i].p / walked[i].q > walked[i - 1].p / walked[i - 1].q + 1e-9) fall = false;
     sz.forEach((q, i) => {
       const L = JSON.parse(w.eval("JSON.stringify(priceLadder(" + q + "))"));
-      if (walked[i].p > L.ask.total + 1e-9) cheaper = false;
       if (walked[i].p < L.floor.total - 0.009) clears = false;
     });
     ok(walked.length === sz.length && walked[0].p === 60, "a book that DOES state two ends is still walked between them: " + JSON.stringify(walked.map((x) => x.p)));
@@ -3676,8 +3676,7 @@ await (async () => {
       ok(ends.length === 2 && ends[0].rate === 60 && ends[1].rate === 80,
         `while his two stated ends print verbatim through it, the rising one included (${ends.map((e) => e.q + "u at " + e.rate).join(", ")})`);
     }
-    ok(cheaper, "a stated Tier 1 is at or under the ask at every printed size, so a board carrying both rises left to right");
-    ok(clears, "and every rung of it clears break-even on today's cost, so none carries a gap");
+    ok(clears, "every rung of the forced pair clears break-even on today's cost, so none carries a gap");
     /* AND A BOOK WITH NO SECOND TIER RETURNS NOTHING RATHER THAN SALT'S. Without the explicit
        tier1:null in LADDER_BY, ladderFor spreads LADDER underneath and oil inherits salt's ends:
        every oil size clamps to 12.5, the rate lands at RM70 a unit, and ten units of oil that
