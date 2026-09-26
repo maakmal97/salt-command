@@ -1,6 +1,6 @@
 {
- "v": "v876",
- "stamped": "26 Sep 2026, 13:22 KL",
+ "v": "v877",
+ "stamped": "26 Sep 2026, 19:47 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5365,6 +5365,16 @@
     "paidOn": "2026-09-25",
     "note": "<b>SALT SELL DATED 25 SEP, PAID IN FULL AND TAKEN IN FULL.</b> Booked to CM6-PJ, 1 unit for RM100 at RM100 a unit, RM100 cash in on 25 Sep 2026 and 1 of 1 unit collected the same day, so nothing is owed and nothing is left to move. Costed at RM48 a unit from the desk's own inventory cost, RM52 on the goods at 52%. The total clears the RM58.40 floor for 1 unit and sits under the RM140 ask, ceiling RM160. On two prior orders their median rate is RM100, range RM90 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1. Not an associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
     "rid": "s204"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 1.5,
+    "total": 150,
+    "cash": 0,
+    "date": "2026-09-26",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CS6-PER, 1.5 unit for RM150 at RM100 a unit, order 20260926114537-jhxzow, to collect. Costed at RM56 a unit, the desk's own inventory cost, RM66 on the goods at 44%. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. On eight prior orders: median RM70.40, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter put their habit near RM80; the dossier median is RM70.40, so the rate sits above habit, at the top of the range. It draws no stock; RM150 and 1.5 unit stay open.",
+    "rid": "s205"
    }
   ],
   "contacts": [
@@ -6103,9 +6113,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T05:17:45.843Z",
+  "QUEUE_COMMITTED": "2026-09-26T11:46:33.887Z",
   "PRICING": {
-   "takenAt": "2026-09-26T05:22:57.345Z",
+   "takenAt": "2026-09-26T11:47:29.395Z",
    "sizes": [
     0.5,
     1,
@@ -6144,11 +6154,11 @@
     "CJ4-BJ": {
      "salt": "Platinum"
     },
-    "CM4-MK": {
-     "salt": "Platinum"
-    },
     "CS6-PER": {
      "salt": "Titanium"
+    },
+    "CM4-MK": {
+     "salt": "Platinum"
     },
     "CE4-CHE": {
      "salt": "Titanium"
@@ -6316,24 +6326,6 @@
       "lateTwice": true
      }
     },
-    "CM4-MK": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 11,
-      "tenureDays": 65,
-      "sinceLastDays": 7,
-      "perMonth": 5.15,
-      "smallShare": 0,
-      "bigShare": 0.45,
-      "late": 0,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CS6-PER": {
      "salt": {
       "name": "large and regular",
@@ -6364,6 +6356,24 @@
       "small": false,
       "bigger": true,
       "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CM4-MK": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 11,
+      "tenureDays": 65,
+      "sinceLastDays": 7,
+      "perMonth": 5.15,
+      "smallShare": 0,
+      "bigShare": 0.45,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
       "rare": false,
       "lateTwice": false
      }
@@ -7633,56 +7643,6 @@
         900
        ]
       ],
-      "CM4-MK": [
-       [
-        0.5,
-        50
-       ],
-       [
-        1,
-        100
-       ],
-       [
-        1.5,
-        150
-       ],
-       [
-        2,
-        200
-       ],
-       [
-        2.5,
-        250
-       ],
-       [
-        3,
-        300
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
       "CS6-PER": [
        [
         0.5,
@@ -7731,6 +7691,56 @@
        [
         12.5,
         1060
+       ]
+      ],
+      "CM4-MK": [
+       [
+        0.5,
+        50
+       ],
+       [
+        1,
+        100
+       ],
+       [
+        1.5,
+        150
+       ],
+       [
+        2,
+        200
+       ],
+       [
+        2.5,
+        250
+       ],
+       [
+        3,
+        300
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        560
+       ],
+       [
+        12.5,
+        1070
        ]
       ],
       "CE4-CHE": [
@@ -9865,7 +9875,7 @@
         450
        ]
       ],
-      "CM4-MK": [
+      "CS6-PER": [
        [
         10,
         130
@@ -9887,7 +9897,7 @@
         450
        ]
       ],
-      "CS6-PER": [
+      "CM4-MK": [
        [
         10,
         130
@@ -10964,7 +10974,7 @@
         1500
        ]
       ],
-      "CM4-MK": [
+      "CS6-PER": [
        [
         1,
         60
@@ -10986,7 +10996,7 @@
         1500
        ]
       ],
-      "CS6-PER": [
+      "CM4-MK": [
        [
         1,
         60
@@ -12013,7 +12023,7 @@
         60
        ]
       ],
-      "CM4-MK": [
+      "CS6-PER": [
        [
         1,
         8
@@ -12027,7 +12037,7 @@
         60
        ]
       ],
-      "CS6-PER": [
+      "CM4-MK": [
        [
         1,
         8
@@ -12708,12 +12718,26 @@
      "cards": {}
     }
    },
-   "v": "v876"
+   "v": "v877"
   },
   "OPEN": {
-   "at": "2026-09-26T05:22:57.584Z",
-   "count": 7,
+   "at": "2026-09-26T11:47:29.638Z",
+   "count": 8,
    "byKey": {
+    "CS6-PER|2026-09-26|150": {
+     "d": "2026-09-26",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 1.5,
+     "t": 150,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 150,
+     "oweUnits": 1.5,
+     "rid": "s205",
+     "key": "CS6-PER|2026-09-26|150"
+    },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
      "p": "CR3-DAM",
@@ -12835,9 +12859,9 @@
      "free": 3.5,
      "owedOut": 9.5,
      "coverDays": 1,
-     "rate": 5.89,
+     "rate": 5.96,
      "owedToYou": 390,
-     "promised": 9.5,
+     "promised": 11,
      "short": 0
     },
     "oil": {
@@ -12892,7 +12916,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v876"
+   "v": "v877"
   }
  }
 }
