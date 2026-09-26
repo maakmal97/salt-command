@@ -9417,7 +9417,7 @@ await (async () => {
     const BM = j9(dirM, "book.json"), MM = j9(dirM, "salt_command.html"), SM = j9(dirM, "_to_fold.json");
     cp9(j9(REPO, "ledger", "book.json"), BM); cp9(j9(REPO, "master", "salt_command.html"), MM); cp9(j9(REPO, "master", "changelog.json"), j9(dirM, "changelog.json")); cp9(S9, SM);
     const env = { ...process.env, ANTHROPIC_BASE_URL: "http://127.0.0.1:" + srv.address().port, ANTHROPIC_API_KEY: "sk-fixture-not-a-key", ANTHROPIC_AUTH_TOKEN: "",
-      SALT_FOLD_TIMEOUT_MS: "10000", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", CLOUDFLARE_API_TOKEN: "" };
+      SALT_FOLD_TIMEOUT_MS: "10000", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", SALT_FOLD_MODEL: "", CLOUDFLARE_API_TOKEN: "" };
     const call = (args) => new Promise((res) => {
       let out = "";
       const c = sp9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args], { cwd: REPO, env, stdio: ["ignore", "pipe", "pipe"] });
@@ -9440,6 +9440,8 @@ await (async () => {
     const sentSchema = schemaOf(sent);
     ok(sentSchema && JSON.stringify(sentSchema) === JSON.stringify(s60),
       "the schema the fold's call sent is the one schema built for 60 rows (" + (sentSchema ? unionsIn(sentSchema) + " union(s)" : "no request") + ")");
+    ok(sent && sent.model === "claude-opus-5-5", "with SALT_FOLD_MODEL unset the fold calls claude-opus-5-5, his instruction of 26 Sep 2026 (" + (sent && sent.model) + ")");
+    ok(sent && sent.max_tokens >= 16000, "and leaves room for the thinking Opus 5.5 always does (max_tokens " + (sent && sent.max_tokens) + ")");
     rm9(dirM, { recursive: true, force: true });
   }
   /* a fake reply that breaks the rules is refused, and nothing is folded */

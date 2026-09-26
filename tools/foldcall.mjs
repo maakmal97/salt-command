@@ -16,7 +16,7 @@
  *   node tools/foldcall.mjs --no-model write the notes with the tool and never call at all
  *   SALT_FOLD_FAKE=<notes.json>        use this reply instead of calling (the suite)
  *   SALT_FOLD_NOMODEL=1                as --no-model, for a runner that cannot add a flag
- *   SALT_FOLD_MODEL                    default claude-opus-5
+ *   SALT_FOLD_MODEL                    default claude-opus-5-5
  *   --staged --book --master --notes --folded --today   as fold.mjs takes them, passed through
  *
  * WHAT IT WRITES. master/_fold_notes.json, then everything fold.mjs --apply writes. It does
@@ -52,7 +52,7 @@ const STAGED = opt("--staged", resolve(dirname(MASTER), "_to_fold.json"));
 const NOTES = opt("--notes", resolve(dirname(MASTER), "_fold_notes.json"));
 const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
 const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));
-const MODEL = process.env.SALT_FOLD_MODEL || "claude-opus-5";
+const MODEL = process.env.SALT_FOLD_MODEL || "claude-opus-5-5";   /* his instruction of 26 Sep 2026 */
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const dayOf = (iso) => { const [y, m, d] = iso.split("-"); return `${d} ${MON[+m - 1]} ${y}`; };
 const r2 = (v) => v == null ? null : +(+v).toFixed(2);
@@ -232,7 +232,10 @@ THE DOSSIER, as JSON. Everything you may cite is in it.
 ${JSON.stringify(d, null, 1)}
 
 Reply with the notes JSON only: version "${d.version.next}", the title, the notes array, rows for exactly these ids ${JSON.stringify(ids)}, stockNote, stockCost, stockCostNote.`;
-  return { model: MODEL, max_tokens: 4000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor() } } };
+  /* 16000, not 4000 (26 Sep 2026): Opus 5.5 always thinks, the thinking counts against max_tokens,
+     and it thinks more than Opus 5 at the same effort, so 4000 could cut a large batch's JSON short.
+     The LENGTH rule keeps the notes short; the ceiling is for the thinking. */
+  return { model: MODEL, max_tokens: 16000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor() } } };
 }
 
 /* THE CALL IS BOUNDED, SO THE FOLD NEVER WAITS ON IT (26 Sep 2026). The client used to keep the
