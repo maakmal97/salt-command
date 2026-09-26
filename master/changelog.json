@@ -1,5 +1,14 @@
 [
  {
+  "v": "v880",
+  "d": "26 Sep 2026",
+  "t": "S205 COLLECTED, NOTHING LEFT OPEN",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> Order s205 to CS6-PER, 1.5 unit of salt for RM150, was already paid in full by QR on 26 Sep. This fold records the collection the same day: deliveredQty set to 1.5, deliveredOn to 26 Sep and handover to collected, preapproved by phone. The row now stands paid and collected, with nothing outstanding for CS6-PER and nothing on credit.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The row carries a trail of two Fulfilment steps that will no longer add up to the figure set directly; the correction is recorded beside them. The drafter's RM80 typical rate does not match the dossier's RM85.52 median. The shelf rolls by 1.5 unit out to CS6-PER. No lot landed, so the RM56 inventory cost stands.</p>"
+  ]
+ },
+ {
   "v": "v879",
   "d": "26 Sep 2026",
   "t": "ONE SALT ORDER FOR CS6-BS-R, AND A TOTAL TO CHECK",

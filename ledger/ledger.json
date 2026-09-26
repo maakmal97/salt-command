@@ -1,6 +1,6 @@
 {
- "v": "v879",
- "stamped": "26 Sep 2026, 21:03 KL",
+ "v": "v880",
+ "stamped": "26 Sep 2026, 21:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13,
+  "STATED_STOCK": 11.5,
   "COUNT_ON": {
    "salt": "2026-09-23",
    "oil": "2026-09-24",
@@ -5372,8 +5372,8 @@
     "total": 150,
     "cash": 150,
     "date": "2026-09-26",
-    "deliveredQty": 0,
-    "note": "<b>PAID IN FULL ON 26 SEP, RM150 BY QR; 1.5 UNIT STILL TO COLLECT.</b> <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CS6-PER, 1.5 unit for RM150 at RM100 a unit, order 20260926114537-jhxzow, to collect. Costed at RM56 a unit, the desk's own inventory cost, RM66 on the goods at 44%. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. On eight prior orders: median RM70.40, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter put their habit near RM80; the dossier median is RM70.40, so the rate sits above habit, at the top of the range. It draws no stock; RM150 and 1.5 unit stay open.",
+    "deliveredQty": 1.5,
+    "note": "<b>COLLECTED 26 SEP, 1.5 UNIT; NOTHING LEFT OPEN.</b> <b>CORRECTION ON S205: 1.5 UNIT COLLECTED ON 26 SEP.</b> Against CS6-PER's order of 1.5 unit for RM150 at RM100 a unit, dated 26 Sep 2026, order 20260926114537-jhxzow, already paid in full by QR. Sets deliveredQty from 0 to 1.5, deliveredOn to 26 Sep and handover to collected; preapproved by phone. Costed at RM56 a unit, the inventory's own. The dossier gives no floor or ask for this size. On 9 orders: median RM85.52, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit; an associate, on the roster. The drafter's RM80 median does not match the dossier's RM85.52. The two-step trail no longer adds up to the set figure, as flagged. Nothing stays open. <b>PAID IN FULL ON 26 SEP, RM150 BY QR; 1.5 UNIT STILL TO COLLECT.</b> <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CS6-PER, 1.5 unit for RM150 at RM100 a unit, order 20260926114537-jhxzow, to collect. Costed at RM56 a unit, the desk's own inventory cost, RM66 on the goods at 44%. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. On eight prior orders: median RM70.40, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter put their habit near RM80; the dossier median is RM70.40, so the rate sits above habit, at the top of the range. It draws no stock; RM150 and 1.5 unit stay open.",
     "rid": "s205",
     "amend": [
      {
@@ -5389,9 +5389,20 @@
       "cash": 150,
       "kg": 0,
       "note": "<b>FULFILMENT ON S205: RM150 PAID ON 26 SEP, NOTHING COLLECTED YET.</b> Against CS6-PER's salt order of 1.5 unit for RM150 at RM100 a unit dated 26 Sep 2026, RM150 came in on 26 Sep by QR on the statements site, order 20260926114537-jhxzow; preapproved by phone. The total clears the RM87.60 floor for 1.5 unit and sits under the RM210 ask. The order stays costed at RM56 a unit, the desk's own inventory cost. On nine orders: median RM85.52, range RM11 to RM100, RM150 outstanding before this, none defaulted, 0 unit on credit against a cap of 2; an associate, on the roster. The drafter flagged nothing. It draws no stock; RM0 is owed and 1.5 unit stays to collect."
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S205: 1.5 UNIT COLLECTED ON 26 SEP.</b> Against CS6-PER's order of 1.5 unit for RM150 at RM100 a unit, dated 26 Sep 2026, order 20260926114537-jhxzow, already paid in full by QR. Sets deliveredQty from 0 to 1.5, deliveredOn to 26 Sep and handover to collected; preapproved by phone. Costed at RM56 a unit, the inventory's own. The dossier gives no floor or ask for this size. On 9 orders: median RM85.52, range RM11 to RM100, nothing outstanding, none defaulted, 0 unit on credit; an associate, on the roster. The drafter's RM80 median does not match the dossier's RM85.52. The two-step trail no longer adds up to the set figure, as flagged. Nothing stays open."
      }
     ],
-    "paidOn": "2026-09-26"
+    "paidOn": "2026-09-26",
+    "deliveredOn": "2026-09-26",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-26: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-09-26; handover (unset) to collected",
+    "cost": 84
    },
    {
     "customer": "CS6-BS-R",
@@ -6142,9 +6153,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T13:02:54.811Z",
+  "QUEUE_COMMITTED": "2026-09-26T13:14:12.243Z",
   "PRICING": {
-   "takenAt": "2026-09-26T13:03:42.549Z",
+   "takenAt": "2026-09-26T13:14:51.774Z",
    "sizes": [
     0.5,
     1,
@@ -7330,15 +7341,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32786885245901637
+         "v": 0.3225806451612903
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07471789611116293,
        "avgDel": {
-        "n": 172,
-        "kg": 444.45,
-        "mean": 2.584
+        "n": 173,
+        "kg": 445.95,
+        "mean": 2.5777
        }
       },
       "policy": {
@@ -12747,26 +12758,12 @@
      "cards": {}
     }
    },
-   "v": "v879"
+   "v": "v880"
   },
   "OPEN": {
-   "at": "2026-09-26T13:03:42.823Z",
-   "count": 9,
+   "at": "2026-09-26T13:14:52.049Z",
+   "count": 8,
    "byKey": {
-    "CS6-PER|2026-09-26|150": {
-     "d": "2026-09-26",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 1.5,
-     "t": 150,
-     "cash": 150,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 1.5,
-     "rid": "s205",
-     "paidOn": "2026-09-26",
-     "key": "CS6-PER|2026-09-26|150"
-    },
     "CS6-BS-R|2026-09-26|490": {
      "d": "2026-09-26",
      "p": "CS6-BS-R",
@@ -12901,13 +12898,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13,
+     "onHand": 11.5,
      "free": 2,
-     "owedOut": 11,
+     "owedOut": 9.5,
      "coverDays": 0.6,
      "rate": 6.2,
      "owedToYou": 390,
-     "promised": 16,
+     "promised": 14.5,
      "short": 3
     },
     "oil": {
@@ -12962,7 +12959,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v879"
+   "v": "v880"
   }
  }
 }
