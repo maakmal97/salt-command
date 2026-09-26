@@ -291,9 +291,11 @@ export function costFor(book, product) {
   const latest = lots.length ? lots[lots.length - 1] : null;
 
   /* IS THE SHELF ONE LOT OR A BLEND? The desk already answers this and the answer is the pair
-     of numbers, not the purchase history. STOCK_COST equal to the newest lot rate means every
-     unit standing there came off that lot; different means it is an average across two rates
-     and the true cost of the next unit out depends which one it draws.
+     of numbers, not the purchase history. The desk's stockCost (derived from the lots since 26 Sep
+     2026: the stock allocated newest-first onto the received lots, at their goods rate) equal to
+     the newest lot rate means every unit standing there came off that lot or one at its rate;
+     different means it is an average across two rates and the true cost of the next unit out
+     depends which one it draws.
      The first version of this compared the last few PURCHASE rates instead, which was wrong in
      the way that matters: it would have flagged a blend on every row for ever after any rate
      change, including now, when the inventory is a single RM56 lot and the RM47 remnant is gone.

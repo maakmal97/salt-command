@@ -506,7 +506,7 @@ function skeleton(book, staged, p) {
     version: "", date: dayOf(TODAY), title: "", notes: [],
     rows,
     stockNote: "", stockCost: null, stockCostNote: "",
-    hint: `Fill note for every row (prose a person auditing it would need; codes only, never a name), the version (the next after the master's), a title in capitals and notes as an array of HTML strings. stockNote is prepended to the roll sentence the tool writes; the salt shelf stands at ${cur}. Leave stockCost null unless a lot landed and the cost basis moves.`
+    hint: `Fill note for every row (prose a person auditing it would need; codes only, never a name), the version (the next after the master's), a title in capitals and notes as an array of HTML strings. stockNote is prepended to the roll sentence the tool writes; the salt shelf stands at ${cur}. Leave stockCost null: the inventory's rate is derived from the lots (26 Sep 2026) and a figure here is ignored.`
   };
 }
 
@@ -837,7 +837,15 @@ export function apply(book, staged, notes, masterText) {
   }
   if (problems.length) return { ok: false, problems };
 
-  const stockCost = (() => { const m = /const STOCK_COST=([\d.]+);/.exec(masterText); return m ? +m[1] : null; })();
+  /* 26 Sep 2026, HIS INSTRUCTION: THE SHELF'S RATE IS DERIVED FROM THE LOTS, so the master has no STOCK_COST line to
+     read or to move. A salt sale leaving the shelf with no cost of its own is costed at the engine's stockBasis on the
+     book as it stands before this batch: salt's received lots, allocated newest-first under the salt count the book
+     states (PROD_OPENING.salt.stated, else STATED_STOCK, as the desk's countedFor reads it), at their goods rate. It is
+     the function the desk's walk runs, so the fold and the desk carry one rate. No salt count stated, no fill, as a
+     master without the line had none. */
+  const saltOpening = (book.PROD_OPENING || {}).salt || null;
+  const saltCount = saltOpening && saltOpening.stated != null ? saltOpening.stated : book.STATED_STOCK;
+  const stockCost = saltCount != null ? E.stockBasis((book.purchases || []).filter((r) => prodOf(r) === "salt"), +saltCount, saltOpening).rate : null;
   const fromSalt = book.STATED_STOCK;
   const moves = [];
   let newest = book.QUEUE_COMMITTED || "";
@@ -962,7 +970,7 @@ export function apply(book, staged, notes, masterText) {
   if (newest && newest > (book.QUEUE_COMMITTED || "")) book.QUEUE_COMMITTED = newest;
   sortBook(book);
 
-  /* the master: the book, the version entry, the stamp, and the cost basis if it moved */
+  /* the master: the book, the version entry and the stamp; the cost basis is derived from the book (26 Sep 2026) */
   let m = syncText(masterText, book);
   const entry = { v: notes.version, d: notes.date || dayOf(TODAY), t: notes.title, n: notes.notes };
   const open = m.indexOf("const evolution=[");
@@ -973,12 +981,12 @@ export function apply(book, staged, notes, masterText) {
   if (close < 0) return { ok: false, problems: ["the master's evolution array is never closed"] };
   m = m.slice(0, open) + "const evolution=[" + JSON.stringify(entry) + "];" + m.slice(close + 3);
   m = m.replace(/const LAST_UPDATED='[^']*';/, `const LAST_UPDATED='${stamp()}';`);
-  if (notes.stockCost != null) {
-    const re = /const STOCK_COST=[\d.]+;(\s*\/\*)?/;
-    if (!re.test(m)) return { ok: false, problems: ["the master has no STOCK_COST line to move"] };
-    m = m.replace(re, (all, c) => `const STOCK_COST=${+notes.stockCost};` + (c ? `  /* ${notes.version}: ${String(notes.stockCostNote || "the cost basis moved with the lot that landed").replace(/\*\//g, "* /")}` + (c.includes("/*") ? "\n  " : "") : ""));
-  }
-  return { ok: true, folded, newest, moves, master: m, plan: p, renames };
+  /* 26 Sep 2026: A stockCost IN THE NOTES IS IGNORED, NEVER REFUSED. It moved the master's STOCK_COST line, which is gone:
+     the inventory's rate is derived from the lots, so the lot this batch lands moves it with nothing written. The notes'
+     shape keeps the field (tools/foldcall.mjs still asks the model for it), and a figure sent is named in the output. */
+  const ignored = notes.stockCost != null
+    ? [`notes.stockCost ${notes.stockCost} ignored: the inventory's rate is derived from the lots since 26 Sep 2026, so a fold moves nothing`] : [];
+  return { ok: true, folded, newest, moves, master: m, plan: p, renames, ignored };
 }
 
 /* ---- the command line ---------------------------------------------------------------------- */
@@ -1054,6 +1062,7 @@ if (isMain) {
     try { execFileSync("node", [resolve(REPO, "tools", "changelog.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } }); }
     catch (e) { console.log("  FAIL  the changelog did not take: " + String((e && e.stdout) || e)); process.exit(1); }
     console.log(`  ok    folded ${res.folded.length} row(s) into ${BOOK} and the master at ${notes.version}`);
+    for (const x of res.ignored || []) console.log("  note  " + x);
     /* 08 Sep 2026: the notes are spent. Left behind, --plan refuses to overwrite them and a later
        hand fold takes them whole, stale version and all. */
     try { unlinkSync(NOTES); } catch (e) { /* already gone */ }

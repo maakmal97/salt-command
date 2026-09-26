@@ -5103,6 +5103,43 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
 function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
+/* ============ WHAT THE INVENTORY IS CARRIED AT (26 Sep 2026, his instruction) ============
+   "Derive the oil stock cost from the lots", then "derive salt's stock cost from the lots too and all
+   of the products". Every book's inventory rate is DERIVED here and nothing typed remains: salt's
+   STOCK_COST and oil's PROD_STOCK_COST were rolled by hand or by the fold, lot by lot, and both fell
+   behind the book (oil's at v384, salt's at RM48 while three lots landed over it).
+   THE METHOD IS THE ONE EVERY ROLL USED, now written once. Units leave oldest first (FIFO), so the
+   units on hand are the NEWEST ones: the stock (counted where a count stands, else the walk, the
+   walk's own currentStock) is allocated newest-first onto the book's received lots, and the rate is
+   the units-weighted rate of those allocations. A lot is live and received (poLive, poRecvUnits):
+   pending, defaulted, cancelled and in-transit units hold no stock. The rate is the GOODS rate,
+   poRate, the total over the quantity bought; freight is left out because every reader adds it
+   separately (Financials' "before freight in", freightPerUnit on the IAS 2 line). Stock beyond
+   every lot sits on the opening at its costPerKg; where the opening has no cost those units are
+   left out of the weighting rather than valued at nothing. At or under nought there is nothing to
+   weigh, so the rate is the newest received lot's, else the opening's, else null (the caller's
+   fallback). lotOutlook's allocation is this one: lotAlloc is what it walks. Rounded to 4 places,
+   the precision the pricing snapshot carries. */
+function lotAlloc(purchases,stock){
+  const lots=(purchases||[]).filter(p=>poLive(p)&&poRecvUnits(p)>0.0001)
+    .map(p=>({p:p,recv:poRecvUnits(p),date:p.receivedOn||p.date}))
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
+  let inv=+stock||0;
+  for(let i=lots.length-1;i>=0;i--){const left=+Math.min(lots[i].recv,Math.max(0,inv)).toFixed(2);inv-=left;lots[i].left=left;}
+  return {lots:lots,beyond:Math.max(0,+inv.toFixed(2))};
+}
+function stockBasis(purchases,stock,opening){
+  const A=lotAlloc(purchases,stock), op=opening||{};
+  const opRate=(op.costPerKg!=null&&Number.isFinite(+op.costPerKg))?+op.costPerKg:null;
+  const parts=A.lots.filter(l=>l.left>0.0001).map(l=>({rid:l.p.rid||null,date:l.date,units:l.left,rate:poRate(l.p)}));
+  let units=0,rm=0;
+  parts.forEach(x=>{units+=x.units;rm+=x.units*x.rate;});
+  if(A.beyond>0.0001&&opRate!=null){units+=A.beyond;rm+=A.beyond*opRate;}
+  const newest=A.lots.length?poRate(A.lots[A.lots.length-1].p):null;
+  const rate=units>0.0001?rm/units:(newest!=null?newest:opRate);
+  return {rate:rate==null?null:+rate.toFixed(4),parts:parts,onOpening:A.beyond,openingRate:opRate,
+    from:units>0.0001?'lots':(newest!=null?'newest lot':(opRate!=null?'opening':null))};
+}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
    rows: what arrived, what left, what the shelf carries, what is owed each way, and what the
@@ -5172,6 +5209,11 @@ function walk(I){
      and flooring selfUse to zero hid it entirely (round six). The reconciliation prints it;
      nothing else reads it, so pricing and the P&L are untouched. */
   W.surplus=W.stockCounted?Math.max(0,+(W.currentStock-(_op.qty+W.buyUnits-drawnUnits)).toFixed(2)):0;
+  /* 26 Sep 2026: what the inventory is carried at, derived from this book's lots and this stock. A book
+     with no received lot and no opening cost has nothing to weigh, and takes the fallback the desk has
+     always given it, this book's own weighted buying rate, which is 0 for such a book. */
+  W.stockBasis=stockBasis(_B,W.currentStock,_op);
+  W.stockCost=W.stockBasis.rate!=null?W.stockBasis.rate:W.wavgBuy;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
   W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
@@ -5714,7 +5756,7 @@ function renameInBook(book,pairs){
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
@@ -7451,11 +7493,18 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    there is no blend to solve: RM 7.525 is the rate of what is actually there. Left at RM 7.6667
    it would have valued a RM 451 inventory at RM 460 and fed that figure to Financials' closing
    inventory, the PRICING snapshot the drafter approves against, and the Inventory value card. */
-const PROD_STOCK_COST={salt:null, oil:8};   // null = use STOCK_COST, the salt roll
-function stockCostFor(p){const k=p||PROD,v=PROD_STOCK_COST[k];
-  if(v!=null)return v;
-  if(k===DEFAULT_PROD&&typeof STOCK_COST!=='undefined'&&STOCK_COST!=null)return STOCK_COST;
-  const o=openingFor(k);return o.costPerKg!=null?o.costPerKg:(typeof wavgBuy!=='undefined'?wavgBuy:0);}
+/* 26 SEP 2026, HIS INSTRUCTION: "derive the oil stock cost from the lots", then "derive salt's stock cost from
+   the lots too and all of the products". PROD_STOCK_COST, which stood at {salt:null, oil:8}, and salt's
+   STOCK_COST, which stood at 48, are gone: every book's rate is the walk's stockCost, the engine's stockBasis
+   over THAT book's received lots and THAT book's stock, the method each roll above was worked by hand. Salt's
+   48 was the 15 Sep lot's goods rate (RM1,200 over 25 unit, freight beside it), and three salt lots landed
+   over it unrolled, so the derived figure is the correction the rolls kept missing. The book asked is walked,
+   never the book in view: the entry check and the Workbench's gift read another book's rate while one is on
+   screen, and a book with no typed rate fell through to the view's weighted average, so with salt in view a
+   sale of spare, which has no lot, passed the entry check at salt's RM49.78. One figure per book, kept until the
+   next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway. */
+function stockCostFor(p){const k=p||PROD,c=stockCostFor._c||(stockCostFor._c={});
+  return (k in c)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
 /* TRANSACTION MODEL (post-audit, three-axis per R1):
    qty  = order unit, total = order RM (price = total/qty)
    cash = RM received in cash;  settledRM = RM settled non-cash (fold/waiver/in-kind)  -> paid = cash+settledRM
@@ -7658,7 +7707,11 @@ const loanDrawUnits=()=>loanOutUnits()-loanInUnits();
    ever bought. Until 28 Jul the inventory was a single remnant and this was one lot's rate;
    the 100 unit lot makes it a genuine mix for the first time, so it is blended across the
    two rates actually sitting there. */
-const STOCK_COST=48;  /* v648: Stock stood at zero, so the landed 25 unit at RM48 a unit sets the basis on its own, replacing the RM44 carried before and sitting above the RM46 replacement mark.
+/* 26 SEP 2026, HIS INSTRUCTION: STOCK_COST IS RETIRED AND DERIVED. It stood at 48 here, typed, and the fold moved
+   it only when a note carried a figure; three salt lots landed over it at RM46 and RM56 and nobody rolled it. The
+   rate is now the walk's stockCost (engine stockBasis, read through stockCostFor beside PROD_OPENING above), worked
+   by the same test every note below applied by hand, so there is nothing left to roll. Its notes are kept as written:
+   v648: Stock stood at zero, so the landed 25 unit at RM48 a unit sets the basis on its own, replacing the RM44 carried before and sitting above the RM46 replacement mark.
    v544: The landed part of the lot came in at RM 44 a unit on the 50 unit tier, under the RM 48 the shelf carried, so the basis moves to RM 44.
    v467: The basis moves from RM50 to RM48 a unit: the 2 Sep lot from SA5-BTR, 25 unit for RM1200, is the newest lot on the inventory.
    v381: The basis moves from RM44 to RM50 a unit on the 26 Aug SA5-BTR lot, up 13.6%. The inventory stood at 0.5 unit before it landed, so the new lot is the basis outright rather than a blend, and every floor on the salt board rises with it.
@@ -8632,6 +8685,7 @@ function ovRefund(row,date){
   if(rec)provNotes.push('refund payable '+fmt0(rec.amount)+' to '+codeOf(rec.party)+' on the cancelled order');
 }
 function applyOverlay(){
+  stockCostFor._c=null;   // 26 Sep 2026: the rows are rebuilt, so no book's inventory rate stands
   purchases.length=0;JSON.parse(JSON.stringify(BASE_PURCHASES)).forEach(p=>purchases.push(p));
   sales.length=0;JSON.parse(JSON.stringify(BASE_SALES)).forEach(s=>sales.push(s));
   selfUseLog.length=0;JSON.parse(JSON.stringify(BASE_SELFUSE)).forEach(x=>selfUseLog.push(x));
@@ -10633,16 +10687,21 @@ function boundaryPanel(b,r){
    recompute() and the transaction helpers above it are one-line wrappers from v338. The bodies
    live in engine/position.mjs, inlined near the top of this script by tools/engine.mjs. What the
    desk contributes is posInputs(): the product's rows and the five facts the walk reads. */
-function posInputs(){
-  const _isSalt=(PROD===DEFAULT_PROD);
-  return {sales:pSales(PROD), purchases:pPurch(PROD), opening:openingFor(PROD), isSalt:_isSalt,
-    loanUnits:_isSalt?loanDrawUnits():0, counted:countedFor(PROD), today:TODAY,
+/* 26 Sep 2026: posInputs takes the book, so stockCostFor can walk a book that is not in view; left out,
+   it is the book in view, as it always was. wavgBuyPrev is the view's and only values goodwill, which
+   the rate of another book never reads. */
+function posInputs(pr){
+  const P=pr||PROD, _isSalt=(P===DEFAULT_PROD);
+  return {sales:pSales(P), purchases:pPurch(P), opening:openingFor(P), isSalt:_isSalt,
+    loanUnits:_isSalt?loanDrawUnits():0, counted:countedFor(P), today:TODAY,
     supplierReceivable:(_isSalt&&typeof supplierReceivable!=='undefined')?supplierReceivable:null,
     wavgBuyPrev:wavgBuy};
 }
 function recompute(){
   restockFor._c=null;   // the restock plan is read off this book, so it is dropped with it
+  stockCostFor._c=null;   // and every book's inventory rate, read off the book as it now stands (26 Sep 2026)
   const W=POSITION_ENGINE.walk(posInputs());
+  stockCostFor._c={[PROD]:W.stockCost};
   receivedPO=W.receivedPO;defaultPO=W.defaultPO;pricedSales=W.pricedSales;goodwillRM=W.goodwillRM;
   buyUnits=W.buyUnits;buyRM=W.buyRM;wavgBuy=W.wavgBuy;soldUnits=W.soldUnits;ledgerStock=W.ledgerStock;
   stockCounted=W.stockCounted;currentStock=W.currentStock;selfUse=W.selfUse;surplus=W.surplus;
@@ -11263,19 +11322,19 @@ function lotOutlook(){
      happens to be Salt's; at the 100 unit Salt held on 28 Jul the walk would have run past
      18 Aug and 13 Aug into the 11 Aug OIL lot and costed Salt's inventory at RM7. Same fault as
      v236 in supplierStats and v365 in the tier table, in the third place it lived. */
-  const lots=pPurch(PROD).filter(poLive).filter(p=>poRecvUnits(p)>0.0001)
-    .map(p=>({p:p,recv:poRecvUnits(p),date:p.receivedOn||p.date,
-              rate:+(p.total/p.qty).toFixed(2),sup:p.supplier}))
-    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   /* THE COUNT ALWAYS WINS, here as everywhere (v180). A first cut rebuilt what was left
      by subtracting delivered units and a share of the shrinkage plug from each lot, and
      arrived at 88.52 unit against a counted 78.4. Any reconstruction that disagrees with
      the count is wrong by definition on this desk, so the counted inventory is ALLOCATED
      instead: newest lot first, because the inventory is what arrived most recently and the
-     older salt has been sold. The lot totals then tie to the count by construction. */
-  let inventory=currentStock;
-  const rows=lots.slice().reverse().map(l=>{
-    const left=+Math.min(l.recv,Math.max(0,inventory)).toFixed(2); inventory-=left;
+     older salt has been sold. The lot totals then tie to the count by construction.
+     26 Sep 2026: THE ALLOCATION IS THE ENGINE'S lotAlloc, the one the inventory's rate is worked from
+     (stockBasis), so this card and the rate cannot rest on two different splits. Same lots, same order,
+     same rounding; the rows come back in receipt order with `left` already set. */
+  const lots=POSITION_ENGINE.lotAlloc(pPurch(PROD),currentStock).lots
+    .map(a=>({p:a.p,recv:a.recv,date:a.date,left:a.left,rate:+(a.p.total/a.p.qty).toFixed(2),sup:a.p.supplier}));
+  const rows=lots.map(l=>{
+    const left=l.left;
     const consumed=+(l.recv-left).toFixed(2);
     const leak=0;
     const cost=+(l.recv*l.rate).toFixed(2);
@@ -11303,7 +11362,6 @@ function lotOutlook(){
       lostPrice:+(left*(1-shrink)*(mixBest-mixMean)).toFixed(2),
       lostBoth:+(left*shrink*(mixBest-mixMean)).toFixed(2)};
   });
-  rows.reverse();                                   // back into receipt order for display
   const sum=k=>+rows.reduce((a,r)=>a+r[k],0).toFixed(2);
   /* v385, THE v379 SHAPE AGAIN: a ceiling computed over no trade at all is not zero, it is
      absent. With no priced sale the bands are empty, so mixBest and mixMean are both 0, every
@@ -15421,21 +15479,10 @@ function observations(){
       why:`Locked at ${fmt(C.repl)} a unit on ${esc(C.lockedOn)}. A lock is right while a quote is live and wrong once it is stale, because every floor on the board is computed from it. If the supplier has moved since, every floor is being read off a rate that no longer exists.`,
       ev:[`locked ${esc(C.lockedOn)} at ${fmt(C.repl)} a unit`,`landed ${fmt(C.landed)} after freight`,`effective ${fmt(C.eff)} once the plug is attributed`]});
   }
-  /* THE INVENTORY ROLL AGAINST THE LATEST LOT. */
-  try{
-    const lots=pPurch(DEFAULT_PROD).filter(p=>poLive(p)&&poRecvUnits(p)>0.0001)
-                 .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-    const last=lots[lots.length-1];
-    if(last&&typeof STOCK_COST!=='undefined'&&STOCK_COST!=null){
-      const rate=obsDiv(+last.total,+last.qty);
-      if(rate!=null&&Math.abs(rate-STOCK_COST)>0.005){
-        add({id:'upkeep:stockcost:'+PROD,fam:'upkeep',sev:'note',conf:'measured',rm:null,tab:'inventory',
-          title:`The inventory is carried at ${fmt(STOCK_COST)} while the latest lot cost ${fmt(rate)}`,
-          why:`Both can be right: the roll is the blend of the lots actually sitting there, and where an older remnant survives underneath a new lot the blend is above the newest rate. It is worth a look only because the Inventory tile labels the roll "latest lot", which is loose wording for a blend. If the remnant is now entirely from the newest lot, the roll should come down to it.`,
-          ev:[`inventory roll ${fmt(STOCK_COST)} a unit`,`newest received lot ${esc(last.receivedOn||last.date)} at ${fmt(rate)} a unit`,`${lots.length} lots in the basis`]});
-      }
-    }
-  }catch(e){}
+  /* THE INVENTORY ROLL AGAINST THE LATEST LOT, RETIRED 26 Sep 2026 with the roll itself. It set the typed
+     STOCK_COST beside the newest salt lot to catch a roll the fold had missed; the rate is derived from the lots
+     now (stockCostFor), so there is no roll to miss, and a derived blend above the newest rate is the remnant
+     underneath it, which the Stock view's lots already show. */
 
   /* ---------- PARITY: THE DESK TESTING ITS OWN PRODUCT SPLIT ---------- */
   try{

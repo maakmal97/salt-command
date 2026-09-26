@@ -78,7 +78,7 @@ const NOT_LEDGER = new Set([
   "TIER_RULE", "TIER_NAMES" /* v641, v642: the tiers' rule per book and the levels' names; a rule and its presentation, like LADDER */,
   "PROFILE_RULE" /* v666: the thresholds a customer's profile is read against; a rule, not a record, like TIER_RULE */,
   "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
-  "RULES", "SHRINK", "R0_NETWORK", "REBATE", "REWARD", "FWD", "PROD_STOCK_COST", "PROD_IDS",
+  "RULES", "SHRINK", "R0_NETWORK", "REBATE", "REWARD", "FWD", "PROD_IDS",   /* PROD_STOCK_COST left 26 Sep 2026: derived from the lots */
   "TIERS", "SIZES", "PRICES", "BANDS", "HURDLES", "REWARDS", "CADENCE", "THRESHOLDS",
 
   /* vocabulary, labels and taxonomy: presentation */

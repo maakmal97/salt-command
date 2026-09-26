@@ -240,6 +240,43 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
 function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
+/* ============ WHAT THE INVENTORY IS CARRIED AT (26 Sep 2026, his instruction) ============
+   "Derive the oil stock cost from the lots", then "derive salt's stock cost from the lots too and all
+   of the products". Every book's inventory rate is DERIVED here and nothing typed remains: salt's
+   STOCK_COST and oil's PROD_STOCK_COST were rolled by hand or by the fold, lot by lot, and both fell
+   behind the book (oil's at v384, salt's at RM48 while three lots landed over it).
+   THE METHOD IS THE ONE EVERY ROLL USED, now written once. Units leave oldest first (FIFO), so the
+   units on hand are the NEWEST ones: the stock (counted where a count stands, else the walk, the
+   walk's own currentStock) is allocated newest-first onto the book's received lots, and the rate is
+   the units-weighted rate of those allocations. A lot is live and received (poLive, poRecvUnits):
+   pending, defaulted, cancelled and in-transit units hold no stock. The rate is the GOODS rate,
+   poRate, the total over the quantity bought; freight is left out because every reader adds it
+   separately (Financials' "before freight in", freightPerUnit on the IAS 2 line). Stock beyond
+   every lot sits on the opening at its costPerKg; where the opening has no cost those units are
+   left out of the weighting rather than valued at nothing. At or under nought there is nothing to
+   weigh, so the rate is the newest received lot's, else the opening's, else null (the caller's
+   fallback). lotOutlook's allocation is this one: lotAlloc is what it walks. Rounded to 4 places,
+   the precision the pricing snapshot carries. */
+function lotAlloc(purchases,stock){
+  const lots=(purchases||[]).filter(p=>poLive(p)&&poRecvUnits(p)>0.0001)
+    .map(p=>({p:p,recv:poRecvUnits(p),date:p.receivedOn||p.date}))
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
+  let inv=+stock||0;
+  for(let i=lots.length-1;i>=0;i--){const left=+Math.min(lots[i].recv,Math.max(0,inv)).toFixed(2);inv-=left;lots[i].left=left;}
+  return {lots:lots,beyond:Math.max(0,+inv.toFixed(2))};
+}
+function stockBasis(purchases,stock,opening){
+  const A=lotAlloc(purchases,stock), op=opening||{};
+  const opRate=(op.costPerKg!=null&&Number.isFinite(+op.costPerKg))?+op.costPerKg:null;
+  const parts=A.lots.filter(l=>l.left>0.0001).map(l=>({rid:l.p.rid||null,date:l.date,units:l.left,rate:poRate(l.p)}));
+  let units=0,rm=0;
+  parts.forEach(x=>{units+=x.units;rm+=x.units*x.rate;});
+  if(A.beyond>0.0001&&opRate!=null){units+=A.beyond;rm+=A.beyond*opRate;}
+  const newest=A.lots.length?poRate(A.lots[A.lots.length-1].p):null;
+  const rate=units>0.0001?rm/units:(newest!=null?newest:opRate);
+  return {rate:rate==null?null:+rate.toFixed(4),parts:parts,onOpening:A.beyond,openingRate:opRate,
+    from:units>0.0001?'lots':(newest!=null?'newest lot':(opRate!=null?'opening':null))};
+}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
    rows: what arrived, what left, what the shelf carries, what is owed each way, and what the
@@ -309,6 +346,11 @@ function walk(I){
      and flooring selfUse to zero hid it entirely (round six). The reconciliation prints it;
      nothing else reads it, so pricing and the P&L are untouched. */
   W.surplus=W.stockCounted?Math.max(0,+(W.currentStock-(_op.qty+W.buyUnits-drawnUnits)).toFixed(2)):0;
+  /* 26 Sep 2026: what the inventory is carried at, derived from this book's lots and this stock. A book
+     with no received lot and no opening cost has nothing to weigh, and takes the fallback the desk has
+     always given it, this book's own weighted buying rate, which is 0 for such a book. */
+  W.stockBasis=stockBasis(_B,W.currentStock,_op);
+  W.stockCost=W.stockBasis.rate!=null?W.stockBasis.rate:W.wavgBuy;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
   W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
@@ -851,7 +893,7 @@ function renameInBook(book,pairs){
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,

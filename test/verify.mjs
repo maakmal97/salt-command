@@ -44,6 +44,33 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
    which is a property of the data and can change under you.
    The floor keeps a margin for these, and the margin is not room for a section to fall out. */
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
+/* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
+   cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
+   checks. A book's stock: its stated count (PROD_OPENING.stated, and salt's STATED_STOCK), else opening plus what landed
+   less what was handed over, `count` overriding both. Its rate: the live lots (not pending, defaulted or cancelled) by
+   the units that landed, oldest first by the day they landed, undated last; the stock laid on them newest first, each at
+   its goods rate (total over quantity, no freight), what is left over on the opening at its cost where it has one; with
+   nothing to lay, the newest lot's rate, else the opening's, else null. Plain rows in, plain numbers out. */
+const suiteLanded = (p) => (p.cancelled || p.defaulted || p.pending) ? 0 : (p.receivedQty != null ? Math.max(0, Math.min(+p.receivedQty, +p.qty)) : (p.inTransit ? 0 : +p.qty));
+function suiteShelf(bk, prod, count) {
+  const op = (bk.PROD_OPENING || {})[prod] || { qty: 0, costPerKg: null, stated: null };
+  const mine = (bk.purchases || []).filter((p) => (p.product || "salt") === prod);
+  let stock = count != null ? +count : op.stated != null ? +op.stated : (prod === "salt" && bk.STATED_STOCK != null) ? +bk.STATED_STOCK : null;
+  if (stock == null) stock = +((+op.qty || 0) + mine.reduce((a, p) => a + suiteLanded(p), 0)
+    - (bk.sales || []).filter((s) => (s.product || "salt") === prod).reduce((a, s) => a + (+s.deliveredQty || 0), 0)).toFixed(2);
+  const lots = mine.map((p, i) => ({ p, i, d: p.receivedOn || p.date || "", u: suiteLanded(p) })).filter((l) => l.u > 0.0001)
+    .sort((a, b) => (!a.d || !b.d) ? (!a.d && !b.d ? a.i - b.i : !a.d ? 1 : -1) : a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i);
+  const parts = []; let left = stock;
+  for (let k = lots.length - 1; k >= 0; k--) {
+    const take = +Math.min(lots[k].u, Math.max(0, left)).toFixed(2); left -= take;
+    if (take > 0.0001) parts.push({ rid: lots[k].p.rid || null, units: take, rate: lots[k].p.total / lots[k].p.qty });
+  }
+  const beyond = Math.max(0, +left.toFixed(2)), opc = op.costPerKg != null ? +op.costPerKg : null;
+  const units = parts.reduce((a, x) => a + x.units, 0) + (beyond > 0.0001 && opc != null ? beyond : 0);
+  const rm = parts.reduce((a, x) => a + x.units * x.rate, 0) + (beyond > 0.0001 && opc != null ? beyond * opc : 0);
+  const newest = lots.length ? lots[lots.length - 1].p.total / lots[lots.length - 1].p.qty : null;
+  return { stock, parts, beyond, rate: units > 0.0001 ? rm / units : newest != null ? newest : opc };
+}
 let sections = 0;
 /* EACH SECTION'S BODY IS ITS OWN ASYNC FUNCTION, `await (async () => { ... })();` (17 Sep 2026). A block at
    the top level of this module is never freed: the module body is suspended at every await, and V8 keeps what
@@ -2692,7 +2719,8 @@ await (async () => {
     const H = JSON.parse(JSON.stringify(DB));
     const hr = apply(H, dcorr("05:06", "sX41", "sales", "SELL", { deliveredQty: 2, deliveredOn: "2026-09-05", handover: "collected" }),
       { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:06")]: { note: "handed over in the suite." } }, stockNote: "" }, master);
-    const hRow = H.sales.find((x) => x.rid === "sX41"), hShelf = +(/const STOCK_COST=([\d.]+);/.exec(master) || [])[1];
+    /* 26 Sep 2026: the shelf's rate is derived from the lots, worked here from the book the fold was handed */
+    const hRow = H.sales.find((x) => x.rid === "sX41"), hShelf = +suiteShelf(DB, "salt").rate.toFixed(4);
     ok(hr.ok && hRow && hRow.deliveredQty === 2 && hRow.cost === +(hShelf * 2).toFixed(2),
       `a pending sale handed over by a Correction takes the shelf's cost (RM${hRow && hRow.cost} on 2 unit at RM${hShelf})` + (hr.ok ? "" : ": " + hr.problems.join("; ")));
     const { openMaster: omD } = await import("../tools/payload.mjs");
@@ -2731,10 +2759,10 @@ await (async () => {
       "the fulfilment moved the cash and the units and dated the order");
     ok(ful && ful.amend && ful.amend.length === 2 && ful.amend[0].note.startsWith("as booked") && ful.amend[1].kg === 6.25 && /in full/.test(ful.amend[1].note), "and extended the trail from an as-booked seed");
     /* v381: DERIVED, NOT PINNED. This read 44 because that was the shelf cost the day it was
-       written, so the first lot to move the basis broke it for no good reason. STOCK_COST in
-       the master is where the fold itself reads the figure, so read it from the same place and
-       the assertion survives every lot that lands. */
-    const shelfCost = +(/const STOCK_COST=([\d.]+);/.exec(master) || [])[1];
+       written, so the first lot to move the basis broke it for no good reason. It read STOCK_COST
+       from the master until 26 Sep 2026, when every book's rate became derived from its lots: the
+       fold works it from the book it is handed, so the suite works it from the same book's rows. */
+    const shelfCost = +suiteShelf(book, "salt").rate.toFixed(4);
     /* v496: the order's cost is absolute, the shelf's unit figure times the units the order is for. */
     ok(ful && ful.cost === +(shelfCost * 6.25).toFixed(2), `salt that left the shelf took the shelf's cost, RM${shelfCost} a unit on 6.25 unit (RM${ful && ful.cost})`);
     ok(ful && ful.amend && ful.amend[1].cost === +(shelfCost * 6.25).toFixed(2), "and the movement carries the cost of what it moved");
@@ -2769,6 +2797,40 @@ await (async () => {
     ok(new RegExp("const STATED_STOCK=" + (+(from - 0.5 - 6.25).toFixed(2))).test(r.master),
       "and the shelf is the rolled figure");
     try { rmSync(tmpMaster); } catch (e) { }
+  }
+  /* 26 SEP 2026, HIS INSTRUCTION: EVERY BOOK'S INVENTORY RATE IS DERIVED FROM ITS LOTS, so the master carries no
+     STOCK_COST line and a fold moves none. A batch landing a salt lot at a rate of its own, its notes still carrying a
+     stockCost (tools/foldcall.mjs asks the model for one), folds, bumps and builds; the figure is named as ignored,
+     never refused; and the folded desk's salt rate takes the new lot, worked here from the folded book's own rows. */
+  {
+    const NB = JSON.parse(JSON.stringify(book)), when = day.slice(0, 10);
+    const sup = (NB.purchases.find((x) => (x.product || "salt") === "salt") || {}).supplier;
+    const lotRow = { supplier: sup, qty: 12.5, total: 765, cash: 765, status: "paid", receivedQty: 12.5, date: when, receivedOn: when };
+    const lotBatch = { ok: true, count: 1, approved: [{ id: ID("04:00"), collection: "purchases", amends: null, amendKind: null,
+      row: lotRow, entry: { at: ID("04:00"), payload: { mode: "new", direction: "BUY" } } }] };
+    const was = suiteShelf(NB, "salt");
+    const rL = apply(NB, lotBatch, { version: "v999", date: "27 Sep 2026", title: "A LOT AT A RATE OF ITS OWN",
+      notes: ["<b>TEST.</b> A salt lot at RM 61.20 a unit, on a copy of the book."], rows: { [ID("04:00")]: { note: "a salt lot landed in the suite." } },
+      stockNote: "", stockCost: 99, stockCostNote: "a figure the fold must not write" }, master);
+    ok(rL.ok && Array.isArray(rL.ignored) && rL.ignored.length === 1 && /stockCost 99 ignored/.test(rL.ignored[0]),
+      "a batch whose notes carry a stockCost folds, the figure named as ignored, never refused" + (rL.ok ? "" : ": " + rL.problems.join("; ")));
+    if (rL.ok) {
+      const lotRid = (NB.purchases.find((x) => x.date === when && x.total === 765) || {}).rid, now = suiteShelf(NB, "salt");
+      ok(!/const STOCK_COST\s*=/.test(master) && !/const STOCK_COST\s*=/.test(rL.master) && !/\b99\b[^\n]*a figure the fold must not write/.test(rL.master)
+        && /const evolution=\[\{"v":"v999"/.test(rL.master) && now.stock === +(was.stock + 12.5).toFixed(2) && now.parts[0] && now.parts[0].rid === lotRid,
+        `and it bumps to v999 with no STOCK_COST line before or after, the shelf rolled ${was.stock} to ${now.stock} and the new lot ${lotRid} first on it`);
+      const tmpLot = join(REPO, "test", "tmp", "fold-lot-master.html");
+      mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
+      writeFileSync(tmpLot, rL.master);
+      try {
+        const { openMaster: omL } = await import("../tools/payload.mjs");
+        const { w: wL } = await omL(tmpLot);
+        wL.eval("setProd('salt');");
+        const deskL = JSON.parse(wL.eval("JSON.stringify({rate:stockCostFor('salt'),stock:currentStock,v:evolution[0].v})"));
+        ok(deskL.v === "v999" && deskL.stock === now.stock && deskL.rate === +now.rate.toFixed(4) && Math.abs(deskL.rate - was.rate) > 0.005,
+          `the folded master builds and its salt rate takes the new lot: RM ${deskL.rate} on ${deskL.stock} unit, worked from the folded book as RM ${now.rate.toFixed(4)} (RM ${was.rate.toFixed(4)} before)`);
+      } finally { try { rmSync(tmpLot); } catch (e) { } }
+    }
   }
 })();
 
@@ -2976,7 +3038,9 @@ await (async () => {
        when stripMethod began deleting the sentence, until v384 put it back. */
     /* v801: the P&L says RM once in its corner, so the figure is matched as the bare number it prints */
     const bare = (x) => x.replace(/^RM\s/, "");
-    const right = bare(html("fmt0(currentStock*stockCostFor(PROD))")), wrong = bare(html("fmt0(currentStock*STOCK_COST)"));
+    /* 26 Sep 2026: STOCK_COST is gone, so "another book's" is another book's derived rate, the first that differs */
+    const otherRate = ids.filter((x) => x !== pr).map((x) => read(`stockCostFor(${JSON.stringify(x)})`)).find((r) => Math.abs(r - read("stockCostFor(PROD)")) > 0.005);
+    const right = bare(html("fmt0(currentStock*stockCostFor(PROD))")), wrong = otherRate == null ? right : bare(html(`fmt0(currentStock*${otherRate})`));
     /* v401 states it as a P&L row rather than a sentence, so the check is the figure and its
        rate, not the words around them. The invariant is the half that matters and it stands. */
     ok(fin.includes(right) && fin.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
@@ -3919,19 +3983,93 @@ await (async () => {
   ok(!/\((?<!I\.lockOn&&)LKb&&pxOver\.cost!=null\)/.test(eng), "and nothing in the cost stack reads the frozen basis on a lock that is off");
 
   /* 4. OIL'S SHELF COST IS DERIVED FROM THE BOOK, NOT PINNED. v381 rolled salt RM44 to RM50 and
-     left oil at the rate of lots long gone. Read the newest RECEIVED oil lot rather than assert
-     a number, which is the same lesson the shelf-cost assertion above learned. */
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const oilLots = (bk.purchases || []).filter((p) => p.product === "oil" && p.receivedOn && p.qty > 0);
-  if (!oilLots.length) skipData("no received oil lot on the book, so the check is skipped");
-  else {
-    oilLots.sort((a, b) => String(a.receivedOn).localeCompare(String(b.receivedOn)));
-    const newest = oilLots[oilLots.length - 1];
-    const rate = newest.total / newest.qty;
-    const stated = +(/const PROD_STOCK_COST=\{salt:null, oil:([\d.]+)\}/.exec(m) || [])[1];
-    ok(Math.abs(stated - rate) < 1e-6,
-       `oil's shelf cost is the newest received lot's rate, RM${rate.toFixed(4)} (stated RM${stated}). A genuine blend would fail this, which is the point: it should be a decision, not a default`);
+     left oil at the rate of lots long gone, and this read the newest received oil lot against the typed
+     PROD_STOCK_COST to catch the next missed roll. 26 Sep 2026, his instruction: every book's rate is derived
+     from its lots, so nothing typed is left to fall behind. The master declares neither constant, and the
+     Today note that set the typed salt roll beside the newest lot went with them; "Stock cost" below proves
+     the derived rate on every book. */
+  ok(!/const (?:PROD_)?STOCK_COST\s*=/.test(m) && !/upkeep:stockcost/.test(m),
+     "no typed inventory rate is declared in the master, and the note that caught a missed roll is retired with the roll");
+})();
+
+section("Stock cost: every book's inventory rate is derived from its lots (his instruction of 26 Sep 2026)");
+await (async () => {
+  /* WHAT IS PROVED, each expectation worked by suiteShelf from the book's own rows, never by the code it checks:
+     every book's rate with salt in view and with the book itself in view (the book asked, never the book in view),
+     resting on the stock the walk holds; the pricing snapshot the drafter prices a sale and a gift from; Financials'
+     closing inventory and the Inventory value card at that rate; and four states forced on the desk (a count across
+     two lots, stock past every lot onto the opening, stock at nought, and lots that hold no stock). The book is read
+     from the desk's window, so a SALT_MASTER copy carrying another book is checked against its own rows. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { pricingSnapshot } = await import("../tools/book.mjs");
+  const { w } = await openMaster();
+  const read = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  const bookNow = () => read("({purchases:purchases,sales:sales,PROD_OPENING:PROD_OPENING,STATED_STOCK:STATED_STOCK,PROD_ORDER:PROD_ORDER})");
+  const r4 = (x) => +(+x).toFixed(4);
+  const want = (bk, p, count) => { const s = suiteShelf(bk, p, count); return { ...s, rate: s.rate == null ? 0 : r4(s.rate) }; };   /* nothing to weigh: the book's own weighted buying rate, 0 when it bought nothing */
+  const bk = bookNow(), J = JSON.stringify;
+  const live = read("liveBooks()");
+  ok(live.includes("salt") && live.length >= 2, `more than one live book to read across (${live.join(", ")})`);
+
+  w.eval("setProd('salt');");
+  const cross = Object.fromEntries(bk.PROD_ORDER.map((p) => [p, read(`stockCostFor(${J(p)})`)]));
+  for (const p of bk.PROD_ORDER) {
+    const x = want(bk, p);
+    ok(cross[p] === x.rate, `${p}, read with salt in view: RM ${cross[p]}, worked from its own lots as RM ${x.rate} on ${x.stock} unit (${x.parts.map((q) => q.units + " of " + q.rid + " at " + r4(q.rate)).join(", ") || "no lot"}${x.beyond > 0.0001 ? ", " + x.beyond + " on the opening" : ""})`);
+    w.eval(`PROD=${J(p)};recompute();`);
+    const own = read(`({rate:stockCostFor(${J(p)}),stock:currentStock,F:ifrsPL(${J(p)})})`);
+    ok(own.rate === x.rate && own.stock === x.stock, `${p}, in view: RM ${own.rate} on ${own.stock} unit, the stock the walk holds (${x.stock})`);
+    /* freightPerUnit comes back rounded to 4 places, so the sen may differ by that rounding on the stock */
+    ok(Math.abs(own.F.atCost - x.stock * (x.rate + own.F.freightPerUnit)) <= 0.006 + x.stock * 0.00005,
+      `${p}: Financials carries the closing inventory at that rate plus the freight it adds (${own.F.atCost} against ${(x.stock * (x.rate + own.F.freightPerUnit)).toFixed(3)})`);
+    if (live.includes(p)) {
+      const card = String(w.eval("tabInventory()")), shown = read(`[fmt0(${+(x.stock * x.rate).toFixed(2)}),fmt(${x.rate})]`);
+      ok(card.includes(`Inventory value</div><div class="v salt-kpi__value">${shown[0]}</div>`) && card.includes(`at ${shown[1]}/unit`),
+        `${p}: the Inventory value card reads ${shown[0]} at ${shown[1]}/unit`);
+    }
   }
+  w.eval("setProd('salt');");
+  const snap = pricingSnapshot(w);
+  ok(bk.PROD_ORDER.every((p) => snap.byProduct[p] && snap.byProduct[p].stockCost === want(bk, p).rate),
+    "the pricing snapshot the drafter costs a sale from carries every book's derived rate: " + bk.PROD_ORDER.map((p) => p + " " + (snap.byProduct[p] || {}).stockCost).join(", "));
+
+  /* THE FORCED STATES, each on the queue's own count road (statedStockBy) or on the committed rows, so no book has to
+     happen to hold them. A book with two lots at two rates takes the count across both; a book with an opening cost
+     takes a count past every lot; the same book at nought takes its newest lot's rate. */
+  const twoRates = bk.PROD_ORDER.find((p) => { const l = suiteShelf(bk, p, 1e9).parts; return l.length >= 2 && Math.abs(l[0].rate - l[1].rate) > 0.005; });
+  const withOpening = bk.PROD_ORDER.find((p) => suiteShelf(bk, p).parts.length && ((bk.PROD_OPENING || {})[p] || {}).costPerKg != null);
+  const forced = (p, count, what) => {
+    w.eval(`statedStockBy[${J(p)}]=${count};setProd('salt');`);
+    const x = want(bk, p, count), got = read(`stockCostFor(${J(p)})`);
+    w.eval(`PROD=${J(p)};recompute();`);
+    const inView = read(`stockCostFor(${J(p)})`);
+    w.eval(`delete statedStockBy[${J(p)}];setProd('salt');`);
+    ok(got === x.rate && inView === x.rate, `${what}: ${p} counted at ${count} reads RM ${got} (in view RM ${inView}), worked as RM ${x.rate} from ${x.parts.map((q) => q.units + " at " + r4(q.rate)).join(" + ")}${x.beyond > 0.0001 ? " + " + x.beyond + " on the opening" : ""}`);
+  };
+  if (!twoRates) skipData("no book holds two lots at two rates, so the count across them is not forced");
+  else { const l = suiteShelf(bk, twoRates, 1e9).parts; forced(twoRates, +(l[0].units + l[1].units / 2).toFixed(2), "a count across two lots is weighted by the units on each, newest first"); }
+  if (!withOpening) skipData("no book with a lot has an opening cost, so stock past every lot is not forced");
+  else {
+    const all = suiteShelf(bk, withOpening, 1e9).parts.reduce((a, q) => a + q.units, 0);
+    forced(withOpening, +(all + 10).toFixed(2), "stock past every lot sits on the opening at its cost");
+    forced(withOpening, 0, "stock at nought takes the newest lot's rate");
+  }
+  /* lots that hold no stock: pending, in transit, cancelled and defaulted, dated after every lot at a rate nobody pays,
+     and a lot part landed, whose landed units alone hold stock. On the committed rows, withdrawn after. */
+  const sup = (bk.purchases.find((p) => (p.product || "salt") === "salt") || {}).supplier;
+  const fx = [
+    { rid: "zSC1", supplier: sup, date: "2099-02-01", qty: 10, total: 9990, status: "unpaid", pending: true, note: "fixture." },
+    { rid: "zSC2", supplier: sup, date: "2099-02-02", qty: 10, total: 9990, cash: 9990, status: "paid", inTransit: true, receivedQty: 0, note: "fixture." },
+    { rid: "zSC3", supplier: sup, date: "2099-02-03", qty: 10, total: 9990, cash: 0, status: "unpaid", cancelled: true, cancelledOn: "2099-02-03", note: "fixture." },
+    { rid: "zSC4", supplier: sup, date: "2099-02-04", qty: 10, total: 9990, cash: 9990, status: "paid", defaulted: true, note: "fixture." },
+    { rid: "zSC5", supplier: sup, date: "2099-02-05", receivedOn: "2099-02-05", qty: 10, receivedQty: 4, inTransit: true, total: 777, cash: 777, status: "paid", note: "fixture." },
+  ];
+  w.eval(`BASE_PURCHASES.push(...${J(fx)});queue=[];applyOverlay();setProd('salt');`);
+  const bkF = bookNow(), xF = want(bkF, "salt", 20), gotF = (w.eval("statedStockBy.salt=20;recompute();"), read("stockCostFor('salt')"));
+  w.eval("delete statedStockBy.salt;BASE_PURCHASES.splice(BASE_PURCHASES.length-" + fx.length + "," + fx.length + ");applyOverlay();setProd('salt');");
+  ok(gotF === xF.rate && xF.parts[0].rid === "zSC5" && xF.parts[0].units === 4,
+    `only what landed holds stock: 20 unit read RM ${gotF}, worked as the 4 landed of a part lot at RM 77.70 then the book's own lots (RM ${xF.rate}); the pending, in-transit, cancelled and defaulted lots hold none`);
+  ok(read("stockCostFor('salt')") === want(bookNow(), "salt").rate, "and with the fixtures withdrawn the book reads its own rate again");
 })();
 
 section("Drafter — a lot that has not arrived does not say it has (v385)");
