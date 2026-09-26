@@ -1,0 +1,652 @@
+{
+ "ok": true,
+ "count": 18,
+ "approved": [
+  {
+   "id": "2026-09-26T05:14:01.631Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CS6-BS": {
+      "salt": "Titanium"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CS6-BS Salt Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CS6-BS's Salt moves from Platinum to Titanium."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:14:01.631Z",
+    "type": "TIER",
+    "party": "CS6-BS",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CS6-BS: Salt Titanium",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CS6-BS": {
+       "salt": "Titanium"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:46.477Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:14:37.637Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CM4-MK": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CM4-MK Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CM4-MK's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:14:37.637Z",
+    "type": "TIER",
+    "party": "CM4-MK",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CM4-MK: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CM4-MK": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:47.756Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:14:45.894Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CJ4-BJ": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CJ4-BJ Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CJ4-BJ's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:14:45.894Z",
+    "type": "TIER",
+    "party": "CJ4-BJ",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CJ4-BJ: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CJ4-BJ": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:48.856Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:14:56.974Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CE4-CHE": {
+      "salt": "Titanium"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CE4-CHE Salt Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CE4-CHE's Salt moves from Platinum to Titanium."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:14:56.974Z",
+    "type": "TIER",
+    "party": "CE4-CHE",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CE4-CHE: Salt Titanium",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CE4-CHE": {
+       "salt": "Titanium"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:49.855Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:03.013Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CM4-TO": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CM4-TO Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CM4-TO's Salt moves from Titanium to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:03.013Z",
+    "type": "TIER",
+    "party": "CM4-TO",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CM4-TO: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CM4-TO": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:50.857Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:29.074Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CR3-DAM": {
+      "salt": "Titanium"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CR3-DAM Salt Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CR3-DAM's Salt moves from small Titanium, mid Titanium, big Platinum to Titanium."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:29.074Z",
+    "type": "TIER",
+    "party": "CR3-DAM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CR3-DAM: Salt Titanium",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CR3-DAM": {
+       "salt": "Titanium"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:51.916Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:40.557Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CA4-DAM": {
+      "salt": "Silver"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CA4-DAM Salt Silver. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CA4-DAM's Salt moves from small Titanium, mid Titanium, big Platinum to Silver."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:40.557Z",
+    "type": "TIER",
+    "party": "CA4-DAM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CA4-DAM: Salt Silver",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CA4-DAM": {
+       "salt": "Silver"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:52.977Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:49.306Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CA2-SEN": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CA2-SEN Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CA2-SEN's Salt moves from Titanium to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:49.306Z",
+    "type": "TIER",
+    "party": "CA2-SEN",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CA2-SEN: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CA2-SEN": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:54.016Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:55.037Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CR4-PJ": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CR4-PJ Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CR4-PJ's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:55.037Z",
+    "type": "TIER",
+    "party": "CR4-PJ",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CR4-PJ: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CR4-PJ": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:54.979Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:15:59.523Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CM4-SK": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CM4-SK Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CM4-SK's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:15:59.523Z",
+    "type": "TIER",
+    "party": "CM4-SK",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CM4-SK: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CM4-SK": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:56.037Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:16:24.821Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CC9-OKR": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CC9-OKR Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CC9-OKR's Salt moves from small Titanium, mid Titanium, big Platinum to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:16:24.821Z",
+    "type": "TIER",
+    "party": "CC9-OKR",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CC9-OKR: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CC9-OKR": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:57.075Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:16:31.597Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CJ2-KUC": {
+      "salt": "Gold"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CJ2-KUC Salt Gold. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CJ2-KUC's Salt moves from Silver to Gold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:16:31.597Z",
+    "type": "TIER",
+    "party": "CJ2-KUC",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CJ2-KUC: Salt Gold",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CJ2-KUC": {
+       "salt": "Gold"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:58.157Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:16:35.406Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CG5-SB": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CG5-SB Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CG5-SB's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:16:35.406Z",
+    "type": "TIER",
+    "party": "CG5-SB",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CG5-SB: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CG5-SB": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:18:59.238Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:17:08.600Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CF5-WM": {
+      "salt": "Titanium"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CF5-WM Salt Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CF5-WM's Salt moves from Platinum to Titanium."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:17:08.600Z",
+    "type": "TIER",
+    "party": "CF5-WM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CF5-WM: Salt Titanium",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CF5-WM": {
+       "salt": "Titanium"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:19:00.336Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:17:13.416Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ6-WM": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CZ6-WM Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CZ6-WM's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:17:13.416Z",
+    "type": "TIER",
+    "party": "CZ6-WM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ6-WM: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ6-WM": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:19:01.438Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:17:17.924Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CA5-SEN": {
+      "salt": "Silver"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CA5-SEN Salt Silver. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CA5-SEN's Salt moves from Platinum to Silver."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:17:17.924Z",
+    "type": "TIER",
+    "party": "CA5-SEN",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CA5-SEN: Salt Silver",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CA5-SEN": {
+       "salt": "Silver"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:19:02.517Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:17:20.918Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CJ4-OKR": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CJ4-OKR Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:17:20.918Z",
+    "type": "TIER",
+    "party": "CJ4-OKR",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CJ4-OKR: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CJ4-OKR": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:19:03.755Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-26T05:17:27.707Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CH4-MAL": {
+      "salt": "Platinum"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CH4-MAL Salt Platinum. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CH4-MAL's Salt moves from Titanium to Platinum."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T05:17:27.707Z",
+    "type": "TIER",
+    "party": "CH4-MAL",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CH4-MAL: Salt Platinum",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CH4-MAL": {
+       "salt": "Platinum"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-09-26T05:19:04.815Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
