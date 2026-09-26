@@ -672,7 +672,9 @@ export function decideDesk(order, body, at) {
     return { ev };
   }
   const status = String((body && body.status) || "");
-  if (!NEXT[status]) return { error: "not a state the desk sets", status: 400 };
+  /* its own states only (26 Sep 2026): a bare NEXT[status] read "constructor" or "__proto__" off Object.prototype, and
+     .includes threw on it where any other unknown state is refused */
+  if (!Object.hasOwn(NEXT, status)) return { error: "not a state the desk sets", status: 400 };
   if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };

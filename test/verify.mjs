@@ -40998,6 +40998,21 @@ await (async () => {
     ok(await st(name) === 404, "/fonts/" + name + " is the site's 404, as an unknown face is: " + await st(name));
 })();
 
+section("The desk's status move takes its own states only, never a name off Object.prototype");
+await (async () => {
+  /* NEXT[status] read through the prototype chain, so a desk move naming "constructor" or "__proto__" found a function
+     or an object, called .includes on it and threw: an error where any other unknown state is refused 400. */
+  const { decideDesk } = await import("../stmt/orders.js");
+  const at = "2026-09-26T09:00:00.000Z";
+  const move = (status) => {
+    try { const d = decideDesk({ id: "20260926090000-ab", status: "placed" }, { status }, at); return d.ev ? "ev " + d.ev.status : d.status + " " + d.error; }
+    catch (e) { return "threw " + e.name; }
+  };
+  ok(move("acknowledged") === "ev acknowledged", "the control: a placed order is acknowledged: " + move("acknowledged"));
+  for (const name of ["__proto__", "constructor", "toString", "hasOwnProperty"])
+    ok(move(name) === "400 not a state the desk sets", name + " is refused as an unknown state is: " + move(name));
+})();
+
 section("v789: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
