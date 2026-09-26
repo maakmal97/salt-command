@@ -1,5 +1,14 @@
 [
  {
+  "v": "v887",
+  "d": "27 Sep 2026",
+  "t": "THE PER-BOOK CACHES ANSWER ONLY THEIR OWN KEYS",
+  "n": [
+   "<p><b>A NAME ON OBJECT.PROTOTYPE IS NEVER READ OFF THE PROTOTYPE.</b> stockCostFor and restockFor keep one figure per book in a plain object, and read it by a bare lookup, so a book named constructor would have been answered with Object itself. Both now read their cache through Object.hasOwn. No book can carry such a name, since tools/product.mjs refuses one, so no figure moves: this is the cache's own guard, proved red without it.</p>",
+   "<p><b>THREE SUITE CHECKS HOLD ON ANY BOOK.</b> The post-live suite had failed six runs since v879 on premises the book outgrew, never on the desk. The closing inventory is now read in its own P&amp;L row rather than as a bare figure anywhere on the page, a buy row short on promises is held to the shortfall it leads with, and Rules supplies its own salt breach and supplier default instead of waiting for the book to hold them.</p>"
+  ]
+ },
+ {
   "v": "v886",
   "d": "27 Sep 2026",
   "t": "CI4-OKR'S SALT TIER GOES OUT AND COMES BACK",
