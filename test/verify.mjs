@@ -3076,9 +3076,15 @@ await (async () => {
     const right = bare(html("fmt0(currentStock*stockCostFor(PROD))")), wrong = otherRate == null ? right : bare(html(`fmt0(currentStock*${otherRate})`));
     /* v401 states it as a P&L row rather than a sentence, so the check is the figure and its
        rate, not the words around them. The invariant is the half that matters and it stands. */
-    ok(fin.includes(right) && fin.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
-       `${pr}: closing stock is valued at this book's own shelf rate (${right})`);
-    if (right !== wrong) ok(!fin.includes(wrong), `${pr}: and never at another book's (${wrong})`);
+    /* 27 Sep 2026: READ IN THE CLOSING ROW, NEVER AS A BARE SUBSTRING OF THE PAGE. Salt's 5.5 unit at oil's RM 8 is 44, which
+       the page prints inside 15,449 and 10.44%, so "never at another book's" went red on a shelf valued rightly (run
+       36254718923). The row's CY cell is the figure and its caption the rate, each held to this book's and not another's. */
+    const closing = (fin.match(/<td class="l">Closing inventory<div[\s\S]*?<\/tr>/) || [""])[0];
+    const cell = (/<td class="fy">([^<]*)<\/td><\/tr>$/.exec(closing) || [])[1];
+    ok(cell === right && closing.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
+       `${pr}: closing stock is valued at this book's own shelf rate (${right}, the row printing ${cell})`);
+    if (right !== wrong) ok(cell !== wrong && !closing.includes(html(`fmt(${otherRate})`) + "/unit"),
+       `${pr}: and never at another book's (${wrong} at ${otherRate}, the row printing ${cell})`);
 
     /* THE RATE OF TRADE IS ORDERS PER MONTH AND THE MONTHS ARE COUNTED, NOT ASSUMED. */
     const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
@@ -41396,9 +41402,29 @@ await (async () => {
     return { prod: PROD, scope: T(d.querySelector(".pscope")), conso: Math.round(consoMoney().rev),
       rev: T(kpi("Revenue").querySelector(".v")), inv: T(kpi("Inventory at cost").querySelector(".n")), invV: T(kpi("Inventory at cost").querySelector(".v")),
       bnd: [].map.call(tables[0].querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[0]), tags: [].map.call(r.cells[0].querySelectorAll(".prodtag"), (x) => x.title) })),
-      def: [].map.call(d.querySelectorAll(".pend h3"), T).find((h) => /Supplier default/.test(h)) || "",
-      srAmount: supplierReceivable ? supplierReceivable.amount : null,
       held, live: liveBooks().map((p) => PRODUCTS[p].name) };
+  }
+  /* 27 Sep 2026: SALT'S BREACH AND THE SUPPLIER DEFAULT ARE THE SECTION'S OWN. Both were read off the live book, so the two
+     checks held only while a salt customer stood over the cap and supplierReceivable carried an amount. A salt sale handed
+     over in full and unpaid, past any cap, is pushed under a fixture code, the book's supplier default is written over with
+     a figure of the section's own, and both are taken off again. */
+  function probeFixture() {
+    const T = (e) => e.textContent.replace(/\s+/g, " ").trim(), n0 = BASE_SALES.length;
+    const sr = (typeof supplierReceivable === "object" && supplierReceivable) || null, sr0 = sr ? JSON.stringify(sr) : null;
+    BASE_SALES.push({ rid: "zCC1", customer: "CZ9-CCA", qty: 9, total: 900, cash: 0, deliveredQty: 9, date: TODAY.toISOString().slice(0, 10) });
+    if (sr) Object.assign(sr, { party: "SZ9-DFX", amount: 4321, since: "2026-07-08", status: "writtenOff", writtenOffOn: "2026-07-31" });
+    try {
+      queue = []; applyOverlay(); setProdView("oil");
+      const d = document.createElement("div"); d.innerHTML = tabOverview();
+      const t = d.querySelector("table");
+      return { prod: PROD, sr: !!sr,
+        bnd: t ? [].map.call(t.querySelectorAll("tbody tr"), (r) => ({ t: T(r.cells[0]), who: T(r.cells[1]), tags: [].map.call(r.cells[0].querySelectorAll(".prodtag"), (x) => x.title) })) : [],
+        def: [].map.call(d.querySelectorAll(".pend h3"), T).find((h) => /Supplier default/.test(h)) || "" };
+    } finally {
+      BASE_SALES.length = n0;
+      if (sr) { Object.keys(sr).forEach((k) => delete sr[k]); Object.assign(sr, JSON.parse(sr0)); }
+      applyOverlay(); recompute();
+    }
   }
   /* 26 Sep 2026 (plan fold 4.3): whether the book's five newest rows span two books is the day's business, so two rows are
      forced newest, one salt and one oil, a day after every dated row on the book, and taken off again */
@@ -41417,6 +41443,7 @@ await (async () => {
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
   const lg = JSON.parse(w.eval("JSON.stringify((" + probeLedger.toString() + ")())"));
+  const own = JSON.parse(w.eval("JSON.stringify((" + probeFixture.toString() + ")())"));
   const fmtRM = (n) => "RM " + n.toLocaleString("en-US");
   ok(v.rev === fmtRM(v.conso), "revenue is added across the books and agrees with the Financials head: " + JSON.stringify([v.rev, v.conso]));
   /* 26 Sep 2026 (plan fold 4.3): each count is held to that book's own shelf, and a book holding nothing is left off rather
@@ -41428,9 +41455,11 @@ await (async () => {
         && new Set(noted.map((m) => m[1])).size === onHand.length && noted.length === onHand.length
       : v.inv === "nothing on hand"),
     "units stay with their book: the inventory figure is money, and its note gives each book holding stock its own count: " + JSON.stringify([v.invV, v.inv, v.held]));
-  ok(v.bnd.some((r) => /^Breach Credit cap/.test(r.t) && JSON.stringify(r.tags) === '["Salt"]') && v.bnd.filter((r) => /^Watch Margin floor/.test(r.t)).every((r) => r.tags.length === 1),
-    "salt's breach is on Rules with oil in view, and a row one book raised names that book: " + JSON.stringify(v.bnd.map((r) => r.t)));
-  ok(v.srAmount > 0 && v.def.includes(fmtRM(v.srAmount)), "the supplier default reads salt's figure whichever book is in view: " + JSON.stringify([v.def, v.srAmount]));
+  const cc = own.bnd.find((r) => r.who === "CZ9-CCA") || null;
+  ok(own.prod === "oil" && cc && /^Breach Credit cap/.test(cc.t) && JSON.stringify(cc.tags) === '["Salt"]' && v.bnd.filter((r) => /^Watch Margin floor/.test(r.t)).every((r) => r.tags.length === 1),
+    "salt's breach is on Rules with oil in view, and a row one book raised names that book: " + JSON.stringify([own.prod, cc, v.bnd.map((r) => r.t)]));
+  ok(own.sr && own.prod === "oil" && own.def.includes(fmtRM(4321) + " written off"),
+    "the supplier default reads salt's figure whichever book is in view: " + JSON.stringify([own.def, own.sr ? "the section's RM 4,321" : "the book declares no supplierReceivable to write one into"]));
   const fx = (c) => lg.rows.find((r) => r.fx === c) || { tags: [] };
   ok(JSON.stringify(fx("CZ9-LGA").tags) === '["Salt"]' && JSON.stringify(fx("CZ9-LGB").tags) === '["Oil"]' && lg.rows.every((r) => r.tags.length === 1)
       && lg.prod === "oil" && v.prod === "oil" && /Every book/.test(v.scope),
@@ -41768,17 +41797,30 @@ await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const v = JSON.parse(w.eval("JSON.stringify(eachBook(function(p){var r=restockFor(p),cv=coverStats(),L=currentLot(),a=actions().filter(function(x){return x.kind==='buy';})[0];"
-    + "var fr=+(currentStock-defUnits).toFixed(2),call=shelfCall(cv,fr<0,fr);"
+    + "var fr=+(currentStock-defUnits).toFixed(2),call=shelfCall(cv,fr<0,fr),f=forecast();"
     + "return {plan:r&&!r.empty?{base:r.base,days:r.coverDays,date:r.coverDate}:null,rate:cv.rate,days:cv.days,"
-    + "lotDry:L?L.dry:null,row:a?a.title:null,call:call?call.f:null,callDry:call?call.w:null};}))"));
+    + "lotDry:L?L.dry:null,row:a?a.title:null,short:f.shortUnits>0.009?units(f.shortUnits):null,call:call?call.f:null,callDry:call?call.w:null};}))"));
   const books = Object.keys(v).filter((p) => v[p].plan && v[p].plan.base > 0 && v[p].plan.days != null);
   ok(books.length >= 2, "at least two books have a plan with a cover to compare: " + JSON.stringify(books));
   const off = books.filter((p) => v[p].rate !== v[p].plan.base || v[p].days !== v[p].plan.days);
   ok(off.length === 0, "coverStats reads the plan's rate and cover on every book: " + JSON.stringify(off.map((p) => [p, v[p].rate, v[p].days, v[p].plan])));
   const lot = books.filter((p) => v[p].lotDry != null && v[p].lotDry !== v[p].plan.date);
   ok(lot.length === 0, "Sourcing's current lot runs dry on the plan's date: " + JSON.stringify(lot.map((p) => [p, v[p].lotDry, v[p].plan.date])));
-  const row = books.filter((p) => v[p].row && v[p].row.indexOf(v[p].plan.days + " days cover") < 0);
-  ok(row.length === 0, "To do's buy row states the plan's cover: " + JSON.stringify(row.map((p) => [p, v[p].row, v[p].plan.days])));
+  /* 27 Sep 2026: A ROW SHORT ON PROMISES STATES NO COVER. actions() leads with the shortfall when one bites (round 5, a
+     month before v824), so this read salt's "Buy: 4 unit short on promises" as a row missing its cover (run 36254718923).
+     The cover is held where the row states one; a row short on promises must lead with the forecast's shortfall, and any
+     cover it does state must be the plan's. Neither form is skipped, and a form no book carries today says so. */
+  const stated = books.filter((p) => v[p].row && !v[p].short), shortRows = books.filter((p) => v[p].row && v[p].short);
+  if (stated.length) {
+    const row = stated.filter((p) => v[p].row.indexOf(v[p].plan.days + " days cover") < 0);
+    ok(row.length === 0, "To do's buy row states the plan's cover: " + JSON.stringify(row.map((p) => [p, v[p].row, v[p].plan.days])));
+  } else skipData("no book's buy row states a cover today, so To do's cover was not read against the plan");
+  if (shortRows.length) {
+    const short = shortRows.filter((p) => { const c = /(\S+) days cover/.exec(v[p].row);
+      return v[p].row.indexOf("Buy: " + v[p].short + " short") !== 0 || (c && c[1] !== String(v[p].plan.days)); });
+    ok(short.length === 0, "and a row short on promises leads with the forecast's shortfall, stating no cover but the plan's: "
+      + JSON.stringify(short.map((p) => [p, v[p].row, v[p].short, v[p].plan.days])));
+  } else skipData("no book is short on promises today, so a buy row leading with the shortfall was not read");
   const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const call = books.filter((p) => { const d = new Date(v[p].plan.date); return v[p].plan.days >= 1 && v[p].callDry && v[p].callDry.indexOf("on " + d.getUTCDate() + " " + mon[d.getUTCMonth()] + ".") < 0; });
   ok(call.length === 0, "and Stock's call runs dry on that date, written as the card writes it: " + JSON.stringify(call.map((p) => [p, v[p].plan.date, String(v[p].callDry).slice(-60)])));
