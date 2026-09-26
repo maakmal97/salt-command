@@ -37,6 +37,8 @@ import { priceList, priceDigest } from "./pricelist.mjs";
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
    node builtins. */
 import { psymSvg, PSHAPE, MON3 } from "../stmt/page.js";
+/* 27 Sep 2026: the reward's line is the one the Counter draws on Home (part.cover), so the two are one set of words */
+import { EN, fill } from "../stmt/words.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -179,6 +181,13 @@ function stmtRows(party,o){
        Goodwill is out of the priced set by definition; a rebate row with a balance prints its
        charge and the balance due, as v432 intended. */
     const gift=!!s.goodwill||(!!s.rebate&&paidCash<=0.009&&owed<=0.009);
+    /* 27 Sep 2026, HIS APPROVAL ("Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): THE PART OF AN
+       ORDER THEIR REWARD PAID IS NAMED, NEVER VALUED. A sale he marks at entry carries coverUnits and coverRM (v620, the
+       desk's coverPlan): reward spent, at cost, on the gap to their own price. A reward unit is valued at cost (coverPlan's
+       rm = kg x cost), so a ringgit figure of the cover would hand a customer salt's own cost per unit: the document
+       carries a FLAG, never coverRM, and the row's own total stays goods plus delivery, the cover never added in. What is
+       owed is untouched, txOwed less the money. A gift and a cancelled order carry none, counting in nothing. */
+    const cover=(!gift&&st.order!=='Cancelled'&&+s.coverUnits>0&&+s.coverRM>0)?1:0;
     /* v432: THE ROW CARRIES ITS OWN rid. Nothing on the document prints it, but without it a
        statement row cannot be traced back to the book row it came from, and any check over these
        figures has to match on party, date and quantity: CH4-MAL has two orders on 14 August of one
@@ -191,6 +200,7 @@ function stmtRows(party,o){
        a mark, never written as a word: rule 2 of this site is that a product is a mark. */
     return {rid:s.rid||null,product:(s.product||"salt"),gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
       unit:s.qty>0?+((s.total)/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
+      cover:cover,
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
          agreed with nothing paid and nothing collected is an intention, not a debt, and
@@ -368,6 +378,9 @@ function stmtDoc(party,rows,o){
      is the one arithmetic a reader would certainly catch. */
   T.pendQty=0;T.pendVal=0;T.pendN=0;
   T.cxN=0;T.cxPaid=0;
+  /* 27 Sep 2026, amended (DROP THE RINGGIT): the reward's own share of an order is NAMED on the line, never valued; the
+     order line and the footer both stay at goods plus delivery, the cover never added in. */
+  const coverSaid=()=>esc(fill(EN['part.cover'],{},'en'));
   rows.forEach(r=>{
     /* a cancelled order contributes NOTHING: not quantity, not value, not the count of
        orders. Anything else makes the footer disagree with the word "cancelled". */
@@ -457,7 +470,8 @@ function stmtDoc(party,rows,o){
         +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+sub(paidLater?'paid '+e(dLong(r.paidOn)):'')+'</div>'
         +'<div class="salt-lines__what" role="cell">'+lineMark(r.product)+units(r.qty)+sub(r.resale?'on behalf of a friend':'')
           +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
-        +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery):'')+'</div>'
+        +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
+          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery):'')+'</div>'
         +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(sub).join('')+'</div></div>';
     }
     /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
@@ -479,6 +493,7 @@ function stmtDoc(party,rows,o){
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
       +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))
+        +(r.cover?'<div class="sub2">'+coverSaid()+'</div>':'')
         +(r.delivery>0.009?'<div class="sub2">plus delivery '+money(r.delivery)+'</div>':'')+'</td>'
       +'<td class="r">'+stat+'</td></tr>';
   }).join('');
@@ -812,15 +827,20 @@ export function payDue(party, day) {
   const gotOn = s => txDates(Object.assign({}, s, { qty: E.txEffDeliv(s) })).dOn || null;
   sales.filter(s => E.ownsCode(party, s.customer) && !s.goodwill && !s.defaulted && onIt(s)).forEach(s => {
     const product = s.product || "salt", resale = s.customer !== party;
+    /* 27 Sep 2026, amended (FIX THE DOUBLE COUNT, DROP THE RINGGIT): the reward's own share travels as a FLAG, never
+       coverRM, and on ONE part only, the handed-over part when there is one, else the part still coming. A part-delivered
+       covered sale carried it on both before, and Home said it twice. rm and whole are still what is owed, the engine's own. */
+    const hasCover = +s.coverUnits > 0 && +s.coverRM > 0;
     const rm = +E.txAdvance(s).toFixed(2);
-    if (rm > 0.009) {
+    const nowPart = rm > 0.009;
+    if (nowPart) {
       const due = s.date ? dayPlus(s.date, term) : null;
-      now.push({ date: s.date || null, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
-        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale });
+      now.push(Object.assign({ date: s.date || null, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
+        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale }, hasCover ? { cover: 1 } : {}));
     }
     const toPay = +E.txPendRM(s).toFixed(2);
-    if (toPay > 0.009) coming.push({ date: s.date || s.agreedOn || null, rm: toPay, product, qty: s.qty,
-      toCome: +(s.qty - E.txEffDeliv(s)).toFixed(4), resale });
+    if (toPay > 0.009) coming.push(Object.assign({ date: s.date || s.agreedOn || null, rm: toPay, product, qty: s.qty,
+      toCome: +(s.qty - E.txEffDeliv(s)).toFixed(4), resale }, (hasCover && !nowPart) ? { cover: 1 } : {}));
   });
   const k = d => d || "9999";   /* an undated part sorts last */
   now.sort((a, b) => k(a.due).localeCompare(k(b.due)));

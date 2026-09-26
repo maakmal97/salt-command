@@ -15,7 +15,8 @@
  * missing wrap) keeps its plain English and no code. The codes are listed here and nowhere else.
  *
  * WHAT IS NOT HERE: Salt Admin (stmt/owner.js), which stays English and unkeyed; the words he sends a customer
- * (stmt/send.js), which he writes himself, the sign-in message carrying its own Malay half; the sealed statement, a dated record; and his notice, which is his own words.
+ * (stmt/send.js), which he writes himself, the sign-in message carrying its own Malay half; the sealed statement, a dated record, save its
+ * one line shared with Home, part.cover, taken from here in English as it is written; and his notice, which is his own words.
  *
  * THE RULES OF THE PAGE HOLD FOR EVERY LANGUAGE: no product word, no level's name, no brand and never the desk's name;
  * figures in RM and units; the suite reads both tables with the site's own lists (src/orders.js). The table travels inside
@@ -514,6 +515,9 @@ export const EN = {
   "part.BareF": "{mark} {u} on behalf of a friend",
   "part.restBare": "The rest of {mark} {u}",
   "part.restBareF": "The rest of {mark} {u} on behalf of a friend",
+  /* 27 Sep 2026, amended the same day (DROP THE RINGGIT): named, never valued, a reward unit costed at cost. A line of
+     its own under the part (and the statement's order line), with no amount. */
+  "part.cover": "Part paid from your reward",
   "pay.odMany": "{n} orders past the day they were due.",
   "pay.nowMany": "{n} orders you have received.",
   "cl.waiting": "{rm} sent, waiting for us to confirm.",
@@ -897,6 +901,7 @@ export const MS = {
   "part.BareF": "{mark} {u} bagi pihak kawan",
   "part.restBare": "Baki bayaran untuk {mark} {u}",
   "part.restBareF": "Baki bayaran untuk {mark} {u} bagi pihak kawan",
+  "part.cover": "Sebahagian dibayar daripada ganjaran anda",
   /* ---- PAYING: To pay now, the pay sheet, Did you send, the claim's words, an order's money, Orders over the line ---- */
   "pay.h": "Bayar",
   "pay.now": "Perlu dibayar sekarang",

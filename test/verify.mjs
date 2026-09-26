@@ -42342,6 +42342,137 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("Reward cover, amended (drop the ringgit, fix the double count): the live document names the part their reward paid, once and with no amount, and Home says it in English and in Malay");
+await (async () => {
+  /* HIS APPROVAL OF 27 SEP 2026 ("Reward cover on statements"), AMENDED THE SAME DAY. A sale he marks at entry carries
+     coverUnits and coverRM (v620, the desk's coverPlan): reward spent, at cost, on the gap to their own price. A reward
+     unit is valued at cost, so no ringgit figure of it ever reaches the customer: the document carries a FLAG (cover: 1),
+     never coverRM, and the order line and the footer stay at goods plus delivery, the cover never added in. A
+     part-delivered covered sale used to carry the flag on both its handed-over part and the part still coming, and Home
+     said it twice; FABLE'S CASE (rc05 below) is exactly that shape, fixed to carry it once. No row on the book carries a
+     cover yet, so this is a fixture: invented codes on a copy of the book, the statement struck on 24 Sep. A distinctive
+     coverRM (13.37, never otherwise printed here) makes a leak findable. */
+  const { pathToFileURL: puC } = await import("node:url");
+  const E = (await import("../engine/position.mjs")).default;
+  const WD = await import("../stmt/words.js");
+  const O = await import("../src/orders.js");
+  const at = new Date("2026-09-24T04:00:00Z"), P = "CX7-RW";
+  const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
+  const rows = [
+    fx("rc01", "2026-09-08", { qty: 2, total: 90, delivery: 5, cash: 60, deliveredQty: 2, coverUnits: 0.2, coverRM: 13.37 }),   // handed over in full, part paid, overdue, covered
+    fx("rc02", "2026-09-12", { total: 50, cash: 50, deliveredQty: 1 }),                                                          // no cover, settled
+    fx("rc03", "2026-09-20", { total: 40, coverUnits: 0.1, coverRM: 13.37 }),                                                    // agreed, nothing delivered: coming up, covered
+    fx("rc04", "2026-09-22", { total: 30, deliveredQty: 1 }),                                                                    // no cover, to pay and not yet due
+    /* FABLE'S CASE: part-delivered (1 of 3 units) and covered, so it owns BOTH a handed-over part (now, overdue) and a
+       part still coming; before the fix the flag rode on both and Home printed the note twice for the one sale */
+    fx("rc05", "2026-09-09", { qty: 3, total: 150, delivery: 3, deliveredQty: 1, coverUnits: 0.15, coverRM: 13.37 })
+  ];
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.sales = rows; book.customerRefunds = [];
+  const tmp = join(REPO, "test", "tmp", "cover-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  writeFileSync(join(tmp, "book.json"), JSON.stringify(book));
+  const keep = process.env.SALT_BOOK;
+  let M, doc;
+  try {
+    process.env.SALT_BOOK = join(tmp, "book.json");
+    M = await import(puC(join(REPO, "tools", "make_statements.mjs")).href + "?cover");
+    doc = M.liveStatement(P, at);
+  } finally {
+    if (keep === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+  const rowsOf = M.stmtRows(P, { from: null, to: "2026-09-24", completed: true, open: true, pending: true, dates: true });
+  const byRid = (rid) => rowsOf.find((x) => x.rid === rid);
+  const docJson = JSON.stringify(doc);
+  const figs = (t) => (String(t || "").match(/RM [0-9,]+\.\d\d/g) || []).map((x) => +x.slice(3).replace(/,/g, ""));
+  const lineOf = (d) => doc.body.split('<div class="salt-lines__row').find((x) => x.includes('role="cell">' + d)) || "";
+  const amtOf = (l) => (/salt-lines__amount" role="cell">([\s\S]*?)<\/div>/.exec(l) || [])[1] || "";
+
+  /* (b) OWED PLUS PAID ADDS UP TO THE ORDER AT GOODS PLUS DELIVERY, on every priced row (a pending order counts nowhere,
+     the standing rule since v189, so rc03 is not one of these): the cover is never part of the arithmetic, Fable's case
+     (rc05, still 2 of its 3 units short) included, and the statement's own order line reads the goods alone. */
+  const priced = rowsOf.filter((r) => !r.pendingOrder && !r.cancelled && !r.gift);
+  const fableLineAmt = figs(amtOf(lineOf("09 Sep 2026")))[0];
+  ok(priced.length === 4 && priced.every((r) => +(r.owed + r.paidCash + r.inKind).toFixed(2) === +(r.total + r.delivery).toFixed(2))
+      && byRid("rc05").owed === 153 && byRid("rc05").cover === 1 && byRid("rc01").cover === 1 && byRid("rc02").cover === 0
+      && fableLineAmt === 150,
+    "owed plus paid adds up to the order at goods plus delivery on every priced row, the statement's own order line "
+    + "reading the goods alone (RM 150 for Fable's case, not RM 151), the cover never added in, a line with none "
+    + "carrying none: " + JSON.stringify({ rows: priced.map((r) => ({ rid: r.rid, owed: r.owed, paid: r.paidCash + r.inKind, order: r.total + r.delivery, cover: r.cover })), fableLineAmt }));
+
+  /* (a) FABLE'S CASE: a part-delivered covered sale carries the flag on ONE part only, the part handed over, never on
+     the part still coming, which is exactly what used to double the note. */
+  const pay = doc.pay, fableNow = pay.now.parts.find((p) => p.date === "2026-09-09"), fableComing = pay.coming.parts.find((p) => p.date === "2026-09-09");
+  ok(fableNow && fableNow.cover === 1 && fableNow.late === true && fableComing && !("cover" in fableComing)
+      && pay.overdue.parts.filter((p) => p.date === "2026-09-09").length === 1,
+    "a part-delivered covered sale carries the cover flag on its handed-over part alone, never on the part still coming: "
+    + JSON.stringify({ fableNow, fableComing }));
+
+  /* (d) NO coverRM VALUE AND NO KEY NAMED coverRM ANYWHERE THE CUSTOMER'S PAGE READS: the sealed document, the payload it
+     travels in (the same JSON, sealed by the crypto module elsewhere), and the page served before it is even opened. */
+  const served = (await import("../stmt/page.js")).landingPage("abcd-efgh", "ncoverleak", null);
+  ok(!/coverRM/.test(docJson) && !docJson.includes("13.37") && !/coverRM/.test(served) && !served.includes("13.37"),
+    "the sealed document and the served page carry a flag, never coverRM or its figure: "
+    + JSON.stringify({ docHasKey: /coverRM/.test(docJson), docHas1337: docJson.includes("13.37"), pageHasKey: /coverRM/.test(served), pageHas1337: served.includes("13.37") }));
+
+  /* Home draws it, sealed and opened as a customer's phone opens it, in the reader's language, from the table, with no
+     amount, once for every covered part and never for one without */
+  const P2 = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
+  const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
+    live: await C.encryptWith(ck, JSON.stringify(doc)),
+    prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+      products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+    env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
+  const html = P2.landingPage(un, "ncover", null);
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const draw = async (langs) => {
+    const W = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        Object.defineProperty(win.navigator, "languages", { get: () => langs, configurable: true });
+        win.scrollTo = () => {}; win.open = () => null;
+        win.fetch = async (p) => { p = String(p);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+          if (p === "/orders") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [] }) };
+          return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+      } }).window;
+    const D = W.document;
+    try {
+      D.getElementById("pw").value = pass;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 200 && !(D.querySelector("#payHead:not([hidden]) .salt-ledger") && D.querySelector(".hpart")); i++) await wait(25);
+      await wait(50);
+      const lang = (x) => { const l = x.closest("[lang]"); return l ? l.getAttribute("lang") : "none"; };
+      const whole = D.documentElement.outerHTML;
+      return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .salt-ledger") && !!D.querySelector(".hpart"),
+        leak: /coverRM/.test(whole) || whole.includes("13.37"),
+        lines: [...D.querySelectorAll(".pcover")].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
+          where: x.closest("#payHead .salt-ledger") ? "overdue" : x.closest(".hpart") ? "coming" : "elsewhere", lang: lang(x) })) };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  const en = await draw(["en-GB", "en"]);
+  ok(en.drawn && en.lang === "en" && !en.leak
+      && JSON.stringify(en.lines.map((x) => [x.where, x.t, x.k])) === JSON.stringify([["overdue", "Part paid from your reward", "part.cover"],
+        ["overdue", "Part paid from your reward", "part.cover"], ["coming", "Part paid from your reward", "part.cover"]]),
+    "Home names the reward's part with no amount, once for every covered part (the overdue pair, Fable's case among "
+    + "them, and the one coming up), never for a part without one, and never a leaked figure: " + JSON.stringify(en));
+  const ms = await draw(["ms-MY", "ms", "en"]);
+  const both = [WD.EN["part.cover"], WD.MS["part.cover"]];
+  ok(ms.drawn && ms.lang === "ms" && !ms.leak && typeof WD.MS["part.cover"] === "string" && WD.MS["part.cover"] !== WD.EN["part.cover"]
+      && !/\d/.test(WD.EN["part.cover"]) && !/\d/.test(WD.MS["part.cover"])
+      && JSON.stringify(ms.lines.map((x) => [x.where, x.t, x.lang])) === JSON.stringify([["overdue", WD.MS["part.cover"], "ms"],
+        ["overdue", WD.MS["part.cover"], "ms"], ["coming", WD.MS["part.cover"], "ms"]])
+      && both.every((w) => O.siteWords(w) === "" && !O.wordsIn(w, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS)).length),
+    "and on a Malay phone it is the Malay table's, with no amount either, and neither language names a product, a level "
+    + "or the desk: " + JSON.stringify({ ms, both }));
+})();
+
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

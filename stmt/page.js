@@ -330,6 +330,8 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ohead .state{margin-left:auto}
 .ohead .sub2{flex-basis:100%;margin:0}
 .odue{color:var(--salt-ember)}
+/* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
+.pcover{display:block;margin-top:2px}
 .oact .salt-pill,.oact>.salt-ghost{width:100%;margin-top:16px}
 .omsgs{margin-top:22px}
 .omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
@@ -2772,7 +2774,7 @@ const CLIENT_JS = `
       dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){
         var L=el('div','salt-ledger salt-ledger--plain');
-        od.parts.forEach(function(x){ L.appendChild(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue')); });
+        od.parts.forEach(function(x){ L.appendChild(coverTo(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue'),x)); });
         dueBox.appendChild(L);
       }
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
@@ -3343,6 +3345,12 @@ const CLIENT_JS = `
       d:function(L){ return dayName(p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
+  /* 27 Sep 2026 (his approval, "Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): A NOTE, WITH NO
+     AMOUNT, that part of an order was paid from the reward, under the part it belongs to, keyed so a switch of language
+     words it again. Only where the publish sealed a flag (payDue's cover, on one part only). The part's own figure is
+     still what is owed, the cover already paid; a reward unit is valued at cost, so a ringgit figure here would give a
+     customer salt's own cost per unit. The statement's order line carries the same note, with no amount either. */
+  function coverTo(x,p){ if(x&&p&&p.cover) x.appendChild(setW(el('span','sub2 pcover'),'part.cover')); return x; }
   function kpiTile(tone,label,value,note){
     var k=el('div','salt-kpi salt-kpi--'+tone);
     k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
@@ -3362,14 +3370,14 @@ const CLIENT_JS = `
   function setHold(){ hold=odLeft()>HOLD_RM+0.004&&!(sentWaiting()>0.004); }
   function odNote(od){
     var n=el('span'), ps=od.parts||[];
-    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); coverTo(n,ps[0]); }
     else n.appendChild(document.createTextNode(tw('pay.odMany',{n:ps.length})+' '+dueWords(ps.length?ps[0].due:null,true)));
     return n;
   }
   /* what To pay now is for, in one line under its figure */
   function nowNote(now){
     var n=el('span'), ps=now.parts||[];
-    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); }
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); coverTo(n,ps[0]); }
     else n.appendChild(document.createTextNode(tw('pay.nowMany',{n:ps.length})+' '+dueWords(now.due,true)));
     return n;
   }
@@ -3443,7 +3451,7 @@ const CLIENT_JS = `
     if(now.rm>0.004&&od.rm>0.004&&(now.parts||[]).length>1){
       box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',tw('pay.overdue')));
       var L=el('div','salt-ledger salt-ledger--plain');
-      od.parts.forEach(function(p){ L.appendChild(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue')); });
+      od.parts.forEach(function(p){ L.appendChild(coverTo(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue'),p)); });
       box.appendChild(L);
     }
     return box;
@@ -3741,6 +3749,7 @@ const CLIENT_JS = `
     t.appendChild(withMark(p.product,unitsOf(p.qty,unitFor(p.product)),18));
     main.appendChild(t);
     main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
+    coverTo(main,p);
     b.appendChild(main);
     var side=el('span','salt-inbox-row__side');
     side.appendChild(el('span','salt-inbox-row__age',p.date?oDay(p.date):''));

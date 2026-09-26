@@ -608,6 +608,11 @@ to know and none is needed to tell them what they did. The reward is in UNITS, w
 the next as a **share of one unit** drawn as a bar, because the unit itself is a margin figure. No
 margin, no cost, no floor, no other party's name.
 
+*A reward that later covers part of an order carries no ringgit either* (his decision of 27 Sep 2026,
+"drop the ringgit"). `coverPlan` values a unit at cost, so the statement's order line and Home's parts
+to pay only name that the reward paid part of it (`part.cover`, no amount); a figure would hand a
+customer salt's own cost per unit.
+
 *Every figure adds up to the list under it.* The lines are struck off `pricedSales`, the same basis
 as the summary, and `onward` counts the onward LINES rather than `dsResell`, which counts every R2
 row including the pending and the cancelled and read 14 above a list of 10. That is the v385 lesson:
