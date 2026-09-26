@@ -12591,12 +12591,15 @@ await (async () => {
       ].join(",") + ");recompute();");
     const pick = (id) => rd16("(function(){var r=networkStats().find(function(x){return x.id==='" + id + "';});return r?{earned:r.earned,toNext:r.toNext,unit:r.unit,mine:r.marginMine,nMine:r.nMine,intro:r.marginIntro,nIntro:r.nIntro,total:r.marginTotal}:null;})()");
     const as = pick("CZ9-AS");
-    ok(!!as && as.mine === 400 && as.nMine === 2,
-      "their own order before 10 Aug and their -R resale pool as one R1 + R2 figure, and the redemption is not an order: " + JSON.stringify(as));
+    /* 27 Sep 2026, his decision ("Reward paid parts"): a rebate row counts its paid part. z616e's reward settled all
+       RM 110 and took half the unit, so the other half left paid for by nobody and taken by no reward, and it is
+       charged at its cost, RM 22, as a gift is; it was skipped whole before, which read RM 400 and two orders. */
+    ok(!!as && as.mine === 378 && as.nMine === 3,
+      "their own order before 10 Aug and their -R resale pool as one R1 + R2 figure, less the half unit z616e handed over that nobody paid for and no reward took: " + JSON.stringify(as));
     ok(!!as && as.intro === 150 && as.nIntro === 2,
       "every priced order of a customer they introduced counts, an introduced associate's resale included, and neither the pending order nor that associate's own introduction does: " + JSON.stringify(as));
-    ok(!!as && as.total === 525 && as.earned === 1 && as.toNext === 415,
-      "RM 400 of their own and RM 150 of R3 at 1/1.2 pool to RM 525, one whole unit, and RM 415 more reaches the second: " + JSON.stringify(as));
+    ok(!!as && as.total === 503 && as.earned === 1 && as.toNext === 437,
+      "RM 378 of their own and RM 150 of R3 at 1/1.2 pool to RM 503, one whole unit, and RM 437 more reaches the second: " + JSON.stringify(as));
     ok(rd16("rebateApplied('CZ9-AS')") === 0.5, "the half unit they took is netted against it");
     const b2 = pick("CZ9-B2"), loss = pick("CZ9-LOSS");
     ok(!!b2 && b2.total === 940 && b2.earned === 2 && b2.toNext === 470, "exactly RM 940 earns two, never a part unit: " + JSON.stringify(b2));
@@ -12609,7 +12612,8 @@ await (async () => {
       "the card shows the pooled count and the half unit free, and no hurdle or band column survives");
     w16.eval("setProd('oil');");
     const oilCard = String(w16.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-AS';}))"));
-    ok(/no reward on this book/.test(oilCard) && !/Margin brought/.test(oilCard) && rd16("networkStats().find(function(x){return x.id==='CZ9-AS';}).earned") === 0,
+    /* the count is the table under its own header: the R3 KPI, Margin brought in, is drawn on every book (27 Sep 2026) */
+    ok(/no reward on this book/.test(oilCard) && !/Margin brought, whole ledger/.test(oilCard) && rd16("networkStats().find(function(x){return x.id==='CZ9-AS';}).earned") === 0,
       "on oil the card says there is no reward and draws no count");
     w16.eval("setProd('salt');queue=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
     w16.eval("redeemRebate('CZ9-AS');");
@@ -41948,6 +41952,83 @@ await (async () => {
     return JSON.stringify({open:open,shut:shut});})()`));
   ok(p.open > 0 && p.shut === 0, "a name Today drew while the vault was open is gone from the render after the lock: " + JSON.stringify(p));
   try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
+await (async () => {
+  /* HIS DECISION OF 27 SEP 2026. rewardMargin skipped every rebate-stamped row whole, so where the reward
+     settled one unit of an order and the rest was paid for, the paid units earned nothing. A rebate row now
+     counts total less settledRM, less the units the reward did not take (rebUnits, the reading rebateApplied
+     nets) at the row's own unit cost. Fixture parties only, one a behaviour, so no figure reads the live book;
+     each assertion was proved red by a mutation of its own. */
+  const { openMaster: omRP } = await import("../tools/payload.mjs");
+  const { w } = await omRP();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  try {
+    w.eval("setProd('salt');");
+    const row = (o) => JSON.stringify(Object.assign({ product: "salt", deliveredQty: o.qty, deliveredOn: o.date }, o));
+    w.eval("sales.push(" + [
+      /* a paid order, and one of three units where the reward took one: the shape of s068 */
+      row({ rid: "zrp1", customer: "CZ9-RPA", date: "2026-09-01", qty: 1, total: 300, cost: 50, cash: 300 }),
+      row({ rid: "zrp2", customer: "CZ9-RPA", date: "2026-09-02", qty: 3, total: 240, cost: 141, cash: 160, settledRM: 80, rebate: true, rebateKg: 1 }),
+      /* stamped rebate with no rebateKg, so the whole unit is taken, and RM 17 paid over it: the shape of s025 */
+      row({ rid: "zrp3", customer: "CZ9-RPB", date: "2026-09-03", qty: 1, total: 107, cost: 48, cash: 17, settledRM: 90, rebate: true }),
+      /* a paid order, and a whole unit the reward settled that is not a gift, so it stays in pricedSales */
+      row({ rid: "zrp4", customer: "CZ9-RPC", date: "2026-09-04", qty: 1, total: 100, cost: 48, cash: 100 }),
+      row({ rid: "zrp5", customer: "CZ9-RPC", date: "2026-09-05", qty: 1, total: 110, cost: 48, cash: 0, settledRM: 110, rebate: true, rebateKg: 1 }),
+      /* one unit from the reward and one paid for under what it cost */
+      row({ rid: "zrp6", customer: "CZ9-RPD", date: "2026-09-06", qty: 2, total: 110, cost: 96, cash: 10, settledRM: 100, rebate: true, rebateKg: 1 }),
+      /* a rebateKg over the quantity, and a settledRM over the goods with the delivery inside it */
+      row({ rid: "zrp7", customer: "CZ9-RPE", date: "2026-09-07", qty: 1, total: 110, cost: 48, cash: 60, settledRM: 50, rebate: true, rebateKg: 2 }),
+      row({ rid: "zrp8", customer: "CZ9-RPF", date: "2026-09-08", qty: 2, total: 200, delivery: 10, cost: 96, cash: 5, settledRM: 205, rebate: true, rebateKg: 1 }),
+    ].join(",") + ");recompute();");
+    const mine = (id) => rd("rewardMargin('" + id + "',[]).mine");
+    const a = mine("CZ9-RPA");
+    ok(a.margin === 316 && a.n === 2,
+      "a row the reward part settled counts its paid part: RM 250 on the paid order, and RM 160 less two units at RM 47 on the other, RM 316 over two orders: " + JSON.stringify(a));
+    const b = mine("CZ9-RPB");
+    ok(b.margin === 17 && b.n === 1 && rd("rebateApplied('CZ9-RPB')") === 1,
+      "a row stamped rebate with no rebateKg is the whole unit taken, as rebateApplied nets it, so the RM 17 paid over it has no unit behind it and counts as RM 17: " + JSON.stringify(b));
+    const c = mine("CZ9-RPC");
+    ok(c.margin === 52 && c.n === 1,
+      "a row the reward settled whole is a redemption and not an order: only the paid order's RM 52 counts, over one order: " + JSON.stringify(c));
+    const d = mine("CZ9-RPD");
+    ok(d.margin === -38 && d.n === 1,
+      "a paid part under its cost counts below zero, as an ordinary row sold under cost does: RM 10 less one unit at RM 48: " + JSON.stringify(d));
+    const e = mine("CZ9-RPE"), f = mine("CZ9-RPF");
+    ok(e.margin === 60 && f.margin === -48,
+      "each side is floored at nothing: a rebateKg over the quantity adds no unit's cost back, and a settledRM over the goods takes nothing off the paid units: " + JSON.stringify({ e, f }));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("Reward paid parts: Network's Margin brought in is the reward's own R3 margin on every order, not first orders' revenue");
+await (async () => {
+  /* HIS DECISION OF 27 SEP 2026. The Brought you figure, on each associate's card and in the Overall row,
+     read firstOrderOf, the revenue of an introduced customer's first order; the reward counts the margin on
+     every order of theirs. Both now read rewardMargin's intro margin, labelled as margin. The fixture
+     customer's first order is RM 150 of revenue and their two orders RM 300 of margin, so the two readings
+     cannot agree by chance, and the Overall row is read as a difference so the live book is not in it. */
+  const { openMaster: omMB } = await import("../tools/payload.mjs");
+  const { w } = await omMB();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  try {
+    w.eval("setProd('salt');");
+    const kpi = (html) => { const m = /salt-kpi__label">Margin brought in<\/div><div class="v salt-kpi__value">([^<]*)<\/div>/.exec(html); return m ? m[1] : null; };
+    const num = (s) => (s == null ? NaN : +String(s).replace(/[^0-9.-]/g, ""));
+    const overall0 = num(kpi(String(w.eval("tabNetwork()"))));
+    const row = (o) => JSON.stringify(Object.assign({ product: "salt", deliveredQty: o.qty, deliveredOn: o.date }, o));
+    w.eval("associates.push('CZ9-MBA');INTRODUCTIONS.push({by:'CZ9-MBA',customer:'CZ9-MBB'});sales.push(" + [
+      row({ rid: "zmb1", customer: "CZ9-MBB", date: "2026-09-01", qty: 1, total: 150, cost: 50, cash: 150 }),
+      row({ rid: "zmb2", customer: "CZ9-MBB", date: "2026-09-10", qty: 2, total: 300, cost: 100, cash: 300 }),
+    ].join(",") + ");recompute();");
+    const r = rd("(function(){var x=networkStats().find(function(x){return x.id==='CZ9-MBA';});return x?{r3:x.r3,intro:x.marginIntro}:null;})()");
+    const card = String(w.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-MBA';}))"));
+    ok(!!r && r.r3 === 150 && r.intro === 300 && kpi(card) === rd("fmt0(300)") && !/>Brought you</.test(card),
+      "an associate's card leads R3 with the margin on every order of the customer they introduced, RM 300, not their first order's RM 150: " + JSON.stringify({ r, kpi: kpi(card) }));
+    const overall1 = num(kpi(String(w.eval("tabNetwork()"))));
+    ok(Number.isFinite(overall0) && Math.abs((overall1 - overall0) - 300) <= 1,
+      "and the Overall row adds the same RM 300 of margin for them, not RM 150 of first order: " + JSON.stringify({ overall0, overall1 }));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
 section("The suite frees its windows: every section's body is its own async function");

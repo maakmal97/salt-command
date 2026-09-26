@@ -17727,8 +17727,8 @@ const REWARD={
      what counts   every priced order on the party's own code and -R account, R1 and R2 together because
                    the two cannot be told apart; for an associate, also every priced order of each customer
                    they introduced, one level only (R3, from introductions()). A redemption is not an order,
-                   and neither is a written-off one (v618, his ruling of 14 Sep 2026: an order never paid
-                   earns nobody anything).
+                   though the paid part of a row the reward part settled is (27 Sep 2026), and a written-off
+                   one is not (v618, his ruling of 14 Sep 2026: an order never paid earns nobody anything).
      margin        the row's total less its units at the row's own cost, as every margin on the desk
      a unit        one for each whole RM 500 of that figure for a customer, RM 470 for an associate (v623),
                    whose R3 margin counts at 1/1.2 because each of those orders already counts for its own
@@ -17741,10 +17741,24 @@ function rewardR3Hurdle(prod){const S=REWARD.stated[prod];return (S&&S.associate
 function rewardRuleTxt(prod,who){const m=rewardUnitMargin(prod,who);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
 function rewardMargin(id,refs){
   const mine={margin:0,n:0},intro={margin:0,n:0};
+  /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
+     was skipped whole, so where one unit of an order came from the reward and the rest was paid for, the
+     paid units earned nothing. The paid part is the goods the reward did not settle, total less settledRM,
+     less the units the reward did not take at the row's own unit cost, the costing every other row gets.
+     The units the reward took are rebUnits, the one reading rebateApplied nets, so no unit is both netted
+     as taken and costed as bought: a row stamped rebate with no rebateKg is the whole row taken, which
+     makes s025's RM 17 over its reward unit money in with no unit behind it, and it counts as RM 17.
+     A PAID PART BELOW ITS COST COUNTS BELOW ZERO, as an ordinary row sold under cost does, and as a unit
+     handed over unpaid and untaken is charged by the gift walk below; flooring it would let such a unit
+     escape the charge. Each side is floored at nothing, so a rebateKg over the quantity or a settledRM
+     over the goods cannot credit margin. A row with neither part left is a redemption, not an order. */
   pricedSales.forEach(s=>{
-    if(s.rebate||txStat(s).order==='Default')return;
+    if(txStat(s).order==='Default')return;
     const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
-    if(t){t.margin+=(s.total||0)-(s.qty||0)*txUnitCost(s,wavgBuy);t.n++;}
+    if(!t)return;
+    let rm=s.total||0,q=s.qty||0;
+    if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-rebUnits(s));if(rm<0.009&&q<1e-9)return;}
+    t.margin+=rm-q*txUnitCost(s,wavgBuy);t.n++;
   });
   /* v733, HIS DECISION OF 19 SEP 2026: THE REWARD SHRINKS WITH THE GIFT. A free unit handed over
      alongside an order cost the shelf real salt and was charged against the reward nowhere, so a
@@ -18451,11 +18465,13 @@ function resellerCard(r){
     :`${fmt0(r.toNext)} more margin earns a unit`;
   // summary line (collapsed)
   const summary=`<summary><span class="mono rname">${ID(r.id)}</span> ${badge}<span class="rsum">made you <b>${fmt0(r.total)}</b> &middot; R3 <b>${fmt0(r.r3)}</b> &middot; ${rebateStr}</span></summary>`;
-  // KPI trio: R1 / R2 / R3 (same for every associate)
+  /* KPI trio: R1 / R2 / R3 (same for every associate). HIS DECISION OF 27 SEP 2026: the third is the
+     reward's own figure, rewardMargin's intro margin on every order of the customers introduced, where it
+     read their first orders' revenue; the first orders stay in the Refer ledger and the summary line. */
   const kpis=`<div class="kpis k3" style="margin-top:10px">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought from you</div><div class="v salt-kpi__value">${fmt0(r.direct)}</div><div class="n salt-kpi__note">their own orders &middot; R1</div></div>
     <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Sold for you</div><div class="v salt-kpi__value">${fmt0(r.indirect)}</div><div class="n salt-kpi__note">${r.dsResell} onward ${r.dsResell===1?'sale':'sales'} &middot; R2</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Brought you</div><div class="v salt-kpi__value">${fmt0(r.r3)}</div><div class="n salt-kpi__note">${r.referrals.length} introduced, first order &middot; R3</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Margin brought in</div><div class="v salt-kpi__value">${fmt0(r.marginIntro)}</div><div class="n salt-kpi__note">${r.referrals.length} introduced, every order &middot; R3</div></div>
   </div>`;
   /* ---- v385: THE FIELDS, NOT A SENTENCE ----
      This was 330 characters of prose restating the two streams, and stripMethod cut every
@@ -18570,14 +18586,14 @@ function tabNetwork(){
   ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
     <div class="insight salt-insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
-  const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tR3=ns.reduce((a,x)=>a+x.r3,0);
+  const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
   const nRef=ns.reduce((a,x)=>a+((x.referrals&&x.referrals.length)||0),0);// customers introduced
   const summary=`<div class="kpis k4" style="margin-top:6px">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Partners</div><div class="v salt-kpi__value">${ns.length}</div><div class="n salt-kpi__note">${ns.filter(isPrincipal).length?`1 ${PRINCIPAL_TITLE.toLowerCase()} &middot; `:''}${ns.filter(x=>!isPrincipal(x)).length} associate${ns.filter(x=>!isPrincipal(x)).length===1?'':'s'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought from you</div><div class="v salt-kpi__value">${fmt0(tR1)}</div><div class="n salt-kpi__note">their own orders &middot; R1</div></div>
     <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Sold for you</div><div class="v salt-kpi__value">${fmt0(tR2)}</div><div class="n salt-kpi__note">${nDs} onward ${nDs===1?'sale':'sales'} &middot; R2</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Brought you</div><div class="v salt-kpi__value">${fmt0(tR3)}</div><div class="n salt-kpi__note">${nRef} introduced, first order &middot; R3</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Margin brought in</div><div class="v salt-kpi__value">${fmt0(tIntro)}</div><div class="n salt-kpi__note">${nRef} introduced, every order &middot; R3</div></div>
   </div>`;
   const cards=ns.map(resellerCard).join('');
   return `<h1>Associates</h1>
