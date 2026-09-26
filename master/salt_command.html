@@ -7499,9 +7499,11 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    never the book in view: the entry check and the Workbench's gift read another book's rate while one is on
    screen, and a book with no typed rate fell through to the view's weighted average, so with salt in view a
    sale of spare, which has no lot, passed the entry check at salt's RM49.78. One figure per book, kept until the
-   next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway. */
+   next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway.
+   27 Sep 2026: the cache answers only its own keys, so a name on Object.prototype (constructor, __proto__)
+   is walked as the book it names, never read off the prototype; restockFor's cache takes the same guard. */
 function stockCostFor(p){const k=p||PROD,c=stockCostFor._c||(stockCostFor._c={});
-  return (k in c)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
+  return Object.hasOwn(c,k)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
 /* TRANSACTION MODEL (post-audit, three-axis per R1):
    qty  = order unit, total = order RM (price = total/qty)
    cash = RM received in cash;  settledRM = RM settled non-cash (fold/waiver/in-kind)  -> paid = cash+settledRM
@@ -10400,8 +10402,7 @@ function tierBoardOLD(){
    when cost rises. This walks the replacement rate up one ringgit at a time and returns the
    first rate at which a live price on the book falls under its floor, and whose.
 
-   The shape of the return is unchanged, so the daily brief that calls boardHeadroom(false)
-   does not have to change: 'firstTier' now names the party rather than a tier. */
+   The shape of the return is unchanged: 'firstTier' now names the party rather than a tier. */
 function boardHeadroom(includeSS){
   const base=pxCost(), live=base.repl;
   const save=pxOver.cost;
@@ -10456,7 +10457,7 @@ function boardHeadroomOLD(includeSS){
       /* v234: nothing is excluded any more. SS was excluded because it carried no delivery
          and sat under its floor by policy; with three delivered tiers there is no such case,
          so every breach the walk finds is a real one. The parameter is kept so the signature
-         and the daily brief that calls boardHeadroom(false) do not change. */
+         does not change. */
       hits.push({code:cl.code,q:row.q,p:cl.p,floor:cl.floor!=null?cl.floor:row.floor,shortBy:+((cl.floor!=null?cl.floor:row.floor)-cl.p).toFixed(2)});
     }));
     return hits;
@@ -15045,7 +15046,7 @@ function restockSignal(R){
    read of another book. */
 function restockFor(prod){
   const p=prod||PROD;
-  if(restockFor._c&&restockFor._c[p])return restockFor._c[p];
+  if(restockFor._c&&Object.hasOwn(restockFor._c,p)&&restockFor._c[p])return restockFor._c[p];
   if(p!==PROD){const keep=PROD,held=restockFor._c;let r;try{PROD=p;recompute();r=restockFor(p);}finally{PROD=keep;recompute();restockFor._c=held;}
     (restockFor._c=restockFor._c||{})[p]=r;return r;}
   const MS=86400000, med=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};

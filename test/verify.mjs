@@ -41950,6 +41950,31 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("The per-book caches answer only their own keys: a name on Object.prototype is never read off the prototype");
+await (async () => {
+  /* 27 Sep 2026: stockCostFor and restockFor keep one figure per book in a plain object and read it by `in` or by a
+     bare lookup, so stockCostFor('constructor') answered Object itself and restockFor('toString') a function, measured
+     on v884. No book can carry such a name (tools/product.mjs refuses one), so this is the cache's own guard: a
+     prototype name is now looked up as a book, which fails loudly deeper in the walk, and never answered from the
+     cache. The unknown book is the control that the probe reads a real answer. Each guard was proved red by its own
+     mutation, one at a time. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const v = JSON.parse(w.eval(`JSON.stringify((function(){
+    var fate=function(f,k){try{var r=f(k);return typeof r==='function'?'function':(r===Object.prototype?'prototype':typeof r);}catch(e){return 'threw';}};
+    var prod=PROD,rate=stockCostFor(PROD),out=[];
+    ['zz-no-book','constructor','toString','__proto__','hasOwnProperty','valueOf'].forEach(function(k){
+      stockCostFor._c=null;stockCostFor(PROD);restockFor._c=null;restockFor(PROD);
+      out.push([k,fate(stockCostFor,k),fate(restockFor,k)]);});
+    return {out:out,prod:prod,after:PROD,rate:rate,rateAfter:stockCostFor(PROD)};})())`));
+  const [control, ...names] = v.out;
+  ok(control[1] === "number" && control[2] === "object", "the control, a book that does not exist, reads a rate and a plan: " + JSON.stringify(control));
+  ok(names.length === 5 && names.every((n) => !/function|prototype/.test(n[1] + n[2])),
+    "stockCostFor and restockFor never answer a name on Object.prototype from the prototype: " + JSON.stringify(names));
+  ok(v.after === v.prod && v.rateAfter === v.rate, "and the book in view and its rate are left as they were: " + JSON.stringify([v.prod, v.after, v.rate, v.rateAfter]));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
