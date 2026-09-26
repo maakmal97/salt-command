@@ -682,7 +682,7 @@
   },
   "TIER_OF": {
     "CS6-BS": {
-      "salt": "Platinum",
+      "salt": "Titanium",
       "oil": "Platinum"
     },
     "CK4-SEN": {
@@ -696,54 +696,46 @@
       "salt": "Titanium"
     },
     "CJ2-KUC": {
-      "salt": "Silver"
+      "salt": "Gold"
     },
     "CJ4-BJ": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CM4-MK": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CS6-PER": {
       "salt": "Titanium"
     },
     "CE4-CHE": {
-      "salt": "Platinum"
+      "salt": "Titanium"
     },
     "CM4-TO": {
-      "salt": "Titanium"
+      "salt": "Ambassador"
     },
     "CZ4-MK": {
       "salt": "Titanium"
     },
     "CR3-DAM": {
-      "salt": {
-        "small": "Titanium",
-        "mid": "Titanium",
-        "big": "Platinum"
-      }
+      "salt": "Titanium"
     },
     "CM6-HCM": {
       "salt": "Silver"
     },
     "CA4-DAM": {
-      "salt": {
-        "small": "Titanium",
-        "mid": "Titanium",
-        "big": "Platinum"
-      }
+      "salt": "Silver"
     },
     "CE4-AD": {
       "salt": "Titanium"
     },
     "CR4-PJ": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CM4-SK": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CG5-SB": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CY2-NIL": {
       "salt": "Titanium"
@@ -767,16 +759,16 @@
       "salt": "Titanium"
     },
     "CF5-WM": {
-      "salt": "Platinum"
+      "salt": "Titanium"
     },
     "CZ6-WM": {
-      "salt": "Titanium"
-    },
-    "CA5-SEN": {
       "salt": "Platinum"
     },
+    "CA5-SEN": {
+      "salt": "Silver"
+    },
     "CH4-MAL": {
-      "salt": "Titanium"
+      "salt": "Platinum"
     },
     "CN5-TAI": {
       "salt": "Titanium"
@@ -785,7 +777,7 @@
       "salt": "Silver"
     },
     "CA2-SEN": {
-      "salt": "Titanium"
+      "salt": "Ambassador"
     },
     "CD4-CS": {
       "salt": "Silver"
@@ -806,14 +798,13 @@
       "salt": "Platinum"
     },
     "CC9-OKR": {
-      "salt": {
-        "small": "Titanium",
-        "mid": "Titanium",
-        "big": "Platinum"
-      }
+      "salt": "Ambassador"
     },
     "CN3-WM": {
       "salt": "Platinum"
+    },
+    "CJ4-OKR": {
+      "salt": "Ambassador"
     }
   },
   "PEOPLE": {
@@ -933,7 +924,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-26T02:29:38.359Z",
+  "QUEUE_COMMITTED": "2026-09-26T05:17:27.707Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

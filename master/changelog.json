@@ -1,5 +1,15 @@
 [
  {
+  "v": "v875",
+  "d": "26 Sep 2026",
+  "t": "EIGHTEEN SALT TIERS RESET, NO CASH OR STOCK MOVED",
+  "n": [
+   "<p><b>EIGHTEEN TIER SETS FOLDED.</b> This fold carries 18 rows, each setting one customer's salt tier, all entered and decided by the desk on 26 Sep 2026. None moves cash or stock, and until the quotes switch none moves a price, so no row has a rate to test against a floor or ask, and no row carries a cost. The dossier holds no order history, outstanding balance or credit for any of the parties.</p>",
+   "<p><b>WHAT WAS UNUSUAL.</b> Three parties, CR3-DAM, CA4-DAM and CC9-OKR, held split salt tiers by size: small Titanium, mid Titanium, big Platinum. Each is now set to a single tier: Titanium, Silver and Ambassador. CJ4-OKR is set to Ambassador with no drafter flag and no prior tier shown in the dossier. Every other row carries a flag naming the move, and each entry matches the flag it answers.</p>",
+   "<p><b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 13 units against a ledger of 91.7, cost RM56 a unit and replacement RM51, reorder at 28.2, with 9.5 owed out, nothing promised and no loans open. The salt count is dated 23 Sep 2026. No lot landed and the cost basis is unchanged. The new tiers take effect on price only when the quotes switch.</p>"
+  ]
+ },
+ {
   "v": "v874",
   "d": "26 Sep 2026",
   "t": "THE INVENTORY IS CARRIED AT ITS LOTS",
