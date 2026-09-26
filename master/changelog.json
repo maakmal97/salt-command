@@ -1,5 +1,14 @@
 [
  {
+  "v": "v882",
+  "d": "26 Sep 2026",
+  "t": "CS6-BS-R PAYS AHEAD OF THE SALT",
+  "n": [
+   "<p><b>ONE FULFILMENT FOLDED, CASH WITHOUT GOODS.</b> The fold carries a single amendment on s206: CS6-BS-R paid RM490 on 26 Sep by qr via tng on the statements site, order 20260926123801-xcco7w, preapproved by phone. No unit moved. The order of 5 unit stays open for delivery, with nothing left to collect in cash. The drafter raised no flag, and the row itself is applied by the master rather than recomputed here.</p>",
+   "<p><b>WHAT IS UNUSUAL, AND THE INVENTORY.</b> The booked note on s206 puts RM20 of delivery inside the RM470, while the outstanding before this payment reads RM490. The drafter took RM490 as owed, and the payment clears that figure. Stock is untouched at 11.5 unit, cost basis unchanged at RM56 a unit, and the 5 unit promised on s206 remain to be handed over.</p>"
+  ]
+ },
+ {
   "v": "v881",
   "d": "26 Sep 2026",
   "t": "A SECOND UNIT FOR CE5-SA, WAITING ON COLLECTION",

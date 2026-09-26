@@ -1,6 +1,6 @@
 {
- "v": "v881",
- "stamped": "26 Sep 2026, 21:19 KL",
+ "v": "v882",
+ "stamped": "26 Sep 2026, 22:02 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5408,13 +5408,30 @@
     "customer": "CS6-BS-R",
     "qty": 5,
     "total": 470,
-    "cash": 0,
+    "cash": 490,
     "delivery": 20,
     "date": "2026-09-26",
     "deliveredQty": 0,
     "rev": "R2",
-    "note": "<b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR DELIVERED.</b> Booked to CS6-BS-R as R2, 5 unit for RM470 with RM20 of delivery inside it, RM450 on the goods, order 20260926123801-xcco7w, to be delivered; preapproved by phone. Costed at RM56 a unit, the desk's own inventory cost. The goods clear the RM291.99 floor for 5 unit and sit under the RM590 ask. On 15 prior orders: median RM96.67, range RM6 to RM120, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1; not an associate, on the roster. The drafter read RM470 as goods and RM490 owed, so the drafter's RM94 a unit and 40.4% do not stand. The R2 flag matches the booking set on his word on s138. It draws no stock; RM470 and 5 unit stay open.",
-    "rid": "s206"
+    "note": "<b>PAID 26 SEP, RM490 BY QR VIA TNG; 5 UNIT STILL TO BE DELIVERED.</b> <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR DELIVERED.</b> Booked to CS6-BS-R as R2, 5 unit for RM470 with RM20 of delivery inside it, RM450 on the goods, order 20260926123801-xcco7w, to be delivered; preapproved by phone. Costed at RM56 a unit, the desk's own inventory cost. The goods clear the RM291.99 floor for 5 unit and sit under the RM590 ask. On 15 prior orders: median RM96.67, range RM6 to RM120, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1; not an associate, on the roster. The drafter read RM470 as goods and RM490 owed, so the drafter's RM94 a unit and 40.4% do not stand. The R2 flag matches the booking set on his word on s138. It draws no stock; RM470 and 5 unit stay open.",
+    "rid": "s206",
+    "amend": [
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-26",
+      "kind": "Fulfilment",
+      "cash": 490,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s206 DATED 26 SEP: RM490 PAID, NOTHING DELIVERED.</b> CS6-BS-R paid RM490 on the statements site, order 20260926123801-xcco7w, by qr via tng; preapproved by phone. It moves no goods. The order stands at 5 unit for RM470 with RM20 of delivery, booked with the delivery inside the RM470, while the outstanding before this payment reads RM490; the drafter took RM490 as owed. The rate is not re-priced here. On 16 orders: median RM95, range RM6 to RM120, none defaulted, 0 unit on credit; not an associate, on the roster. No cost moves and no flag was raised. It leaves RM0 and 5 unit outstanding, the salt still to be delivered."
+     }
+    ],
+    "paidOn": "2026-09-26"
    },
    {
     "customer": "CE5-SA",
@@ -6163,9 +6180,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-26T13:18:24.231Z",
+  "QUEUE_COMMITTED": "2026-09-26T13:54:57.383Z",
   "PRICING": {
-   "takenAt": "2026-09-26T13:19:10.871Z",
+   "takenAt": "2026-09-26T14:02:40.753Z",
    "sizes": [
     0.5,
     1,
@@ -6327,12 +6344,12 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 18,
+      "orders": 19,
       "tenureDays": 76,
-      "sinceLastDays": 5,
-      "perMonth": 7.21,
-      "smallShare": 0.5,
-      "bigShare": 0.33,
+      "sinceLastDays": 0,
+      "perMonth": 7.61,
+      "smallShare": 0.47,
+      "bigShare": 0.37,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -12768,10 +12785,10 @@
      "cards": {}
     }
    },
-   "v": "v881"
+   "v": "v882"
   },
   "OPEN": {
-   "at": "2026-09-26T13:19:11.151Z",
+   "at": "2026-09-26T14:02:41.002Z",
    "count": 9,
    "byKey": {
     "CS6-BS-R|2026-09-26|490": {
@@ -12780,15 +12797,15 @@
      "dir": "S",
      "q": 5,
      "t": 470,
-     "cash": 0,
+     "cash": 490,
      "mv": 0,
-     "st": "part",
-     "oweRM": 490,
+     "st": "oweStock",
      "oweUnits": 5,
      "dv": 20,
      "rid": "s206",
      "as": "CS6-BS",
      "st2": "R2",
+     "paidOn": "2026-09-26",
      "key": "CS6-BS-R|2026-09-26|490"
     },
     "CE5-SA|2026-09-26|110": {
@@ -12923,9 +12940,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 11.5,
-     "free": 2,
-     "owedOut": 9.5,
-     "coverDays": 0.6,
+     "free": -3,
+     "owedOut": 14.5,
+     "coverDays": 0,
      "rate": 6.25,
      "owedToYou": 390,
      "promised": 15.5,
@@ -12983,7 +13000,7 @@
     "rice": "2026-09-24",
     "spare": null
    },
-   "v": "v881"
+   "v": "v882"
   }
  }
 }
