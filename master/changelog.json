@@ -1,5 +1,14 @@
 [
  {
+  "v": "v888",
+  "d": "27 Sep 2026",
+  "t": "SIX LEDGER ROWS CORRECTED ON HIS WORD",
+  "n": [
+   "<p><b>THREE COUNTS AND A NOTE, SETTLED BY THE DATA.</b> The salt count of 02 Sep stated 18.75 before it; walked from the 24 Aug count of 21.5 the rows close at 16.25, so its drift is -5.75, not -8.25 (s127 had left before the count, and s104's half unit was sold, not delivered twice). The 04 Sep count's drift is -0.7, as v489 found, not nought. The oil count of 23 Aug is 0, as v346 counted it, not 15, so its roll chain closes. s140's note now says RM8.30 a unit on the goods. No floor, price, stock or rate moves on any book: the leak reads the 19, 21 and 23 Sep counts.</p>",
+   "<p><b>TWO FREE UNITS BOOKED AS WHAT THEY WERE.</b> s103, CS6-BS's free unit, is an advance on an award: RM44 settled by the reward, carrying rebate and goodwill, so CS6-BS has now taken 7 units against 6 earned. s053 was one unit sold at RM90 with a second given free, not a reward redemption: s053 is restated to 1 unit and RM90, and the gift is its own row, s208, RM47 of cost settled by goodwill. CI4-OKR no longer draws on its reward for it. Salt revenue falls RM90, goodwill rises RM91 and gross margin moves by under RM2.</p>"
+  ]
+ },
+ {
   "v": "v887",
   "d": "27 Sep 2026",
   "t": "THE PER-BOOK CACHES ANSWER ONLY THEIR OWN KEYS",
