@@ -1,0 +1,70 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-26T17:16:52.294Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s207",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-26",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "qty",
+      "from": 1,
+      "to": 2
+     },
+     {
+      "field": "total",
+      "from": 110,
+      "to": 210
+     }
+    ],
+    "customer": "CE5-SA"
+   },
+   "reasoning": "Correction against CE5-SA's order of 1 unit for RM 110 dated 2026-09-26 (s207). Sets qty from 1 to 2, total from 110 to 210. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 1 unit goes out with RM 105 unpaid. Check it against CE5-SA's credit cap."
+   ],
+   "amends": "s207",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-26T17:16:52.294Z",
+    "type": "AMEND",
+    "party": "CE5-SA",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE5-SA s207: qty to 2, total to 210, recorded 2026-09-27",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE5-SA",
+     "rid": "s207",
+     "orderKey": "CE5-SA|2026-09-26|110",
+     "kind": "Correction",
+     "date": "2026-09-27",
+     "fields": {
+      "qty": 2,
+      "total": 210
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-26T17:17:26.638Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
