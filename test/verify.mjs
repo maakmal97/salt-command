@@ -2832,6 +2832,39 @@ await (async () => {
       } finally { try { rmSync(tmpLot); } catch (e) { } }
     }
   }
+  /* 26 Sep 2026, review: THE FOLD'S SALT RATE FOLLOWS THE COUNT, and the count is proved. On the day it was written
+     every salt unit sat on lots at one rate, so the two pins above passed with the fold costing at the newest lot's
+     rate or at any count inside those lots. Here a clone's count is set to lie across two rates, read from the book's
+     own lots newest first: once by STATED_STOCK, once by PROD_OPENING.salt.stated over that STATED_STOCK, which the
+     desk's countedFor reads first. The two counts sit at different rates, so no one fixed count can pass both. A
+     pending sale handed over by a Correction must be costed at the rate suiteShelf works on that clone, times its units. */
+  {
+    const parts = suiteShelf(book, "salt", 1e9).parts;
+    const k = parts.findIndex((q) => Math.abs(q.rate - parts[0].rate) > 0.005);
+    if (k < 1) skipData("the fold's salt count across two rates: every live salt lot is at one rate");
+    else {
+      const under = parts.slice(0, k).reduce((a, q) => a + q.units, 0);
+      const countA = +(under + parts[k].units / 2).toFixed(2);
+      const countB = +(under + parts[k].units + (parts[k + 1] ? parts[k + 1].units / 2 : 5)).toFixed(2);
+      const hand = (at, clone) => {
+        clone.sales.push({ rid: "sX50", customer: "CX9-TESTCNT", qty: 2, total: 200, cash: 0, deliveredQty: 0, date: "2026-08-20", product: "salt", note: "fixture." });
+        const batch = { ok: true, count: 1, approved: [{ id: ID(at), collection: "sales", amends: "sX50", amendKind: "Correction", row: { rid: "sX50" },
+          entry: { at: ID(at), payload: { mode: "amend", direction: "SELL", rid: "sX50", kind: "Correction", date: "2026-09-05", fields: { deliveredQty: 2, deliveredOn: "2026-09-05", handover: "collected" } } } }] };
+        const want = suiteShelf(clone, "salt");
+        const res = apply(clone, batch, { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "handed over in the suite." } }, stockNote: "" }, master);
+        const row = clone.sales.find((x) => x.rid === "sX50");
+        return { res, want, cost: row && row.cost };
+      };
+      const CA = JSON.parse(JSON.stringify(book)); CA.STATED_STOCK = countA; CA.PROD_OPENING.salt = { ...(CA.PROD_OPENING.salt || { qty: 0, costPerKg: null }), stated: null };
+      const a = hand("05:10", CA), rA = +a.want.rate.toFixed(4);
+      ok(a.res.ok && a.want.stock === countA && Math.abs(rA - parts[0].rate) > 0.005 && a.cost === +(rA * 2).toFixed(2),
+        `with STATED_STOCK at ${countA}, across two rates, the fold costs the handover at RM${rA} a unit, not the newest lot's RM${parts[0].rate.toFixed(4)} (RM${a.cost} on 2 unit)` + (a.res.ok ? "" : ": " + a.res.problems.join("; ")));
+      const CB2 = JSON.parse(JSON.stringify(book)); CB2.STATED_STOCK = countA; CB2.PROD_OPENING.salt = { ...(CB2.PROD_OPENING.salt || { qty: 0, costPerKg: null }), stated: countB };
+      const b = hand("05:11", CB2), rB = +b.want.rate.toFixed(4);
+      ok(b.res.ok && b.want.stock === countB && Math.abs(rB - rA) > 0.005 && b.cost === +(rB * 2).toFixed(2),
+        `with PROD_OPENING.salt.stated at ${countB} over STATED_STOCK ${countA}, the fold reads the opening's count first, RM${rB} a unit against RM${rA} (RM${b.cost} on 2 unit)` + (b.res.ok ? "" : ": " + b.res.problems.join("; ")));
+    }
+  }
 })();
 
 /* ---- 24. The parts are visible, and the phone carries the people (v343) ------------ */
