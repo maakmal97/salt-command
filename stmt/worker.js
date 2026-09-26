@@ -1490,7 +1490,10 @@ export default {
        and a new face would be a new name. */
     if (p.startsWith("/fonts/")) {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-      const b64 = FONTS[p.slice(7)];
+      /* its own names only (26 Sep 2026): a bare FONTS[face] read /fonts/__proto__ and /fonts/constructor off
+         Object.prototype, and atob threw on them where an unknown face answers 404 */
+      const face = p.slice(7);
+      const b64 = Object.hasOwn(FONTS, face) ? FONTS[face] : null;
       if (!b64) return notFound();
       const bytes = bytesOf(p, b64);
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {

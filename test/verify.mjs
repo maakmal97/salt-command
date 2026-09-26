@@ -40984,6 +40984,20 @@ await (async () => {
   } finally { globalThis.atob = realAtob; }
 })();
 
+section("The Counter's /fonts/ answers its own faces only, never a name off Object.prototype");
+await (async () => {
+  /* FONTS[name] read through the prototype chain, so /fonts/__proto__ and /fonts/constructor found an object and a
+     function, handed them to atob and threw: an error where an unknown face answers 404. A real face is the control. */
+  const W = (await import("../stmt/worker.js")).default;
+  const st = async (name) => {
+    try { return (await W.fetch(new Request("https://site.test/fonts/" + name), { STMT: new KV() })).status; }
+    catch (e) { return "threw " + e.name; }
+  };
+  ok(await st("fraunces-latin.woff2") === 200, "the control: a face the site has still answers 200");
+  for (const name of ["__proto__", "constructor", "toString", "hasOwnProperty"])
+    ok(await st(name) === 404, "/fonts/" + name + " is the site's 404, as an unknown face is: " + await st(name));
+})();
+
 section("v789: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
