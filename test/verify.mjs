@@ -9283,24 +9283,34 @@ await (async () => {
   ok(F.checkNotes({ ...good, stockNote: "The lot came in D\u0065ARER than the last one, which the house does not write." }, "v999", ids).some((x) => /never the word/.test(x)), "the word he banned on 24 Aug 2026 is refused in any form, capitals included (v672)");
   ok(F.checkNotes({ ...good, rows: { ...good.rows, extra: { note: "a paragraph that is long enough to pass the length check on its own merits", rowNote: null, cost: null } } }, "v999", ids).some((x) => /not in the batch/.test(x)), "a row the batch does not carry is refused");
   ok(F.nextVersion("v520") === "v521" && F.nextVersion("junk") === null, "the next version is the master's plus one");
-  const sch = F.schemaFor(ids);
-  ok(sch.additionalProperties === false && sch.required.includes("rows") && sch.properties.rows.required[0] === ids[0] && sch.properties.rows.properties[ids[0]].required.includes("note"), "the schema names every id and forbids anything else");
-  /* 26 Sep 2026: THE SCHEMA STAYS UNDER THE API'S UNION LIMIT AT ANY BATCH SIZE. Run 36180354574 sent
-     14 rows with rowNote and cost each ["x","null"], 29 union-typed parameters, and the API refused the
-     call with http 400 before the model read a word; the fold landed on the tool's notes. The limit
-     is 16 (refused at 29). Counted by the suite's own walk, which is proved on a literal first. */
+  /* 26 Sep 2026: THE REQUEST'S SCHEMA IS THE SAME FOR EVERY BATCH. It named each id as a property with
+     rowNote and cost each ["x","null"], and the API refused it twice: 29 union-typed parameters at 14
+     rows (run 36180354574, the fold landed on the tool's notes), then a compiled grammar too large at 40
+     rows (probe run 36204519170). The request is built through requestFor at 1 and 60 rows and must
+     carry one schema, with no id in it and its unions under the limit (16; refused at 29), counted by
+     the suite's own walk, which is proved on a literal first. */
   const UNION_LIMIT = 16;
   const unionsIn = (s) => (s && typeof s === "object") ? Object.values(s).reduce((a, v) => a + unionsIn(v), (Array.isArray(s.type) && s.type.length > 1) || Array.isArray(s.anyOf) ? 1 : 0) : 0;
   ok(unionsIn({ type: "object", properties: { a: { type: ["string", "null"] }, b: { anyOf: [{ type: "number" }, { type: "null" }] }, c: { type: "string" }, d: { type: ["number"] } } }) === 2, "the union count reads a type array and an anyOf, and nothing else");
   const idsN = (n) => Array.from({ length: n }, (_, i) => "2099-01-01T00:00:00." + String(i).padStart(3, "0") + "Z");
-  const uc = [1, 14, 60].map((n) => unionsIn(F.schemaFor(idsN(n))));
-  ok(uc.every((c) => c <= UNION_LIMIT) && uc[2] === uc[0], "the reply schema's union-typed parameters stay under the API's " + UNION_LIMIT + " and do not grow with the batch (1, 14, 60 rows: " + uc.join(", ") + ")");
-  const rowOf = (r) => F.fromReply({ ...good, rows: { [ids[0]]: { ...good.rows[ids[0]], ...r } } });
+  const reqSchema = (n) => { const ii = idsN(n); return F.requestFor({ todayKL: "02 Jan 2099", version: { last: "v998", next: "v999" }, items: ii.map((id) => ({ id })) }, ii).output_config.format.schema; };
+  const s1 = reqSchema(1), s60 = reqSchema(60);
+  ok(JSON.stringify(s1) === JSON.stringify(s60) && !JSON.stringify(s60).includes(idsN(60)[59]) && unionsIn(s60) <= UNION_LIMIT,
+    "the request carries one schema whatever the batch, naming no id, with " + unionsIn(s60) + " union-typed parameter(s) against the API's " + UNION_LIMIT);
+  ok(s1.additionalProperties === false && s1.required.includes("rows") && s1.properties.rows.type === "array" && s1.properties.rows.items.additionalProperties === false
+    && ["id", "note", "rowNote", "cost"].every((k) => s1.properties.rows.items.required.includes(k)), "rows is an array of {id, note, rowNote, cost}, and the schema forbids anything else");
+  const rowOf = (r) => F.fromReply({ ...good, rows: [{ id: ids[0], ...good.rows[ids[0]], ...r }] });
   ok(F.checkNotes(rowOf({ rowNote: "", cost: "" }), "v999", ids).length === 0 && rowOf({ rowNote: " ", cost: "" }).rows[ids[0]].rowNote === null && rowOf({ rowNote: "", cost: "" }).rows[ids[0]].cost === null,
-    "an empty rowNote and cost, the schema's none, read as the nulls checkNotes and fold.mjs have always read");
+    "a reply's rows are keyed by id, and an empty rowNote and cost, the schema's none, read as the nulls checkNotes and fold.mjs have always read");
   ok(rowOf({ cost: "312.50" }).rows[ids[0]].cost === 312.5 && F.checkNotes(rowOf({ cost: "312.50" }), "v999", ids).length === 0, "a cost in digits is the number");
   ok(["0", "RM 120", "-5"].every((c) => F.checkNotes(rowOf({ cost: c }), "v999", ids).some((x) => /cost/.test(x))), "a cost of nothing, in words or below zero is still refused");
-  ok(F.checkNotes(rowOf({ rowNote: null, cost: null }), "v999", ids).length === 0 && rowOf({ rowNote: "<b>AMENDED.</b>" }).rows[ids[0]].rowNote === "<b>AMENDED.</b>", "and nulls, as the tool's notes and the fakes carry, and a rowNote with words pass unchanged");
+  const twice = { id: ids[0], ...good.rows[ids[0]], rowNote: "", cost: "" };
+  ok(F.checkNotes(F.fromReply({ ...good, rows: [twice, twice] }), "v999", ids).some((x) => /\(twice\), which is not in the batch/.test(x))
+    && F.checkNotes(F.fromReply({ ...good, rows: [] }), "v999", ids).some((x) => /paragraph/.test(x))
+    && F.checkNotes(F.fromReply({ ...good, rows: [{ ...twice, id: "2099-01-09T00:00:00.000Z" }] }), "v999", ids).some((x) => /not in the batch/.test(x)),
+    "an id given twice, a batch id left out and an id not in the batch are each refused, as the keyed schema never allowed");
+  ok(F.checkNotes(F.fromReply(good), "v999", ids).length === 0 && F.fromReply({ ...good, rows: { [ids[0]]: { ...good.rows[ids[0]], rowNote: "<b>AMENDED.</b>" } } }).rows[ids[0]].rowNote === "<b>AMENDED.</b>",
+    "rows already keyed by id, as the tool's notes and the fakes carry them, and a rowNote with words pass unchanged");
 
   /* END TO END ON A FIXTURE, through a fake reply: the tool plans, builds the dossier off the real
      master, takes the notes, and folds with fold.mjs into copies of the book and the master. */
@@ -9329,7 +9339,7 @@ await (async () => {
   ok(dd.version.next && it9 && it9.ladder && it9.ladder.size === 1 && it9.ladder.floor > 0 && it9.ladder.ask >= it9.ladder.floor, "the dossier carries the desk's own floor and ask for 1 unit (floor " + (it9 && it9.ladder && it9.ladder.floor) + ", ask " + (it9 && it9.ladder && it9.ladder.ask) + ")");
   ok(it9.party && it9.party.code === party9 && it9.party.lastRows.length > 0 && it9.party.medianRate > 0 && it9.drafterFlags[0] === "a flag from the drafter", "and the party's last rows, median rate and the drafter's flag");
   ok(dd.inventory.position && typeof dd.inventory.position.stock === "number" && typeof dd.inventory.position.owedOut === "number", "and the inventory position from the engine");
-  ok(dj.schema.properties.rows.required[0] === id9 && /never kg or kilo/.test(dj.system), "the request binds the reply to the batch's ids under the house rules");
+  ok(dj.user.includes(JSON.stringify([id9])) && dj.schema.properties.rows.type === "array" && /never kg or kilo/.test(dj.system), "the request binds the reply to the batch's ids under the house rules");
   /* v791: NO KEY IS NO LONGER A STOP (his instruction of 22 Sep 2026). Its own copies of the book
      and the master, because unlike every run above it this one FOLDS, and a folded batch would
      stand the good reply below down. Proved on the book it writes, never on the run's own words. */
@@ -9381,14 +9391,14 @@ await (async () => {
     rm9(dirT, { recursive: true, force: true });
   }
   /* 26 Sep 2026: A REPLY IN THE SCHEMA'S SHAPE LANDS AS THE MODEL'S. A local API answers the call with
-     rowNote and cost empty, as the schema asks; the row folds on that note with the draft's own cost,
-     and the request it was sent carries a schema under the union limit. */
+     rows as an array and rowNote and cost empty, as the schema asks; the row folds on that note with the
+     draft's own cost, and the probe sends the very schema the fold sent. */
   {
     const { createServer } = await import("node:http");
     const { spawn: sp9 } = await import("node:child_process");
     let sent = null;
     const reply = { version: dd.version.next, title: "ONE UNIT TO " + party9, notes: ["<b>ONE ROW FOLDED.</b> A paragraph that says what was folded and what the inventory did, long enough to pass."],
-      rows: { [id9]: { note: "<b>1 UNIT COLLECTED AND PAID, RM 130.</b> Written by the fixture model, clear of the floor for 1 unit on the desk's own ladder.", rowNote: "", cost: "" } },
+      rows: [{ id: id9, note: "<b>1 UNIT COLLECTED AND PAID, RM 130.</b> Written by the fixture model, clear of the floor for 1 unit on the desk's own ladder.", rowNote: "", cost: "" }],
       stockNote: "", stockCost: null, stockCostNote: "" };
     const srv = createServer((req, res) => {
       let b = ""; req.on("data", (c) => { b += c; });
@@ -9419,18 +9429,18 @@ await (async () => {
     const mo = await call(["--staged", SM, "--book", BM, "--master", MM, "--notes", j9(dirM, "_fold_notes.json"), "--folded", j9(dirM, "_folded.json"), "--today", "2099-01-02"]);
     const foldSent = sent; sent = null;
     const po = await call(["--probe"]);
-    const probeSchema = sent && sent.output_config && sent.output_config.format && sent.output_config.format.schema;
-    ok(po.code === 0 && probeSchema && Object.keys(probeSchema.properties.rows.properties).length === 40 && unionsIn(probeSchema) <= UNION_LIMIT,
-      "the key probe sends the fold's own schema at 40 rows, so a schema the API refuses fails the probe (exit " + po.code + ", " + (probeSchema ? Object.keys(probeSchema.properties.rows.properties).length + " rows" : "no schema sent") + ")");
+    const schemaOf = (b) => b && b.output_config && b.output_config.format && b.output_config.format.schema;
+    ok(po.code === 0 && schemaOf(sent) && JSON.stringify(schemaOf(sent)) === JSON.stringify(schemaOf(foldSent)),
+      "the key probe sends the very schema the fold sent, so a schema the API refuses fails the probe (exit " + po.code + ", " + (schemaOf(sent) ? "a schema" : "no schema") + " sent)");
     sent = foldSent;
     srv.closeAllConnections(); srv.close();
     const afterM = existsSync(BM) ? JSON.parse(rf9(BM, "utf8")) : null;
     const rowM = afterM && afterM.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
     ok(mo.code === 0 && rowM && /Written by the fixture model/.test(rowM.note) && !/no judgement is recorded/.test(rowM.note) && rowM.cost === 48 && afterM.QUEUE_COMMITTED === id9,
       "a reply with rowNote and cost empty folds on the model's own note and keeps the draft's cost (exit " + mo.code + ", cost " + (rowM && rowM.cost) + ")" + (mo.code ? ": " + mo.out.slice(-300) : ""));
-    const sentSchema = sent && sent.output_config && sent.output_config.format && sent.output_config.format.schema;
-    ok(sentSchema && unionsIn(sentSchema) <= UNION_LIMIT && sentSchema.properties.rows.properties[id9].properties.cost.type === "string",
-      "the schema the call sent is under the union limit (" + (sentSchema ? unionsIn(sentSchema) : "no request") + ")");
+    const sentSchema = schemaOf(sent);
+    ok(sentSchema && JSON.stringify(sentSchema) === JSON.stringify(s60),
+      "the schema the fold's call sent is the one schema built for 60 rows (" + (sentSchema ? unionsIn(sentSchema) + " union(s)" : "no request") + ")");
     rm9(dirM, { recursive: true, force: true });
   }
   /* a fake reply that breaks the rules is refused, and nothing is folded */
