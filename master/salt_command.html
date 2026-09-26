@@ -8411,7 +8411,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v886","d":"27 Sep 2026","t":"CI4-OKR'S SALT TIER GOES OUT AND COMES BACK","n":["<p><b>TWO TIER SETS, ONE PARTY, NET NO CHANGE.</b> This fold carries two tier rows for CI4-OKR, both decided by the desk on 26 Sep. The first sets its salt tier to Ambassador, moving it from Titanium as the drafter flagged. The second, entered about four seconds later, sets it back to Titanium. Read together, CI4-OKR ends where it began. Neither row moves cash, stock or price until the quotes switch.</p>","<p><b>NOTHING TOUCHES THE INVENTORY.</b> The dossier lists no moves and no open loans, and neither row carries a cost, so the stock of 5.5 units and the cost of RM56 a unit stand as they were. The dossier gives no party record for CI4-OKR, so no median, range, outstanding or credit is cited. The quick reversal reads as a correction by the desk, but the dossier gives no reason, and none is supplied here.</p>"]}];
+const evolution=[{"v":"v887","d":"27 Sep 2026","t":"THE PER-BOOK CACHES ANSWER ONLY THEIR OWN KEYS","n":["<p><b>A NAME ON OBJECT.PROTOTYPE IS NEVER READ OFF THE PROTOTYPE.</b> stockCostFor and restockFor keep one figure per book in a plain object, and read it by a bare lookup, so a book named constructor would have been answered with Object itself. Both now read their cache through Object.hasOwn. No book can carry such a name, since tools/product.mjs refuses one, so no figure moves: this is the cache's own guard, proved red without it.</p>","<p><b>THREE SUITE CHECKS HOLD ON ANY BOOK.</b> The post-live suite had failed six runs since v879 on premises the book outgrew, never on the desk. The closing inventory is now read in its own P&amp;L row rather than as a bare figure anywhere on the page, a buy row short on promises is held to the shortfall it leads with, and Rules supplies its own salt breach and supplier default instead of waiting for the book to hold them.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8526,7 +8526,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 01:34 KL';
+const LAST_UPDATED='27 Sep 2026, 01:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

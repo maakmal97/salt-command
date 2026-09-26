@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0784afe9a717a201";
+var SALT_BUILD_ID="3b0093a4ff041831";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7621,9 +7621,11 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    never the book in view: the entry check and the Workbench's gift read another book's rate while one is on
    screen, and a book with no typed rate fell through to the view's weighted average, so with salt in view a
    sale of spare, which has no lot, passed the entry check at salt's RM49.78. One figure per book, kept until the
-   next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway. */
+   next recompute, which drops them all; the book in view comes with the walk that recompute runs anyway.
+   27 Sep 2026: the cache answers only its own keys, so a name on Object.prototype (constructor, __proto__)
+   is walked as the book it names, never read off the prototype; restockFor's cache takes the same guard. */
 function stockCostFor(p){const k=p||PROD,c=stockCostFor._c||(stockCostFor._c={});
-  return (k in c)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
+  return Object.hasOwn(c,k)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
 /* TRANSACTION MODEL (post-audit, three-axis per R1):
    qty  = order unit, total = order RM (price = total/qty)
    cash = RM received in cash;  settledRM = RM settled non-cash (fold/waiver/in-kind)  -> paid = cash+settledRM
@@ -8531,7 +8533,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v886","d":"27 Sep 2026","t":"CI4-OKR'S SALT TIER GOES OUT AND COMES BACK","n":["<p><b>TWO TIER SETS, ONE PARTY, NET NO CHANGE.</b> This fold carries two tier rows for CI4-OKR, both decided by the desk on 26 Sep. The first sets its salt tier to Ambassador, moving it from Titanium as the drafter flagged. The second, entered about four seconds later, sets it back to Titanium. Read together, CI4-OKR ends where it began. Neither row moves cash, stock or price until the quotes switch.</p>","<p><b>NOTHING TOUCHES THE INVENTORY.</b> The dossier lists no moves and no open loans, and neither row carries a cost, so the stock of 5.5 units and the cost of RM56 a unit stand as they were. The dossier gives no party record for CI4-OKR, so no median, range, outstanding or credit is cited. The quick reversal reads as a correction by the desk, but the dossier gives no reason, and none is supplied here.</p>"]}];
+const evolution=[{"v":"v887","d":"27 Sep 2026","t":"THE PER-BOOK CACHES ANSWER ONLY THEIR OWN KEYS","n":["<p><b>A NAME ON OBJECT.PROTOTYPE IS NEVER READ OFF THE PROTOTYPE.</b> stockCostFor and restockFor keep one figure per book in a plain object, and read it by a bare lookup, so a book named constructor would have been answered with Object itself. Both now read their cache through Object.hasOwn. No book can carry such a name, since tools/product.mjs refuses one, so no figure moves: this is the cache's own guard, proved red without it.</p>","<p><b>THREE SUITE CHECKS HOLD ON ANY BOOK.</b> The post-live suite had failed six runs since v879 on premises the book outgrew, never on the desk. The closing inventory is now read in its own P&amp;L row rather than as a bare figure anywhere on the page, a buy row short on promises is held to the shortfall it leads with, and Rules supplies its own salt breach and supplier default instead of waiting for the book to hold them.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8646,7 +8648,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 01:34 KL';
+const LAST_UPDATED='27 Sep 2026, 01:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10522,8 +10524,7 @@ function tierBoardOLD(){
    when cost rises. This walks the replacement rate up one ringgit at a time and returns the
    first rate at which a live price on the book falls under its floor, and whose.
 
-   The shape of the return is unchanged, so the daily brief that calls boardHeadroom(false)
-   does not have to change: 'firstTier' now names the party rather than a tier. */
+   The shape of the return is unchanged: 'firstTier' now names the party rather than a tier. */
 function boardHeadroom(includeSS){
   const base=pxCost(), live=base.repl;
   const save=pxOver.cost;
@@ -10578,7 +10579,7 @@ function boardHeadroomOLD(includeSS){
       /* v234: nothing is excluded any more. SS was excluded because it carried no delivery
          and sat under its floor by policy; with three delivered tiers there is no such case,
          so every breach the walk finds is a real one. The parameter is kept so the signature
-         and the daily brief that calls boardHeadroom(false) do not change. */
+         does not change. */
       hits.push({code:cl.code,q:row.q,p:cl.p,floor:cl.floor!=null?cl.floor:row.floor,shortBy:+((cl.floor!=null?cl.floor:row.floor)-cl.p).toFixed(2)});
     }));
     return hits;
@@ -15167,7 +15168,7 @@ function restockSignal(R){
    read of another book. */
 function restockFor(prod){
   const p=prod||PROD;
-  if(restockFor._c&&restockFor._c[p])return restockFor._c[p];
+  if(restockFor._c&&Object.hasOwn(restockFor._c,p)&&restockFor._c[p])return restockFor._c[p];
   if(p!==PROD){const keep=PROD,held=restockFor._c;let r;try{PROD=p;recompute();r=restockFor(p);}finally{PROD=keep;recompute();restockFor._c=held;}
     (restockFor._c=restockFor._c||{})[p]=r;return r;}
   const MS=86400000, med=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
