@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-26T13:54:57.383Z",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 470,
+    "cash": 0,
+    "date": "2026-09-26",
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Fulfilment against CS6-BS-R's order of 5 unit for RM 470 with RM 20 delivery, RM 490 owed agreed 2026-09-26. RM 490 and 0 unit move on 2026-09-26, against RM 490 and 5 unit outstanding. Leaves RM 0 and 5 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s206",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-26T13:54:57.383Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 0,
+    "total": 490,
+    "status": "Payment",
+    "by": "customer",
+    "raw": "Payment of RM 490 on CS6-BS-R, order 20260926123801-xcco7w, by qr via tng",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": null,
+     "orderKey": "CS6-BS-R|2026-09-26|490",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-26",
+     "qty": 0,
+     "total": 0,
+     "cash": 490,
+     "kg": 0,
+     "note": "Paid on the statements site, order 20260926123801-xcco7w, by qr via tng."
+    },
+    "orderId": "20260926123801-xcco7w",
+    "claim": true,
+    "claimOf": "2026-09-26T13:54:57.383Z"
+   },
+   "decidedAt": "2026-09-26T14:02:01.599Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
