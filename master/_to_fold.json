@@ -1,0 +1,62 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-26T13:02:54.811Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS-R",
+    "qty": 5,
+    "total": 470,
+    "cash": 0,
+    "delivery": 20,
+    "date": "2026-09-26",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "Ordered on the statements site, order 20260926123801-xcco7w, acknowledged, on behalf of a friend, to be delivered, delivery RM 20. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 5 unit of salt to CS6-BS-R for RM 470, with RM 20 of delivery beside it, RM 490 owed, RM 94/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 190 on the goods at 40.4%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-26 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-BS-R as R2: CS6-BS buys it to sell on."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-26T13:02:54.811Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 5,
+    "total": 470,
+    "status": "Pending",
+    "raw": "SELL CS6-BS-R 5 salt RM 490, nothing paid, nothing moved (order 20260926123801-xcco7w)",
+    "orderKey": "CS6-BS-R|2026-09-26|490",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-09-26",
+     "qty": 5,
+     "total": 470,
+     "delivery": 20,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CS6-BS",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260926123801-xcco7w, acknowledged, on behalf of a friend, to be delivered, delivery RM 20. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260926123801-xcco7w"
+   },
+   "decidedAt": "2026-09-26T13:02:58.145Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
