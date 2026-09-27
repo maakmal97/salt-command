@@ -23,7 +23,7 @@
  * opens the page with it filled in, the way the QR does. A string rather than a file because the
  * site has no assets and every byte it serves is generated per request.
  */
-import { WORDS } from "./words.js";
+import { WORDS, LIVE } from "./words.js";
 
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
@@ -33,16 +33,20 @@ export const NEWS = Object.fromEntries(KINDS.map((k) => [k, WORDS.en["news." + k
 const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
   Object.fromEntries(Object.keys(WORDS[L]).filter((k) => k.startsWith("news.")).map((k) => [k.slice(5), WORDS[L][k]]))]));
 
-export const SW_JS = `
-var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LANG = 'en';
+/* F7 (his instruction of 28 Sep 2026): the script for the languages live on the Counter, LIVE as served; the suite builds
+   it with Malay live too, to prove the kept words */
+export function swScript(langs) {
+  return `
+var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LIVE = ${JSON.stringify(langs)}, LANG = 'en';
 /* a word in the language this phone last chose, else English's */
 function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
 /* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
-   service worker cannot read the page); English where there is none, or one this script has no words for */
+   service worker cannot read the page); English where there is none, or one this script has no words for. F7: or one
+   that is not live, so a phone that kept Malay while Malay is off reads its banner in English */
 function langOf(){
   try {
     return self.caches.open('lang').then(function(c){ return c.match('/lang'); }).then(function(r){ return r ? r.text() : ''; })
-      .then(function(t){ return Object.prototype.hasOwnProperty.call(W, t) ? t : 'en'; }, function(){ return 'en'; });
+      .then(function(t){ return LIVE.indexOf(t) >= 0 && Object.prototype.hasOwnProperty.call(W, t) ? t : 'en'; }, function(){ return 'en'; });
   } catch (x) { return Promise.resolve('en'); }
 }
 self.addEventListener('install', function(){ self.skipWaiting(); });
@@ -89,3 +93,5 @@ self.addEventListener('notificationclick', function(e){
   }));
 });
 `;
+}
+export const SW_JS = swScript(LIVE);

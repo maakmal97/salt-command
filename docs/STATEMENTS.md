@@ -226,6 +226,14 @@ none. Salt Admin is English on any phone, with no switch. The sign-in message is
 since it goes before the phone's language is known. The suite reads the Malay table and a Malay served page for a
 product or level word.
 
+**Live languages are `LIVE`** (F7, `stmt/words.js`): Malay is kept and off since 28 Sep 2026, his instruction,
+superseding D12's slice and the two-language message while it is off. With `LIVE = ["en"]` the page draws no switch
+(the door, the welcome, One step to finish and This device's row all go), a Malay phone and a phone that kept `ms` open
+in English (`langOk` requires `LIVE`, so `langOfPhone` and `salt-lang` pass Malay over), `/lang` is written English,
+the banner reads English for a language not live (`swScript(LIVE)`), and the sign-in message is its English half
+alone. `MS` stays whole: turning Malay on again is `LIVE = ["en", "ms"]`, and the suite renders the slice's sections
+with `{langs: ["en", "ms"]}` (`landingPage`, `signInMessage`, `swScript`), so the kept table stays proved.
+
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the

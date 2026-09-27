@@ -36,7 +36,7 @@ import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES } from "./orders.js";
-import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
+import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
    phone left on a table; he asked for a page that stays signed in and a button that leaves. What
@@ -597,9 +597,11 @@ const wl = (k) => ' aria-label="' + esc(EN[k]) + '" data-wl="' + k + '"';
 /* whose account it is: the username is a slot, filled by the script (data-who) */
 const whoAs = () => '<span data-whoas data-w="who.as">' + fillHtml(EN["who.as"], Object.assign(slotsAt(22), { u: '<span class="mono" data-who></span>' }), "en") + "</span>";
 /* S13 13.4 (his D12): ENGLISH OR BAHASA MELAYU, each named in its own words and its own language, the system's tab strip;
-   the script presses the pill of the language in use and keeps a tap's choice on this phone */
-function langSwitch() {
-  return '<div class="salt-tabs lang" role="group"' + wl("lang.h") + ">" + ["en", "ms"].map((L) => wt("button",
+   the script presses the pill of the language in use and keeps a tap's choice on this phone.
+   F7 (his instruction of 28 Sep 2026): a pill a live language (LIVE, stmt/words.js), and with one live language no switch at all */
+function langSwitch(langs) {
+  if (langs.length < 2) return "";
+  return '<div class="salt-tabs lang" role="group"' + wl("lang.h") + ">" + langs.map((L) => wt("button",
     'type="button" class="salt-tabs__pill' + (L === "en" ? " salt-tabs__pill--active" : "") + '" data-l="' + L + '" lang="' + L + '" aria-pressed="' + (L === "en") + '"',
     "lang." + L)).join("") + "</div>";
 }
@@ -650,13 +652,13 @@ function keepCard() {
    lead a new account's Home instead), its notifications (drawDevice), the account's phones and computers with Sign in
    another device and Sign out other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the
    customer's one Log out (#lock, S7 7.1: it left the bar) */
-function thisDevice() {
+function thisDevice(langs) {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
-    /* S13 13.4: the language, under its label, the door's own switch */
-    + '<div class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + wt("span", 'class="salt-ledger__label"', "lang.h") + '</div><div class="salt-ledger__flag">' + langSwitch() + "</div></div></div>"
+    /* S13 13.4: the language, under its label, the door's own switch; F7: the row goes with the switch */
+    + (langs.length < 2 ? "" : '<div class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + wt("span", 'class="salt-ledger__label"', "lang.h") + '</div><div class="salt-ledger__flag">' + langSwitch(langs) + "</div></div></div>")
     + '<div id="devSlot"></div>'
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
@@ -715,8 +717,8 @@ function devSheet() {
 
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
    eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
-function codeScreen() {
-  return '<div id="codeBox" class="gate" hidden>' + langSwitch()
+function codeScreen(langs) {
+  return '<div id="codeBox" class="gate" hidden>' + langSwitch(langs)
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", 'id="codeH"', "code.h")
     + wt("p", 'class="lead" id="codeLead"', "code.lead")
@@ -733,10 +735,10 @@ function codeScreen() {
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
-function linkScreen() {
+function linkScreen(langs) {
   const row = (g, k) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
     + glyphSvg(g, 20) + wt("span", "", k) + "</span></div></div>";
-  return '<div id="link" class="gate" hidden>' + langSwitch()
+  return '<div id="link" class="gate" hidden>' + langSwitch(langs)
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", "", "link.h")
     + wt("p", 'class="lead" id="linkLead"', "link.lead")
@@ -863,8 +865,10 @@ function placesBar() {
     + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
-export function landingPage(user, nonce, owner, bulletin) {
+/* F7: `opts.langs`, the languages live on this page, LIVE unless given; the suite passes ["en", "ms"] to prove the kept slice */
+export function landingPage(user, nonce, owner, bulletin, opts) {
   const u = esc(user || "");
+  const langs = (opts && Array.isArray(opts.langs) && opts.langs.length) ? opts.langs : LIVE;
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
@@ -969,7 +973,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">Sign in again to carry on.</p>'
         + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
       : "")
-    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">" + (owner ? "" : langSwitch())
+    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">" + (owner ? "" : langSwitch(langs))
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
@@ -998,7 +1002,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + keepSheet() + paySheet() + devSheet())
+    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + keepSheet() + paySheet() + devSheet())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -1029,7 +1033,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
     + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
-    + (owner ? "" : thisDevice())
+    + (owner ? "" : thisDevice(langs))
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -1049,6 +1053,8 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* S13 13.3: every word by key, both tables, and the functions that fill them, the page's own; the marks for a
          sentence the script words again. By function, so a $ in a word is kept as typed; "<" escaped, as the notice is */
       .replace("__WORDS__", () => JSON.stringify(WORDS).replace(/</g, "\\u003c"))
+      /* F7: the languages live on this page, the only ones a phone's or a kept choice can open it in */
+      .replace("__LIVE__", () => JSON.stringify(langs))
       .replace("/*__FILL__*/", () => [fill, fillHtml, unitsIn, glyphOf].map(String).join("\n"))
       .replace("__GLS__", () => JSON.stringify(GLYPH))
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
@@ -1172,13 +1178,16 @@ const CLIENT_JS = `
      table is a slice (stmt/words.js), a key it lacks being English's, and what lies outside the slice is drawn in English
      whatever was chosen (inEn), so a word it shares with the slice, a state, a size or a date, reads English there too.
      html lang follows and translate="no" stays; the choice is left in this browser's Cache as /lang, where the service
-     worker reads it to word a banner (stmt/sw.js). His own page is English. */
-  var LANG_KEY='salt-lang', READER='en';
-  function langOk(L){ return Object.prototype.hasOwnProperty.call(WORDS,L); }
+     worker reads it to word a banner (stmt/sw.js). His own page is English.
+     F7 (his instruction of 28 Sep 2026): ONLY A LIVE LANGUAGE IS A CHOICE (LIVE, stmt/words.js, spliced in as served). With
+     Malay off, a Malay phone and a phone that kept Malay both open in English, the kept choice left as it was for the day
+     Malay is on again, and the Cache is told English, so the banner is too. */
+  var LANG_KEY='salt-lang', READER='en', LIVE=__LIVE__;
+  function langOk(L){ return LIVE.indexOf(L)>=0&&Object.prototype.hasOwnProperty.call(WORDS,L); }
   function langKept(){ try{ var v=localStorage.getItem(LANG_KEY); return langOk(v)?v:''; }catch(e){ return ''; } }
   function langOfPhone(){
     var l=[].concat(navigator.languages||[],navigator.language||[]);
-    for(var i=0;i<l.length;i++){ var p=String(l[i]||'').toLowerCase().split(/[-_]/)[0]; if(p==='ms'||p==='zsm') return 'ms'; if(p==='en') return 'en'; }
+    for(var i=0;i<l.length;i++){ var p=String(l[i]||'').toLowerCase().split(/[-_]/)[0]; if((p==='ms'||p==='zsm')&&langOk('ms')) return 'ms'; if(p==='en') return 'en'; }
     return 'en';
   }
   function inEn(f){ return function(){ var was=LANG; LANG='en'; try{ return f.apply(this,arguments); }finally{ LANG=was; } }; }

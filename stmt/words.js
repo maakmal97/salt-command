@@ -2,7 +2,8 @@
  *
  * ONE TABLE A LANGUAGE, A PLAIN OBJECT OF KEY TO WORDS. EN is complete: the page (stmt/page.js), the door, the sheets, the
  * places, the banners (stmt/sw.js) and the refusals all read it, the page's markup at first paint and its script as it
- * draws. A KEY A LANGUAGE LACKS IS ENGLISH'S, NEVER THE KEY'S NAME, so a language can be a slice (13.4).
+ * draws. A KEY A LANGUAGE LACKS IS ENGLISH'S, NEVER THE KEY'S NAME, so a language can be a slice (13.4). Which tables a
+ * customer can meet is LIVE, at the foot (F7): English alone since 28 Sep 2026, Malay kept and off.
  *
  * SLOTS, NEVER HALVES. {n} style slots carry a figure, a date, a username or a mark; a sentence is never built by joining
  * translated halves, so a language may put the slot where its grammar wants it. In markup **x** is bold, and a slot named
@@ -1021,6 +1022,13 @@ export const MS = {
 };
 
 export const WORDS = { en: EN, ms: MS };
+
+/* F7, HIS INSTRUCTION OF 28 SEP 2026: THE LIVE LANGUAGES. English is the Counter's language and Malay is off, kept whole in
+ * MS above: with one live language the page draws no switch and opens in English on a Malay phone, or on one that kept
+ * Malay (stmt/page.js, served as __LIVE__), the banner is worded in English (stmt/sw.js) and the sign-in message carries
+ * no Malay half (stmt/send.js). It supersedes D12's slice and the two-language message while Malay is off. Turning Malay
+ * on again is LIVE = ["en", "ms"]; the suite renders the slice with both, so the kept table stays proved. */
+export const LIVE = ["en"];
 
 /** A key's words with its slots filled. A slot's value may be a function of the language the words were found in (a date
  *  says its month in that language). A slot not given stays as written, so a missing one shows rather than vanishes. */
