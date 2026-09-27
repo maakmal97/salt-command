@@ -1,5 +1,14 @@
 [
  {
+  "v": "v909",
+  "d": "28 Sep 2026",
+  "t": "TWO COLLECTIONS AND A COUNTER PAYMENT FOR CE5-SA",
+  "n": [
+   "<p><b>THREE AMENDMENTS FOR CE5-SA, ALL PREAPPROVED BY PHONE.</b> Two corrections record collection on 28 Sep 2026: s212, 1 unit rice for RM8 on order 20260927221155-ndxqjg, and s211, 1 unit salt for RM110 on order 20260927220617-thqf5q. A fulfilment then pays s212 in full, RM8 cash at the counter. s212 closes. s211 stands collected with RM110 unpaid, its 1 unit on credit against CE5-SA's cap of 1.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter's fulfilment reasoning left 1 unit to hand over on s212 because it read the row before the correction folded ahead of it; taken together the two close the order. The advance flag on s211 sits exactly at CE5-SA's cap. The shelf rolls 1 unit of salt and 1 unit of rice out, neither a landing, so the cost basis stays at RM56 a unit. Stock stands at 6.5 against a reorder point of 28.77.</p>"
+  ]
+ },
+ {
   "v": "v908",
   "d": "28 Sep 2026",
   "t": "A FIRST RICE ORDER PRICED AT THE ASK",
