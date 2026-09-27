@@ -1,5 +1,14 @@
 [
  {
+  "v": "v910",
+  "d": "28 Sep 2026",
+  "t": "ONE PAYMENT, BOOKED TWICE, NOW BOOKED ONCE",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s210, CE5-SA's order of 27 Sep for 2 units salt at RM210, had its cash set from RM420 to RM210. The same RM210 was booked twice, once as a claim against the account at v902 and once as cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The row now reads paid in full, with nothing outstanding.</p>",
+   "<p><b>THE TRAIL NO LONGER ADDS UP, BY DESIGN.</b> The row's 4-step trail still shows two fulfilments of RM210 each. The correction sets the figure directly and does not rewrite them. As the drafter flagged, it is recorded beside the trail saying so. The inventory did not move: stock stays at 5.5 units, costed at RM56 a unit, and the counts of 27 Sep stand.</p>"
+  ]
+ },
+ {
   "v": "v909",
   "d": "28 Sep 2026",
   "t": "TWO COLLECTIONS AND A COUNTER PAYMENT FOR CE5-SA",
