@@ -13761,7 +13761,11 @@ function tabLedger(){
        A replaced figure shows what it replaced, struck: grey for a modification, white for a
        correction. It is drawn on the line that states where the order is NOW, which is the
        one-line card and the collapsed line; a multi-step trail is history and keeps its deltas.
-       The rail and the pill stay, by his choice, until he has lived with the figures. */
+       The rail and the pill stay, by his choice, until he has lived with the figures.
+       28 Sep 2026, his word: ONLY THE AGREED FIGURES ARE STRUCK. A correction of what moved or what was paid
+       struck its old figure beside the quantity or the sum, so every collected site order, whose handover is a
+       Correction, read "0 unit" struck beside its 2 units as if the order had been for none, and a correction
+       of cash read as a replaced total. What moved and what was paid are drawn by the figure's own state. */
     const figNow=(()=>{
       const raw=t._buy||t,buy=t.type==='BUY';
       const moved=buy?poRecvUnits(raw):txEffDeliv(raw),paid=buy?poCash(raw):txPaid(raw);
@@ -13776,12 +13780,12 @@ function tabLedger(){
         const cls=struck?'lfig struck':none?'lfig carried':'lfig';
         return `<span class="${cls}">${f(struck||none||whole?agreed:done)}</span>`+((!struck&&!none&&!whole)?`<em class="lof">of ${f(agreed)}</em>`:'');};
       const fq=v=>units(v),ft=v=>fmt0(v);
-      const qty=()=>`<span class="lcol cqty">${draw(t.qty,moved,t.qty,dead||dflt,fq)}${was(['qty','deliveredQty'],'qty',v=>units(+String(v).replace(/[^\d.]/g,'')||0))}</span>`;
+      const qty=()=>`<span class="lcol cqty">${draw(t.qty,moved,t.qty,dead||dflt,fq)}${was(['qty'],'qty',v=>units(+String(v).replace(/[^\d.]/g,'')||0))}</span>`;
       const tot=()=>`<span class="lcol ctot"><b class="tval">${draw(t.total,paid,t.total,dead,ft)}</b>`
         +(margin!=null?`<em class="submar${(marPct!=null&&marPct<20)?' thin':''}">${fmt(margin)}${marPct!=null?' &middot; '+marPct.toFixed(0)+'%':''}</em>`:'')
-        +was(['total','cash'],'total',v=>fmt0(+String(v).replace(/[^\d.]/g,'')||0))+`</span>`;
-      const wasQ=()=>was(['qty','deliveredQty'],'qty',v=>units(+String(v).replace(/[^\d.]/g,'')||0));
-      const wasT=()=>was(['total','cash'],'total',v=>fmt0(+String(v).replace(/[^\d.]/g,'')||0));
+        +was(['total'],'total',v=>fmt0(+String(v).replace(/[^\d.]/g,'')||0))+`</span>`;
+      const wasQ=()=>was(['qty'],'qty',v=>units(+String(v).replace(/[^\d.]/g,'')||0));
+      const wasT=()=>was(['total'],'total',v=>fmt0(+String(v).replace(/[^\d.]/g,'')||0));
       return {qty,tot,wasQ,wasT};})();
     /* ============ AN ENTRY IS TWO ROWS (his schematic, 09 Sep 2026) ============
        Row 1 is the order as it stands: the figure carries the state (v447), so a part-delivered

@@ -43030,5 +43030,41 @@ await (async () => {
     && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
     "the table names each line, the free shelf only where it differs, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
 })();
+section("28 Sep 2026: only the agreed figures are struck: a handover or a cash correction strikes no quantity or sum, a corrected size still does");
+await (async () => {
+  /* E242 (s210) read "0 unit" struck beside its 2 units: the handover Correction a collected site order makes
+     (deliveredQty 0 to 2) was drawn as a replaced quantity, and a correction of cash read as a replaced total. A struck
+     figure is the agreement's or a wrong record's (v447); what moved and what was paid are the figure's own state. Three
+     rows written here on a copy of the book, read back off the Ledger's cards by class and text. */
+  const { openMaster: omX } = await import("../tools/payload.mjs");
+  const { execSync: exX } = await import("node:child_process");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const cust = bk.sales.find((x) => x.customer).customer;
+  const row = (rid, extra) => Object.assign({ rid, date: "2026-09-27", customer: cust, product: "salt", qty: 2, total: 210, cash: 0, deliveredQty: 0 }, extra);
+  bk.sales.push(row("g1", { deliveredQty: 2, deliveredOn: "2026-09-27", handover: "collected",
+      mod: "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected",
+      amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "handover" }] }),
+    row("g2", { cash: 210, deliveredQty: 2, deliveredOn: "2026-09-27", mod: "corrected on 2026-09-28: cash 420 to 210",
+      amend: [{ date: "2026-09-28", kind: "Correction", cash: 0, kg: 0, note: "cash" }] }),
+    row("g3", { mod: "corrected on 2026-09-27: qty 1 to 2; total 110 to 210", amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "size" }] }));
+  const B = join(REPO, "test", ".struck-" + process.pid + ".json"), M = join(REPO, "test", ".struck-" + process.pid + ".html");
+  writeFileSync(B, JSON.stringify(bk, null, 1));
+  writeFileSync(M, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  let wX = null;
+  try {
+    exX("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    ({ w: wX } = await omX(M));
+    wX.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
+    const cell = (rid) => JSON.parse(wX.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var f=function(sel){var e=c.querySelector(sel);if(!e)return null;var g=e.querySelector('.lfig'),ws=e.querySelector('.lwas');return {fig:g?g.textContent:'',was:ws?ws.textContent:'',wasCls:ws?ws.className:''};};return {q:f('.lcol.cqty'),t:f('.lcol.ctot')};})())"));
+    const g1 = cell("g1"), g2 = cell("g2"), g3 = cell("g3");
+    ok(!!g1 && g1.q.fig === "2 unit" && g1.q.was === "", "a handover correction strikes no quantity: the order reads its 2 units alone: " + JSON.stringify(g1 && g1.q));
+    ok(!!g2 && g2.t.fig === "RM 210" && g2.t.was === "", "a correction of cash strikes no sum: " + JSON.stringify(g2 && g2.t));
+    ok(!!g3 && g3.q.was === "1 unit" && g3.q.wasCls === "lwas corr" && g3.t.was === "RM 110",
+      "while a corrected size still shows its old quantity and sum struck white: " + JSON.stringify(g3));
+  } finally {
+    try { if (wX) wX.close(); } catch (e) { /* best effort */ }
+    for (const f of [B, M]) { try { rmSync(f); } catch (e) { /* best effort */ } }
+  }
+})();
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
