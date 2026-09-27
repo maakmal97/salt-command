@@ -905,7 +905,7 @@ export default {
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Admin */
+      /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Account */
       const r = await listOrders(env, url.searchParams.get("all") === "1", true);
       /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
       if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
@@ -923,7 +923,7 @@ export default {
       }
       return json(r, r.ok ? 200 : 503);
     }
-    /* S9 9.8 FIX: the desk's page tells Salt Admin what waits here, its own Waiting on you count (tellWaiting) */
+    /* S9 9.8 FIX: the desk's page tells Salt Account what waits here, its own Waiting on you count (tellWaiting) */
     if (p === "/orders/waiting") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};

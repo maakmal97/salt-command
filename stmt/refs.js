@@ -155,7 +155,7 @@ export async function readRef(env, id) {
 }
 
 /** Many keys in KV's bulk form, get(keys[]), which takes at most 100 keys a call and answers a Map with null
- *  for a missing key: so the keys go in chunks of 100, all at once. Salt Admin's sheet reads every account's
+ *  for a missing key: so the keys go in chunks of 100, all at once. Salt Account's sheet reads every account's
  *  keys through it (2.5), and listRefs every link (5.3). */
 const BULK_KEYS = 100;
 export async function getMany(env, keys) {

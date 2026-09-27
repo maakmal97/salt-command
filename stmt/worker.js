@@ -704,11 +704,11 @@ async function handleDesk(request, env, p, m) {
     /* v694: the orders with a stage the ledger has not been told about, whatever state they are
        in. A completed order still owes its last entries, so this is not the open list. */
     if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
-    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Admin: a count, no link, no name */
+    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Account: a count, no link, no name */
     const links = q.get("links") === "1" ? { links: (await listRefs(env)).filter(linkWaiting).length } : {};
     return json(Object.assign({ ok: true, orders: await allOrders(env, q.get("all") === "1") }, links));
   }
-  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Admin's
+  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Account's
      line. A count and its moment, nothing else: no order, no code and no way to the desk. */
   if (p === "/desk/waiting") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -894,7 +894,7 @@ async function alertsOn(env) {
   } while (cursor);
   return out;
 }
-/* 2.5: SALT ADMIN OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
+/* 2.5: SALT ACCOUNT OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
    codes, 3 to 7 s). Every head at once, then every account's seen: and sent: keys in KV's bulk form, through
    getMany (stmt/refs.js, which reads the guest links the same way), 100 keys a chunk. */
 /* The QR is most of the sheet's CPU (42 encodes measured 55 ms), and an account's address does not move, so each is
@@ -1330,7 +1330,7 @@ export default {
          is named for that, not for the ledger it reports on. */
       if (p === "/all/manifest.webmanifest") {
         if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-        const own = { name: "Salt Admin", short_name: "Salt Admin", start_url: "/all", scope: "/all",
+        const own = { name: "Salt Account", short_name: "Salt Account", start_url: "/all", scope: "/all",
           display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
           icons: [{ src: "/icon-key.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
@@ -1499,7 +1499,7 @@ export default {
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
     }
-    /* S9 9.7: Salt Admin's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
+    /* S9 9.7: Salt Account's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
        fetches an icon without the Access cookie, and a ring names nothing. */
     if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);

@@ -77,7 +77,9 @@ const PWA_BLOCK = [
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
-  '<meta name="apple-mobile-web-app-title" content="Salt">',
+  /* SALT DESK (his Q6 of 28 Sep 2026): the name a home screen shows, here and in the manifest's name and short_name;
+     the page's <title> stays Salt Command, the anchor this block is put after. A manifest change bumps CACHE in public/sw.js */
+  '<meta name="apple-mobile-web-app-title" content="Salt Desk">',
   '<link rel="manifest" href="manifest.webmanifest">',
   '<link rel="apple-touch-icon" href="icon-180.png">',
   /* THE WAY BACK MUST BE VISIBLE. The master draws its Close control at 22% opacity and

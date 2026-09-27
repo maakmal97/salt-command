@@ -83,7 +83,7 @@ self.addEventListener('notificationclick', function(e){
     for (var i = 0; i < list.length; i++) {
       var c = list[i], path = '';
       try { path = new URL(c.url).pathname; } catch (x) { path = ''; }
-      /* S5 5.6: only the Counter's own page can open an order; a guest board or Salt Admin in another tab cannot */
+      /* S5 5.6: only the Counter's own page can open an order; a guest board or Salt Account in another tab cannot */
       if (c.url.indexOf(self.registration.scope) === 0 && (path === '/' || path.indexOf('/s/') === 0) && 'focus' in c) {
         try { c.postMessage({ salt: 'news', order: d.order || '' }); } catch (x) {}
         return c.focus();

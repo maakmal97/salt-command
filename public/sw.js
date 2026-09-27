@@ -3,7 +3,10 @@
    API: /queue, /vault, /bio and /bye must always hit the Worker, or a stale ping
    would strand the desk in read-only mode and a cached POST is meaningless. */
 
-const CACHE = "salt-shell-v5";   /* bumped 08 Sep 2026: /orders and /stmt-users leave the cache */
+/* bumped 08 Sep 2026: /orders and /stmt-users leave the cache. Bumped 28 Sep 2026: the manifest names the desk Salt Desk,
+   and the manifest and icons are served cache first below and sit outside the build id, so a phone reads a new one only
+   when this name moves: a change to either bumps it in the same version. */
+const CACHE = "salt-shell-v6";
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */

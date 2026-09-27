@@ -15,7 +15,7 @@
  * the Worker's English standing for a code the page does not know. A request only a broken page could send (a method, a
  * missing wrap) keeps its plain English and no code. The codes are listed here and nowhere else.
  *
- * WHAT IS NOT HERE: Salt Admin (stmt/owner.js), which stays English and unkeyed; the words he sends a customer
+ * WHAT IS NOT HERE: Salt Account (stmt/owner.js), which stays English and unkeyed; the words he sends a customer
  * (stmt/send.js), which he writes himself, the sign-in message carrying its own Malay half; the sealed statement, a dated record, save its
  * one line shared with Home, part.cover, taken from here in English as it is written; and his notice, which is his own words.
  *

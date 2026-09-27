@@ -2101,7 +2101,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   .salt-rail.salt-appbar__rail { display: none; } /* two classes, so the rail's own display, later in the file, cannot outrank it */
 }
 
-/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Admin's
+/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Account's
    Needs you). Who it concerns and its kind as a chip, what it is in one sentence, how long it has waited,
    and the one action it leads to in brass. The whole row is one tap that opens its card; the row whose
    card is open is read from aria-current and takes the brass rule down its left edge. The sentence keeps
@@ -19150,8 +19150,8 @@ async function ordLoad(quiet){
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
-    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Admin: a count, no link and no name */
-    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Admin':'';}
+    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Account: a count, no link and no name */
+    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Account':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
     if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
@@ -19338,7 +19338,7 @@ function ordWaiting(){
   const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
   return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
 }
-/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THIS COUNT. Once the orders and the drafts have both been read, and
+/* S9 9.8 FIX (25 Sep 2026): SALT ACCOUNT'S LINE IS THIS COUNT. Once the orders and the drafts have both been read, and
    neither read failed, the Waiting on you figure Today's row and the Enter badge count (ordActs) goes to the desk Worker
    (POST orders/waiting), which sets the site's desk-waiting mark: one reading, the desk's. A change is sent, and the
    first count of every load, so the mark's moment says when the desk last looked.

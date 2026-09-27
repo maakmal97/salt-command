@@ -104,7 +104,7 @@ export function siteRecipes() {
     .replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/, "")
     .replace(/\n\.salt-field__select option \{[^}]*\}/, "")
     /* NOT THE COMMENTS (24 Sep 2026). The system's notes name its other surfaces (the Inbox row's
-       names Salt Admin, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
+       names Salt Account, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
        the rules are carried whole, the prose stays upstream. No recipe holds a string with a comment
        mark in it; one that did would unbalance the braces, which stops the generation. */
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n{3,}/g, "\n\n");

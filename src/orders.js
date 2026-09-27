@@ -133,7 +133,7 @@ export async function usersMap(env) {
 }
 
 /** Every open order (or all with `all`), each with the desk code the username maps to; with `links`, how many
- *  associate links wait in Salt Admin as well (S9 9.8), a count the desk's page shows and nothing more. */
+ *  associate links wait in Salt Account as well (S9 9.8), a count the desk's page shows and nothing more. */
 export async function listOrders(env, all, links) {
   const q = [all ? "all=1" : "", links ? "links=1" : ""].filter(Boolean).join("&");
   const r = await site(env, "/desk/orders" + (q ? "?" + q : ""));
@@ -1437,13 +1437,13 @@ export async function ordersWaiting(env) {
     placed: r.orders.filter((o) => o.status === "placed").length };
 }
 
-/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
+/* S9 9.8 FIX (25 Sep 2026): SALT ACCOUNT'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
    master's ordActs, over the orders and the drafts together: a new order not yet accepted, a question of theirs not
    marked No reply needed, cash to record, a payment they say they made) for its Today row and its Enter badge, and once
    it has read both it sends that figure here (POST /orders/waiting), which this relays to the site's desk-waiting mark.
    One reading, the desk's: this Worker's own recount every minute (placed, or their line last) missed cash and payments
    and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
-   last read of its orders, and the mark carries its moment, which Salt Admin shows. S9 fix: the page sends how old its
+   last read of its orders, and the mark carries its moment, which Salt Account shows. S9 fix: the page sends how old its
    reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
 export async function tellWaiting(env, n, age) {
   if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };

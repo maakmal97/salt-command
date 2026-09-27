@@ -1,6 +1,6 @@
 {
-  "name": "Salt Command",
-  "short_name": "Salt",
+  "name": "Salt Desk",
+  "short_name": "Salt Desk",
   "description": "Salt Command: ledger, pricing and transaction entry, on the go.",
   "start_url": "./",
   "scope": "./",

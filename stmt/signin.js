@@ -140,7 +140,7 @@ export async function burnSignin(env, token, nonce) {
 }
 
 /* ---- THE HAND-OVER: A KEY AND AN EIGHT-SYMBOL CODE (S3 3.9, his decision D2 of 24 Sep 2026) ---------------
- * "A signed-in page (or Salt Admin) mints a one-use key plus an eight-symbol code, alive 15 minutes. It is
+ * "A signed-in page (or Salt Account) mints a one-use key plus an eight-symbol code, alive 15 minutes. It is
  * stored under a keyed hash with its wrap sealed by a Worker secret, and braked site-wide and per address."
  *
  * WHAT IT IS FOR. An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches

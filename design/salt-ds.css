@@ -586,7 +586,7 @@
   .salt-rail.salt-appbar__rail { display: none; } /* two classes, so the rail's own display, later in the file, cannot outrank it */
 }
 
-/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Admin's
+/* ---- Inbox row: one waiting thing in a list beside its card (the desk's Waiting on you, Salt Account's
    Needs you). Who it concerns and its kind as a chip, what it is in one sentence, how long it has waited,
    and the one action it leads to in brass. The whole row is one tap that opens its card; the row whose
    card is open is read from aria-current and takes the brass rule down its left edge. The sentence keeps

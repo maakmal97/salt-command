@@ -109,7 +109,9 @@ built desk is seven destinations (`VIEWS`): Today, Order book, Stock, Pricing, N
 Enter. Old ids remain addresses (`/desk#book`, `/desk#network`). **The rail is two levels at
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
-Everything the desk shows, cost and margin included, is served at the public URL.
+Everything the desk shows, cost and margin included, is served at the public URL. **It installs as
+Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
+`<title>` stays Salt Command, the build's anchor.
 
 In cloud mode Enter carries **Add ID**, **Amend ID** and **Approve**. A code is derived from the
 name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
@@ -216,7 +218,9 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   and never cached by `sw.js`.
 - **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
   NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
-  `chart.umd.js` and both wrangler configs, so **deploy a `wrangler.jsonc` change by hand**.
+  `chart.umd.js` and both wrangler configs, so **deploy a `wrangler.jsonc` change by hand**. **`sw.js`
+  serves the manifest and the icons cache first**: a change to either bumps its `CACHE` in the same
+  version, or an installed desk never reads it.
 - A deploy is decided by ids, never by hashing output (`deployVerdict`): none when live `/rev`
   serves `rev.json.id`, which is then written to `.deployed.json`, else `rev.json.id` against
   `.deployed.json.id`. The record is untracked, this checkout's own, and never written unseen.
@@ -328,7 +332,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **`/all` IS THE MASTER ACCOUNT, behind Access with two locks, neither trusted alone**: the Access
   application and `stmt/access.js` verifying the JWT again (RS256, issuer, audience, expiry). Empty
   `ACCESS_TEAM` or `ACCESS_AUD` closes `/all`. **`stmt/owner.js` travels only there.**
-- **An account's card on Salt Admin hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
+- **An account's card on Salt Account hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
 - **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
@@ -337,7 +341,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
   only on Continue** (asking which account spends nothing), and a spent record answers the page that
   spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
-- **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
+- **The hand-over** (his decision D2): a signed-in page, or Salt Account's Show a code, hands the sign-in to
   another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
   `STMT_HANDOVER_KEY` with the wrap sealed, the code braked per address and site-wide; unset, `/handover` answers 503.
 - **The door** (his D3): one username field and one password field a password manager fills, Show, a
@@ -345,7 +349,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
   in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
   alone, thirty days from the last open), log out, which also drops that wrap, this phone's
-  notifications and every hand-over the page minted. Salt Admin's **Sign out everywhere** (`POST /all/signout`) ends
+  notifications and every hand-over the page minted. Salt Account's **Sign out everywhere** (`POST /all/signout`) ends
   every device, unused link and code, and alert on an account, never its `u:` record: the answer to a forwarded link or a
   lost phone. An account's phones and computers are named from the browser (`deviceOf`), never an address. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
@@ -358,10 +362,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   says a link signs the saved app in. **The saved app starts at `/app`** (the manifest's `start_url`): with
   nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
   (`POST /handover/open`), and the app is remembered. A key in the address (`/app#<key>`) is spent by the saved app
-  alone; a browser tab spends only Salt Admin's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
+  alone; a browser tab spends only Salt Account's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
   opens only for a key his `/all/handover` minted; an app's own browser spends nothing.
-  Salt Admin links its own manifest with credentials, is titled Salt Admin, has its own icon (the ring
-  with a keyhole, `/icon-key.png`) and turns into Sign in again when Access lapses.
+  Salt Account links its own manifest with credentials, is titled Salt Account (twelve characters, his Q6
+  of 28 Sep 2026; it was Salt Admin, a name kept for the desk's own admin surface to come), has its own icon
+  (the ring with a keyhole, `/icon-key.png`) and turns into Sign in again when Access lapses.
 - **A customer's banner names the kind of news, never an amount, a product, an order or a name**:
   `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription filed, the
   words `NEWS` in `stmt/sw.js`; a record with no keys gets the payload-free wake and the old words. A
@@ -383,7 +388,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
-  page, `shutPage`, the same words for all; a board ends with how to order. **One standing link per tier**, ensured on Salt Admin's first
+  page, `shutPage`, the same words for all; a board ends with how to order. **One standing link per tier**, ensured on Salt Account's first
   read of its links and kept for good; Ambassador is never a guest's; Bronze's old link opens the
   stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline

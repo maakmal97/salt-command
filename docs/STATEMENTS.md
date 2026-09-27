@@ -80,10 +80,10 @@ the file. Each is sealed as an account is, around an empty bundle, its password 
 `pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet; once
 bound it stays there, and a `make_statements` retry and Send look under the username after the code.
 `tools/update.mjs` warns with that line when fewer than three are free.
-**The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
+**The fold binds them, never Salt Account**: at Add ID a registration takes the next free spare as its
 username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
 publish in the same run seals the live statement and price list into it, so a walk-in signs in within
-the fold's few minutes. With none free the fold mints a bare username as before; Salt Admin then reads
+the fold's few minutes. With none free the fold mints a bare username as before; Salt Account then reads
 "Made at the next laptop update. Until then, show the Silver link." (the level is the ladder's last,
 from `tiers`), and `update.mjs` mints the account.
 **One username, one code**: the next spare is the same on every machine, so two folds from one base
@@ -101,7 +101,7 @@ committed, so the same passwords went into git anyway. One place, and that place
 repository. The suite asserts that no generated page contains one.
 
 **Sealed under the master, they also ride with the record** (v688, his decision of 18 Sep 2026),
-as `pwMaster`, so an account's card on Salt Admin can hand one over from his phone. That is
+as `pwMaster`, so an account's card on Salt Account can hand one over from his phone. That is
 ciphertext under the passphrase that already unwraps every account, the publish keeps it out of
 the record a customer fetches, and his page decrypts it in the browser straight to the clipboard.
 `node tools/stmt-seal.mjs statements/<YYYY-MM> [--check]` sealed the issue that went out before
@@ -200,7 +200,7 @@ the vault, D1 or the desk. Nothing a customer holds points at the desk's address
 checks that no statement does either.
 
 **Never offered to a translator** (his decision D12, 24 Sep 2026): every page the site serves, a
-guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with Google's
+guest's and Salt Account's included, opens `<html lang="en" translate="no">` with Google's
 `notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
 opened statement to a translation service. The Counter's script then sets `lang` to the language it reads (13.4).
 
@@ -209,7 +209,7 @@ opened statement to a translation service. The Counter's script then sets `lang`
 language lacks is English's, never its name. A figure, a date or a username is a `{n}` slot, and no sentence is
 joined from translated halves. A refusal a customer can meet is `e.<code>` there: the Worker answers
 `{error, code}` through `refusal()`, the order book passing the code and its slots on, and the page words the
-code, the Worker's English standing for one it does not know. Salt Admin stays English and unkeyed; a guest's board
+code, the Worker's English standing for one it does not know. Salt Account stays English and unkeyed; a guest's board
 and a shut link are keyed but English only (no script); `stmt/send.js` is unkeyed.
 
 **The first Malay slice** (his D12, the plan's 13.4): the `MS` table words the welcome, the door and its refusals,
@@ -222,7 +222,7 @@ order's head, steps, history and cancel) is drawn in English whatever is chosen 
 (`enLang`, the slice inside it `rdLang`), a state, size or date the
 slice shares included, and so is a note a tap leaves there (`wErrE`), so an order's screen is mixed until its slice comes. The page leaves its language in the
 origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
-none. Salt Admin is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
+none. Salt Account is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
 since it goes before the phone's language is known. The suite reads the Malay table and a Malay served page for a
 product or level word.
 
@@ -321,7 +321,7 @@ of `tools/make_statements.mjs`) changed to match before the next issue, since th
 guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
 quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.
 A standing link carries its `level` and `standing: true`, and `ensureStanding` in `stmt/refs.js`
-makes the missing ones on Salt Admin's first read of its links (Needs you or Links): **ensured, not minted on a tap**, so
+makes the missing ones on Salt Account's first read of its links (Needs you or Links): **ensured, not minted on a tap**, so
 the answer to "what are my links" is always exactly five and there is nothing to remember. It is
 idempotent, and a level that already has one keeps the id it was given, because an id handed to a
 stranger must never change what it opens. The level names travel from the book to the Worker as the
@@ -377,7 +377,9 @@ sign-in link's page and the Keep it on your Home Screen card all say **Salt Coun
 then The Counter, then his own name for it). The icon on a customer's home screen has to say
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never
-appears is the DESK's name. Twelve characters exactly, which is what iOS gives a home screen. The statement's letterhead, the last
+appears is the DESK's name, nor his page's: the customer-page sweeps refuse Salt Command, Salt Desk (the desk as it
+installs, his Q6 of 28 Sep 2026), Salt Account (`/all`, which was Salt Admin until then, twelve characters too) and
+Salt Admin (the desk's admin surface to come). Twelve characters exactly, which is what iOS gives a home screen. The statement's letterhead, the last
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.
@@ -385,7 +387,7 @@ Issues already sealed keep the letterhead they were issued with until they are r
 ### The hand-over: a key and an eight-symbol code (S3 3.9, his decision D2 of 24 Sep 2026)
 
 An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches it. A page already
-signed in (or Salt Admin, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
+signed in (or Salt Account, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
 `/app#<key>`, and an eight-symbol CODE to type. Mechanism: `stmt/signin.js`; the door: `handleHandover` in
 `stmt/worker.js`. **The contract the Counter codes to:**
 
@@ -876,7 +878,7 @@ reply, payment received, a payment is due, delivered or collected (in part or in
 not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
-A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Admin in
+A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Account in
 another tab) is sent a message instead, re-reads its orders, patching only what changed, and opens that one,
 or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in
 on the Sheet). A return to the page (S3 3.5) and a lapse reopened patch the orders the same way, so an open
@@ -956,7 +958,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
-- **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
+- **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
   on him, its action on the card, the tap answered there. A card about an account carries its code as a
   button that opens it: from 1080px beside the list (the first such card's account until he picks one, the
   pane drawn again only when its account changes or the sheet is read), on a phone on Accounts. An associate's waiting link (Approve, the tier
@@ -987,7 +989,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   says so in the past tense: "Nothing waited on the desk as at 09:00, and an order has moved since." The
   desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
-  `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
+  `approved === false` test), and its rail's foot says "N links wait in Salt Account".
 - **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
   system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
 - **The test account is wrapped on his page** (fold 2.7): Make a test account makes the key and wraps it under the
@@ -1027,7 +1029,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   door is the customer's own code. His decision: the gated route hands the master to the page,
   so nothing is typed, and the trade is that an Access session there reads every account. The
   Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address, a
-  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Admin
+  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Account
   says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
   to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
   401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request

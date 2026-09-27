@@ -793,7 +793,7 @@ export function shutPage(nonce) {
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to Malay or Chinese, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
-   the customer's, a guest board, a shut link and Salt Admin. */
+   the customer's, a guest board, a shut link and Salt Account. */
 const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">';
 function guestPage(inner, nonce, title) {
@@ -823,7 +823,7 @@ function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
   return '<div id="bull" class="salt-insight hnote"' + (lines.length ? "" : " hidden") + ">" + lines.map((l) => "<p>" + esc(l) + "</p>").join("") + "</div>";
 }
-/* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
+/* S9 9.2: SALT ACCOUNT'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
 const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["more", "More"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
@@ -890,16 +890,16 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
-    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
-    + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
+    /* his page is Salt Account, as its manifest says; the customer's is Salt Counter */
+    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Account" : "Salt Counter") + '">'
+    + "<title>" + (owner ? "Salt Account" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Accounts, Links, More. A count beside a place is what waits there. */
-        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Admin">'
-        + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Admin</b></div>'
+        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
+        + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Account</b></div>'
         + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '">'
           + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(m) + "</span><span>" + w + "</span></span>"
           + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
@@ -907,7 +907,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + '<div class="amain">'
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome">'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
@@ -920,7 +920,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         /* S9 9.2: ACCOUNTS, one list for what Send and Review were: found by a word, narrowed by a filter, and a
            row opens the account beside the list from 1080px, in its place below it on a phone */
         + '<div id="oAccts" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Accounts</h1>"
         + '<p class="lead" id="scount"></p>'
         + '<div class="afind">'
@@ -948,7 +948,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + '<div id="glist"></div>'
         + "</div>"
         + '<div id="oMore" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Admin</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>More</h1>"
         + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
         + '<div class="rlist" id="mItems">'
@@ -964,7 +964,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + '<div id="clist"></div>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Admin">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'
+        + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
         + "</div>"
@@ -997,7 +997,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
        reload needs */
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="remAgain" type="button" hidden', "door.again"))
-    /* S3 3.11: a code from another device, or from Salt Admin at the counter. S3 fix: both inside the form's box, so
+    /* S3 3.11: a code from another device, or from Salt Account at the counter. S3 fix: both inside the form's box, so
        the signed-out Sheet carries them with it */
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
     + wt("p", 'class="salt-insight"', "door.help")
