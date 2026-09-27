@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="96a651409b6ff6ac";
+var SALT_BUILD_ID="d88d6ad87dbcb478";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8550,7 +8550,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v900","d":"27 Sep 2026","t":"CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER","n":["<b>1 ROW FOLDED FROM THE PHONE.</b> Correction on s210: deliveredQty, deliveredOn, handover. The stated salt shelf stands at 1 unit, counted 27 Sep 2026, and this fold rolls it only for what physically moved.","<b>WRITTEN BY THE TOOL, NOT A MODEL.</b> The model could not be called: the model declined: {\"type\":\"refusal\",\"category\":\"cyber\",\"explanation\":\"This request triggered restrictions on violative cyber content and was blocked under Anthropic's Usage Policy. To lea The figures are the dossier's own and the prose is tools/foldnotes.mjs, so every row here carries its terms, its party's history and the drafter's flags, and none of them carries a judgement on those flags. Each row note says as much on its own line, because a reader holding one row should not have to come here to learn it."]}];
+const evolution=[{"v":"v901","d":"27 Sep 2026","t":"TWO READINGS OF THE FLOOR, HELD TO THE SEN","n":["<p><b>THE BUYING LEVER NAMES RM56, NOT RM55.98.</b> Pricing's wholesale lever names the buying rate at which the floor, unchanged, meets the realised wholesale price. It fixed its line with the floor at RM0 and at RM1 a unit, and each probe carried the engine's rounding of every order's floor to the sen; carried fifty-fold to the answer, that named RM55.98, where the floor stands at RM68.29 against the realised RM68.31. The line is now fixed at RM0 and at the realised price itself, and the lever names RM56, where the floor is RM68.31.</p>","<p><b>ONE FLOOR IN THE VOLUME LINE.</b> A floor total is to the sen, so a half unit's RM31.18 reads RM62.36 a unit beside RM62.35 at one unit, and since the folds of v898 to v900 the line under the price chart gave the floor as a range, RM62.35 to RM62.36 a unit, as if it moved with size. Rule 5's floor has no time in it and is one rate a unit, so the line names the RM62.35/unit floor again, and prints a range only when the floor itself moves with size. The share sold under it, 15% of volume, is unchanged.</p>","<p><b>NO PRICE MOVES.</b> Both are readings on Pricing; the board, the cards, the price lists and the drafter read neither. <b>THE SUITE.</b> The two checks that went red on v898 to v900's book now force the state instead of waiting for the book: the lever on the book's leak and on leaks from 0% to 25%, the volume line at ten buying rates a sen apart, with a charge per order as the control that still prints a range. Each was proved red against the old engine on today's book and on the book before it, where the old checks had passed with a quarter of a sen or less to spare.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8665,7 +8665,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 18:03 KL';
+const LAST_UPDATED='27 Sep 2026, 20:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20361,11 +20361,15 @@ function pxMarket(){
   /* the buying rate at which the realised bulk price would clear the floor
      unchanged. v385: null when wholesale has never traded, because there is no realised price to hold.
      27 Sep 2026: SOLVED ON THE ENGINE'S OWN STACK, not backed out by hand. The floor is straight-line in the
-     buying rate (freight and the leak ride on it), so two probes of costStack at RM 0 and RM 1 fix the line and
-     the rate where it meets the realised price is read off it; nothing here restates the stack. */
+     buying rate (freight and the leak ride on it), so two probes of costStack fix the line and the rate where
+     it meets the realised price is read off it; nothing here restates the stack.
+     27 Sep 2026, v900's book: THE PROBES ARE RM 0 AND THE REALISED PRICE, NOT RM 0 AND RM 1. floorTotal rounds each
+     order's floor to the sen, and a line fixed one ringgit apart carried that rounding fifty-fold to the answer: the
+     lever named RM 55.98 where the floor meets the realised RM 68.31 at RM 56. Probes a whole price apart hold it
+     to the rounding of one probe. */
   const flAt=lot=>{const I=pxInputs();I.over={cost:lot,shrink:I.over.shrink};return flOf(rows.filter(s=>s.qty>=PX.bulkFrom),bulk.k,PRICING_ENGINE.costStack(I));};
-  const f0=bulk.none?null:flAt(0), f1=bulk.none?null:flAt(1);
-  const needRate=(bulk.p==null||!(f1>f0))?null:+((bulk.p-f0)/(f1-f0)).toFixed(2);
+  const f0=bulk.none?null:flAt(0), fP=bulk.none?null:flAt(bulk.p);
+  const needRate=(bulk.p==null||!(fP>f0))?null:+((bulk.p-f0)/(fP-f0)*bulk.p).toFixed(2);
   return {c,all,small,bulk,bulkEx,excluded,needRate};
 }
 /* THE ACTIVE PRODUCT'S SUPPLY QUOTE (v228). One panel, driven by QUOTES, so a third
@@ -21628,7 +21632,12 @@ function priceNote(){
   const flRate=s=>PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
   const lo=Math.min.apply(null,rates), hi=Math.max.apply(null,rates);
   const underUnits=sold.filter(s=>txGoods(s)/s.qty<flRate(s)-0.009).reduce((a,s)=>a+s.qty-txPendUnitsRaw(s),0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
-  const line=hi-lo<0.005?`the ${fmt(lo)}/unit floor`:`the floor at its size, ${fmt(lo)} to ${fmt(hi)}/unit`;
+  /* 27 Sep 2026, v900's book: A FLOOR TOTAL IS TO THE SEN, so its rate is known to half a sen over the size: a half
+     unit's RM 31.18 reads RM 62.36/unit beside RM 62.35 at one unit, with nothing in the floor moving by size. The
+     floor is one rate, named at one unit, while every size's rate is that figure to the sen its total is rounded to;
+     a range is printed only when the floor itself moves with size. */
+  const f1=PRICING_ENGINE.floorTotal(1,C,P), one=sold.every(s=>Math.abs(flRate(s)-f1)<=0.005+0.005/s.qty+1e-9);
+  const line=one?`the ${fmt(f1)}/unit floor`:`the floor at its size, ${fmt(lo)} to ${fmt(hi)}/unit`;
   /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
      NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this
      ran 130 characters on salt and 132 on oil against a limit of 140, which is headroom rather
