@@ -99,3 +99,9 @@ test/_one.mjs
 # tools/suite-split.mjs: its shards and last run's timings, laptop only
 test/.shard-*.mjs
 test/.suite-times.json
+
+# THE DEPLOY RECORD IS THIS CHECKOUT'S OWN (27 Sep 2026). .deployed.json is the build tools/update.mjs
+# last SAW LIVE, written only once /rev serves it. Three deployers ship the desk and only the laptop
+# writes it, so a tracked copy went stale at every cloud deploy (it read v789 while the phone served
+# v890), and writing it on an idle run would have been a commit with nothing shipped.
+.deployed.json

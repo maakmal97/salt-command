@@ -11,14 +11,15 @@
  *   3  queues      what is still pending, on BOTH queues, and the replay check
  *   4  build       master -> public/desk.html, then whether there is anything to ship
  *   5  test        the smoke suite
- *   6  deploy      only when rev.json's id differs from .deployed.json's
+ *   6  deploy      only when the phone does not serve rev.json's id and .deployed.json does not name it
  *   6b mirror      the D1 store against the desk's version       (skip with --no-mirror)
  *   7  version     git add, commit, push                        (skip with --no-push)
  *   8  verify      master == rev.json == live /rev, origin level, no locks left
  *
- * AN IDLE RUN STOPS AT THE BUILD (26 Sep 2026): when the build, the deploy on record and the phone
- * carry one id, the tree is clean, nothing is ahead of origin and nothing is queued, it prints
- * "nothing to ship" and skips 5, 6 and 7; 6b and 8 still run (`idleVerdict`, tools/preflight.mjs).
+ * AN IDLE RUN STOPS AT THE BUILD (26 Sep 2026): when the build and the phone carry one id, the tree
+ * is clean, nothing is ahead of origin and nothing is queued, it prints "nothing to ship" and skips
+ * 5 and 7, and 6 only writes down a record that was stale; 6b and 8 still run (`idleVerdict` and
+ * `deployVerdict`, tools/preflight.mjs).
  *
  * WHAT IT DELIBERATELY WILL NOT DO: fold a queued entry into the ledger. Writing a
  * transaction row is a judgement (which product, whose bucket, what cost, what the note
@@ -44,6 +45,7 @@ import { resolve, dirname, join } from "node:path";
 import { messageFrom } from "./commitmsg.mjs";
 import { aheadVerdict } from "./preflight.mjs";
 import { idleVerdict } from "./preflight.mjs";
+import { deployVerdict } from "./preflight.mjs";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -278,13 +280,13 @@ else if (sh("npm", ["run", "build"]).code !== 0) { fail("build failed"); process
    idle build leaves the tree clean, and a run that finds every surface on one id with nothing waiting
    skips the suite, the deploy and the commit rather than spending runner minutes proving it again.
    The mirror (6b) and the proof (8) still run: a stale mirror is the silent fault this tool exists for. */
-let IDLE = false;
+let IDLE = false, LIVE4 = null;
 if (!DRY) {
-  const live4 = await liveRev();
+  LIVE4 = await liveRev();
   const v = idleVerdict({
     revId: readJson(resolve(REPO, "public", "rev.json"), {}).id,
     deployedId: readJson(resolve(REPO, ".deployed.json"), {}).id,
-    liveId: live4 && live4.id,
+    liveId: LIVE4 && LIVE4.id,
     dirty: git("status", "--porcelain"),
     ahead: git("rev-list", "--count", "origin/master..HEAD"),
     pending: pending.length
@@ -320,22 +322,28 @@ async function waitForRev(id, tries = 8, gapMs = 2000) {
   }
   return await liveRev();
 }
-/* The deploy is RECORDED HERE, before step 7 commits, and only after the live id has been
-   read back. Written after the commit instead (which is where it was first put) it is
-   correct but forever uncommitted, so every run left a dirty tree. Caught 12 Aug by running
-   the thing. Two writers own this file, salt_sync.ps1 and this, and the rule both obey is
-   the same: never record a deploy you have not seen live. */
+/* The deploy is RECORDED HERE, and only after the live id has been read back: never record a
+   deploy you have not seen live. THE RECORD IS THIS CHECKOUT'S OWN (27 Sep 2026). It was committed
+   with each version from 12 Aug, when this laptop was the one deployer; with three deployers it
+   went stale at every cloud deploy, so it is untracked now and writing it leaves the tree clean.
+   salt_sync.ps1, its other writer, is retired. */
 function recordDeploy(r) {
   writeFileSync(resolve(REPO, ".deployed.json"),
     JSON.stringify({ id: r.id, v: r.v, at: new Date().toISOString() }, null, 4) + "\n");
 }
 
+/* THE PHONE FIRST, THEN THE RECORD (deployVerdict, tools/preflight.mjs, says why). An idle run was
+   judged on the phone's answer at step 4 and never deploys; any other run asks again, because the
+   suite has run since. */
+const seen = NO_DEPLOY ? null : IDLE ? LIVE4 : await liveRev();
+const dv = deployVerdict({ revId: rev.id, deployedId: deployed.id, liveId: seen && seen.id });
 if (NO_DEPLOY) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
-} else if (IDLE) {
-  ok(`skipped: nothing to ship (${rev.v} ${rev.id} is deployed and live)`);
-} else if (rev.id && deployed.id === rev.id) {
-  ok(`already deployed (${rev.v} ${rev.id})`);
+} else if (dv.act === "record") {
+  recordDeploy(rev);
+  ok(`${rev.v} ${dv.text}`);
+} else if (dv.act === "none") {
+  ok(IDLE ? `skipped: nothing to ship (${rev.v} ${rev.id} is deployed and live)` : `already deployed (${rev.v} ${rev.id})`);
 } else {
   console.log(`        built ${rev.v} ${rev.id}, last deployed ${deployed.v || "(none)"} ${deployed.id || "(none)"}`);
   if (sh("npx", ["wrangler", "deploy"]).code !== 0) fail("wrangler deploy failed");
@@ -440,12 +448,12 @@ if (!live) warn("could not reach " + SITE + "/rev");
 else if (live.id !== revNow.id) fail(`the phone is BEHIND: live ${live.v} ${live.id}, built ${revNow.v} ${revNow.id}`);
 else ok(`live matches the build (${live.v} ${live.id})`);
 
-/* The catch-up case: the build was already live so step 6 had nothing to do, but the record
-   is stale (a hand deploy, or a run that died between deploying and recording). Correct it,
-   or the next run redeploys for no reason. */
+/* THE NET. Step 6 writes down a build the phone already serves; this catches what it could not:
+   a --no-deploy run, or a deploy whose read-back failed or came early. Seen live here, so recorded
+   here, and the record is untracked, so nothing is left to commit. */
 if (!DRY && live && live.id === revNow.id && readJson(resolve(REPO, ".deployed.json"), {}).id !== revNow.id) {
   recordDeploy(revNow);
-  warn(".deployed.json was stale and has been corrected; commit it");
+  ok(".deployed.json was stale and now records " + revNow.v + ", seen live");
 }
 
 if (!NO_PUSH) {

@@ -218,14 +218,16 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 - **`public/rev.json` id** = sha256 over the patched master, `public/sw.js` and every `src/*.js`,
   NUL-joined; written by the build only. It omits `public/_headers`, `manifest.webmanifest`,
   `chart.umd.js` and both wrangler configs, so **deploy a `wrangler.jsonc` change by hand**.
-- A deploy is decided by `rev.json.id` against `.deployed.json.id`, never by hashing output.
+- A deploy is decided by ids, never by hashing output (`deployVerdict`): none when live `/rev`
+  serves `rev.json.id`, which is then written to `.deployed.json`, else `rev.json.id` against
+  `.deployed.json.id`. The record is untracked, this checkout's own, and never written unseen.
 - `ci.yml` on push: book in date order, master version in the changelog, tests pass unless
   cloud-commit tests the same push, `public/` matches the master. `ship-check.yml` daily: repo id
   against live `/rev`.
 - **"Update" means `node tools/update.mjs`, the whole chain, with no step left for him**: drains (a
   pull only), reports both queues, mints any missing account, builds, tests, deploys on an id
   change, commits, pushes, then proves master, `rev.json`, live `/rev` and origin agree. An idle run
-  (one id built, recorded and live, the tree clean and level, nothing queued) prints nothing to ship
+  (one id built and live, a stale record written down, the tree clean and level, nothing queued) prints nothing to ship
   and skips the suite, deploy and commit; `built` moves only with the id, so no stamp is left to commit. **A tree
   behind origin stops it dead** (`aheadVerdict` in `tools/preflight.mjs`); `--no-push` still
   deploys, so only `--dry` touches nothing. Also `--no-deploy`, `--no-drain`, `-m`. It never folds.

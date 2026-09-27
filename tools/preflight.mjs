@@ -33,15 +33,17 @@ export function aheadVerdict(behind, opts = {}) {
  * re-seed, the publish, the Counter's deploy and the suite) and a Workers Build, about ten runner
  * minutes for nothing shipped. build.mjs now keeps the stamp while the id stands, so an idle build
  * leaves the tree clean, and this says when the run may stop at the build.
- * IDLE ONLY WHEN EVERY SURFACE AGREES AND NOTHING WAITS: the build on disk, the deploy on record and
- * the phone carry one id, the tree is clean, nothing is ahead of origin and nothing is queued. A
- * count or an id this could not read is never taken as agreement; such a run ships as it always did. */
+ * IDLE ONLY WHEN EVERY SURFACE AGREES AND NOTHING WAITS: the build on disk and the phone carry one
+ * id, the tree is clean, nothing is ahead of origin and nothing is queued. A deploy on record that
+ * names another build is not a reason while the phone serves this one: step 6 writes it down
+ * (deployVerdict, below). A count or an id this could not read is never taken as agreement; such a
+ * run ships as it always did. */
 export function idleVerdict({ revId, deployedId, liveId, dirty, ahead, pending } = {}) {
   const why = [];
   const id = typeof revId === "string" && revId ? revId : null;
   if (!id) why.push("no build id on disk");
   else {
-    if (deployedId !== id) why.push("the deploy on record is " + (deployedId || "none") + ", the build is " + id);
+    if (deployedId !== id && liveId !== id) why.push("the deploy on record is " + (deployedId || "none") + ", the build is " + id);
     if (liveId !== id) why.push("the phone serves " + (liveId || "nothing readable") + ", the build is " + id);
   }
   const d = dirty == null ? null : String(dirty).trim();
@@ -56,4 +58,22 @@ export function idleVerdict({ revId, deployedId, liveId, dirty, ahead, pending }
   return why.length
     ? { idle: false, text: why.join("; ") }
     : { idle: true, text: id + " is built, deployed and live; the tree is clean and level with origin, and nothing is queued" };
+}
+
+/* WHETHER TO DEPLOY, OR ONLY TO WRITE DOWN WHAT THE PHONE ALREADY SERVES (27 Sep 2026). Three deployers
+ * ship the desk and only the laptop's update run wrote .deployed.json; the Actions job and Workers Builds
+ * never do. So after every cloud deploy the record named a build the phone had moved past (v789 on 27 Sep,
+ * while the phone served v890), and the chain decided by the record alone: every laptop run after a cloud
+ * deploy ran the whole suite, redeployed the build the phone already served, desk and Counter, and
+ * committed the record. The phone is the witness now. When /rev serves the build, the run records it and
+ * deploys nothing, which keeps the record's one rule: never record a deploy you have not seen live. A phone
+ * on another id, or one that could not be read, is decided by the record as it always was. `act` is
+ * "record", "none" or "deploy". */
+export function deployVerdict({ revId, deployedId, liveId } = {}) {
+  const id = typeof revId === "string" && revId ? revId : null;
+  if (id && liveId === id) return deployedId === id
+    ? { act: "none", text: id + " is already deployed and live" }
+    : { act: "record", text: id + " is already live, so it is recorded and nothing is deployed (the record read " + (deployedId || "none") + ")" };
+  if (id && deployedId === id) return { act: "none", text: id + " is already deployed on record; the phone serves " + (liveId || "nothing readable") };
+  return { act: "deploy", text: "built " + (id || "(no id)") + ", last deployed " + (deployedId || "(none)") };
 }

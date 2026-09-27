@@ -37953,13 +37953,13 @@ await (async () => {
     + "arrives as a string or a number: " + JSON.stringify(all));
 
   /* EACH CONDITION ON ITS OWN. Every case differs from the idle state in exactly one input, so a verdict
-     that forgot one condition reads that case as idle and goes red here alone. */
+     that forgot one condition reads that case as idle and goes red here alone. A stale deploy on record is
+     not one while the phone serves the build (27 Sep 2026): the next section. */
   for (const [what, delta, why] of [
     ["the phone serving another id", { liveId: "fff0123456789def" }, /the phone serves fff0123456789def/],
     ["a dirty tree", { dirty: " M public/rev.json\n?? ledger/x.json" }, /2 file\(s\) changed/],
     ["one commit ahead of origin", { ahead: "1" }, /1 commit\(s\) ahead of origin/],
-    ["a pending entry", { pending: 1 }, /1 entry queued/],
-    ["a stale deploy on record", { deployedId: "c2cf75e8dd3ec9f9" }, /the deploy on record is c2cf75e8dd3ec9f9/]
+    ["a pending entry", { pending: 1 }, /1 entry queued/]
   ]) {
     const v = idleVerdict({ ...level, ...delta });
     ok(v.idle === false && why.test(v.text) && !v.text.includes("\n"),
@@ -38029,6 +38029,68 @@ await (async () => {
   ok(/import \{ idleVerdict \} from "\.\/preflight\.mjs";/.test(upI) && /IDLE = v\.idle;/.test(upI)
     && /else if \(IDLE\) ok\("skipped: nothing to ship"\);\nelse if \(sh\("npm", \["test"\]\)/.test(upI.replace(/\r\n/g, "\n")),
     "update.mjs reads the verdict after the build and skips the suite on it");
+})();
+
+section("A stale deploy record: a build the phone already serves is written down, never redeployed, and the run stays idle");
+await (async () => {
+  /* WHAT IT COST, to 27 Sep 2026. Three deployers ship the desk and only the laptop's update run wrote
+     .deployed.json, so every cloud deploy left it naming an old build: it read v789 while the phone served
+     v890. The idle verdict and the deploy step both went by the record, so every laptop run after a cloud
+     deploy ran the whole suite, redeployed the build the phone already served, desk and Counter, and
+     committed the record. The phone is the witness now, and the record is written only once /rev serves
+     the build. update.mjs runs on import, so both verdicts are driven here, in tools/preflight.mjs. */
+  const { idleVerdict, deployVerdict } = await import("../tools/preflight.mjs");
+  const ID = "abc0123456789def", OLD = "c2cf75e8dd3ec9f9", NEW = "fff0123456789def";
+  const stale = { revId: ID, deployedId: OLD, liveId: ID, dirty: "", ahead: "0", pending: 0 };
+
+  /* THE FAULT'S OWN INPUTS: the build is live, the record names v789's id, and nothing else waits */
+  const iv = idleVerdict(stale);
+  ok(iv.idle === true && iv.text.includes(ID) && !iv.text.includes("\n"),
+    "a stale record with the phone serving the build is idle, so the suite does not run: " + JSON.stringify(iv));
+  const dv = deployVerdict(stale);
+  ok(dv.act === "record" && dv.text.includes(ID) && dv.text.includes(OLD) && !dv.text.includes("\n"),
+    "and the deploy step writes the record down and deploys nothing, desk or Counter: " + JSON.stringify(dv));
+  const same = deployVerdict({ ...stale, deployedId: ID });
+  ok(same.act === "none", "a record that already names the live build is left as it is: " + JSON.stringify(same));
+
+  /* NEVER RECORD A DEPLOY YOU HAVE NOT SEEN LIVE. A phone on another id, or one that did not answer, vouches
+     for nothing, so the stale record deploys as it always did. With no build id nothing is recorded, even
+     when a missing id and an unread phone both arrive as null. */
+  const acts = {
+    phoneOnAnother: deployVerdict({ ...stale, liveId: NEW }).act,
+    phoneUnread: deployVerdict({ ...stale, liveId: null }).act,
+    noBuildPhoneUnread: deployVerdict({ revId: undefined, deployedId: OLD, liveId: null }).act,
+    noBuildAllNull: deployVerdict({ revId: null, deployedId: null, liveId: null }).act,
+    nothingRead: deployVerdict().act
+  };
+  ok(acts.phoneOnAnother === "deploy" && acts.phoneUnread === "deploy"
+    && acts.noBuildPhoneUnread !== "record" && acts.noBuildAllNull !== "record" && acts.nothingRead !== "record",
+    "a phone that does not serve the build decides nothing, and nothing is recorded unseen: " + JSON.stringify(acts));
+  const idles = { phoneOnAnother: idleVerdict({ ...stale, liveId: NEW }), phoneUnread: idleVerdict({ ...stale, liveId: null }) };
+  ok(idles.phoneOnAnother.idle === false && idles.phoneUnread.idle === false
+    && idles.phoneOnAnother.text.includes("the deploy on record is " + OLD)
+    && idles.phoneOnAnother.text.includes("the phone serves " + NEW),
+    "nor is such a run idle, and its one line names the record and the phone: " + JSON.stringify(idles));
+
+  /* THE RECORD IS THIS CHECKOUT'S OWN. Tracked, writing it at step 6 dirtied the tree and an idle run
+     committed and pushed it, a push with nothing shipped: the stamp-only commit by another road. Asked of
+     git rather than of .gitignore's text, since check-ignore answers no for a file in the index. */
+  const tracked = spawnSync("git", ["ls-files", "--error-unmatch", ".deployed.json"], { cwd: REPO, stdio: "ignore" }).status;
+  const ignored = spawnSync("git", ["check-ignore", "-q", ".deployed.json"], { cwd: REPO, stdio: "ignore" }).status;
+  ok(tracked === 1 && ignored === 0,
+    "the record is untracked and ignored, so writing it leaves the tree clean: " + JSON.stringify({ tracked, ignored }));
+
+  /* AND THE CHAIN ASKS IT. A source pin, the weak kind, for the reason the section above gives. */
+  const up = readFileSync(join(REPO, "tools", "update.mjs"), "utf8").replace(/\r\n/g, "\n");
+  const atAsk = up.indexOf("const dv = deployVerdict({ revId: rev.id, deployedId: deployed.id, liveId: seen && seen.id });");
+  const atRecord = up.indexOf('} else if (dv.act === "record") {\n  recordDeploy(rev);');
+  const atNone = up.indexOf('} else if (dv.act === "none") {');
+  const atDeploy = up.indexOf('sh("npx", ["wrangler", "deploy"])');
+  ok(/import \{ deployVerdict \} from "\.\/preflight\.mjs";/.test(up)
+    && up.includes("const seen = NO_DEPLOY ? null : IDLE ? LIVE4 : await liveRev();")
+    && atAsk > 0 && atRecord > atAsk && atNone > atRecord && atDeploy > atNone,
+    "update.mjs asks the verdict before any deploy, records on its answer, and reaches wrangler only past both: "
+    + JSON.stringify({ atAsk, atRecord, atNone, atDeploy }));
 })();
 
 section("v772: the monthly issue is retired, and a sealed one is made only when it is asked for");
