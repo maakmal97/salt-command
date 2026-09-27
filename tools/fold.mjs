@@ -166,6 +166,11 @@ export function plan(book, staged, notes) {
      received in full, and stating that figure must move nothing. */
   const movedSoFar = new Map();
   const movedOf = (row, d) => movedSoFar.has(row) ? movedSoFar.get(row) : (d === "BUY" ? E.poRecvUnits(row) : (+row.deliveredQty || 0));
+  /* 28 Sep 2026, s210: AND THE ROW AS THE BATCH LEAVES IT, for the payment rule. Two payments in one batch, or a
+     correction of the total before a payment, are measured one after the other on a copy each accepted amendment is
+     applied to, so the rule reads what the row will say when this item lands, not what it said before the batch. */
+  const simSoFar = new Map();
+  const simOf = (row) => simSoFar.has(row) ? simSoFar.get(row) : JSON.parse(JSON.stringify(row));
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
@@ -291,11 +296,18 @@ export function plan(book, staged, notes) {
       } else {
         if (!pay.date) { out.refused.push({ id: it.id, why: `the ${it.amendKind.toLowerCase()} on ${it.amends} carries no date; an amendment is dated the day it happened, not the day the order was agreed` }); continue; }
         entry.pay = { date: pay.date, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+        /* 28 Sep 2026, s210: a payment measured before other money reached its row, which would now take the row past
+           what it owes, is refused here on the row as this batch leaves it. The drafted row's cash is what it was
+           measured on; it rides with the payment so applyAmend reads the same rule. */
+        if (r.cash != null && Number.isFinite(+r.cash)) entry.pay.drafted = +r.cash;
+        const pf = E.payFault(simOf(hits[0]), entry.pay.cash, dir !== "BUY", entry.pay.drafted);
+        if (pf) { out.refused.push({ id: it.id, why: `the ${it.amendKind.toLowerCase()} on ${it.amends} was refused: ${pf}` }); continue; }
         entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
       }
       if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
       if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
       if (entry.pay.kg > 0.009) movedSoFar.set(hits[0], +(movedOf(hits[0], dir) + entry.pay.kg).toFixed(3));   /* v742: the batch's running figure follows a fulfilment too */
+      { const s = simOf(hits[0]); try { applyAmend(s, entry.pay, dir, null); } catch (e) { /* the apply refuses it below, with its own reason */ } simSoFar.set(hits[0], s); }
     } else if (it.collection === "sales" || it.collection === "purchases") {
       const key = it.collection === "sales" ? "customer" : "supplier";
       /* v540: EVERY ROW IS DATED (v487), and a pending row is dated to the day it was agreed. A draft
@@ -736,6 +748,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      the same as moving goods against it. */
   if (row.cancelled && ((+pay.cash || 0) > 0.009 || (+pay.kg || 0) > 0.009))
     throw new Error(`this row is already cancelled, so ${(+pay.cash || 0) > 0.009 ? "RM " + (+pay.cash) + " " : ""}${(+pay.kg || 0) > 0.009 ? (+pay.kg) + " unit " : ""}cannot be recorded against it: revive it by Correction first, or record the movement on the row that actually carries it`);
+  /* 28 Sep 2026, s210: the writer refuses it too, before it touches the row, rather than trusting plan() to have looked
+     (the v436 reason): a payment measured before other money reached the row, which would take it past what it owes */
+  { const pf = E.payFault(row, pay.cash, dir !== "BUY", pay.drafted); if (pf) throw new Error(pf); }
   if (dir === "BUY") {
     /* v435, ROUND TEN: A LOT THAT HAS ARRIVED CANNOT HAVE BEEN DEFAULTED ON. The flag means the supplier
      took the money and sent nothing, and poRecvUnits short-circuits on it, so setting it on a
