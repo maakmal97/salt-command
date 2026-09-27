@@ -16,7 +16,7 @@
  * missing wrap) keeps its plain English and no code. The codes are listed here and nowhere else.
  *
  * WHAT IS NOT HERE: Salt Account (stmt/owner.js), which stays English and unkeyed; the words he sends a customer
- * (stmt/send.js), which he writes himself, the sign-in message carrying its own Malay half; the sealed statement, a dated record, save its
+ * (stmt/send.js), which he writes himself, the sign-in message carrying its own Malay half while Malay is live; the sealed statement, a dated record, save its
  * one line shared with Home, part.cover, taken from here in English as it is written; and his notice, which is his own words.
  *
  * THE RULES OF THE PAGE HOLD FOR EVERY LANGUAGE: no product word, no level's name, no brand and never the desk's name;

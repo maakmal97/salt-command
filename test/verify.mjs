@@ -16696,6 +16696,11 @@ await (async () => {
   ok(c.manifest === '<link rel="manifest" href="/manifest.webmanifest">' && c.title === "Salt Counter" && c.apple === "Salt Counter"
     && !/crossorigin|Salt Account|Salt Desk|Salt Admin/.test(cust),
     "and the customer's page is unchanged: Salt Counter, its public manifest, no credentials asked: " + JSON.stringify(c));
+  /* the worker a customer's phone installs ships as it is written, comments and all: it names none of his surfaces either */
+  const sw110 = await (await (await import("../stmt/worker.js")).default.fetch(new Request("https://k7m3p2.example/sw.js"), { STMT: new KV() })).text();
+  ok(sw110.length > 1000 && /showNotification/.test(sw110) && !/Salt Account|Salt Desk|Salt Admin|Salt Command/i.test(sw110),
+    "and the service worker a customer's phone installs names none of his surfaces, in a comment or anywhere: "
+    + JSON.stringify((sw110.match(/Salt (Account|Desk|Admin|Command)/gi) || []).slice(0, 3)));
 })();
 section("S1 1.13: Decline is its own state: shut, left out of Waiting on you, and Not approved to the associate");
 await (async () => {
@@ -20755,9 +20760,14 @@ await (async () => {
     ok(tiered91.length >= 1 && books91.some((p) => !tiered91.includes(p))
       && JSON.stringify(snap91.products.map((p) => p.product)) === JSON.stringify(tiered91),
       "his card carries the tiered books and no other: " + JSON.stringify({ card: snap91.products.map((p) => p.product), tiered: tiered91, books: books91 }));
-    const oil91 = snap91.products.find((p) => p.product === "oil");
-    if (oil91) ok(oil91.rows.every((r) => r.reward === null), "oil has no reward, so its cards say so rather than showing a zero");
-    else skipData("oil is off the card (F9: a fixed board, not a tiered book), so the no-reward case went unchecked");
+    /* THE NO-REWARD CASE, DRIVEN: oil showed it until F9 took the fixed boards off the card, so a book whose reward has
+       no unit is made here, every row of every card book at once, and the desk's own figures put back after */
+    book91.w.eval("var ns91=networkStats;networkStats=function(){return ns91().map(function(r){return Object.assign({},r,{unit:null});});};");
+    let none91 = null;
+    try { none91 = as91(book91.w); } finally { book91.w.eval("networkStats=ns91;"); }
+    const nrows91 = none91.products.flatMap((p) => p.rows);
+    ok(nrows91.length >= 6 && nrows91.every((r) => r.reward === null) && as91(book91.w).products.flatMap((p) => p.rows).some((r) => r.reward),
+      "a book whose reward has no unit says so with a null rather than a zero, and the desk's own figures come back after");
     const withReward = rows91.filter((r) => r.reward && r.reward.next != null);
     ok(withReward.length > 0 && withReward.every((r) => r.reward.next >= 0 && r.reward.next <= 1
       && r.reward.left === +(r.reward.earned - r.reward.taken).toFixed(2)),
@@ -22408,7 +22418,7 @@ await (async () => {
                { product: "oil", name: "Oil", unit: "unit", rate: 40, orders: 2, basis: "yours", sizes: [{ q: 1, price: 44 }] },
                { product: "candy", name: "Candy", unit: "unit", rate: 20, orders: 1, basis: "yours", sizes: [{ q: 1, price: 24 }] }],
     soon: [{ product: "rice", name: "Rice" }, { product: "spare", name: "Spare" }] };
-  const card8 = { at: "2026-09-24T04:00:00Z", products: ["salt", "oil"].map((product) => ({ product, unit: "unit",
+  const card8 = { at: "2026-09-24T04:00:00Z", products: ["salt"].map((product) => ({ product, unit: "unit",
     summary: { bought: 770, soldFor: 390, onward: 2, introduced: 240, referred: 1 }, reward: { earned: 1.6, taken: 1, left: 0.6, next: 0.42, held: false },
     lines: [{ date: "2026-09-12", kind: "resale", qty: 2.5, rm: 270 }] })) };
   const ord8 = { id: "20260928000000-f8f8", u: u8, product: "salt", qty: 2.5, mode: "collect", unit: 120, total: 300,
@@ -22462,7 +22472,7 @@ await (async () => {
     const seen8 = { rewards: D8.querySelectorAll("#pCard svg.psym").length, row: rowMarks8, screen: D8.querySelectorAll("#pOrder .oscreen svg.psym").length,
       sheet: sheet8[0], sheetLetters: sheet8[1], home: D8.querySelectorAll("#pHome svg.psym").length,
       stray: [...D8.querySelectorAll("svg.psym text")].filter((t) => !t.closest("#pPrices")).map((t) => t.textContent) };
-    ok(seen8.rewards >= 2 && seen8.row >= 1 && seen8.screen >= 1 && seen8.sheet >= 3 && !seen8.sheetLetters && !seen8.stray.length,
+    ok(seen8.rewards >= 1 && seen8.row >= 1 && seen8.screen >= 1 && seen8.sheet >= 3 && !seen8.sheetLetters && !seen8.stray.length,
       "Rewards, the order's row and its screen, the order sheet and Home draw their marks bare, and no letter is drawn outside Prices: " + JSON.stringify(seen8));
   } finally { try { dom8.window.close(); } catch (e) { /* best effort */ } }
 

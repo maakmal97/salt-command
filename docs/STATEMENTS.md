@@ -212,7 +212,7 @@ joined from translated halves. A refusal a customer can meet is `e.<code>` there
 code, the Worker's English standing for one it does not know. Salt Account stays English and unkeyed; a guest's board
 and a shut link are keyed but English only (no script); `stmt/send.js` is unkeyed.
 
-**The first Malay slice** (his D12, the plan's 13.4): the `MS` table words the welcome, the door and its refusals,
+**The first Malay slice** (his D12, the plan's 13.4), as it reads while Malay is live (it is off: `LIVE` below): the `MS` table words the welcome, the door and its refusals,
 saving the app (the keep card and Sheets, One step to finish), Home, paying (To pay now, the pay Sheet, Did you send,
 a claim), an order's money and its messages, and This device. The page follows the phone (`navigator.languages`, the
 first of `ms`, `ms-MY`, `ms-BN`, `zsm` or `en`, else English); a switch, English or Bahasa Melayu, on the door, the
@@ -223,8 +223,8 @@ order's head, steps, history and cancel) is drawn in English whatever is chosen 
 slice shares included, and so is a note a tap leaves there (`wErrE`), so an order's screen is mixed until its slice comes. The page leaves its language in the
 origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
 none. Salt Account is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
-since it goes before the phone's language is known. The suite reads the Malay table and a Malay served page for a
-product or level word.
+since it goes before the phone's language is known. The suite reads the Malay table and a page drawn with Malay live
+(`{langs: ["en", "ms"]}`) for a product or level word.
 
 **Live languages are `LIVE`** (F7, `stmt/words.js`): Malay is kept and off since 28 Sep 2026, his instruction,
 superseding D12's slice and the two-language message while it is off. With `LIVE = ["en"]` the page draws no switch
