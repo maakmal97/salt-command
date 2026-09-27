@@ -43243,16 +43243,143 @@ await (async () => {
 
   /* the table, on a state made here */
   const state = (queue, tree) => ({ book: { books: { salt: { shelf: 11.5, counted: true, free: -5, credit: 390, writtenOff: 260 },
-    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
+    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, candy: { shelf: 14, counted: true, free: 10, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
     queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
   const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
   const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
-  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5), oil 30 |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
+  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5: restock now), oil 30, candy 14 (free 10) |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
     && tb[5] === "| Pending orders | 1 (s1) |" && tb[6] === "| Undated rows | 0 |"
     && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 1 entry left in a phone's key, already folded: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
     && tb[8] === "| Tree | master at abc1234, clean, level with origin |"
     && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
-    "the table names each line, the free shelf only where it differs, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
+    "the table names each line, the free shelf only where it differs and a restock now only where it is below nothing, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
 })();
+section("28 Sep 2026: only the agreed figures are struck: a handover or a cash correction strikes no quantity or sum, a corrected size still does");
+await (async () => {
+  /* E242 (s210) read "0 unit" struck beside its 2 units: the handover Correction a collected site order makes
+     (deliveredQty 0 to 2) was drawn as a replaced quantity, and a correction of cash read as a replaced total. A struck
+     figure is the agreement's or a wrong record's (v447); what moved and what was paid are the figure's own state. Three
+     rows written here on a copy of the book, read back off the Ledger's cards by class and text. */
+  const { openMaster: omX } = await import("../tools/payload.mjs");
+  const { execSync: exX } = await import("node:child_process");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const cust = bk.sales.find((x) => x.customer).customer;
+  const row = (rid, extra) => Object.assign({ rid, date: "2026-09-27", customer: cust, product: "salt", qty: 2, total: 210, cash: 0, deliveredQty: 0 }, extra);
+  bk.sales.push(row("g1", { deliveredQty: 2, deliveredOn: "2026-09-27", handover: "collected",
+      mod: "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected",
+      amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "handover" }] }),
+    row("g2", { cash: 210, deliveredQty: 2, deliveredOn: "2026-09-27", mod: "corrected on 2026-09-28: cash 420 to 210",
+      amend: [{ date: "2026-09-28", kind: "Correction", cash: 0, kg: 0, note: "cash" }] }),
+    row("g3", { mod: "corrected on 2026-09-27: qty 1 to 2; total 110 to 210", amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "size" }] }));
+  const B = join(REPO, "test", ".struck-" + process.pid + ".json"), M = join(REPO, "test", ".struck-" + process.pid + ".html");
+  writeFileSync(B, JSON.stringify(bk, null, 1));
+  writeFileSync(M, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  let wX = null;
+  try {
+    exX("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    ({ w: wX } = await omX(M));
+    wX.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
+    const cell = (rid) => JSON.parse(wX.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var f=function(sel){var e=c.querySelector(sel);if(!e)return null;var g=e.querySelector('.lfig'),ws=e.querySelector('.lwas');return {fig:g?g.textContent:'',was:ws?ws.textContent:'',wasCls:ws?ws.className:''};};return {q:f('.lcol.cqty'),t:f('.lcol.ctot')};})())"));
+    const g1 = cell("g1"), g2 = cell("g2"), g3 = cell("g3");
+    ok(!!g1 && g1.q.fig === "2 unit" && g1.q.was === "", "a handover correction strikes no quantity: the order reads its 2 units alone: " + JSON.stringify(g1 && g1.q));
+    ok(!!g2 && g2.t.fig === "RM 210" && g2.t.was === "", "a correction of cash strikes no sum: " + JSON.stringify(g2 && g2.t));
+    ok(!!g3 && g3.q.was === "1 unit" && g3.q.wasCls === "lwas corr" && g3.t.was === "RM 110",
+      "while a corrected size still shows its old quantity and sum struck white: " + JSON.stringify(g3));
+  } finally {
+    try { if (wX) wX.close(); } catch (e) { /* best effort */ }
+    for (const f of [B, M]) { try { rmSync(f); } catch (e) { /* best effort */ } }
+  }
+})();
+
+section("28 Sep 2026: Cash received takes a custom amount, whole or part, and the pill and field survive a redraw");
+await (async () => {
+  /* His instruction, 28 Sep 2026: Cash received always sent the whole of what an order owed. Other amount
+     opens a field, the same shape as the handover part stepper (ORD_PART): the pill reads the typed figure
+     live and carries data-cashpart while it is open, ordAct refuses outside 0 to what is owed, and a
+     part-paid order (paid<=0.004 no longer required) offers cash on the rest too. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const o1 = Object.assign({ id: "o1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const o2 = Object.assign({ id: "o2", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 40, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const orders = [o1, o2];
+    const posted = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (p === "orders" && !post) return { ok: true, status: 200, json: async () => ({ ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
+      if (post && /\/cash$/.test(p)) { posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) }; }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL='o1';ORD_OPENED=true;ordDraw();");
+    const q = (id, sel) => D.querySelector('.ordcard[data-id="' + id + '"] ' + sel);
+    /* a real timer, not just a microtask hop, so a click's own trailing ordLoad (its own fetch, json
+       and redraw, none of it a real delay) is fully drained before the next action reads the card */
+    const wait = async (cond) => { for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 30)); if (cond()) return true; } return cond(); };
+
+    /* (a) untouched, the filled pill posts the whole of what is owed */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 1);
+    ok(posted.length === 1 && posted[0].amount === 100, "the whole pill posts the amount due: " + JSON.stringify(posted[0]));
+    const said = () => (q("o1", '[data-msg="o1"]') || {}).textContent || "";
+    const wholeSaid = said();
+    ok(/^Recorded: RM 100 in cash\. They see it paid and the chase stops\. /.test(wholeSaid), "the whole recorded says it is paid and the chase stops: " + JSON.stringify(wholeSaid));
+
+    /* (b) Other amount opens the field; a typed figure follows on the pill at once, and carries data-cashpart */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    let inp = q("o1", 'input[data-cashamt="o1"]');
+    inp.value = "40"; inp.oninput();
+    let pill = q("o1", 'button[data-ord="cash"]');
+    ok(pill.textContent.trim() === "Cash received, RM 40" && pill.dataset.cashpart === "1",
+      "typing a custom figure follows on the pill at once, and marks it: " + JSON.stringify({ text: pill.textContent, part: pill.dataset.cashpart }));
+
+    /* (e) a poll's redraw mid-type keeps what he typed, the same as the handover part stepper */
+    w.eval("ordDraw();");
+    inp = q("o1", 'input[data-cashamt="o1"]'); pill = q("o1", 'button[data-ord="cash"]');
+    ok(inp.value === "40" && pill.textContent.trim() === "Cash received, RM 40",
+      "the typed figure survives ordDraw(): " + JSON.stringify({ value: inp.value, text: pill.textContent }));
+
+    /* (b) continued: the pill posts the typed figure, not the whole */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 2);
+    ok(posted.length === 2 && posted[1].amount === 40, "Other amount posts the typed figure: " + JSON.stringify(posted[1]));
+    /* a part leaves the rest owed and the chase going: the answer says what is left, never that it is paid */
+    const partSaid = said();
+    ok(/^Recorded: RM 40 in cash\. They see RM 60 still owed\. /.test(partSaid) && !/paid|chase stops/.test(partSaid),
+      "a part recorded says what is still owed, never paid: " + JSON.stringify(partSaid));
+
+    /* (c) 0, and a figure over what is owed, are refused on the card and send nothing */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    /* an emptied box: the pill says RM 0, what its tap would send and refuse, never the whole */
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = ""; inp.oninput();
+    const emptyPill = q("o1", 'button[data-ord="cash"]').textContent.trim();
+    ok(emptyPill === "Cash received, RM 0", "an emptied box reads RM 0 on the pill: " + JSON.stringify(emptyPill));
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "0";
+    q("o1", 'button[data-ord="cash"]').click();
+    const zeroSaid = (q("o1", '[data-msg="o1"]') || {}).textContent, zeroPosted = posted.length;
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "200";
+    q("o1", 'button[data-ord="cash"]').click();
+    const overSaid = (q("o1", '[data-msg="o1"]') || {}).textContent;
+    const refused = /^That is not a figure above RM 0 and up to the RM 100 owed; nothing moved\.$/;
+    ok(posted.length === 2 && zeroPosted === 2 && refused.test(zeroSaid || "") && refused.test(overSaid || ""),
+      "0, and a figure above what is owed, are refused on the card and nothing is posted: " + JSON.stringify({ zeroSaid, overSaid, posted: posted.length }));
+
+    /* (d) a part-paid order still offers cash on the rest, and the reason line says what was paid already */
+    const pill2 = q("o2", 'button[data-ord="cash"]'), why2 = q("o2", ".salt-approve__reason:not(.ordtold):not(.ordclaim):not(.ordyes)");
+    ok(!!pill2 && pill2.textContent.trim() === "Cash received, RM 60" && !!why2 && /^Collected 1 unit, RM 40 paid\./.test(why2.textContent || "")
+      && /The chase stops once what is paid keeps up with what was handed over\.$/.test((why2.textContent || "").trim()) && !/so the chase stops/.test(why2.textContent || ""),
+      "a part-paid order offers cash on the rest, and the reason line says what was paid: " + JSON.stringify({ pill: pill2 && pill2.textContent, why: why2 && why2.textContent }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
