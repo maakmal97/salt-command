@@ -1,5 +1,14 @@
 [
  {
+  "v": "v889",
+  "d": "27 Sep 2026",
+  "t": "THE COST PANEL READS THE ASK, AND THERE IS ONE FLOOR",
+  "n": [
+   "<p><b>THE COST PANEL READS THE ASK.</b> His approval of 27 Sep 2026. What an order is worth read a retired tier and fell back by index to Tier 1, so a unit of salt showed RM 80 against an ask of RM 140, and 12.5 units RM 850 against RM 1,090. It now reads the ladder's ask, row T2, found by its code at every size. A size the ask does not price is left out, and a book it prices nowhere says so.</p>",
+   "<p><b>ONE FLOOR.</b> The retired 20% line is gone, with floorPct and floorPrice. The register, the market segments and their buying rate, the margin-realised signal and the share of volume under the line all read the engine's floor, COGS plus leakage, at the order's own size. Salt's closed sales under floor fall from 5 to 2, and 6% of its volume sits under RM 58.40. No price moves on any book, size or customer; the drafter's pricing snapshot drops its unused floorPct key, so a site-order preview drawn before this deploy waits under Approve once.</p>"
+  ]
+ },
+ {
   "v": "v888",
   "d": "27 Sep 2026",
   "t": "SIX LEDGER ROWS CORRECTED ON HIS WORD",
