@@ -41563,6 +41563,28 @@ await (async () => {
      they are the workbook's and not the code's own echo. Each assertion was proved red by its own mutation, one at a time. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
+  /* HIS WORKBOOK RATES ARE PROVED ON THE BOOK AS IT STOOD AT v895 (commit c8f1e053), the version
+     before the 27 Sep hand count that first moved rice's floor past RM60 at 10 units. Read from
+     git rather than guessed: at v895, ledger/book.json carried PROD_OPENING.candy.stated:null,
+     .rice.stated:85, and no COUNTS row for salt, candy or rice dated after 2026-09-23 (salt),
+     2026-09-24 (rice) and never (candy, which had no count at all). Pinning v896's three rows by
+     their exact figures only survives v896: he folds a hand count every few days, and the next
+     one would land after this section's own reset and fail it again exactly as v896 did. A DATE
+     CUTOFF survives every count from here on, because the book only grows forward: nothing for
+     these three products dated after 2026-09-24 belongs in the window the workbook was proved
+     against, whatever figures a later count carries. Applied on this window's copy only, never
+     on the live book. COUNT_ON is left alone: neither pxLeakCharge nor its sold window reads it
+     (checked in the master: its only readers are countedFor's display fallback and actions()'s
+     "Never counted" breach, neither of which this section touches), so there is nothing there
+     for a later count to move that this section could fail on. */
+  w.eval(`(()=>{
+    for(let i=COUNTS.length-1;i>=0;i--){
+      const c=COUNTS[i];
+      if(['salt','candy','rice'].includes(c.product)&&c.date>'2026-09-24')COUNTS.splice(i,1);
+    }
+    PROD_OPENING.candy.stated=null;
+    PROD_OPENING.rice.stated=85;
+  })()`);
   const v = JSON.parse(w.eval(`JSON.stringify((()=>{const keep=PROD,o={};
     const ask=(p,qs)=>{PROD=p;recompute();return qs.map(q=>PRICING_ENGINE.priceLadder(q,pxCost(),pxPolicy()).ask.total);};
     PROD='salt';recompute();o.salt=Object.fromEntries(fiveTiersNow().map(r=>[r.q,r.prices]));
