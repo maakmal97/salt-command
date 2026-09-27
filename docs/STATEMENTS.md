@@ -443,7 +443,11 @@ and "Nothing on your account yet". Nothing about the statements changed.
 level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
 to S4); it is gone, and nothing on the page reads the level. The name still travels inside the sealed list,
 as it has since v651, and the suite holds two lists differing only in level to the same Prices, to the
-character.
+character. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
+2026): a product's pane is its mark and its sizes, the lead says nothing of history or of a week, and the
+retired words are deleted from `stmt/words.js`, whose every word is served in the page's source. `rate`,
+`orders` and `basis` still travel in the sealed list, unread; the suite holds three lists differing only in
+that history to the same Prices, to the character.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
 theirs, off their own device, so Home's heading is Good morning, Good afternoon or Good evening

@@ -15098,6 +15098,55 @@ await (async () => {
   try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
   finally { E.w.close(); }
 })();
+section("27 Sep 2026: Prices states no rate of theirs and never says one customer's prices differ from another's");
+await (async () => {
+  /* HIS INSTRUCTION OF 27 SEP 2026: "for each customer, do not state their historical price, nor tell them that their
+     prices is different from another." Under each product's mark Prices said "Your rate: RM 97.50 per unit, from your last
+     3 orders" off the sealed list's rate, "Your own rate follows your first order" with no history, and "The same price
+     for everybody" on a stated board; its lead said the list was "written from your own history and changes weekly".
+     Driven in jsdom against the real page and the real crypto. */
+  const { landingPage: lpR } = await import("../stmt/page.js");
+  const CR = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wcR } = await import("node:crypto");
+  const { JSDOM: JDR } = await import("jsdom");
+  const openR = async (list) => {
+    const u = "abcd-efgh", pass = "fixture-pass-r27", ck = await CR.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "", prices: await CR.encryptWith(ck, JSON.stringify(list)),
+      env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const dom = new JDR(lpR(u, "nr27", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wcR, configurable: true }); } catch (e) { win.crypto = wcR; }
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const open = String(path) === "/open"; return { ok: open, status: open ? 200 : 404, json: async () => (open ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
+      const tw = d.createTreeWalker(d.getElementById("pPrices"), 4), nodes = [];
+      while (tw.nextNode()) nodes.push(tw.currentNode.nodeValue);
+      return { words: nodes.join(" "), rows: d.querySelectorAll("#pPrices .szrow").length, html: d.getElementById("pPrices").innerHTML };
+    } finally { dom.window.close(); }
+  };
+  const listR = (salt) => ({ at: "2026-09-27T03:23:00.000Z", week: { label: "21 Sep to 27 Sep 2026", monday: "2026-09-21" }, since: "2026-03-04",
+    products: [Object.assign({ product: "salt", name: "Salt", unit: "unit", tier: "Gold", sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 250 }] }, salt),
+      { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, rate: 13, orders: 2, sizes: [{ q: 10, price: 130 }] }],
+    soon: [] });
+  const said = /97[.]5|Your rate|your last|own rate|own history|everybody|weekly/i;
+  const mine = await openR(listR({ basis: "yours", rate: 97.5, orders: 3 }));
+  /* 1. NO RATE OF THEIRS AND NO WORD THAT A PRICE IS THEIRS ALONE: the sizes and their prices, the stamp, the goods line */
+  ok(mine.rows === 3 && /RM 110/.test(mine.words) && /Prices as at/.test(mine.words) && !said.test(mine.words),
+    "Prices draws the sizes and states no rate of theirs, no history and nothing about anybody else's price: " + JSON.stringify(mine.words.slice(0, 400)));
+  /* 2. AND THE HISTORY LEAVES NO TRACE: a list off three orders, off one and off none draw the same Prices, to the character */
+  const one = await openR(listR({ basis: "yours", rate: 97.5, orders: 1 }));
+  const none = await openR(listR({ basis: "tier", rate: null, orders: 0 }));
+  ok(mine.html.length > 200 && mine.html === one.html && mine.html === none.html,
+    "three lists differing only in the history under them draw the same Prices, to the character: " + JSON.stringify([mine.html.length, one.html.length, none.html.length]));
+  /* 3. AND THE PAGE IS NOT SERVED THE WORDS: every word of the Counter travels in the page's source */
+  const served = lpR("abcd-efgh", "nr27", null);
+  ok(served.length > 10000 && !/Your rate|own rate|own history|same price for everybody|changes weekly/i.test(served),
+    "the page the Counter serves carries none of the retired words: " + JSON.stringify((served.match(/.{0,40}(Your rate|own rate|own history|same price for everybody|changes weekly).{0,40}/i) || [""])[0]));
+})();
 section("S4 4.9: one delivery sentence, on Prices, in the check before Place and on a guest's board");
 await (async () => {
   /* HIS "ALL RECOMMENDED" OF 24 SEP 2026. Three wordings of the delivery charge stood on the site, and a guest's board

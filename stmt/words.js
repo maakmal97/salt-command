@@ -304,17 +304,18 @@ export const EN = {
   "lnk.make": "Make a link",
   "lnk.notMade": "That link was not made.",
   /* ---- PRICES ---- */
-  "pr.none": "No price list has been written for your account yet. It is written with the next update and changes weekly.",
+  /* HIS INSTRUCTION OF 27 SEP 2026: Prices never states a customer's own rate, and never says that one customer's prices
+     differ from another's. Gone: "Your rate: {rm} per {u}, from your last {n} orders" and its one-order twin, "Your own
+     rate follows your first order", "The same price for everybody", and "written from your own history and changes
+     weekly", which was also untrue: the list is sealed again at every publish, hourly. The keys are deleted, not left
+     unused, because every word here is served in the page's source. */
+  "pr.none": "No price list has been written for your account yet. It is written with the next update.",
   "pr.asAt": "Prices as at {d}.",
   "pr.asAtTap": "Prices as at {d}. Tap a size to order it.",
   "pr.week": "For the week of {w}.",
   "pr.weekTap": "For the week of {w}. Tap a size to order it.",
-  "pr.goods": "The price is for the goods. {deliv} The list is written from your own history and changes weekly.",
+  "pr.goods": "The price is for the goods. {deliv}",
   "pr.since": "Buying with us since {m}.",
-  "pr.board": "The same price for everybody.",
-  "pr.rate1": "Your rate: {rm} per {u}, from your last {n} order.",
-  "pr.rateN": "Your rate: {rm} per {u}, from your last {n} orders.",
-  "pr.own": "Your own rate follows your first order.",
   "pr.soon": "Price coming soon.",
   "ord.opensSet": "Ordering opens once your prices are set.",
   "ord.opensList": "Ordering opens once your price list is written, with the next update.",

@@ -2325,11 +2325,8 @@ const CLIENT_JS = `
       var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
-         still travels inside the sealed list, and nothing here reads it. */
+         still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
       pane.appendChild(h3);
-      pane.appendChild(el('p','sub2', p.basis==='board' ? tw('pr.board')
-        : p.basis==='yours' ? tw(p.orders===1?'pr.rate1':'pr.rateN',{rm:rm(p.rate), u:p.unit||'unit', n:p.orders})
-        : tw('pr.own')));
       /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
       var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){
