@@ -1,6 +1,6 @@
 {
- "v": "v903",
- "stamped": "27 Sep 2026, 21:10 KL",
+ "v": "v904",
+ "stamped": "27 Sep 2026, 21:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": -1,
+  "STATED_STOCK": 11.5,
   "COUNT_ON": {
    "salt": "2026-09-27",
    "oil": "2026-09-27",
@@ -751,6 +751,19 @@
     "cost": 700,
     "note": "<b>SALT BUY DATED 25 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700 at RM56 a unit, collected, RM700 cash out and 12.5 unit received on 25 Sep, with RM20 freight beside it, so nothing stays open. The total is the 23 Sep tier to the ringgit: on his word, multiples of 12.5 unit at RM700 each. Across 18 orders their median rate is RM56, range RM44 to RM64, RM0 outstanding, none defaulted, no credit taken, on the roster and not an associate. The drafter flagged RM48 a unit as an inventory average across more than one lot rate rather than this lot; these figures do not settle it.",
     "rid": "p032"
+   },
+   {
+    "qty": 12.5,
+    "total": 700,
+    "cash": 700,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "date": "2026-09-27",
+    "receivedOn": "2026-09-27",
+    "receivedQty": 12.5,
+    "paidOn": "2026-09-27",
+    "note": "<b>SALT BUY DATED 27 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700, RM56 a unit, RM700 cash out and 12.5 unit received on 27 Sep, with no freight or delivery on the row. The terms match the 23 Sep quote exactly: one 12.5 unit tier at RM700, bought in whole lots on his word. SA5-BTR: 19 orders on the book, median RM56 a unit, range RM44 to RM64, RM0 outstanding before this row. The RM700 is the lot's own cost and matches the RM56 stock cost. The drafter raised no flag. Nothing stays open.",
+    "rid": "p033"
    }
   ],
   "sales": [
@@ -6360,9 +6373,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T13:09:07.341Z",
+  "QUEUE_COMMITTED": "2026-09-27T13:24:04.148Z",
   "PRICING": {
-   "takenAt": "2026-09-27T13:11:01.067Z",
+   "takenAt": "2026-09-27T13:25:51.849Z",
    "sizes": [
     0.5,
     1,
@@ -7414,43 +7427,43 @@
    "byProduct": {
     "salt": {
      "stockCost": 56,
-     "replCost": 51,
+     "replCost": 56,
      "floors": {
       "1": {
-       "floor": 62.35
+       "floor": 68.67
       },
       "2": {
-       "floor": 124.7
+       "floor": 137.34
       },
       "3": {
-       "floor": 187.06
+       "floor": 206.01
       },
       "4": {
-       "floor": 249.41
+       "floor": 274.68
       },
       "5": {
-       "floor": 311.76
+       "floor": 343.35
       },
       "0.5": {
-       "floor": 31.18
+       "floor": 34.34
       },
       "1.5": {
-       "floor": 93.53
+       "floor": 103.01
       },
       "2.5": {
-       "floor": 155.88
+       "floor": 171.68
       },
       "3.5": {
-       "floor": 218.23
+       "floor": 240.35
       },
       "4.5": {
-       "floor": 280.58
+       "floor": 309.02
       },
       "6.25": {
-       "floor": 389.7
+       "floor": 429.19
       },
       "12.5": {
-       "floor": 779.4
+       "floor": 858.38
       }
      },
      "inputs": {
@@ -7483,7 +7496,7 @@
          "qty": 12.5,
          "total": 700,
          "rate": 56,
-         "date": "2026-09-25",
+         "date": "2026-09-27",
          "sup": "SA5-BTR"
         },
         "days": 52,
@@ -7517,13 +7530,13 @@
         "qty": 12.5,
         "total": 700,
         "rate": 56,
-        "date": "2026-09-25",
+        "date": "2026-09-27",
         "sup": "SA5-BTR"
        },
-       "meanLot": 25.297619047619047,
+       "meanLot": 24.71590909090909,
        "quoteRate": 56,
-       "repl": 51,
-       "freightRate": 1.3,
+       "repl": 56,
+       "freightRate": 1.6,
        "leak": {
         "ratio": 0.1922,
         "leak": 8.65,
@@ -7548,7 +7561,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.08497621934160217,
+       "shrinkRate": 0.08304018955618336,
        "avgDel": {
         "n": 176,
         "kg": 452.95,
@@ -12968,10 +12981,10 @@
      "cards": {}
     }
    },
-   "v": "v903"
+   "v": "v904"
   },
   "OPEN": {
-   "at": "2026-09-27T13:11:01.216Z",
+   "at": "2026-09-27T13:25:52.151Z",
    "count": 8,
    "byKey": {
     "CE4-AD|2026-09-27|500": {
@@ -13106,14 +13119,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": -1,
-     "free": -17.5,
+     "onHand": 11.5,
+     "free": -5,
      "owedOut": 16.5,
      "coverDays": 0,
      "rate": 6.25,
      "owedToYou": 390,
      "promised": 16.5,
-     "short": 17.5
+     "short": 5
     },
     "oil": {
      "name": "Oil",
@@ -13167,7 +13180,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v903"
+   "v": "v904"
   }
  }
 }

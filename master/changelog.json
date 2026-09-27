@@ -1,5 +1,14 @@
 [
  {
+  "v": "v904",
+  "d": "27 Sep 2026",
+  "t": "ONE WHOLE TIER OF SALT BOUGHT AT THE QUOTED RATE",
+  "n": [
+   "<p><b>ONE SALT BUY FOLDED.</b> v904 appends a single purchase from SA5-BTR dated 27 Sep: 12.5 unit for RM700, RM56 a unit, paid and received in full the same day. It follows the 23 Sep quote to the figure, one whole 12.5 unit tier at RM700, and sits on SA5-BTR's RM56 median rate. The desk approved it on 27 Sep and the drafter raised no flag, so nothing about the row is unusual.</p>",
+   "<p><b>INVENTORY: THE LOT LANDED, THE COST HOLDS.</b> The 12.5 unit reached the shelf on 27 Sep and the moves record it as landed. The lot came in at RM56 a unit, the same as the RM56 stock cost, so the cost basis does not move. Replacement cost stands at RM51, the reorder point at 29.3 unit, and 16.5 unit are owed out. Salt, oil, candy and rice were all counted on 27 Sep.</p>"
+  ]
+ },
+ {
   "v": "v903",
   "d": "27 Sep 2026",
   "t": "S210 PAID IN FULL AT THE COUNTER",
