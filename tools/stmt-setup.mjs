@@ -18,7 +18,7 @@
  *   node tools/stmt-setup.mjs            both secrets, then the public key into the config
  *   node tools/stmt-setup.mjs --force    re-mint the push pair as well, silencing every phone
  */
-import "./cloudflare.mjs";
+import { againIfLapsed } from "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -48,7 +48,7 @@ if (!(await put("STMT_DESK_KEY", deskKey, STMT_CFG))) { console.log("  FAILED on
 console.log("  ok    the desk and the site share a key, and it was never printed");
 
 /* 2. the site's push pair */
-const listed = spawnSync("npx", ["wrangler", "secret", "list", "-c", STMT_CFG], { cwd: REPO, shell: true, encoding: "utf8" });
+const listed = againIfLapsed(() => spawnSync("npx", ["wrangler", "secret", "list", "-c", STMT_CFG], { cwd: REPO, shell: true, encoding: "utf8" }));
 if (!FORCE && /STMT_VAPID_PRIVATE_JWK/.test(listed.stdout || "")) {
   console.log("\n  The site already holds a push key. A new pair would silence every customer already");
   console.log("  subscribed, so it is left alone. Pass --force if that is genuinely what you want.");

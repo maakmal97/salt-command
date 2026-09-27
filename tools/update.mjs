@@ -36,7 +36,7 @@
  *   node tools/update.mjs -m "message"   commit message (defaults to the version)
  */
 
-import "./cloudflare.mjs";
+import { againIfLapsed } from "./cloudflare.mjs";
 import { readFileSync, existsSync, writeFileSync, readdirSync, rmSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { readSnapshot } from "./d1.mjs";
@@ -78,7 +78,8 @@ const ok = (m) => console.log("  ok    " + m);
 const step = (n, t) => console.log("\n" + n + "  " + t.toUpperCase());
 
 function sh(cmd, args, { quiet = false } = {}) {
-  const r = spawnSync(cmd, args, { cwd: REPO, shell: true, encoding: "utf8" });
+  const go = () => spawnSync(cmd, args, { cwd: REPO, shell: true, encoding: "utf8" });
+  const r = args[0] === "wrangler" ? againIfLapsed(go) : go();   /* wrangler only: a suite never runs twice */
   const out = ((r.stdout || "") + (r.stderr || "")).trim();
   if (!quiet && out) console.log(out.split("\n").map(l => "        " + l).join("\n"));
   return { code: r.status === null ? 1 : r.status, out };

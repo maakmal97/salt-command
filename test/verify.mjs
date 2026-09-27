@@ -592,7 +592,7 @@ await (async () => {
   const src = (f) => readFileSync(join(REPO, "tools", f), "utf8");
   const reach = readdirSync(join(REPO, "tools")).filter((f) => f.endsWith(".mjs") && f !== "cloudflare.mjs")
     .filter((f) => /\["wrangler"|fetch\((SITE|BASE|base) \+/.test(src(f)));
-  const bare = reach.filter((f) => !/^import (\{ wranglerSaid \} from )?"\.\/cloudflare\.mjs";$/m.test(src(f)));
+  const bare = reach.filter((f) => !/^import (\{ [\w, ]+ \} from )?"\.\/cloudflare\.mjs";$/m.test(src(f)));
   ok(reach.length >= 10 && !bare.length, "every tool that reaches Cloudflare imports tools/cloudflare.mjs (" + reach.length + " found; without it: " + (bare.join(", ") || "none") + ")");
 
   const { wranglerSaid } = await import("../tools/cloudflare.mjs");
@@ -601,6 +601,26 @@ await (async () => {
   const timedOut = Object.assign(new Error("Command failed: npx wrangler kv key put vault\n" + said), { stdout: "\n", stderr: said });
   ok(wranglerSaid(timedOut) === "The request to Cloudflare's API timed out.", "a failed wrangler call reports wrangler's own [ERROR] line, colours stripped, not \"Command failed\"");
   ok(wranglerSaid(new Error("Command failed: npx wrangler kv key list\nno error line")) === "Command failed: npx wrangler kv key list", "…and with no [ERROR] line, the first line of the message, as before");
+
+  /* A lapsed login is run once more and nothing else is, in both shapes a tool calls wrangler in:
+     spawnSync's returned failure and execFileSync's thrown one. The words are wrangler 4's own. */
+  const { againIfLapsed } = await import("../tools/cloudflare.mjs");
+  const LAPSED = "In a non-interactive environment, it's necessary to set a CLOUDFLARE_API_TOKEN environment variable for wrangler to work.";
+  const answers = (...a) => { let n = 0; const run = () => { const x = a[Math.min(n++, a.length - 1)]; if (x instanceof Error) throw x; return x; }; run.calls = () => n; return run; };
+  const lapsedRow = { status: 1, stdout: "{ \"error\": { \"text\": \"" + LAPSED + "\" } }", stderr: "" };
+  let run = answers(lapsedRow, { status: 0, stdout: "[]", stderr: "" });
+  ok(againIfLapsed(run).status === 0 && run.calls() === 2, "a wrangler call that says its login lapsed is run once more, and the second answer is the one returned");
+  run = answers(Object.assign(new Error("Command failed: npx wrangler kv key list"), { stdout: "", stderr: "X [ERROR] " + LAPSED }), "listed");
+  let got; try { got = againIfLapsed(run); } catch (e) { got = e; }
+  ok(got === "listed" && run.calls() === 2, "…and so is one that throws it, the way execFileSync does");
+  const fetchFailed = { status: 1, stdout: "{ \"error\": { \"text\": \"fetch failed\" } }", stderr: "" };
+  run = answers(fetchFailed, { status: 0 });
+  const kept = againIfLapsed(run) === fetchFailed && run.calls() === 1;
+  run = answers(Object.assign(new Error("Command failed: npx wrangler kv key put"), { stdout: "", stderr: "fetch failed" }), "put");
+  try { got = againIfLapsed(run); } catch (e) { got = e; }
+  ok(kept && got instanceof Error && run.calls() === 1, "…but no other failure is, returned or thrown: a \"fetch failed\" can follow a write that landed");
+  run = answers(lapsedRow, lapsedRow, { status: 0 });
+  ok(againIfLapsed(run) === lapsedRow && run.calls() === 2, "…and only once: a login still lapsed comes back as it is");
 })();
 
 /* ---- 3. Worker: access gate + routing ------------------------------------------ */

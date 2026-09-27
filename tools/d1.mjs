@@ -18,7 +18,7 @@
  *   node tools/d1.mjs --status    what the store holds, no writes
  *   --local                       act on the local D1 rather than the remote one
  */
-import "./cloudflare.mjs";
+import { againIfLapsed } from "./cloudflare.mjs";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
@@ -38,7 +38,7 @@ const fail = (m) => { problems.push(m); console.log("  FAIL  " + m); };
 const ok = (m) => console.log("  ok    " + m);
 
 function wrangler(args, { quiet = false } = {}) {
-  const r = spawnSync("npx", ["wrangler", ...args], { cwd: REPO, shell: true, encoding: "utf8" });
+  const r = againIfLapsed(() => spawnSync("npx", ["wrangler", ...args], { cwd: REPO, shell: true, encoding: "utf8" }));
   const out = ((r.stdout || "") + (r.stderr || "")).trim();
   if (!quiet && out) console.log(out.split("\n").map((l) => "        " + l).join("\n"));
   return { code: r.status === null ? 1 : r.status, out };

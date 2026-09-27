@@ -47,7 +47,7 @@
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
  */
 
-import { wranglerSaid } from "./cloudflare.mjs";
+import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { dirname, resolve, join } from "node:path";
@@ -69,9 +69,9 @@ const nowISO = () => new Date().toISOString();
 function wr(args) {
   // Run in the repo so wrangler.jsonc (and its KV binding) is found. --remote targets
   // the deployed namespace, not the local simulator.
-  return execFileSync("npx", ["wrangler", ...args, "--binding", BINDING, "--remote"], {
+  return againIfLapsed(() => execFileSync("npx", ["wrangler", ...args, "--binding", BINDING, "--remote"], {
     cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32"
-  });
+  }));
 }
 function jsonSlice(s, open, close) {
   const a = s.indexOf(open), b = s.lastIndexOf(close);

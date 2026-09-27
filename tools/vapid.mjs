@@ -13,7 +13,7 @@
  *   node tools/vapid.mjs            generate, store the secret, print the public key
  *   node tools/vapid.mjs --force    do it again anyway, invalidating every subscription
  */
-import "./cloudflare.mjs";
+import { againIfLapsed } from "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 
@@ -21,7 +21,7 @@ const FORCE = process.argv.includes("--force");
 const b64url = (buf) => Buffer.from(buf).toString("base64")
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-const existing = spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" });
+const existing = againIfLapsed(() => spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" }));
 if (!FORCE && /VAPID_PRIVATE_JWK/.test(existing.stdout || "")) {
   console.log("  VAPID_PRIVATE_JWK is already set.");
   console.log("  Generating a new pair would silence every phone already subscribed, because");

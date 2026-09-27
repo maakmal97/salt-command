@@ -23,3 +23,16 @@ export function wranglerSaid(e) {
   const line = out.split(/\r?\n/).find((l) => l.includes("[ERROR]"));
   return line ? line.slice(line.indexOf("[ERROR]") + 7).trim() : String(e.message || e).split("\n")[0];
 }
+
+/* A LAPSED LOGIN IS TRIED ONCE MORE (27 Sep 2026). Wrangler's login lasts an hour and renews on
+   the next call; twice that day the renewal timed out on the first call after an idle spell, and
+   a shell with no terminal hears only "set a CLOUDFLARE_API_TOKEN". Wrangler says it before it
+   sends anything, so the same call again is safe, a write included. Nothing else is retried: a
+   "fetch failed" can follow a write that landed. run is the call: spawnSync hands back its
+   failure and execFileSync throws it, and either is read the same way. */
+export function againIfLapsed(run) {
+  const lapsed = (x) => /CLOUDFLARE_API_TOKEN/.test(String((x && x.stdout) || "") + String((x && x.stderr) || ""));
+  let r;
+  try { r = run(); } catch (e) { if (!lapsed(e)) throw e; return run(); }
+  return r && r.status && lapsed(r) ? run() : r;
+}

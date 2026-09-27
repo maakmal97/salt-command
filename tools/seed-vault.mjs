@@ -20,7 +20,7 @@
  *   node tools/seed-vault.mjs --dry-run   encrypt only; write the envelope (ciphertext) to
  *                                         test/tmp for inspection, push nothing
  */
-import { wranglerSaid } from "./cloudflare.mjs";
+import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
 import { webcrypto as wc } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -72,8 +72,8 @@ function loadBio() {
 }
 
 function wrPut(jsonPath) {
-  return execFileSync("npx", ["wrangler", "kv", "key", "put", VKEY, "--path", jsonPath, "--binding", BINDING, "--remote"],
-    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" });
+  return againIfLapsed(() => execFileSync("npx", ["wrangler", "kv", "key", "put", VKEY, "--path", jsonPath, "--binding", BINDING, "--remote"],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
 }
 
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
