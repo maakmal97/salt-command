@@ -43066,5 +43066,96 @@ await (async () => {
     for (const f of [B, M]) { try { rmSync(f); } catch (e) { /* best effort */ } }
   }
 })();
+
+section("28 Sep 2026: Cash received takes a custom amount, whole or part, and the pill and field survive a redraw");
+await (async () => {
+  /* His instruction, 28 Sep 2026: Cash received always sent the whole of what an order owed. Other amount
+     opens a field, the same shape as the handover part stepper (ORD_PART): the pill reads the typed figure
+     live and carries data-cashpart while it is open, ordAct refuses outside 0 to what is owed, and a
+     part-paid order (paid<=0.004 no longer required) offers cash on the rest too. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const o1 = Object.assign({ id: "o1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const o2 = Object.assign({ id: "o2", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 40, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const orders = [o1, o2];
+    const posted = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (p === "orders" && !post) return { ok: true, status: 200, json: async () => ({ ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
+      if (post && /\/cash$/.test(p)) { posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) }; }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL='o1';ORD_OPENED=true;ordDraw();");
+    const q = (id, sel) => D.querySelector('.ordcard[data-id="' + id + '"] ' + sel);
+    /* a real timer, not just a microtask hop, so a click's own trailing ordLoad (its own fetch, json
+       and redraw, none of it a real delay) is fully drained before the next action reads the card */
+    const wait = async (cond) => { for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 30)); if (cond()) return true; } return cond(); };
+
+    /* (a) untouched, the filled pill posts the whole of what is owed */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 1);
+    ok(posted.length === 1 && posted[0].amount === 100, "the whole pill posts the amount due: " + JSON.stringify(posted[0]));
+    const said = () => (q("o1", '[data-msg="o1"]') || {}).textContent || "";
+    const wholeSaid = said();
+    ok(/^Recorded: RM 100 in cash\. They see it paid and the chase stops\. /.test(wholeSaid), "the whole recorded says it is paid and the chase stops: " + JSON.stringify(wholeSaid));
+
+    /* (b) Other amount opens the field; a typed figure follows on the pill at once, and carries data-cashpart */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    let inp = q("o1", 'input[data-cashamt="o1"]');
+    inp.value = "40"; inp.oninput();
+    let pill = q("o1", 'button[data-ord="cash"]');
+    ok(pill.textContent.trim() === "Cash received, RM 40" && pill.dataset.cashpart === "1",
+      "typing a custom figure follows on the pill at once, and marks it: " + JSON.stringify({ text: pill.textContent, part: pill.dataset.cashpart }));
+
+    /* (e) a poll's redraw mid-type keeps what he typed, the same as the handover part stepper */
+    w.eval("ordDraw();");
+    inp = q("o1", 'input[data-cashamt="o1"]'); pill = q("o1", 'button[data-ord="cash"]');
+    ok(inp.value === "40" && pill.textContent.trim() === "Cash received, RM 40",
+      "the typed figure survives ordDraw(): " + JSON.stringify({ value: inp.value, text: pill.textContent }));
+
+    /* (b) continued: the pill posts the typed figure, not the whole */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 2);
+    ok(posted.length === 2 && posted[1].amount === 40, "Other amount posts the typed figure: " + JSON.stringify(posted[1]));
+    /* a part leaves the rest owed and the chase going: the answer says what is left, never that it is paid */
+    const partSaid = said();
+    ok(/^Recorded: RM 40 in cash\. They see RM 60 still owed\. /.test(partSaid) && !/paid|chase stops/.test(partSaid),
+      "a part recorded says what is still owed, never paid: " + JSON.stringify(partSaid));
+
+    /* (c) 0, and a figure over what is owed, are refused on the card and send nothing */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    /* an emptied box: the pill says RM 0, what its tap would send and refuse, never the whole */
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = ""; inp.oninput();
+    const emptyPill = q("o1", 'button[data-ord="cash"]').textContent.trim();
+    ok(emptyPill === "Cash received, RM 0", "an emptied box reads RM 0 on the pill: " + JSON.stringify(emptyPill));
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "0";
+    q("o1", 'button[data-ord="cash"]').click();
+    const zeroSaid = (q("o1", '[data-msg="o1"]') || {}).textContent, zeroPosted = posted.length;
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "200";
+    q("o1", 'button[data-ord="cash"]').click();
+    const overSaid = (q("o1", '[data-msg="o1"]') || {}).textContent;
+    const refused = /^That is not a figure above RM 0 and up to the RM 100 owed; nothing moved\.$/;
+    ok(posted.length === 2 && zeroPosted === 2 && refused.test(zeroSaid || "") && refused.test(overSaid || ""),
+      "0, and a figure above what is owed, are refused on the card and nothing is posted: " + JSON.stringify({ zeroSaid, overSaid, posted: posted.length }));
+
+    /* (d) a part-paid order still offers cash on the rest, and the reason line says what was paid already */
+    const pill2 = q("o2", 'button[data-ord="cash"]'), why2 = q("o2", ".salt-approve__reason:not(.ordtold):not(.ordclaim):not(.ordyes)");
+    ok(!!pill2 && pill2.textContent.trim() === "Cash received, RM 60" && !!why2 && /^Collected 1 unit, RM 40 paid\./.test(why2.textContent || "")
+      && /The chase stops once what is paid keeps up with what was handed over\.$/.test((why2.textContent || "").trim()) && !/so the chase stops/.test(why2.textContent || ""),
+      "a part-paid order offers cash on the rest, and the reason line says what was paid: " + JSON.stringify({ pill: pill2 && pill2.textContent, why: why2 && why2.textContent }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
