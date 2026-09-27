@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bd2705b7436e5fa1";
+var SALT_BUILD_ID="11e149d44968f8f7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6475,6 +6475,7 @@ function fiveTiers(sizes,C,P){
   });
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
+   (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
    T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
    no history), F the floor. The tier is a ceiling: their own rate can only lower it, and a price that lands under the floor
    lifts clear of it. The one rule the desk's printed board and the customer's page both quote. A product with no tier is
@@ -6519,12 +6520,15 @@ function levelShapeOk(v,names){
    cap has nothing to protect against and would only hold two customers below the board he has typed.
    He was asked and chose the board: "this is the only price for oil, fixed for all". The floor still
    lifts, because that is break-even and not a preference. */
+/* ============ 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED, AND A CARD IS ITS TIER ============
+   What a customer paid before no longer lowers their price, so every card is one of the tier prices on the board. Measured
+   that day, 36 of 41 accounts had a size carded under their tier by the cap, 27 of them RM10 to RM60 under it at one unit,
+   and eight sat under Ambassador, the lowest tier; the cap was also the one weekly thing on their list, its window closing
+   each Monday. THE FLOOR STILL LIFTS, to the first ten above, and is now the only thing that can move a card off its tier.
+   R and fixed stay in the signature so no caller breaks, and nothing here reads them: a tier and a stated board are priced
+   alike. */
 function cardPrice(R,F,T,fixed){
-  if(fixed)return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
-  if(R==null)return T;
-  let p=Math.min(T,Math.floor(R/10)*10);
-  if(p<F-0.009)p=Math.ceil((F-0.009)/10)*10;
-  return p;
+  return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
 }
 /* v652: THE LADDER AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
    rung it is the ladder's own row, and between rungs the rate law has walked every smaller size first. */
@@ -8534,7 +8538,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v892","d":"27 Sep 2026","t":"DEFAULTED IS DRAWN ONLY WHERE A LOT DEFAULTED","n":["<p><b>OIL, CANDY, RICE AND SPARE LOSE AN EMPTY LEGEND ENTRY.</b> Found on the desk check of 27 Sep 2026: the lots chart on Analysis always drew a Defaulted series, so every book but salt carried the legend entry with nothing in it. The series is now drawn only for a book with a defaulted lot, the same guard the one-off series already has, and salt's write-offs keep it. The engine is untouched and no price moves.</p>","<p><b>THE SUITE HOLDS IT.</b> One section forces both sides, oil cleared of any defaulted lot and salt given one, and reads the chart each book draws: red with the fix undone, green with it.</p>"]}];
+const evolution=[{"v":"v893","d":"27 Sep 2026","t":"A CARD IS ITS TIER: THE CAP IS RETIRED","n":["<p><b>A CUSTOMER'S PRICE IS THEIR TIER.</b> His decision of 27 Sep 2026 retires the cap of 15 Sep. A card was the tier's price lowered to the best unit rate of the customer's last four orders before the week's Monday, rounded down to the ten. Measured before the change, 234 of the 492 salt prices on 41 customers' lists sat under their tier because of it, across 36 accounts; at one unit 27 accounts were RM10 to RM60 under, and eight were under Ambassador, the lowest level. Each of those prices now reads its tier, so 234 prices rise and none falls. The floor is the one thing that can still lift a card. Oil, a typed board, is unchanged.</p>","<p><b>ONE RULE, BOTH SURFACES.</b> The engine's cardPrice no longer reads a customer's own rate, so the desk's cardQuote and everything that reads it (the printed board, the approach offer, Today's worth and the reward cover's gap) quote the tier, and so does the customer's own price list. The list carries no rate, no order count and no personal basis now, and nothing on it is weekly. What they pay still proposes a level for a customer who holds none; a held level is untouched.</p>","<p><b>THE SUITE.</b> Seven sections that pinned the cap now pin the tier, among them every live card read against the level its customer holds, and each rewritten check was proved red against the old engine, the old list or the old desk.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8649,7 +8653,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 14:53 KL';
+const LAST_UPDATED='27 Sep 2026, 15:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20483,9 +20487,10 @@ function cardTierAt(code,q){return TIER_NAMES.indexOf(PRICING_ENGINE.levelAt(hel
 function cardTier(code){return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* their normal level: a mid-sized order's */
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
-   product in view, off the ladder walked through that size, never above their own recent rate to the nearest five and never
-   under the floor, through the engine's one cardPrice, as tools/pricelist.mjs quotes the customer's own page. No tier for the
-   product, held or proposed, and there is nothing to quote: null, as their page reads the price as coming soon. */
+   product in view, off the ladder walked through that size, never under the floor, through the engine's one cardPrice, as
+   tools/pricelist.mjs quotes the customer's own page. No tier for the product, held or proposed, and there is nothing to
+   quote: null, as their page reads the price as coming soon. 27 SEP 2026, HIS DECISION: what they paid before no longer
+   lowers it (the cap is retired, engine's cardPrice), so their own rate is not read here. */
 /* 19 SEP 2026: A TYPED BOARD IS QUOTED TO EVERYBODY, tier or no tier (his instruction). The no-tier
    refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
    all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
@@ -20497,8 +20502,7 @@ function cardQuote(code,q,t){
   if(row&&row.fixed)return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[row.prices.length-1],true).toFixed(2);
   if(t==null)t=cardTierAt(code,q);if(t<0)return null;
   if(!row||row.prices[t]==null)return null;
-  const own=pbOwnRate(code);
-  return +PRICING_ENGINE.cardPrice(own.rate!=null?own.rate*q:null,floorTotal(q),row.prices[t]).toFixed(2);}
+  return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[t]).toFixed(2);}
 /* v670: each size reads its own level, so a customer on a band set is printed their small, mid and big levels where they fall */
 function pbPrices(code){
   /* a typed board needs no tier to be printed; a tiered product still does */
@@ -20519,7 +20523,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Clients or proposed from what they pay, never above their own recent rate to the nearest five, and lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Clients or proposed from what they pay, lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>

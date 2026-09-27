@@ -445,9 +445,9 @@ to S4); it is gone, and nothing on the page reads the level. The name still trav
 as it has since v651, and the suite holds two lists differing only in level to the same Prices, to the
 character. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
 2026): a product's pane is its mark and its sizes, the lead says nothing of history or of a week, and the
-retired words are deleted from `stmt/words.js`, whose every word is served in the page's source. `rate`,
-`orders` and `basis` still travel in the sealed list, unread; the suite holds three lists differing only in
-that history to the same Prices, to the character.
+retired words are deleted from `stmt/words.js`, whose every word is served in the page's source. Since the
+cap was retired the same day, the sealed list carries no `rate` or `orders`, and `basis` is `tier` or `board`;
+the suite holds three lists differing only in history to the same Prices, to the character.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
 theirs, off their own device, so Home's heading is Good morning, Good afternoon or Good evening
@@ -461,21 +461,18 @@ would put names, encrypted, into the committed `_kv` records, where today there 
 
 **The price list is a second sealed document beside the live statement.** The deploy writes
 it in the same publish, under the same content key, so the site still holds nothing it can
-read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the BEST
-unit rate of his last four committed orders of it (v655, his decision of 16 Sep 2026; it was the
-median until then), read from orders dated before the week's
-Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week. Since v651 (his
-decisions of 15 Sep 2026) each board size is the price of the customer's tier for that product, the
-tier held on the book or proposed from what they pay for it, never above that rate times the size to
-rounded DOWN to the ten and never up (v660), and lifted only to clear the floor: the engine's
-`cardPrice`, which the desk's printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
-with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
+read. `tools/pricelist.mjs` is the whole rule: since v651 (his decisions of 15 Sep 2026) each board
+size is the price of the customer's tier for that product, the tier held on the book or proposed from
+what they pay for it, lifted only to clear the floor: the engine's `cardPrice`, which the desk's
+printed board calls too, and the suite holds the two equal. **The cap is retired** (his decision of
+27 Sep 2026): until then the tier was a ceiling, lowered to the best unit rate of their last four orders
+before the week's Monday (v655), rounded down to the ten (v660); now what they paid before lowers
+nothing, and nothing on the list is weekly. The v510 draw toward the ask retired with v651. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
 the page says its price is coming soon, and the order sheet does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
 a row at the acknowledgement, so the charge has to be settled there), the customer sees goods plus
-delivery as the sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
-with a tier and no history on a product sees the tier's price. Nothing outside the
+delivery as the sum to pay, and the sale carries it as its own field, `delivery`, inside the total. Nothing outside the
 engine prices: the publish opens the master in jsdom for the desk's PRICING inputs (the same the
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what

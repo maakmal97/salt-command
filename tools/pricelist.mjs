@@ -1,32 +1,25 @@
 #!/usr/bin/env node
-/* tools/pricelist.mjs: A CUSTOMER'S OWN PRICE LIST, for the week, from his own history.
+/* tools/pricelist.mjs: A CUSTOMER'S OWN PRICE LIST.
  *
  * His instruction of 06 Sep 2026: after the username and the password, a customer can also find
- * a price list based on his historical purchase price, changing weekly. This is the whole of
- * that rule, stated once so the page, the deploy and the suite cannot disagree about it.
+ * a price list. This is the whole of that rule, stated once so the page, the deploy and the suite
+ * cannot disagree about it.
  *
- * THE TIER IS A CEILING (his decisions of 15 Sep 2026, v651). A customer is quoted the price of their
- * own tier for each product, held on the book or, until he sets one, proposed from what they pay for
- * it; and where they have bought before, never more than their own rate: the BEST unit rate of their
- * last four committed orders of that product, to the nearest five (his decision of 16 Sep 2026; it was
- * the median until then). Four, not all: a price moved to in July should be the price seen in September,
- * and the window is what keeps one old high day from setting a card for good. A tier and no history, and
- * the tier's price stands. NO TIER FOR A
- * PRODUCT, HELD OR PROPOSED, AND IT IS NOT PRICED: it goes on the list as coming soon, and the page
- * offers no order for it. The rule is the engine's cardPrice, the one the desk's printed board quotes too.
+ * A CARD IS ITS TIER (his decisions of 15 Sep 2026, v651, and of 27 Sep 2026). A customer is quoted the
+ * price of their own tier for each product, held on the book or, until he sets one, proposed from what
+ * they pay for it. From v651 to 27 Sep 2026 the tier was only a ceiling: where they had bought before,
+ * the card was never more than the best unit rate of their last four orders read before the week's
+ * Monday. HE RETIRED THAT CAP ON 27 SEP 2026, so what they paid before no longer lowers a card, and the
+ * list has nothing weekly left in it. NO TIER FOR A PRODUCT, HELD OR PROPOSED, AND IT IS NOT PRICED: it
+ * goes on the list as coming soon, and the page offers no order for it. The rule is the engine's
+ * cardPrice, the one the desk's printed board quotes too.
  *
  * THE FLOOR STILL HOLDS. A quoted total is never below what the engine says that size costs him
- * to sell; so a customer whose old rate has fallen under a risen floor is lifted to the floor
- * rather than quoted a loss. Nothing here prices: floorTotal, cardPrice and the cost stack are the
- * engine's, fed the same PRICING inputs the desk and the drafter read, and the tier's prices are the
- * ladder the desk carried into those inputs.
- *
- * WEEKLY, AND WHAT THAT MEANS. The week runs Monday to Sunday in Kuala Lumpur. His own rate is
- * read from orders dated BEFORE the week's Monday, so an order he places on Wednesday cannot
- * move the price he was shown on Tuesday; the list is stamped with the week it is for. The
- * floor is the engine's at the moment the deploy writes the list, which is the one part that
- * can move inside a week, and only ever upwards for him. That is deliberate: a floor that has
- * risen is a floor.
+ * to sell, so a tier under a risen floor is lifted to the floor rather than quoted a loss. Nothing
+ * here prices: floorTotal, cardPrice and the cost stack are the engine's, fed the same PRICING inputs
+ * the desk and the drafter read, and the tier's prices are the ladder the desk carried into those
+ * inputs. The list is written at every publish, hourly, so it follows the ladder and the floor as
+ * they stand then; `week` stays on it as a stamp, which an order carries.
  *
  * DELIVERY IS NOT ON THE LIST (v502, his instruction of 07 Sep 2026): it is a figure he types on
  * the order when he marks it ready to deliver, and the customer sees it then, on top of these.
@@ -71,7 +64,9 @@ export function weekOf(now) {
            label: say(mon) + " to " + say(sun) + " " + sun.getFullYear() };
 }
 
-/** The customer's own rate on a product: the best of his last four committed orders before `before` (v655). */
+/** The customer's own rate on a product: the best of his last four committed orders before `before` (v655). It prices
+ *  nothing since the cap was retired on 27 Sep 2026; it is kept as the reading the desk's pbOwnRate makes for a tier
+ *  proposal, which the suite holds equal to it. */
 export function ownRate(sales, code, product, before) {
   const rows = (sales || [])
     /* v609: the bucket is the associate's own, so what they bought for resale is a price they paid too */
@@ -109,7 +104,6 @@ export function priceList(code, book, pricing, now) {
     const inputs = snap && snap.inputs;
     if (!inputs || !inputs.cost || !inputs.policy) continue;      // a product the desk cannot price is left off
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
-    const own = ownRate(book.sales, code, p, week.monday);
     /* 08 Sep 2026: THIS BOOK'S SIZES. `pricing.sizes` is the one global grid, salt's 0.5 to 12.5,
        and every customer's oil list was drawn on it: sizes the desk never sells, and none it does.
        The board's own sizes travel in the policy; the snapshot carries them too since today. */
@@ -143,7 +137,8 @@ export function priceList(code, book, pricing, now) {
         return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
       }
       const tq = names.indexOf(PRICING_ENGINE.levelAt(held, q, bandCuts));
-      const price = PRICING_ENGINE.cardPrice(own.rate != null ? own.rate * q : null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[tq]);
+      /* 27 Sep 2026, his decision: the cap is retired, so their own rate is not passed */
+      const price = PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[tq]);
       /* a level the board has no column for is a size NOT PRICED, which is what the caller already
          knows how to show; it was a TypeError until 19 Sep, and the crash was the only way to find out */
       if (price == null || !isFinite(price)) return null;
@@ -159,12 +154,13 @@ export function priceList(code, book, pricing, now) {
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       /* 23 Sep 2026: a stated board is the same for everybody, so it is neither their rate nor a level; it carries no
          level, so the page draws no mark (it drew Ambassador's beside oil for every customer from 19 Sep) */
-      basis: fixedBoard ? "board" : (own.rate != null ? "yours" : "tier"),
+      /* 27 Sep 2026: "yours", a list lowered by their own rate, went with the cap, and so did `rate` and `orders` */
+      basis: fixedBoard ? "board" : "tier",
       /* the page draws ONE mark a product, so `tier` is their normal level, a band set's mid; the set itself travels as
          `levels` for whatever later reads it, and the page still never names either */
       tier: fixedBoard ? null : names[t],
       levels: (!fixedBoard && held && typeof held === "object") ? held : null,
-      rate: own.rate, orders: own.orders, sizes: rows
+      sizes: rows
     });
   }
   return out;
@@ -331,10 +327,9 @@ async function main() {
   const { readBook } = await import("./book.mjs");
   const pricing = (await readBook()).ledger.PRICING;
   const list = priceList(code, book, pricing, new Date());
-  console.log(code + ", week " + list.week.label + " (history before " + list.week.monday + ")");
+  console.log(code + ", as at " + list.at);
   for (const p of list.products) {
-    console.log("\n" + p.name + " at " + p.tier + ": " + (p.basis === "yours" ? "never above your rate RM " + p.rate + "/" + p.unit + " over " + p.orders + " order(s)" : "the tier's prices; no history")
-      );
+    console.log("\n" + p.name + (p.basis === "board" ? ": the stated board, the same for everybody" : " at " + p.tier + ": the tier's prices"));
     for (const r of p.sizes) console.log("  " + String(r.q).padStart(5) + " " + p.unit + "  RM " + r.price);
   }
   for (const p of list.soon) console.log("\n" + p.name + ": no tier, so the price is coming soon");

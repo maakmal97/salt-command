@@ -585,6 +585,7 @@ function fiveTiers(sizes,C,P){
   });
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
+   (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
    T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
    no history), F the floor. The tier is a ceiling: their own rate can only lower it, and a price that lands under the floor
    lifts clear of it. The one rule the desk's printed board and the customer's page both quote. A product with no tier is
@@ -629,12 +630,15 @@ function levelShapeOk(v,names){
    cap has nothing to protect against and would only hold two customers below the board he has typed.
    He was asked and chose the board: "this is the only price for oil, fixed for all". The floor still
    lifts, because that is break-even and not a preference. */
+/* ============ 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED, AND A CARD IS ITS TIER ============
+   What a customer paid before no longer lowers their price, so every card is one of the tier prices on the board. Measured
+   that day, 36 of 41 accounts had a size carded under their tier by the cap, 27 of them RM10 to RM60 under it at one unit,
+   and eight sat under Ambassador, the lowest tier; the cap was also the one weekly thing on their list, its window closing
+   each Monday. THE FLOOR STILL LIFTS, to the first ten above, and is now the only thing that can move a card off its tier.
+   R and fixed stay in the signature so no caller breaks, and nothing here reads them: a tier and a stated board are priced
+   alike. */
 function cardPrice(R,F,T,fixed){
-  if(fixed)return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
-  if(R==null)return T;
-  let p=Math.min(T,Math.floor(R/10)*10);
-  if(p<F-0.009)p=Math.ceil((F-0.009)/10)*10;
-  return p;
+  return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
 }
 /* v652: THE LADDER AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
    rung it is the ladder's own row, and between rungs the rate law has walked every smaller size first. */

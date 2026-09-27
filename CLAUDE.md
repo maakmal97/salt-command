@@ -68,10 +68,10 @@ means `/desk` at desktop width. Public by his decision, no sign-in.
      frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
      from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
      next lot. **A HELD tier is never moved by a rule**, only offered one.
-   - **A customer's price is their tier, never above what they pay, rounded DOWN to the ten.**
-     Only the floor lifts a card over a rate, to the first ten above. **A product with no tier,
-     held or proposed, is not priced.** One rule, the engine's `cardPrice`: the price list, and the
-     desk's `cardQuote`, which every quote to a named customer reads.
+   - **A customer's price is their tier.** What they paid before never lowers it (the cap retired
+     on his decision of 27 Sep 2026); only the floor lifts a card, to the first ten above. **A
+     product with no tier, held or proposed, is not priced.** One rule, the engine's `cardPrice`:
+     the price list, and the desk's `cardQuote`, which every quote to a named customer reads.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes

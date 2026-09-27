@@ -98,15 +98,13 @@
   their level), never Ambassador; one they have never bought is proposed nothing and reads
   not set, and the card lists customers who have bought nothing yet.
 - **The price** (v651): the price of their tier for the product at the size, held or
-  proposed, lowered by their own rate (**the best of their last four orders** before the week's
-  Monday, v655 on his reading that a sale struck is the best price strikeable; it was the median
-  until then) rounded DOWN to the ten, and lifted only to clear the floor, so a long-standing low rate
-  can sit under Ambassador at the smallest sizes. **v660, his instruction of 16 Sep 2026: down to the
-  ten and never up.** It was the NEAREST five, which rounds up as often as down, so 63 of the 432
-  priced cells sat RM1 to RM2 over the customer's own rate; rounding down settles it for RM385 across
-  the board, and the FLOOR is the only thing that can still put a card over a rate (18 cells today),
-  lifting to the first ten above. The grid is the ten the ladder itself rounds to. A product with no tier: their page says price
-  coming soon and offers no order for it, and the desk's printed board prints nothing for it.
+  proposed, lifted only to clear the floor, to the first ten above. **The cap is retired (his
+  decision of 27 Sep 2026)**: from v651 their own rate (the best of their last four orders before the
+  week's Monday, v655; rounded down to the ten, v660) lowered the tier, so 36 of 41 accounts were
+  carded under their tier at some size and eight under Ambassador at one unit, and that window was
+  the one weekly thing on their list. `pbOwnRate` and `ownRate` now feed only the proposal. A product
+  with no tier: their page says price coming soon and offers no order for it, and the desk's printed
+  board prints nothing for it.
   `cardPrice` is called by the price list off the snapshot's `ladder` and `tierOf`
   (`tools/book.mjs`), and on the desk by `cardQuote` at any size (the ladder walked through it,
   `fiveTierAt` in the engine), which since v652 every quote to a named customer reads: the

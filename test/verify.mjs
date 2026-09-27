@@ -3550,11 +3550,14 @@ await (async () => {
   for (const p of live) ok(w.eval("JSON.stringify(restockFor(" + q(p) + "))") === fresh[p],
     p + ": the plan held from " + inView + "'s view is the plan read fresh with " + p + " in view");
   w.eval("POSITION_ENGINE.restockPlan=__rp.f;");
-  /* pbWeekMonday: TODAY is a const, so the Monday is worked out on the first call and kept */
+  /* pbWeekMonday: TODAY is a const, so the Monday is worked out on the first call and kept. 27 Sep 2026: with the cap retired
+     no card reads a customer's own rate, so a Today render may read the Monday nowhere; the proposal's own rate still does,
+     and is read here twice for each of five customers, so the count cannot be vacuous. */
   w.eval("pbWeekMonday();window.__tl={n:0};TODAY.toLocaleString=function(){__tl.n++;return Date.prototype.toLocaleString.apply(this,arguments);};"
-    + "window.__pm={n:0,f:pbWeekMonday};pbWeekMonday=function(){__pm.n++;return __pm.f.apply(this,arguments);};switchTab('today');");
-  ok(read("__pm.n") > 0 && read("__tl.n") === 0,
-    "a Today render reads the week's Monday " + read("__pm.n") + " times and works it out " + read("__tl.n") + " times");
+    + "window.__pm={n:0,f:pbWeekMonday};pbWeekMonday=function(){__pm.n++;return __pm.f.apply(this,arguments);};switchTab('today');"
+    + "roster.slice(0,5).forEach(function(c){pbOwnRate(c);pbOwnRate(c);});");
+  ok(read("__pm.n") >= 10 && read("__tl.n") === 0,
+    "a Today render and the proposal's own rate read the week's Monday " + read("__pm.n") + " times and work it out " + read("__tl.n") + " times");
   const mon = read("pbWeekMonday()"), day = read("TODAY.toISOString().slice(0,10)");
   const gap = (Date.parse(day + "T00:00:00Z") - Date.parse(mon + "T00:00:00Z")) / 864e5;
   ok(/^\d{4}-\d\d-\d\d$/.test(mon) && new Date(mon + "T00:00:00Z").getUTCDay() === 1 && gap >= 0 && gap <= 6,
@@ -8452,22 +8455,27 @@ await (async () => {
    the nearest five of 56.21 is 55, which is UNDER break-even, so the shipped rule must lift it to 60
    and nothing else in the suite walks that branch. These are exact values, not properties, because
    the point is to pin the rule rather than to describe it. */
-section("Pricing — the down-to-the-ten rule is told apart from the two it replaced (v564, v660)");
+section("Pricing — a card is its tier, and what the customer paid before no longer lowers it (27 Sep 2026)");
 await (async () => {
-  /* v646: the drawing rule retired with the tier ceiling; its rounding and floor guard live on in the engine's cardPrice.
-     v660, HIS INSTRUCTION OF 16 SEP 2026: the grid is the TEN and the rounding only ever goes DOWN, so these cases now tell
-     three rules apart, the old round-up, the nearest-five that replaced it, and the floor-to-the-ten that replaced that. */
-  const PE64 = (await import("../engine/pricing.mjs")).default, adj = (R, F) => PE64.cardPrice(R, F, 1e9);
-  ok(adj(71, 56.21) === 70, "a rate of 71 gives 70, where rounding up gave 75 and the nearest five gave 70");
-  ok(adj(703, 50) === 700, "and 703 gives 700, where the nearest five rounded UP to 705 and the old rule stopped at 703");
-  ok(adj(56.21, 56.21) === 60, "and where the rounding would sit under break-even the floor guard lifts it to 60, never 50");
-  let under = 0;
+  /* v646 to 27 Sep 2026 the engine's cardPrice lowered a tier to the customer's own rate, rounded down to the ten (v660).
+     HIS DECISION OF 27 SEP 2026 RETIRED THAT CAP: the card is the tier's price, and the floor guard is the one thing that
+     moves it, to the first ten above. Across a grid, no rate moves a card, and none is under its floor. */
+  const PE64 = (await import("../engine/pricing.mjs")).default;
+  ok(PE64.cardPrice(71, 56.21, 110) === 110 && PE64.cardPrice(703, 50, 900) === 900,
+    "a rate of 71 against a tier of 110 is quoted 110, and 703 against 900 is quoted 900: the rate lowers nothing");
+  ok(PE64.cardPrice(56.21, 56.21, 50) === 60, "and a tier that would sit under break-even is lifted to 60 by the floor guard, never left at 50");
+  let moved = 0, under = 0;
   for (let F = 20; F <= 800; F += 7.3) {
     for (const T of [70, 140, 500, 1150]) {
-      for (let R = 1; R <= 900; R += 37) if (PE64.cardPrice(R, F, Math.max(T, F)) < F - 0.009) under++;
+      const base = PE64.cardPrice(null, F, T);
+      for (let R = 1; R <= 900; R += 37) {
+        const p = PE64.cardPrice(R, F, T);
+        if (Math.abs(p - base) > 0.009) moved++;
+        if (p < F - 0.009) under++;
+      }
     }
   }
-  ok(under === 0, "and across a grid of rates, floors and tiers it never returns a price below the floor");
+  ok(moved === 0 && under === 0, "and across a grid of rates, floors and tiers no rate moves a card and none is below its floor: " + JSON.stringify({ moved, under }));
 })();
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
@@ -8509,24 +8517,16 @@ await (async () => {
     "the last four dated salt orders before the Monday are 100, 110, 120 and 130 a unit, and their own rate is the best of them, 130 (v655): the RM500 fifth-oldest, the gift, the cancelled, the undated and this week's are all left out");
   ok(PL.ownRate(sales, "CX0-AA", "oil", "2026-08-31").rate === 10 && PL.ownRate(sales, "CX0-ZZ", "salt", "2026-08-31").rate === null,
     "per product, and a customer with no history has no rate");
-  /* v646, HIS DECISION OF 15 SEP 2026: THE TIER IS A CEILING. T the tier's price at the size, R his rate times the size, F the
-     floor: no history is the tier's price, his own rate can only lower it, and under the floor it lifts clear.
-     v660, HIS INSTRUCTION OF 16 SEP 2026: DOWN TO THE TEN, NEVER UP. The nearest five rounded up as often as down, so a
-     customer paying RM108 a unit was carded RM110 and "never above what they pay" held only to the nearest five. */
+  /* v646, HIS DECISION OF 15 SEP 2026: THE TIER WAS A CEILING, which their own rate lowered (down to the ten from v660).
+     27 SEP 2026, HIS DECISION: THE CAP IS RETIRED. T the tier's price at the size, F the floor, R what their own rate comes to,
+     which nothing reads now: the card is the tier's price, lifted clear of the floor. */
   const cp = PE.cardPrice;
   ok(cp(null, 110, 220) === 220, "no history: the tier's price at the size");
-
-  ok(cp(160, 110, 220) === 160 && cp(163, 110, 220) === 160, "under the tier: his own rate stands, down to the ten");
+  ok(cp(160, 110, 220) === 220 && cp(163, 110, 220) === 220 && cp(108, 50, 900) === 900,
+    "a rate under the tier no longer lowers it: the tier's price stands (the cap retired, 27 Sep 2026)");
   ok(cp(260, 110, 220) === 220 && cp(220, 110, 220) === 220, "at or over the tier: the tier's price, never more");
-  ok(cp(100, 110, 220) === 110 && cp(20, 111, 220) === 120, "under the floor: lifted to the first ten at or above it, never left under");
-  /* THE RULE'S WHOLE POINT, PINNED: the answer is never a ringgit above what was asked for, which is what the nearest five
-     could not promise. 108 is the live case, CA5-SEN's rate at a unit; 102.5 was the half-step the old rule rounded UP. */
-  ok(cp(108, 50, 900) === 100 && cp(102.5, 50, 900) === 100 && cp(110, 50, 900) === 110,
-    "down to the ten and never up: 108 to 100, the old half-step 102.5 to 100, and a rate already on the ten stands");
-  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) === 410), "every rate across a run of ten ringgit lands on the ten below it");
-  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) <= 410 + d + 0.009), "and not one of them is above the rate it was asked for");
-  ok(cp(31, 31, 300) === 40 && cp(10, 28.11, 300) === 30, "a ten that lands under the floor is lifted to the first ten above it, never left there");
-  ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => cp(f, f, 900) >= f - 0.009), "and no floor in a sweep of eight is breached by the rounding");
+  ok(cp(null, 111, 100) === 120 && cp(20, 111, 100) === 120 && cp(31, 31, 30) === 40, "a tier under the floor is lifted to the first ten above it, whatever the rate");
+  ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => cp(f, f, 30) >= f - 0.009), "and no floor in a sweep of eight is breached");
 
   /* THE LIST AGAINST THE ENGINE, on the real snapshot: never below the collected floor, delivery on top. */
   const { pricingSnapshot } = await import("../tools/book.mjs");
@@ -8539,26 +8539,27 @@ await (async () => {
   const tiered = (tierOf) => ({ ...snap, tierOf });
   const list = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Silver", oil: "Silver" } }), nowP);
   const saltL = list.products.find(p => p.product === "salt");
-  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "yours" && saltL.rate === 130 && saltL.orders === 4,
-    "the list is stamped with the week and carries both products, salt on the customer's own rate");
+  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "tier" && !("rate" in saltL) && !("orders" in saltL),
+    "the list is stamped with the week and carries both products, salt on its tier with no rate or order count of theirs on it");
   /* v651: the customer's tier for the product at each size, off the snapshot's ladder, through the engine's cardPrice */
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
   const floorC = q => PE.floorTotal(q, Cs, Ps);
   const tierAt = (q, t) => snap.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[t];
   const bronze = snap.tierNames.indexOf("Silver"), gold = snap.tierNames.indexOf("Gold");
-  const wrong = saltL.sizes.filter(x => x.price !== PE.cardPrice(130 * x.q, floorC(x.q), tierAt(x.q, bronze)) || "delivered" in x);
-  ok(saltL.tier === "Silver" && wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
-    "a customer holding Bronze is quoted Bronze, never above his own rate, at every board size; one price, no delivery on the list");
+  const wrong = saltL.sizes.filter(x => x.price !== tierAt(x.q, bronze) || "delivered" in x);
+  const under = saltL.sizes.filter(x => tierAt(x.q, bronze) > 130 * x.q + 0.009).length;
+  ok(saltL.tier === "Silver" && wrong.length === 0 && under > 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
+    "a customer holding Silver is quoted Silver at every board size, the " + under + " sizes where their own rate of 130 sits under it included; one price, no delivery on the list");
   const goldL = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Gold" } }), nowP), goldS = goldL.products.find(p => p.product === "salt");
   /* 19 Sep 2026: OIL IS PRICED FOR EVERYBODY, held tier or none, because he has typed one board for
      all. The "no tier, no price" rule is right where a level decides the price and would otherwise
      have told thirty of thirty-six customers their oil price was still coming. */
-  ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === PE.cardPrice(130 * x.q, floorC(x.q), tierAt(x.q, gold)) && x.price <= tierAt(x.q, gold))
+  ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === tierAt(x.q, gold))
     && goldL.soon.length === 0 && goldL.products.some((x) => x.product === "oil"),
-    "a customer holding Gold on salt is quoted Gold's price at each size, or his own rate where it is lower, and oil is priced too because its board needs no tier");
+    "a customer holding Gold on salt is quoted Gold's price at each size, whatever they paid before, and oil is priced too because its board needs no tier");
   const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Silver" } }), nowP).products[0];
-  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PE.cardPrice(1 * x.q, floorC(x.q), tierAt(x.q, bronze)) && x.price >= floorC(x.q) - 0.009),
-    "a customer whose old rate is under the floor is lifted to the first five above it, never under the floor");
+  ok(!("rate" in cheap) && cheap.sizes.every(x => x.price === tierAt(x.q, bronze) && x.price >= floorC(x.q) - 0.009),
+    "a customer who once paid RM 1 a unit is quoted their tier at every size, never their old rate and never under the floor");
   const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Silver" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
   ok(fresh.products[0].basis === "tier" && fresh.products[0].sizes.every(x => x.price === tierAt(x.q, bronze))
     && JSON.stringify(none.soon.map((s) => s.product)) === '["salt"]' && none.products.some((x) => x.product === "oil"),
@@ -8622,7 +8623,7 @@ await (async () => {
   let b = await r.json();
   ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",
     "a correct password answers with a session and the sealed price list");
-  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].rate === 130 && !JSON.stringify(b.prices).includes('"rate":130'),   // v588: the ciphertext is random and the rate turned up in it by chance, twice on 11 Sep; the plaintext is what must not
+  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].tier === "Silver" && !JSON.stringify(b.prices).includes('"tier":"Silver"'),   // v588: the plaintext is what must not show; a quoted key cannot turn up in base64 by chance
     "the list opens under the content key and is ciphertext on the wire");
   const rm = await (await stmtWorker.fetch(sj("/open", { u: un, password: "master-pass", master: "master-pass" }), senv)).json();
   ok(rm.ok && rm.byMaster && rm.session === null, "the owner's override gets no session: the owner does not order");
@@ -14083,9 +14084,13 @@ await (async () => {
       "and Accept queues one entry of every proposal still open, passing over a tier held and one already waiting: " + JSON.stringify(Object.fromEntries(Object.entries(acc43.tiers).filter(([c]) => /^CZ9-/.test(c)))));
     const nm43 = rd43("(function(){queue=[];vaultNames={'CZ9-TA':'Zed Person (Here)'};revealed=true;render();document.getElementById('tierSel_CZ9-TA_salt').value='Silver';tierSet('CZ9-TA');var q=JSON.stringify(queue);vaultNames={};revealed=false;return q;})()");
     ok(/CZ9-TA/.test(nm43) && /"tiers":\{"CZ9-TA":\{"salt":"Silver"\}\}/.test(nm43) && !/Zed Person/.test(nm43), "a tier set with the names open queues the code and never the name: " + nm43.slice(0, 160));
-    const px43 = rd43("(function(){var read=function(){return JSON.stringify([pbPrices('CZ9-TA'),priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
-      + "delete TIER_OF['CZ9-TA'];var a=read();TIER_OF['CZ9-TA']={salt:'Titanium',oil:'Gold'};var b=read();TIER_OF['CZ9-TA']={salt:'Silver'};var c=read();delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];return a===b&&b===c;})()");
-    ok(px43 === true, "and a tier moves no price yet: the customer's own list, the ask and the phone's board read the same with any tier held");
+    /* 27 Sep 2026: this was "a tier moves no price", true of CZ9-TA only because they pay at the floor and the cap held every
+       card there. With the cap retired their tier IS their card, and the ask and the phone's board still move for nobody. */
+    const px43 = rd43("(function(){var own=function(){return JSON.stringify(pbPrices('CZ9-TA'));},rest=function(){return JSON.stringify([priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
+      + "delete TIER_OF['CZ9-TA'];var a=[own(),rest()];TIER_OF['CZ9-TA']={salt:'Titanium',oil:'Gold'};var b=[own(),rest()];TIER_OF['CZ9-TA']={salt:'Silver'};var c=[own(),rest()];delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];"
+      + "return {rest:a[1]===b[1]&&b[1]===c[1],own:b[0]!==c[0]};})()");
+    ok(px43.rest === true && px43.own === true,
+      "a tier moves the customer's own card and nothing else: their printed board differs between Titanium and Silver, and the ask and the phone's board read the same with any tier held: " + JSON.stringify(px43));
 
     /* ---- the drafter ---- */
     const mir43 = { sales: [], purchases: [], state: { roster: ["CZ9-TA", "CZ9-TB", "CZ9-TB-R"], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } }, TIER_OF: { "CZ9-TB": { salt: "Silver" } } }, pricing: { tierNames: NAMES43 } };
@@ -14398,11 +14403,12 @@ await (async () => {
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
     const deskOn47 = (p) => rd47("(function(){setProd('" + p + "');recompute();var x=pbPrices('CZ9-CD');setProd('salt');recompute();return x;})()");
     const list47 = PL47.priceList("CZ9-CD", book47, snap47, new Date()), tool47 = list47.products.find((p) => p.product === "salt"), desk47 = deskOn47("salt");
-    ok(tool47 && tool47.tier === "Gold" && tool47.rate === 120 && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
+    ok(tool47 && tool47.tier === "Gold" && !("rate" in tool47) && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
       "the desk's printed board and the customer's own page quote the same prices, off the one rule: " + JSON.stringify(desk47.map((r) => r.price)));
+    /* 27 Sep 2026, the cap retired: Gold's price at every size, including those where their best rate of 120 a unit is under it */
     const gold47 = snap47.tierNames.indexOf("Gold"), T47 = (q) => snap47.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[gold47];
-    ok(tool47.sizes.every((r) => r.price <= T47(r.q)) && tool47.sizes.some((r) => r.price < T47(r.q)) && tool47.sizes.some((r) => r.price === T47(r.q)),
-      "and never above Gold's price at any size: lower where his own rate is, Gold's where it is not");
+    ok(tool47.sizes.every((r) => r.price === T47(r.q)) && tool47.sizes.some((r) => T47(r.q) > 120 * r.q + 0.009),
+      "and Gold's price at every size, where their own rate of 120 a unit sits under it too: " + JSON.stringify(tool47.sizes.filter((r) => T47(r.q) > 120 * r.q + 0.009).map((r) => r.q)));
     const oilDesk47 = deskOn47("oil");
     /* 19 SEP 2026: OIL IS PRICED WITH NO TIER AT ALL, because he has typed one board for everybody.
        The "no tier, no price" rule stands for salt, where a level decides the price; it is the reason
@@ -14514,14 +14520,16 @@ await (async () => {
       sale52("z652i", "CZ9-QB", "2026-07-25", 7, 700, 350), sale52("z652j", "CZ9-QB", "2026-07-30", 7, 700, 350),
       sale52("z652d", "CZ9-QN", today52, 2, 240, 100), sale52("z652e", "CZ9-QN", today52, 2, 240, 100)];
     w52.eval("(function(){['CZ9-QB','CZ9-QN'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx52) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
-    const prop52 = rd52("tierProposal('CZ9-QB','salt',tierBoards())"), held52 = prop52 === "Silver" ? "Platinum" : "Silver";
+    /* 27 Sep 2026: never Silver either, the stranger's level, so their card and the board's ask stay two different figures below */
+    const prop52 = rd52("tierProposal('CZ9-QB','salt',tierBoards())"), held52 = prop52 === "Platinum" ? "Gold" : "Platinum";
     w52.eval("TIER_OF['CZ9-QB']={salt:" + JSON.stringify(held52) + "};recompute();");
     const card52 = rd52("(function(){var t=cardTier('CZ9-QB'),pol=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),row=PRICING_ENGINE.fiveTierAt(7,pxCost(),pol);"
-      + "return {t:t,held:TIER_NAMES.indexOf(" + JSON.stringify(held52) + "),seven:cardQuote('CZ9-QB',7),want:+PRICING_ENGINE.cardPrice(pbOwnRate('CZ9-QB').rate*7,floorTotal(7),row.prices[t]).toFixed(2),"
-      + "one:cardQuote('CZ9-QB',1),oneTier:PRICING_ENGINE.fiveTierAt(1,pxCost(),pol).prices[t],"
+      + "return {t:t,held:TIER_NAMES.indexOf(" + JSON.stringify(held52) + "),seven:cardQuote('CZ9-QB',7),want:+PRICING_ENGINE.cardPrice(null,floorTotal(7),row.prices[t]).toFixed(2),"
+      + "one:cardQuote('CZ9-QB',1),oneTier:PRICING_ENGINE.fiveTierAt(1,pxCost(),pol).prices[t],own:pbOwnRate('CZ9-QB').rate,"
       + "board:pbPrices('CZ9-QB').map(function(r){return r.price;}),each:shownSizes('salt').slice().sort(function(a,b){return a-b;}).map(function(q){return cardQuote('CZ9-QB',q);})};})()");
-    ok(card52.t === card52.held && held52 !== prop52 && card52.seven === card52.want && card52.one < card52.oneTier && JSON.stringify(card52.board) === JSON.stringify(card52.each),
-      "a customer's card price at any size is the price of the tier they hold off the ladder walked through it, lowered by their own rate where it is under, and the printed board is that rule at the shown sizes: " + JSON.stringify([held52, card52.seven, card52.one, card52.oneTier]));
+    /* 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED. Their RM 100 a unit sits under their tier at a unit and lowers none of it */
+    ok(card52.t === card52.held && held52 !== prop52 && card52.seven === card52.want && card52.own < card52.oneTier && card52.one === card52.oneTier && JSON.stringify(card52.board) === JSON.stringify(card52.each),
+      "a customer's card price at any size is the price of the tier they hold off the ladder walked through it, their own rate under it lowering nothing, and the printed board is that rule at the shown sizes: " + JSON.stringify([held52, card52.seven, card52.one, card52.oneTier, card52.own]));
     const nb52 = rd52("(function(){var n=nextBest('CZ9-QB');return {n:n,card:cardQuote('CZ9-QB',n?n.q:0),eff:pxCost().eff,none:nextBest('CZ9-QN'),noneTier:cardTier('CZ9-QN')};})()");
     ok(nb52.n && nb52.n.q === 7 && nb52.n.total === nb52.card && nb52.n.profit === +(nb52.card - nb52.eff * 7).toFixed(2) && nb52.none === null && nb52.noneTier === -1,
       "the approach offer is their card price at their usual lot, and what it would earn is struck on it; a customer with no tier for the product is offered nothing: " + JSON.stringify(nb52.n && [nb52.n.q, nb52.n.total, nb52.n.profit]));
@@ -14574,7 +14582,7 @@ await (async () => {
     ok(r55.rate === 200 && r55.orders === 4 && JSON.stringify(r55.window) === '["z655b","z655c","z655d","z655e"]',
       "their own rate is the best of the last four priced orders, not the middle one, and the fifth and older is out of the window: " + JSON.stringify(r55));
     const tool55 = PL55.ownRate(rd55("sales"), "CZ9-BR", "salt", "2026-09-01");
-    ok(tool55.rate === 200 && tool55.orders === 4, "and the customer's own page reads the same rate off the same four: " + JSON.stringify(tool55));
+    ok(tool55.rate === 200 && tool55.orders === 4, "and tools/pricelist.mjs's ownRate reads the same rate off the same four: " + JSON.stringify(tool55));
     /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM buys half a unit only; the level nearest their rate at half a unit is not the
        level nearest it across the whole board, because the board's big rungs ask far less a unit. The board is read again
        beside the proposal, so the three readings are the ones the proposal was made against. */
@@ -15631,7 +15639,7 @@ await (async () => {
     "the month is their first PRICED order, so a cancelled, a defaulted and an award with no cash are not it: " + PL59.since(s59, "CZ9-SN"));
 })();
 
-section("v660: a card is rounded DOWN to the ten, so it is never above what the customer pays");
+section("v660: every card lands on the ten and never under its floor, and since 27 Sep 2026 it is the level they hold");
 await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "round down such that it is as close as possible to their current rate, and never
      higher, to the nearest 10". The rule read the NEAREST five, which rounds up as often as down: measured over all 432
@@ -15643,7 +15651,7 @@ await (async () => {
   const rd60 = (e) => JSON.parse(String(w60.eval("JSON.stringify(" + e + ")")));
   try {
     const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
-      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0;"
+      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0,offTier=0;"
       + "roster.filter(function(c){return c.slice(-2)!=='-R';}).forEach(function(c){"
       /* 23 Sep 2026: a stated board is carded to everybody, so only a tiered book is gated on the tier */
       + "  if(!TIER_RULE[p].fixed&&cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
@@ -15653,9 +15661,10 @@ await (async () => {
       + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()), t=cardTierAt(c,q);"
       + "    if(row&&v>row.prices[t]+0.009)overTier++;"
       + "    var F=floorTotal(q); if(v<F-0.009)under++;"
+      + "    if(row&&!TIER_RULE[p].fixed&&Math.abs(v-row.prices[t])>0.009&&v!==Math.ceil((F-0.009)/10)*10)offTier++;"
       + "    if(own!=null&&v>own*q+0.009)over.push({c:c,q:q,card:v,own:+(own*q).toFixed(2),"
       + "      byFloor:v===Math.ceil((F-0.009)/10)*10});});});"
-      + "res[p]={n:n,onTen:onTen,under:under,overTier:overTier,over:over.length,"
+      + "res[p]={n:n,onTen:onTen,under:under,overTier:overTier,offTier:offTier,over:over.length,"
       + " overByFloor:over.filter(function(x){return x.byFloor;}).length,"
       + " sample:over.slice(0,2),total:Math.round(tot)};});setProd('salt');recompute();return res;})()");
     /* 1. EVERY CARD ON THE TEN, on both books. The grid is the one the ladder itself rounds to, so a card and a board
@@ -15669,16 +15678,12 @@ await (async () => {
        could be lifted out of cardPrice and every assertion above would stay green, which a mutation showed. */
     ok(Object.keys(cells).every((p) => cells[p].overTier === 0),
       "and none above the level they hold: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].overTier)));
-    /* 3. THE CLAIM ITSELF: nothing above what they pay, except where the FLOOR lifted it, which is the floor talking and
-       not the rounding. The two are counted apart, so a rounding fault cannot hide inside the floor's allowance. */
-    /* 19 SEP 2026: THE CAP IS SALT'S RULE NOW. He was asked which wins where his typed oil board sits
-       above what a customer has paid, and chose the board: "this is the only price for oil, fixed for
-       all". So oil cards ARE above two customers' own rates by design, and the rule is asserted where
-       it still holds. The oil count is asserted separately and deliberately, below, so the change
-       cannot quietly grow. */
-    ok(cells.salt.over === cells.salt.overByFloor,
-      "no salt card is above the customer's own rate unless the floor lifted it there: "
-      + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].over + " over, " + cells[p].overByFloor + " by the floor"))
+    /* 3. 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED. It said nothing above what they pay; now every salt card is the level
+       they hold at that size, the floor aside, and what they paid before moves none of it. The cards above their own rate are
+       counted beside it, so the check cannot pass on a book where no rate sits under a tier. */
+    ok(cells.salt.offTier === 0 && cells.salt.over > 0,
+      "every salt card is the level they hold, " + cells.salt.over + " of them above what that customer has paid: "
+      + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].offTier + " off their level, " + cells[p].over + " over their rate"))
       + " " + JSON.stringify(cells.salt.sample));
     ok(cells.oil && cells.oil.over > 0 && cells.oil.overByFloor === 0,
       "and oil's typed board DOES sit above what some have paid, which is the decision he took on 19 Sep and not the floor talking: "
