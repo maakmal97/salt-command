@@ -42367,5 +42367,35 @@ await (async () => {
     + JSON.stringify({ armed, closedWindowFired: firedA, openWindowFired: firedB }));
   try { wB.close(); } catch (e) { /* best effort */ }
 })();
+
+section("The lots chart names Defaulted only for a book that has actually defaulted a lot");
+await (async () => {
+  /* Desk check of 27 Sep 2026: oil, candy, rice and spare have never defaulted a purchase, so the
+     Analysis view's bubble chart always pushed both "Lots received" and "Defaulted" as datasets,
+     and the second carried a legend entry with nothing in it on every book but salt, the same
+     shape as the one-off series drawEarnChart already guards and the Tier 1 line the board chart
+     already guards. The state is forced on both sides rather than read off today's book: oil is
+     cleared of any defaulted lot it might already carry and salt is given one, so the claim does
+     not depend on what the live ledger happens to hold. */
+  const { openMaster: omLG } = await import("../tools/payload.mjs");
+  const { w: wLG } = await omLG();
+  const STUB_LG = "window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id+':'+PROD]=cfg;this.destroy=function(){};};window.Chart.register=function(){};";
+  try {
+    wLG.eval("purchases.filter(function(p){return inProd(p,'oil');}).forEach(function(p){p.defaulted=false;});"
+      + "purchases.push({rid:'zlgd01',date:'2026-07-05',supplier:'SA5-BTR',product:'oil',qty:5,total:250,status:'paid'});"
+      + "purchases.push({rid:'zlgd02',date:'2026-07-06',supplier:'SA5-BTR',product:'salt',qty:5,total:250,status:'paid',defaulted:true});");
+    const readLG = (prod) => JSON.parse((() => {
+      wLG.eval(STUB_LG + "setProd(" + JSON.stringify(prod) + ");recompute();switchTab('analysis');");
+      return wLG.eval("JSON.stringify((function(){var c=window.__charts['anBuys:" + prod + "'];"
+        + "if(!c)return null;var d=c.data.datasets.filter(function(x){return x.label==='Defaulted';})[0];"
+        + "return {labels:c.data.datasets.map(function(x){return x.label;}),defData:d?d.data:null};})())");
+    })());
+    const oilLG = readLG("oil"), saltLG = readLG("salt");
+    ok(!!oilLG && oilLG.labels.indexOf("Defaulted") < 0
+      && !!saltLG && saltLG.labels.indexOf("Defaulted") >= 0 && Array.isArray(saltLG.defData) && saltLG.defData.length > 0,
+      "oil, with no defaulted lot, draws the lots chart with no Defaulted series (" + JSON.stringify(oilLG && oilLG.labels)
+      + "), while salt, which does default one, keeps the series and it carries the point (" + JSON.stringify(saltLG && saltLG.labels) + ")");
+  } finally { try { wLG.close(); } catch (e) { /* best effort */ } }
+})();
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -1,5 +1,14 @@
 [
  {
+  "v": "v892",
+  "d": "27 Sep 2026",
+  "t": "DEFAULTED IS DRAWN ONLY WHERE A LOT DEFAULTED",
+  "n": [
+   "<p><b>OIL, CANDY, RICE AND SPARE LOSE AN EMPTY LEGEND ENTRY.</b> Found on the desk check of 27 Sep 2026: the lots chart on Analysis always drew a Defaulted series, so every book but salt carried the legend entry with nothing in it. The series is now drawn only for a book with a defaulted lot, the same guard the one-off series already has, and salt's write-offs keep it. The engine is untouched and no price moves.</p>",
+   "<p><b>THE SUITE HOLDS IT.</b> One section forces both sides, oil cleared of any defaulted lot and salt given one, and reads the chart each book draws: red with the fix undone, green with it.</p>"
+  ]
+ },
+ {
   "v": "v891",
   "d": "27 Sep 2026",
   "t": "A BOOK WITH NO COST READS AS NOT PRICED",

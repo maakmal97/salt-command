@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9ec540e6f4639ccf";
+var SALT_BUILD_ID="bd2705b7436e5fa1";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8534,7 +8534,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v891","d":"27 Sep 2026","t":"A BOOK WITH NO COST READS AS NOT PRICED","n":["<p><b>SPARE'S PRICING PAGE SAYS IT IS NOT PRICED.</b> Measured on v890: with spare in view the board printed NaN% margin at every size and NaN% to NaN% and NaNx to NaNx under it, beside columns of RM 0 and a line saying every price cleared break-even. Spare has no lot and no quote, so the margin and the multiple divided by nothing. A book with no cost now reads as not priced in one line: the board waits for its first lot or a supplier's quote. The engine is untouched, no price moves, and every part of the other four books draws exactly what it drew.</p>","<p><b>THE SUITE READS EVERY PART OF EVERY BOOK.</b> Each book in turn, every part through the view he opens, is checked for NaN, undefined and Infinity in what a reader sees; red on v890 and on three planted faults before its green was trusted. The board check that expected a board for every book now expects one for every book with a cost, and its no-ladder half reads a book given a cost rather than going quiet.</p>"]}];
+const evolution=[{"v":"v892","d":"27 Sep 2026","t":"DEFAULTED IS DRAWN ONLY WHERE A LOT DEFAULTED","n":["<p><b>OIL, CANDY, RICE AND SPARE LOSE AN EMPTY LEGEND ENTRY.</b> Found on the desk check of 27 Sep 2026: the lots chart on Analysis always drew a Defaulted series, so every book but salt carried the legend entry with nothing in it. The series is now drawn only for a book with a defaulted lot, the same guard the one-off series already has, and salt's write-offs keep it. The engine is untouched and no price moves.</p>","<p><b>THE SUITE HOLDS IT.</b> One section forces both sides, oil cleared of any defaulted lot and salt given one, and reads the chart each book draws: red with the fix undone, green with it.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8649,7 +8649,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 11:34 KL';
+const LAST_UPDATED='27 Sep 2026, 14:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12013,10 +12013,14 @@ function drawAnalysis(){
       const buys=lots.map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/maxLot)*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
+      /* found on a desk check: oil, candy, rice and spare have never defaulted a lot, so this
+         legend carried "Defaulted" for a series with no points in it, same shape as the
+         one-off series drawEarnChart guards below. Salt's write-offs keep the entry. */
+      const defBuys=buys.filter(b=>b.def);
+      const buySets=[{label:'Lots received',data:buys.filter(b=>!b.def),backgroundColor:'rgba(111,174,151,.35)',borderColor:'#6fae97',borderWidth:1.5}];
+      if(defBuys.length)buySets.push({label:'Defaulted',data:defBuys,backgroundColor:'rgba(212,105,76,.35)',borderColor:'#d4694c',borderWidth:1.5});
       freshChart(blkEl('anBuys'),{type:'bubble',
-        data:{datasets:[
-          {label:'Lots received',data:buys.filter(b=>!b.def),backgroundColor:'rgba(111,174,151,.35)',borderColor:'#6fae97',borderWidth:1.5},
-          {label:'Defaulted',data:buys.filter(b=>b.def),backgroundColor:'rgba(212,105,76,.35)',borderColor:'#d4694c',borderWidth:1.5}]},
+        data:{datasets:buySets},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
             title:{display:true,text:'Buying rate against lot size, bubble by ringgit committed',color:INK,font:{size:12}},
