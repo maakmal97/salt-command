@@ -159,9 +159,13 @@
 - **Rewards**: a whole free unit per stated margin brought, over the whole ledger
   (`REWARD.stated`; at v623 RM 500 for a customer, RM 470 for an associate, introduced customers'
   margin counted at a 1.2 hurdle). Oil and the other books are absent from it, so they carry no
-  reward. `rewardMargin` counts priced rows that are neither rebate nor defaulted, through
-  `ownerOf` (the code and its `-R`), plus introduced customers' rows for an associate
-  (`introductions()`, from `INTRODUCTIONS` and the rows' `ref` stamps). A departed party cannot
+  reward. `rewardMargin` counts priced rows that are not defaulted, through `ownerOf` (the code
+  and its `-R`), plus introduced customers' rows for an associate (`introductions()`, from
+  `INTRODUCTIONS` and the rows' `ref` stamps). A rebate row counts only its paid part (his
+  decision of 27 Sep 2026): total less `settledRM`, less the units the reward did not take
+  (`rebUnits`, which `rebateApplied` nets) at the row's own unit cost, each side floored at
+  nothing; a row with neither part left is a redemption and counts nothing. Network's Margin
+  brought in is the reward's own intro margin, not first orders' revenue. A departed party cannot
   redeem (`canRedeem`). A sale to a customer holding reward and under their card price offers a
   cover at entry (`coverPlan`: the gap, up to the balance, at cost; the row carries `coverUnits`
   and `coverRM`). A customer holding a whole unit may redeem one; a redemption is a sales row with
