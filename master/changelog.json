@@ -1,5 +1,14 @@
 [
  {
+  "v": "v903",
+  "d": "27 Sep 2026",
+  "t": "S210 PAID IN FULL AT THE COUNTER",
+  "n": [
+   "<b>ONE ROW FOLDED: CASH ON S210.</b> A fulfilment against CE5-SA's order s210, 2 units for RM210, records RM210 received in cash at the counter on 27 Sep 2026, order 20260927095911-gwepmw. It follows the earlier fulfilment and correction that sent the 2 units out as collected. The order now reads paid and settled, with RM0 and 0 units outstanding. The fold was preapproved by phone, and nothing in it was recomputed by hand.",
+   "<b>NOTHING UNUSUAL, NO STOCK MOVE.</b> The row moves cash only, so the shelf, the cost basis of RM56 a unit and the reorder point of RM29.3 stand as they were. CE5-SA carries no outstanding balance, no units on credit and no defaults. The cancelled order s207 stays cancelled with nothing owed. The drafter's flag that this settles the order in full is answered by the figures: RM210 paid against RM210 due."
+  ]
+ },
+ {
   "v": "v902",
   "d": "27 Sep 2026",
   "t": "CE5-SA SETTLES S210 IN FULL",

@@ -1,6 +1,6 @@
 {
- "v": "v902",
- "stamped": "27 Sep 2026, 21:09 KL",
+ "v": "v903",
+ "stamped": "27 Sep 2026, 21:10 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5582,10 +5582,10 @@
     "customer": "CE5-SA",
     "qty": 2,
     "total": 210,
-    "cash": 210,
+    "cash": 420,
     "date": "2026-09-27",
     "deliveredQty": 2,
-    "note": "<b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them. <b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
+    "note": "<b>PAID IN FULL 27 SEP (v903): RM210 CASH AT THE COUNTER.</b> <b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them. <b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
     "rid": "s210",
     "deliveredOn": "2026-09-27",
     "handover": "collected",
@@ -5611,6 +5611,13 @@
       "cash": 210,
       "kg": 0,
       "note": "<b>PAYMENT ON S210: RM210 FROM CE5-SA SETTLES THE ORDER.</b> Paid 27 Sep 2026 on the statements site against the account, by transfer via tng, claim a20260927130712-aq26vg, and preapproved by phone. It applies to s210: 2 units for RM210, collected 27 Sep with RM0 paid until now. The order note placed RM210 above the floor of RM125.65 and below the ask of RM270 for 2 units. CE5-SA has 3 orders, a median of RM110 a unit, a range of RM105 to RM110, and RM210 on 2 units on credit before this row, with nothing defaulted. No units move and no cost is carried. The drafter flagged that this settles the order in full. The figures answer it: RM210 against RM210 outstanding leaves RM0."
+     },
+     {
+      "date": "2026-09-27",
+      "kind": "Fulfilment",
+      "cash": 210,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S210: RM210 CASH RECEIVED, ORDER SETTLED.</b> CE5-SA paid RM210 in cash at the counter on 27 Sep 2026 against order s210, 2 units for RM210, order 20260927095911-gwepmw. No units move: the 2 units went out on the earlier fulfilment and correction. The total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. CE5-SA: 3 orders, median RM110 a unit, range RM105 to RM110, no defaults, no units on credit. The row carries no cost of its own. The drafter flagged that this settles the order in full, and the figures answer it: RM210 against RM210, leaving RM0 and 0 units outstanding. Preapproved by phone."
      }
     ],
     "cost": 112,
@@ -6353,9 +6360,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T13:07:12.189Z",
+  "QUEUE_COMMITTED": "2026-09-27T13:09:07.341Z",
   "PRICING": {
-   "takenAt": "2026-09-27T13:09:26.841Z",
+   "takenAt": "2026-09-27T13:11:01.067Z",
    "sizes": [
     0.5,
     1,
@@ -12961,10 +12968,10 @@
      "cards": {}
     }
    },
-   "v": "v902"
+   "v": "v903"
   },
   "OPEN": {
-   "at": "2026-09-27T13:09:27.157Z",
+   "at": "2026-09-27T13:11:01.216Z",
    "count": 8,
    "byKey": {
     "CE4-AD|2026-09-27|500": {
@@ -13100,13 +13107,13 @@
     "salt": {
      "name": "Salt",
      "onHand": -1,
-     "free": -15.5,
-     "owedOut": 14.5,
+     "free": -17.5,
+     "owedOut": 16.5,
      "coverDays": 0,
      "rate": 6.25,
      "owedToYou": 390,
-     "promised": 14.5,
-     "short": 15.5
+     "promised": 16.5,
+     "short": 17.5
     },
     "oil": {
      "name": "Oil",
@@ -13160,7 +13167,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v902"
+   "v": "v903"
   }
  }
 }
