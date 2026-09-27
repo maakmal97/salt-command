@@ -436,4 +436,4 @@ from the engine in an `openMaster` window, never by hand.
   `SALT_MASTER` copies; tool-file mutations one at a time.
 
 Read @MEMORY.md beside this file (current facts) before the first action; correct it in place.
-History: master/changelog.json and git log.
+History: git log; master/changelog.json is written only by tools/changelog.mjs on a bump.
