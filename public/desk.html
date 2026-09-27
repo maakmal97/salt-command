@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="36b0c08b09f12180";
+var SALT_BUILD_ID="202c66e4e6f5ca7d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8534,7 +8534,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v889","d":"27 Sep 2026","t":"THE COST PANEL READS THE ASK, AND THERE IS ONE FLOOR","n":["<p><b>THE COST PANEL READS THE ASK.</b> His approval of 27 Sep 2026. What an order is worth read a retired tier and fell back by index to Tier 1, so a unit of salt showed RM 80 against an ask of RM 140, and 12.5 units RM 850 against RM 1,090. It now reads the ladder's ask, row T2, found by its code at every size. A size the ask does not price is left out, and a book it prices nowhere says so.</p>","<p><b>ONE FLOOR.</b> The retired 20% line is gone, with floorPct and floorPrice. The register, the market segments and their buying rate, the margin-realised signal and the share of volume under the line all read the engine's floor, COGS plus leakage, at the order's own size. Salt's closed sales under floor fall from 5 to 2, and 6% of its volume sits under RM 58.40. No price moves on any book, size or customer; the drafter's pricing snapshot drops its unused floorPct key, so a site-order preview drawn before this deploy waits under Approve once.</p>"]}];
+const evolution=[{"v":"v890","d":"27 Sep 2026","t":"THE REWARD COUNTS WHAT WAS PAID FOR, AND R3 IS MARGIN BROUGHT IN","n":["<p><b>A REBATE ROW NOW EARNS ON WHAT WAS PAID FOR.</b> His approval of 27 Sep 2026. rewardMargin skipped every row the reward had touched, so where the reward settled one unit and the rest was paid, the paid units earned nothing. It now counts the goods the reward did not settle, less the units it did not take at the row's own cost: s068 and s196 add RM 118 to CS6-PER, and s025 RM 17 to CS6-BS. Through that introduction CJ4-OKR reaches a sixth unit, held while departed. No price moves.</p>","<p><b>MARGIN BROUGHT IN REPLACES BROUGHT YOU.</b> The R3 figure on each associate's card and in the Overall row read the revenue of an introduced customer's first order. It now reads the margin the reward counts on every order of theirs, RM 6,697 against RM 3,860 on salt. The Refer ledger, the chart and the Counter keep first orders' revenue.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8649,7 +8649,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 10:13 KL';
+const LAST_UPDATED='27 Sep 2026, 10:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17846,8 +17846,8 @@ const REWARD={
      what counts   every priced order on the party's own code and -R account, R1 and R2 together because
                    the two cannot be told apart; for an associate, also every priced order of each customer
                    they introduced, one level only (R3, from introductions()). A redemption is not an order,
-                   and neither is a written-off one (v618, his ruling of 14 Sep 2026: an order never paid
-                   earns nobody anything).
+                   though the paid part of a row the reward part settled is (27 Sep 2026), and a written-off
+                   one is not (v618, his ruling of 14 Sep 2026: an order never paid earns nobody anything).
      margin        the row's total less its units at the row's own cost, as every margin on the desk
      a unit        one for each whole RM 500 of that figure for a customer, RM 470 for an associate (v623),
                    whose R3 margin counts at 1/1.2 because each of those orders already counts for its own
@@ -17860,10 +17860,24 @@ function rewardR3Hurdle(prod){const S=REWARD.stated[prod];return (S&&S.associate
 function rewardRuleTxt(prod,who){const m=rewardUnitMargin(prod,who);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
 function rewardMargin(id,refs){
   const mine={margin:0,n:0},intro={margin:0,n:0};
+  /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
+     was skipped whole, so where one unit of an order came from the reward and the rest was paid for, the
+     paid units earned nothing. The paid part is the goods the reward did not settle, total less settledRM,
+     less the units the reward did not take at the row's own unit cost, the costing every other row gets.
+     The units the reward took are rebUnits, the one reading rebateApplied nets, so no unit is both netted
+     as taken and costed as bought: a row stamped rebate with no rebateKg is the whole row taken, which
+     makes s025's RM 17 over its reward unit money in with no unit behind it, and it counts as RM 17.
+     A PAID PART BELOW ITS COST COUNTS BELOW ZERO, as an ordinary row sold under cost does, and as a unit
+     handed over unpaid and untaken is charged by the gift walk below; flooring it would let such a unit
+     escape the charge. Each side is floored at nothing, so a rebateKg over the quantity or a settledRM
+     over the goods cannot credit margin. A row with neither part left is a redemption, not an order. */
   pricedSales.forEach(s=>{
-    if(s.rebate||txStat(s).order==='Default')return;
+    if(txStat(s).order==='Default')return;
     const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
-    if(t){t.margin+=(s.total||0)-(s.qty||0)*txUnitCost(s,wavgBuy);t.n++;}
+    if(!t)return;
+    let rm=s.total||0,q=s.qty||0;
+    if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-rebUnits(s));if(rm<0.009&&q<1e-9)return;}
+    t.margin+=rm-q*txUnitCost(s,wavgBuy);t.n++;
   });
   /* v733, HIS DECISION OF 19 SEP 2026: THE REWARD SHRINKS WITH THE GIFT. A free unit handed over
      alongside an order cost the shelf real salt and was charged against the reward nowhere, so a
@@ -18570,11 +18584,13 @@ function resellerCard(r){
     :`${fmt0(r.toNext)} more margin earns a unit`;
   // summary line (collapsed)
   const summary=`<summary><span class="mono rname">${ID(r.id)}</span> ${badge}<span class="rsum">made you <b>${fmt0(r.total)}</b> &middot; R3 <b>${fmt0(r.r3)}</b> &middot; ${rebateStr}</span></summary>`;
-  // KPI trio: R1 / R2 / R3 (same for every associate)
+  /* KPI trio: R1 / R2 / R3 (same for every associate). HIS DECISION OF 27 SEP 2026: the third is the
+     reward's own figure, rewardMargin's intro margin on every order of the customers introduced, where it
+     read their first orders' revenue; the first orders stay in the Refer ledger and the summary line. */
   const kpis=`<div class="kpis k3" style="margin-top:10px">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought from you</div><div class="v salt-kpi__value">${fmt0(r.direct)}</div><div class="n salt-kpi__note">their own orders &middot; R1</div></div>
     <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Sold for you</div><div class="v salt-kpi__value">${fmt0(r.indirect)}</div><div class="n salt-kpi__note">${r.dsResell} onward ${r.dsResell===1?'sale':'sales'} &middot; R2</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Brought you</div><div class="v salt-kpi__value">${fmt0(r.r3)}</div><div class="n salt-kpi__note">${r.referrals.length} introduced, first order &middot; R3</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Margin brought in</div><div class="v salt-kpi__value">${fmt0(r.marginIntro)}</div><div class="n salt-kpi__note">${r.referrals.length} introduced, every order &middot; R3</div></div>
   </div>`;
   /* ---- v385: THE FIELDS, NOT A SENTENCE ----
      This was 330 characters of prose restating the two streams, and stripMethod cut every
@@ -18689,14 +18705,14 @@ function tabNetwork(){
   ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
     <div class="insight salt-insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
-  const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tR3=ns.reduce((a,x)=>a+x.r3,0);
+  const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
   const nRef=ns.reduce((a,x)=>a+((x.referrals&&x.referrals.length)||0),0);// customers introduced
   const summary=`<div class="kpis k4" style="margin-top:6px">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Partners</div><div class="v salt-kpi__value">${ns.length}</div><div class="n salt-kpi__note">${ns.filter(isPrincipal).length?`1 ${PRINCIPAL_TITLE.toLowerCase()} &middot; `:''}${ns.filter(x=>!isPrincipal(x)).length} associate${ns.filter(x=>!isPrincipal(x)).length===1?'':'s'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Bought from you</div><div class="v salt-kpi__value">${fmt0(tR1)}</div><div class="n salt-kpi__note">their own orders &middot; R1</div></div>
     <div class="kpi salt-kpi g"><div class="l salt-kpi__label">Sold for you</div><div class="v salt-kpi__value">${fmt0(tR2)}</div><div class="n salt-kpi__note">${nDs} onward ${nDs===1?'sale':'sales'} &middot; R2</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Brought you</div><div class="v salt-kpi__value">${fmt0(tR3)}</div><div class="n salt-kpi__note">${nRef} introduced, first order &middot; R3</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Margin brought in</div><div class="v salt-kpi__value">${fmt0(tIntro)}</div><div class="n salt-kpi__note">${nRef} introduced, every order &middot; R3</div></div>
   </div>`;
   const cards=ns.map(resellerCard).join('');
   return `<h1>Associates</h1>
