@@ -43019,16 +43019,16 @@ await (async () => {
 
   /* the table, on a state made here */
   const state = (queue, tree) => ({ book: { books: { salt: { shelf: 11.5, counted: true, free: -5, credit: 390, writtenOff: 260 },
-    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
+    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, candy: { shelf: 14, counted: true, free: 10, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
     queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
   const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
   const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
-  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5), oil 30 |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
+  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5: restock now), oil 30, candy 14 (free 10) |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
     && tb[5] === "| Pending orders | 1 (s1) |" && tb[6] === "| Undated rows | 0 |"
     && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 1 entry left in a phone's key, already folded: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
     && tb[8] === "| Tree | master at abc1234, clean, level with origin |"
     && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
-    "the table names each line, the free shelf only where it differs, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
+    "the table names each line, the free shelf only where it differs and a restock now only where it is below nothing, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
 })();
 section("28 Sep 2026: only the agreed figures are struck: a handover or a cash correction strikes no quantity or sum, a corrected size still does");
 await (async () => {

@@ -95,7 +95,9 @@ const said = (x, fn) => (x.error ? "could not read (" + x.error + ")" : fn(x));
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 export function table(s) {
   const shelf = Object.entries(s.book.books).filter(([, b]) => b.counted || Math.abs(b.shelf) > 0.004)
-    .map(([p, b], i) => p + " " + num(b.shelf) + (i === 0 ? " units" : "") + (Math.abs(b.free - b.shelf) > 0.004 ? " (free " + num(b.free) + ")" : ""))
+    /* free is the shelf less what is owed out; below nothing, it is a restock now (his word, 28 Sep 2026), never a book error */
+    .map(([p, b], i) => p + " " + num(b.shelf) + (i === 0 ? " units" : "")
+      + (Math.abs(b.free - b.shelf) > 0.004 ? " (free " + num(b.free) + (b.free < -0.004 ? ": restock now" : "") + ")" : ""))
     .join(", ") || "nothing counted or held";
   const q = s.queue, t = s.tree;
   const queue = !q ? "not read (--offline)" : [
