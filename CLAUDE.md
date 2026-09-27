@@ -420,12 +420,14 @@ npm test           # the suite split across processes (tools/suite-split.mjs), a
 npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
+node tools/standing.mjs   # the standing-state table a task closes with, about a minute
 ```
 
 Each build patch is anchored on one unique line; a moved anchor aborts. First-time Cloudflare and
 local tools: `docs/DESK.md`. Close every task with the seven-line standing-state table (shelf, live
-credit, written off, pending orders, undated rows, queue and drafts and staged, tree), computed
-from the engine in an `openMaster` window, never by hand.
+credit, written off, pending orders, undated rows, queue and drafts and staged, tree), printed by
+`node tools/standing.mjs` from the engine in an `openMaster` window, never by hand (`--offline`
+skips Cloudflare and the fetch).
 
 ## How a fold is sized
 

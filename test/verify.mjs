@@ -42970,5 +42970,65 @@ await (async () => {
       + "), while salt, which does default one, keeps the series and it carries the point (" + JSON.stringify(saltLG && saltLG.labels) + ")");
   } finally { try { wLG.close(); } catch (e) { /* best effort */ } }
 })();
+
+section("tools/standing.mjs: the seven lines a task closes with, each book read under its own view, and a failed read said, never read as nothing");
+await (async () => {
+  /* 28 Sep 2026: every task closes with the standing-state table (CLAUDE.md), and each session built it by hand. The tool
+     reads the book in a window book by book, as the desk shows it, and the queue through the tools' own reads. Driven
+     offline: the book on this master against the desk's own figures for each book, the counts on rows made here, the
+     three reads on their answers (a failure and a folded entry included), a read tried once more, and the table on a
+     state made here. */
+  const T = await import("../tools/standing.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const { openMaster: omSt } = await import("../tools/payload.mjs");
+  const { w: wSt } = await omSt();
+  try {
+    const rdSt = (e) => JSON.parse(wSt.eval("JSON.stringify(" + e + ")"));
+    const st = T.bookState(wSt), want = {};
+    for (const p of rdSt("PROD_IDS")) {
+      wSt.eval("setProdView(" + JSON.stringify(p) + ")");
+      want[p] = rdSt("({shelf:currentStock,free:+(currentStock-defUnits).toFixed(2),credit:+(+arGross).toFixed(2),writtenOff:+(+writtenOffRM).toFixed(2)})");
+    }
+    const got = Object.fromEntries(Object.entries(st.books).map(([p, b]) => [p, { shelf: b.shelf, free: b.free, credit: b.credit, writtenOff: b.writtenOff }]));
+    ok(JSON.stringify(got) === JSON.stringify(want) && st.watermark === rdSt("QUEUE_COMMITTED"),
+      "each live book is read under its own view, as the desk shows it, with the watermark: " + JSON.stringify({ got, want }));
+  } finally { try { wSt.close(); } catch (e) { /* best effort */ } }
+
+  /* the counts, on rows made here: Pending is the engine's own label, nothing paid and nothing moved */
+  const rows = [{ rid: "a1", qty: 1, total: 100, cash: 0, date: "2026-09-01" }, { rid: "a2", qty: 1, total: 100, cash: 50, date: "2026-09-02" },
+    { rid: "a3", qty: 1, total: 100, cash: 0, deliveredQty: 1, date: "2026-09-03" }, { rid: "a4", qty: 1, total: 100, cash: 0, cancelled: true, date: "2026-09-04" },
+    { rid: "a5", qty: 1, total: 100, cash: 0 }];
+  ok(JSON.stringify(T.pendingOf(rows, E.txStat)) === '["a1","a5"]' && T.undatedOf(rows, [{ qty: 1 }, { qty: 1, date: "2026-09-01" }]) === 2,
+    "pending orders are the rows with nothing paid and nothing moved, not a part-paid, handed-over or cancelled one; undated rows count lots too: "
+    + JSON.stringify({ pending: T.pendingOf(rows, E.txStat), undated: T.undatedOf(rows, [{ qty: 1 }, { qty: 1, date: "2026-09-01" }]) }));
+
+  /* the three reads, on the tools' own answers */
+  const failed = { status: 1, out: '  FAIL  could not read a JSON result from wrangler:\n        {\n          "error": {\n            "text": "fetch failed"' };
+  const L0 = T.readList({ status: 0, out: "  ok    nothing is waiting for a decision\n" }), L2 = T.readList({ status: 0, out: "  2 waiting for a decision:\n\n  2026-09-28T01:00:00.000Z   [pending]\n" });
+  const Lf = T.readList(failed), A1 = T.readApproved({ status: 0, out: '{\n "ok": true,\n "count": 1,\n "approved": [{"id":"2026-09-28T01:00:00.000Z"}]\n}' }), Af = T.readApproved(failed);
+  const drain = "KV: 6 device key(s), 0 unreadable, 2 entries.\n  q:orders, the old orders blob: 0; orders keys of their own: 0.\nFile salt_queue_cloud.json: 0 entries.\n"
+    + "Union (dedup by at): 2.\n\n  KV   2026-09-26T17:16:52.294Z  Correction on ZQ7-VRN s1: qty to 2\n  FILE 2026-09-28T01:00:00.000Z  Sale to ZQ7-VRN, 1 unit\n";
+  const Q = T.readQueue({ status: 0, out: drain }, "2026-09-27T13:24:04.148Z"), Qf = T.readQueue({ status: 1, out: "KV unreachable: Command failed: npx wrangler kv key list" }, "2026-09-27T13:24:04.148Z");
+  ok(L0.n === 0 && L2.n === 2 && A1.n === 1 && !("n" in Lf) && /fetch failed/.test(Lf.error || "") && !!Af.error && !!Qf.error
+    && Q.folded.length === 1 && Q.folded[0].at === "2026-09-26T17:16:52.294Z" && Q.waiting.length === 1 && Q.waiting[0].what === "Sale to ZQ7-VRN, 1 unit",
+    "the reads take the tools' counts, a failure is an error and never a count, and an entry at or below the watermark is folded: "
+    + JSON.stringify({ L0, L2, Lf, A1, Af, Q, Qf }));
+  let calls = 0;
+  const again = await T.runTool("drafts.mjs", ["--list"], async () => (++calls === 1 ? { status: 1, out: "timed out" } : { status: 0, out: "ok" }));
+  ok(again.status === 0 && calls === 2, "a read that fails is tried once more before it is said: " + JSON.stringify({ again, calls }));
+
+  /* the table, on a state made here */
+  const state = (queue, tree) => ({ book: { books: { salt: { shelf: 11.5, counted: true, free: -5, credit: 390, writtenOff: 260 },
+    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
+    queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
+  const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
+  const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
+  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5), oil 30 |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
+    && tb[5] === "| Pending orders | 1 (s1) |" && tb[6] === "| Undated rows | 0 |"
+    && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 1 entry left in a phone's key, already folded: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
+    && tb[8] === "| Tree | master at abc1234, clean, level with origin |"
+    && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
+    "the table names each line, the free shelf only where it differs, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
+})();
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
