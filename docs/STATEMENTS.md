@@ -891,7 +891,11 @@ at v651 while the desk quoted something else. Both run after every step the ledg
 fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
 seals the live statement into each of the newest issue's records under the content key, puts
 them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
-new set retires last month's**), and clears the attempt counters on a new issue only. Without
+new set retires last month's**), and clears the attempt counters on a new issue only. **A failed
+read of the store's `issue` is not a fresh store** (27 Sep 2026): only wrangler's 404 is absent, a
+lapsed login is tried once more, and any other failure publishes as usual, clears no counter or
+older tick, and says why in a warning in wrangler's words, his answer, since stopping would fail
+the chain job and skip its suite. Without
 `STMT_KEY` in the cloud the records go up as issued and "Now" is simply absent; the step warns.
 `node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
 call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one

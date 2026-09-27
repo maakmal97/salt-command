@@ -23482,6 +23482,28 @@ await (async () => {
       + boards.join() + " " + saidP.slice(-1));
     ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 9,
       "in nine spawns where it took nineteen: the links in one bulk get, no get per link, and no list but the links': " + cP.join());
+
+    /* ---- 27 Sep 2026: a failed read of the store's issue is not a fresh store ---- */
+    /* the issue read failing as execFileSync hands wrangler's failure back: its [ERROR] line reaches the error only down
+       a pipe. The 404 is wrangler 4.136.1's own for a KV key not there; after the words run out, the store answers. */
+    const issueFails = (site, calls, ...words) => { const w = wr55(site, new Map(), calls); return (cmd, argv, o) => {
+      if (argv[argv.length - 1] !== "issue" || !words.length) return w(cmd, argv, o);
+      calls.push("kv key get issue");
+      const said = "X [ERROR] " + words.shift() + "\n";
+      throw Object.assign(new Error("Command failed: npx wrangler kv key get issue"), { status: 1, stdout: "", stderr: o.stdio[2] === "pipe" ? said : null });
+    }; };
+    const kept = (s) => s.has("fail:aaaa-bbbb") && s.has("sent:2026-08-01:aaaa-bbbb");
+    const gone = (s) => !s.has("fail:aaaa-bbbb") && !s.has("sent:2026-08-01:aaaa-bbbb");
+    const sF = site0(), saidF = await run55(["--no-prices"], issueFails(sF, [], "fetch failed"));
+    const sN = site0(); sN.delete("issue");
+    const saidN = await run55(["--no-prices"], issueFails(sN, [], "Failed to fetch https://api.cloudflare.com/client/v4/accounts/0/storage/kv/namespaces/0/values/issue - 404: Not Found"));
+    const sL = site0(), cL = []; sL.set("issue", "2026-08-01");
+    const saidL = await run55(["--no-prices"], issueFails(sL, cL, "In a non-interactive environment, it's necessary to set a CLOUDFLARE_API_TOKEN environment variable for wrangler to work."));
+    ok(saidF.includes("returned") && kept(sF) && !sF.has("u:zzzz-zzzz") && JSON.parse(sF.get("u:aaaa-bbbb")).u === "aaaa-bbbb"
+      && saidF.some((l) => /^::warning::.+: fetch failed$/.test(l))
+      && saidN.includes("returned") && gone(sN) && saidL.includes("returned") && gone(sL) && cL.filter((c) => c === "kv key get issue").length === 2,
+      "a deploy's publish whose read of the store's issue fails publishes and retires as ever but clears no attempt counter or older tick, and says so in wrangler's words, where it took the failure for a fresh store and cleared them; wrangler's 404, a fresh store, and a lapsed login run once more still clear them for a new issue: "
+      + [saidF, saidN, saidL].map((s) => s.slice(-1)).join(" | "));
   } finally { rmSync(root55, { recursive: true, force: true }); }
 })();
 section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");

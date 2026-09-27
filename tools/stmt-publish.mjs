@@ -17,7 +17,7 @@
  * exists. `--dry <dir>` writes the bulk files and touches nothing remote, which is how the suite
  * proves it. It stands down while wrangler.stmt.jsonc still carries the placeholder store id.
  */
-import "./cloudflare.mjs";
+import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -81,7 +81,9 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   });
   const keep = new Set(r.records.map(rec => "u:" + rec.u));
   const issued = r.records.length ? r.records[0].issued : null;
-  const newIssue = !!issued && storedIssue !== issued;
+  /* an issue the store did not answer for is not a new one (27 Sep 2026): main says so, and the
+     counters and ticks below wait for a run that reads it */
+  const newIssue = !!issued && storedIssue !== issued && !(opts && opts.issueUnread);
   const deletes = [];
   /* NOTHING PUBLISHABLE MEANS NOTHING TOUCHED: an issue of stale records must not retire what
      is already in the store, or a botched regeneration would take every account down. */
@@ -230,12 +232,23 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
   /* the three lists feed only the retirement, so the hourly run, which retires nothing, does not
      spawn them (fold 5.5, 26 Sep 2026); the puts never read them */
   const noRetire = argv.includes("--no-retire");
-  let existing = [], storedIssue = null;
+  let existing = [], storedIssue = null, issueUnread = false;
   if (!dry) {
     if (!noRetire) existing = [...listKeys("u:", run), ...listKeys("fail:", run), ...listKeys("sent:", run)];
-    /* absent on a fresh store, which wrangler reports as a 404 on stderr; that is not news */
-    try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }, run).trim() || null; }
-    catch (e) { storedIssue = null; }
+    /* A FAILED READ IS NOT A FRESH STORE (27 Sep 2026). Absent on a fresh store, wrangler's 404, is
+       not news; but every failure read as absent, so a fetch failed or a lapsed login on this one
+       read, after the lists had answered, took the issue for new and deleted every fail: counter
+       and every older sent: tick. stderr is kept for wrangler's words and a lapsed login is run once
+       more. Any other failure publishes as usual and skips only those deletes, saying why (his
+       answer): stopping would fail the chain job and skip its suite, and a counter lapses in
+       fifteen minutes on its own. */
+    try { storedIssue = againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "pipe"] }, run)).trim() || null; }
+    catch (e) {
+      if (!/ - 404:/.test(wranglerSaid(e))) {
+        issueUnread = true;
+        console.log("::warning::the store's issue did not read, so this run clears no attempt counter and no older tick: " + wranglerSaid(e));
+      }
+    }
   }
   /* THE PRICE LIST NEEDS THE DESK'S PRICING SNAPSHOT, which only the desk can produce: pxInputs and
      pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
@@ -263,7 +276,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       }
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards });
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards, issueUnread });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
