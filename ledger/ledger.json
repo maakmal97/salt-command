@@ -1,6 +1,6 @@
 {
- "v": "v906",
- "stamped": "28 Sep 2026, 05:36 KL",
+ "v": "v907",
+ "stamped": "28 Sep 2026, 06:11 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5646,6 +5646,16 @@
     ],
     "cost": 112,
     "paidOn": "2026-09-27"
+   },
+   {
+    "customer": "CE5-SA",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-28",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE: 1 UNIT SALT TO CE5-SA FOR RM110, NOTHING PAID OR HANDED OVER.</b> Ordered on the statements site, order 20260927220617-thqf5q, acknowledged, to collect, dated 28 Sep 2026 and preapproved by phone. RM110 a unit sits above the desk's floor of RM68.67 and below its ask of RM140 for 1 unit. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, so RM54 on the goods at 49.1%. The drafter flagged nothing. Outstanding: RM110 to be paid and 1 unit to hand over; the row draws no stock until something moves.",
+    "rid": "s211"
    }
   ],
   "contacts": [
@@ -6384,9 +6394,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T21:35:49.488Z",
+  "QUEUE_COMMITTED": "2026-09-27T22:10:22.337Z",
   "PRICING": {
-   "takenAt": "2026-09-27T21:36:35.803Z",
+   "takenAt": "2026-09-27T22:11:05.286Z",
    "sizes": [
     0.5,
     1,
@@ -6493,10 +6503,10 @@
     "CA5-BAN": {
      "salt": "Platinum"
     },
-    "CF5-WM": {
+    "CE5-SA": {
      "salt": "Titanium"
     },
-    "CE5-SA": {
+    "CF5-WM": {
      "salt": "Titanium"
     },
     "CZ6-WM": {
@@ -7153,12 +7163,12 @@
       "lateTwice": false
      }
     },
-    "CF5-WM": {
+    "CE5-SA": {
      "salt": {
       "name": "consistent mid",
       "orders": 2,
-      "tenureDays": 26,
-      "sinceLastDays": 9,
+      "tenureDays": 22,
+      "sinceLastDays": 1,
       "perMonth": 2.03,
       "smallShare": 0.5,
       "bigShare": 0,
@@ -7171,12 +7181,12 @@
       "lateTwice": false
      }
     },
-    "CE5-SA": {
+    "CF5-WM": {
      "salt": {
       "name": "consistent mid",
       "orders": 2,
-      "tenureDays": 22,
-      "sinceLastDays": 1,
+      "tenureDays": 26,
+      "sinceLastDays": 9,
       "perMonth": 2.03,
       "smallShare": 0.5,
       "bigShare": 0,
@@ -9110,7 +9120,7 @@
         1070
        ]
       ],
-      "CF5-WM": [
+      "CE5-SA": [
        [
         0.5,
         60
@@ -9160,7 +9170,7 @@
         1060
        ]
       ],
-      "CE5-SA": [
+      "CF5-WM": [
        [
         0.5,
         60
@@ -10670,7 +10680,7 @@
         450
        ]
       ],
-      "CF5-WM": [
+      "CE5-SA": [
        [
         10,
         130
@@ -10692,7 +10702,7 @@
         450
        ]
       ],
-      "CE5-SA": [
+      "CF5-WM": [
        [
         10,
         130
@@ -11776,7 +11786,7 @@
         1500
        ]
       ],
-      "CF5-WM": [
+      "CE5-SA": [
        [
         1,
         60
@@ -11798,7 +11808,7 @@
         1500
        ]
       ],
-      "CE5-SA": [
+      "CF5-WM": [
        [
         1,
         60
@@ -12633,7 +12643,7 @@
         64
        ]
       ],
-      "CF5-WM": [
+      "CE5-SA": [
        [
         1,
         8
@@ -12647,7 +12657,7 @@
         64
        ]
       ],
-      "CE5-SA": [
+      "CF5-WM": [
        [
         1,
         8
@@ -12992,12 +13002,26 @@
      "cards": {}
     }
    },
-   "v": "v906"
+   "v": "v907"
   },
   "OPEN": {
-   "at": "2026-09-27T21:36:36.111Z",
-   "count": 7,
+   "at": "2026-09-27T22:11:05.590Z",
+   "count": 8,
    "byKey": {
+    "CE5-SA|2026-09-28|110": {
+     "d": "2026-09-28",
+     "p": "CE5-SA",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s211",
+     "key": "CE5-SA|2026-09-28|110"
+    },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
      "p": "CR3-DAM",
@@ -13119,10 +13143,10 @@
      "free": -5,
      "owedOut": 11.5,
      "coverDays": 0,
-     "rate": 5.94,
+     "rate": 5.99,
      "owedToYou": 390,
-     "promised": 11.5,
-     "short": 5
+     "promised": 12.5,
+     "short": 6
     },
     "oil": {
      "name": "Oil",
@@ -13176,7 +13200,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v906"
+   "v": "v907"
   }
  }
 }
