@@ -1,5 +1,14 @@
 [
  {
+  "v": "v895",
+  "d": "27 Sep 2026",
+  "t": "A DELIVERY SET BACK TO NOTHING",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> The desk set s207, CE5-SA's order of 26 Sep for 2 units at RM210, to 0 units delivered, recorded 27 Sep. The drafter described it as moving no stock; the fold instead rolls 1 unit back to the shelf, the difference the correction states. No cash moves, and RM210 stays outstanding against CE5-SA with nothing paid.</p>",
+   "<p><b>A TRAIL THAT NO LONGER ADDS UP.</b> s207 carries 3 steps: a 1 unit fulfilment on 26 Sep and two corrections on 27 Sep. Setting the delivered figure directly does not rewrite them, so the correction is recorded beside the trail saying so. The inventory takes back 1 unit of salt from CE5-SA; no lot landed, so the cost basis holds at RM56 a unit.</p>"
+  ]
+ },
+ {
   "v": "v894",
   "d": "27 Sep 2026",
   "t": "A PENDING SALE ABOVE THE PARTY'S OWN RECORD",
