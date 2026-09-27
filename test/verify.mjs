@@ -623,6 +623,55 @@ await (async () => {
   ok(againIfLapsed(run) === lapsedRow && run.calls() === 2, "…and only once: a login still lapsed comes back as it is");
 })();
 
+/* ---- 2d. A failed wrangler read is not an absence (27 Sep 2026) ------------------ */
+section("Cloudflare route: a failed wrangler read is never read as absent");
+await (async () => {
+  /* Injected runners, never the network. The words are wrangler 4.136's own, read on the laptop on
+     27 Sep 2026: a KV key that is not there is the API's 404, and a dead connection is "fetch failed". */
+  const { wrGet, seedRefusal, vaultEncrypt } = await import("../tools/seed-vault.mjs");
+  const { hasSecret } = await import("../tools/cloudflare.mjs");
+  const said = (words) => Object.assign(new Error("Command failed: npx wrangler kv key get vault"),
+    { status: 1, stdout: "\n", stderr: "X [ERROR] " + words + "\n" });
+  const NOT_THERE = said("Failed to fetch https://api.cloudflare.com/client/v4/accounts/0/storage/kv/namespaces/0/values/vault - 404: Not Found");
+  const DEAD = said("fetch failed");
+  const LAPSED = said("In a non-interactive environment, it's necessary to set a CLOUDFLARE_API_TOKEN environment variable for wrangler to work.");
+
+  let seen = null;
+  try { wrGet((cmd, args, opts) => { seen = { cmd, args, opts }; return "{}"; }); } catch (e) { seen = null; }
+  ok(seen && seen.cmd === "npx" && seen.args.join(" ") === "wrangler kv key get vault --binding SALT_QUEUE --remote"
+    && seen.opts.cwd === REPO && seen.opts.shell === (process.platform === "win32") && seen.opts.stdio[2] === "pipe",
+    "seed-vault reads the live vault the way it writes it: from the repo, through a shell on Windows, where npx alone throws ENOENT, and stderr kept for wrangler's words");
+  let n = 0, back;
+  try { back = wrGet(() => { if (n++ === 0) throw LAPSED; return "{}"; }); } catch (e) { back = e; }
+  ok(back === "{}" && n === 2, "…and a read whose login lapsed is run once more");
+
+  const pass = "correct horse", map = { A26: "Zorvek (Talmira)" };
+  const verdict = async (read, m = map) => { try { return await seedRefusal(pass, m, read); } catch (e) { return e; } };
+  ok(await verdict(() => { throw NOT_THERE; }) === null, "a vault key that is not there, wrangler's 404, lets the seed go on: there is nothing to drop");
+  const stop = await verdict(() => { throw DEAD; });
+  ok(Array.isArray(stop) && /^STOPPED/.test(stop[0]) && stop.includes("  wrangler said: fetch failed"),
+    "any other failed read stops the seed in wrangler's own words, where it used to pass for no vault and push over every name");
+  const live = JSON.stringify({ updated: "t", vault: await vaultEncrypt(pass, { ...map, G01: "Quellin (Ul Brissa)" }), ids: {} });
+  const refused = await verdict(() => live);
+  ok(Array.isArray(refused) && refused[0] === "REFUSED: the vault holds 1 name(s) this directory does not: G01"
+    && await verdict(() => live, { ...map, G01: "Quellin (Ul Brissa)" }) === null,
+    "…and a vault that reads is still checked: a code it holds and the directory lacks is refused, and none lacking goes on");
+
+  /* push-key, vapid and stmt-setup mint and put a key when the list does not name theirs */
+  const list = { status: 0, stdout: "[\n  {\n    \"name\": \"VAPID_PRIVATE_JWK\",\n    \"type\": \"secret_text\"\n  }\n]\n", stderr: "" };
+  const answer = (name, r) => { try { return hasSecret(name, () => r); } catch (e) { return e; } };
+  const failed = answer("VAPID_PRIVATE_JWK", { status: 1, stdout: "\n", stderr: "X [ERROR] fetch failed\n" });
+  ok(answer("VAPID_PRIVATE_JWK", list) === true && answer("SALT_PUSH_KEY", list) === false
+    && failed instanceof Error && failed.message === "fetch failed",
+    "a secret list answers set or not set only when it came back; a failed one throws wrangler's words, where it used to read as not set and a new key was minted");
+  /* the three cannot run here (they write live secrets), so the census holds each to the helper */
+  const src = (f) => readFileSync(join(REPO, "tools", f), "utf8");
+  const lists = readdirSync(join(REPO, "tools")).filter((f) => f.endsWith(".mjs") && src(f).includes("\"secret\", \"list\""));
+  const bare = lists.filter((f) => src(f).split("\"secret\", \"list\"").length
+    !== src(f).split(/hasSecret\("\w+", \(\) => spawnSync\("npx", \["wrangler", "secret", "list"/).length);
+  ok(lists.length >= 3 && !bare.length, "every tool that lists secrets asks hasSecret (" + lists.join(", ") + "; reading the list itself: " + (bare.join(", ") || "none") + ")");
+})();
+
 /* ---- 3. Worker: access gate + routing ------------------------------------------ */
 section("Worker — access gate and routing");
 await (async () => {

@@ -13,7 +13,7 @@
  *   node tools/vapid.mjs            generate, store the secret, print the public key
  *   node tools/vapid.mjs --force    do it again anyway, invalidating every subscription
  */
-import { againIfLapsed } from "./cloudflare.mjs";
+import { hasSecret } from "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 
@@ -21,8 +21,16 @@ const FORCE = process.argv.includes("--force");
 const b64url = (buf) => Buffer.from(buf).toString("base64")
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-const existing = againIfLapsed(() => spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" }));
-if (!FORCE && /VAPID_PRIVATE_JWK/.test(existing.stdout || "")) {
+/* a list that failed says nothing about the key: stop, in wrangler's words (27 Sep 2026) */
+let existing;
+try { existing = hasSecret("VAPID_PRIVATE_JWK", () => spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" })); }
+catch (e) {
+  console.log("  STOPPED: wrangler could not list the Worker's secrets, so VAPID_PRIVATE_JWK may be set already,");
+  console.log("  and a new pair would silence every phone subscribed. Nothing was generated.");
+  console.log("  wrangler said: " + e.message);
+  process.exit(1);
+}
+if (!FORCE && existing) {
   console.log("  VAPID_PRIVATE_JWK is already set.");
   console.log("  Generating a new pair would silence every phone already subscribed, because");
   console.log("  each subscription is bound to the public key it was created with.");

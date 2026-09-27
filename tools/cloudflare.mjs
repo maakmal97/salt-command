@@ -36,3 +36,15 @@ export function againIfLapsed(run) {
   try { r = run(); } catch (e) { if (!lapsed(e)) throw e; return run(); }
   return r && r.status && lapsed(r) ? run() : r;
 }
+
+/* A LIST THAT FAILED IS NOT A LIST WITHOUT THE SECRET (27 Sep 2026). push-key, vapid and
+   stmt-setup mint and put a new secret when `wrangler secret list` does not name theirs, and a
+   list that failed named nothing, so they went on: for VAPID the new pair silences every phone
+   subscribed. The answer comes only from a list that came back; any other ending throws, in
+   wrangler's own words. run is the spawnSync call, tried once more if the login lapsed. */
+export function hasSecret(name, run) {
+  const r = againIfLapsed(run);
+  if (r && r.status === 0) return String(r.stdout || "").includes(name);
+  const why = (r && r.error && r.error.message) || "wrangler secret list exited " + (r && r.status);
+  throw new Error(wranglerSaid({ ...r, message: why }));
+}

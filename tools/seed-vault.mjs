@@ -75,6 +75,45 @@ function wrPut(jsonPath) {
   return againIfLapsed(() => execFileSync("npx", ["wrangler", "kv", "key", "put", VKEY, "--path", jsonPath, "--binding", BINDING, "--remote"],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
 }
+/* THE READ TAKES THE PUT'S ROAD (27 Sep 2026): from the repo, through a shell on Windows, stderr
+   kept, a lapsed login tried once more. Without the shell execFileSync("npx") throws ENOENT on the
+   laptop, so the read failed there every time, the failure passed for "no vault", and the guard
+   in seedRefusal never ran. exec is the suite's way in. */
+export function wrGet(exec = execFileSync) {
+  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "get", VKEY, "--binding", BINDING, "--remote"],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
+}
+
+/* A SEED REPLACES THE WHOLE VAULT, so it must not run over names it has never seen (19 Sep 2026).
+   Add ID and Amend ID both file names into the vault FROM THE PHONE, and the laptop's directory is
+   behind it until pull-vault.mjs runs. The Names rule has said to pull first since v528 and nothing
+   enforced it, so a seed could silently drop every name the phone had filed since the last pull.
+   It happened twice on 19 Sep. This reads the live vault and refuses while it holds a code the
+   directory lacks; --force is for the case where the vault is the thing that is wrong.
+   A READ THAT FAILED IS NOT AN EMPTY VAULT (27 Sep 2026). Only wrangler's 404, the key not there,
+   goes on; any other failure stops the seed in wrangler's words. Answers the lines to refuse with,
+   or null to go on; read is the suite's way in. */
+export async function seedRefusal(pass, map, read = wrGet) {
+  let cloud;
+  try { cloud = JSON.parse(read()); } catch (e) {
+    if (/ - 404:/.test(wranglerSaid(e))) return null;
+    return ["STOPPED: wrangler could not read the live vault, and a seed replaces the whole of it. Nothing was pushed.",
+      "  wrangler said: " + wranglerSaid(e),
+      "  Timed out: run it again. If the vault is the thing that is wrong:  node tools/seed-vault.mjs --force"];
+  }
+  if (!cloud || !cloud.vault) return null;
+  let there;
+  try { there = await vaultDecrypt(pass, cloud.vault); } catch (e) {
+    return ["The vault is there but this passphrase did not open it. Nothing was pushed.",
+      "  A seed replaces the whole vault, so it will not run blind over names it cannot read."];
+  }
+  const missing = Object.keys(there).filter((c) => !(c in map));
+  if (!missing.length) return null;
+  return [`REFUSED: the vault holds ${missing.length} name(s) this directory does not: ${missing.join(", ")}`,
+    "  A seed replaces the whole vault, so pushing now would drop them.",
+    "  Pull them down first:  node tools/pull-vault.mjs",
+    "  Or, if the vault is the thing that is wrong:  node tools/seed-vault.mjs --force"];
+}
 
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
    shell history, the screen or a transcript; the string lives only in this process. Returns
@@ -126,32 +165,9 @@ async function main() {
   const named = Object.keys(map).length;
   if (!named) { console.error("No names found in salt_bio.json; nothing to seed."); process.exit(1); }
 
-  /* A SEED REPLACES THE WHOLE VAULT, so it must not run over names it has never seen (19 Sep 2026).
-     Add ID and Amend ID both file names into the vault FROM THE PHONE, and the laptop's directory is
-     behind it until pull-vault.mjs runs. The Names rule has said to pull first since v528 and nothing
-     enforced it, so a seed could silently drop every name the phone had filed since the last pull.
-     It happened twice on 19 Sep. This reads the live vault and refuses while it holds a code the
-     directory lacks; --force is for the case where the vault is the thing that is wrong. */
   if (!process.argv.includes("--force")) {
-    let cloud = null;
-    try { cloud = JSON.parse(execFileSync("npx", ["wrangler", "kv", "key", "get", VKEY, "--binding", BINDING, "--remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })); } catch (e) { cloud = null; }
-    if (cloud && cloud.vault) {
-      let there = {};
-      try { there = await vaultDecrypt(pass, cloud.vault); } catch (e) { there = null; }
-      if (there === null) {
-        console.error("The vault is there but this passphrase did not open it. Nothing was pushed.");
-        console.error("  A seed replaces the whole vault, so it will not run blind over names it cannot read.");
-        process.exit(2);
-      }
-      const missing = Object.keys(there).filter((c) => !(c in map));
-      if (missing.length) {
-        console.error(`REFUSED: the vault holds ${missing.length} name(s) this directory does not: ${missing.join(", ")}`);
-        console.error("  A seed replaces the whole vault, so pushing now would drop them.");
-        console.error("  Pull them down first:  node tools/pull-vault.mjs");
-        console.error("  Or, if the vault is the thing that is wrong:  node tools/seed-vault.mjs --force");
-        process.exit(2);
-      }
-    }
+    const refused = await seedRefusal(pass, map);
+    if (refused) { for (const l of refused) console.error(l); process.exit(2); }
   }
 
   const envelope = { updated: new Date().toISOString(), vault: await vaultEncrypt(pass, map), ids };

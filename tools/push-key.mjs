@@ -14,14 +14,21 @@
  *   node tools/push-key.mjs             mint and store in both places
  *   node tools/push-key.mjs --force     replace an existing one
  */
-import { againIfLapsed } from "./cloudflare.mjs";
+import { hasSecret } from "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 
 const FORCE = process.argv.includes("--force");
 
-const have = againIfLapsed(() => spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" }));
-if (!FORCE && /SALT_PUSH_KEY/.test(have.stdout || "")) {
+/* a list that failed says nothing about the key: stop, in wrangler's words (27 Sep 2026) */
+let have;
+try { have = hasSecret("SALT_PUSH_KEY", () => spawnSync("npx", ["wrangler", "secret", "list"], { shell: true, encoding: "utf8" })); }
+catch (e) {
+  console.log("  STOPPED: wrangler could not list the Worker's secrets, so SALT_PUSH_KEY may be set already. Nothing was minted.");
+  console.log("  wrangler said: " + e.message);
+  process.exit(1);
+}
+if (!FORCE && have) {
   console.log("  SALT_PUSH_KEY already exists on the Worker. Pass --force to replace it,");
   console.log("  remembering that CI keeps the old value until it is updated too.");
   process.exit(1);

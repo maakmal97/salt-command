@@ -18,7 +18,7 @@
  *   node tools/stmt-setup.mjs            both secrets, then the public key into the config
  *   node tools/stmt-setup.mjs --force    re-mint the push pair as well, silencing every phone
  */
-import { againIfLapsed } from "./cloudflare.mjs";
+import { hasSecret } from "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -47,9 +47,16 @@ console.log("Setting the same STMT_DESK_KEY on the statements site ...");
 if (!(await put("STMT_DESK_KEY", deskKey, STMT_CFG))) { console.log("  FAILED on the site. The desk holds a key the site does not: run this again."); process.exit(1); }
 console.log("  ok    the desk and the site share a key, and it was never printed");
 
-/* 2. the site's push pair */
-const listed = againIfLapsed(() => spawnSync("npx", ["wrangler", "secret", "list", "-c", STMT_CFG], { cwd: REPO, shell: true, encoding: "utf8" }));
-if (!FORCE && /STMT_VAPID_PRIVATE_JWK/.test(listed.stdout || "")) {
+/* 2. the site's push pair; a list that failed says nothing about it: stop, in wrangler's words (27 Sep 2026) */
+let listed;
+try { listed = hasSecret("STMT_VAPID_PRIVATE_JWK", () => spawnSync("npx", ["wrangler", "secret", "list", "-c", STMT_CFG], { cwd: REPO, shell: true, encoding: "utf8" })); }
+catch (e) {
+  console.log("\n  STOPPED: wrangler could not list the site's secrets, so it may hold a push key already. The desk key");
+  console.log("  is set on both; the push pair is left alone.");
+  console.log("  wrangler said: " + e.message);
+  process.exit(1);
+}
+if (!FORCE && listed) {
   console.log("\n  The site already holds a push key. A new pair would silence every customer already");
   console.log("  subscribed, so it is left alone. Pass --force if that is genuinely what you want.");
   process.exit(0);
