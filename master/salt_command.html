@@ -8412,7 +8412,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v890","d":"27 Sep 2026","t":"THE REWARD COUNTS WHAT WAS PAID FOR, AND R3 IS MARGIN BROUGHT IN","n":["<p><b>A REBATE ROW NOW EARNS ON WHAT WAS PAID FOR.</b> His approval of 27 Sep 2026. rewardMargin skipped every row the reward had touched, so where the reward settled one unit and the rest was paid, the paid units earned nothing. It now counts the goods the reward did not settle, less the units it did not take at the row's own cost: s068 and s196 add RM 118 to CS6-PER, and s025 RM 17 to CS6-BS. Through that introduction CJ4-OKR reaches a sixth unit, held while departed. No price moves.</p>","<p><b>MARGIN BROUGHT IN REPLACES BROUGHT YOU.</b> The R3 figure on each associate's card and in the Overall row read the revenue of an introduced customer's first order. It now reads the margin the reward counts on every order of theirs, RM 6,697 against RM 3,860 on salt. The Refer ledger, the chart and the Counter keep first orders' revenue.</p>"]}];
+const evolution=[{"v":"v891","d":"27 Sep 2026","t":"A BOOK WITH NO COST READS AS NOT PRICED","n":["<p><b>SPARE'S PRICING PAGE SAYS IT IS NOT PRICED.</b> Measured on v890: with spare in view the board printed NaN% margin at every size and NaN% to NaN% and NaNx to NaNx under it, beside columns of RM 0 and a line saying every price cleared break-even. Spare has no lot and no quote, so the margin and the multiple divided by nothing. A book with no cost now reads as not priced in one line: the board waits for its first lot or a supplier's quote. The engine is untouched, no price moves, and every part of the other four books draws exactly what it drew.</p>","<p><b>THE SUITE READS EVERY PART OF EVERY BOOK.</b> Each book in turn, every part through the view he opens, is checked for NaN, undefined and Infinity in what a reader sees; red on v890 and on three planted faults before its green was trusted. The board check that expected a board for every book now expects one for every book with a cost, and its no-ladder half reads a book given a cost rather than going quiet.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8527,7 +8527,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 10:20 KL';
+const LAST_UPDATED='27 Sep 2026, 11:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20629,7 +20629,14 @@ async function pbSaveHtml(){const sh=await pbSheet();const m=document.getElement
 function pbWire(){const b=document.getElementById('pbPrint'),c=document.getElementById('pbCopy'),i=document.getElementById('pbImage'),h=document.getElementById('pbHtml'),d=document.getElementById('pbPdf');
   if(b)b.onclick=pbPrint;if(c)c.onclick=pbCopy;if(i)i.onclick=pbSaveImage;if(h)h.onclick=pbSaveHtml;if(d)d.onclick=pbSavePdf;if(cloudMode()&&saltWriteKey())pbUsers();}
 function tabPricing(){
-  const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
+  const c=pxCost();
+  /* 27 SEP 2026: A BOOK WITH NO COST IS NOT PRICED (rule 5), AND THE PART SAYS SO RATHER THAN DRAWING A BOARD OF NOTHING.
+     COGS is the stack's landed rate times the size, and spare opened with no lot and no quote, so every figure below came
+     out RM 0 and the ask's margin and multiple divided by a price and a COGS of nothing: "NaN% margin" at every size,
+     "NaN% to NaN%" under the board, and a green line saying every price cleared break-even. Nothing here measures anything
+     until the book has a cost, so none of it is drawn. The engine is untouched and no price moves. */
+  if(!(c.landed>0))return `<div class="card"><div class="insight salt-insight"><b>${esc((PRODUCTS[PROD]||{name:PROD}).name)} is not priced</b>: it has no cost on the book, so the board waits for its first lot or a supplier&rsquo;s quote.</div></div>`;
+  const sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
   /* v403: THE BOOK'S OWN QUOTE, FOUND BY THE CROSS-BOOK PROBE. The lever sentence read q
      above, which was pxQuoteRate() on the bare supplierQuote, so oil's lever compared its

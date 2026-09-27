@@ -2982,6 +2982,42 @@ await (async () => {
   try { w.close(); } catch (e) { }
 })();
 
+section("Every part of every book: no NaN, undefined or Infinity in the text (27 Sep 2026)");
+await (async () => {
+  /* MEASURED ON LIVE v890, 27 SEP 2026: with spare in view the Pricing board printed "NaN% margin" at every size and
+     "NaN% to NaN%" and "NaNx to NaNx" under it, fourteen strings. Spare has no cost, and the engine's margin and markup
+     divide by a price and a COGS of nothing. The sweeps above read one part, or the book the desk opens on, so a book
+     opened empty was never read. Every book in turn, set as the desk sets it (PROD, then recompute: perProduct draws
+     the book in view only), and every part of every view through switchTab, the road he takes. The text is what a
+     reader sees, fold contents included; script and style are not text. One assertion, and it counts what it read:
+     each part, on its own book, named by the part the view drew and holding text of its own (the view's pills above it
+     are text too, so a part that drew nothing read as drawn until this asked the part itself). */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
+  const parts = JSON.parse(w.eval("JSON.stringify(VIEWS.reduce(function(a,v){return a.concat([v.lead],v.parts);},[]))"));
+  const hits = [];
+  let read = 0;
+  for (const p of ids) {
+    w.eval(`PROD=${JSON.stringify(p)};recompute();`);
+    for (const k of parts) {
+      const r = JSON.parse(w.eval(`(function(){try{switchTab(${JSON.stringify(k)});var e=document.querySelector('.sec.on'),v=e&&e.querySelector('.vpart');`
+        + `if(!v||v.getAttribute('data-tab')!==${JSON.stringify(k)}||!v.textContent.trim()||PROD!==${JSON.stringify(p)})return JSON.stringify({miss:true});`
+        + `var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('script,style')).forEach(function(x){x.parentNode.removeChild(x);});`
+        + `return JSON.stringify({text:c.textContent});}catch(x){return JSON.stringify({threw:String(x&&x.message||x)});}})()`));
+      const t = String(r.text || "").replace(/\s+/g, " ");
+      if (r.miss || r.threw || !t.trim()) { hits.push(`${p}/${k}: ${r.threw ? "threw " + r.threw : "not drawn"}`); continue; }
+      read++;
+      const n = (t.match(/NaN|undefined|Infinity/g) || []).length;
+      if (n) hits.push(`${p}/${k}: ${n}, first "${t.match(/.{0,40}(?:NaN|undefined|Infinity).{0,20}/)[0]}"`);
+    }
+  }
+  ok(ids.length >= 2 && parts.length >= 10 && read === ids.length * parts.length && !hits.length,
+    `no part of any book renders NaN, undefined or Infinity (${read} of ${ids.length * parts.length} book parts read`
+    + `${hits.length ? "; " + hits.slice(0, 3).join(" | ") : ""})`);
+  try { w.close(); } catch (e) { }
+})();
+
 /* ---- 26. Orders and money: the basis moved under the figures (v385) ----------------
    v382 halved a trip to RM30 and moved its divisor from the latest lot to the average one,
    and took a delivery from RM50 to RM10. Nothing on this view holds a frozen number, so
@@ -3628,8 +3664,10 @@ await (async () => {
      every level carries its own now, so the count is three (size, COGS, break-even) plus the book's own levels,
      which is six for salt and two for oil, whose rule is a fixed price a size. The count is still asserted per
      book rather than as a range, so a column appearing or going missing fails here rather than on the phone. */
-  const lvlOf = JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse().map(function(p){setProdView(p);"
-    + "var g=fiveTiersNow();return g?Math.max.apply(null,g.map(function(x){return x.prices.length;})):1;}))"));
+  /* RESTATED 27 SEP 2026: A BOOK WITH NO COST DRAWS NO BOARD (rule 5), so it is not counted here, and a board drawn
+     for one is a count over and fails this line. */
+  const lvlOf = JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse().map(function(p){setProdView(p);if(!(pxCost().landed>0))return 0;"
+    + "var g=fiveTiersNow();return g?Math.max.apply(null,g.map(function(x){return x.prices.length;})):1;}).filter(function(n){return n>0;}))"));
   const wantCols = lvlOf.map((n) => 3 + n);
   ok(heads.length === wantCols.length && heads.every((h, i) => h.length === wantCols[i]),
     `each board carries a column a level (${heads.map((h) => h.length + " cols").join(", ")} against ${wantCols.join(", ")})`);
@@ -3638,10 +3676,19 @@ await (async () => {
   /* v780: a book with NO ladder carries the plain Ask column, which the engine keeps for exactly
      that case, so the rule is about boards that HAVE levels. Stated both ways so neither half can
      go quiet: a levelled board ends on the last level, a ladderless one ends on Ask. */
-  const levelled = heads.filter((h, i) => lvlOf[i] > 1), flat = heads.filter((h, i) => lvlOf[i] <= 1);
+  /* 27 SEP 2026: AND THE LADDERLESS HALF IS FORCED, because the one book with no ladder, spare, has no cost either and
+     now draws no board, which left this half reading nothing. A book with no ladder and a cost: the first with no
+     TIER_RULE, else the last with its rule lifted, given a cost through the stack's own override (pxOver.cost, which
+     boardHeadroom walks and nothing on screen sets) only if it has none; both put back, and salt's board redrawn. */
+  const forced = JSON.parse(w.eval("(function(){var p=PROD_IDS.filter(function(x){return !TIER_RULE[x];})[0]||PROD_IDS[PROD_IDS.length-1];"
+    + "var rule=TIER_RULE[p],cost=pxOver.cost;try{delete TIER_RULE[p];setProdView(p);if(!(pxCost().landed>0))pxOver.cost=10;switchTab('pricing');"
+    + "var t=[].filter.call(document.querySelectorAll('.sec.on table.pxboard'),function(x){return /^COGS/.test(x.rows[0].cells[1].textContent);})[0];"
+    + "return JSON.stringify(t?[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();}):null);}"
+    + "finally{if(rule)TIER_RULE[p]=rule;pxOver.cost=cost;setProdView(PROD_IDS[0]);switchTab('pricing');}})()"));
+  const levelled = heads.filter((h, i) => lvlOf[i] > 1), flat = heads.filter((h, i) => lvlOf[i] <= 1).concat(forced ? [forced] : []);
   ok(levelled.length > 0 && levelled.every((h) => h[h.length - 1].indexOf(lastLevel) === 0),
     `and each levelled board's LAST column is headed ${lastLevel}, the level a stranger is quoted (${levelled.map((h) => h[h.length - 1]).join(" / ")})`);
-  ok(flat.every((h) => /^Ask/.test(h[h.length - 1])),
+  ok(flat.length > 0 && flat.every((h) => /^Ask/.test(h[h.length - 1])),
     `and a book with no ladder ends on Ask instead (${flat.map((h) => h[h.length - 1]).join(" / ") || "none"})`);
   ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
   ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");

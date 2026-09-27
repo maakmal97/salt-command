@@ -1,5 +1,14 @@
 [
  {
+  "v": "v891",
+  "d": "27 Sep 2026",
+  "t": "A BOOK WITH NO COST READS AS NOT PRICED",
+  "n": [
+   "<p><b>SPARE'S PRICING PAGE SAYS IT IS NOT PRICED.</b> Measured on v890: with spare in view the board printed NaN% margin at every size and NaN% to NaN% and NaNx to NaNx under it, beside columns of RM 0 and a line saying every price cleared break-even. Spare has no lot and no quote, so the margin and the multiple divided by nothing. A book with no cost now reads as not priced in one line: the board waits for its first lot or a supplier's quote. The engine is untouched, no price moves, and every part of the other four books draws exactly what it drew.</p>",
+   "<p><b>THE SUITE READS EVERY PART OF EVERY BOOK.</b> Each book in turn, every part through the view he opens, is checked for NaN, undefined and Infinity in what a reader sees; red on v890 and on three planted faults before its green was trusted. The board check that expected a board for every book now expects one for every book with a cost, and its no-ladder half reads a book given a cost rather than going quiet.</p>"
+  ]
+ },
+ {
   "v": "v890",
   "d": "27 Sep 2026",
   "t": "THE REWARD COUNTS WHAT WAS PAID FOR, AND R3 IS MARGIN BROUGHT IN",
