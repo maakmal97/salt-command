@@ -1,0 +1,61 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-27T07:20:28.541Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CE4-AD",
+    "qty": 5,
+    "total": 470,
+    "cash": 0,
+    "delivery": 30,
+    "date": "2026-09-27",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260927071536-4auaew, acknowledged, to be delivered, delivery RM 30. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 5 unit of salt to CE4-AD for RM 470, with RM 30 of delivery beside it, RM 500 owed, RM 94/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 190 on the goods at 40.4%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-27 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CE4-AD typically pays about RM 83.5/unit for salt across 2 orders; this one is RM 94, 12.6% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-27T07:20:28.541Z",
+    "type": "SELL",
+    "party": "CE4-AD",
+    "qty": 5,
+    "total": 470,
+    "status": "Pending",
+    "raw": "SELL CE4-AD 5 salt RM 500, nothing paid, nothing moved (order 20260927071536-4auaew)",
+    "orderKey": "CE4-AD|2026-09-27|500",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE4-AD",
+     "newId": null,
+     "date": "2026-09-27",
+     "qty": 5,
+     "total": 470,
+     "delivery": 30,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260927071536-4auaew, acknowledged, to be delivered, delivery RM 30. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260927071536-4auaew"
+   },
+   "decidedAt": "2026-09-27T07:20:31.008Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
