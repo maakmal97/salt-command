@@ -8456,7 +8456,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v910","d":"28 Sep 2026","t":"ONE PAYMENT, BOOKED TWICE, NOW BOOKED ONCE","n":["<p><b>ONE CORRECTION FOLDED.</b> s210, CE5-SA's order of 27 Sep for 2 units salt at RM210, had its cash set from RM420 to RM210. The same RM210 was booked twice, once as a claim against the account at v902 and once as cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The row now reads paid in full, with nothing outstanding.</p>","<p><b>THE TRAIL NO LONGER ADDS UP, BY DESIGN.</b> The row's 4-step trail still shows two fulfilments of RM210 each. The correction sets the figure directly and does not rewrite them. As the drafter flagged, it is recorded beside the trail saying so. The inventory did not move: stock stays at 5.5 units, costed at RM56 a unit, and the counts of 27 Sep stand.</p>"]}];
+const evolution=[{"v":"v911","d":"28 Sep 2026","t":"ONLY THE AGREED FIGURES ARE STRUCK","n":["<p><b>A HANDOVER NO LONGER READS AS A REPLACED ORDER.</b> A collected site order's handover is a Correction of what moved, and the Order book struck its old figure beside the quantity, so E242, s210, read 0 unit struck beside its 2 units, as if it had been ordered at none. A correction of cash was drawn the same way beside the sum. On his word of 28 Sep 2026 only the agreed figures are struck: a quantity or a total that was replaced. What moved and what was paid are drawn by the figure's own state, grey, white or part.</p>","<p><b>NO PRICE OR FIGURE MOVES.</b> A reading on the Order book. <b>THE SUITE.</b> A new section draws a handover, a cash correction and a corrected size on the Ledger: the first two strike nothing, the third still strikes its old quantity and sum; each of four mutations turns one red.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8571,7 +8571,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 06:50 KL';
+const LAST_UPDATED='28 Sep 2026, 06:57 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

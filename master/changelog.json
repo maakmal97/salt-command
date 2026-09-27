@@ -1,5 +1,14 @@
 [
  {
+  "v": "v911",
+  "d": "28 Sep 2026",
+  "t": "ONLY THE AGREED FIGURES ARE STRUCK",
+  "n": [
+   "<p><b>A HANDOVER NO LONGER READS AS A REPLACED ORDER.</b> A collected site order's handover is a Correction of what moved, and the Order book struck its old figure beside the quantity, so E242, s210, read 0 unit struck beside its 2 units, as if it had been ordered at none. A correction of cash was drawn the same way beside the sum. On his word of 28 Sep 2026 only the agreed figures are struck: a quantity or a total that was replaced. What moved and what was paid are drawn by the figure's own state, grey, white or part.</p>",
+   "<p><b>NO PRICE OR FIGURE MOVES.</b> A reading on the Order book. <b>THE SUITE.</b> A new section draws a handover, a cash correction and a corrected size on the Ledger: the first two strike nothing, the third still strikes its old quantity and sum; each of four mutations turns one red.</p>"
+  ]
+ },
+ {
   "v": "v910",
   "d": "28 Sep 2026",
   "t": "ONE PAYMENT, BOOKED TWICE, NOW BOOKED ONCE",
