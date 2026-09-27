@@ -3,8 +3,7 @@
 Root `CLAUDE.md` governs voice, verification and precedence. Mechanism: `docs/DESK.md`; statements
 site `docs/STATEMENTS.md`; products `docs/PRODUCTS.md`; design `docs/DESIGN.md`; the fold
 `docs/CLOUD_FOLD.md`; landing, the suite and instrument traps `docs/WORKING.md`; superseded
-reasoning `docs/NOTES.md`. The dated record is `master/changelog.json`, never here. British
-English, no flourish, and never the word the suite bans (write "costly" or the figure), in files,
+reasoning `docs/NOTES.md`. The dated record is `master/changelog.json`, never here. No flourish, and never the word the suite bans (write "costly" or the figure), in files,
 code and copy.
 **THE HARD RULE NUMBERS ARE LOAD BEARING.** Rules 1 to 8 are cited by number from code, the suite
 and the `update-names-id` skill. Reorganise within a rule; grep `rule [0-9]` before touching the list.
