@@ -26,7 +26,7 @@
  *   node tools/suite-split.mjs --jobs 12
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
  */
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -103,6 +103,29 @@ export function plan(text, { jobs, past = {}, costs = {} }) {
   return { ...suite, serial, cost, shards: pack(units, jobs, cost) };
 }
 
+/* ONE SHARD, THE ONE WAY A SECTION IS RUN OUT OF verify.mjs (27 Sep 2026). The prelude, the blocks in the suite's order and
+   the footer go to test/.shard-<name>.mjs beside verify.mjs, so its relative imports and REPO resolve, and run in a process of
+   their own with SUITE_SHARD set; every line of output but the totals goes to `line`, the file is deleted when the process
+   closes, and the promise holds the exit code and the totals (null if it never reached the footer). tools/section.mjs runs
+   one section through it, so a section alone runs exactly as it runs here; a shard file on disk is a run live in this checkout. */
+export const shardFile = (name) => join(REPO, "test", `.shard-${name}.mjs`);
+export const shardsOnDisk = () => readdirSync(join(REPO, "test")).filter((f) => /^\.shard-.+\.mjs$/.test(f));
+export function runShard(suite, name, blocks, line = () => {}, env = {}) {
+  const file = shardFile(name);
+  writeFileSync(file, [suite.prelude, ...[...blocks].sort((a, b) => a.k - b.k).map((b) => b.text), suite.footer].join("\n"));
+  return new Promise((done) => {
+    const p = spawn(process.execPath, ["--max-old-space-size=4096", file], { cwd: REPO, env: { ...process.env, ...env, SUITE_SHARD: name } });
+    let buf = "", res = null;
+    const each = (l) => {
+      const m = l.match(/^(\d+) passed, (\d+) failed, across (\d+) sections$/);
+      if (m) res = { pass: +m[1], fail: +m[2], sections: +m[3] }; else line(l);
+    };
+    const eat = (d) => { buf += d; let i; while ((i = buf.indexOf("\n")) >= 0) { each(buf.slice(0, i).replace(/\r$/, "")); buf = buf.slice(i + 1); } };
+    p.stdout.on("data", eat); p.stderr.on("data", eat);
+    p.on("close", (code) => { if (buf) each(buf); rmSync(file, { force: true }); done({ code, res }); });
+  });
+}
+
 /* shards: --jobs, else half the cores, at most 10; never more than the cores less one, never fewer than two */
 export function jobsFor(argv, cores) {
   const ji = argv.indexOf("--jobs");
@@ -144,22 +167,16 @@ if (isMain) {
     + ` ${shards.map((s) => (s.load / 1000).toFixed(0)).join(", ")} s estimated`);
 
   const times = {};
-  const run = (name, bl) => new Promise((done) => {
-    const file = join(REPO, "test", `.shard-${name}.mjs`);
-    writeFileSync(file, [prelude, ...bl.sort((a, b) => a.k - b.k).map((b) => b.text), footer].join("\n"));
-    const p = spawn(process.execPath, ["--max-old-space-size=4096", file], { cwd: REPO, env: { ...process.env, SUITE_SHARD: name } });
-    let buf = "", last = null, lastAt = Date.now(), res = null;
+  const run = (name, bl) => {
+    let last = null, lastAt = Date.now();
     const titles = new Set(bl.map((b) => b.title));
     const line = (l) => {
       if (titles.has(l)) { const now = Date.now(); if (last) times[last] = now - lastAt; last = l; lastAt = now; return; }
-      const m = l.match(/^(\d+) passed, (\d+) failed, across (\d+) sections$/);
-      if (m) { res = { pass: +m[1], fail: +m[2], sections: +m[3] }; return; }
       if (/^\s*(FAIL|SKIP)/.test(l) || /Error|at file:/.test(l)) console.log(`  [${name}] ${last ? last.slice(0, 50) + ": " : ""}${l.trim()}`);
     };
-    const eat = (d) => { buf += d; let i; while ((i = buf.indexOf("\n")) >= 0) { line(buf.slice(0, i).replace(/\r$/, "")); buf = buf.slice(i + 1); } };
-    p.stdout.on("data", eat); p.stderr.on("data", eat);
-    p.on("close", (code) => { if (buf) line(buf); if (last) times[last] = Date.now() - lastAt; rmSync(file, { force: true }); done({ name, code, res, n: bl.length }); });
-  });
+    return runShard({ prelude, footer }, name, bl, line)
+      .then(({ code, res }) => { if (last) times[last] = Date.now() - lastAt; return { name, code, res, n: bl.length }; });
+  };
 
   const t0 = Date.now();
   const results = [];

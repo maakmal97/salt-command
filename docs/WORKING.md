@@ -90,21 +90,24 @@ measurement of the desk.
   forcing GC per section, never by reading `heapUsed` raw.
 - The suite rewrites `public/desk.html` and `public/rev.json` and drains the live KV: restore
   `public/` from HEAD afterwards.
-- **One section on its own**, for red proofs in seconds: a scratch script slices `test/verify.mjs`
-  from `section("<title>` to the next `section(`, rewrites `import("../` to the repo's file URL,
-  and runs it through `new AsyncFunction(ok, section, skipData, REPO, readFileSync, execFileSync,
-  spawnSync, createHash, dirname, join, resolve, block)`. The suite's helpers (`KV`, `assets`,
-  `req`, `mkEnv`) come from slicing `class KV {` to the end of the `const req =` line; import the two
-  Workers yourself; resolve `jsdom` through `createRequire(REPO + "/package.json")`. Restore an unset
-  variable with `delete`, never `= undefined`, which stores the string. A ReferenceError is the
-  runner's, not the code's. Run the full suite once before every push regardless.
+- **One section on its own**, for red proofs in seconds: `node tools/section.mjs "<title prefix>"`
+  runs the one section whose title starts so (none, or two, is refused) exactly as a shard of `npm
+  test` runs it, through `readSuite` and `runShard` in `tools/suite-split.mjs`, prints its non-ok
+  lines and exits with its status; `--master <file>` runs it on that master. Nothing is sliced by
+  hand. In a section, restore an unset variable with `delete`, never `= undefined`, which stores the
+  string. Run the full suite once before every push regardless.
 - **Mutations.** One mutation per run, but runs may overlap. Master mutations go to their own
   copies, run with `SALT_MASTER=<copy>`; a section that reads the master straight off disk will not
   see the copy. Tool-file mutations edit the shared checkout: one at a time, restored byte for byte
   in a `finally`, never while the full suite runs. Check that each mutation actually changed the
-  text.
+  text. `tools/section.mjs "<prefix>" --mutations <file.json>` (`[{name, file?, find, replace}]`,
+  no file meaning the master) does all of that and names the checks each one turns red; it exits 1
+  when a mutation turned none red, a crash included.
 - **Attributing a red suite after a cloud fold:** swap only the book. Run the section on today's
-  `ledger/book.json` and on `git show <last green>:ledger/book.json`, same code, same clock.
+  `ledger/book.json` and on `git show <last green>:ledger/book.json`, same code, same clock:
+  `--book <last green>` runs it on that commit's master, refused unless the BOOK block, `evolution`
+  and `LAST_UPDATED` are all that differ; a section reading `ledger/book.json` off disk is not
+  swapped.
 - **jsdom has no canvas**, so QR, PDF and JPEG output is proved in the Browser pane by reading the
   bytes back: QR modules read at their centres against `qrMatrix`; a PDF's `startxref` landing on
   `xref` and every table offset on its own `<n> 0 obj`; a JPEG's `FFD8` and `FFD9`. A screenshot

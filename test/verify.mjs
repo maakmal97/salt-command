@@ -10295,6 +10295,107 @@ await (async () => {
     "ci.yml and cloud-commit.yml each run the suite once, as three shards, and git does not ignore the cost file: " + JSON.stringify([runs("ci.yml"), runs("cloud-commit.yml"), ignored]));
 })();
 
+section("27 Sep 2026: tools/section.mjs runs one section as a shard does and names the checks each mutation turns red");
+await (async () => {
+  /* His instruction of 27 Sep 2026: one section on its own, and its checks proved red, with no upkeep. The tool reads the
+     sections through readSuite and runs one through runShard, the two things npm test itself stands on, so what is left to
+     drive here is its own: the needle, the pick, the verdict, the lines a fold writes (--book), the edit put back, the refusal
+     while a run is live, and two runs end to end on v532, whose check on a field no correction may set one master mutation
+     turns red. The tool is started with SUITE_SHARD and SALT_MASTER unset, so it must set both itself. */
+  const T = await import("../tools/section.mjs");
+  const S = await import("../tools/suite-split.mjs");
+  const { BEGIN, END } = await import("../tools/booksync.mjs");
+  const { spawn } = await import("node:child_process");
+  const dir = join(REPO, "test", "tmp", "section-tool");
+  mkdirSync(dir, { recursive: true });
+  const threw = (f) => { try { f(); return null; } catch (e) { return e.message; } };
+
+  /* the needle: exactly once, the replacement taken literally, and a change */
+  const n = (find, replace) => ({ name: "n", find, replace });
+  const once = T.mutate("a $& b", n("b", "$&c"));
+  const why = [threw(() => T.mutate("abc", n("x", "y"))), threw(() => T.mutate("aaa", n("aa", "b"))), threw(() => T.mutate("abc", n("b", "b"))), threw(() => T.mutate("abc", n("", "y")))];
+  ok(once === "a $& $&c" && /nowhere/.test(why[0]) && /more than once/.test(why[1]) && /changes nothing/.test(why[2]) && typeof why[3] === "string",
+    "a mutation puts its replacement in once and literally, and refuses a needle found nowhere, one found twice (overlapping counts), "
+    + "a replacement that changes nothing and an empty needle: " + JSON.stringify({ once, why }));
+
+  /* the pick: one section or a refusal */
+  const bl = [{ title: "v1: one" }, { title: "v1: two" }, { title: "v10: ten" }];
+  const pk = [threw(() => T.pick(bl, "v1: t")) || T.pick(bl, "v1: t").title, threw(() => T.pick(bl, "v1")), threw(() => T.pick(bl, "v2"))];
+  ok(pk[0] === "v1: two" && /^3 sections start/.test(pk[1]) && /^no section starts/.test(pk[2]),
+    "a prefix picks the one section whose title starts so, and two or more, or none, is refused: " + JSON.stringify(pk));
+
+  /* side by side only where suite-split would run two copies of the section apart: no fixed folder under test/tmp, no build
+     (each fixture is split in two, or suite-split would read this section as holding a folder, or as running the build) */
+  const wd = [T.widthFor({ title: "a", text: "x" }, 16), T.widthFor({ title: "b", text: 'join(REPO, "test", "tmp", ' + '"fixed")' }, 16),
+    T.widthFor({ title: "c", text: 'execFileSync("node", ["tools/' + 'build.mjs"])' }, 16), T.widthFor({ title: "d", text: "x" }, 1)];
+  ok(JSON.stringify(wd) === "[15,1,1,1]",
+    "runs of a section go side by side on the cores less one, and one at a time for a section holding a fixed test/tmp folder or running the build: " + JSON.stringify(wd));
+
+  /* the verdict: red is a check that failed, even in a run that then crashed; green reached the footer, none failed, exit 0 */
+  const R = (res, code, lines = []) => ({ res, code, lines });
+  const green = R({ pass: 4, fail: 0, sections: 1 }, 0), red = R({ pass: 3, fail: 1, sections: 1 }, 1, ["  FAIL: x"]);
+  const crash = R(null, 1, ["TypeError: y"]), failThenCrash = R(null, 1, ["  FAIL: x", "TypeError: y"]);
+  const states = [green, red, crash, failThenCrash, R({ pass: 4, fail: 0, sections: 1 }, 1), R({ pass: 0, fail: 0, sections: 0 }, 0)].map(T.stateOf);
+  const exits = [T.verdict(green, [red, failThenCrash]), T.verdict(green, [red, green]), T.verdict(green, [red, crash]), T.verdict(red, [red]),
+    T.verdict(crash, []), T.verdict(green, [])].map((v) => v.exit);
+  ok(JSON.stringify(states) === '["green","red","crashed","red","crashed","crashed"]' && JSON.stringify(exits) === "[0,1,1,1,1,0]",
+    "a run is red when a check failed, green only when it reached the footer with none failed and exited 0, else crashed; "
+    + "the tool passes only a green unmutated run with every mutation red: " + JSON.stringify({ states, exits }));
+
+  /* --book: a master whose book, evolution and stamp alone differ is taken, and any other hunk is named by its line */
+  const mk = (rows, v, at, code) => ["<script>", "const A=1;", BEGIN, "const sales=[", ...rows, "];", END, "function f(){return " + code + ";}",
+    "const B=2;", 'const evolution=[{"v":"' + v + '","n":["x"]}];', "const C=3;", "const LAST_UPDATED='" + at + "';", "</script>", ""].join("\n");
+  const was = mk(['  {"rid":"a"}'], "v1", "1 Jan", 1);
+  const nf = [T.notFold(was, mk(['  {"rid":"a"}', '  {"rid":"b"}'], "v2", "2 Jan", 1), dir), T.notFold(was, mk(['  {"rid":"a"}', '  {"rid":"b"}'], "v2", "2 Jan", 2), dir)];
+  ok(nf[0].length === 0 && nf[1].length === 1 && nf[1][0].text === "-function f(){return 1;}" && nf[1][0].was[0] === 8,
+    "--book takes a master that differs only in the BOOK block, evolution and LAST_UPDATED, and names the one other hunk by its line: " + JSON.stringify(nf));
+
+  /* the edit: in place for its run, then back byte for byte when the run throws, and no listener left behind */
+  const file = join(dir, "edit.bin"), bytes = Buffer.from([0xef, 0xbb, 0xbf, 0x61, 0x0d, 0x0a, 0xff, 0x62, 0x0a]);
+  writeFileSync(file, bytes);
+  const listeners = process.listenerCount("exit");
+  let inside = null, thrown = null;
+  try { await T.withEdit(file, "edited", async () => { inside = readFileSync(file, "utf8"); throw new Error("boom"); }); } catch (e) { thrown = e.message; }
+  ok(inside === "edited" && thrown === "boom" && readFileSync(file).equals(bytes) && process.listenerCount("exit") === listeners,
+    "a checkout edit is in place for its run and put back byte for byte when the run throws, a BOM, a CRLF and a byte no text "
+    + "reading keeps included, leaving no exit listener: " + JSON.stringify({ inside, thrown, back: readFileSync(file).equals(bytes), listeners: [listeners, process.listenerCount("exit")] }));
+
+  /* the tool itself, with SUITE_SHARD and SALT_MASTER unset */
+  const tool = (args) => new Promise((done) => {
+    const p = spawn(process.execPath, [join(REPO, "tools", "section.mjs"), ...args], { cwd: REPO, env: { ...process.env, SUITE_SHARD: undefined, SALT_MASTER: undefined } });
+    let out = "";
+    p.stdout.on("data", (d) => { out += d; }); p.stderr.on("data", (d) => { out += d; });
+    p.on("close", (code) => done({ code, out: out.replace(/\r/g, "") }));
+  });
+  const V532 = "v532: a re-keyed party reads back";
+  const target = join(dir, "target.txt");
+  writeFileSync(target, "needle\n");
+  writeFileSync(join(dir, "edit.json"), JSON.stringify([{ name: "edit", file: "test/tmp/section-tool/target.txt", find: "needle", replace: "moved" }]));
+  const planted = S.shardFile("probe-" + process.pid);
+  writeFileSync(planted, "");
+  let refused = { code: null, out: "" };
+  try { refused = await tool([V532, "--mutations", join(dir, "edit.json")]); } finally { rmSync(planted, { force: true }); }
+  ok(refused.code === 1 && refused.out.startsWith("refused: ") && refused.out.includes("test/.shard-probe-" + process.pid + ".mjs")
+      && !/passed/.test(refused.out) && readFileSync(target, "utf8") === "needle\n",
+    "a checkout mutation is refused before anything runs while a shard file says a run is live here, and its file is untouched: " + JSON.stringify(refused.out.trim().slice(0, 300)));
+
+  writeFileSync(join(dir, "red.json"), JSON.stringify([{ name: "unknown", find: "c.verdict='unknown'", replace: "c.verdict='unread'" }]));
+  writeFileSync(join(dir, "quiet.json"), JSON.stringify([{ name: "stamp", find: "const LAST_UPDATED='", replace: "const LAST_UPDATED_PROBE=1;const LAST_UPDATED='" }]));
+  const [r1, r2] = await Promise.all([tool([V532, "--mutations", join(dir, "red.json")]), tool([V532, "--mutations", join(dir, "quiet.json")])]);
+  const under = (out, name) => {
+    const ls = out.split("\n"), i = ls.findIndex((l) => /^(red|UNNOTICED|crashed) /.test(l) && l.includes(" " + name + ": "));
+    const fails = [];
+    for (let k = i + 1; i >= 0 && k < ls.length && ls[k].startsWith("  FAIL: "); k++) fails.push(ls[k].slice(8));
+    return i < 0 ? null : { state: ls[i].split(" ")[0], fails };
+  };
+  const u1 = under(r1.out, "unknown"), u2 = under(r2.out, "stamp");
+  ok(r1.code === 0 && /^unmutated: \d+ passed, 0 failed/m.test(r1.out) && !!u1 && u1.state === "red" && u1.fails.length === 1
+      && u1.fails[0].startsWith("a field no correction may set is still unknown"),
+    "end to end on v532: a master mutation of the unknown verdict, run through SALT_MASTER, turns that one named check red and the run exits 0: " + JSON.stringify(r1.out.trim().slice(0, 400)));
+  ok(r2.code === 1 && /^unmutated: \d+ passed, 0 failed/m.test(r2.out) && !!u2 && u2.state === "UNNOTICED" && u2.fails.length === 0,
+    "and a mutation no check notices is named and fails the run: " + JSON.stringify(r2.out.trim().slice(0, 400)));
+})();
+
 section("v524: roster-only parties on the phone");
 await (async () => {
   const { openMaster: omB } = await import("../tools/payload.mjs");
