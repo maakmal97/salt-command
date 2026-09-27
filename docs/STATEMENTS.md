@@ -372,6 +372,16 @@ form's product dropdown became a **segment of marks** (pressed ghosts in the ord
 an `<option>` carries text and no drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
+**A letter of his sits in each book's mark on Prices, and nowhere else** (F8, his answer of 28 Sep 2026, "letters only
+in Prices"). `PLET` in `stmt/page.js`: I in the cube, G in the droplet, E in the lozenge, V in the capsule, none its
+book's initial in English or Malay and together no product word. A letter is not a word and names nothing.
+`psymSvg` and the page's `psym` draw it only when asked (`lettered`, spliced to the page as `__PLET__`), and only the
+Prices tab asks, for the priced books and those not yet priced alike. Rewards, the order page, Home, the guest board and
+the statement keep their plain marks, and no mark changed size. Where a letter sits, `PLET_DRAW` gives it room: the
+cube's three inner edges stop at radius 5 and the capsule loses its seam, its letter a size down. The spare book's Ring
+stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
+style policy refuses one.
+
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
 sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
 then The Counter, then his own name for it). The icon on a customer's home screen has to say

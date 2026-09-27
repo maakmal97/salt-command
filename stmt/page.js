@@ -98,6 +98,8 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme
 select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
+/* F8: his letter in a Prices mark, the mono face at its middle weight, whatever the heading around it says */
+.psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
 h3.pmark{margin:0 0 4px;line-height:1}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
@@ -531,6 +533,24 @@ const RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
 export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", _: "Ring" };
+/* ---- F8, HIS ANSWER OF 28 SEP 2026 ("letters only in Prices"): A LETTER OF HIS IN EACH MARK, ON THE PRICES TAB ALONE ----
+   None is its product's initial, in English or in Malay, and together they spell no product word: a letter names nothing
+   and the mark is still the thing. Drawn only where Prices asks (`lettered`, on psymSvg and the page's psym): Rewards, the order
+   page, Home, the guest board and the statement keep their plain marks at their sizes. The spare book and any product
+   with no letter keep the Ring, bare, and the aria stays the shape. */
+export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V" };
+/* THE MARK GIVES ITS LETTER ROOM: the cube's three inner edges stop at radius 5 from its centre, and the capsule's seam,
+   which crosses its centre, gives way. The letter is the mono face (.plet) at size s in the 24 grid, its baseline y half
+   a capital (0.73 of the size) below where its capitals centre: the mark's centre, 12; the droplet's round part, 14.5;
+   and a size down in the capsule, which is shorter than a capital at 8. His drawing, shown before it shipped. */
+const PLET_DRAW = {
+  salt: { d: "M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M16.39 9.6 L20.6 7.3 M7.61 9.6 L3.4 7.3 M12 17 L12 21.4", y: 14.92, s: 8 },
+  oil: { d: PSYM.oil, y: 17.42, s: 8 },
+  candy: { d: PSYM.candy, y: 14.92, s: 8 },
+  rice: { d: "M8.2 8.2 L15.8 8.2 A3.8 3.8 0 0 1 15.8 15.8 L8.2 15.8 A3.8 3.8 0 0 1 8.2 8.2 Z", y: 14.37, s: 6.5 }
+};
+/* one letter's drawing, its letter beside it, for the page's script; null for a product with none */
+const pletOf = (k) => (Object.hasOwn(PLET, k) && Object.hasOwn(PLET_DRAW, k) ? Object.assign({ l: PLET[k] }, PLET_DRAW[k]) : null);
 /* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
    the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
 export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -538,11 +558,15 @@ export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
    Prices, the check before Place, and a guest's board. It replaces three wordings, one of which ("quoted when you order")
    was never true: the charge is set when he confirms the order, and only then. */
 export const DELIVERY = EN["deliv"];
-/** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. */
-export function psymSvg(product, px) {
-  const d = PSYM[String(product || "").toLowerCase()] || RING;
+/** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. `lettered` (F8) draws his
+ *  letter in it, which only Prices asks for; the page's psym is its twin. */
+export function psymSvg(product, px, lettered) {
+  const k = String(product || "").toLowerCase(), L = lettered ? pletOf(k) : null;
+  const d = L ? L.d : PSYM[k] || RING;
   return '<svg class="psym" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
-    + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>'
+    + (L ? '<text class="plet" x="12" y="' + L.y + '" font-size="' + L.s + '" text-anchor="middle" fill="currentColor">' + L.l + "</text>" : "")
+    + "</svg>";
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -1050,6 +1074,8 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       /* v695: the product marks, so the page can draw one wherever it would have written a name */
       .replace("__PSYM__", JSON.stringify(Object.assign({ _: RING }, PSYM)))
       .replace("__PSHAPE__", JSON.stringify(PSHAPE))
+      /* F8: each letter with its drawing, only for a product that has one */
+      .replace("__PLET__", () => JSON.stringify(Object.fromEntries(Object.keys(PLET).map((k) => [k, pletOf(k)]).filter((e) => e[1]))))
       /* S13 13.3: every word by key, both tables, and the functions that fill them, the page's own; the marks for a
          sentence the script words again. By function, so a $ in a word is kept as typed; "<" escaped, as the notice is */
       .replace("__WORDS__", () => JSON.stringify(WORDS).replace(/</g, "\\u003c"))
@@ -1286,19 +1312,28 @@ const CLIENT_JS = `
   function clean(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   /* v695: A PRODUCT IS A MARK, NOT A WORD (his instruction, 18 Sep 2026). Drawn, never written,
      and never labelled either: naming it in aria would put the word back for half the readers. */
-  var PSYM=__PSYM__, PSHAPE=__PSHAPE__;
+  var PSYM=__PSYM__, PSHAPE=__PSHAPE__, PLET=__PLET__;
   /* S13: a mark's name is the table's, by its shape (shape.<Shape>), so a screen reader says it in the reader's language */
   function pshape(product){ var n=PSHAPE[String(product||'').toLowerCase()]||PSHAPE._; return wordIn(LANG,'shape.'+n)||n; }
-  function psym(product,px){
-    var NS='http://www.w3.org/2000/svg';
+  /* F8: lettered draws his letter in the mark, which Prices alone asks for (psymSvg's twin); the aria stays the shape */
+  function psym(product,px,lettered){
+    var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase();
+    var L=lettered&&Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
     var svg=document.createElementNS(NS,'svg');
     svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('width',px); svg.setAttribute('height',px);
     svg.setAttribute('class','psym'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
     var d=document.createElementNS(NS,'path');
-    d.setAttribute('d',PSYM[String(product||'').toLowerCase()]||PSYM._);
+    d.setAttribute('d',L?L.d:(PSYM[k]||PSYM._));
     d.setAttribute('fill','none'); d.setAttribute('stroke','currentColor'); d.setAttribute('stroke-width','1.4');
     d.setAttribute('stroke-linejoin','round'); d.setAttribute('stroke-linecap','round');
-    svg.appendChild(d); return svg;
+    svg.appendChild(d);
+    if(L){
+      var t=document.createElementNS(NS,'text');
+      t.setAttribute('class','plet'); t.setAttribute('x','12'); t.setAttribute('y',String(L.y)); t.setAttribute('font-size',String(L.s));
+      t.setAttribute('text-anchor','middle'); t.setAttribute('fill','currentColor'); t.textContent=L.l;
+      svg.appendChild(t);
+    }
+    return svg;
   }
   /* a size and its mark, as one phrase: "2.5 unit" then the cube */
   function withMark(product,text,px){
@@ -2333,7 +2368,7 @@ const CLIENT_JS = `
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28,true));
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
@@ -2353,7 +2388,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
+      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28,true)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });

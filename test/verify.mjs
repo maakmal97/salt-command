@@ -22351,6 +22351,136 @@ await (async () => {
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
+section("F8: his letters are drawn in the Prices marks alone, none its book's initial, and the Ring carries none");
+await (async () => {
+  /* HIS ANSWER OF 28 SEP 2026 (Q8, "letters only in Prices"): a letter of his in each book's mark, I G E V, drawn on the
+     Prices tab and nowhere else. Rewards, the order page, Home, the guest board and the statement keep their plain marks at
+     their sizes, the spare book keeps the bare Ring, and the aria stays the shape. Read off psymSvg, then off the served
+     page driven as an associate drives it, then off the board and the live statements. */
+  const P8 = await import("../stmt/page.js");
+  const W8 = (await import("../stmt/worker.js")).default;
+  const { JSDOM: JD8 } = await import("jsdom");
+  const C8 = await import("../tools/stmt-crypto.mjs");
+  const OW8 = await import("../src/orders.js");
+  const BOOKS8 = ["salt", "oil", "candy", "rice"];
+
+  /* ---- the table ---- */
+  ok(JSON.stringify(P8.PLET) === JSON.stringify({ salt: "I", oil: "G", candy: "E", rice: "V" }),
+    "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule: " + JSON.stringify(P8.PLET));
+  /* each book's words, English and Malay, held to the lock's own list both ways: a word the list gains and no book here
+     owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
+  const OWN8 = { salt: ["salt", "garam"], oil: ["oil", "minyak"], candy: ["candy", "gula-gula", "gula"], rice: ["rice", "beras"], spare: ["spare"] };
+  const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
+  ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
+    && Object.keys(P8.PLET).every((k) => OWN8[k] && /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k]))
+    && !OW8.PRODUCT_WORDS.some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
+    "each is one capital, none is its book's initial in English or in Malay, and together they spell no product word: " + letters8);
+
+  /* ---- psymSvg, the server's twin ---- */
+  const lets8 = (svg) => [...svg.matchAll(/<text class="plet"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+  ok(BOOKS8.every((k) => { const s = P8.psymSvg(k, 28, true); return lets8(s).join() === P8.PLET[k] && (s.match(/<text/g) || []).length === 1
+      && /<text[^>]* fill="currentColor"/.test(s) && /aria-hidden="true"/.test(s) && /width="28" height="28"/.test(s); }),
+    "asked, psymSvg draws each book's letter in its mark once, in the ink the mark is drawn in, at the size asked and hidden from a reader");
+  ok([...Object.keys(P8.PSYM), "spare", "tin", ""].every((k) => [13, 18, 28, 30].every((px) => !/<text/.test(P8.psymSvg(k, px)))),
+    "not asked, no mark carries a letter, at any size");
+  ok(["spare", "tin", "", null].every((k) => P8.psymSvg(k, 28, true) === P8.psymSvg(k, 28) && /A7\.8 7\.8/.test(P8.psymSvg(k, 28, true))),
+    "the spare book and a product with no mark keep the bare Ring, even asked");
+  /* the mark gives its letter room only where a letter sits */
+  const dOf8 = (svg) => (/<path d="([^"]*)"/.exec(svg) || [])[1] || "";
+  const shell8 = (d) => d.slice(0, d.indexOf("Z") + 1);
+  const inner8 = (d) => [...d.slice(d.indexOf("Z") + 1).matchAll(/M\s*([\d.]+) ([\d.]+) L\s*([\d.]+) ([\d.]+)/g)]
+    .map((m) => ({ r: Math.hypot(+m[1] - 12, +m[2] - 12), to: m[3] + " " + m[4] }));
+  const cubeL8 = dOf8(P8.psymSvg("salt", 28, true)), iL8 = inner8(cubeL8), iP8 = inner8(P8.PSYM.salt);
+  ok(shell8(cubeL8) === shell8(P8.PSYM.salt) && iL8.length === 3 && iP8.length === 3
+    && iL8.every((e) => Math.abs(e.r - 5) < 0.05) && iP8.every((e) => e.r === 0) && iL8.map((e) => e.to).join() === iP8.map((e) => e.to).join()
+    && dOf8(P8.psymSvg("salt", 28)) === P8.PSYM.salt,
+    "the cube's three inner edges stop at radius 5 where the letter sits, reaching the same corners, and meet at the centre everywhere else: "
+    + JSON.stringify(iL8.map((e) => +e.r.toFixed(2))));
+  const capL8 = dOf8(P8.psymSvg("rice", 28, true));
+  ok(capL8 === shell8(P8.PSYM.rice) && /M12 8\.2 L12 15\.8/.test(P8.PSYM.rice) && dOf8(P8.psymSvg("rice", 28)) === P8.PSYM.rice
+    && dOf8(P8.psymSvg("oil", 28, true)) === P8.PSYM.oil && dOf8(P8.psymSvg("candy", 28, true)) === P8.PSYM.candy,
+    "the capsule gives its seam to the letter and keeps it everywhere else, and the droplet and the lozenge are drawn as they are");
+
+  /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card and an order ---- */
+  const u8 = "abcd-efgh", pass8 = "fixture-pass-f8", ck8 = await C8.contentKey("test-secret", u8), env8 = { STMT: new KV() };
+  const list8 = { at: "2026-09-28T00:00:00Z", week: { monday: "2026-09-28", label: "28 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }, { q: 2.5, price: 300 }] },
+               { product: "oil", name: "Oil", unit: "unit", rate: 40, orders: 2, basis: "yours", sizes: [{ q: 1, price: 44 }] },
+               { product: "candy", name: "Candy", unit: "unit", rate: 20, orders: 1, basis: "yours", sizes: [{ q: 1, price: 24 }] }],
+    soon: [{ product: "rice", name: "Rice" }, { product: "spare", name: "Spare" }] };
+  const card8 = { at: "2026-09-24T04:00:00Z", products: ["salt", "oil"].map((product) => ({ product, unit: "unit",
+    summary: { bought: 770, soldFor: 390, onward: 2, introduced: 240, referred: 1 }, reward: { earned: 1.6, taken: 1, left: 0.6, next: 0.42, held: false },
+    lines: [{ date: "2026-09-12", kind: "resale", qty: 2.5, rm: 270 }] })) };
+  const ord8 = { id: "20260928000000-f8f8", u: u8, product: "salt", qty: 2.5, mode: "collect", unit: 120, total: 300,
+    at: "2026-09-28T01:00:00Z", status: "acknowledged", paid: 0, moved: 0, payments: [], delivery: 0,
+    history: [{ at: "2026-09-28T01:00:00Z", status: "placed", by: "customer" }] };
+  const body8 = { ok: true, assoc: true, wrap: await C8.wrapKey(pass8, ck8), session: "fixture-session-token-f8-abcdefgh",
+    env: await C8.encryptWith(ck8, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C8.encryptWith(ck8, JSON.stringify(list8)), card: await C8.encryptWith(ck8, JSON.stringify(card8)) };
+  const dom8 = new JD8(await (await W8.fetch(new Request("https://k7m3p2.example/?u=" + u8), env8)).text(),
+    { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => {
+        const p = String(path), js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        if (p === "/open") return js(body8);
+        if (p === "/orders") return js({ ok: true, orders: [ord8] });
+        if (p === "/my/refs") return js({ ok: true, refs: [], max: 10 });
+        return js({ ok: false }, 404);
+      };
+    } });
+  const D8 = dom8.window.document;
+  const until8 = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return !!f(); };
+  try {
+    D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
+    D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
+    const up8 = await until8(() => D8.querySelectorAll("#pPrices h3.pmark").length === 5 && D8.querySelector("#pCard .pane svg.psym")
+      && D8.querySelector("#pOrder [data-row] svg.psym"));
+    const heads8 = [...D8.querySelectorAll("#pPrices h3.pmark")];
+    const got8 = heads8.map((h) => { const s = h.querySelector("svg.psym");
+      return [h.getAttribute("aria-label"), [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join(""), s.getAttribute("width"), s.getAttribute("aria-hidden")].join(":"); });
+    ok(up8 && JSON.stringify(got8) === JSON.stringify(["Cube:I:28:true", "Droplet:G:28:true", "Lozenge:E:28:true", "Capsule:V:28:true", "Ring::28:true"]),
+      "Prices draws each book's letter in its mark, priced and not yet priced alike, at the size it had and named by its shape, the Ring bare: " + JSON.stringify(got8));
+    /* the page's mark is psymSvg's, drawn twice in two languages: the same path, the same letter in the same place */
+    const look8 = (s) => { const p = s.querySelector("path"), t = s.querySelector("text");
+      return p.getAttribute("d") + "|" + (t ? ["class", "x", "y", "font-size", "text-anchor", "fill"].map((a) => t.getAttribute(a)).join(",") + "," + t.textContent : ""); };
+    const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.psymSvg(k, 28, true); return look8(h.querySelector("svg")); };
+    const pair8 = heads8.map((h, i) => [look8(h.querySelector("svg.psym")), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
+    ok(pair8.length === 5 && pair8.every(([a, b]) => a === b),
+      "and each is psymSvg's own drawing, path, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
+    /* nowhere else: Rewards, the order's row and its screen, the order sheet, Home */
+    D8.querySelector('button[data-t="order"]').click();
+    await until8(() => D8.getElementById("oNew"));
+    D8.getElementById("oNew").click();
+    await until8(() => D8.querySelectorAll("#osheet svg.psym").length >= 3);
+    const sheet8 = [D8.querySelectorAll("#osheet svg.psym").length, D8.querySelectorAll("#osheet text").length];
+    const rowMarks8 = D8.querySelectorAll("#pOrder [data-row] svg.psym").length;
+    D8.querySelector("#pOrder [data-row]").click();
+    await until8(() => D8.querySelector("#pOrder .oscreen svg.psym"));
+    const seen8 = { rewards: D8.querySelectorAll("#pCard svg.psym").length, row: rowMarks8, screen: D8.querySelectorAll("#pOrder .oscreen svg.psym").length,
+      sheet: sheet8[0], sheetLetters: sheet8[1], home: D8.querySelectorAll("#pHome svg.psym").length,
+      stray: [...D8.querySelectorAll("svg.psym text")].filter((t) => !t.closest("#pPrices")).map((t) => t.textContent) };
+    ok(seen8.rewards >= 2 && seen8.row >= 1 && seen8.screen >= 1 && seen8.sheet >= 3 && !seen8.sheetLetters && !seen8.stray.length,
+      "Rewards, the order's row and its screen, the order sheet and Home draw their marks bare, and no letter is drawn outside Prices: " + JSON.stringify(seen8));
+  } finally { try { dom8.window.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- the guest board and the statement ---- */
+  const board8 = P8.boardPage({ prices: { week: { label: "28 Sep 2026" },
+    products: BOOKS8.map((product) => ({ product, unit: "unit", tierName: "", sizes: [{ q: 1, price: 10 }] })) } }, "n8");
+  ok((board8.match(/class="psym"/g) || []).length === 4 && !/<text/.test(board8), "the guest board draws its four marks bare");
+  const MS8 = await import("../tools/make_statements.mjs");
+  const POS8 = (await import("../engine/position.mjs")).default;
+  const bk8 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  let docs8 = 0, marks8 = 0, texts8 = 0;
+  for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 12)) {
+    const d = MS8.liveStatement(p, new Date("2026-09-28T04:00:00Z"), "abcd-efgh");
+    if (!d) continue;
+    docs8++; marks8 += (d.body.match(/class="psym"/g) || []).length; texts8 += (d.body.match(/<text/g) || []).length;
+  }
+  ok(docs8 > 3 && marks8 > 0 && !texts8, "and the live statement draws its marks bare: " + JSON.stringify({ docs8, marks8, texts8 }));
+})();
 section("S8 8.2: the guest board ends with a next step, and every shut link answers one styled page");
 await (async () => {
   /* 24 SEP 2026, stage 8 of the Counter redesign. The board named no way to order, and a shut link answered the
