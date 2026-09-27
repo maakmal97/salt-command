@@ -1,19 +1,18 @@
 # Salt Command, on the phone
 
-Standing facts only; root `CLAUDE.md` governs voice, verification and precedence. A line stays
-only if a session goes wrong without it. Mechanism: `docs/DESK.md`; statements site
-`docs/STATEMENTS.md`; products `docs/PRODUCTS.md`; design `docs/DESIGN.md`; the fold
+Root `CLAUDE.md` governs voice, verification and precedence. Mechanism: `docs/DESK.md`; statements
+site `docs/STATEMENTS.md`; products `docs/PRODUCTS.md`; design `docs/DESIGN.md`; the fold
 `docs/CLOUD_FOLD.md`; landing, the suite and instrument traps `docs/WORKING.md`; superseded
-reasoning `docs/NOTES.md`. The dated record is `master/changelog.json`, never here; correct stale
-facts in place. British English, no em dashes, no flourish, and never the word the suite bans
-(write "costly" or the figure), in files, code and copy.
+reasoning `docs/NOTES.md`. The dated record is `master/changelog.json`, never here. British
+English, no flourish, and never the word the suite bans (write "costly" or the figure), in files,
+code and copy.
 **THE HARD RULE NUMBERS ARE LOAD BEARING.** Rules 1 to 8 are cited by number from code, the suite
 and the `update-names-id` skill. Reorganise within a rule; grep `rule [0-9]` before touching the list.
 
 The Salt Command desk as a cloud app: the ledger and the pricing engine on the go, a transaction
-addable from the phone. **This repo holds the master**, deployed as a Cloudflare Worker at
-`https://salt-command.qyts8mh72kyg.workers.dev`; `/desk` is the one surface, and "the dashboard"
-means `/desk` at desktop width. Public by his decision, no sign-in.
+addable from the phone. **This repo holds the master**, deployed as a Cloudflare Worker (URL in
+MEMORY.md); `/desk` is the one surface, and "the dashboard" means `/desk` at desktop width. Public
+by his decision, no sign-in.
 
 ## Hard rules
 
@@ -106,7 +105,7 @@ means `/desk` at desktop width. Public by his decision, no sign-in.
 
 ## The one surface
 
-**Retired:** the phone app `public/index.html`, `public/data.json` and the claude.ai mirror. The
+**Retired surfaces:** see MEMORY.md. The
 built desk is seven destinations (`VIEWS`): Today, Order book, Stock, Pricing, Network, Record,
 Enter. Old ids remain addresses (`/desk#book`, `/desk#network`). **The rail is two levels at
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
@@ -195,21 +194,18 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 - **A change to `cloud-commit.yml` never tests itself**: it is not on its own push paths. Dispatch
   a run by hand and read the step list, since a skipped step is green too. After any push read the
   run's annotation: a billing refusal looks like an ordinary red run.
-- **No clock.** `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S) is disabled: fire it
+- **No clock.** `Salt fold (manual backup)` is disabled (id in MEMORY.md): fire it
   by hand if the Fold step fails. The stage stands down while `master/_to_fold.json` is in HEAD,
   unless `fold.mjs --replays` says the batch is a replay.
 - **The laptop's queue takes the same road**: `node tools/drafts.mjs --from-queue`. A decided
   draft keeps its id for good; re-drafting an entry he later calls real, and folding from the
   laptop (approve last), are in `docs/CLOUD_FOLD.md`. A ledger row edit queues as a Correction.
-- Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`, `POST
-  /draft-now?dry=1`, `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never
-  the dry run) and `/accept|handed|cash|received|notfound|again` (the card's taps), and `/claims/<id>/preview|received|notfound`, all keyed. Nothing writes
-  to `entry`. **The `draft` table's CHECK lists every collection by name**: a collection the drafter
-  newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and as that
-  file alone (`wrangler d1 execute salt_ledger --remote --file=...`); re-running an older one drops
-  rows. Newest rebuild: `migrations/0010`; `0011` adds `preapproval`, applied alone the same way.
-  `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`: a rebuild drops them and
-  must create them again. The drafter reads its queue's ids by primary key, never the whole table.
+- Endpoints: see MEMORY.md. Nothing writes to `entry`. **The `draft` table's CHECK lists every
+  collection by name**: a collection the drafter newly returns needs a migration rebuilding it,
+  applied to the live D1 BEFORE the deploy and as that file alone (`wrangler d1 execute salt_ledger
+  --remote --file=...`); re-running an older one drops rows, and a rebuild drops the newest
+  migration's indexes, which must be created again (migrations to date: MEMORY.md). The drafter
+  reads its queue's ids by primary key, never the whole table.
 
 ## Sync and proof
 
@@ -258,7 +254,7 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
 
 ## Access, and why it is off; the write gate
 
-- **`REQUIRE_ACCESS` is `"0"` on his instruction and the Access application was removed.** Setting
+- **`REQUIRE_ACCESS` (current value in MEMORY.md).** Setting
   it to `"1"` without recreating the application locks him out. To restore: first the Access
   application (Self-hosted, Workers, `salt-command`, policy Allow for his two addresses), then the
   var, then deploy by hand. **This is the DESK; the statements site's Access is live** and gates
@@ -439,3 +435,6 @@ from the engine in an `openMaster` window, never by hand.
   read `docs/WORKING.md`.
 - **Run independent steps in parallel**: the suite in the background; master mutations at once on
   `SALT_MASTER` copies; tool-file mutations one at a time.
+
+Read @MEMORY.md beside this file (current facts) before the first action; correct it in place.
+History: master/changelog.json and git log.

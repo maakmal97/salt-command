@@ -15942,7 +15942,7 @@ await (async () => {
     while (j + 1 < lines.length && !/\];\s*$/.test(lines[j])) j++;
     return lines.slice(0, i).concat(lines.slice(j + 1));
   };
-  const files = ["CLAUDE.md", "master/salt_command.html", "public/desk.html", "test/verify.mjs"];
+  const files = ["CLAUDE.md", "MEMORY.md", "master/salt_command.html", "public/desk.html", "test/verify.mjs"];
   for (const [dir, ext] of [["engine", ".mjs"], ["src", ".js"], ["stmt", ".js"], ["tools", ".mjs"], ["docs", ".md"], ["design", ".css"]])
     for (const f of readdirSync(join(REPO, dir))) if (f.endsWith(ext)) files.push(dir + "/" + f);
   const hits = [];
