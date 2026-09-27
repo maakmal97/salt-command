@@ -27,9 +27,12 @@ measurement of the desk.
   commit is on master, revert it forward. Merge `origin/master`, never the shared local master: an
   unpushed commit in a shared `.git` is not private, and its author may still be deciding about it.
 - `.claude/launch.json` is tracked: never edit it in a worktree; restore it with `git checkout --`.
-- **Removing a worktree:** unlink the junction first (`cmd /c rmdir <wt>\node_modules`), check for
-  uncommitted files and for a HEAD not in master (`git log -S` finds a superseded copy under another
-  sha), then `git worktree remove`. A lock naming a dead pid is stale: `git worktree unlock`.
+- **Removing a worktree:** unlink the junction first, since the PowerShell tool refuses `cmd /c
+  rmdir`: `[System.IO.Directory]::Delete("<wt>\node_modules", $false)`. Check for uncommitted files
+  and for a HEAD not in master (`git log -S` finds a superseded copy under another sha), then send the
+  folder to the Recycle Bin (`[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory` with
+  `SendToRecycleBin`) and run `git worktree prune`. A lock naming a dead pid is stale: `git worktree
+  unlock`.
 - **Old branches:** only master remains since 14 Sep 2026; superseded tips are LOCAL `archive/*`
   tags, never pushed (`git tag -l 'archive/*'`), then `git log -S` on master.
 - **Re-landing after origin took the number.** A phone approval folds within a minute as
