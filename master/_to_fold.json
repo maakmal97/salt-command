@@ -1,0 +1,58 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-27T09:59:32.306Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CE5-SA",
+    "qty": 2,
+    "total": 210,
+    "cash": 0,
+    "date": "2026-09-27",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260927095911-gwepmw, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 2 unit of salt to CE5-SA for RM 210, RM 105/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 98 on the goods at 46.7%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-27 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-27T09:59:32.306Z",
+    "type": "SELL",
+    "party": "CE5-SA",
+    "qty": 2,
+    "total": 210,
+    "status": "Pending",
+    "raw": "SELL CE5-SA 2 salt RM 210, nothing paid, nothing moved (order 20260927095911-gwepmw)",
+    "orderKey": "CE5-SA|2026-09-27|210",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE5-SA",
+     "newId": null,
+     "date": "2026-09-27",
+     "qty": 2,
+     "total": 210,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260927095911-gwepmw, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260927095911-gwepmw"
+   },
+   "decidedAt": "2026-09-27T09:59:33.127Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
