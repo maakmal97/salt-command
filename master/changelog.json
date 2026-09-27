@@ -1,5 +1,14 @@
 [
  {
+  "v": "v899",
+  "d": "27 Sep 2026",
+  "t": "A CANCELLED ORDER COMES BACK ON THE SAME TERMS",
+  "n": [
+   "<p><b>ONE PENDING SALE FOLDED.</b> CE5-SA's order of 27 Sep for 2 units of salt at RM210, order 20260927095911-gwepmw, is appended to sales, preapproved by phone. It sits above the floor of RM125.65 and below the ask of RM270 for that size, and carries the inventory's own RM56 a unit. Nothing was paid and nothing was collected, so the row draws no stock and books no revenue until something moves.</p>",
+   "<p><b>A REPEAT OF A CANCELLED ORDER, ON A THIN SHELF.</b> The terms match s207 of 26 Sep, 2 units at RM210, which was withdrawn and cancelled on 27 Sep in v898. The dossier gives no reason for the return beyond the new order itself. The inventory is unchanged: stock stands at 1 unit against a reorder point of 28.73 units, counted 27 Sep, at a cost of RM56 a unit and a replacement cost of RM51. The order is for more than the 1 unit on the shelf.</p>"
+  ]
+ },
+ {
   "v": "v898",
   "d": "27 Sep 2026",
   "t": "A WITHDRAWN ORDER MOVES NOTHING",
