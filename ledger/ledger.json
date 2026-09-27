@@ -1,6 +1,6 @@
 {
- "v": "v899",
- "stamped": "27 Sep 2026, 18:01 KL",
+ "v": "v900",
+ "stamped": "27 Sep 2026, 18:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 1,
+  "STATED_STOCK": -1,
   "COUNT_ON": {
    "salt": "2026-09-27",
    "oil": "2026-09-27",
@@ -5584,9 +5584,29 @@
     "total": 210,
     "cash": 0,
     "date": "2026-09-27",
-    "deliveredQty": 0,
-    "note": "<b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
-    "rid": "s210"
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them. <b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
+    "rid": "s210",
+    "deliveredOn": "2026-09-27",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-09-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them."
+     }
+    ],
+    "cost": 112
    }
   ],
   "contacts": [
@@ -6325,9 +6345,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T09:59:32.306Z",
+  "QUEUE_COMMITTED": "2026-09-27T09:59:40.175Z",
   "PRICING": {
-   "takenAt": "2026-09-27T10:01:24.427Z",
+   "takenAt": "2026-09-27T10:03:20.181Z",
    "sizes": [
     0.5,
     1,
@@ -7114,16 +7134,16 @@
     },
     "CE5-SA": {
      "salt": {
-      "name": "one-off",
-      "orders": 1,
+      "name": "consistent mid",
+      "orders": 2,
       "tenureDays": 21,
-      "sinceLastDays": 21,
-      "perMonth": 1.01,
-      "smallShare": 1,
+      "sinceLastDays": 0,
+      "perMonth": 2.03,
+      "smallShare": 0.5,
       "bigShare": 0,
       "late": 0,
-      "frequent": false,
-      "small": true,
+      "frequent": true,
+      "small": false,
       "bigger": false,
       "loyal": false,
       "rare": false,
@@ -7382,40 +7402,40 @@
      "replCost": 51,
      "floors": {
       "1": {
-       "floor": 62.82
+       "floor": 62.35
       },
       "2": {
-       "floor": 125.65
+       "floor": 124.7
       },
       "3": {
-       "floor": 188.47
+       "floor": 187.06
       },
       "4": {
-       "floor": 251.29
+       "floor": 249.41
       },
       "5": {
-       "floor": 314.11
+       "floor": 311.76
       },
       "0.5": {
-       "floor": 31.41
+       "floor": 31.18
       },
       "1.5": {
-       "floor": 94.23
+       "floor": 93.53
       },
       "2.5": {
-       "floor": 157.06
+       "floor": 155.88
       },
       "3.5": {
-       "floor": 219.88
+       "floor": 218.23
       },
       "4.5": {
-       "floor": 282.7
+       "floor": 280.58
       },
       "6.25": {
-       "floor": 392.64
+       "floor": 389.7
       },
       "12.5": {
-       "floor": 785.28
+       "floor": 779.4
       }
      },
      "inputs": {
@@ -7490,9 +7510,9 @@
        "repl": 51,
        "freightRate": 1.3,
        "leak": {
-        "ratio": 0.2012,
+        "ratio": 0.1922,
         "leak": 8.65,
-        "sold": 43,
+        "sold": 45,
         "cycles": 3,
         "from": "2026-09-19",
         "to": "2026-09-27"
@@ -7509,15 +7529,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.328125
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08497621934160217,
        "avgDel": {
-        "n": 175,
-        "kg": 450.95,
-        "mean": 2.5769
+        "n": 176,
+        "kg": 452.95,
+        "mean": 2.5736
        }
       },
       "policy": {
@@ -12933,10 +12953,10 @@
      "cards": {}
     }
    },
-   "v": "v899"
+   "v": "v900"
   },
   "OPEN": {
-   "at": "2026-09-27T10:01:24.744Z",
+   "at": "2026-09-27T10:03:20.399Z",
    "count": 9,
    "byKey": {
     "CE4-AD|2026-09-27|500": {
@@ -12961,12 +12981,15 @@
      "q": 2,
      "t": 210,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 2,
+     "st": "dueMoney",
      "oweRM": 210,
-     "oweUnits": 2,
      "rid": "s210",
-     "key": "CE5-SA|2026-09-27|210"
+     "deliveredOn": "2026-09-27",
+     "handover": "collected",
+     "key": "CE5-SA|2026-09-27|210",
+     "age": 0,
+     "exp": 210
     },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
@@ -13085,13 +13108,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 1,
-     "free": -13.5,
+     "onHand": -1,
+     "free": -15.5,
      "owedOut": 14.5,
      "coverDays": 0,
      "rate": 6.25,
-     "owedToYou": 390,
-     "promised": 16.5,
+     "owedToYou": 600,
+     "promised": 14.5,
      "short": 15.5
     },
     "oil": {
@@ -13146,7 +13169,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v899"
+   "v": "v900"
   }
  }
 }
