@@ -1,5 +1,14 @@
 [
  {
+  "v": "v898",
+  "d": "27 Sep 2026",
+  "t": "A WITHDRAWN ORDER MOVES NOTHING",
+  "n": [
+   "<p><b>ONE CANCELLATION FOLDED.</b> CE5-SA's order s207 of 26 Sep, 2 units at RM210 with nothing paid, is withdrawn by the desk on 27 Sep and now counts nowhere. The master applies the amendment through ovAmend, so the row is not recomputed in this fold. The drafter raised no flag, and the row carries no cost. Its RM210 no longer stands as owed.</p>",
+   "<p><b>INVENTORY UNTOUCHED.</b> Earlier corrections had already taken s207's delivered quantity from 1 to 0, so the cancellation moves no stock. The position stays at 1 unit in stock against a ledger of 85.2, with stock cost RM56 and replacement cost RM51 a unit, and the reorder point at 29.3 units. Salt, oil, candy and rice were all counted on 27 Sep. No lot landed, so the cost basis holds.</p>"
+  ]
+ },
+ {
   "v": "v897",
   "d": "27 Sep 2026",
   "t": "CE4-AD PAYS S209 IN FULL, SALT STILL TO GO",

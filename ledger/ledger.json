@@ -1,6 +1,6 @@
 {
- "v": "v897",
- "stamped": "27 Sep 2026, 16:27 KL",
+ "v": "v898",
+ "stamped": "27 Sep 2026, 17:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5504,7 +5504,7 @@
     "cash": 0,
     "date": "2026-09-26",
     "deliveredQty": 0,
-    "note": "<b>CORRECTED 27 SEP: NOTHING NOW DELIVERED.</b> <b>CORRECTION ON S207: DELIVERED QUANTITY FROM 1 TO 0.</b> Recorded 27 Sep against CE5-SA's order of 26 Sep for 2 units at RM210, nothing paid; decided by the desk. The drafter read it as moving no stock, but the fold rolls 1 unit back to the shelf from CE5-SA, the difference the correction states. No cash moves and the correction carries no cost of its own. The dossier gives no floor or ask for this row. Party record: median RM110, range RM105 to RM110, RM210 outstanding, 1 unit on credit before, none defaulted. The drafter flagged a 3 step trail, a 1 unit fulfilment on 26 Sep and two corrections on 27 Sep, that will no longer add up; the correction is recorded beside it. RM210 and both units stay open. <b>CORRECTED 27 SEP: NOW 2 UNITS FOR RM210, NOTHING PAID.</b> <b>CORRECTION ON S207: QTY TO 2, TOTAL TO RM210.</b> Recorded 27 Sep against CE5-SA's order of 26 Sep, which read 1 unit for RM110; decided by the desk. It moves no cash and no stock: 1 unit has gone out, collected, and nothing is paid. The dossier gives no floor or ask for 2 units, so the rate is not tested here. Party record: median RM110, range RM110 to RM110, RM110 outstanding before this, none defaulted, 1 unit on credit before this; the dossier states no cap. The row carries RM56 a unit, the inventory's own. The drafter flagged an advance of 1 unit with RM105 unpaid; without a cap the figures do not answer it. The unpaid total and the undelivered unit stay open. <b>COLLECTED 27 SEP, 1 UNIT OUT, RM110 UNPAID.</b> <b>CORRECTION ON S207: 1 UNIT COLLECTED ON 27 SEP, RM110 STILL UNPAID.</b> CE5-SA's order 20260926131647-tg8bpq of 26 Sep, 1 unit for RM110, now reads deliveredQty 1, deliveredOn 2026-09-27 and handover collected; preapproved by phone. The rate clears the RM58.4 floor for 1 unit and sits under the RM140 ask. It is costed at RM56 a unit, the inventory's own. Party record: median RM110, range RM110 to RM110, RM110 outstanding before this, none defaulted, 0 unit on credit against a cap of 1. The drafter flagged an advance, and the figures answer it: the unit sits within the cap. The shelf rolls 1 unit out, and RM110 stays open. <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CE5-SA, 1 unit for RM110 with no delivery charge, order 20260926131647-tg8bpq, acknowledged, to collect; preapproved by phone. Costed at RM56 a unit, the desk's own inventory cost. The goods clear the RM58.4 floor for 1 unit and sit under the RM140 ask. On 1 prior order, s135, paid and handed over on the day: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1; not an associate, on the roster. The drafter's RM54 on the goods at 49.1% stands, and no flag was raised. It draws no stock; RM110 and 1 unit stay open.",
+    "note": "<b>CANCELLED 27 SEP (v898): ORDER WITHDRAWN, NOTHING OWED.</b> <b>CORRECTED 27 SEP: NOTHING NOW DELIVERED.</b> <b>CORRECTION ON S207: DELIVERED QUANTITY FROM 1 TO 0.</b> Recorded 27 Sep against CE5-SA's order of 26 Sep for 2 units at RM210, nothing paid; decided by the desk. The drafter read it as moving no stock, but the fold rolls 1 unit back to the shelf from CE5-SA, the difference the correction states. No cash moves and the correction carries no cost of its own. The dossier gives no floor or ask for this row. Party record: median RM110, range RM105 to RM110, RM210 outstanding, 1 unit on credit before, none defaulted. The drafter flagged a 3 step trail, a 1 unit fulfilment on 26 Sep and two corrections on 27 Sep, that will no longer add up; the correction is recorded beside it. RM210 and both units stay open. <b>CORRECTED 27 SEP: NOW 2 UNITS FOR RM210, NOTHING PAID.</b> <b>CORRECTION ON S207: QTY TO 2, TOTAL TO RM210.</b> Recorded 27 Sep against CE5-SA's order of 26 Sep, which read 1 unit for RM110; decided by the desk. It moves no cash and no stock: 1 unit has gone out, collected, and nothing is paid. The dossier gives no floor or ask for 2 units, so the rate is not tested here. Party record: median RM110, range RM110 to RM110, RM110 outstanding before this, none defaulted, 1 unit on credit before this; the dossier states no cap. The row carries RM56 a unit, the inventory's own. The drafter flagged an advance of 1 unit with RM105 unpaid; without a cap the figures do not answer it. The unpaid total and the undelivered unit stay open. <b>COLLECTED 27 SEP, 1 UNIT OUT, RM110 UNPAID.</b> <b>CORRECTION ON S207: 1 UNIT COLLECTED ON 27 SEP, RM110 STILL UNPAID.</b> CE5-SA's order 20260926131647-tg8bpq of 26 Sep, 1 unit for RM110, now reads deliveredQty 1, deliveredOn 2026-09-27 and handover collected; preapproved by phone. The rate clears the RM58.4 floor for 1 unit and sits under the RM140 ask. It is costed at RM56 a unit, the inventory's own. Party record: median RM110, range RM110 to RM110, RM110 outstanding before this, none defaulted, 0 unit on credit against a cap of 1. The drafter flagged an advance, and the figures answer it: the unit sits within the cap. The shelf rolls 1 unit out, and RM110 stays open. <b>SALT SELL DATED 26 SEP, PENDING, NOTHING PAID OR COLLECTED.</b> Booked to CE5-SA, 1 unit for RM110 with no delivery charge, order 20260926131647-tg8bpq, acknowledged, to collect; preapproved by phone. Costed at RM56 a unit, the desk's own inventory cost. The goods clear the RM58.4 floor for 1 unit and sit under the RM140 ask. On 1 prior order, s135, paid and handed over on the day: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, 0 unit on credit against a cap of 1; not an associate, on the roster. The drafter's RM54 on the goods at 49.1% stands, and no flag was raised. It draws no stock; RM110 and 1 unit stay open.",
     "rid": "s207",
     "deliveredOn": "2026-09-27",
     "handover": "collected",
@@ -5537,9 +5537,18 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON S207: DELIVERED QUANTITY FROM 1 TO 0.</b> Recorded 27 Sep against CE5-SA's order of 26 Sep for 2 units at RM210, nothing paid; decided by the desk. The drafter read it as moving no stock, but the fold rolls 1 unit back to the shelf from CE5-SA, the difference the correction states. No cash moves and the correction carries no cost of its own. The dossier gives no floor or ask for this row. Party record: median RM110, range RM105 to RM110, RM210 outstanding, 1 unit on credit before, none defaulted. The drafter flagged a 3 step trail, a 1 unit fulfilment on 26 Sep and two corrections on 27 Sep, that will no longer add up; the correction is recorded beside it. RM210 and both units stay open."
+     },
+     {
+      "date": "2026-09-27",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLED 27 SEP: CE5-SA'S ORDER S207 WITHDRAWN.</b> Recorded 27 Sep against the order of 26 Sep for 2 units at RM210, nothing paid; decided by the desk. The trail shows 1 unit fulfilled on 26 Sep, then three corrections on 27 Sep leaving nothing delivered, so no stock moves back. The dossier gives no floor or ask for this size. Party record: median RM110, range RM105 to RM110, RM210 outstanding before this row, none defaulted, no units on credit. The row carries no cost. The drafter raised no flag. The order now counts nowhere and the RM210 it carried falls away; nothing is left outstanding on s207."
      }
     ],
-    "cost": 112
+    "cost": 112,
+    "cancelled": true,
+    "cancelledOn": "2026-09-27"
    },
    {
     "customer": "CE4-AD",
@@ -6306,9 +6315,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T08:25:57.565Z",
+  "QUEUE_COMMITTED": "2026-09-27T09:28:52.908Z",
   "PRICING": {
-   "takenAt": "2026-09-27T08:27:44.093Z",
+   "takenAt": "2026-09-27T09:59:09.954Z",
    "sizes": [
     0.5,
     1,
@@ -6418,9 +6427,6 @@
     "CF5-WM": {
      "salt": "Titanium"
     },
-    "CE5-SA": {
-     "salt": "Titanium"
-    },
     "CZ6-WM": {
      "salt": "Platinum"
     },
@@ -6447,6 +6453,9 @@
     },
     "CR3-PUD": {
      "salt": "Platinum"
+    },
+    "CE5-SA": {
+     "salt": "Titanium"
     },
     "CZ5-TM": {
      "salt": "Titanium",
@@ -7093,24 +7102,6 @@
       "lateTwice": false
      }
     },
-    "CE5-SA": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 21,
-      "sinceLastDays": 21,
-      "perMonth": 1.01,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CZ6-WM": {
      "salt": {
       "name": "small and rare",
@@ -7271,6 +7262,24 @@
       "lateTwice": false
      }
     },
+    "CE5-SA": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 21,
+      "sinceLastDays": 21,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CZ5-TM": {
      "salt": {
       "name": "one-off",
@@ -7363,40 +7372,40 @@
      "replCost": 51,
      "floors": {
       "1": {
-       "floor": 62.58
+       "floor": 62.82
       },
       "2": {
-       "floor": 125.16
+       "floor": 125.65
       },
       "3": {
-       "floor": 187.75
+       "floor": 188.47
       },
       "4": {
-       "floor": 250.33
+       "floor": 251.29
       },
       "5": {
-       "floor": 312.91
+       "floor": 314.11
       },
       "0.5": {
-       "floor": 31.29
+       "floor": 31.41
       },
       "1.5": {
-       "floor": 93.87
+       "floor": 94.23
       },
       "2.5": {
-       "floor": 156.46
+       "floor": 157.06
       },
       "3.5": {
-       "floor": 219.04
+       "floor": 219.88
       },
       "4.5": {
-       "floor": 281.62
+       "floor": 282.7
       },
       "6.25": {
-       "floor": 391.14
+       "floor": 392.64
       },
       "12.5": {
-       "floor": 782.28
+       "floor": 785.28
       }
      },
      "inputs": {
@@ -7471,9 +7480,9 @@
        "repl": 51,
        "freightRate": 1.3,
        "leak": {
-        "ratio": 0.1966,
+        "ratio": 0.2012,
         "leak": 8.65,
-        "sold": 44,
+        "sold": 43,
         "cycles": 3,
         "from": "2026-09-19",
         "to": "2026-09-27"
@@ -9082,56 +9091,6 @@
         1060
        ]
       ],
-      "CE5-SA": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
       "CZ6-WM": [
        [
         0.5,
@@ -9580,6 +9539,56 @@
        [
         12.5,
         1070
+       ]
+      ],
+      "CE5-SA": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
        ]
       ],
       "CZ5-TM": [
@@ -10614,28 +10623,6 @@
         450
        ]
       ],
-      "CE5-SA": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CZ6-WM": [
        [
         10,
@@ -10813,6 +10800,28 @@
        ]
       ],
       "CR3-PUD": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CE5-SA": [
        [
         10,
         130
@@ -11720,28 +11729,6 @@
         1500
        ]
       ],
-      "CE5-SA": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CZ6-WM": [
        [
         1,
@@ -11919,6 +11906,28 @@
        ]
       ],
       "CR3-PUD": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CE5-SA": [
        [
         1,
         60
@@ -12569,20 +12578,6 @@
         64
        ]
       ],
-      "CE5-SA": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
       "CZ6-WM": [
        [
         1,
@@ -12696,6 +12691,20 @@
        ]
       ],
       "CR3-PUD": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
+      "CE5-SA": [
        [
         1,
         8
@@ -12914,11 +12923,11 @@
      "cards": {}
     }
    },
-   "v": "v897"
+   "v": "v898"
   },
   "OPEN": {
-   "at": "2026-09-27T08:27:44.276Z",
-   "count": 9,
+   "at": "2026-09-27T09:59:10.244Z",
+   "count": 8,
    "byKey": {
     "CE4-AD|2026-09-27|500": {
      "d": "2026-09-27",
@@ -12934,22 +12943,6 @@
      "rid": "s209",
      "paidOn": "2026-09-27",
      "key": "CE4-AD|2026-09-27|500"
-    },
-    "CE5-SA|2026-09-26|210": {
-     "d": "2026-09-26",
-     "p": "CE5-SA",
-     "dir": "S",
-     "q": 2,
-     "t": 210,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 210,
-     "oweUnits": 2,
-     "rid": "s207",
-     "deliveredOn": "2026-09-27",
-     "handover": "collected",
-     "key": "CE5-SA|2026-09-26|210"
     },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
@@ -13072,10 +13065,10 @@
      "free": -13.5,
      "owedOut": 14.5,
      "coverDays": 0,
-     "rate": 6.24,
+     "rate": 6.15,
      "owedToYou": 390,
-     "promised": 16.5,
-     "short": 15.5
+     "promised": 14.5,
+     "short": 13.5
     },
     "oil": {
      "name": "Oil",
@@ -13129,7 +13122,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v897"
+   "v": "v898"
   }
  }
 }
