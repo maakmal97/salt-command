@@ -93,7 +93,9 @@ rather than typed, so declaring a product is the whole of the work; changing it 
 aria-label, both in `stmt/page.js`. **A product with no mark gets the Ring**, deliberately,
 because a blank reads as a fault rather than as an omission. Everything else under `stmt/` is
 data-driven: the price list, the guest board, the order form's segment, the order history and
-the associate's card all loop over whatever the published data carries. There is no
+the associate's card all loop over whatever the published data carries. The associates' two
+cards carry the tiered books alone (F9, 28 Sep 2026: `associateSnapshot` and `associateCard` in
+`tools/book.mjs` loop the desk's `tieredBooks()`), so a new book reaches them only with a tier. There is no
 hard-coded list of two anywhere in `stmt/page.js`, `stmt/orders.js`, `stmt/refs.js` or
 `stmt/send.js`.
 

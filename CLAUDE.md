@@ -372,9 +372,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.
-- **An associate's own card** (`rec.card`): `share`, `stars` and `rank` never travel, and every
-  figure adds up to the list under it. **The associates report card** (`/all/assoc`, whitelist
-  `ASSOC_FIELDS`): no margin crosses.
+- **An associate's own card** (`rec.card`), on the tiered books only: `share`, `stars` and `rank` never
+  travel, and every figure adds up to the list under it. **The associates report card** (`/all/assoc`,
+  whitelist `ASSOC_FIELDS`), on the tiered books only: no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows

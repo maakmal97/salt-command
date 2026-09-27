@@ -306,14 +306,17 @@ export function pricingSnapshot(w) {
  * through the current unit they are, which is a ratio and not an amount. ASSOC_FIELDS is the
  * whitelist, and the suite reads it against what comes out.
  * CODES ONLY, and nothing from PEOPLE.departed but the fact of it: a reason or a memorial is his
- * note about a person, and this is read on a page a person opens. */
+ * note about a person, and this is read on a page a person opens.
+ * ON THE TIERED BOOKS ONLY (F9, his answer of 28 Sep 2026): the reward is a tier's, and a tier is salt's
+ * alone, so a fixed board (oil, candy, rice) and the spare book are off both cards. The desk's own
+ * tieredBooks() names them; salt where the window has none. */
 export const ASSOC_FIELDS = ["id", "founder", "rank", "bought", "soldFor", "onward", "introduced",
   "referred", "share", "stars", "departed", "reward"];
 export const REWARD_FIELDS = ["earned", "taken", "left", "next", "held"];
 export function associateSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
-  const products = call("PROD_ORDER") || ["salt"];
+  const products = call("tieredBooks()") || ["salt"];
   const before = call("PROD");
   const out = [];
   try {
@@ -378,7 +381,8 @@ export const CARD_SUM_FIELDS = ["bought", "soldFor", "onward", "introduced", "re
 export function associateCard(w, code) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
-  const products = call("PROD_ORDER") || ["salt"];
+  /* the tiered books only, as his card above (F9) */
+  const products = call("tieredBooks()") || ["salt"];
   const before = call("PROD");
   const out = [];
   try {

@@ -601,6 +601,10 @@ share sheet it is Copy link. Make a link says, before the tap, that the link sta
 served only at `/all/assoc`, behind Access. Two functions rather than one, deliberately: the two
 audiences differ, and the whitelist that guards his card would have had to widen to carry dated lines.
 
+**Both cards are the tiered books' alone** (F9, his answer of 28 Sep 2026): both functions loop the desk's
+`tieredBooks()`, salt where the window has none, never `PROD_ORDER`. The reward is a tier's and a tier is
+salt's alone, so a fixed board (oil, candy, rice) and the spare book are off his card and theirs.
+
 *What is left off, and why.* `share` is a ratio against the WHOLE book's revenue, so an associate
 holding their own RM and their own share can solve for his total; `stars` are bands of that same
 share and give a range of it; `rank` is a position among other people. None of the three is theirs

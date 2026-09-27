@@ -20738,9 +20738,15 @@ await (async () => {
     ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
       && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
       "codes only, and a departure is a yes or no, never his note about a person");
+    /* F9, HIS ANSWER OF 28 SEP 2026: the card is the tiered books' and no other's, a fixed board and the spare book
+       left off, since the reward is a tier's; a desk with no book outside the tiers would make this vacuous */
+    const tiered91 = JSON.parse(book91.w.eval("JSON.stringify(tieredBooks())")), books91 = JSON.parse(book91.w.eval("JSON.stringify(PROD_IDS)"));
+    ok(tiered91.length >= 1 && books91.some((p) => !tiered91.includes(p))
+      && JSON.stringify(snap91.products.map((p) => p.product)) === JSON.stringify(tiered91),
+      "his card carries the tiered books and no other: " + JSON.stringify({ card: snap91.products.map((p) => p.product), tiered: tiered91, books: books91 }));
     const oil91 = snap91.products.find((p) => p.product === "oil");
     if (oil91) ok(oil91.rows.every((r) => r.reward === null), "oil has no reward, so its cards say so rather than showing a zero");
-    else skipData("no oil book on this desk, so the no-reward case went unchecked");
+    else skipData("oil is off the card (F9: a fixed board, not a tiered book), so the no-reward case went unchecked");
     const withReward = rows91.filter((r) => r.reward && r.reward.next != null);
     ok(withReward.length > 0 && withReward.every((r) => r.reward.next >= 0 && r.reward.next <= 1
       && r.reward.left === +(r.reward.earned - r.reward.taken).toFixed(2)),
@@ -24491,11 +24497,12 @@ await (async () => {
   const C6 = await import("../tools/stmt-crypto.mjs");
 
   const { w: w6 } = await om6();
-  let card6 = null, who6 = null;
+  let card6 = null, who6 = null, tiered6 = [], books6 = [];
   try {
     const ids = JSON.parse(w6.eval("JSON.stringify(typeof associateIds==='function'?associateIds():[])"));
     who6 = ids[0] || null;
     if (who6) card6 = associateCard(w6, who6);
+    tiered6 = JSON.parse(w6.eval("JSON.stringify(tieredBooks())")); books6 = JSON.parse(w6.eval("JSON.stringify(PROD_IDS)"));
   } finally { try { w6.close(); } catch (e) { /* best effort */ } }
 
   if (!card6) skipData("this book carries no associate, so the card was not built");
@@ -24510,9 +24517,15 @@ await (async () => {
       "and every line carries only a date, what it was, a size and a figure: " + JSON.stringify(p6.lines[0]));
     ok(p6.lines.every((l) => l.kind === "own" || l.kind === "onward"),
       "a line is either their own purchase or one that went out through them, and nothing else");
+    /* F9, HIS ANSWER OF 28 SEP 2026: THE TIERED BOOKS AND NO OTHER. Their reward is a tier's, and a tier is salt's
+       alone, so a fixed board and the spare book are off their card as off his; a desk with every book tiered would
+       make this vacuous */
+    ok(tiered6.length >= 1 && books6.some((p) => !tiered6.includes(p))
+      && card6.products.every((p) => tiered6.includes(p.product)),
+      "their card carries the tiered books and no other: " + JSON.stringify({ card: card6.products.map((p) => p.product), tiered: tiered6 }));
     /* EVERY FIGURE ADDS UP TO THE LIST UNDER IT. This is the v385 lesson applied here: a figure a
        reader can disprove by looking six lines down is worse than no figure, and it also proves the
-       lines are THEIRS, because a foreign row would break the sum. Both books, not just the first. */
+       lines are THEIRS, because a foreign row would break the sum. Every book on the card, not just the first. */
     for (const pr of card6.products) {
       const own = pr.lines.filter((l) => l.kind === "own"), on = pr.lines.filter((l) => l.kind === "onward");
       ok(Math.abs(own.reduce((a, l) => a + l.rm, 0) - pr.summary.bought) < 0.01
