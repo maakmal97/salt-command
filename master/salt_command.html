@@ -6505,6 +6505,9 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v896 on 2026-09-27: the rice inventory held 74 against 85 on the roll, a drift of -11. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-27. <b>COUNT: RICE 74 UNITS ON HAND ON 27 SEP, BOOK SAID 85.</b> A hand count gives a drift of -11 units since the last rice count on 24 Sep; the dossier gives no reason for the gap. The count wins: stated rice becomes 74 and the count date moves to 27 Sep. Floors rise from RM4.08 to RM6.31 for 1 unit, RM8.16 to RM12.63 for 2 and RM51 to RM78.93 at the largest size; the ask holds at RM8 and self use moves from 1 to 12. No cost is carried. The drafter flagged the gap as shrinkage across every unit sold, and the floor rise matches that. The 11 unit gap stays unexplained. */
+/* COUNTED AT v896 on 2026-09-27: the candy inventory held 14 against 15 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-09-27. <b>COUNT: CANDY 14 UNITS ON HAND ON 27 SEP, BOOK SAID 15.</b> A hand count gives a drift of -1 unit; no earlier candy count stands on the book, so this is the first. The dossier gives no reason for the gap. The count wins: stated candy becomes 14 and the count date is set to 27 Sep. Floors rise from RM39.33 to RM40.64 for 1 unit, RM78.66 to RM81.28 for 2 and RM491.63 to RM508 at the largest size; the ask holds at RM60 and self use moves from 0 to 1. No cost is carried. The drafter flagged the gap as shrinkage, and the modest floor rise matches that. The 1 unit gap stays unexplained. */
+/* COUNTED AT v896 on 2026-09-27: the oil inventory held 30 against 50 on the roll, a drift of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-27. <b>COUNT: OIL 30 UNITS ON HAND ON 27 SEP, BOOK SAID 50.</b> A hand count gives a drift of -20 units since the last oil count on 24 Sep; the dossier gives no reason for the gap. The count wins: stated oil becomes 30 and the count date moves to 27 Sep. The floors do not move: RM7.86 for 1 unit, RM15.73 for 2 and RM98.31 at the largest size, against an ask of RM10; self use moves from 104 to 124. No cost is carried. The drafter flagged the gap as shrinkage across every unit sold, but the unchanged floors do not show it, and the dossier does not say why. The 20 unit gap stays unexplained. */
 /* ROLLED AT v853 (rice): 9 unit to CM4-TO on 2026-09-25, so 94 less 9 is 85. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v836 on 2026-09-24: the rice inventory held 94 against 95 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-24. <b>RICE COUNT ON 24 SEP 2026: 94 UNIT ON HAND AGAINST 95 ON THE BOOK.</b> A drift of -1 unit, and on his word a count wins over the ledger, so the stated rice inventory becomes 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no rate and no cash attach, and the row carries no cost, so the inventory's own rate is untouched. The floors move with the count: floor1 RM3.40 to RM4.08, floor2 RM6.80 to RM8.16, floor125 RM42.50 to RM51, ask at RM8 for 1 unit held, self use 0 to 1. The drafter flagged the gap as shrinkage across every unit sold, and flagged that 9 unit of this inventory is owed out and already paid for. The figures cover the shrinkage; the 9 unit owed out stays outstanding. */
 /* ROLLED AT v834 (oil): 50 unit from SP7-PUD on 2026-09-24, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -6530,17 +6533,17 @@ const PROD_OPENING={
   "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 50
+    "stated": 30
   },
   "candy": {
     "qty": 0,
     "costPerKg": null,
-    "stated": null
+    "stated": 14
   },
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 85
+    "stated": 74
   },
   "spare": {
     "qty": 0,
@@ -6548,6 +6551,7 @@ const PROD_OPENING={
     "stated": null
   }
 };
+/* COUNTED AT v896 on 2026-09-27: the salt inventory held 1 against 5.5 on the roll, a drift of -4.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-27. <b>COUNT: SALT 1 UNIT ON HAND ON 27 SEP, BOOK SAID 5.5.</b> A hand count gives a drift of -4.5 units since the last salt count on 23 Sep; the dossier gives no reason for the gap. The count wins: stated salt becomes 1 and the count date moves to 27 Sep. Floors rise from RM58.4 to RM62.58 for 1 unit, RM116.8 to RM125.16 for 2 and RM729.98 to RM782.28 at the largest size; the ask holds at RM140 and self use moves from 78.7 to 84.2. No cost is carried; stock cost stays RM56 a unit. The drafter flagged 9.5 units owed out and paid for; with 1 unit on hand the figures confirm the flag. The gap and that owed stock stay open. */
 /* ROLLED AT v895: 1 unit from CE5-SA on 2026-09-27, so 5.5 plus 1 is 6.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit comes back to the shelf from CE5-SA on the correction to s207. No lot landed, so the cost basis stays at RM56 a unit. */
 /* ROLLED AT v884: 1 unit to CE5-SA on 2026-09-27, so 6.5 less 1 is 5.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit collected by CE5-SA on s207 leaves the shelf on credit, with RM110 unpaid. No lot landed, and the RM56 cost basis stands. */
 /* ROLLED AT v883: 5 unit to CS6-BS-R on 2026-09-27, so 11.5 less 5 is 6.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 5 unit out to CS6-BS-R are the delivery on s206, corrected on 27 Sep. No lot landed, so the cost basis stays at RM56. */
@@ -6624,12 +6628,12 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=6.5;
+const STATED_STOCK=1;
 const COUNT_ON={
-  "salt": "2026-09-23",
-  "oil": "2026-09-24",
-  "candy": null,
-  "rice": "2026-09-24",
+  "salt": "2026-09-27",
+  "oil": "2026-09-27",
+  "candy": "2026-09-27",
+  "rice": "2026-09-27",
   "spare": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -6649,7 +6653,11 @@ const COUNTS=[
   {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15},
   {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1},
   {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35},
-  {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1}
+  {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1},
+  {"product":"salt","date":"2026-09-27","qty":1,"was":5.5,"drift":-4.5},
+  {"product":"oil","date":"2026-09-27","qty":30,"was":50,"drift":-20},
+  {"product":"candy","date":"2026-09-27","qty":14,"was":15,"drift":-1},
+  {"product":"rice","date":"2026-09-27","qty":74,"was":85,"drift":-11}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -7413,7 +7421,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-27T07:58:45.279Z";
+const QUEUE_COMMITTED="2026-09-27T07:59:24.295Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -8418,7 +8426,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v895","d":"27 Sep 2026","t":"A DELIVERY SET BACK TO NOTHING","n":["<p><b>ONE CORRECTION FOLDED.</b> The desk set s207, CE5-SA's order of 26 Sep for 2 units at RM210, to 0 units delivered, recorded 27 Sep. The drafter described it as moving no stock; the fold instead rolls 1 unit back to the shelf, the difference the correction states. No cash moves, and RM210 stays outstanding against CE5-SA with nothing paid.</p>","<p><b>A TRAIL THAT NO LONGER ADDS UP.</b> s207 carries 3 steps: a 1 unit fulfilment on 26 Sep and two corrections on 27 Sep. Setting the delivered figure directly does not rewrite them, so the correction is recorded beside the trail saying so. The inventory takes back 1 unit of salt from CE5-SA; no lot landed, so the cost basis holds at RM56 a unit.</p>"]}];
+const evolution=[{"v":"v896","d":"27 Sep 2026","t":"FOUR COUNTS, ALL SHORT, SALT BELOW WHAT IS OWED","n":["<p><b>FOUR HAND COUNTS FOLDED, ALL BELOW THE BOOK.</b> On 27 Sep the desk counted salt at 1 against 5.5, oil at 30 against 50, candy at 14 against 15 and rice at 74 against 85. Each count wins over the ledger, so each sets the stated stock and moves its count date to 27 Sep. The dossier gives no reason for any of the four gaps, and none is offered here.</p>","<p><b>SALT IS THE ROW THAT MATTERS.</b> The salt gap is -4.5 units since the 23 Sep count. The book shows 9.5 units owed out and already paid for, plus 7 promised, against 1 unit on hand, below the reorder point of 29.3. The drafter called this worse than shrinkage and the figures bear it out. Salt floors rise: RM58.4 to RM62.58 for 1 unit, RM116.8 to RM125.16 for 2; the ask holds at RM140.</p>","<p><b>THE OTHER FLOORS MOVE UNEVENLY.</b> Rice floors rise, RM4.08 to RM6.31 for 1 unit against an ask of RM8. Candy, counted for the first time, rises from RM39.33 to RM40.64 for 1 unit. Oil floors do not move at all despite a -20 unit gap, which the dossier does not explain. No lot landed, so the salt cost basis stays at RM56 a unit against a replacement cost of RM51.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8533,7 +8541,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Sep 2026, 16:00 KL';
+const LAST_UPDATED='27 Sep 2026, 16:01 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

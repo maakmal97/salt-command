@@ -69,17 +69,17 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 50
+      "stated": 30
     },
     "candy": {
       "qty": 0,
       "costPerKg": null,
-      "stated": null
+      "stated": 14
     },
     "rice": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 85
+      "stated": 74
     },
     "spare": {
       "qty": 0,
@@ -87,12 +87,12 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 6.5,
+  "STATED_STOCK": 1,
   "COUNT_ON": {
-    "salt": "2026-09-23",
-    "oil": "2026-09-24",
-    "candy": null,
-    "rice": "2026-09-24",
+    "salt": "2026-09-27",
+    "oil": "2026-09-27",
+    "candy": "2026-09-27",
+    "rice": "2026-09-27",
     "spare": null
   },
   "COUNTS": [
@@ -111,7 +111,11 @@
     {"product":"salt","date":"2026-09-21","qty":8,"was":11.15,"drift":-3.15},
     {"product":"salt","date":"2026-09-23","qty":25,"was":26,"drift":-1},
     {"product":"oil","date":"2026-09-24","qty":0,"was":35,"drift":-35},
-    {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1}
+    {"product":"rice","date":"2026-09-24","qty":94,"was":95,"drift":-1},
+    {"product":"salt","date":"2026-09-27","qty":1,"was":5.5,"drift":-4.5},
+    {"product":"oil","date":"2026-09-27","qty":30,"was":50,"drift":-20},
+    {"product":"candy","date":"2026-09-27","qty":14,"was":15,"drift":-1},
+    {"product":"rice","date":"2026-09-27","qty":74,"was":85,"drift":-11}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -929,7 +933,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-27T07:58:45.279Z",
+  "QUEUE_COMMITTED": "2026-09-27T07:59:24.295Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -983,6 +987,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "COUNTED AT v896 on 2026-09-27: the salt inventory held 1 against 5.5 on the roll, a drift of -4.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-27. <b>COUNT: SALT 1 UNIT ON HAND ON 27 SEP, BOOK SAID 5.5.</b> A hand count gives a drift of -4.5 units since the last salt count on 23 Sep; the dossier gives no reason for the gap. The count wins: stated salt becomes 1 and the count date moves to 27 Sep. Floors rise from RM58.4 to RM62.58 for 1 unit, RM116.8 to RM125.16 for 2 and RM729.98 to RM782.28 at the largest size; the ask holds at RM140 and self use moves from 78.7 to 84.2. No cost is carried; stock cost stays RM56 a unit. The drafter flagged 9.5 units owed out and paid for; with 1 unit on hand the figures confirm the flag. The gap and that owed stock stay open.",
       "ROLLED AT v895: 1 unit from CE5-SA on 2026-09-27, so 5.5 plus 1 is 6.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit comes back to the shelf from CE5-SA on the correction to s207. No lot landed, so the cost basis stays at RM56 a unit.",
       "ROLLED AT v884: 1 unit to CE5-SA on 2026-09-27, so 6.5 less 1 is 5.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit collected by CE5-SA on s207 leaves the shelf on credit, with RM110 unpaid. No lot landed, and the RM56 cost basis stands.",
       "ROLLED AT v883: 5 unit to CS6-BS-R on 2026-09-27, so 11.5 less 5 is 6.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 5 unit out to CS6-BS-R are the delivery on s206, corrected on 27 Sep. No lot landed, so the cost basis stays at RM56.",
@@ -1064,6 +1069,9 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v896 on 2026-09-27: the rice inventory held 74 against 85 on the roll, a drift of -11. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-27. <b>COUNT: RICE 74 UNITS ON HAND ON 27 SEP, BOOK SAID 85.</b> A hand count gives a drift of -11 units since the last rice count on 24 Sep; the dossier gives no reason for the gap. The count wins: stated rice becomes 74 and the count date moves to 27 Sep. Floors rise from RM4.08 to RM6.31 for 1 unit, RM8.16 to RM12.63 for 2 and RM51 to RM78.93 at the largest size; the ask holds at RM8 and self use moves from 1 to 12. No cost is carried. The drafter flagged the gap as shrinkage across every unit sold, and the floor rise matches that. The 11 unit gap stays unexplained.",
+      "COUNTED AT v896 on 2026-09-27: the candy inventory held 14 against 15 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-09-27. <b>COUNT: CANDY 14 UNITS ON HAND ON 27 SEP, BOOK SAID 15.</b> A hand count gives a drift of -1 unit; no earlier candy count stands on the book, so this is the first. The dossier gives no reason for the gap. The count wins: stated candy becomes 14 and the count date is set to 27 Sep. Floors rise from RM39.33 to RM40.64 for 1 unit, RM78.66 to RM81.28 for 2 and RM491.63 to RM508 at the largest size; the ask holds at RM60 and self use moves from 0 to 1. No cost is carried. The drafter flagged the gap as shrinkage, and the modest floor rise matches that. The 1 unit gap stays unexplained.",
+      "COUNTED AT v896 on 2026-09-27: the oil inventory held 30 against 50 on the roll, a drift of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-27. <b>COUNT: OIL 30 UNITS ON HAND ON 27 SEP, BOOK SAID 50.</b> A hand count gives a drift of -20 units since the last oil count on 24 Sep; the dossier gives no reason for the gap. The count wins: stated oil becomes 30 and the count date moves to 27 Sep. The floors do not move: RM7.86 for 1 unit, RM15.73 for 2 and RM98.31 at the largest size, against an ask of RM10; self use moves from 104 to 124. No cost is carried. The drafter flagged the gap as shrinkage across every unit sold, but the unchanged floors do not show it, and the dossier does not say why. The 20 unit gap stays unexplained.",
       "ROLLED AT v853 (rice): 9 unit to CM4-TO on 2026-09-25, so 94 less 9 is 85. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "COUNTED AT v836 on 2026-09-24: the rice inventory held 94 against 95 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-24. <b>RICE COUNT ON 24 SEP 2026: 94 UNIT ON HAND AGAINST 95 ON THE BOOK.</b> A drift of -1 unit, and on his word a count wins over the ledger, so the stated rice inventory becomes 94 and COUNT_ON for rice moves to 24 Sep 2026. No party, no rate and no cash attach, and the row carries no cost, so the inventory's own rate is untouched. The floors move with the count: floor1 RM3.40 to RM4.08, floor2 RM6.80 to RM8.16, floor125 RM42.50 to RM51, ask at RM8 for 1 unit held, self use 0 to 1. The drafter flagged the gap as shrinkage across every unit sold, and flagged that 9 unit of this inventory is owed out and already paid for. The figures cover the shrinkage; the 9 unit owed out stays outstanding.",
       "ROLLED AT v834 (oil): 50 unit from SP7-PUD on 2026-09-24, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
