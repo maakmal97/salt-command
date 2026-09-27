@@ -174,6 +174,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
   drawn as the engine's oldest-first `claimAlloc`, each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
+- **Every tap that books money checks what its row can still take** (`rowRoom` in `src/orders.js`:
+  the mirror's figure less every payment on its way to the row by any road), **and the fold's
+  `payFault` is the last check**, refusing a payment measured before other money reached its row.
+  A new road for money reads both. Detail: `docs/STATEMENTS.md`.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
   through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
