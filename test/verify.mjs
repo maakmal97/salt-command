@@ -12328,16 +12328,33 @@ await (async () => {
       && pricing.includes("against its " + rdR("fmt(" + mk.small.fl + ")") + "/unit floor") && pricing.includes("against its " + rdR("fmt(" + mk.bulk.fl + ")") + "/unit floor"),
       "each market segment's floor is the engine's over the units it sold, and the page sets each half against it: " + JSON.stringify({ mk: { all: mk.all.fl, small: mk.small.fl, bulk: mk.bulk.fl }, E }));
 
-    /* 4. the buying lever: bought at needRate, the bulk floor meets the realised bulk rate */
-    const lever = rdR("(function(){var keep=pxOver.cost,m=pxMarket();pxOver.cost=m.needRate;try{var rs=pricedSales.filter(function(s){return s.total>0&&s.qty>=PX.bulkFrom;}),k=0,f=0;"
-      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=floorTotal(s.qty)/s.qty*u;});return {need:m.needRate,p:m.bulk.p,fl:f/k};}finally{pxOver.cost=keep;}})()");
-    ok(lever.need != null && Math.abs(lever.fl - lever.p) < 0.01,
-      "the buying rate the lever names is the one at which the engine's bulk floor meets the realised bulk price: " + JSON.stringify(lever));
+    /* 4. the buying lever: bought at needRate, the bulk floor meets the realised bulk rate, on the book's leak and on
+       leaks forced from 0% to 25%, since each moves where floorTotal's rounding to the sen falls. v900's book found a
+       line fixed at RM 0 and RM 1 two sen out; the book before it had passed with a quarter of a sen to spare. A rate
+       named to the sen moves the floor by half a sen times the slope, 1.33 at a 25% leak, so RM 0.01 holds with room. */
+    const lever = rdR("(function(){var keepC=pxOver.cost,keepS=pxOver.shrink,out=[];try{[null,0,5,10,15,20,25].forEach(function(sh){pxOver.cost=keepC;pxOver.shrink=sh;var m=pxMarket();pxOver.cost=m.needRate;"
+      + "var rs=pricedSales.filter(function(s){return s.total>0&&s.qty>=PX.bulkFrom;}),k=0,f=0;"
+      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=floorTotal(s.qty)/s.qty*u;});out.push({leak:sh,need:m.needRate,p:m.bulk.p,fl:+(f/k).toFixed(4)});});return out;}"
+      + "finally{pxOver.cost=keepC;pxOver.shrink=keepS;}})()");
+    ok(lever.length === 7 && lever.every((x) => x.need != null && Math.abs(x.fl - x.p) < 0.01),
+      "the buying rate the lever names is the one at which the engine's bulk floor meets the realised bulk price, on the book's leak and on leaks from 0% to 25%: " + JSON.stringify(lever));
 
     /* 5. the share of volume under the line is the share under the engine's floor at each order's size */
     const note = rdR(txt("priceNote()"));
     ok(note.includes(E.share + "% of your volume has sold under the " + E.rate + "/unit floor"),
       "the volume sentence counts the units sold under the engine's floor at their own size, and names that floor: " + JSON.stringify({ note: note.slice(0, 120), E: { share: E.share, rate: E.rate } }));
+
+    /* 5b. a floor total is to the sen, so a half unit's floor can read a sen over the rate at one unit (v900's book):
+       at ten buying rates a sen apart the sentence names the one floor, at one unit, and a charge per order, which
+       does move the floor with size, still prints the range */
+    const notes = rdR("(function(){var keepC=pxOver.cost,t=PRICE_ENGINE.timePerOrder,c0=pxCost().lot,out=[];"
+      + "function read(){var d=document.createElement('div');d.innerHTML=priceNote();return {at:pxOver.cost,rate:fmt(floorTotal(1)),t:d.textContent.replace(/\\s+/g,' ').slice(0,140)};}"
+      + "try{for(var i=0;i<10;i++){pxOver.cost=+(c0+i*0.01).toFixed(2);out.push(read());}pxOver.cost=keepC;PRICE_ENGINE.timePerOrder=5;out.push(read());}"
+      + "finally{pxOver.cost=keepC;if(t===undefined)delete PRICE_ENGINE.timePerOrder;else PRICE_ENGINE.timePerOrder=t;}return out;})()");
+    const ranged = notes.slice(0, 10).filter((x) => !x.t.includes("% of your volume has sold under the " + x.rate + "/unit floor"));
+    ok(notes.length === 11 && ranged.length === 0 && /has sold under the floor at its size, RM [\d.,]+ to RM [\d.,]+\/unit/.test(notes[10].t),
+      "the volume sentence names one floor, the rate at one unit, at every buying rate a sen apart, and a range only when a charge per order moves the floor with size: "
+      + JSON.stringify({ ranged: ranged.map((x) => [x.at, x.t.slice(0, 90)]), timed: notes[10] && notes[10].t.slice(0, 90) }));
 
     /* 6. the margin-realised signal is the margin over that floor, on the same thresholds */
     const sg = rdR("pxSignals().rows.find(function(r){return r.k==='Margin realised';})");
