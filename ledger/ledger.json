@@ -1,6 +1,6 @@
 {
- "v": "v896",
- "stamped": "27 Sep 2026, 16:01 KL",
+ "v": "v897",
+ "stamped": "27 Sep 2026, 16:27 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5545,12 +5545,29 @@
     "customer": "CE4-AD",
     "qty": 5,
     "total": 470,
-    "cash": 0,
+    "cash": 500,
     "delivery": 30,
     "date": "2026-09-27",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE: 5 UNITS SALT TO CE4-AD FOR RM470, NOTHING PAID.</b> Ordered 27 Sep, order 20260927071536-4auaew, preapproved by phone; delivery RM30 beside it, RM500 owed. The RM470 total sits above the floor of RM291.99 and below the ask of RM590 for 5 units. Party record: median RM87, range RM80 to RM87, nothing outstanding, none defaulted, no units on credit, cap 2 units. The row carries RM56 a unit, the inventory's own. The drafter flagged RM94 a unit as 12.6% above a typical RM83.5; the dossier's median is RM87, so the flag's base does not match, though the rate stands above the record either way. Payment and all 5 units stay open.",
-    "rid": "s209"
+    "note": "<b>PAID IN FULL 27 SEP BY QR, RM500 (v897); 5 UNITS STILL TO DELIVER.</b> <b>PENDING SALE: 5 UNITS SALT TO CE4-AD FOR RM470, NOTHING PAID.</b> Ordered 27 Sep, order 20260927071536-4auaew, preapproved by phone; delivery RM30 beside it, RM500 owed. The RM470 total sits above the floor of RM291.99 and below the ask of RM590 for 5 units. Party record: median RM87, range RM80 to RM87, nothing outstanding, none defaulted, no units on credit, cap 2 units. The row carries RM56 a unit, the inventory's own. The drafter flagged RM94 a unit as 12.6% above a typical RM83.5; the dossier's median is RM87, so the flag's base does not match, though the rate stands above the record either way. Payment and all 5 units stay open.",
+    "rid": "s209",
+    "amend": [
+     {
+      "date": "2026-09-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-27",
+      "kind": "Fulfilment",
+      "cash": 500,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S209: RM500 PAID BY QR, NO UNITS MOVED.</b> Paid 27 Sep on the statements site against order 20260927071536-4auaew, preapproved by phone. It clears the RM500 owed on s209, RM470 for 5 units plus RM30 delivery, leaving RM0 owed. The rate is unchanged: the RM470 total stands above the floor of RM291.99 and below the ask of RM590 for 5 units. Party record: median RM87, range RM80 to RM94, RM500 outstanding before this payment, none defaulted, no units on credit. The amendment carries no cost of its own. The drafter raised no flags, and the figures agree with the target row. All 5 units stay to be delivered."
+     }
+    ],
+    "paidOn": "2026-09-27"
    }
   ],
   "contacts": [
@@ -6289,9 +6306,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T07:59:24.295Z",
+  "QUEUE_COMMITTED": "2026-09-27T08:25:57.565Z",
   "PRICING": {
-   "takenAt": "2026-09-27T08:02:00.104Z",
+   "takenAt": "2026-09-27T08:27:44.093Z",
    "sizes": [
     0.5,
     1,
@@ -6725,10 +6742,10 @@
     "CE4-AD": {
      "salt": {
       "name": "rare and large",
-      "orders": 2,
+      "orders": 3,
       "tenureDays": 61,
-      "sinceLastDays": 38,
-      "perMonth": 1,
+      "sinceLastDays": 0,
+      "perMonth": 1.5,
       "smallShare": 0,
       "bigShare": 1,
       "late": 0,
@@ -6736,7 +6753,7 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
+      "rare": false,
       "lateTwice": false
      }
     },
@@ -12897,10 +12914,10 @@
      "cards": {}
     }
    },
-   "v": "v896"
+   "v": "v897"
   },
   "OPEN": {
-   "at": "2026-09-27T08:02:00.363Z",
+   "at": "2026-09-27T08:27:44.276Z",
    "count": 9,
    "byKey": {
     "CE4-AD|2026-09-27|500": {
@@ -12909,13 +12926,13 @@
      "dir": "S",
      "q": 5,
      "t": 470,
-     "cash": 0,
+     "cash": 500,
      "mv": 0,
-     "st": "part",
-     "oweRM": 500,
+     "st": "oweStock",
      "oweUnits": 5,
      "dv": 30,
      "rid": "s209",
+     "paidOn": "2026-09-27",
      "key": "CE4-AD|2026-09-27|500"
     },
     "CE5-SA|2026-09-26|210": {
@@ -13052,8 +13069,8 @@
     "salt": {
      "name": "Salt",
      "onHand": 1,
-     "free": -8.5,
-     "owedOut": 9.5,
+     "free": -13.5,
+     "owedOut": 14.5,
      "coverDays": 0,
      "rate": 6.24,
      "owedToYou": 390,
@@ -13112,7 +13129,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v896"
+   "v": "v897"
   }
  }
 }
