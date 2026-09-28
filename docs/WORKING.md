@@ -145,6 +145,13 @@ Each of these stayed green, or read clean, through a real fault.
   window, let only booleans cross, and carry a control). Build patterns from a regexp literal's
   `.source`. Run every new assertion against `git show HEAD:<file>` and the working copy, and see it
   red.
+- **A guard for a page that has gone.** jsdom from 30.1.0 keeps a closed window's document and
+  tells the page nothing, so `docLive()` (`!!document&&!!document.body`) read true after `close()`:
+  removing any of its eleven guards left the four closed-page sections green, their only check being
+  that nothing threw. The guards are gone (28 Sep 2026; a browser runs no script for a page that has
+  gone); those sections wait with `pageWork(win).quiet()`, check the held answer landed, and are
+  proved red by a landing that throws only after `close()` (a listener added before the await,
+  dispatched after it: `close()` drops every listener). Prove a new closed-page check the same way.
 - **The wrong position.** An effect assertion sited before the step that undoes the effect, or after
   a branch that skipped it, stays green: a KV key written, then deleted by the next workflow step
   keyed on a shared prefix; a diff against a base that a depth-1 checkout lacks, failing into

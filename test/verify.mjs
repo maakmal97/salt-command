@@ -19335,18 +19335,26 @@ await (async () => {
     sob().click(); sob().click();
     ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled,
       "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
-    /* ---- an account closed while its link and its story are still on their way lands on nothing ---- */
+    /* ---- an account closed while its link and its story are still on their way: their landing throws nothing ----
+       28 Sep 2026: jsdom from 30.1.0 keeps a closed window's document, so the late answers draw into it, harmlessly; what
+       is held is that nothing they do throws into the next section's time. The answers are held until the page has
+       closed, then let through, and the wait is for the page's own work to finish (pageWork), never a fixed time. */
     const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
     process.on("unhandledRejection", onRej);
     try {
-      const gate = { go: null };
+      const gate = { go: null, open: false, landed: [] };
+      let work = null;
       const w3 = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
         try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
         if (!w.TextEncoder) w.TextEncoder = TextEncoder;
         if (!w.TextDecoder) w.TextDecoder = TextDecoder;
         w.fetch = async (q, o) => { o = o || {};
-          if (/^[/]all[/](account|signin)[/]/.test(String(q))) await new Promise((r) => { const was = gate.go; gate.go = () => { if (was) was(); r(); }; });
-          return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+          const held = String(q).match(/^[/]all[/](account|signin)[/]/);
+          if (held && !gate.open) await new Promise((r) => { const was = gate.go; gate.go = () => { if (was) was(); r(); }; });
+          const r = await site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body });
+          if (held && gate.open) gate.landed.push(held[1]);
+          return r; };
+        work = pageWork(w);
       } }).window;
       const D3 = w3.document;
       await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
@@ -19355,10 +19363,10 @@ await (async () => {
       D3.querySelector('#rlist [data-u="' + u + '"]').click();
       ok(await until(() => !!gate.go), "the account opened, its story is on its way");
       w3.close();
-      await until(() => !!gate.go);
-      for (let i = 0; i < 40 && gate.go; i++) { const g = gate.go; gate.go = null; g(); await new Promise((r) => setTimeout(r, 50)); }
-      await new Promise((r) => setTimeout(r, 200));
-      ok(errs.length === 0, "and when it and the link land after the page has gone, nothing is drawn and nothing throws: " + JSON.stringify(errs));
+      gate.open = true; gate.go();
+      ok(await work.quiet() && gate.landed.includes("account") && gate.landed.includes("signin"),
+        "its story and its link land after the page has gone, and the page finishes with them: " + JSON.stringify(gate.landed));
+      ok(errs.length === 0, "and nothing they do throws: " + JSON.stringify(errs));
     } finally { process.off("unhandledRejection", onRej); }
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -19447,8 +19455,9 @@ await (async () => {
     ok(!landingPage("", "n99o", { master: "x", accounts: [] }).includes('id="thisDevice"'), "and his own page carries no This device card");
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
-  /* ---- the list is a read in the background: a lapse it meets is left to the next tap, and it lands on nothing once
-     the page has gone. Driven with the site stood in, the list's answer held until the test lets it go. ---- */
+  /* ---- the list is a read in the background: a lapse it meets is left to the next tap, and it throws nothing when it
+     lands after the page has gone (jsdom from 30.1.0 keeps the closed window's document, so it draws there, unseen).
+     Driven with the site stood in, the list's answer held until the test lets it go. ---- */
   const wrap = await C.wrapKey(pw, ck), envSealed = JSON.parse(await kv.get("u:" + u)).env;
   const drive = async (devices) => {
     const st = { posts: [], release: null };
@@ -19463,6 +19472,7 @@ await (async () => {
         if (path === "/devices") return devices(st, ans);
         return ans(200, { ok: true, orders: [] });
       };
+      st.work = pageWork(w);
     } }).window;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     w2.document.getElementById("pw").value = pw;
@@ -19480,12 +19490,17 @@ await (async () => {
   const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
   process.on("unhandledRejection", onRej);
   try {
-    const d2 = await drive((st, ans) => new Promise((r) => { st.release = () => r(ans(200, { ok: true, devices: [{ label: "iPhone, Safari", kind: "phone", at: null, last: null, kept: true, here: true }] })); }));
+    /* every read of the list is held until the release, which answers them all, and one asked after it is answered at
+       once: a page that asks again leaves nothing hanging */
+    const listed = (st, ans) => { const a = ans(200, { ok: true, devices: [{ label: "iPhone, Safari", kind: "phone", at: null, last: null, kept: true, here: true }] }), read = a.json;
+      a.json = async () => { st.landed = true; return read(); }; return a; };
+    const d2 = await drive((st, ans) => st.open ? listed(st, ans) : new Promise((r) => { const was = st.release; st.release = () => {
+      st.open = true; if (was) was(); r(listed(st, ans)); }; }));
     await d2.until(() => !!d2.st.release);
     d2.w2.close();
     d2.st.release();
-    await new Promise((r) => setTimeout(r, 150));
-    ok(errs.length === 0, "and a list that lands after the page has gone draws nothing and throws nothing: " + JSON.stringify(errs));
+    ok(await d2.st.work.quiet() && d2.st.landed === true, "the list lands after the page has gone, and the page finishes with it");
+    ok(errs.length === 0, "and a list that lands after the page has gone throws nothing: " + JSON.stringify(errs));
   } finally { process.off("unhandledRejection", onRej); }
 })();
 section("S9 fix S9R-1: a link copied or shared from any card is dropped from the page, so Sign out everywhere ends it with the rest");
@@ -23928,12 +23943,14 @@ await (async () => {
     ms1359: "Selamat tengah hari", ms1400: WD.MS["home.afternoon"], en1230: "Good afternoon", en1400: "Good afternoon" }),
     "Home says Selamat tengah hari from 12:00 to 13:59 and Selamat petang from 14:00 on a Malay phone, and Good afternoon from noon in English: " + JSON.stringify(got));
 })();
-section("S13 fix: an associate's page closed while Rewards' links are on their way draws nothing and throws nothing after it");
+section("S13 fix: an associate's page closed while Rewards' links are on their way throws nothing after it");
 await (async () => {
   /* 25 SEP 2026: S8 8.3 closed its associate's page while loadMyLinks was still reading /my/refs, and the answer drew
      Rewards on a window with no document; the throw took the whole shard down in the next section's time (twice in this
-     stage's suite runs). drawCard stands down on a page that has gone, as the S7 merge's draws do. Forced state: the
-     site's answer to the links held back until the page has closed. */
+     stage's suite runs). 28 Sep 2026: jsdom from 30.1.0 keeps a closed window's document, so the late draw lands there,
+     unseen, and the guard drawCard carried could never fire; it is gone, and what is held is that the landing throws
+     nothing. Forced state: the site's answer to the links held back until the page has closed, and the wait is for the
+     page's own work to finish (pageWork), never a fixed time. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -23941,16 +23958,18 @@ await (async () => {
   const u = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("s13-links", u);
   const body = { ok: true, assoc: true, wrap: await C.wrapKey(pass, ck), session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
-  const st = { asked: false, release: null, errs: [] };
+  const st = { asked: false, release: null, landed: false, errs: [] };
   const onErr = (e) => st.errs.push(String((e && e.message) || e));
   process.on("unhandledRejection", onErr); process.on("uncaughtException", onErr);
+  let work = null;
   const dom = new JSDOM(landingPage(u, "n13l", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {};
     win.fetch = async (path) => { const p = String(path);
       if (p === "/my/refs") { st.asked = true; await new Promise((r) => { st.release = r; }); }
       const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/my/refs" ? { ok: true, refs: [], max: 3 } : { ok: true };
-      return { ok: true, status: 200, json: async () => j }; };
+      return { ok: true, status: 200, json: async () => { if (p === "/my/refs") st.landed = true; return j; } }; };
+    work = pageWork(win);
   } });
   const W = dom.window, D = W.document;
   try {
@@ -23960,8 +23979,8 @@ await (async () => {
     ok(st.asked, "signed in as an associate, Rewards reads its links from the site");
     W.close();
     st.release();
-    await new Promise((r) => setTimeout(r, 300));
-    ok(!st.errs.length, "and the page closed before the links came back draws nothing and throws nothing after it: " + JSON.stringify(st.errs));
+    ok(await work.quiet() && st.landed, "the links land after the page has closed, and the page finishes with them");
+    ok(!st.errs.length, "and nothing they do throws: " + JSON.stringify(st.errs));
   } finally {
     if (st.release) st.release();
     try { W.close(); } catch (e) { /* closed above */ }
@@ -40444,12 +40463,14 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 50)); W.close(); }
 })();
 
-section("S7 merge: a sign-in's notifications still being filed when its page goes draw nothing after it");
+section("S7 merge: a sign-in's notifications still being filed when its page goes throw nothing after it");
 await (async () => {
-  /* A closed window has no document, and every flow that waits ends in drawOrder, drawHome or drawDevice: the way in's
-     filing of this phone (askPush) landed after the page had gone and threw, which in the suite took a whole shard down
-     from another section's time. Those draws ask docLive first, as stage 9's list does. Forced state: the site's answer to
-     the filing held back until the page has closed. */
+  /* Every flow that waits ends in drawOrder, drawHome or drawDevice: the way in's filing of this phone (askPush) landed
+     after the page had gone and threw (the jsdom of the time took a closed window's document away), which in the suite
+     took a whole shard down from another section's time. 28 Sep 2026: jsdom from 30.1.0 keeps the document, so the late
+     draw lands there, unseen, and the docLive guard those draws carried could never fire; it is gone, and what is held
+     is that the landing throws nothing. Forced state: the site's answer to the filing held back until the page has
+     closed, and the wait is for the page's own work to finish (pageWork), never a fixed time. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -40457,9 +40478,10 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-s7m2", ck = await C.contentKey("test-secret", u);
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7m2",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
-  const st = { asked: false, release: null, errs: [] };
+  const st = { asked: false, release: null, landed: false, errs: [] };
   const onErr = (e) => st.errs.push(String((e && e.message) || e));
   process.on("unhandledRejection", onErr); process.on("uncaughtException", onErr);
+  let work = null;
   const dom = new JSDOM(landingPage(u, "ns7m2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {};
@@ -40471,7 +40493,8 @@ await (async () => {
     win.fetch = async (path) => { const p = String(path);
       if (p === "/push/subscribe") { st.asked = true; await new Promise((r) => { st.release = r; }); }
       const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: [] } : p === "/push/key" ? { ok: true, key: "AAAA", configured: true } : { ok: true };
-      return { ok: true, status: 200, json: async () => j }; };
+      return { ok: true, status: 200, json: async () => { if (p === "/push/subscribe") st.landed = true; return j; } }; };
+    work = pageWork(win);
   } });
   const W = dom.window, D = W.document;
   try {
@@ -40481,8 +40504,8 @@ await (async () => {
     ok(st.asked, "signed in, the way in files this phone with the site");
     W.close();
     st.release();
-    await new Promise((r) => setTimeout(r, 300));
-    ok(!st.errs.length, "and the page closed before the site answered draws nothing and throws nothing after it: " + JSON.stringify(st.errs));
+    ok(await work.quiet() && st.landed, "the filing lands after the page has closed, and the page finishes with it");
+    ok(!st.errs.length, "and nothing it does throws: " + JSON.stringify(st.errs));
   } finally {
     if (st.release) st.release();
     try { W.close(); } catch (e) { /* closed above */ }
@@ -44343,7 +44366,7 @@ await (async () => {
      predicate (a for or while line carrying &&, if or return), and a pause directly before a window's close, which lets
      a late answer land (a Workbench save, docs/WORKING.md 2) and checks nothing. The count may only fall: lower PAUSES
      when one goes, and meet a new pause with a wait on the effect, never a higher PAUSES. */
-  const PAUSES = 163;
+  const PAUSES = 159;
   const pause = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|await (?:nap|wait|sleep|pause)\(\d+\))/g;
   const beforeClose = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|(?:nap|wait|sleep|pause)\(\d+\)); (?:try \{ )?[\w.]+\.close\(\)/g;
   const poll = (l) => /\b(?:for|while) \(/.test(l) && /&&|\bif \(|\breturn /.test(l);

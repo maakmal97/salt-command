@@ -1455,10 +1455,8 @@ const CLIENT_JS = `
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
-  /* S9: whether the page is still there, for work that lands after a wait (a closed window has no document). S7 merge:
-     drawOrder, drawHome and drawDevice ask it too, since every flow that waits ends in one of them (a sign-in's
-     notifications filed, a claim, a cash choice, a re-read), and one landing on a page that has gone threw */
-  function docLive(){ try{ return !!document&&!!document.body; }catch(e){ return false; } }
+  /* 28 Sep 2026: NO DRAW ASKS WHETHER THE PAGE IS STILL THERE. A page that has gone runs no script, and jsdom from 30.1.0 keeps
+     a closed window's document, so the guard S9 and the S7 merge put on every late draw could never fire (docs/WORKING.md 3) */
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under; S13: in the language asked, the reader's by default */
   function unitsOf(q,u,L){ L=L||LANG; return unitsIn(wordIn(L,'unit.one'),wordIn(L,'unit.many'),q,u); }
@@ -1683,7 +1681,7 @@ const CLIENT_JS = `
       var j=null; try{ j=await x.json(); }catch(e){ j=null; }
       r={status:x.status, body:j||{ok:false}};
     }catch(e){ /* not sent: the card says so */ }
-    if(n!==devN||!session||!docLive()) return;
+    if(n!==devN||!session) return;
     devSlot.textContent='';
     var list=el('div','salt-ledger salt-ledger--plain');
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
@@ -1721,7 +1719,7 @@ const CLIENT_JS = `
       var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
       var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
       var r=await api('/handover',{token:tok, wrap:wrap});
-      if(n!==devM||!docLive()||devSheetEl.hidden) return;
+      if(n!==devM||devSheetEl.hidden) return;
       if(r.status===503){ dsay(tw('dev.off'),'bad'); return; }
       if(!r.body.ok||!r.body.code){ dsay(r.status===401?wErr(r.body):tw('code.notMade'),'bad'); return; }
       keepMinted=keepMinted.concat(r.body.token||tok).slice(-10);
@@ -2143,7 +2141,7 @@ const CLIENT_JS = `
   }
   function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
   function drawDevice(){
-    if(!devEl||!docLive()) return;
+    if(!devEl) return;
     devEl.hidden=!session||view||OWNER;
     if(devEl.hidden) return;
     devRows.textContent='';
@@ -2217,9 +2215,6 @@ const CLIENT_JS = `
   /* an associate's alone: a place built before anybody signs in reads nothing (the links read needs a session) */
   function drawRewards(el){ if(el) rewardsEl=el; if(assoc) drawCard(); }
   function drawCard(){
-    /* Rewards' links are read after it is drawn (loadMyLinks), and a page closed before they land has no document: the draw
-       stands down, as drawOrder, drawHome and drawDevice do (the S7 merge), or it throws into whatever runs next */
-    if(!docLive()) return;
     var box=rewardsEl;
     box.textContent='';
     drawMyLinks(box);
@@ -2889,7 +2884,6 @@ const CLIENT_JS = `
   var drawnSig='';
   function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,oLive().length>=OMAX]); }
   function drawOrder(){
-    if(!docLive()) return;
     var sc=window.scrollY;
     drawnSig=formSig();
     /* 24 Sep 2026: a redraw (a poll, another order's tap) rebuilt the thread box empty and took the caret away
@@ -3685,7 +3679,7 @@ const CLIENT_JS = `
     said.forEach(function(t){ box.appendChild(statusLine(t)); });
     return box;
   }
-  function drawPayHead(){ if(!docLive()) return; var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
+  function drawPayHead(){ var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
@@ -3923,7 +3917,6 @@ const CLIENT_JS = `
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
-    if(!docLive()) return;
     var parts={hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     drawPayHead();
