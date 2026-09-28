@@ -1,5 +1,14 @@
 [
  {
+  "v": "v919",
+  "d": "28 Sep 2026",
+  "t": "THE ROW EDITOR'S R2 MOVE QUEUES WHAT THE DRAFTER TAKES",
+  "n": [
+   "<p><b>AN R2 MOVE WITH THE BUYER EMPTIED NOW QUEUES.</b> On the row editor, setting Associate and Stream R2 and emptying the Buyer queued a cleared party, which the drafter refuses, since a row cannot lose its party: three Corrections moving CE5-SA's rows to CE5-SA-R were refused that way on 28 Sep 2026 and then swept from the queue by the next fold. The sheet now reads an empty Buyer on an R2 row as no end buyer, as the book does: where the row is on the associate's own code it queues Associate and Stream R2 alone, and where it names an end buyer it names the associate, so the row books to the resale account with no end buyer either way. s210 and s212 were entered again in that form and folded at v918.</p>",
+   "<p><b>WHAT THE DRAFTER REFUSES, THE SHEET DOES NOT QUEUE.</b> Emptying the Buyer, the product, the quantity or the goods total is refused on the sheet, which says so and queues nothing; an emptied Buyer is told to name the associate with Stream R2 for a resale. The Buyer's hint says what the box means on an R2 row. The drafter and the fold are unchanged.</p>"
+  ]
+ },
+ {
   "v": "v918",
   "d": "28 Sep 2026",
   "t": "CE5-SA ROWS MOVED TO THE RESALE ACCOUNT",

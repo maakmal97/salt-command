@@ -43708,5 +43708,90 @@ await (async () => {
   }
 })();
 
+
+section("28 Sep 2026: the row editor's R2 move with the Buyer cleared queues what the drafter takes, and the sheet queues nothing the drafter refuses");
+await (async () => {
+  /* HIS THREE CORRECTIONS OF 28 SEP 2026 (s210 to s212): Associate and Stream R2 set on the sheet, the Buyer cleared. The
+     sheet queued a cleared party, the drafter refused all three (a row cannot lose its party) and the next fold swept them
+     from the queue. Driven on the sheet itself, over a copy of the book carrying fixture rows under invented codes, and each
+     queued entry is then put to the drafter itself: what is asserted is what the desk queues AND that the drafter takes it. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { draftRow } = await import("../src/drafter.js");
+  const { readFileSync: rf, writeFileSync: wf, mkdtempSync, rmSync } = await import("node:fs");
+  const { execSync } = await import("node:child_process");
+  const { join } = await import("node:path");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "edr2-"));
+  const A = "CX9-QA", AR = "CX9-QA-R", X = "CX8-QB";
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const fx = (rid, customer, extra) => Object.assign({ rid, date: "2026-09-01", customer, qty: 1, total: 110, cash: 110,
+    deliveredQty: 1, deliveredOn: "2026-09-01", handover: "collected", cost: 56 }, extra || {});
+  bk.sales = bk.sales.concat([fx("zq1", A), fx("zq2", AR, { rev: "R2", downstream: X, date: "2026-09-02" }), fx("zq3", X, { date: "2026-09-03" })]);
+  bk.roster = bk.roster.concat([A, AR, X]);
+  bk.associates = bk.associates.concat([A]);
+  const B = join(dir, "book.json"), M = join(dir, "master.html");
+  wf(B, JSON.stringify(bk, null, 1));
+  wf(M, rf(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+  const { w } = await openMaster(M);
+  try {
+    w.eval("setProd('salt');recompute();");
+    const book = { sales: bk.sales, purchases: bk.purchases, state: Object.assign({}, bk), pricing: null, version: "fixture" };
+    /* one tap of the sheet: open the row, type into its boxes, Queue; what was queued, the row as the desk then previews
+       it, and what the sheet said. The entry is taken back off the queue after, so each tap starts from the same book. */
+    const tap = (rid, set) => JSON.parse(w.eval("(function(){var n0=queue.length;ledEdit(" + JSON.stringify(rid) + ",'SELL');"
+      + Object.keys(set).map((k) => "document.getElementById('ed_" + k + "').value=" + JSON.stringify(set[k]) + ";").join("")
+      + "edSubmit();var why=(document.getElementById('edWhy')||{}).textContent||'';"
+      + "var q=queue.length===n0+1?queue[queue.length-1]:null;"
+      + "var r=sales.find(function(s){return s.rid===" + JSON.stringify(rid) + ";})||{};"
+      + "var seen={customer:r.customer,rev:r.rev||null,downstream:r.downstream||null,total:r.total,cash:r.cash};"
+      + "if(q){queue.pop();applyOverlay();}edClose();"
+      + "return JSON.stringify({q:q,why:why,seen:seen});})()"));
+
+    /* (a) the case he hit: a row on the associate's own code, moved to R2 with the Buyer cleared */
+    const a = tap("zq1", { assoc: A, stream: "R2", party: "" });
+    const fa = a.q && a.q.payload && a.q.payload.fields;
+    ok(!!fa && fa.assoc === A && fa.stream === "R2" && !Object.prototype.hasOwnProperty.call(fa, "party") && Object.keys(fa).length === 2,
+      "the Buyer cleared on an R2 move queues Associate and Stream R2 alone, the form the drafter takes: " + JSON.stringify(fa || a.why));
+    const da = a.q ? draftRow(a.q, book) : { skip: "nothing was queued" };
+    ok(!da.skip && /moves the row from CX9-QA to CX9-QA-R/.test(da.reasoning || ""),
+      "and the drafter drafts it, moving the row to the resale account: " + (da.skip || da.reasoning));
+    ok(a.seen.customer === AR && a.seen.rev === "R2" && !a.seen.downstream && a.seen.total === 110 && a.seen.cash === 110,
+      "the desk previews it on the resale account with no end buyer and every figure as it was: " + JSON.stringify(a.seen));
+
+    /* (b) an R2 row naming an end buyer, the Buyer cleared: stated as the associate, which books no end buyer */
+    const b = tap("zq2", { party: "" });
+    const fb = b.q && b.q.payload && b.q.payload.fields;
+    ok(!!fb && fb.party === A && Object.keys(fb).length === 1,
+      "the end buyer cleared on an R2 row queues the associate as the party: " + JSON.stringify(fb || b.why));
+    const db = b.q ? draftRow(b.q, book) : { skip: "nothing was queued" };
+    ok(!db.skip, "and the drafter drafts it: " + (db.skip || "drafted"));
+    ok(b.seen.customer === AR && b.seen.rev === "R2" && !b.seen.downstream,
+      "the desk previews the row on the resale account with the end buyer gone: " + JSON.stringify(b.seen));
+
+    /* (c) and (d): what the drafter refuses, the sheet does not queue */
+    const c = tap("zq3", { party: "" });
+    ok(!c.q && /Buyer/.test(c.why) && /cannot be left empty/.test(c.why) && /Stream R2/.test(c.why),
+      "a Buyer cleared with no R2 is refused on the sheet, which says how to book a resale: " + JSON.stringify(c.why));
+    const d = tap("zq3", { qty: "" });
+    ok(!d.q && /Quantity/.test(d.why) && /cannot be left empty/.test(d.why),
+      "and so is an emptied quantity: " + JSON.stringify(d.why));
+
+    /* the control, built here and not off the sheet: the shape the sheet used to queue is still what the drafter refuses,
+       so (a) passes on the sheet's fix and not on a change of the drafter's */
+    const old = { at: "2026-09-28T00:00:00.000Z", type: "AMEND", party: A, qty: 0, total: 0, raw: "Correction on " + A + " zq1, the old shape",
+      payload: { mode: "amend", direction: "SELL", party: A, rid: "zq1", orderKey: null, kind: "Correction", date: "2026-09-28",
+        fields: { party: null, assoc: A, stream: "R2" }, assoc: null, downstream: null, orderCode: null, linkTo: null, sameDay: false,
+        note: null, qty: 0, total: 0, cash: 0, kg: 0 } };
+    const dold = draftRow(old, book);
+    ok(/party cannot be cleared/.test(dold.skip || ""), "the old shape, the party cleared, is still what the drafter refuses: " + (dold.skip || "drafted"));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+    try { rmSync(dir, { recursive: true, force: true }); } catch (x) { /* best effort */ }
+  }
+})();
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

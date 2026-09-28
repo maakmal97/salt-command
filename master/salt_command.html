@@ -8483,7 +8483,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v918","d":"28 Sep 2026","t":"CE5-SA ROWS MOVED TO THE RESALE ACCOUNT","n":["<p><b>TWO CORRECTIONS FOLDED, BOTH AGAINST CE5-SA.</b> s210, 2 unit salt at RM210, and s212, 1 unit rice at RM8, each have assoc set to CE5-SA and stream set to R2, which moves them to CE5-SA-R, the associate's resale account, where an R2 books since v611. The move is on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. Neither correction moves cash or stock. The drafter raised no flags on either row.</p>","<p><b>WHAT WAS UNUSUAL, AND THE INVENTORY.</b> Both rows were re-entered from the laptop after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer. This fold keeps CE5-SA on the rows and sets the associate beside it, so the buyer stands. CE5-SA's RM110 outstanding on s211 is untouched. Stock stays at 3 unit at RM56 a unit, and nothing landed or left.</p>"]}];
+const evolution=[{"v":"v919","d":"28 Sep 2026","t":"THE ROW EDITOR'S R2 MOVE QUEUES WHAT THE DRAFTER TAKES","n":["<p><b>AN R2 MOVE WITH THE BUYER EMPTIED NOW QUEUES.</b> On the row editor, setting Associate and Stream R2 and emptying the Buyer queued a cleared party, which the drafter refuses, since a row cannot lose its party: three Corrections moving CE5-SA's rows to CE5-SA-R were refused that way on 28 Sep 2026 and then swept from the queue by the next fold. The sheet now reads an empty Buyer on an R2 row as no end buyer, as the book does: where the row is on the associate's own code it queues Associate and Stream R2 alone, and where it names an end buyer it names the associate, so the row books to the resale account with no end buyer either way. s210 and s212 were entered again in that form and folded at v918.</p>","<p><b>WHAT THE DRAFTER REFUSES, THE SHEET DOES NOT QUEUE.</b> Emptying the Buyer, the product, the quantity or the goods total is refused on the sheet, which says so and queues nothing; an emptied Buyer is told to name the associate with Stream R2 for a resale. The Buyer's hint says what the box means on an R2 row. The drafter and the fold are unchanged.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8598,7 +8598,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 14:13 KL';
+const LAST_UPDATED='28 Sep 2026, 14:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12760,7 +12760,7 @@ function deskExit(){
 const EDFORM=[
   {g:'The trade'},
   {k:'product', l:'Product',            kind:'product', hint:'Changing this recosts the row off the other inventory.'},
-  {k:'party',   l:'Buyer',              kind:'code', only:'S', hint:'Who the row books to. Moving it moves what each of them owes.'},
+  {k:'party',   l:'Buyer',              kind:'code', only:'S', hint:'Who the row books to. Moving it moves what each of them owes. On an R2 row, the end buyer if named; empty for none.'},
   {k:'party',   l:'Supplier',           kind:'code', only:'B'},
   {k:'qty',     l:'Quantity, unit',     kind:'num'},
   {k:'total',   l:'Goods, RM',          kind:'num'},
@@ -13298,6 +13298,18 @@ function edSubmit(){
   const fa=has('assoc')?fields.assoc:now.assoc, fs=has('stream')?fields.stream:now.stream;
   if(fa&&!fs)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
   if(!fa&&fs)return say('A stream with no associate credits nobody. Clear the stream or name an associate.');
+  /* 28 Sep 2026, s210 TO s212: AN R2 MOVE WITH THE BUYER CLEARED QUEUES WHAT THE DRAFTER TAKES. On an R2 row the Buyer is
+     the end buyer, and the row books to the associate's resale account whether or not one is named (bookR2, v611), so an
+     empty box means none. Queued as a cleared party, the drafter refused it, since a row cannot lose its party, and three
+     Corrections moving CE5-SA's rows to CE5-SA-R were refused and then swept from the queue by the next fold. The box is
+     read as the associate instead: left out where the row names them already, stated where it names somebody else, which
+     bookR2 reads as no end buyer. */
+  if(has('party')&&fields.party===null&&fa&&fs==='R2'){const own=POSITION_ENGINE.ownerCode(String(fa));if(now.party===own)delete fields.party;else fields.party=own;}
+  /* and what the drafter refuses, the sheet does not queue: a row without one of these is not a row (CORRECT_REQUIRED) */
+  const edBare=(POSITION_ENGINE.CORRECT_REQUIRED||[]).filter(k=>has(k)&&fields[k]===null);
+  if(edBare.length)return say('<b>'+esc(edBare.map(k=>(edFields(edType).find(f=>f.k===k)||{}).l||k).join(', '))+'</b> cannot be left empty, only changed. Nothing was queued.'
+    +(edBare.indexOf('party')>=0&&edType!=='BUY'?' To book the row to an associate\'s resale account, name the associate with Stream R2.':''));
+  if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
   const today=TODAY.toISOString().slice(0,10);
   const words=Object.keys(fields).map(k=>k+' to '+(fields[k]===null?'(cleared)':fields[k]));
   queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(row[partyKey]),qty:0,total:0,
