@@ -1,0 +1,62 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-28T05:38:47.880Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CE4-CHE",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 140,
+    "cash": 230,
+    "handover": "collected",
+    "date": "2026-09-28",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-28",
+    "paidOn": "2026-09-28"
+   },
+   "reasoning": "Sold 2.5 unit of salt to CE4-CHE for RM 230, RM 92/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 90 on the goods at 39.1%. Paid in full and delivered in full on 2026-09-28. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-28T05:38:47.880Z",
+    "type": "SELL",
+    "party": "CE4-CHE",
+    "qty": 2.5,
+    "total": 230,
+    "status": "paid",
+    "raw": "Sell 2.5 unit to CE4-CHE for RM 230 on 2026-09-28, collected, RM 230 cash, 2.5 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "newId": null,
+     "date": "2026-09-28",
+     "qty": 2.5,
+     "total": 230,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 230,
+     "kg": 2.5,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-28T05:39:33.857Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
