@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="aa14db6e27fc4aee";
+var SALT_BUILD_ID="4346d972cfbb58c5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8578,7 +8578,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v912","d":"28 Sep 2026","t":"CASH RECEIVED TAKES THE FIGURE HANDED OVER","n":["<p><b>A SITE ORDER'S CASH RECEIVED TAKES A TYPED FIGURE.</b> On his word of 28 Sep 2026, after the counter cash on s210 that was a mistake: the pill sent the whole owed and nothing else could be typed. Other amount opens a box beside it and the pill reads the figure as it is typed; Take the whole shuts it. The card refuses a figure of RM 0 or less, or over what is owed, before anything is sent, and the Worker and what the row can still take check it again. A part-paid order offers Cash received on the rest, its line saying what was paid. A part recorded says what is still owed, and the chase goes on until what is paid keeps up with what was handed over.</p>","<p><b>NO PRICE OR FIGURE MOVES.</b> The Worker and the Counter already took any figure up to what is owed. Waiting on you still counts Cash only where nothing is paid: a prompt at the handover, not a list of what is owed. <b>THE SUITE.</b> One section draws the card: the whole, a typed part, an emptied box, the refusals, a redraw mid-type and a part-paid order; each of 11 mutations turns a check red.</p>"]}];
+const evolution=[{"v":"v913","d":"28 Sep 2026","t":"THE DESK INSTALLS AS SALT DESK, AND HIS PAGE IS SALT ACCOUNT","n":["<p><b>THE DESK INSTALLS AS SALT DESK.</b> His answer to Q6 of 28 Sep 2026: the name a home screen gives the desk, from the manifest and the iPhone app title, is Salt Desk; the page's own title stays Salt Command. The manifest is read cache first, so the shell cache moves to salt-shell-v6 with it. A phone keeps the old name on an icon already saved: add the desk to the home screen again to take the new one.</p>","<p><b>SALT ADMIN IS NOW SALT ACCOUNT.</b> The Counter's master page and every place that named it, the rail's foot here among them (\"links wait in Salt Account\"). Salt Admin is kept for the desk's own admin surface to come.</p>","<p><b>ON THE COUNTER, WITH NOTHING MORE CHANGED HERE.</b> The associates' cards carry the tiered books alone (F9). The Counter speaks English alone, the Malay kept and switched off (F7). His letters I, G, E and V sit in the Prices marks alone, one size on one line, and every mark takes his redraw on every surface: one square for all, the lozenge made square, the droplet rounder, the capsule on the diagonal, the ring larger (F8).</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8693,7 +8693,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 07:35 KL';
+const LAST_UPDATED='28 Sep 2026, 09:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
