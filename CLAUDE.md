@@ -267,7 +267,7 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
   the vault's ciphertext stay open. Rotate with `npx wrangler secret put SALT_WRITE_KEY` from the
   repo, then clear `saltWriteKey` from the phone's storage. `drain.mjs` and `seed-vault.mjs` go
   through wrangler, unaffected. **`wrangler dev` binds the LIVE KV.**
-- Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`.
+- Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`; a drafted one is rejected under Approve instead.
 
 ## Statements site
 
