@@ -174,7 +174,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
-  drawn as the engine's oldest-first `claimAlloc`, each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
+  drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
 - **Every tap that books money checks what its row can still take** (`rowRoom` in `src/orders.js`:
   the mirror's figure less every payment on its way to the row by any road), **and the fold's

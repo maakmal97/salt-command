@@ -625,10 +625,14 @@ function pastRoom(room, o, entry, word, claim) {
     + (claim ? ". " + (r.on > 0.004 ? "Once that is folded, answer" : rm > due + 0.004 ? "Answer" : "Within the minute its order hears of the book: then answer")
       + " it Received, on the book already, if you recorded it, or Not found" : "") };
 }
+/* and (pay terms V2, 28 Sep 2026) the rows of the claimant's orders he has made Ready, by their key, which the engine's
+   allocation takes as owing all that is left on them: an order at Ready is due at once, a cash-on-handover one included
+   (his C1). Read off the same list, so nothing more is fetched. An order at Ready with no row on the book yet has no key,
+   so what it would take is left over, and Received refuses that on a tap until the fold lands it. */
 async function inFlight(env, db, c, sales) {
   const all = await listOrders(env, true);
   if (!all.ok) return null;
-  const by = {}, cash = {}, keyOf = rowKeyer(sales);
+  const by = {}, cash = {}, keyOf = rowKeyer(sales), ready = [];
   /* a claim against the account's own rows are its own; an order's own moves are read off the site below, which knows them
      at once; the rest (other claims against the account, a payment typed on the desk) are on their way to the rows they name */
   for (const e of await paysOnWay(db)) {
@@ -639,15 +643,16 @@ async function inFlight(env, db, c, sales) {
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of all.orders) {
     if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    if (o.status === "ready") ready.push(o.ledgerKey);
     const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[o.ledgerKey] || 0)).toFixed(2);
     if (more > 0.004) by[o.ledgerKey] = +((by[o.ledgerKey] || 0) + more).toFixed(2);
   }
-  return by;
+  return { by, ready };
 }
 function claimRows(book, c, fl) {
-  const sales = (book.sales || []).map((s) => { const on = fl && fl[POSITION_ENGINE.ovKey(s)];
+  const sales = (book.sales || []).map((s) => { const on = fl && fl.by[POSITION_ENGINE.ovKey(s)];
     return on ? Object.assign({}, s, { cash: +((+s.cash || 0) + on).toFixed(2) }) : s; });
-  const alloc = POSITION_ENGINE.claimAlloc(sales, c.code, +c.amount);
+  const alloc = POSITION_ENGINE.claimAlloc(sales, c.code, +c.amount, fl && fl.ready);
   const date = klDate(new Date(c.at)), method = c.method + (c.account ? " via " + c.account : "");
   const entries = alloc.rows.map((r, i) => ({ at: new Date(Date.parse(c.at) + i).toISOString(), type: "SELL", party: r.party, qty: 0, total: r.rm,
     status: "Payment", by: "customer", claim: true, claimId: c.id,

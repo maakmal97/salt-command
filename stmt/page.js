@@ -293,6 +293,17 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .payhead .btn{margin-top:12px}
 .payhead .salt-insight{margin:12px 0 0}
 .salt-ledger--plain .salt-ledger__value{white-space:nowrap}
+/* V2 (28 Sep 2026): To pay now is an invoice, a line a thing due, on the plain Ledger list; on the pay sheet each line's goods,
+   delivery and what is paid stand beneath it, then the totals and the Total */
+.inv{margin-top:12px}
+.inv .invd{margin-top:6px;padding-left:22px}
+.inv .invd .salt-ledger__line,.inv .invt .salt-ledger__line{padding:2px 0}
+.inv .invd .salt-ledger__label,.inv .invd .salt-ledger__value{font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.inv .invt .salt-ledger__label,.inv .invt .salt-ledger__value{font-size:var(--salt-text-sm)}
+.inv .invt .salt-ledger__flag{margin:0 0 4px}
+.inv .invtot{border-top:1px solid var(--salt-line-strong);border-bottom:0}
+.inv .invtot .salt-ledger__label{color:var(--salt-text);font-weight:600}
+.inv .invtot .salt-ledger__value{color:var(--salt-brass);font-weight:600}
 /* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
 .payseg{display:flex;gap:8px;margin-top:12px}
 .payseg .salt-ghost{flex:1 1 0;min-width:0}
@@ -3150,7 +3161,10 @@ const CLIENT_JS = `
   /* S13: which of six, the order's screen saying it as pw.<k> and Home's Coming up as hc.still<k> */
   function payWhenKey(o){
     var mv=+o.moved||0, ar=o.mode==='deliver'?'Arrives':'Collect';
-    if(mv>0) return movedAll(o)?'WithYou':'Part';
+    if(mv>0&&movedAll(o)) return 'WithYou';
+    /* V2 (28 Sep 2026, his instruction): an order at Ready is due at once, cash on handover included (his C1) */
+    if(o.status==='ready') return 'DueNow';
+    if(mv>0) return 'Part';
     /* S6 6.8: cash chosen for the handover is paid then, never now */
     return (o.method==='cod'?'Cash':'Now')+ar;
   }
@@ -3471,7 +3485,7 @@ const CLIENT_JS = `
      (nowOf). His Received used to bring the hold back until the next publish, asking again for what he had just confirmed.
      A claim still waiting lifts the hold whatever its figure (his D9). */
   function odLeft(){ var od=odRm(); if(!(od>0.004)) return 0;
-    var got=nowOf().filter(function(x){ return lateNow(x.p); }).reduce(function(t,x){ return t+x.own+x.acct; },0);
+    var got=nowOf().filter(function(x){ return lateNow(x.p); }).reduce(function(t,x){ return t+x.back; },0);
     return Math.max(0,+(od-got).toFixed(2)); }
   /* S7 7.1: the places keep their names over the line; Home leads with what to pay, and Orders is the payment page */
   function setHold(){ hold=odLeft()>0.004&&!(sentWaiting()>0.004); }
@@ -3479,13 +3493,6 @@ const CLIENT_JS = `
     var n=el('span'), ps=od.parts||[];
     if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0]))); coverTo(n,ps[0]); }
     else n.appendChild(document.createTextNode(tw('pay.odMany',{n:ps.length, t:payDue&&payDue.term})+' '+dueWords(ps[0],true)));
-    return n;
-  }
-  /* what To pay now is for, in one line under its figure */
-  function nowNote(now){
-    var n=el('span'), ps=now.parts||[];
-    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0]))); coverTo(n,ps[0]); }
-    else n.appendChild(document.createTextNode(tw('pay.nowMany',{n:ps.length})+' '+dueWords(ps.filter(function(x){ return x.due; })[0],true)));
     return n;
   }
   /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
@@ -3502,51 +3509,136 @@ const CLIENT_JS = `
      what was sent against the account that reaches its row, walking the parts in the order they are sealed, oldest first,
      which is the order the desk's allocation takes them in (claimAlloc). ---- */
   function oSince(o){ return (o.payments||[]).filter(function(x){ return x&&x.claim==='received'&&String(x.answered||'')>liveAt; }); }
+  /* ---- V2 (28 Sep 2026, his points 1 and 6): AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE. A line for
+     each order at Ready still owing, read off the order itself (all that is left on it: its goods and delivery less what
+     is paid), so it is due the moment he taps Ready rather than at the next publish; a line for each part the publish
+     sealed that no order at Ready accounts for. The lines run in the order the desk books money sent against the account
+     (claimAlloc, the orders at Ready named): the rows with goods out, oldest first, then the orders at Ready with nothing
+     handed over, oldest first; that money is spread over them in that order, each to what is left on it, so each line's
+     Less sent is what the desk will book there. An order at Ready whose row is not on the book yet (no rowOn) takes none
+     of it, as the desk's allocation cannot reach it either. The hold still reads the sealed parts alone (back): due is
+     not overdue, and an order at Ready unpaid holds nothing. ---- */
+  function readyDue(o){ return !!o&&o.status==='ready'&&dueOf(o)>0.004; }
   function nowOf(){
-    var out=((payDue&&payDue.now&&payDue.now.parts)||[]).map(function(p){ return {p:p, o:null, own:0, acct:0}; });
+    var out=((payDue&&payDue.now&&payDue.now.parts)||[]).map(function(p){ return {p:p, o:null, fig:+p.rm||0, own:0, acct:0}; });
     orders.forEach(function(o){
       if(!o.rowOn||['cancelled','declined'].indexOf(o.status)>=0) return;
       var w=+((+o.total||0)+(+o.delivery||0)).toFixed(2);
       for(var i=0;i<out.length;i++){ var p=out[i].p;
-        if(!out[i].o&&p.date===o.rowOn&&Math.abs((+p.whole||0)-w)<0.005&&!!p.resale===!!o.forFriend){
-          out[i].o=o; out[i].own=Math.min(+p.rm||0,+(oClaimed(o)+sumOf(oSince(o))).toFixed(2)); break; } }
+        if(!out[i].o&&p.date===o.rowOn&&Math.abs((+p.whole||0)-w)<0.005&&!!p.resale===!!o.forFriend){ out[i].o=o; break; } }
     });
+    orders.forEach(function(o){ if(readyDue(o)&&!out.some(function(x){ return x.o===o; })) out.push({p:null, o:o, fig:0, own:0, acct:0}); });
+    out.forEach(function(x,i){ var o=x.o; x.i=i;
+      if(readyDue(o)){ x.fig=dueOf(o); x.own=Math.min(x.fig,oClaimed(o)); }
+      else if(o) x.own=Math.min(x.fig,+(oClaimed(o)+sumOf(oSince(o))).toFixed(2));
+    });
+    function grp(x){ return !x.p&&!((+x.o.moved||0)>0)?1:0; }
+    function day(x){ return String((x.p?x.p.date:x.o.rowOn)||'9999'); }
+    out.sort(function(a,b){ return grp(a)-grp(b)||day(a).localeCompare(day(b))||a.i-b.i; });
     var left=+(acctWaiting()+sumOf(acctSince())).toFixed(2);
-    out.forEach(function(x){ var t=+Math.max(0,Math.min(left,(+x.p.rm||0)-x.own)).toFixed(2); x.acct=t; left=+(left-t).toFixed(2); });
+    out.forEach(function(x){ if(!x.p&&!x.o.rowOn) return;
+      var t=+Math.max(0,Math.min(left,x.fig-x.own)).toFixed(2); x.acct=t; left=+(left-t).toFixed(2); });
+    /* what reaches a sealed part, for the hold: money on an order at Ready goes to its handed part first */
+    out.forEach(function(x){ x.back=!x.p?0:readyDue(x.o)?Math.min(+x.p.rm||0,+(oClaimed(x.o)+sumOf(oSince(x.o))+x.acct).toFixed(2)):+(x.own+x.acct).toFixed(2); });
     return out;
   }
   function oAcct(o){ var x=nowOf().filter(function(y){ return y.o===o; })[0]; return x?x.acct:0; }
-  function acctToPay(){ var n=payDue&&payDue.now; if(!n) return 0;
-    var own=nowOf().reduce(function(t,x){ return t+x.own; },0);
-    return Math.max(0,+(n.rm-acctWaiting()-sumOf(acctSince())-own).toFixed(2)); }
+  function invTotal(lines){ return Math.max(0,+lines.reduce(function(t,x){ return t+x.fig-x.own-x.acct; },0).toFixed(2)); }
+  function acctToPay(){ return invTotal(nowOf()); }
   function sentWaiting(){ return +(acctWaiting()+orders.reduce(function(n,o){ return n+(['cancelled','declined'].indexOf(o.status)>=0?0:oClaimed(o)); },0)).toFixed(2); }
-  /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight */
-  function claimLines(){
-    var out=[], sw=sentWaiting();
-    if(sw>0.004) out.push(tw('cl.waiting',{rm:rm(sw)}));
-    acctSince().forEach(function(c){ out.push(tw('cl.received',{rm:rm(c.amount), d:Dd(oDay,c.answered)})); });
+  /* the lines under To pay now: what waits on him, and his answers since the statement was written, or in the last fortnight.
+     V2: the invoice's Less sent carries what reaches its lines, so the first two are said only where it does not carry all of it */
+  function claimLines(lines){
+    var out=[], sw=sentWaiting(), rc=acctSince(), inv=(lines||[]).reduce(function(t,x){ return t+x.own+x.acct; },0);
+    if(inv+0.004<+(sw+sumOf(rc)).toFixed(2)){
+      if(sw>0.004) out.push(tw('cl.waiting',{rm:rm(sw)}));
+      rc.forEach(function(c){ out.push(tw('cl.received',{rm:rm(c.amount), d:Dd(oDay,c.answered)})); });
+    }
     /* S6 fix: likewise only while nothing was sent since and To pay now still asks for something */
     claims.filter(function(c){ return c&&c.state==='notfound'&&Date.now()-Date.parse(c.answered||c.at)<14*864e5&&acctToPay()>0.004
       &&!claims.some(function(y){ return y&&String(y.at)>String(c.answered||c.at); }); })
       .forEach(function(c){ out.push(tw('cl.notFound',{rm:rm(c.amount), d:Dd(oDay,c.at)})); });
     return out;
   }
+  /* A LINE OF THE INVOICE: what it is and what it adds up from. An order at Ready reads the order: its size, its goods,
+     delivery and what is paid. A part reads what the publish sealed (V2): the units handed over at the rate, their goods
+     and delivery, and what is paid on the row, adding up to its figure; one sealed before V2 has its figure alone. */
+  function invOf(x){
+    var o=x.o, p=x.p;
+    if(readyDue(o)){ var q=o.closed&&+o.closed.qty>0?+o.closed.qty:(+o.qty||0);
+      return {product:o.product, q:q, rate:q>0?+((+o.total||0)/q).toFixed(2):0, friend:!!o.forFriend, goods:+o.total||0, deliv:+o.delivery||0, less:+o.paid||0, split:true}; }
+    var sp=typeof p.goods==='number';
+    return {product:p.product, q:sp?(+p.got||0):(+p.qty||0), rate:+p.rate||0, friend:!!p.resale,
+      goods:sp?+p.goods:(+p.rm||0), deliv:sp?(+p.deliv||0):0, less:sp?(+p.less||0):0, split:sp};
+  }
+  function isoDay(iso){ if(!iso) return ''; try{ var p=klBits(iso); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }catch(e){ return ''; } }
+  /* when a line is due: in a word or three on Home ("Due now", "Pay by Tue 29 Sep", "Overdue by 5 days"), and whole on the
+     pay sheet, after when the goods went or the order was made ready. An order at Ready is due now unless its handed part is
+     already late, which is overdue as it was. */
+  function dueShort(p){
+    var n=p&&p.due?daysTo(p.due):null; if(n==null) return '';
+    var from=p.since||p.gotOn||p.date;
+    if(lateNow(p)&&from) return tw('dueS.Late',{n:Math.max(0,-(daysTo(from)||0))});
+    return n<=0?tw('dueS.Today'):tw('dueS.By',{d:Dd(dayName,p.due)});
+  }
+  function invWhen(x,full){
+    var o=x.o, p=x.p, now=readyDue(o)&&!(p&&lateNow(p));
+    if(!full) return now?tw('dueS.Now'):dueShort(p);
+    var rd=readyDue(o)?(movedAll(o)?o.movedOn:isoDay(firstAt(o,'ready'))):'', got=p&&(p.since||p.gotOn),
+        at=rd?tw(movedAll(o)?'inv.gotOn':'inv.readySince',{d:Dd(dayName,rd)}):got?tw('inv.gotOn',{d:Dd(dayName,got)}):'',
+        due=now?tw('due.Now'):dueWords(p);
+    return at&&due?at+' '+due:at||due;
+  }
+  function ledLine(k,v){ var l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); return l; }
+  /* Home draws each line in one row, its figure and when (his "less words, but maximum impact"), then Less sent where
+     something was sent, the figure above being the Total; the pay sheet draws the line whole with what it adds up from
+     beneath it, then Goods, Delivery, Less paid, Less sent and the Total. A nil figure is left out, and a line of goods
+     alone draws nothing beneath it. */
+  function invNode(lines,full){
+    var L=el('div','salt-ledger salt-ledger--plain inv'), T={goods:0,deliv:0,less:0,sent:0}, split=true,
+        wait=lines.some(function(x){ return x.o&&oClaimed(x.o)>0.004&&x.own>0.004; })||(acctWaiting()>0.004&&lines.some(function(x){ return x.acct>0.004; }));
+    lines.forEach(function(x){
+      var d=invOf(x), mk=markHtml(d.product,20), u=function(Lg){ return esch(unitsOf(d.q,unitFor(d.product),Lg)); },
+          lab=full&&d.split&&d.rate>0?setW(el('span'),d.friend?'inv.lineF':'inv.line',{mark:mk, u:u, rate:esch(rm(d.rate))})
+            :setW(el('span'),d.friend?'part.BareF':'part.Bare',{mark:mk, u:u});
+      var r=lrowN(lab,rm(x.fig),invWhen(x,full),x.p&&lateNow(x.p)?'odue':'');
+      if(full){
+        var det=[[tw('om.goods'),d.goods],[tw('sh.delivery'),d.deliv],[tw('inv.lessPaid'),d.less]].filter(function(q,i){ return i===0||q[1]>0.004; });
+        if(d.split&&det.length>1){ var dd=el('div','invd'); det.forEach(function(q){ dd.appendChild(ledLine(q[0],rm(q[1]))); }); r.appendChild(dd); }
+      }
+      /* his approval of 27 Sep 2026: the part their reward paid says so, with no amount, on Home and on the sheet */
+      coverTo(r,x.p);
+      L.appendChild(r);
+      T.goods+=d.goods; T.deliv+=d.deliv; T.less+=d.less; T.sent+=x.own+x.acct; split=split&&d.split;
+    });
+    var sent=+T.sent.toFixed(2);
+    if(!full){ if(sent>0.004) L.appendChild(lrow(tw('inv.lessSent'),rm(sent),wait?tw('om.waiting'):'')); return L; }
+    var tr=el('div','salt-ledger__row invt');
+    function tl(k,v,f){ tr.appendChild(ledLine(k,rm(v))); if(f) tr.appendChild(el('span','salt-ledger__flag',f)); }
+    if(split){ tl(tw('om.goods'),T.goods); if(T.deliv>0.004) tl(tw('sh.delivery'),T.deliv); if(T.less>0.004) tl(tw('inv.lessPaid'),T.less); }
+    if(sent>0.004) tl(tw('inv.lessSent'),sent,tw(wait?'om.waiting':'om.received'));
+    if(tr.firstChild) L.appendChild(tr);
+    var tt=lrow(tw('inv.total'),rm(invTotal(lines))); tt.className+=' invtot'; L.appendChild(tt);
+    return L;
+  }
   /* S7 7.1: TO PAY NOW IS HOME'S FIRST ANSWER, so it answers even when it is nothing: a new account says there is nothing
      on it yet, and an account owing nothing now says so, with no Pay. Over the line (setHold) it says, in the payment
      page's own words, to pay the overdue amount first; the payment page itself is Orders'. Built afresh and put on the
-     page only where it reads differently, so a poll never takes a tap's focus from its Pay. */
+     page only where it reads differently, so a poll never takes a tap's focus from its Pay. V2: the figure is the
+     invoice's Total, its lines beneath it and the one Pay for it; each line says its own day, so the note under the
+     figure and the Overdue list under it went. */
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
-    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=odNow(), said=bundle?claimLines():[], fr=fresh();
-    box.hidden=!bundle||!(fr||payDue||said.length);
+    var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
+    box.hidden=!bundle||!(fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
-    if(now.rm>0.004){
-      box.appendChild(kpiTile('ember',tw('pay.now'),rm(now.rm),nowNote(now)));
+    if(lines.length){
+      box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
+      box.appendChild(invNode(lines,false));
       if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
-      var left=acctToPay();
-      if(!view&&left>0.004){
+      if(!view&&tot>0.004){
         /* S6 6.4: it opens the pay sheet on what is to pay now, the one road for Home's Pay */
-        var pb=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(left)})); pb.type='button'; pb.id='payNow';
+        var pb=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
         pb.addEventListener('click',function(){ openPay(acctCtx()); });
         box.appendChild(pb);
       }
@@ -3554,13 +3646,6 @@ const CLIENT_JS = `
     else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
     else if(payDue) box.appendChild(kpiTile('verdigris',tw('pay.now'),rm(0),el('span',null,tw('pay.nothing'))));
     said.forEach(function(t){ box.appendChild(statusLine(t)); });
-    /* each overdue part with the day it fell due; one part says so in the line above */
-    if(now.rm>0.004&&od.rm>0.004&&(now.parts||[]).length>1){
-      box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',tw('pay.overdue')));
-      var L=el('div','salt-ledger salt-ledger--plain');
-      od.parts.forEach(function(p){ L.appendChild(coverTo(lrowN(partSpan(p),rm(p.rm),dueWords(p),'odue'),p)); });
-      box.appendChild(L);
-    }
     return box;
   }
   function drawPayHead(){ if(!docLive()) return; var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
@@ -3596,7 +3681,8 @@ const CLIENT_JS = `
   /*__PAYHREF__*/
   function payInto(rail,amt){ return PAY.filter(function(a){ return !!payHref(a.key,rail,amt,user); }); }
   /* label: a key, worded as the sheet draws */
-  function acctCtx(){ var n=payDue&&payDue.now; return {kind:'acct', fig:acctToPay(), label:'pay.now', note:function(){ return nowNote(n); }}; }
+  /* V2: the invoice is fixed as the sheet opens, as its figure is, so a poll landing while they pay moves neither */
+  function acctCtx(){ var L=nowOf(); return {kind:'acct', fig:invTotal(L), label:'pay.now', lines:L, note:function(){ return null; }}; }
   function orderCtx(id){
     var o=oFind(id);
     return {kind:'order', id:id, fig:o?oToPay(o):0, label:'pay.still', note:function(){
@@ -3648,6 +3734,8 @@ const CLIENT_JS = `
     var body=document.getElementById('payBody'), c=PS.ctx;
     body.textContent=''; payTitle();
     body.appendChild(kpiTile('ember',tw(c.label),rm(c.fig),c.note()));
+    if(c.lines) body.appendChild(invNode(c.lines,true));
+    if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     var cash=PS.rail==='cod';
     var seg=el('div','payseg');
     [[false,tw('pay.all',{rm:rm(c.fig)})],[true,tw('pay.part')]].forEach(function(x){
@@ -3666,7 +3754,8 @@ const CLIENT_JS = `
     }
     var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
     fs.appendChild(el('legend','salt-options__legend',tw('pay.how')));
-    HOW.concat(c.kind==='order'?[cashWay()]:[]).forEach(function(w){
+    /* V2 (his C1): an order at Ready is due now, so its sheet offers no cash way, cash on handover chosen or not */
+    HOW.concat(c.kind==='order'&&!readyDue(oFind(c.id))?[cashWay()]:[]).forEach(function(w){
       var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'),
           ld=el('span','salt-option__lead'), tx=el('span','salt-option__text'), a=w.v==='transfer'&&PS.rail==='transfer'&&acct(PS.acct);
       r.type='radio'; r.name='payHow'; r.value=w.v; r.checked=PS.rail===w.v; r.disabled=!!w.off;
@@ -3836,7 +3925,8 @@ const CLIENT_JS = `
     return box;
   }
   function homeComing(){
-    var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o); }), more=comingParts();
+    /* V2: an order at Ready still owing is a line of To pay now, so it leaves Coming up */
+    var box=el('div'), list=orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0&&!movedAll(o)&&!replyWaiting(o)&&!toCollect(o)&&!readyDue(o); }), more=comingParts();
     if(!list.length&&!more.length) return box;
     box.appendChild(hHead(tw('hc.h')));
     list.forEach(function(o){

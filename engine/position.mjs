@@ -872,12 +872,20 @@ function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET
    against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
    bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
    Each row takes what it owes or what is left of the figure; what no row owes is `left`. The desk draws this and nothing
-   else, so the rows his one tap approves are the engine's. */
-function claimAlloc(sales,party,amount){
-  const rows=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&txAdvance(s)>0.009)
-    .slice().sort((a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999')));
+   else, so the rows his one tap approves are the engine's.
+   28 SEP 2026, HIS INSTRUCTION (pay terms V2): AN ORDER AT READY IS DUE AT ONCE. `ready` names, by ovKey, the rows whose site
+   orders he has made Ready. Such a row owes all that is left on it (the goods and the delivery less what was paid), not
+   only the goods handed over: with goods out it takes its place among the rows with goods out, oldest first; with nothing
+   handed over it comes after all of them, oldest first. A cancelled or written-off row is never Ready. Without `ready` the
+   allocation is as it was, so the rows are settled as the statement's To pay now lists them. */
+function claimAlloc(sales,party,amount,ready){
+  const rd=new Set(ready||[]),isRd=s=>rd.size>0&&!s.cancelled&&!s.defaulted&&rd.has(ovKey(s));
+  const owes=s=>isRd(s)?Math.max(0,txOwed(s)-txPaid(s)):txAdvance(s),out1=s=>!isRd(s)||(s.deliveredQty||0)>0.0001;
+  const byDate=(a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999'));
+  const mine=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&owes(s)>0.009);
+  const rows=mine.filter(out1).sort(byDate).concat(mine.filter(s=>!out1(s)).sort(byDate));
   let left=+(+amount||0).toFixed(2);const out=[];
-  for(const s of rows){if(left<=0.004)break;const owed=+txAdvance(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
+  for(const s of rows){if(left<=0.004)break;const owed=+owes(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
     out.push({key:ovKey(s),rid:s.rid||null,party:s.customer,date:s.date||null,owed:owed,rm:take});left=+(left-take).toFixed(2);}
   return {rows:out,left:Math.max(0,left)};
 }

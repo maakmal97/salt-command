@@ -844,8 +844,17 @@ export function payDue(party, day) {
     const nowPart = rm > 0.009;
     if (nowPart) {
       const since = E.txUnpaidSince(s), due = since ? dayPlus(since, term) : null;
+      /* 28 SEP 2026, HIS INSTRUCTION (pay terms V2): TO PAY NOW READS LIKE AN INVOICE, so a part carries its line, sealed
+         here because the site prices nothing: the goods and the delivery on the units handed over, what is paid, and the
+         rate, with goods + deliv - less = rm to the sen. The engine spreads the delivery over the units (txPrice), so the
+         worth of the units handed over is rm plus what is paid; the goods are those units at the row's rate, and the
+         delivery is the rest of that worth. A row with no delivery charge has none, whatever the rounding. What is paid is
+         the engine's txPaid, cash and in kind, both on the statement already; a reward's cover is not in it. */
+      const less = +E.txPaid(s).toFixed(2), worth = +(rm + less).toFixed(2), goodsAll = +E.txGoods(s);
+      const goods = +s.delivery > 0 && s.qty > 0 ? Math.min(worth, +((+(s.deliveredQty || 0)) * goodsAll / s.qty).toFixed(2)) : worth;
       now.push(Object.assign({ date: s.date || null, since, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
-        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale }, hasCover ? { cover: 1 } : {}));
+        product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale,
+        goods, deliv: +(worth - goods).toFixed(2), less, rate: s.qty > 0 ? +(goodsAll / s.qty).toFixed(2) : 0 }, hasCover ? { cover: 1 } : {}));
     }
     const toPay = +E.txPendRM(s).toFixed(2);
     if (toPay > 0.009) coming.push(Object.assign({ date: s.date || s.agreedOn || null, rm: toPay, product, qty: s.qty,

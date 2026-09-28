@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="5023471839057c6d";
+var SALT_BUILD_ID="e0dc1c703e399967";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5857,12 +5857,20 @@ function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET
    against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
    bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
    Each row takes what it owes or what is left of the figure; what no row owes is `left`. The desk draws this and nothing
-   else, so the rows his one tap approves are the engine's. */
-function claimAlloc(sales,party,amount){
-  const rows=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&txAdvance(s)>0.009)
-    .slice().sort((a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999')));
+   else, so the rows his one tap approves are the engine's.
+   28 SEP 2026, HIS INSTRUCTION (pay terms V2): AN ORDER AT READY IS DUE AT ONCE. `ready` names, by ovKey, the rows whose site
+   orders he has made Ready. Such a row owes all that is left on it (the goods and the delivery less what was paid), not
+   only the goods handed over: with goods out it takes its place among the rows with goods out, oldest first; with nothing
+   handed over it comes after all of them, oldest first. A cancelled or written-off row is never Ready. Without `ready` the
+   allocation is as it was, so the rows are settled as the statement's To pay now lists them. */
+function claimAlloc(sales,party,amount,ready){
+  const rd=new Set(ready||[]),isRd=s=>rd.size>0&&!s.cancelled&&!s.defaulted&&rd.has(ovKey(s));
+  const owes=s=>isRd(s)?Math.max(0,txOwed(s)-txPaid(s)):txAdvance(s),out1=s=>!isRd(s)||(s.deliveredQty||0)>0.0001;
+  const byDate=(a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999'));
+  const mine=(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.goodwill&&owes(s)>0.009);
+  const rows=mine.filter(out1).sort(byDate).concat(mine.filter(s=>!out1(s)).sort(byDate));
   let left=+(+amount||0).toFixed(2);const out=[];
-  for(const s of rows){if(left<=0.004)break;const owed=+txAdvance(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
+  for(const s of rows){if(left<=0.004)break;const owed=+owes(s).toFixed(2),take=+Math.min(left,owed).toFixed(2);
     out.push({key:ovKey(s),rid:s.rid||null,party:s.customer,date:s.date||null,owed:owed,rm:take});left=+(left-take).toFixed(2);}
   return {rows:out,left:Math.max(0,left)};
 }
@@ -8605,7 +8613,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v920","d":"28 Sep 2026","t":"HIS LETTER IN EVERY MARK, AND A CARD'S FIGURE UNDER ITS MARK","n":["<p><b>EVERY MARK ON THE COUNTER CARRIES HIS LETTER (F8, Step 1a.2 of the combined plan).</b> I, G, E and V sit in the cube, the droplet, the lozenge and the capsule on Home, Orders, the order sheet, Prices, Rewards, the guest board and the live statement, where v913 drew them on Prices alone; the spare book's Ring carries none, and the letter names nothing. No mark is drawn under 20 px: a statement table's 13 px and a pay line's 15 px are raised. Sealed issues and archives keep what they were sent with.</p>","<p><b>IN A CARD THE MARK IS A BUTTON WITH ITS FIGURE ALONE UNDER IT, his note of 28 Sep 2026.</b> An order's row and its screen, Coming up, Order again, the check before Place, the open-order limit and the live statement's lines, totals and Still to collect draw the mark with the size under it and no unit word beside it; a reader still hears the shape and the size in words. A running sentence keeps its mark beside the size, at 20 px.</p>","<p><b>EVERY BOOK'S SALES PROGRESS ON AN ASSOCIATE'S CARD, THE REWARD ON SALT ALONE (F9 revised).</b> The associate's own card and the associates report card loop every book again and fill the reward only on a tiered book; a book with none draws its progress with no reward line. No price, level or figure on the desk moves.</p>"]}];
+const evolution=[{"v":"v921","d":"28 Sep 2026","t":"AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE","n":["<p><b>AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE.</b> His points 1 and 6 of 28 Sep 2026, with his C1 and C2. An order he has made Ready owes all that is left on it at once, cash on handover included: on the Counter it leaves Coming up and becomes a line of To pay now, read off the order itself, so it is due the moment he taps Ready rather than at the next publish. Its own screen says Due now, and its pay sheet offers no cash way. Due is not overdue: the hold still counts only a part more than three days past its handover, so an order at Ready unpaid stops nothing.</p>","<p><b>ONE PAY, BOOKED IN THE DESK'S ORDER.</b> The engine's claimAlloc takes the rows of the orders at Ready, which the desk Worker names from the site's orders at Ready: first the rows with goods out, oldest first, each owing what was handed over, or all that is left on a row at Ready; then the rows at Ready with nothing handed over, oldest first. Without them it is as it was. The page spreads money sent against the account over its lines in the same order, so each line's Less sent is what the desk books there. The account road is proved end to end on a row at Ready: the preview, Received, the drafter, the fold, and no tap after it booking past what the row can take.</p>","<p><b>THE INVOICE.</b> The publish seals each part's line: the goods and the delivery on the units handed over, what is paid, and the rate, adding up to its figure to the sen. Home draws a line a row, its figure and when it is due in a word or three, then Less sent, and the Total with one Pay, his \"less words, but maximum impact\"; the pay sheet draws the same invoice whole, each line's rate, when, goods, delivery and paid, then Goods, Delivery, Less paid, Less sent and the Total.</p>","<p><b>PROOFS.</b> Four new suite sections (the seal, the allocation, the account road and the page, whose last check holds the invoice to Step 1a.2: every mark it draws lettered and 20 px); S6 6.2 rewritten for the invoice, three fixtures given the part their figure stood for, and five checks reading the invoice's words. 27 mutations red: 6 on the allocation, 4 on the account road, 4 on the seal and 13 on the page.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8720,7 +8728,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 15:08 KL';
+const LAST_UPDATED='28 Sep 2026, 15:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

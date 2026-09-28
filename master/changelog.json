@@ -1,5 +1,16 @@
 [
  {
+  "v": "v921",
+  "d": "28 Sep 2026",
+  "t": "AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE",
+  "n": [
+   "<p><b>AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE.</b> His points 1 and 6 of 28 Sep 2026, with his C1 and C2. An order he has made Ready owes all that is left on it at once, cash on handover included: on the Counter it leaves Coming up and becomes a line of To pay now, read off the order itself, so it is due the moment he taps Ready rather than at the next publish. Its own screen says Due now, and its pay sheet offers no cash way. Due is not overdue: the hold still counts only a part more than three days past its handover, so an order at Ready unpaid stops nothing.</p>",
+   "<p><b>ONE PAY, BOOKED IN THE DESK'S ORDER.</b> The engine's claimAlloc takes the rows of the orders at Ready, which the desk Worker names from the site's orders at Ready: first the rows with goods out, oldest first, each owing what was handed over, or all that is left on a row at Ready; then the rows at Ready with nothing handed over, oldest first. Without them it is as it was. The page spreads money sent against the account over its lines in the same order, so each line's Less sent is what the desk books there. The account road is proved end to end on a row at Ready: the preview, Received, the drafter, the fold, and no tap after it booking past what the row can take.</p>",
+   "<p><b>THE INVOICE.</b> The publish seals each part's line: the goods and the delivery on the units handed over, what is paid, and the rate, adding up to its figure to the sen. Home draws a line a row, its figure and when it is due in a word or three, then Less sent, and the Total with one Pay, his \"less words, but maximum impact\"; the pay sheet draws the same invoice whole, each line's rate, when, goods, delivery and paid, then Goods, Delivery, Less paid, Less sent and the Total.</p>",
+   "<p><b>PROOFS.</b> Four new suite sections (the seal, the allocation, the account road and the page, whose last check holds the invoice to Step 1a.2: every mark it draws lettered and 20 px); S6 6.2 rewritten for the invoice, three fixtures given the part their figure stood for, and five checks reading the invoice's words. 27 mutations red: 6 on the allocation, 4 on the account road, 4 on the seal and 13 on the page.</p>"
+  ]
+ },
+ {
   "v": "v920",
   "d": "28 Sep 2026",
   "t": "HIS LETTER IN EVERY MARK, AND A CARD'S FIGURE UNDER ITS MARK",

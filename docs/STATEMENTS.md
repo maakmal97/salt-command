@@ -267,7 +267,10 @@ seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten
 "late", since that moves prices, and the cash-in forecast expects a receivable at it.
 **Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by
 `agreedOn`. A part carries `date`, `since`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
-id, drawn as a mark), `qty`, `got`, `gotOn` (the last handover's day, one in stages included) and `resale`; a coming part `date`, `rm`, `product`,
+id, drawn as a mark), `qty`, `got`, `gotOn` (the last handover's day, one in stages included) and `resale`, and (pay terms V2,
+28 Sep 2026) its invoice line: `goods` and `deliv` on the units handed over, `less` (what is paid, the engine's `txPaid`,
+cash and in kind) and `rate` (the goods' rate), with `goods + deliv - less = rm` to the sen, the delivery taking the worth
+the goods leave and none on a row with no charge; a coming part `date`, `rm`, `product`,
 `qty`, `toCome` and `resale`. A gift, a write-off and a row the statement has not reached (not agreed, and
 dated after the day) count in none of them, so now plus coming is `owed` plus the
 agreed orders it leaves out, less the write-off it still prints. The site draws them and
@@ -476,11 +479,17 @@ D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens f
 at the foot of a phone and on its rail from 1080px. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
 address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
-banner's `#o=<id>` still opens Orders at that order. **Home** reads To pay now (S6 6.2, `drawPayHead`: the sealed
-figure, its one filled Pay opening the pay sheet, the claims waiting, each overdue part, and over the line the overdue
-amount first; Orders is then the payment page), Needs you (a reply not yet shown on this device, goods ready to
-collect, goods with them unpaid) and Coming up (an order agreed or sent and not handed over, then any sealed part no
-order accounts for, `comingParts`) and **Order again** (S7 7.4): a tile a size, way and place they have
+banner's `#o=<id>` still opens Orders at that order. **Home** reads To pay now (S6 6.2, `drawPayHead`; since pay terms
+V2 of 28 Sep 2026 an INVOICE, `nowOf`: a line for each order at Ready still owing, read off the order itself so it is due
+the moment he taps Ready, and a line for each sealed part no order at Ready accounts for, in `claimAlloc`'s order (goods
+out oldest first, then the orders at Ready with nothing handed over), then Less sent, what was sent on those lines or
+against the account, spread in that order; the figure is the Total and its one filled Pay opens the pay sheet on the same
+invoice, drawn whole there with each line's rate, when, goods, delivery and paid, then the totals. Home draws a line a
+row with its due in a word or three, his "less words, but maximum impact". Over the line the overdue amount first, the
+hold reading the sealed parts alone, so an order at Ready is due and never overdue; Orders is then the payment page),
+Needs you (a reply not yet shown on this device, goods ready to collect, goods with them unpaid) and Coming up (an order
+agreed or sent and not handed over, an order at Ready still owing excepted, then any sealed part no order accounts for,
+`comingParts`) and **Order again** (S7 7.4): a tile a size, way and place they have
 ordered, while the size is on their list, at today's price, whose tap opens the check with them, so the second tap places
 it; a new account is offered its list's first sizes, and nothing is offered over the line. A new account opens on Welcome
 and "Nothing on your account yet". Nothing about the statements changed.
@@ -715,7 +724,8 @@ beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay n
 reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
 shown when it comes; Pay then asks only for what no claim covers, **never the same money twice**: To pay now nets what was
 sent on an order whose row is one of its parts (matched by `rowOn` and the whole figure), and the order nets what was sent
-against the account that reaches its row, the parts walked oldest first as `claimAlloc` takes them. The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+against the account that reaches its row, the lines walked as `claimAlloc` takes them (since V2: the rows with goods out
+oldest first, then the orders at Ready with nothing handed over; an order at Ready with no `rowOn` takes none). The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
@@ -741,7 +751,12 @@ that money he recorded another way covers (more than the order still owes, or th
 `covered` the way Not found files it, one event, the claim received with paid unmoved, the wake Payment received. **A claim against the account is received row by
 row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
 bucket's with goods out and money owed, by date, each to what it owes, less the money already on its way to it: a claim
-on its order waiting or received, cash not folded, another account claim's booked row, a payment typed on the desk) as one Fulfilment a row, against the mirror and
+on its order waiting or received, cash not folded, another account claim's booked row, a payment typed on the desk; and, since
+pay terms V2 of 28 Sep 2026, an order at Ready being due at once, the rows of their orders he has made Ready, `ready`, which
+the Worker names from the site's orders at `ready` with a `ledgerKey`, a cash-on-handover one included (his C1): each owes
+all that is left on it, `txOwed - txPaid`, one with goods out in its place among the rows with goods out, then the Ready
+rows with nothing handed over, oldest first; a Ready order whose row is not on the mirror yet leaves its share over, which
+Received refuses on a tap until the fold lands it) as one Fulfilment a row, against the mirror and
 stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
 Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
 then tells the site. More than the rows owe is never a tap. An order claim's Received is refused on a row an account claim
@@ -753,7 +768,8 @@ its way until the mirror is re-seeded (`snapshot.at`), since the chain marks bef
 is told its answer: Received, on the book already, or Not found, once the money is folded and its order has heard of it
 (the return leg, the minute after the re-seed), and the refusal says which of those it is waiting on. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
-order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
+order sheet's third way (S6 6.8), never To pay now's and never at Ready (pay terms V2, his C1: an order at Ready is due
+now, cash on handover chosen or not, and says "Due now"), shown dashed with that reason where withheld;
 choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
