@@ -140,6 +140,40 @@ const dropOrdersQueue = (kv) => { for (const k of [...kv.m.keys()]) if (isOrders
    (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
    seen waits here first, so the state it proves is forced and never the runner's speed. */
 const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
+/* A PAGE'S WORK IS COUNTED, NEVER WAITED OUT (28 Sep 2026). "Wait 80 ms, then read the phone's memory" is a stopwatch:
+   beside other suites the Counter's PBKDF2 (150,000 rounds) outran it, and S3 3.8 read the memory before the page wrote
+   it. pageWork(win), called at the end of beforeParse once the section's own fetch and crypto are in place, counts what
+   the window has in flight, its fetches, the reading of their bodies (a stub may do its own key work inside json()) and
+   its crypto.subtle calls, and quiet() waits until none is left over three turns of the loop: the page has finished,
+   however long that took. A minute without that is a hang, and quiet() says so by returning false. A timer the page
+   sets is not counted; the Counter's flows set none. */
+const pageWork = (win) => {
+  let n = 0;
+  const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; }); };
+  const reads = (r) => {
+    if (r && typeof r === "object") for (const k of ["json", "text", "arrayBuffer"]) {
+      const g = r[k];
+      if (typeof g === "function") r[k] = function (...a) { return track(g.apply(this, a)); };
+    }
+    return r;
+  };
+  const f = win.fetch;
+  if (typeof f === "function") win.fetch = function (...a) { return track(Promise.resolve(f.apply(this, a)).then(reads)); };
+  const c = win.crypto, s = c && c.subtle;
+  if (s) {
+    const subtle = new Proxy(s, { get: (o, k) => (typeof o[k] === "function" ? (...a) => track(o[k](...a)) : o[k]) });
+    Object.defineProperty(win, "crypto", { configurable: true,
+      value: new Proxy(c, { get: (o, k) => (k === "subtle" ? subtle : typeof o[k] === "function" ? o[k].bind(o) : o[k]) }) });
+  }
+  return {
+    inFlight: () => n,
+    quiet: async () => {
+      const end = Date.now() + 60000;
+      for (let still = 0; still < 3 && Date.now() < end; still = n ? 0 : still + 1) await new Promise((r) => setTimeout(r, 5));
+      return n === 0;
+    }
+  };
+};
 const DESK_TAG = '"desk-e1"';
 const assets = {
   async fetch(req) {
@@ -9755,38 +9789,51 @@ await (async () => {
   ok(rowN && /no judgement is recorded/.test(rowN.note) && /WRITTEN BY THE TOOL, NOT A MODEL/.test(rf9(MN, "utf8")), "and the row note and the version entry both say no judgement is in them");
   rm9(dirN, { recursive: true, force: true });
   /* 26 Sep 2026: AN API THAT NEVER ANSWERS IS CUT, and the fold still lands. A local server takes the
-     request and says nothing; foldcall is pointed at it with a 300 ms bound and no retries, on its own
-     copies, and must land on the tool's notes inside 10 s. The SDK's own bound is ten minutes an attempt. */
+     request and says nothing; foldcall is pointed at it with a 2 s bound and no retries, on its own
+     copies, and must land on the tool's notes. The SDK's own bound is ten minutes an attempt.
+     28 Sep 2026: THE CUT IS TIMED, NEVER THE RUN. The whole run was held to 10 s, and beside other suites
+     on the laptop it took 10.3 to 15.7 s: node's start, the dossier and the fold are the machine's speed,
+     not the bound. The server times each request from its arrival to the moment its socket closes, and
+     closes it itself 10 s in: a request the server had to drop is one the fold never cut. The client's own
+     words say which timer fired ("Request timed out." is the SDK's; the server's drop reads as a connection
+     error). The bound is 2 s, not 300 ms, because the SDK starts it before it connects, and a starved
+     client must still reach the server inside it. The child's kill is a hang guard only. */
   {
     const { createServer } = await import("node:http");
     const { spawn: sp9 } = await import("node:child_process");
-    const hits = [];
-    const srv = createServer((req) => { hits.push(req.method + " " + req.url); });
+    const hits = [], held = [];
+    const srv = createServer((req) => {
+      const t = Date.now(), h = { ms: null, by: null };
+      hits.push(req.method + " " + req.url); held.push(h);
+      const dog = setTimeout(() => { h.by = "server"; h.ms = Date.now() - t; req.socket.destroy(); }, 10000);
+      req.socket.on("close", () => { clearTimeout(dog); if (!h.by) { h.by = "client"; h.ms = Date.now() - t; } });
+    });
     await new Promise((r) => srv.listen(0, "127.0.0.1", r));
     const silentEnv = { ANTHROPIC_BASE_URL: "http://127.0.0.1:" + srv.address().port, ANTHROPIC_API_KEY: "sk-fixture-not-a-key", ANTHROPIC_AUTH_TOKEN: "",
-      SALT_FOLD_TIMEOUT_MS: "300", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", CLOUDFLARE_API_TOKEN: "" };
+      SALT_FOLD_TIMEOUT_MS: "2000", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", CLOUDFLARE_API_TOKEN: "" };
     const timed = (args) => new Promise((res) => {
-      const t0 = Date.now(); let out = "";
+      let out = "";
       const c = sp9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args], { cwd: REPO, env: { ...process.env, ...silentEnv }, stdio: ["ignore", "pipe", "pipe"] });
       c.stdout.on("data", (b) => { out += b; }); c.stderr.on("data", (b) => { out += b; });
-      const kill = setTimeout(() => c.kill(), 20000);
-      c.on("close", (code) => { clearTimeout(kill); res({ code, out, ms: Date.now() - t0 }); });
+      const kill = setTimeout(() => c.kill(), 120000);
+      c.on("close", (code) => { clearTimeout(kill); res({ code, out }); });
     });
+    const cutBy = (h) => (h ? h.by + " at " + h.ms + " ms" : "no request");
     const dirT = j9(REPO, "test", "tmp", "foldcall-silent-" + Date.now());
     mk9(dirT, { recursive: true });
     const BT = j9(dirT, "book.json"), MT = j9(dirT, "salt_command.html"), ST = j9(dirT, "_to_fold.json");
     cp9(j9(REPO, "ledger", "book.json"), BT); cp9(j9(REPO, "master", "salt_command.html"), MT); cp9(j9(REPO, "master", "changelog.json"), j9(dirT, "changelog.json")); cp9(S9, ST);
     const tm = await timed(["--staged", ST, "--book", BT, "--master", MT, "--notes", j9(dirT, "_fold_notes.json"), "--folded", j9(dirT, "_folded.json"), "--today", "2099-01-02"]);
-    const foldHits = hits.splice(0);
+    const foldHits = hits.splice(0), foldHeld = held.splice(0);
     const afterT = existsSync(BT) ? JSON.parse(rf9(BT, "utf8")) : null;
     const rowT = afterT && afterT.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
-    ok(tm.code === 0 && tm.ms < 10000 && rowT && afterT.QUEUE_COMMITTED === id9,
-      "a fold call to an API that never answers is cut at SALT_FOLD_TIMEOUT_MS and the fold lands inside 10 s (took " + (tm.ms / 1000).toFixed(1) + " s, exit " + tm.code + ")");
+    ok(tm.code === 0 && foldHeld.length === 1 && foldHeld[0].by === "client" && /Request timed out/.test(tm.out) && rowT && afterT.QUEUE_COMMITTED === id9,
+      "a fold call to an API that never answers is cut by the fold's own SALT_FOLD_TIMEOUT_MS, inside the server's 10 s, and the fold lands (cut by " + cutBy(foldHeld[0]) + ", exit " + tm.code + ")");
     ok(foldHits.length === 1 && /^POST \/v1\/messages/.test(foldHits[0]) && rowT && /no judgement is recorded/.test(rowT.note) && /could not be called/.test(tm.out),
       "with SALT_FOLD_RETRIES=0 the silent API is asked once, and the row lands on the tool's notes saying no judgement is recorded: " + JSON.stringify(foldHits));
     const pr = await timed(["--probe"]);
-    ok(pr.code === 1 && pr.ms < 10000 && /FAIL\s+the call was refused/.test(pr.out) && hits.length === 1,
-      "the key probe takes the same bound: a silent API fails it inside 10 s (took " + (pr.ms / 1000).toFixed(1) + " s, exit " + pr.code + ", " + hits.length + " request)");
+    ok(pr.code === 1 && held.length === 1 && held[0].by === "client" && /FAIL\s+the call was refused: Request timed out/.test(pr.out) && hits.length === 1,
+      "the key probe takes the same bound: it cuts a silent API itself, inside the server's 10 s, and fails (cut by " + cutBy(held[0]) + ", exit " + pr.code + ", " + hits.length + " request)");
     srv.closeAllConnections(); srv.close();
     rm9(dirT, { recursive: true, force: true });
   }
@@ -9823,7 +9870,7 @@ await (async () => {
       let out = "";
       const c = sp9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args], { cwd: REPO, env, stdio: ["ignore", "pipe", "pipe"] });
       c.stdout.on("data", (x) => { out += x; }); c.stderr.on("data", (x) => { out += x; });
-      const kill = setTimeout(() => c.kill(), 30000);
+      const kill = setTimeout(() => c.kill(), 120000);   /* a hang guard, as above: nothing here is timed */
       c.on("close", (code) => { clearTimeout(kill); res({ code, out }); });
     });
     const mo = await call(["--staged", SM, "--book", BM, "--master", MM, "--notes", j9(dirM, "_fold_notes.json"), "--folded", j9(dirM, "_folded.json"), "--today", "2099-01-02"]);
@@ -10202,7 +10249,12 @@ await (async () => {
   const env = Object.fromEntries(Object.entries(process.env).filter(([k2]) => !/^(GIT_|GITHUB_|LIVE_AT$|GATED_TREE$|PUSH_KEY$)/.test(k2)));
   const root = mkdtempSync(join(tmpdir(), "fold34-")), fwd = (p) => p.replace(/\\/g, "/");
   const log = fwd(join(root, "log.txt")), reads = fwd(join(root, "reads.txt")), sleeps = fwd(join(root, "sleeps.txt"));
+  /* BASH'S CLOCK IS THE STUBS' ALONE (28 Sep 2026). SECONDS counts real time as well as what the sleep stub adds, so
+     each read's real node start ran the minute down: beside other suites a Worker that never switched was read 19
+     times and slept 36 s. Unset, SECONDS is a plain variable that only sleep moves, and the minute is exactly thirty
+     sleeps of 2 s however busy the machine is. */
   const stubs = [
+    "unset SECONDS; SECONDS=0",
     /* curl answers the nth read with the nth entry of STUB_SEQ, the last repeating; down is a failed read */
     "curl() { echo \"$*\" >> " + JSON.stringify(log) + "; local n a v; n=$(( $(cat " + JSON.stringify(reads) + ") + 1 )); echo $n > " + JSON.stringify(reads) + ";",
     "  IFS=, read -ra a <<< \"${STUB_SEQ:-200}\"; if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
@@ -10259,7 +10311,7 @@ await (async () => {
     const never = run(q.w, "The phone is serving it", {}, { STUB_SEQ: OLD });
     const slept = never.sleeps.reduce((s, x) => s + +x, 0);
     ok(never.code === 1 && /::error::the Worker is not serving/.test(never.text) && never.sleeps.every((x) => x === "2")
-       && slept >= 40 && slept <= 60 && never.reads === never.sleeps.length + 1 && !never.e.LIVE_AT,
+       && slept === 60 && never.reads === 31 && never.reads === never.sleeps.length + 1 && !never.e.LIVE_AT,
       "a Worker that never switches is read for a minute, 2 s apart, then fails the run: " + JSON.stringify({ reads: never.reads, slept }));
     const flaky = run(q.w, "The phone is serving it", {}, { STUB_SEQ: ["down", "down", P].join(",") });
     ok(flaky.code === 0 && flaky.reads === 3 && !!flaky.e.LIVE_AT,
@@ -20083,23 +20135,29 @@ await (async () => {
   const site = (path, o) => S.fetch(new Request("https://k7m3p2.example" + path, o), senv);
   const desk = { "X-Stmt-Desk": "dk-s9r2" };
   const mark = () => JSON.parse(skv.m.get("desk-waiting") || "null");
-  const ago = (m) => (Date.now() - Date.parse(m.at)) / 1000;
+  /* 28 Sep 2026: A STAMP IS BRACKETED BY THE TEST'S OWN CLOCK, NEVER HELD TO A STOPWATCH. "Stamped two hours ago" was
+     "within 5 s of two hours before this line", a window a busy machine can outrun; `inside` holds the stamp between the
+     clock read just before the call and just after it, less the age, to the millisecond the site writes. */
+  const timed = async (fn) => { const t0 = Date.now(), r = await fn(); return { r, t0, t1: Date.now() }; };
+  const inside = (m, t, age) => !!m && Date.parse(m.at) >= t.t0 - age * 1000 && Date.parse(m.at) <= t.t1 - age * 1000;
   const post = async (b) => (await site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, desk), body: JSON.stringify(b) })).json();
 
   /* ---- the site: the moment is the reading's ---- */
-  await post({ n: 3, age: 7200 });
-  ok(mark().n === 3 && Math.abs(ago(mark()) - 7200) < 5, "a count read two hours ago is stamped two hours ago: " + JSON.stringify(mark()));
-  await post({ n: 5, age: 0 });
-  ok(mark().n === 5 && ago(mark()) < 5, "a fresh reading replaces it");
+  const t3 = await timed(() => post({ n: 3, age: 7200 }));
+  ok(mark().n === 3 && inside(mark(), t3, 7200), "a count read two hours ago is stamped two hours ago: " + JSON.stringify(mark()));
+  const t5 = await timed(() => post({ n: 5, age: 0 }));
+  const fresh = mark();
+  ok(fresh.n === 5 && inside(fresh, t5, 0), "a fresh reading replaces it");
   const kept = await post({ n: 1, age: 3600 });
-  ok(kept.kept === true && mark().n === 5 && ago(mark()) < 5, "and a reading an hour old never overwrites it: " + JSON.stringify([kept, mark()]));
+  ok(kept.kept === true && mark().n === 5 && mark().at === fresh.at, "and a reading an hour old never overwrites it: " + JSON.stringify([kept, mark()]));
 
   /* ---- the relay passes the age through ---- */
   const denv = { ...mkEnv(new KV()), SALT_WRITE_KEY: "k-s9r2", STMT_DESK_KEY: "dk-s9r2", STMT_SITE: { fetch: (url, init) => S.fetch(new Request(url, init), senv) } };
   skv.m.delete("desk-waiting");
-  const rr = await D.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
-    headers: { "content-type": "application/json", "X-Salt-Key": "k-s9r2" }, body: JSON.stringify({ n: 2, age: 600 }) }), denv);
-  ok(rr.status === 200 && mark() && mark().n === 2 && Math.abs(ago(mark()) - 600) < 5, "the desk's Worker relays the reading's age: " + JSON.stringify([rr.status, mark()]));
+  const tr = await timed(() => D.fetch(new Request("https://salt-command.example/orders/waiting", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-s9r2" }, body: JSON.stringify({ n: 2, age: 600 }) }), denv));
+  const rr = tr.r;
+  ok(rr.status === 200 && mark() && mark().n === 2 && inside(mark(), tr, 600), "the desk's Worker relays the reading's age: " + JSON.stringify([rr.status, mark()]));
 
   /* ---- the desk's page: the age is the older read's, and a reading moved on sends the same figure again ---- */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -20108,32 +20166,38 @@ await (async () => {
     w.SALT_CLOUD = true;
     const at = "2026-09-24T01:00:00Z";
     const o = (id, st) => ({ id, u: "abcd-efgh", at, status: st, product: "salt", qty: 1, total: 150, delivery: 0, mode: "collect", paid: 0, payments: [], moved: 0, msgs: [], history: [] });
-    const told = [];
+    const told = [], toldAt = [];
     const orders = [o("20260924010000-n001", "placed"), Object.assign(o("20260924010000-p002", "acknowledged"), { paid: 50, payments: [{ at, by: "customer", amount: 50 }] })];
     let drafts = [];
     w.fetch = async (q, init) => {
       const path = String(q);
-      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
+      if (path === "orders/waiting") { told.push(JSON.parse(init.body)); toldAt.push(Date.now()); return { ok: true, status: 200, json: async () => ({ ok: true }) }; }
       if (path.startsWith("drafts")) return { ok: true, status: 200, json: async () => ({ ok: true, drafts, refused: [], clock: null }) };
       return { ok: true, status: 200, json: async () => ({ ok: true, orders, links: 0 }) };
     };
+    /* A FRESH AGE IS NO OLDER THAN THE READS THIS TEST MADE (28 Sep 2026): each count's age is held under the time from
+       just before the earliest read it can stand on to its own arrival, where "2 s at most" was a stopwatch over up to
+       four desk renders */
+    const since = (k, t) => told[k].age >= 0 && told[k].age <= Math.round((toldAt[k] - t) / 1000);
+    const tA = Date.now();
     await w.eval("ordLoad(true)"); await w.eval("apLoad(true)");
-    ok(told.length === 1 && told[0].n === 1 && told[0].age <= 2, "the first count goes with a fresh age: " + JSON.stringify(told));
+    ok(told.length === 1 && told[0].n === 1 && since(0, tA), "the first count goes with a fresh age: " + JSON.stringify(told));
     /* the orders were read two hours ago; Approve's own poll then finds the payment they say they made drafted */
     w.eval("ORD_AT=Date.now()-7200000");
     drafts = [{ id: "d-p002", entry: { orderId: "20260924010000-p002", status: "Payment", by: "customer" } }];
     await w.eval("apLoad(true)");
     ok(told.length === 2 && told[1].n === 2 && told[1].age >= 7190,
       "a count Approve makes over orders read two hours ago goes as two hours old, never as fresh: " + JSON.stringify(told[1]));
+    const tB = Date.now();   /* this Approve read is the older of the two every count below stands on */
     await w.eval("apLoad(true)");
     ok(told.length === 2, "the same figure over the same reading is not sent again");
     await w.eval("ordLoad(true)");
-    ok(told.length === 3 && told[2].n === 2 && told[2].age <= 2, "a fresh read of the orders sends the same figure again, fresh: " + JSON.stringify(told[2]));
+    ok(told.length === 3 && told[2].n === 2 && since(2, tB), "a fresh read of the orders sends the same figure again, fresh: " + JSON.stringify(told[2]));
     await w.eval("ordLoad(true)");
     ok(told.length === 3, "and not again while the reading has moved on less than five minutes");
     w.eval("ORD_TOLD_AT=Date.now()-600000");
     await w.eval("ordLoad(true)");
-    ok(told.length === 4 && told[3].n === 2 && told[3].age <= 2, "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
+    ok(told.length === 4 && told[3].n === 2 && since(3, tB), "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix S9R-2b: Salt Account's desk line says an order has moved since the desk's reading, where it went on saying the old figure waits");
@@ -20363,7 +20427,8 @@ await (async () => {
       const buttons = [...cardEl.querySelectorAll("button")];
       const pwBtn = buttons.find((b) => b.textContent === "Copy password");
       pwBtn.dispatchEvent(new W88.Event("click", { bubbles: true }));
-      await new Promise((r) => setTimeout(r, 900));
+      /* the copy waits on a PBKDF2 under the master: waited for, never timed (28 Sep 2026: a 900 ms pause, short under load) */
+      for (let i = 0; i < 400 && copied !== PW88; i++) await new Promise((r) => setTimeout(r, 25));
       ok(copied === PW88, "Copy password opens the sealed password with the master and copies it: " + (copied === PW88));
       ok(!D88.body.innerHTML.includes(PW88), "and the password is never written into the page");
     } finally { try { W88.close(); } catch (e) { /* best effort */ } }
@@ -21173,6 +21238,7 @@ await (async () => {
   const tokD = "k".repeat(32);
   const drive = (stored, st) => {
     const html = lpD("", "nD", null).replace("var POLL_MS=10000", "var POLL_MS=40");
+    let work = null;
     const dom = new JDD(html, { url: stored ? "https://site.test/" : "https://site.test/s/" + tokD, runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: wcD, configurable: true }); } catch (e) { win.crypto = wcD; }
@@ -21193,8 +21259,9 @@ await (async () => {
             : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
           return { ok: true, status: 200, json: async () => ({ ok: true }) };
         };
+        work = pageWork(win);
       } });
-    return { W: dom.window, D: dom.window.document };
+    return { W: dom.window, D: dom.window.document, work };
   };
   const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); };
 
@@ -21207,8 +21274,8 @@ await (async () => {
     st1.dead = "sessD" + st1.reopened + "aaaaaaaaaaaaaaaaaaaaaa";
     st1.lapsed = true;
     await wait(() => st1.reopened > before);
-    await new Promise((r) => setTimeout(r, 120));
-    ok(st1.reopened === before + 1 && one.D.getElementById("lapse").hidden && one.D.getElementById("outSheet").hidden
+    const q1 = await one.work.quiet();   /* the reopen's unwrap and draw, finished: it was a 120 ms pause, short under load */
+    ok(q1 && st1.reopened === before + 1 && one.D.getElementById("lapse").hidden && one.D.getElementById("outSheet").hidden
       && !one.D.getElementById("barw").hidden && one.D.getElementById("gate").hidden,
       "with no tap, a remembered phone signs itself back in through the device, and nothing is said: " + JSON.stringify({ reopened: st1.reopened - before }));
     ok(!/lock and sign in/.test(one.D.documentElement.outerHTML), "and the old note telling them to lock is gone from the page");
@@ -21768,11 +21835,15 @@ await (async () => {
     && (await call("/handover", { token: newKey() }, { "X-Stmt-Session": sess })).status === 400,
     "minting needs a live session, and the key with its wrap");
   const before = new Set(kv.m.keys());
+  const tMint = Date.now();
   const h1 = await mint();
+  const tMinted = Date.now();
   const ho = [...kv.m.keys()].filter((k) => !before.has(k) && k.startsWith("ho:"));
-  const exp = Date.parse(h1.exp) - Date.now();
+  /* fifteen minutes from the mint, bracketed by the clock either side of it (28 Sep 2026), never "14 to 15 minutes from
+     whenever this line ran" */
+  const exp = Date.parse(h1.exp) - tMint;
   ok(h1.ok && /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/.test(h1.code) && typeof h1.token === "string" && h1.token.length >= 20
-    && exp > 14 * 60e3 && exp <= 15 * 60e3,
+    && exp >= 15 * 60e3 && exp <= 15 * 60e3 + (tMinted - tMint),
     "a session mints { code, token, exp }: eight symbols of the username alphabet, the key back, fifteen minutes: " + JSON.stringify({ code: h1.code, exp }));
   const plain = [h1.code, h1.code.replace("-", ""), h1.token, sha(h1.code), sha(h1.code.replace("-", "")), sha(h1.token), u, h1.wrap.ct];
   ok(ho.length === 2 && ho.every((k) => (kv.opts.get(k) || {}).expirationTtl === 900)
@@ -22079,6 +22150,7 @@ await (async () => {
   };
   const drive93 = (standalone, permission) => {
     const asked = { times: 0 };
+    let work = null;
     const dom = new JD93(lp93(u93, "n93", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: wc93, configurable: true }); } catch (e) { win.crypto = wc93; }
@@ -22094,8 +22166,9 @@ await (async () => {
         win.fetch = async (path) => (String(path) === "/open" ? { ok: true, status: 200, json: async () => body93 }
           : String(path) === "/push/key" ? { ok: true, status: 200, json: async () => ({ ok: true, key: "k", configured: true }) }
           : { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) });
+        work = pageWork(win);
       } });
-    return { W: dom.window, D: dom.window.document, asked };
+    return { W: dom.window, D: dom.window.document, asked, work };
   };
   const browser93 = drive93(false, "default");
   try {
@@ -22105,7 +22178,7 @@ await (async () => {
     /* S4 (S4R-4): v693 asked here; the plan asks at the first order, from a tap. The Order tab's Notify me is the
        control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
     for (let i = 0; i < 80 && !/Your orders/.test(browser93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
-    await new Promise((r) => setTimeout(r, 400));
+    await browser93.work.quiet();
     const signedIn93 = browser93.asked.times;
     const notify93 = [...browser93.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Notify me on this phone");
     if (notify93) notify93.click();
@@ -22119,9 +22192,12 @@ await (async () => {
     app93.D.getElementById("un").value = u93;
     app93.D.getElementById("pw").value = pass93;
     app93.D.getElementById("f").dispatchEvent(new app93.W.Event("submit", { bubbles: true, cancelable: true }));
-    await new Promise((r) => setTimeout(r, 400));
-    ok(app93.asked.times === 0, "and a browser that has already refused is not asked again");
-    ok(app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it");
+    /* SIGNED IN FIRST, THEN LOOKED AT (28 Sep 2026): the sign-in unwraps its key by PBKDF2, and a 400 ms pause here read an
+       app still at the door on a busy machine, where nothing is asked or shown yet whatever the page does */
+    for (let i = 0; i < 80 && !/Your orders/.test(app93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    const in93 = /Your orders/.test(app93.D.getElementById("pOrder").textContent) && (await app93.work.quiet());
+    ok(in93 && app93.asked.times === 0, "and a browser that has already refused is not asked again, once signed in: " + JSON.stringify({ in: in93, asked: app93.asked.times }));
+    ok(in93 && app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it, once signed in");
   } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v694: an order reaches the ledger in stages, and money and goods move apart");
@@ -26563,6 +26639,7 @@ await (async () => {
   const drive = async (path, stored, road, answer) => {
     const st = { posts: [] };
     const store = new Map(stored ? [["salt-stmt-remember", stored]] : []);
+    let work = null;
     const dom = new JD38(lp38(road === "door" ? uB : "", "n38", null), { url: "https://site.test" + path, runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
@@ -26582,6 +26659,7 @@ await (async () => {
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
         };
+        work = pageWork(win);
       } });
     const W = dom.window, D = W.document;
     const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
@@ -26598,27 +26676,27 @@ await (async () => {
     const q = { shown: !ask.hidden, text: ask.textContent, beside: ask.previousElementSibling && ask.previousElementSibling.id,
       anchorHidden: road === "door" ? D.getElementById("go").hidden : D.getElementById("linkGo").hidden, noLabel: D.getElementById("askNo").textContent };
     if (!ask.hidden) (answer ? D.getElementById("askYes") : D.getElementById("askNo")).click();
-    await until(() => !D.getElementById("barw").hidden);
-    await new Promise((r) => setTimeout(r, 80));
+    const opened = await until(() => !D.getElementById("barw").hidden);   /* the page got in: what is kept below is its doing */
+    const quiet = await work.quiet();   /* the remember's PBKDF2, its POST and the old wrap's drop: finished, not timed */
     const kept = JSON.parse(store.get("salt-stmt-remember") || "null");
     W.close();
-    return { q, kept, posts: st.posts };
+    return { q, kept, posts: st.posts, done: opened && quiet };
   };
 
   const d1 = await drive("/", oldA, "door", true);
   ok(d1.q.shown && d1.q.text.startsWith("Replace " + uA + " on this phone? It will open " + uB + " instead.") && d1.q.beside === "go" && d1.q.anchorHidden
     && d1.q.noLabel === "Keep " + uA,
     "signing in at the door over a remembered account asks first, where Sign in was: " + JSON.stringify(d1.q.text));
-  ok(d1.kept && d1.kept.u === uB && d1.posts.some((x) => x.path === "/logout" && x.body && x.body.token === "a".repeat(32)),
+  ok(d1.done && d1.kept && d1.kept.u === uB && d1.posts.some((x) => x.path === "/logout" && x.body && x.body.token === "a".repeat(32)),
     "Replace keeps the new account and drops the old one's wrap on the site");
   const d2 = await drive("/", oldA, "door", false);
-  ok(d2.q.shown && d2.kept && d2.kept.u === uA && !d2.posts.some((x) => x.path === "/remember" || x.path === "/logout"),
+  ok(d2.done && d2.q.shown && d2.kept && d2.kept.u === uA && !d2.posts.some((x) => x.path === "/remember" || x.path === "/logout"),
     "Keep opens the new account for this visit and leaves the phone's own remembered, untouched");
   const l1 = await drive("/s/" + tokL, oldA, "link", true);
-  ok(l1.q.shown && l1.q.beside === "linkGo" && /Replace aaaa-kkkk on this phone/.test(l1.q.text) && l1.kept && l1.kept.u === uB,
+  ok(l1.done && l1.q.shown && l1.q.beside === "linkGo" && /Replace aaaa-kkkk on this phone/.test(l1.q.text) && l1.kept && l1.kept.u === uB,
     "a sign-in link over another remembered account asks the same, beside Continue, and Replace keeps it");
   const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
-  ok(!same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
+  ok(same.done && !same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
 })();
 section("S3 3.10: Keep it on your Home Screen mints the hand-over as its Sheet opens, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
 await (async () => {
@@ -27019,7 +27097,8 @@ await (async () => {
   const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B"), listA = await listOf(ckA), listB = await listOf(ckB);
   const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
   const drive = (fast, path, rec) => {
-    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000" };
+    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000", polls: [], stopped: new Set() };
+    let work = null;
     const store = new Map([["salt-stmt-remember", rec || recOf(uA, devA)]]);
     const html = lpK("", "nK", null);
     const dom = new JDK(fast ? html.replace("var POLL_MS=10000", "var POLL_MS=40") : html, { url: "https://site.test" + (path || "/s/" + tokL), runScripts: "dangerously", pretendToBeVisual: true,
@@ -27029,6 +27108,10 @@ await (async () => {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
         win.scrollTo = () => {};
+        /* the poll's own ids, so that the lapse stopping it is read, not assumed */
+        const every = win.setInterval.bind(win), stop = win.clearInterval.bind(win);
+        win.setInterval = (f, ms, ...r) => { const id = every(f, ms, ...r); if (ms === 40) st.polls.push(id); return id; };
+        win.clearInterval = (id) => { st.stopped.add(id); return stop(id); };
         win.fetch = async (p, init) => {
           const m = (init && init.method) || "GET", s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const body = init && init.body ? JSON.parse(init.body) : null;
@@ -27048,8 +27131,9 @@ await (async () => {
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true });
         };
+        work = pageWork(win);   /* every settle below waits for the page's fetches and crypto to finish, never a fixed time */
       } });
-    return { st, store, W: dom.window, D: dom.window.document };
+    return { st, store, W: dom.window, D: dom.window.document, work };
   };
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const openB = async (g, answer) => {
@@ -27058,7 +27142,7 @@ await (async () => {
     await until(() => !g.D.getElementById("askRep").hidden);
     g.D.getElementById(answer).click();
     await until(() => !g.D.getElementById("barw").hidden);
-    await new Promise((r) => setTimeout(r, 60));
+    await g.work.quiet();
   };
 
   /* Keep aaaa-kkkk, then B's session lapses under Place this order */
@@ -27076,8 +27160,8 @@ await (async () => {
     await until(() => g1.D.getElementById("oPlace"));
     g1.D.getElementById("oPlace").click();
     await until(() => !g1.D.getElementById("outSheet").hidden);
-    await new Promise((r) => setTimeout(r, 120));
-    ok(!g1.st.posts.some((x) => x.s === g1.st.sA) && g1.st.reopens === 0,
+    const q1 = await g1.work.quiet();
+    ok(q1 && !g1.st.posts.some((x) => x.s === g1.st.sA) && g1.st.reopens === 0,
       "Place on B's lapsed page never reopens A and never sends the order on A's session: " + JSON.stringify({ posts: g1.st.posts.map((x) => x.s), reopens: g1.st.reopens }));
     ok(/STATEMENT OF B/.test(g1.D.getElementById("out").textContent) && !/STATEMENT OF A/.test(g1.D.getElementById("out").textContent)
       && !g1.D.getElementById("outSheet").hidden && g1.D.getElementById("un").value === uB,
@@ -27095,16 +27179,17 @@ await (async () => {
     await openB(g2, "askNo");
     g2.st.dead.add(g2.st.sB);
     await until(() => !g2.D.getElementById("outSheet").hidden);
-    await new Promise((r) => setTimeout(r, 150));
-    ok(g2.st.reopens === 0 && /STATEMENT OF B/.test(g2.D.getElementById("out").textContent) && !g2.D.getElementById("outSheet").hidden,
-      "the ten-second poll meeting B's lapse never swaps the page to A: " + JSON.stringify({ reopens: g2.st.reopens }));
+    const q2 = await g2.work.quiet();   /* the lapse stops the poll (checked here), so what is in flight is all there is to wait for */
+    const stopped = g2.st.polls.length > 0 && g2.st.polls.every((id) => g2.st.stopped.has(id));
+    ok(q2 && stopped && g2.st.reopens === 0 && /STATEMENT OF B/.test(g2.D.getElementById("out").textContent) && !g2.D.getElementById("outSheet").hidden,
+      "the ten-second poll meeting B's lapse stops, and never swaps the page to A: " + JSON.stringify({ reopens: g2.st.reopens, polls: g2.st.polls.length, stopped }));
   } finally { g2.W.close(); }
 
   /* B remembered here, then another tab's Replace makes the phone remember A: this page's lapse is not reopened as A */
   const g3 = drive(false, "/", recOf(uB, devB));
   try {
     await until(() => !g3.D.getElementById("barw").hidden);
-    await new Promise((r) => setTimeout(r, 60));
+    await g3.work.quiet();
     ok(/STATEMENT OF B/.test(g3.D.getElementById("out").textContent), "the fixture: B open, B remembered");
     g3.store.set("salt-stmt-remember", recOf(uA, devA));
     const n = g3.st.reopens;
@@ -27112,7 +27197,8 @@ await (async () => {
     Object.defineProperty(g3.D, "visibilityState", { value: "visible", configurable: true });
     g3.D.dispatchEvent(new g3.W.Event("visibilitychange"));
     await until(() => !g3.D.getElementById("outSheet").hidden);
-    ok(g3.st.reopens === n && /STATEMENT OF B/.test(g3.D.getElementById("out").textContent) && !g3.D.getElementById("outSheet").hidden,
+    const q3 = await g3.work.quiet();
+    ok(q3 && g3.st.reopens === n && /STATEMENT OF B/.test(g3.D.getElementById("out").textContent) && !g3.D.getElementById("outSheet").hidden,
       "after another tab replaced B with A, B's page coming back to a lapse asks B to sign in and never opens A: " + JSON.stringify({ reopens: g3.st.reopens - n }));
   } finally { g3.W.close(); }
 
@@ -27120,14 +27206,14 @@ await (async () => {
   const g4 = drive(false, "/", recOf(uB, devB));
   try {
     await until(() => !g4.D.getElementById("barw").hidden);
-    await new Promise((r) => setTimeout(r, 60));
+    await g4.work.quiet();
     const n = g4.st.reopens, was = g4.st.sB;
     g4.st.dead.add(was);
     Object.defineProperty(g4.D, "visibilityState", { value: "visible", configurable: true });
     g4.D.dispatchEvent(new g4.W.Event("visibilitychange"));
     await until(() => g4.st.reopens > n);
-    await new Promise((r) => setTimeout(r, 80));
-    ok(g4.st.reopens === n + 1 && g4.st.sB !== was && g4.D.getElementById("outSheet").hidden && g4.D.getElementById("lapse").hidden,
+    const q4 = await g4.work.quiet();   /* the reopen's unwrap and draw finished: it was an 80 ms sleep, short under load */
+    ok(q4 && g4.st.reopens === n + 1 && g4.st.sB !== was && g4.D.getElementById("outSheet").hidden && g4.D.getElementById("lapse").hidden,
       "the control: with B both on screen and remembered, B's lapse reopens B in silence");
   } finally { g4.W.close(); }
 })();
@@ -27968,10 +28054,11 @@ await (async () => {
   const sha = (s) => createHash("sha256").update(s).digest("hex");
   const ttl = (k) => (kv.opts.get(k) || {}).expirationTtl || 0;
   const wrap = { v: 2, salt: "c2FsdA==", iv: "aXY=", ct: "Y3Q=" }, day = 86400;
-  const tok = "cop" + "f".repeat(29), at = new Date(Date.now() - 29 * day * 1000).toISOString();
+  const t0 = Date.now(), tok = "cop" + "f".repeat(29), at = new Date(t0 - 29 * day * 1000).toISOString();
   await kv.put("rem:" + tok, JSON.stringify({ u, wrap, at }), { expirationTtl: day });
-  const first = await post({ token: tok }), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
-  ok(first.status === 200 && ttl(key) <= day && ttl(key) > day - 120 && ttl(ptr) === ttl(key) && !(await kv.get("rem:" + tok)),
+  const first = await post({ token: tok }), t1 = Date.now(), key = "rem:" + sha(tok), ptr = "dev:" + u + ":" + sha(key);
+  /* the day it had left, less exactly the time this test took to open it (28 Sep 2026), where two minutes' slack was a stopwatch */
+  ok(first.status === 200 && ttl(key) <= day && ttl(key) >= Math.floor((t0 + day * 1000 - t1) / 1000) && ttl(ptr) === ttl(key) && !(await kv.get("rem:" + tok)),
     "a raw record ticked twenty-nine days ago opens and moves under its hash with the one day it had left, its pointer too: " + JSON.stringify({ rec: ttl(key), ptr: ttl(ptr) }));
   const second = await post({ token: tok });
   ok(second.status === 200 && ttl(key) <= day, "and opened again from its new place it still does not slide: " + ttl(key));
@@ -39229,8 +39316,10 @@ await (async () => {
       "a rev.json on the same id keeps its stamp to the byte, however old: " + rd(REVT).toString().trim());
 
     writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0000000000000000", built: OLD }) + "\n");
-    const s4 = build(); let r4 = {}; try { r4 = JSON.parse(rd(REVT).toString()); } catch (e) { /* red below */ }
-    ok(s4 === 0 && r4.id === r1.id && r4.built !== OLD && Math.abs(Date.parse(r4.built) - Date.now()) < 5 * 60e3,
+    /* stamped during this build, bracketed by the clock either side of it (28 Sep 2026), where "within five minutes of
+       now" was a stopwatch and passed a stamp minutes stale */
+    const b4 = Date.now(); const s4 = build(); const a4 = Date.now(); let r4 = {}; try { r4 = JSON.parse(rd(REVT).toString()); } catch (e) { /* red below */ }
+    ok(s4 === 0 && r4.id === r1.id && r4.built !== OLD && Date.parse(r4.built) >= b4 && Date.parse(r4.built) <= a4,
       "a new id is stamped afresh, so the stamp still says when something last changed: " + JSON.stringify(r4));
 
     writeFileSync(REVT, "{ not json");
@@ -44241,6 +44330,25 @@ await (async () => {
     "a desk window the section before left open is closed, so its own timers stop: "
     + JSON.stringify({ armed, closedWindowFired: firedA, openWindowFired: firedB }));
   try { wB.close(); } catch (e) { /* best effort */ }
+})();
+
+section("The suite waits for what it checks, and adds no fixed pause");
+await (async () => {
+  /* A FIXED PAUSE IS A STOPWATCH (28 Sep 2026). "Wait 200 ms, then look" measures the machine as much as the page: beside
+     another session's suite, a pause that waits for something goes red when nothing is wrong, and a pause before a check
+     that something did NOT happen goes green when it has not happened YET. New code waits for the effect: a bounded poll
+     on its state, or pageWork(win).quiet() for a page's fetches and crypto (docs/WORKING.md 3, A clock in the check).
+     Counted: every setTimeout promise with a fixed delay, awaited or kept as a helper (a helper counts once, however often
+     it is awaited), and every await of nap, wait, sleep or pause with a number. Not counted: a loop that polls a predicate (its
+     line carries &&, if or return), and a pause directly before a window's close, which lets a late answer land (a
+     Workbench save, docs/WORKING.md 2) and checks nothing. The count may only fall: lower PAUSES when one goes. */
+  const PAUSES = 164;
+  const pause = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|await (?:nap|wait|sleep|pause)\(\d+\))/g;
+  const beforeClose = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|(?:nap|wait|sleep|pause)\(\d+\)); (?:try \{ )?[\w.]+\.close\(\)/g;
+  const poll = (l) => /\bfor \(/.test(l) && /&&|\bif \(|\breturn /.test(l);
+  const lines = readFileSync(join(REPO, "test", "verify.mjs"), "utf8").split("\n");   /* the suite, not a shard of it */
+  const n = lines.filter((l) => !poll(l)).reduce((s, l) => s + (l.replace(beforeClose, "").match(pause) || []).length, 0);
+  ok(n <= PAUSES, "no new fixed pause: " + n + " in the suite against " + PAUSES + "; wait for the effect instead (a poll on its state, or pageWork(win).quiet())");
 })();
 
 section("The lots chart names Defaulted only for a book that has actually defaulted a lot");

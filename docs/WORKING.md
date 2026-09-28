@@ -161,6 +161,27 @@ Each of these stayed green, or read clean, through a real fault.
   one-time restatement touched (read them off `git show <sha>:ledger/book.json`), and express a
   position as a difference (drop the row, recompute, assert what moved). The hourly runs run no
   suite, so such a red stays red until the next fold or push.
+- **A clock in the check** (28 Sep 2026, his instruction). Beside another session's suite, a
+  stopwatch goes red with nothing wrong (v521's 10 s over a whole fold, the banner proof, S3 3.8,
+  S3's lapse control), and a pause before an absence check goes green with nothing proved. Time only
+  the interval the product enforces: v521's server times its own request and says who cut it, the
+  fold at `SALT_FOLD_TIMEOUT_MS` (2 s) or the server's 10 s watchdog, the red line. A fake clock
+  never reads the real one: bash's `SECONDS` counts real time until `unset SECONDS`. Bracket a stamp
+  with the test's own clock (`t0` before the call, `t1` after), never a window around now. Wait for
+  the effect, never a fixed time: a bounded poll on its state, or `pageWork(win).quiet()` (the
+  suite's prelude), which counts a page's fetches and `crypto.subtle` calls; assert an absence only
+  after that, with a positive sign that the flow ran (v693 now signs in before it looks). An effect
+  that is microtasks alone, or one page timer armed before the pause and shorter than it (not a
+  poll re-arming itself, nor a timer armed after a fetch or a key derivation), lands before the pause
+  however busy the machine; work off the event loop can outlast it: `crypto.subtle` (PBKDF2 above
+  all), a child process, a socket, the real Worker's round trip. `pageWork` counts a stub's
+  `json()` too, since a stub may do its key work there, but never a timer: a step the page defers
+  by `setTimeout` needs its own sign.
+  A poll's cap is a hang guard, not a budget: 5 s held at six and a half times the load. The suite
+  counts its fixed pauses and the count may only fall ("The suite waits for what it checks"). Prove
+  it under load, never committed: CPU burners at below-normal priority, so a peer's run keeps
+  precedence, and a preload delaying every `deriveKey` and `deriveBits`
+  (`NODE_OPTIONS=--import=<file URL>`). The new check is green there and red by its mutation.
 - **Fixtures.** Bare `{date, customer, qty, total}` rows read as Pending under `txStat`: a completed
   fixture carries `cash: total, deliveredQty: qty`, and `pricedOrder` or the drafter's filter is
   never loosened to pass one. A fixture wider than production proves nothing: push tests used
