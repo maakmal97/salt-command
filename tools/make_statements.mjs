@@ -36,7 +36,7 @@ import { priceList, priceDigest } from "./pricelist.mjs";
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
    node builtins. */
-import { psymSvg, PSHAPE, MON3 } from "../stmt/page.js";
+import { psymSvg, mtileSvg, PSHAPE, MON3 } from "../stmt/page.js";
 /* 27 Sep 2026: the reward's line is the one the Counter draws on Home (part.cover), so the two are one set of words */
 import { EN, fill } from "../stmt/words.js";
 
@@ -339,7 +339,9 @@ function stmtDoc(party,rows,o){
      just as well. An issue that footed to one blended figure keeps it, exactly as issues sealed
      before v695 keep the letterhead they were sent with. The correction is for what is live. */
   const marked=!(o&&o.archive);
-  const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||13)
+  /* F8 (his answers of 28 Sep 2026): his letter in every mark and none under 20 px; an issue's table keeps its mark beside the
+     size, and the live document's marks are cards (lineTile, below) */
+  const markOf=(p,px)=>!marked?'':'<span class="pm">'+psymSvg(p,px||20)
     +'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
   /* EVERY TABLE IN ITS OWN SCROLL BOX (stage 1 of the Counter redesign, 24 Sep 2026): the orders table is
      340px at its narrowest and wider with a long figure, so at a phone's width the whole page scrolled
@@ -349,7 +351,10 @@ function stmtDoc(party,rows,o){
   /* S7 7.3: the live document's lists are Statement lines, read aloud as a table at every width; "units" above one (D11) */
   const lines=!!o.live;
   const units=q=>n2(q)+' '+(+q>1?'units':'unit');
-  const lineMark=p=>'<span class="salt-lines__mark">'+psymSvg(p,13)+'<span class="sr">'+esc(PSHAPE[String(p||'').toLowerCase()]||PSHAPE._)+'</span></span>';
+  /* HIS ANSWER OF 28 SEP 2026, "It will be rendered cards in the statement": each mark of the live document is a card, the
+     mark a button and its figure under it, alone, as on the Counter's own cards (mtileSvg) */
+  const lineTile=(p,q)=>mtileSvg(p,n2(q),units(q));
+  const tiles=(ps,qOf)=>'<span class="mtiles">'+ps.map(p=>lineTile(p,qOf(p))).join('')+'</span>';
   const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
     +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -468,7 +473,7 @@ function stmtDoc(party,rows,o){
       return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
         +(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
         +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+sub(paidLater?'paid '+e(dLong(r.paidOn)):'')+'</div>'
-        +'<div class="salt-lines__what" role="cell">'+lineMark(r.product)+units(r.qty)+sub(r.resale?'on behalf of a friend':'')
+        +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
           +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
         +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
           +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery):'')+'</div>'
@@ -571,9 +576,9 @@ function stmtDoc(party,rows,o){
         SALT LEADS, his standing instruction of 11 Aug restated on the 13th: the books come out in
         the BOOK's own PROD_ORDER and not alphabetically, which put oil first on the first draft of
         this line. A book the order does not name sorts last rather than being dropped. */
-     +', '+(marked
-        ? bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+(lines?units(T.qtyBy[p]):n2(T.qtyBy[p])+' unit')).join(' &middot; ')
-        : n2(T.qty)+' unit')
+     +(!marked?', '+n2(T.qty)+' unit'
+        : lines ? tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])
+        : ', '+bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; '))
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
      +'</span><span>'+money(T.total)+'</span></div>',
    '<div class="tr"><span>Paid</span><span>'+money(T.paid)+'</span></div>',
@@ -593,10 +598,10 @@ function stmtDoc(party,rows,o){
       stage 1 of the Counter redesign, 24 Sep 2026): two of one book and one and a half of another
       are not three and a half of anything. An archive keeps the one figure it was issued with. */
    (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
-     +(marked
-       ? bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
-           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>'+(lines&&T.toGetBy[p]>1?'units':'unit')+'</span></p>').join('')
-       : '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>')
+     +(!marked ? '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>'
+       : lines ? tiles(bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009)),p=>T.toGetBy[p])
+       : bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
+           .map(p=>'<p class="owedv">'+markOf(p,20)+n2(T.toGetBy[p])+' <span>unit</span></p>').join(''))
      +'</div>':''),
    /* THE WORKINGS, step by step, so nothing has to be taken on trust */
    (o.recon||[]).map(R=>{

@@ -284,7 +284,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
-  Salt Command. A product is a mark (`PSYM`), and a control holding only a mark is named by its shape
+  Salt Command. A product is a mark (`PSYM`) carrying a letter of his (`PLET`) in every mark, 20 px and
+  over; it names nothing. A control holding only a mark is named by its shape
   (`PSHAPE`), never its product. **The one name on the site is the app's, `Salt Counter`**, twelve
   characters, which is what iOS gives a home screen; the desk's name never appears. **A customer never
   sees a level**, named or marked (D11); no name is used because none exists there (rule 2).
@@ -378,9 +379,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.
-- **An associate's own card** (`rec.card`), on the tiered books only: `share`, `stars` and `rank` never
-  travel, and every figure adds up to the list under it. **The associates report card** (`/all/assoc`,
-  whitelist `ASSOC_FIELDS`), on the tiered books only: no margin crosses.
+- **An associate's own card** (`rec.card`), every book's sales progress; the reward on the tiered books
+  only: `share`, `stars` and `rank` never travel, and every figure adds up to the list under it. **The
+  associates report card** (`/all/assoc`, whitelist `ASSOC_FIELDS`), every book's sales progress; the
+  reward on the tiered books only: no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows

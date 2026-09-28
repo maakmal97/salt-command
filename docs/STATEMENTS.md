@@ -382,19 +382,31 @@ form's product dropdown became a **segment of marks** (pressed ghosts in the ord
 an `<option>` carries text and no drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube, Droplet, Ring) and
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
-**A letter of his sits in each book's mark on Prices, and nowhere else** (F8, his answer of 28 Sep 2026, "letters only
-in Prices"). `PLET` in `stmt/page.js`: I in the cube, G in the droplet, E in the lozenge, V in the capsule, none its
-book's initial in English or Malay and together no product word. A letter is not a word and names nothing.
-`psymSvg` and the page's `psym` draw it only when asked (`lettered`, spliced to the page as `__PLET__`), and only the
-Prices tab asks, for the priced books and those not yet priced alike. Rewards, the order page, Home, the guest board and
-the statement draw their marks with no letter, and no mark changed size on the page. **Every letter is the same size on
+**A letter of his in every mark, 20 px and over; it names nothing** (F8, his answers of 28 Sep 2026: "everywhere",
+then "Yes everywhere", the statement and the guest board included; v913's letters on Prices alone are superseded).
+`PLET` in `stmt/page.js`: I in the cube, G in the droplet, E in the lozenge, V in the capsule, none its book's initial
+in English or Malay and together no product word. `psymSvg` and the page's `psym` draw it always (spliced to the page as
+`__PLET__`); there is no switch. **No mark is drawn under 20 px**, where the letter, a third of the mark, is too small to
+read: every smaller mark was raised, the statement's 13 px ones among them.
+
+**In a card the mark is a button with its figure alone under it** (his note on the sheet of the raised marks, 28 Sep
+2026: a card never sets the glyph beside words or figures; then "number alone", and "It will be rendered cards in the
+statement"). `mtileSvg` in `stmt/page.js` and the page's `mtile`: the mark at 28 px on the pressed ghost's edge and
+glass, the figure in the mono face under it, and a reader told the shape and the size in words, once. Check your order
+leads with it and carries no What line; an order's row (Your orders, and Home's rows, which are the same row), an
+order's own screen, Home's part rows under Coming up and the open orders at the limit take it; Order again's face is
+itself the button, the mark and the figure stacked on it. The live statement's lines, its totals and its Still to
+collect are cards too. A sentence (a part of an order, the pay sheet's note) keeps its mark beside the size, at 20 px;
+a mark alone (Prices, Rewards, the guest board, the order sheet's choice of book and its heading) keeps its size; an
+issue's table keeps its mark beside the size, at 20 px. Sealed issues and archives keep what they were issued with (an
+archive draws no mark). **Every letter is the same size on
 the same line** (`PLET_AT`: 8 in the 24 grid, its capitals centred on the mark's centre), and **every book's mark stands
 2.6 to 21.4 about the centre**, on every surface (his redraw of 28 Sep 2026, "of the same ratio 1:1"): the lozenge made
 square, the droplet rounder, the capsule turned to the diagonal so it is as wide as it is tall, the book's ring larger,
 the cube as it was. The app's own ring on the door and the rail keeps the home-screen icon's proportion (`APP_RING`). Where a line of the mark would
 cross its letter, `PLET_ROOM` gives it room: the cube's three inner edges stop at radius 5 and the capsule's seam gives
 way. The spare book's Ring stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
-style policy refuses one.
+style policy refuses one. The guest board carries it in the page's own styles, with the mono face its policy lets load.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
 sign-in link's page and the Keep it on your Home Screen card all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
@@ -635,9 +647,12 @@ share sheet it is Copy link. Make a link says, before the tap, that the link sta
 served only at `/all/assoc`, behind Access. Two functions rather than one, deliberately: the two
 audiences differ, and the whitelist that guards his card would have had to widen to carry dated lines.
 
-**Both cards are the tiered books' alone** (F9, his answer of 28 Sep 2026): both functions loop the desk's
-`tieredBooks()`, salt where the window has none, never `PROD_ORDER`. The reward is a tier's and a tier is
-salt's alone, so a fixed board (oil, candy, rice) and the spare book are off his card and theirs.
+**Both cards carry every book's sales progress, and the reward on the tiered books alone** (F9, his answers
+of 28 Sep 2026, revised the same day: "Rewards remains solely for salt", and associates "can see all but just
+on the sales progress"). Both functions loop `PROD_ORDER` and fill `reward` only on a book the desk's
+`tieredBooks()` names, salt where the window has none, null on every other whatever `networkStats` says. Each
+page draws a book's reward block only where it is present, so a fixed board (oil, candy, rice) and the spare
+book show the progress alone, on his card and theirs.
 
 *What is left off, and why.* `share` is a ratio against the WHOLE book's revenue, so an associate
 holding their own RM and their own share can solve for his total; `stars` are bands of that same

@@ -90,15 +90,17 @@ rather than typed, so declaring a product is the whole of the work; changing it 
 ## 4. Product-specific: the Counter
 
 `PSYM` maps a product id to an SVG path, and `PSHAPE` maps it to a shape word used for the
-aria-label, both in `stmt/page.js`. `PLET` gives a book the letter drawn inside its mark on the Prices
-tab alone (F8), every letter at `PLET_AT`, one size on one line; `PLET_ROOM` redraws a mark only where
-a line of it would cross its letter. Every mark in `PSYM` stands 2.6 to 21.4 about the centre (his redraw
+aria-label, both in `stmt/page.js`. `PLET` gives a book the letter drawn inside its mark wherever it is
+drawn (F8), no mark under 20 px, every letter at `PLET_AT`, one size on one line; `PLET_ROOM` redraws a mark
+only where a line of it would cross its letter. In a card the mark is a button with its figure alone under it
+(`mtileSvg`, the page's `mtile`). Every mark in `PSYM` stands 2.6 to 21.4 about the centre (his redraw
 of 28 Sep 2026), and the suite measures each one; a book with no letter draws its plain mark there. **A product with no mark gets the Ring**, deliberately,
 because a blank reads as a fault rather than as an omission. Everything else under `stmt/` is
 data-driven: the price list, the guest board, the order form's segment, the order history and
 the associate's card all loop over whatever the published data carries. The associates' two
-cards carry the tiered books alone (F9, 28 Sep 2026: `associateSnapshot` and `associateCard` in
-`tools/book.mjs` loop the desk's `tieredBooks()`), so a new book reaches them only with a tier. There is no
+cards carry every book's sales progress and the reward on the tiered books alone (F9 revised, 28 Sep 2026:
+`associateSnapshot` and `associateCard` in `tools/book.mjs` loop `PROD_ORDER` and fill `reward` only on the
+desk's `tieredBooks()`), so a new book reaches them at once, and its reward only with a tier. There is no
 hard-coded list of two anywhere in `stmt/page.js`, `stmt/orders.js`, `stmt/refs.js` or
 `stmt/send.js`.
 

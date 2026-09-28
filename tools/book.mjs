@@ -307,16 +307,17 @@ export function pricingSnapshot(w) {
  * whitelist, and the suite reads it against what comes out.
  * CODES ONLY, and nothing from PEOPLE.departed but the fact of it: a reason or a memorial is his
  * note about a person, and this is read on a page a person opens.
- * ON THE TIERED BOOKS ONLY (F9, his answer of 28 Sep 2026): the reward is a tier's, and a tier is salt's
- * alone, so a fixed board (oil, candy, rice) and the spare book are off both cards. The desk's own
- * tieredBooks() names them; salt where the window has none. */
+ * EVERY BOOK'S SALES PROGRESS; THE REWARD ON THE TIERED BOOKS ONLY (F9 revised, his answers of 28 Sep
+ * 2026: "Rewards remains solely for salt", and associates "can see all but just on the sales progress"):
+ * both cards loop every book, and `reward` is filled only on a book the desk's own tieredBooks() names,
+ * salt where the window has none, and is null on every other, whatever networkStats says. */
 export const ASSOC_FIELDS = ["id", "founder", "rank", "bought", "soldFor", "onward", "introduced",
   "referred", "share", "stars", "departed", "reward"];
 export const REWARD_FIELDS = ["earned", "taken", "left", "next", "held"];
 export function associateSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
-  const products = call("tieredBooks()") || ["salt"];
+  const products = call("PROD_ORDER") || ["salt"], tiered = call("tieredBooks()") || ["salt"];
   const before = call("PROD");
   const out = [];
   try {
@@ -349,7 +350,8 @@ export function associateSnapshot(w) {
           };
         });
       })())`));
-      out.push({ product: p, name: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].name") || p, rows });
+      out.push({ product: p, name: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].name") || p,
+        rows: tiered.includes(p) ? rows : rows.map((r) => Object.assign(r, { reward: null })) });
     }
   } finally {
     if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { /* the extract goes on */ } }
@@ -381,8 +383,8 @@ export const CARD_SUM_FIELDS = ["bought", "soldFor", "onward", "introduced", "re
 export function associateCard(w, code) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
-  /* the tiered books only, as his card above (F9) */
-  const products = call("tieredBooks()") || ["salt"];
+  /* every book, the reward on a tiered book alone, as his card above (F9 revised) */
+  const products = call("PROD_ORDER") || ["salt"], tiered = call("tieredBooks()") || ["salt"];
   const before = call("PROD");
   const out = [];
   try {
@@ -431,7 +433,8 @@ export function associateCard(w, code) {
       })())`));
       if (one) out.push(Object.assign({ product: p,
         name: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].name") || p,
-        unit: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].unit") || "unit" }, one));
+        unit: call("PRODUCTS && PRODUCTS[" + JSON.stringify(p) + "] && PRODUCTS[" + JSON.stringify(p) + "].unit") || "unit" }, one,
+        tiered.includes(p) ? {} : { reward: null }));
     }
   } finally {
     if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { /* the extract goes on */ } }

@@ -925,7 +925,9 @@ export const OWNER_JS = `
   /* ---- THE ASSOCIATES REPORT CARD (v691) ------------------------------------------------------
      One card an associate, per book: what they bought, what they sold for him, what they brought
      in, their share and their stars, and the reward in UNITS with a bar for how far through the
-     next one they are. No margin is in the snapshot, so none can be drawn here. */
+     next one they are. No margin is in the snapshot, so none can be drawn here.
+     F9 REVISED (his answers of 28 Sep 2026): every book's progress, and the reward only where the
+     snapshot carries one, a tiered book; any other book draws the progress alone, no reward line. */
   async function loadCards(){
     try{ cards=await refs('/all/assoc'); drawCards(); }
     catch(e){ say(e.message,'bad'); }
@@ -961,7 +963,7 @@ export const OWNER_JS = `
       c.appendChild(el('p','tot','Reward: '+w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'
         +(w.held?', held while departed':'')));
       if(w.next!=null){ c.appendChild(bar(w.next)); c.appendChild(el('p','op',Math.round(w.next*100)+'% of the way to the next unit')); }
-    } else c.appendChild(el('p','tot','No reward on this book.'));
+    }
     return c;
   }
   function drawCards(){

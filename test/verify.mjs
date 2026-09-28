@@ -15270,10 +15270,12 @@ await (async () => {
     ok(!!d.getElementById("oNew") && !d.getElementById("oLimit"), "one short of the limit, New order is offered");
     d.getElementById("oNew").click(); d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !d.querySelector("#osheet .olim"); i++) await new Promise((r) => setTimeout(r, 30));
-    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({ t: r.querySelector(".salt-ledger__label").textContent, cancel: !!r.querySelector("button") }));
+    /* F8 (Step 1a.2): the order is a tile, its figure under the mark, and its word stands beside the tile */
+    const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
+      return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
     ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
-      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]"
-      && rows.map((r) => r.t.replace(/^1 unit Cube, /, "")).join("|") === "Sent|Sent|Confirmed|Confirmed|Collected",
+      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1")
+      && rows.map((r) => r.t).join("|") === "Sent|Sent|Confirmed|Confirmed|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
     const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
     for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
@@ -15822,8 +15824,9 @@ await (async () => {
     for (let i = 0; i < 100 && !d.querySelector("#pPrices .szrow"); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
     d.querySelector("#pPrices .szrow").click();
+    /* F8 (Step 1a.2): the word stands beside the order's tile, which holds the mark and its figure */
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
-      word: r.querySelector(".salt-ledger__label").textContent.replace(/^2 units Cube, /, ""),
+      word: [...r.querySelector(".salt-ledger__label").children].filter((c) => !c.classList.contains("mtile")).map((c) => c.textContent).join(""),
       flag: [...r.querySelectorAll(".salt-ledger__flag")].map((f) => f.textContent).filter((t) => !/^Placed /.test(t)).join("") }));
     ok(rows.map((r) => r.word).join("|") === "Sent|Sent|Delivered|Part delivered|Part collected",
       "a handover reads as what happened to the goods, in part where only some moved, never Ready: " + JSON.stringify(rows.map((r) => r.word)));
@@ -20569,14 +20572,16 @@ await (async () => {
     if (!/<div class="salt-lines" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
     const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
-    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="salt-lines__mark">[\s\S]*?<\/span><\/span>([\d.,]+) (units?)</g)) {
+    /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its figure alone
+       under the mark, and the words a reader hears carry the unit */
+    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="mtile"><span class="sr">[A-Z][a-z]+ ([\d.,]+) (units?)<\/span><svg[\s\S]*?<\/svg><span class="mq" aria-hidden="true">([\d.,]+)<\/span>/g)) {
       const q = +m[1].replace(/,/g, "");
-      if ((q > 1) !== (m[2] === "units")) wrongWord.push(p + " " + m[1] + " " + m[2]); else if (q > 1) plural++;
+      if ((q > 1) !== (m[2] === "units") || m[3] !== m[1]) wrongWord.push(p + " " + m[1] + " " + m[2] + " under " + m[3]); else if (q > 1) plural++;
     }
   }
   ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
   ok(docs > 10 && !untagged, "and every dated line carries its month, an undated one none: " + untagged + " out of step");
-  ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11): " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
+  ok(plural > 0 && !wrongWord.length, "a quantity above one reads units, one or less unit (D11), and the card's figure is the size: " + plural + " plural" + (wrongWord.length ? "; wrong: " + wrongWord.slice(0, 3).join(", ") : ""));
 
   /* the page: a party whose live document spans two months, and two issues kept as they were sent */
   const who = parties.find((p) => { const d = M.liveStatement(p, at, "abcd-efgh"); return d && new Set([...d.body.matchAll(/data-m="(\d{4}-\d{2})"/g)].map((m) => m[1])).size > 1; });
@@ -20854,14 +20859,28 @@ await (async () => {
     ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
       && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
       "codes only, and a departure is a yes or no, never his note about a person");
-    /* F9, HIS ANSWER OF 28 SEP 2026: the card is the tiered books' and no other's, a fixed board and the spare book
-       left off, since the reward is a tier's; a desk with no book outside the tiers would make this vacuous */
-    const tiered91 = JSON.parse(book91.w.eval("JSON.stringify(tieredBooks())")), books91 = JSON.parse(book91.w.eval("JSON.stringify(PROD_IDS)"));
-    ok(tiered91.length >= 1 && books91.some((p) => !tiered91.includes(p))
-      && JSON.stringify(snap91.products.map((p) => p.product)) === JSON.stringify(tiered91),
-      "his card carries the tiered books and no other: " + JSON.stringify({ card: snap91.products.map((p) => p.product), tiered: tiered91, books: books91 }));
-    /* THE NO-REWARD CASE, DRIVEN: oil showed it until F9 took the fixed boards off the card, so a book whose reward has
-       no unit is made here, every row of every card book at once, and the desk's own figures put back after */
+    /* F9 REVISED, HIS ANSWERS OF 28 SEP 2026 ("Rewards remains solely for salt"; associates "can see all but just on
+       the sales progress"): every book's progress, the reward on the tiered books alone. A desk with no book outside
+       the tiers would make this vacuous, and so would a book outside them that no reward unit reaches: oil is given
+       salt's unit here, so only the rule, and never the data, can keep a reward off it */
+    const tiered91 = JSON.parse(book91.w.eval("JSON.stringify(tieredBooks())")), order91 = JSON.parse(book91.w.eval("JSON.stringify(PROD_ORDER)"));
+    ok(tiered91.length >= 1 && order91.some((p) => !tiered91.includes(p))
+      && JSON.stringify(snap91.products.map((p) => p.product)) === JSON.stringify(order91)
+      && snap91.products.every((p) => p.rows.length >= 6),
+      "his card carries every book's progress, the fixed boards and the spare book beside the tiered: "
+      + JSON.stringify({ card: snap91.products.map((p) => p.product), order: order91, tiered: tiered91 }));
+    book91.w.eval("var rs91=REWARD.stated.oil;REWARD.stated.oil=REWARD.stated.salt;");
+    let oil91 = null;
+    try { oil91 = as91(book91.w); } finally { book91.w.eval("if(rs91===undefined)delete REWARD.stated.oil;else REWARD.stated.oil=rs91;"); }
+    const oilRows91 = (oil91.products.find((p) => p.product === "oil") || { rows: [] }).rows;
+    const saltRows91 = (oil91.products.find((p) => p.product === "salt") || { rows: [] }).rows;
+    ok(oilRows91.length >= 6 && oilRows91.every((r) => r.reward === null) && saltRows91.some((r) => r.reward)
+      && tiered91.includes("salt") && !tiered91.includes("oil")
+      && oil91.products.filter((p) => !tiered91.includes(p.product)).every((p) => p.rows.every((r) => r.reward === null)),
+      "and the reward rides on the tiered books alone, null on oil even with a reward unit on it: "
+      + JSON.stringify({ oil: oilRows91.filter((r) => r.reward).length, salt: saltRows91.filter((r) => r.reward).length }));
+    /* THE NO-REWARD CASE, DRIVEN: a tiered book whose reward has no unit is made here, every row of every card book at
+       once, and the desk's own figures put back after (oil's null above is the rule's, not the unit's) */
     book91.w.eval("var ns91=networkStats;networkStats=function(){return ns91().map(function(r){return Object.assign({},r,{unit:null});});};");
     let none91 = null;
     try { none91 = as91(book91.w); } finally { book91.w.eval("networkStats=ns91;"); }
@@ -20926,8 +20945,15 @@ await (async () => {
       ok(drawn === rowsAll && list91.querySelectorAll("h2").length === snap91.products.length
         && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Brought you/.test(list91.textContent),
         "the panel draws a card an associate under each book: " + drawn + " cards");
-      ok(!/margin/i.test(list91.textContent) && (!snap91.products.some((p) => p.product === "oil") || /No reward on this book/.test(list91.textContent)),
-        "it never says margin, and a book with no reward says that instead");
+      /* F9 revised: a book with no reward draws the progress alone, every card of it, with no reward line and no bar */
+      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: n.textContent, cards: [] });
+        else if (a.length && n.classList.contains("acard")) a[a.length - 1].cards.push(n); return a; }, []);
+      const bare91 = snap91.products.filter((p) => p.rows.length && p.rows.every((r) => !r.reward)).map((p) => p.name || p.product);
+      const drawnBare91 = books91.filter((b) => bare91.includes(b.h));
+      ok(!/margin/i.test(list91.textContent) && bare91.length >= 1 && drawnBare91.length === bare91.length
+        && drawnBare91.every((b) => b.cards.length && b.cards.every((c) => /Bought from you/.test(c.textContent)
+          && !/Reward|reward/.test(c.textContent) && !c.querySelector(".pbar"))),
+        "it never says margin, and a book with no reward draws its progress alone, no reward line and no bar: " + JSON.stringify(bare91));
       ok(list91.querySelectorAll(".pbar").length > 0, "and the part-unit is a bar rather than a figure");
     } finally { try { W91.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch91; }
@@ -22355,9 +22381,12 @@ await (async () => {
   ok(/^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4 8\.6 12 2\.6/.test(P95.PSYM.oil),
     "one table holds the marks: a cube for the one and a droplet for the other");
   const cube = P95.psymSvg("salt", 28), drop = P95.psymSvg("oil", 28), odd = P95.psymSvg("tin", 28);
-  ok(/stroke="currentColor"/.test(cube) && /fill="none"/.test(cube) && !/<text|Salt|salt/.test(cube)
+  /* F8 (Step 1a.2): the one thing written in a mark is his letter, one capital that names nothing (PLET) */
+  const said95 = (s) => (s.match(/<text[^>]*>([^<]*)<\/text>/g) || []).map((t) => t.replace(/<[^>]*>/g, ""));
+  ok(/<path[^>]*fill="none"[^>]*stroke="currentColor"/.test(cube) && !/Salt|salt/.test(cube)
+    && JSON.stringify(said95(cube)) === JSON.stringify([P95.PLET.salt]) && JSON.stringify(said95(drop)) === JSON.stringify([P95.PLET.oil])
     && cube !== drop && /aria-hidden="true"/.test(cube),
-    "each is drawn as an outline in the ink it sits in, with no word in it and no fill");
+    "each is drawn as an outline in the ink it sits in, no fill, and the one thing written in it is his letter, never a word: " + JSON.stringify(said95(cube)));
   ok(odd.includes("A8.6 8.6") && odd !== cube && odd !== drop,
     "and a product with no mark of its own gets the ring, never a blank, so an omission does not read as a fault");
   ok(P95.PSHAPE.salt === "Cube" && P95.PSHAPE.oil === "Droplet" && !/salt|oil/i.test(Object.values(P95.PSHAPE).join(" ")),
@@ -22451,7 +22480,8 @@ await (async () => {
     const row95 = d95.querySelector("#pOrder [data-row]");
     if (row95) row95.click();
     const card95 = d95.querySelector("#pOrder .oscreen");
-    ok(row95 && row95.querySelector(".pwith svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
+    /* F8: a row's mark is a tile, its figure under it (his "number alone"), and the shape rides in the tile's words */
+    ok(row95 && row95.querySelector(".mtile svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
       && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
       "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
@@ -22461,12 +22491,13 @@ await (async () => {
       "and no product is written as a word anywhere on the prices or the order: " + JSON.stringify((words95.match(/\b(salt|oil)\b/gi) || []).slice(0, 4)));
   } finally { try { dom95.window.close(); } catch (e) { /* best effort */ } }
 })();
-section("F8: his letters are drawn in the Prices marks alone, none its book's initial, and the Ring carries none");
+section("F8: his letter in every mark wherever it is drawn, none under 20 px, the Ring bare, and in a card the mark a button with its figure alone under it");
 await (async () => {
-  /* HIS ANSWER OF 28 SEP 2026 (Q8, "letters only in Prices"): a letter of his in each book's mark, I G E V, drawn on the
-     Prices tab and nowhere else. Rewards, the order page, Home, the guest board and the statement keep their plain marks at
-     their sizes, the spare book keeps the bare Ring, and the aria stays the shape. Read off psymSvg, then off the served
-     page driven as an associate drives it, then off the board and the live statements. */
+  /* HIS ANSWERS OF 28 SEP 2026: Q8 "everywhere", then "Yes everywhere", the statement and the guest board included, which
+     retired v913's letters on Prices alone; then, on the sheet of the raised marks, a card "shall not combine glyphs (icon)
+     and fonts (alphanumeric together)": the mark is a button with its figure under it, "number alone", and "It will be
+     rendered cards in the statement". Read off psymSvg and mtileSvg, then the served page driven as an associate drives it,
+     the guest board as the Worker serves it, and the live statements. */
   const P8 = await import("../stmt/page.js");
   const W8 = (await import("../stmt/worker.js")).default;
   const { JSDOM: JD8 } = await import("jsdom");
@@ -22486,36 +22517,30 @@ await (async () => {
     && !OW8.PRODUCT_WORDS.some((w) => [...w.replace(/-/g, "").toUpperCase()].every((c) => letters8.includes(c))),
     "each is one capital, none is its book's initial in English or in Malay, and together they spell no product word: " + letters8);
 
-  /* ---- psymSvg, the server's twin ---- */
+  /* ---- psymSvg, the server's twin: the letter always, and nothing turns it off ---- */
   const lets8 = (svg) => [...svg.matchAll(/<text class="plet"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
-  ok(BOOKS8.every((k) => { const s = P8.psymSvg(k, 28, true); return lets8(s).join() === P8.PLET[k] && (s.match(/<text/g) || []).length === 1
-      && /<text[^>]* fill="currentColor"/.test(s) && /aria-hidden="true"/.test(s) && /width="28" height="28"/.test(s); }),
-    "asked, psymSvg draws each book's letter in its mark once, in the ink the mark is drawn in, at the size asked and hidden from a reader");
-  ok([...Object.keys(P8.PSYM), "spare", "tin", ""].every((k) => [13, 18, 28, 30].every((px) => !/<text/.test(P8.psymSvg(k, px)))),
-    "not asked, no mark carries a letter, at any size");
-  ok(["spare", "tin", "", null].every((k) => P8.psymSvg(k, 28, true) === P8.psymSvg(k, 28) && /A8\.6 8\.6/.test(P8.psymSvg(k, 28, true))),
-    "the spare book and a product with no mark keep the bare Ring, even asked");
-  /* the mark gives its letter room only where a letter sits */
+  ok(BOOKS8.every((k) => [20, 22, 24, 28, 30].every((px) => { const s = P8.psymSvg(k, px);
+      return lets8(s).join() === P8.PLET[k] && (s.match(/<text/g) || []).length === 1 && P8.psymSvg(k, px, false) === s
+        && /<text[^>]* fill="currentColor"/.test(s) && /aria-hidden="true"/.test(s) && s.includes('width="' + px + '" height="' + px + '"'); })),
+    "psymSvg draws each book's letter in its mark once, at every size, in the mark's ink and hidden from a reader, and no third argument turns it off");
+  ok(["spare", "tin", "", null].every((k) => !/<text/.test(P8.psymSvg(k, 28)) && /A8\.6 8\.6/.test(P8.psymSvg(k, 28))),
+    "the spare book and a product with no mark keep the bare Ring");
+  /* the mark gives its letter room: the cube's three inner edges stop at radius 5 and the capsule gives its seam */
   const dOf8 = (svg) => (/<path d="([^"]*)"/.exec(svg) || [])[1] || "";
   const shell8 = (d) => d.slice(0, d.indexOf("Z") + 1);
   const inner8 = (d) => [...d.slice(d.indexOf("Z") + 1).matchAll(/M\s*([\d.]+) ([\d.]+) L\s*([\d.]+) ([\d.]+)/g)]
     .map((m) => ({ r: Math.hypot(+m[1] - 12, +m[2] - 12), to: m[3] + " " + m[4] }));
-  const cubeL8 = dOf8(P8.psymSvg("salt", 28, true)), iL8 = inner8(cubeL8), iP8 = inner8(P8.PSYM.salt);
+  const cubeL8 = dOf8(P8.psymSvg("salt", 28)), iL8 = inner8(cubeL8), iP8 = inner8(P8.PSYM.salt);
   ok(shell8(cubeL8) === shell8(P8.PSYM.salt) && iL8.length === 3 && iP8.length === 3
-    && iL8.every((e) => Math.abs(e.r - 5) < 0.05) && iP8.every((e) => e.r === 0) && iL8.map((e) => e.to).join() === iP8.map((e) => e.to).join()
-    && dOf8(P8.psymSvg("salt", 28)) === P8.PSYM.salt,
-    "the cube's three inner edges stop at radius 5 where the letter sits, reaching the same corners, and meet at the centre everywhere else: "
-    + JSON.stringify(iL8.map((e) => +e.r.toFixed(2))));
-  const capL8 = dOf8(P8.psymSvg("rice", 28, true)), seam8 = P8.PSYM.rice.slice(P8.PSYM.rice.indexOf("Z") + 1).trim();
+    && iL8.every((e) => Math.abs(e.r - 5) < 0.05) && iL8.map((e) => e.to).join() === iP8.map((e) => e.to).join(),
+    "the cube's three inner edges stop at radius 5 where the letter sits, reaching the same corners: " + JSON.stringify(iL8.map((e) => +e.r.toFixed(2))));
+  const seam8 = P8.PSYM.rice.slice(P8.PSYM.rice.indexOf("Z") + 1).trim();
   const sm8 = (/^M([\d.]+) ([\d.]+) L([\d.]+) ([\d.]+)$/.exec(seam8) || []).slice(1).map(Number);
-  ok(capL8 === shell8(P8.PSYM.rice) && sm8.length === 4 && Math.abs((sm8[0] + sm8[2]) / 2 - 12) < 0.01 && Math.abs((sm8[1] + sm8[3]) / 2 - 12) < 0.01
-    && dOf8(P8.psymSvg("rice", 28)) === P8.PSYM.rice
-    && dOf8(P8.psymSvg("oil", 28, true)) === P8.PSYM.oil && dOf8(P8.psymSvg("candy", 28, true)) === P8.PSYM.candy,
-    "the capsule gives its seam, which crosses its centre, to the letter and keeps it everywhere else, and the droplet and the lozenge are drawn as they are: " + seam8);
-  /* HIS REDRAW OF 28 SEP 2026: "the letters should all be aligned centrally when put next to each other, must be of the
-     same size", and the shapes must look to be of one ratio, 1:1. Read off the drawing: every letter's place and size, and
-     every mark's extent, its arcs and curves walked point by point */
-  const at8 = BOOKS8.map((k) => (/<text[^>]* x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"/.exec(P8.psymSvg(k, 28, true)) || []).slice(1).map(Number));
+  ok(dOf8(P8.psymSvg("rice", 28)) === shell8(P8.PSYM.rice) && sm8.length === 4 && Math.abs((sm8[0] + sm8[2]) / 2 - 12) < 0.01
+    && dOf8(P8.psymSvg("oil", 28)) === P8.PSYM.oil && dOf8(P8.psymSvg("candy", 28)) === P8.PSYM.candy,
+    "the capsule gives its seam, which crosses its centre, to the letter, and the droplet and the lozenge are drawn as they are: " + seam8);
+  /* HIS REDRAW OF 28 SEP 2026: every letter the same size on the same line, and every mark one ratio, 1:1 */
+  const at8 = BOOKS8.map((k) => (/<text[^>]* x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"/.exec(P8.psymSvg(k, 28)) || []).slice(1).map(Number));
   ok(at8.every((a) => a.length === 3) && new Set(at8.map((a) => a.join())).size === 1 && at8[0][0] === 12 && at8[0][2] === 8
     && Math.abs(at8[0][1] - 0.365 * at8[0][2] - 12) < 0.01,
     "every letter is the same size, 8 in the 24 grid, on the same line, its capitals centred on the mark's centre: " + JSON.stringify(at8));
@@ -22555,7 +22580,19 @@ await (async () => {
   ok(/A7\.8 7\.8/.test(P8.glyphSvg("ring", 40)) && dOf8(P8.glyphSvg("ring", 40)) !== dOf8(P8.psymSvg("spare", 40)),
     "and the app's own ring, on the door and the rail, keeps the home-screen icon's proportion");
 
-  /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card and an order ---- */
+  /* ---- mtileSvg, the card: the mark a button, the figure under it and nothing else to see; a reader hears the shape and
+     the size in words, the figure once ---- */
+  const td8 = new JD8("<body>" + P8.mtileSvg("salt", "2.5", "2.5 units") + P8.mtileSvg("spare", "1", "1 unit") + "</body>").window.document;
+  const seen8 = (n) => [...n.childNodes].filter((c) => !(c.classList && c.classList.contains("sr"))).map((c) => c.textContent).join("").trim();
+  const [tS8, tR8] = [...td8.querySelectorAll(".mtile")];
+  ok(!!tS8 && tS8.querySelectorAll("svg.psym").length === 1 && tS8.querySelector("svg.psym").getAttribute("width") === "28"
+    && tS8.querySelector("svg text.plet").textContent === "I" && seen8(tS8) === "I2.5"
+    && tS8.querySelector(".mq").getAttribute("aria-hidden") === "true" && tS8.querySelector(".sr").textContent === "Cube 2.5 units"
+    && !!tR8 && !tR8.querySelector("text") && tR8.querySelector(".sr").textContent === "Ring 1 unit",
+    "a card's mark is a button at 28px with its letter, the figure alone under it, and a reader hears the shape and the size once: "
+    + JSON.stringify([tS8 && seen8(tS8), tS8 && tS8.querySelector(".sr").textContent]));
+
+  /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card, an order ---- */
   const u8 = "abcd-efgh", pass8 = "fixture-pass-f8", ck8 = await C8.contentKey("test-secret", u8), env8 = { STMT: new KV() };
   const list8 = { at: "2026-09-28T00:00:00Z", week: { monday: "2026-09-28", label: "28 Sep 2026" },
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }, { q: 2.5, price: 300 }] },
@@ -22587,53 +22624,103 @@ await (async () => {
     } });
   const D8 = dom8.window.document;
   const until8 = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return !!f(); };
+  /* a mark on the page: its size, its letter, and whether it is the Ring; the page's glyphs are not marks */
+  const RING8 = /A8\.6 8\.6/;
+  const census8 = (root) => [...root.querySelectorAll("svg.psym:not(.glyph)")].map((s) => ({ px: +s.getAttribute("width"),
+    ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
+  /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
+  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && /^[A-Z]?[\d,]+(\.\d+)?$/.test(seen8(t).replace(/\s+/g, "")); };
+  const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
     D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
     const up8 = await until8(() => D8.querySelectorAll("#pPrices h3.pmark").length === 5 && D8.querySelector("#pCard .pane svg.psym")
-      && D8.querySelector("#pOrder [data-row] svg.psym"));
-    const heads8 = [...D8.querySelectorAll("#pPrices h3.pmark")];
-    const got8 = heads8.map((h) => { const s = h.querySelector("svg.psym");
-      return [h.getAttribute("aria-label"), [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join(""), s.getAttribute("width"), s.getAttribute("aria-hidden")].join(":"); });
-    ok(up8 && JSON.stringify(got8) === JSON.stringify(["Cube:I:28:true", "Droplet:G:28:true", "Lozenge:E:28:true", "Capsule:V:28:true", "Ring::28:true"]),
-      "Prices draws each book's letter in its mark, priced and not yet priced alike, at the size it had and named by its shape, the Ring bare: " + JSON.stringify(got8));
+      && D8.querySelector("#pOrder [data-row] svg.psym") && D8.querySelector("#pHome .htile svg.psym"));
+    const heads8 = [...D8.querySelectorAll("#pPrices h3.pmark")].map((h) => { const s = h.querySelector("svg.psym");
+      return [h.getAttribute("aria-label"), [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join(""), s.getAttribute("width")].join(":"); });
+    ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube:I:28", "Droplet:G:28", "Lozenge:E:28", "Capsule:V:28", "Ring::28"]),
+      "Prices draws each book's letter in its mark, priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
     /* the page's mark is psymSvg's, drawn twice in two languages: the same path, the same letter in the same place */
     const look8 = (s) => { const p = s.querySelector("path"), t = s.querySelector("text");
       return p.getAttribute("d") + "|" + (t ? ["class", "x", "y", "font-size", "text-anchor", "fill"].map((a) => t.getAttribute(a)).join(",") + "," + t.textContent : ""); };
-    const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.psymSvg(k, 28, true); return look8(h.querySelector("svg")); };
-    const pair8 = heads8.map((h, i) => [look8(h.querySelector("svg.psym")), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
-    ok(pair8.length === 5 && pair8.every(([a, b]) => a === b),
-      "and each is psymSvg's own drawing, path, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
-    /* nowhere else: Rewards, the order's row and its screen, the order sheet, Home */
+    const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.psymSvg(k, 28); return look8(h.querySelector("svg")); };
+    const pair8 = [...D8.querySelectorAll("#pPrices h3.pmark svg.psym")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
+    ok(pair8.length === 5 && pair8.every(([a, b]) => a === b), "and each is psymSvg's own drawing, path, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
+    /* Home first, as it opens: Order again and the order under Coming up */
+    const home8 = { again: [...D8.querySelectorAll("#pHome .htile svg.psym")], rows: [...D8.querySelectorAll("#pHome .salt-inbox-row svg.psym")] };
+    all8.push(...census8(D8.getElementById("pHome")));
+    /* Orders: the row, then its own screen */
     D8.querySelector('button[data-t="order"]').click();
-    await until8(() => D8.getElementById("oNew"));
+    await until8(() => D8.querySelector("#pOrder [data-row]"));
+    const row8 = [...D8.querySelectorAll("#pOrder [data-row] svg.psym")];
+    all8.push(...census8(D8.getElementById("pOrder")));
+    D8.querySelector("#pOrder [data-row]").click();
+    await until8(() => D8.querySelector("#pOrder .ohead svg.psym"));
+    const screen8 = [...D8.querySelectorAll("#pOrder .ohead svg.psym")];
+    all8.push(...census8(D8.querySelector("#pOrder .ohead")));
+    /* the order sheet: its choice of book, then the check before Place */
     D8.getElementById("oNew").click();
     await until8(() => D8.querySelectorAll("#osheet svg.psym").length >= 3);
-    const sheet8 = [D8.querySelectorAll("#osheet svg.psym").length, D8.querySelectorAll("#osheet text").length];
-    const rowMarks8 = D8.querySelectorAll("#pOrder [data-row] svg.psym").length;
-    D8.querySelector("#pOrder [data-row]").click();
-    await until8(() => D8.querySelector("#pOrder .oscreen svg.psym"));
-    const seen8 = { rewards: D8.querySelectorAll("#pCard svg.psym").length, row: rowMarks8, screen: D8.querySelectorAll("#pOrder .oscreen svg.psym").length,
-      sheet: sheet8[0], sheetLetters: sheet8[1], home: D8.querySelectorAll("#pHome svg.psym").length,
-      stray: [...D8.querySelectorAll("svg.psym text")].filter((t) => !t.closest("#pPrices")).map((t) => t.textContent) };
-    ok(seen8.rewards >= 1 && seen8.row >= 1 && seen8.screen >= 1 && seen8.sheet >= 3 && !seen8.sheetLetters && !seen8.stray.length,
-      "Rewards, the order's row and its screen, the order sheet and Home draw their marks bare, and no letter is drawn outside Prices: " + JSON.stringify(seen8));
+    const choice8 = census8(D8.getElementById("osheet"));
+    all8.push(...choice8);
+    /* an associate says who it is for first (S4 4.7), or Review waits */
+    const me8 = D8.querySelector('#osheet button[data-k="for:0"]'); if (me8) me8.click();
+    const one8 = D8.querySelector('#osheet input[name="osize"][value="1"]');
+    if (one8) { one8.checked = true; one8.dispatchEvent(new dom8.window.Event("change", { bubbles: true })); }
+    D8.getElementById("oGo").click();
+    await until8(() => D8.querySelector("#osheet .mhero svg.psym"));
+    const check8 = [...D8.querySelectorAll("#osheet .mhero svg.psym")], checkRows8 = [...D8.querySelectorAll("#osheet .salt-ledger svg.psym")];
+    all8.push(...census8(D8.getElementById("osheet")));
+    all8.push(...census8(D8.getElementById("pPrices")), ...census8(D8.getElementById("pCard")));
+    const bad8 = all8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
+    ok(all8.length >= 12 && !bad8.length && all8.some((m) => m.ring),
+      "every mark the page draws carries its letter, the Ring none, and none is under 20px: " + JSON.stringify({ marks: all8.length, bad: bad8.slice(0, 4) }));
+    const cards8 = { again: home8.again, homeRows: home8.rows, row: row8, screen: screen8, check: check8 };
+    const loose8 = Object.entries(cards8).filter(([, l]) => !l.length || !l.every(inCard8)).map(([k]) => k);
+    ok(!loose8.length && !checkRows8.length && choice8.length >= 3,
+      "in every card the mark is a button with its figure alone under it: Order again, Home's rows, the order's row and its screen, and the check, whose lines carry no mark: "
+      + JSON.stringify({ loose: loose8, checkRows: checkRows8.length }));
   } finally { try { dom8.window.close(); } catch (e) { /* best effort */ } }
 
-  /* ---- the guest board and the statement ---- */
-  const board8 = P8.boardPage({ prices: { week: { label: "28 Sep 2026" },
-    products: BOOKS8.map((product) => ({ product, unit: "unit", tierName: "", sizes: [{ q: 1, price: 10 }] })) } }, "n8");
-  ok((board8.match(/class="psym"/g) || []).length === 4 && !/<text/.test(board8), "the guest board draws its four marks bare");
+  /* ---- the guest board, as the Worker serves it: lettered marks, and the letter's face in its own styles ---- */
+  const RF8 = await import("../stmt/refs.js");
+  const genv8 = { STMT: new KV() };
+  await genv8.STMT.put("board:2", JSON.stringify({ week: { label: "28 Sep 2026" },
+    products: BOOKS8.concat(["spare"]).map((product) => ({ product, unit: "unit", sizes: [{ q: 1, price: 10 }] })) }));
+  const g8 = await RF8.mintRef(genv8, { label: "f8" });
+  const gr8 = await W8.fetch(new Request("https://k7m3p2.example/g/" + g8.id), genv8), board8 = await gr8.text();
+  const gd8 = new JD8(board8).window.document, gm8 = census8(gd8);
+  const gcss8 = [...gd8.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+  ok(gr8.status === 200 && gm8.length === 5 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEV" && gm8.filter((m) => m.ring).every((m) => !m.lets)
+    && gm8.every((m) => m.px >= 20),
+    "the guest board draws its four books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
+  ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'JetBrains Mono'/.test(gcss8)
+    && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
+    "and the board's own styles carry the letter's mono face, whose file its policy lets load");
+
+  /* ---- the live statement: its marks are cards, lettered, none under 20px; an archive draws none ---- */
   const MS8 = await import("../tools/make_statements.mjs");
   const POS8 = (await import("../engine/position.mjs")).default;
   const bk8 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  let docs8 = 0, marks8 = 0, texts8 = 0;
+  let docs8 = 0; const sm8s = [], loose8s = [];
   for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 12)) {
     const d = MS8.liveStatement(p, new Date("2026-09-28T04:00:00Z"), "abcd-efgh");
     if (!d) continue;
-    docs8++; marks8 += (d.body.match(/class="psym"/g) || []).length; texts8 += (d.body.match(/<text/g) || []).length;
+    docs8++;
+    const sd = new JD8("<body>" + d.body + "</body>").window.document;
+    sm8s.push(...census8(sd));
+    loose8s.push(...[...sd.querySelectorAll("svg.psym")].filter((s) => !inCard8(s)).map(() => p));
   }
-  ok(docs8 > 3 && marks8 > 0 && !texts8, "and the live statement draws its marks bare: " + JSON.stringify({ docs8, marks8, texts8 }));
+  const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
+  ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
+    "the live statement's every mark is a card, lettered and none under 20px, its figure alone under it: " + JSON.stringify({ docs8, marks: sm8s.length, bad: sbad8.slice(0, 3), loose: loose8s.length }));
+  /* a new issue's table keeps its mark beside the size, lettered, and raised from the 13px it had to 20 */
+  const oI8 = { from: null, to: "2026-09-28", completed: true, open: true, pending: true, dates: true, issued: "28 Sep 2026" };
+  const im8 = [];
+  for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 6))
+    im8.push(...census8(new JD8(MS8.stmtDoc(p, MS8.stmtRows(p, oI8), oI8)).window.document));
+  const ibad8 = im8.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
+  ok(im8.length > 3 && !ibad8.length, "and a new issue's table draws every mark lettered and none under 20px: " + JSON.stringify({ marks: im8.length, bad: ibad8.slice(0, 3) }));
 })();
 section("S8 8.2: the guest board ends with a next step, and every shut link answers one styled page");
 await (async () => {
@@ -22729,6 +22816,52 @@ await (async () => {
       "a reward there to take says how to take it: " + JSON.stringify(lineOf("Cube")));
     ok(!take.test(lineOf("Droplet")) && /Held for now[.]$/.test(lineOf("Droplet")) && !take.test(lineOf("Lozenge")),
       "and a held reward, or one with nothing left, never invites an ask: " + JSON.stringify([lineOf("Droplet"), lineOf("Lozenge")]));
+  } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
+})();
+section("F9 revised: an associate's card draws every book's progress, and a reward block only where the book carries one");
+await (async () => {
+  /* HIS ANSWERS OF 28 SEP 2026: "Rewards remains solely for salt", and associates "can see all but just on the sales
+     progress". tools/book.mjs sends every book with `reward` null off the tiered books; the page draws each book's pane,
+     its progress for all, and the reward line and its Meter only where `reward` is there. Driven on the associate's own
+     page against the real Worker, a card as associateCard writes it: salt with a reward, oil and rice with none. */
+  const W = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const kv = new KV();
+  const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("f9-rev", u);
+  const day = "2026-09-21";
+  const book = (product, reward) => ({ product, name: "x", unit: "unit",
+    summary: { bought: 150, soldFor: 40, onward: 1, introduced: 0, referred: 0 }, reward,
+    lines: [{ date: day, kind: "own", qty: 1, rm: 150 }, { date: day, kind: "onward", qty: 0.5, rm: 40 }] });
+  const cardDoc = { at: day + "T00:00:00Z", products: [
+    book("salt", { earned: 1.6, taken: 1, left: 0.6, next: 0.4, held: false }), book("oil", null), book("rice", null)] };
+  await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) }));
+  const env = { STMT: kv };
+  const site = (path, o) => W.fetch(new Request("https://k7m3p2.example" + path, o), env);
+  const until = async (f) => { for (let i = 0; i < 200 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
+  let win = null;
+  try {
+    win = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
+    } }).window;
+    const D = win.document;
+    D.getElementById("un").value = u; D.getElementById("pw").value = pw;
+    D.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+    ok(await until(() => D.getElementById("tCard") && !D.getElementById("tCard").hidden), "the associate's page opens with its Rewards place");
+    D.getElementById("tCard").click();
+    const pCard = D.getElementById("pCard");
+    const pane = (shape) => { const h = [...pCard.querySelectorAll("h3.pmark")].find((x) => x.getAttribute("aria-label") === shape); return h ? h.closest(".pane") : null; };
+    ok(await until(() => pane("Cube") && pane("Droplet") && pane("Capsule")), "a pane for every book on the card, the tiered and the rest");
+    const look = (p) => ({ progress: p.querySelectorAll("ul.conf li").length, lines: p.querySelectorAll("tbody tr").length,
+      meter: p.querySelectorAll(".rmeter").length, reward: [...p.querySelectorAll("p.sub2")].filter((x) => /^Reward: /.test(x.textContent)).length });
+    const salt = look(pane("Cube")), oil = look(pane("Droplet")), rice = look(pane("Capsule"));
+    ok(salt.progress === 5 && salt.reward === 1 && salt.meter === 1,
+      "salt's pane carries its progress, its reward line and its Meter: " + JSON.stringify(salt));
+    ok([oil, rice].every((b) => b.progress === 5 && b.lines === 2 && b.reward === 0 && b.meter === 0),
+      "and a book with no reward draws its progress and its lines alone, no reward line and no Meter: " + JSON.stringify({ oil, rice }));
   } finally { try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S13 fix: the send sheet splices its rows and its issue by function, so a $ pattern or a placeholder in a row is kept as typed");
@@ -24863,12 +24996,17 @@ await (async () => {
   const C6 = await import("../tools/stmt-crypto.mjs");
 
   const { w: w6 } = await om6();
-  let card6 = null, who6 = null, tiered6 = [], books6 = [];
+  let card6 = null, cardOil6 = null, who6 = null, tiered6 = [], order6 = [];
   try {
     const ids = JSON.parse(w6.eval("JSON.stringify(typeof associateIds==='function'?associateIds():[])"));
+    tiered6 = JSON.parse(w6.eval("JSON.stringify(tieredBooks())")); order6 = JSON.parse(w6.eval("JSON.stringify(PROD_ORDER)"));
     who6 = ids[0] || null;
     if (who6) card6 = associateCard(w6, who6);
-    tiered6 = JSON.parse(w6.eval("JSON.stringify(tieredBooks())")); books6 = JSON.parse(w6.eval("JSON.stringify(PROD_IDS)"));
+    /* oil given salt's reward unit: the check below asks salt for a reward too, so the rule, not an empty unit, keeps oil's null */
+    if (who6) {
+      w6.eval("var rs6=REWARD.stated.oil;REWARD.stated.oil=REWARD.stated.salt;");
+      try { cardOil6 = associateCard(w6, who6); } finally { w6.eval("if(rs6===undefined)delete REWARD.stated.oil;else REWARD.stated.oil=rs6;"); }
+    }
   } finally { try { w6.close(); } catch (e) { /* best effort */ } }
 
   if (!card6) skipData("this book carries no associate, so the card was not built");
@@ -24883,12 +25021,18 @@ await (async () => {
       "and every line carries only a date, what it was, a size and a figure: " + JSON.stringify(p6.lines[0]));
     ok(p6.lines.every((l) => l.kind === "own" || l.kind === "onward"),
       "a line is either their own purchase or one that went out through them, and nothing else");
-    /* F9, HIS ANSWER OF 28 SEP 2026: THE TIERED BOOKS AND NO OTHER. Their reward is a tier's, and a tier is salt's
-       alone, so a fixed board and the spare book are off their card as off his; a desk with every book tiered would
-       make this vacuous */
-    ok(tiered6.length >= 1 && books6.some((p) => !tiered6.includes(p))
-      && card6.products.every((p) => tiered6.includes(p.product)),
-      "their card carries the tiered books and no other: " + JSON.stringify({ card: card6.products.map((p) => p.product), tiered: tiered6 }));
+    /* F9 REVISED, HIS ANSWERS OF 28 SEP 2026: EVERY BOOK'S PROGRESS, THE REWARD ON THE TIERED BOOKS ALONE. They "can see
+       all but just on the sales progress", and "Rewards remains solely for salt". A desk with every book tiered would make
+       this vacuous, and so would a book outside the tiers that no reward unit reaches: oil carries salt's unit in cardOil6 */
+    ok(tiered6.length >= 1 && order6.some((p) => !tiered6.includes(p))
+      && JSON.stringify(card6.products.map((p) => p.product)) === JSON.stringify(order6),
+      "their card carries every book's progress, the fixed boards and the spare book beside the tiered: "
+      + JSON.stringify({ card: card6.products.map((p) => p.product), order: order6, tiered: tiered6 }));
+    const oilC6 = cardOil6 && cardOil6.products.find((p) => p.product === "oil"), saltC6 = cardOil6 && cardOil6.products.find((p) => p.product === "salt");
+    ok(!!oilC6 && !!saltC6 && oilC6.reward === null && !!saltC6.reward && !tiered6.includes("oil")
+      && card6.products.filter((p) => !tiered6.includes(p.product)).every((p) => p.reward === null),
+      "and the reward rides on the tiered books alone, null on oil even with a reward unit on it: "
+      + JSON.stringify({ oil: oilC6 && oilC6.reward, salt: !!(saltC6 && saltC6.reward) }));
     /* EVERY FIGURE ADDS UP TO THE LIST UNDER IT. This is the v385 lesson applied here: a figure a
        reader can disprove by looking six lines down is worse than no figure, and it also proves the
        lines are THEIRS, because a foreign row would break the sum. Every book on the card, not just the first. */
@@ -39557,17 +39701,21 @@ await (async () => {
     for (let i = 0; i < 200 && !(!D.getElementById("barw").hidden && D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 25));
     return { W, D, posts };
   };
-  const tiles = (D) => [...D.querySelectorAll("#hAgain button.htile")].map((b) => b.textContent);
+  /* F8 (Step 1a.2): the tile is the button, the mark on it and its figure under it, alone; the shape and size in the words
+     a reader hears, then the detail */
+  const said = (b) => ["sr", "mq"].map((c) => (b.querySelector("." + c) || { textContent: "" }).textContent).join("|");
+  const tiles = (D) => [...D.querySelectorAll("#hAgain button.htile")].map((b) => said(b) + "|" + (b.querySelector(".salt-option__detail") || { textContent: "" }).textContent);
   const a = await open({});
   try {
     const { D, posts } = a;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110, delivered to Marlow Row", "2 unitsCubeRM 200, delivered to Veloria", "1 unitCubeRM 110, collected"])
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1|RM 110, delivered to Marlow Row", "Cube 2 units|2|RM 200, delivered to Veloria", "Cube 1 unit|1|RM 110, collected"])
       && /Order again/.test(D.getElementById("hAgain").textContent),
       "Home offers each size, way and place once, newest first, at today's price, and never a cancelled order or a size off the list: " + JSON.stringify(tiles(D)));
     /* the second: its place is not the last order's, which is where a sheet would otherwise start */
     D.querySelectorAll("#hAgain button.htile")[1].click();
     const sheet = () => (D.getElementById("osheet") || { textContent: "" }).textContent;
-    ok(/Check your order/.test(sheet()) && /What2 units/.test(sheet()) && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+    const hero = () => D.querySelector("#osheet .mhero .mtile");
+    ok(/Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
       "a tap opens the check with the same size, way and place at today's price, and not the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
     D.getElementById("oPlace").click();
@@ -39580,7 +39728,7 @@ await (async () => {
   const b = await open({ fresh: true });
   try {
     const { D } = b;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["1 unitCubeRM 110", "2 unitsCubeRM 200"]) && /Start your first order/.test(D.getElementById("hAgain").textContent),
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1|RM 110", "Cube 2 units|2|RM 200"]) && /Start your first order/.test(D.getElementById("hAgain").textContent),
       "a new account is offered its list's first sizes: " + JSON.stringify(tiles(D)));
     D.querySelectorAll("#hAgain button.htile")[1].click();
     const on = D.querySelector('#osheet input[name="osize"]:checked');
@@ -40314,17 +40462,21 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
     const box = D.getElementById("hComing"), kids = [...box.children];
-    const rows = kids.slice(1).map((r) => ({ tag: r.tagName, row: r.classList.contains("salt-inbox-row"), id: r.getAttribute("data-row") || "",
-      mark: !!r.querySelector(".salt-inbox-row__title svg.psym"), bits: ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s))) }));
+    /* F8 (Step 1a.2): the mark and size are the row's card, its figure alone under the mark, and the size in the words a
+       reader hears; an order's title is its state, and a part has none */
+    const rows = kids.slice(1).map((r) => { const tile = r.querySelector(":scope > .mtile");
+      return { tag: r.tagName, row: r.classList.contains("salt-inbox-row"), id: r.getAttribute("data-row") || "",
+        mark: !!(tile && tile.querySelector("svg.psym")), size: tile ? t(tile.querySelector(".sr")) + "|" + t(tile.querySelector(".mq")) : "",
+        bits: ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s))) }; });
     ok(kids.length > 0 && t(kids[0]) === "Coming up" && kids[0].tagName === "H2" && box.querySelectorAll("h2, h3").length === 1 && !box.querySelector(".salt-ledger"),
       "Coming up is one heading over one list, with no Ledger line beside the rows: " + JSON.stringify(kids.map((k) => k.tagName + "." + k.className.split(" ")[0])));
-    ok(rows.length === 4 && rows.every((r) => r.tag === "BUTTON" && r.row && r.mark && r.bits[0] && r.bits[2] && r.bits[3]),
+    ok(rows.length === 4 && rows.every((r) => r.tag === "BUTTON" && r.row && r.mark && r.size && r.bits[2] && r.bits[3]) && rows.slice(0, 2).every((r) => r.bits[0]),
       "every entry is the system's Inbox row, a tap, with its mark and size, its day and its figure: " + JSON.stringify(rows));
     ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8]).length === 1,
       "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
-    ok(JSON.stringify(rows.slice(2).map((r) => r.bits)) === JSON.stringify([["2.5 unitsCube", "Due when you receive it", "16 " + MON3[8], "RM 250"],
-      ["1 unitCube", "On behalf of a friend. Due when you receive it", "17 " + MON3[8], "RM 120"]]) && !/salt|Gold|Silver/i.test(t(box)),
-      "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => r.bits)));
+    ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5", "", "Due when you receive it", "16 " + MON3[8], "RM 250"],
+      ["Cube 1 unit|1", "", "On behalf of a friend. Due when you receive it", "17 " + MON3[8], "RM 120"]]) && !/salt|Gold|Silver/i.test(t(box)),
+      "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])));
     box.querySelectorAll(".salt-inbox-row")[2].click();
     ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
       "a part's row opens Account, where the statement carries the row: " + ["pHome", "pStmt"].map((id) => id + ":" + D.getElementById(id).hidden).join(","));
@@ -40977,7 +41129,8 @@ await (async () => {
   const { JSDOM: JD } = await import("jsdom");
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const said = (s) => { const t = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][t.getUTCDay()] + " " + t.getUTCDate() + " " + MON3[t.getUTCMonth()]; };
-  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  /* the words, not the drawing: F8's letter is drawn inside every mark (Step 1a.2), and a mark is aria-hidden */
+  const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((s) => s.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   const open = async (pay) => {
     const u = "abcd-efgh", pass = "fixture-pass-s62", ck = await C.contentKey("test-secret", u);
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
@@ -41000,8 +41153,9 @@ await (async () => {
         tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
         pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
-        /* S7 polish: Coming up's part is the Inbox row its orders are */
-        coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => ["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))),
+        /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, the figure under the mark */
+        coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => { const m = r.querySelector(":scope > .mtile");
+          return [m ? t(m.querySelector(".sr")) + "|" + t(m.querySelector(".mq")) : ""].concat(["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))); }),
         marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
     } finally { dom.window.close(); }
   };
@@ -41025,7 +41179,7 @@ await (async () => {
     "on its last day the line says to pay today, with no date beside it: " + JSON.stringify(today.tile));
   const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1];
   ok(one.heads.join() === "Coming up" && one.rows.length === 0 && one.coming.length === 1
-    && one.coming[0].join("|") === "1 unitCube|Due when you receive it|" + age(kl(-1)) + "|RM 110"
+    && one.coming[0].join("|") === "Cube 1 unit|1||Due when you receive it|" + age(kl(-1)) + "|RM 110"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
     + JSON.stringify([one.heads, one.rows, one.coming]));
@@ -41312,7 +41466,8 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-s67", ck = await C.contentKey("test-secret", u);
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const said = (x) => { const d = new Date(x + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
-  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  /* the words, not the drawing: F8's letter is drawn inside every mark (Step 1a.2), and a mark is aria-hidden */
+  const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((s) => s.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   const part = (o) => Object.assign({ late: true, product: "salt", qty: 2, got: 2, resale: false }, o);
   const parts = [part({ date: kl(-32), since: kl(-30), due: kl(-27), rm: 180, whole: 180, gotOn: kl(-30) }), part({ date: kl(-16), since: kl(-14), due: kl(-11), rm: 120, whole: 200, gotOn: kl(-14) })];
   const pay = { term: 3, now: { rm: 300, due: kl(-27), parts }, overdue: { rm: 300, parts }, coming: { rm: 0, parts: [] } };
@@ -41861,12 +42016,15 @@ await (async () => {
   const doc = M.liveStatement("CX8-TG", at);
   const body = String(doc && doc.body);
   const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
-  const lines = block.split('<p class="owedv">').slice(1);
+  /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): a line a book is a card a book, the
+     mark a button and its figure alone under it, the unit in the words a reader hears */
+  const lines = block.split('<span class="mtile">').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  ok(i >= 0 && lines.length === 2, "the block has one line a book: " + lines.length + " lines");
-  ok(lines.length === 2 && /class="pm"/.test(lines[0]) && /Cube/.test(lines[0]) && txt(lines[0]).endsWith("2 units")
-    && /class="pm"/.test(lines[1]) && /Droplet/.test(lines[1]) && txt(lines[1]).endsWith("1.5 units"),
-    "each line carries its book's mark and its own figure, salt first: " + lines.map(txt).join(" | "));
+  const said = (h) => ((h.match(/<span class="sr">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="mq" aria-hidden="true">([^<]*)<\/span>/) || [])[1] || "");
+  ok(i >= 0 && lines.length === 2, "the block has one card a book: " + lines.length + " cards");
+  ok(lines.length === 2 && /<svg class="psym"/.test(lines[0]) && said(lines[0]) === "Cube 2 units|2"
+    && /<svg class="psym"/.test(lines[1]) && said(lines[1]) === "Droplet 1.5 units|1.5",
+    "each card carries its book's mark and its own figure, salt first: " + lines.map(said).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
   const o = { from: null, to: "2026-09-22", completed: true, open: true, pending: true, dates: true, issued: "22 Sep 2026", archive: true };
@@ -42021,10 +42179,12 @@ await (async () => {
 
   const who = many[0];
   const b = bodyOf(who), t = text(b);
-  const foot = t.slice(t.indexOf(" orders,"));
+  /* the footer's first line, the orders and their quantities (F8, Step 1a.2: a card a book, no comma after the count) */
+  const totLine = (h) => { const i = h.indexOf('<div class="tot">'); return i < 0 ? "" : h.slice(i, h.indexOf("</div>", i + 17)); };
+  const foot = text(totLine(b));
 
   /* the footer keeps them apart: one figure a book, and their sum is NOT printed. A figure is read whole, so 5 unit is not
-     found inside 35 unit, and against its own book's mark, whose shape is the one word the mark carries. */
+     found inside 35 unit, and against its own book's card, whose shape and size are the words a reader hears. */
   const qty = stmtQty(who);
   const { PSHAPE: SHAPE82 } = await import("../stmt/page.js");
   const num82 = (n) => String(+(+n).toFixed(2)).replace(".", "\\.");
@@ -42067,8 +42227,8 @@ await (async () => {
   /* a single-book account reads as it always did */
   const one = (bk.roster || []).find((c) => booksOf(c).size === 1);
   if (one) {
-    const t1 = text(bodyOf(one));
-    ok(/ orders?, /.test(t1) || / order, /.test(t1), `a single-book account still foots to one figure (${one})`);
+    const tr1 = totLine(bodyOf(one));
+    ok(/^ ?\d+ orders? /.test(text(tr1)) && (tr1.match(/class="mtile"/g) || []).length === 1, `a single-book account still foots to one figure, one card (${one}): ` + text(tr1).slice(0, 60));
   }
 })();
 
@@ -42157,8 +42317,9 @@ await (async () => {
   ok(/'<button type="button" class="salt-appbar__item"' \+ placeAttrs\(t\)/.test(pgY) && /class="salt-rail__tab salt-rail__tab--solo"' \+ placeAttrs\(t, true\)/.test(pgY)
     && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
     "the places are the system's, and a tap moves aria-current with the open one");
-  /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order */
-  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /h\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
+  /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
+     1a.2) stood it beside the head's card */
+  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /side\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),

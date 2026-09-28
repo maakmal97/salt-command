@@ -98,10 +98,27 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme
 select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
-/* F8: his letter in a Prices mark, the mono face at its middle weight, whatever the heading around it says */
+/* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
 h3.pmark{margin:0 0 4px;line-height:1}
 .pwith{display:inline-flex;align-items:center;gap:7px}
+/* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS FIGURE UNDER IT AND ALONE. The pressed ghost's edge and
+   glass, the mark at 28px, the figure in the mono face; nothing sits beside the mark. The statement's lines take it too. */
+.mtile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
+  min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
+  background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
+.mtile .psym,.mstack .psym{display:block}
+.mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
+  color:var(--salt-text);white-space:nowrap;line-height:1.2}
+.mhero{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.salt-inbox-row>.mtile{align-self:center}
+.mlab{display:inline-flex;align-items:center;gap:12px}
+.mstack{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.htile{justify-content:center}
+.salt-lines__row--cancelled .mq{color:var(--salt-prose);text-decoration:line-through;text-decoration-thickness:1px}
+.tot .mtiles{display:inline-flex;flex-wrap:wrap;gap:8px;vertical-align:middle;margin-left:6px}
+.owed .mtiles{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.owed .mq{font-size:var(--salt-text-xl);color:var(--salt-verdigris)}
 /* read aloud, never drawn: the shape's word, so a mark in a sentence is not a hole */
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 /* v694: the order's own figures, typed in the same well as everything else. payamt, not amt (24 Sep 2026):
@@ -327,10 +344,10 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .olist .salt-inbox-row{margin:0 0 8px}
 .olater{width:100%;margin-top:10px}
 .oback{margin:0 0 12px}
-.ohead{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:0 0 16px}
+.ohead{display:flex;align-items:center;gap:6px 14px;margin:0 0 16px}
 .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
-.ohead .state{margin-left:auto}
-.ohead .sub2{flex-basis:100%;margin:0}
+.ohead>div{min-width:0}
+.ohead .sub2{margin:6px 0 0}
 .odue{color:var(--salt-ember)}
 /* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
 .pcover{display:block;margin-top:2px}
@@ -538,11 +555,12 @@ const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
    what is on the screen, so saying it aloud gives away no more than looking does. */
 export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", _: "Ring" };
-/* ---- F8, HIS ANSWER OF 28 SEP 2026 ("letters only in Prices"): A LETTER OF HIS IN EACH MARK, ON THE PRICES TAB ALONE ----
+/* ---- F8, HIS ANSWERS OF 28 SEP 2026 ("everywhere", then "Yes everywhere", the statement and the guest board included):
+   A LETTER OF HIS IN EVERY BOOK'S MARK, WHEREVER IT IS DRAWN ----
    None is its product's initial, in English or in Malay, and together they spell no product word: a letter names nothing
-   and the mark is still the thing. Drawn only where Prices asks (`lettered`, on psymSvg and the page's psym): Rewards, the order
-   page, Home, the guest board and the statement keep their plain marks at their sizes. The spare book and any product
-   with no letter keep the Ring, bare, and the aria stays the shape. */
+   and the mark is still the thing. psymSvg and the page's psym draw it always (v913's `lettered` switch is retired), and no
+   mark is drawn under 20 px, where the letter, a third of the mark, would be too small to read. The spare book and any
+   product with no letter keep the Ring, bare, and the aria stays the shape. */
 export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V" };
 /* EVERY LETTER THE SAME SIZE ON THE SAME LINE (his redraw of 28 Sep 2026): the mono face (.plet) at size 8 in the 24
    grid, its capitals centred on the mark's centre, so the baseline sits half a capital (0.73 of the size) below 12. */
@@ -563,15 +581,22 @@ export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
    Prices, the check before Place, and a guest's board. It replaces three wordings, one of which ("quoted when you order")
    was never true: the charge is set when he confirms the order, and only then. */
 export const DELIVERY = EN["deliv"];
-/** The mark for a product, as SVG source. `px` is the drawn size; the stroke stays hairline. `lettered` (F8) draws his
- *  letter in it, which only Prices asks for; the page's psym is its twin. */
-export function psymSvg(product, px, lettered) {
-  const k = String(product || "").toLowerCase(), L = lettered ? pletOf(k) : null;
+/** The mark for a product, as SVG source, his letter in it (F8). `px` is the drawn size, 20 and over; the stroke stays
+ *  hairline. The page's psym is its twin. */
+export function psymSvg(product, px) {
+  const k = String(product || "").toLowerCase(), L = pletOf(k);
   const d = L ? L.d : PSYM[k] || RING;
   return '<svg class="psym" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
     + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>'
     + (L ? '<text class="plet" x="12" y="' + L.y + '" font-size="' + L.s + '" text-anchor="middle" fill="currentColor">' + L.l + "</text>" : "")
     + "</svg>";
+}
+/** HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON AND ITS FIGURE SITS UNDER IT, ALONE ("number alone"), never
+ *  a mark beside words or figures; the statement's lines are cards too. `fig` is the figure drawn; a reader hears the
+ *  shape, then `said`, the size in words, and never the figure twice. The page's mtile is its twin. */
+export function mtileSvg(product, fig, said, px) {
+  return '<span class="mtile"><span class="sr">' + esc(PSHAPE[String(product || "").toLowerCase()] || PSHAPE._) + " " + esc(said)
+    + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + esc(fig) + "</span></span>";
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -1325,10 +1350,10 @@ const CLIENT_JS = `
   var PSYM=__PSYM__, PSHAPE=__PSHAPE__, PLET=__PLET__;
   /* S13: a mark's name is the table's, by its shape (shape.<Shape>), so a screen reader says it in the reader's language */
   function pshape(product){ var n=PSHAPE[String(product||'').toLowerCase()]||PSHAPE._; return wordIn(LANG,'shape.'+n)||n; }
-  /* F8: lettered draws his letter in the mark, which Prices alone asks for (psymSvg's twin); the aria stays the shape */
-  function psym(product,px,lettered){
+  /* F8: his letter in every book's mark, wherever it is drawn (psymSvg's twin); the aria stays the shape */
+  function psym(product,px){
     var NS='http://www.w3.org/2000/svg', k=String(product||'').toLowerCase();
-    var L=lettered&&Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
+    var L=Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k]:null;
     var svg=document.createElementNS(NS,'svg');
     svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('width',px); svg.setAttribute('height',px);
     svg.setAttribute('class','psym'); svg.setAttribute('aria-hidden','true'); svg.setAttribute('focusable','false');
@@ -1345,11 +1370,19 @@ const CLIENT_JS = `
     }
     return svg;
   }
-  /* a size and its mark, as one phrase: "2.5 unit" then the cube */
+  /* a size and its mark, as one phrase: "2.5 unit" then the cube; outside a card alone (his note of 28 Sep 2026) */
   function withMark(product,text,px){
     var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
-    w.appendChild(psym(product,px||18));
+    w.appendChild(psym(product,px||20));
     var sr=el('span','sr',pshape(product)); w.appendChild(sr);
+    return w;
+  }
+  /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON AND ITS FIGURE SITS UNDER IT, alone; a reader hears the shape
+     and the size in words, never the figure twice (mtileSvg's twin) */
+  function mtile(product,q,u,px){
+    var w=el('span','mtile'); w.appendChild(el('span','sr',pshape(product)+' '+unitsOf(q,u)));
+    w.appendChild(psym(product,px||28));
+    var f=el('span','mq',String(+q)); f.setAttribute('aria-hidden','true'); w.appendChild(f);
     return w;
   }
   var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
@@ -2378,7 +2411,7 @@ const CLIENT_JS = `
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28,true));
+      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
@@ -2398,7 +2431,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28,true)); pane.appendChild(sh);
+      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
@@ -2678,12 +2711,13 @@ const CLIENT_JS = `
     var say=el('p','salt-insight salt-insight--copper',limitLine(open.length)); say.setAttribute('role','status'); B.appendChild(say);
     var L=el('div','salt-ledger salt-ledger--plain');
     open.forEach(function(o){
-      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label');
-      lab.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o))+' ',16));
+      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
+      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */
+      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));
       /* the order's own word, stage 5's (stateWord, over oWord), as its row under Your orders says it; goods handed over in
          part keep an order open at ready, so they read as the banner's part word, never Ready over "part of it is with you" */
       var mv=+o.moved||0, part=mv>0&&!movedAll(o), dl=o.mode==='deliver';
-      lab.appendChild(document.createTextNode(', '+(part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o))));
+      lab.appendChild(el('span',null,part?tw(dl?'st.partDelivered':'st.partCollected'):stateWord(o)));
       l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
       if(!(+o.moved>0)){
         var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
@@ -2710,12 +2744,14 @@ const CLIENT_JS = `
   function drawCheck(){
     var c=draft.check, B=osh.body;
     sheetHead(tw('sh.check'),toForm);
+    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
+       place of a What line that set the mark beside its size */
+    var H=el('div','mhero'); H.appendChild(mtile(c.product,c.q,c.unit)); B.appendChild(H);
     var L=el('div','salt-ledger salt-ledger--plain');
     function row(k,v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), val=el('span','salt-ledger__value');
       l.appendChild(el('span','salt-ledger__label',k)); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
       l.appendChild(val); r.appendChild(l); L.appendChild(r); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
-    row(tw('rew.what'),withMark(c.product,unitsOf(c.q,c.unit)+' ',16));
     row(tw('sh.price'),rm(c.total));
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
@@ -2994,8 +3030,9 @@ const CLIENT_JS = `
   function oRow(o,shown){
     var b=el('button','salt-inbox-row orow'); b.type='button'; b.setAttribute('data-row',o.id);
     if(o.id===shown) b.setAttribute('aria-current','true');
+    /* the order as a card: its mark a button, the figure under it, and its state beside (his note of 28 Sep 2026) */
+    b.appendChild(mtile(o.product,o.qty,oUnit(o)));
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(withMark(o.product,unitsOf(o.qty,oUnit(o)),18));
     t.appendChild(stateChip(o));
     main.appendChild(t);
     var why=oWhy(o); if(why) main.appendChild(el('span','salt-inbox-row__what',why));
@@ -3056,12 +3093,14 @@ const CLIENT_JS = `
     return {k:k, t:tap?tap.t:''};
   }
   function oHead(o){
-    var h=el('div','ohead'), t=el('h3');
-    t.appendChild(psym(o.product,26)); t.appendChild(document.createTextNode(' '+unitsOf(o.qty,oUnit(o)))); t.appendChild(el('span','sr',pshape(o.product)));
+    /* the order's head as a card: the mark a button with the figure under it, its state and how beside (his note of 28 Sep 2026) */
+    var h=el('div','ohead'), t=el('h3'), side=el('div');
+    t.appendChild(mtile(o.product,o.qty,oUnit(o)));
     h.appendChild(t);
-    h.appendChild(stateChip(o,'state'));
-    h.appendChild(el('p','sub2',tw('oh.'+(o.mode==='deliver'?(o.place?'deliverTo':'deliver'):'collect')+(o.forFriend?'F':''),
+    side.appendChild(stateChip(o,'state'));
+    side.appendChild(el('p','sub2',tw('oh.'+(o.mode==='deliver'?(o.place?'deliverTo':'deliver'):'collect')+(o.forFriend?'F':''),
       {t:Dd(stamp,o.at), p:o.place||''})));
+    h.appendChild(side);
     return h;
   }
   /* GOODS ONLY: a declined or cancelled order has no track to show */
@@ -3400,7 +3439,7 @@ const CLIENT_JS = `
   function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML; }
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
-    return setW(el('span'),k,{mark:markHtml(p.product,15), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
+    return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
       d:function(L){ return dayName(p.since||p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
@@ -3561,7 +3600,7 @@ const CLIENT_JS = `
   function orderCtx(id){
     var o=oFind(id);
     return {kind:'order', id:id, fig:o?oToPay(o):0, label:'pay.still', note:function(){
-      return setW(el('span'),movedAll(o)?'pn.orderedWithYou':'pn.ordered',{mark:markHtml(o.product,15),
+      return setW(el('span'),movedAll(o)?'pn.orderedWithYou':'pn.ordered',{mark:markHtml(o.product,20),
         u:function(L){ return esch(unitsOf(o.qty,oUnit(o),L)); }, d:Dd(oDay,o.at)}); }};
   }
   function openPay(ctx){
@@ -3813,9 +3852,9 @@ const CLIENT_JS = `
      open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
   function partRow(p){
     var b=el('button','salt-inbox-row hpart'); b.type='button';
-    var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(withMark(p.product,unitsOf(p.qty,unitFor(p.product)),18));
-    main.appendChild(t);
+    /* the part as a card: its mark a button and the figure under it, its due day beside (his note of 28 Sep 2026) */
+    b.appendChild(mtile(p.product,p.qty,unitFor(p.product)));
+    var main=el('span','salt-inbox-row__main');
     main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
     coverTo(main,p);
     b.appendChild(main);
@@ -3857,10 +3896,13 @@ const CLIENT_JS = `
     var g=el('div','salt-options__grid salt-options__grid--2');
     list.slice(0,4).forEach(function(a){
       var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
-      var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text'), l=el('span','salt-option__label');
+      var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
       /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
       b.type='button';
-      l.appendChild(psym(a.product,18)); l.appendChild(document.createTextNode(unitsOf(a.q,P.unit))); l.appendChild(el('span','sr',pshape(a.product)));
+      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and the figure under it, alone; a reader hears the
+         shape and the size in words */
+      var fq=el('span','mq',String(+a.q)); fq.setAttribute('aria-hidden','true');
+      l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail',a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
       b.appendChild(t);
