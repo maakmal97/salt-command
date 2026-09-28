@@ -574,6 +574,31 @@ export function decideCustomer(order, action, body, mine, at) {
 /* the cash rule reads their other orders, and only a rail being picked asks it */
 const readsMine = (action, body) => action === "method" || (action === "pay" && !!(body && body.method));
 
+/** Fix 4: one correction of a line the desk wrote, checked. Returns { ev } or { error, status }. */
+export const FIX_ID_RE = /^[a-z0-9-]{1,40}$/;
+/* every refusal of a fix begins so, and the desk keeps a refusal only when it does: a Counter deployed a minute behind the
+   desk answers a fix it cannot read as an unknown move, which is no answer to the fix (src/orders.js sendFixes) */
+export const FIX_REFUSED = "fix refused: ";
+export function decideFix(order, f, at) {
+  if (!f || typeof f !== "object" || !FIX_ID_RE.test(String(f.id || ""))) return { error: FIX_REFUSED + "a fix names itself", status: 400 };
+  const line = (order.payments || []).find((p) => p && p.by === "desk" && p.at === f.line);
+  if (!line) return { error: FIX_REFUSED + "this order has no line of the desk's at " + String(f.line || "no moment"), status: 409 };
+  const fix = { id: f.id, line: line.at };
+  if (f.method !== undefined) {
+    const a = PAY_ACCOUNTS.find((x) => x.key === f.account);
+    if (f.unpay || f.method === "cod" || !METHODS.includes(f.method) || !a || !a[f.method]) return { error: FIX_REFUSED + "a line is restated to a way and an account that take it", status: 400 };
+    fix.method = f.method; fix.account = a.key;
+  } else if (f.unpay !== true) return { error: FIX_REFUSED + "a fix restates a line or takes it back", status: 400 };
+  else fix.unpay = true;
+  if (f.unmove === true || f.cancel !== undefined) {
+    const note = String(f.cancel || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (!fix.unpay || f.unmove !== true || !note) return { error: FIX_REFUSED + "an order is cancelled by a fix only with its line and its handover taken back, and his reason", status: 400 };
+    if ((+order.paid || 0) - line.amount > 0.004 || (+order.claimed || 0) > 0.004) return { error: FIX_REFUSED + "money would still be on it: that is a cancellation for the desk's own Cancel", status: 409 };
+    fix.unmove = true; fix.cancel = note;
+  }
+  return { ev: { kind: "fix", at, fix } };
+}
+
 /** The owner's moves, from the phone through the desk's Worker. Returns { ev }, { none } when there is
  *  nothing to record, or { error, status }. */
 export function decideDesk(order, body, at) {
@@ -600,6 +625,14 @@ export function decideDesk(order, body, at) {
       c.sync = { state: m.sync.state, why: String(m.sync.why || "").slice(0, 200), at: String(m.sync.at || at).slice(0, 40) };
     return { ev: { kind: "mark", at, mark: c } };
   }
+  /* 28 Sep 2026, FIX 4: A LINE THE DESK WROTE BY MISTAKE, taken back or restated (his answers on three orders of one
+     account, where Cash received was tapped by mistake). The desk's committed list sends each correction once, named by
+     its id, and the order book keeps the id, so a repeat is answered and never applied twice. It names one payment line
+     of the desk's by its moment, and either restates its way (money that came by a transfer) or takes it back; taking
+     it back may also take back the handover and cancel the order with his reason, only when that leaves nothing paid
+     and nothing handed over, since a cancellation with money or goods on it is his Cancel and the fold's refund. What
+     the ledger has been told comes down with it, so the reconcile has nothing to queue: none of it reaches the book. */
+  if (body && body.fix) return decideFix(order, body.fix, at);
   /* v764: WHAT THE BOOK ALREADY HOLDS, COMING BACK THE OTHER WAY (his instruction of 21 Sep 2026).
    * Money and goods are two tracks and the site has only ever heard one end of each: the customer
    * types what they paid, he types what he handed over HERE. When he takes the payment in cash and
@@ -786,6 +819,33 @@ export function applyEvent(order, ev) {
       if (!p) continue;
       order.payments = order.payments.map((x) => (x === p ? Object.assign({}, x, { queued: c.draft }) : x));
       if (p.claim === "received") q.paid = +((+q.paid || 0) + p.amount).toFixed(2);
+    }
+    order.queued = q;
+  } else if (ev.kind === "fix") {
+    /* fix 4: the line, the lines of the history written with it (its cash note, and the done it completed), and what
+       the ledger was told, all at once; an order the line had completed is open again at the state it held before */
+    const f = ev.fix, q = Object.assign({}, order.queued || {}), line = (order.payments || []).find((p) => p && p.at === f.line && p.by === "desk");
+    if (line && f.method) {
+      order.payments = order.payments.map((p) => (p === line ? Object.assign({}, p, { method: f.method, account: f.account }) : p));
+      order.history = order.history.map((h) => (h && h.at === f.line && h.by === "desk" && h.method
+        ? Object.assign({}, h, { method: f.method, account: f.account, note: "paid " + (+line.amount).toFixed(2) }) : h));
+    }
+    if (line && f.unpay) {
+      order.payments = order.payments.filter((p) => p !== line);
+      order.paid = +Math.max(0, (+order.paid || 0) - line.amount).toFixed(2);
+      q.paid = +Math.max(0, (+q.paid || 0) - line.amount).toFixed(2);
+      order.history = order.history.filter((h) => !h || h.at !== f.line);
+    }
+    if (f.unmove) {
+      order.moved = 0; q.moved = 0; delete order.movedOn; delete order.movedAt;
+      order.history = order.history.filter((h) => !h || !/^[0-9.]+ unit (delivered|collected)$/.test(String(h.note || "")));
+    }
+    if (f.cancel) {
+      order.status = "cancelled"; q.cancel = at;
+      order.history.push({ at, status: "cancelled", by: "desk", note: f.cancel });
+    } else if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
+      const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
+      order.status = was ? was.status : "ready";
     }
     order.queued = q;
   } else if (ev.kind === "ledger") {
@@ -979,6 +1039,8 @@ export async function deskMove(env, u, id, body) {
   }
   /* S6 fix: and Received, on the book already, which takes a claim and its entry's name off the order as Not found does */
   if (body && body.verdict && (body.verdict.kind === "notfound" || body.verdict.covered)) return { error: NOT_FOUND_ON_KV, status: 503 };
+  /* fix 4: a correction is one event under its own id, which only the order book keeps */
+  if (body && body.fix) return { error: FIX_ON_KV, status: 503 };
   const order = await env.STMT.get(OKEY(u, id), "json");
   const d = decideDesk(order, body, new Date().toISOString());
   if (d.error) return d;
@@ -1042,6 +1104,7 @@ export function decideClaimDesk(claim, body, at) {
 /* S6 11.14 (D7, D10): NOT FOUND IS ONE EVENT IN THE ORDER BOOK, or it is not taken. On the KV road it would be a record
    read, changed and written back whole, which is what the judges ruled out for a figure that falls. */
 export const NOT_FOUND_ON_KV = "Not found is recorded in the order book only, and the site is on the kv road: move it back first";
+export const FIX_ON_KV = "A fix is recorded in the order book only, and the site is on the kv road: it is sent again once the site is back on the book";
 /** POST /desk/claims/<u>/<id> {verdict}: his Received or Not found on a claim against the account; it wakes them. */
 export async function deskClaim(env, u, id, body) {
   if (onBook(env)) {

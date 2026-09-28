@@ -1528,7 +1528,7 @@ async function followRows(env, orders, idx) {
   }
   return { followed, failed };
 }
-export async function tellSite(env) {
+export async function tellSite(env, fixes) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
@@ -1559,10 +1559,57 @@ export async function tellSite(env) {
     if (!m || !m.ok) failed.push({ id: o.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") });
     else told++;
   }
+  /* fix 4: the committed list's corrections, sent on the list of orders this pass already read */
+  const fx = await sendFixes(env, r.orders, fixes);
+  failed.push(...(fx.failed || []));
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
   if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
-  return Object.assign({ ok: true, told, v }, followed ? { followed } : {}, failed.length ? { failed } : {});
+  return Object.assign({ ok: true, told, v }, followed ? { followed } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
+    failed.length ? { failed } : {});
+}
+
+/* ---- A LINE THE DESK WROTE BY MISTAKE, TAKEN BACK (28 Sep 2026, fix 4, his answers on CE5-SA's three orders) ------
+ * Cash received was tapped by mistake on three of one account's orders, and the site kept each as money paid in cash.
+ * The book has been put right by Corrections; the site is put right here: EACH CORRECTION IS A LINE OF THIS LIST, added by
+ * a Code session and shipped in a version, and the return leg's pass after that version's fold (tellSite) sends each line
+ * once, on the list of orders it has already read, as one event in the order book under the line's id (stmt/orders.js
+ * decideFix), so a repeat is answered and never applied twice. What was sent is kept in KV under FIXED_MARK, by id: sent,
+ * or refused with the site's own reason (its 400 or 409, beginning "fix refused: "), never sent again; any other answer,
+ * a Counter deployed a minute behind the desk's mirror among them, leaves the pass unclean, so
+ * the next minute sends it again, and so does a site on the kv road, which refuses a fix (it keeps no event log). A line
+ * whose order is not on the site's list waits, recorded nowhere, and the pass says so (waiting). Nothing here reaches the
+ * ledger: the fix lowers what the ledger was told with what the site shows, so the reconcile has nothing to queue.
+ *   line     the moment of the desk's payment line on that order
+ *   method   and account: the way the money came, restated on the line and its history (unpay absent)
+ *   unpay    the line taken back, and with it the history written with it; an order it completed is open again
+ *   unmove   the handover taken back too, and cancel his reason: cancelled by us, nothing paid, handed over or owed */
+export const SITE_FIXES = [
+  { id: "fx4-tg8bpq-carried", order: "20260926131647-tg8bpq", line: "2026-09-27T15:52:02.970Z", unpay: true, unmove: true, cancel: "Carried on your order of 27 Sep" },
+  { id: "fx4-ndxqjg-unpaid", order: "20260927221155-ndxqjg", line: "2026-09-27T22:29:15.338Z", unpay: true },
+  { id: "fx4-gwepmw-transfer", order: "20260927095911-gwepmw", line: "2026-09-27T13:09:07.720Z", method: "transfer", account: "tng" }
+];
+const FIXED_MARK = "orders:fixed";
+/** Each line of the list not yet sent, to its order on `orders`: { sent, refused?, waiting?, failed? }. */
+export async function sendFixes(env, orders, fixes) {
+  const list = fixes || SITE_FIXES;
+  if (!env.SALT_QUEUE || !list.length) return { sent: 0 };
+  const done = (await env.SALT_QUEUE.get(FIXED_MARK, "json")) || {};
+  let sent = 0; const failed = [], refused = [], waiting = [];
+  for (const f of list.filter((x) => !done[x.id])) {
+    const o = (orders || []).find((x) => x.id === f.order), why = f.cancel ? siteWords(f.cancel) : "";
+    if (!o) { waiting.push(f.id); continue; }
+    if (why) { done[f.id] = { at: new Date().toISOString(), refused: "its reason " + why }; refused.push(f.id); continue; }
+    const fix = Object.assign({}, f); delete fix.order;
+    const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id),
+      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fix }) });
+    const b = m ? await m.json().catch(() => ({})) : {};
+    if (m && m.ok && b.ok) { done[f.id] = { at: new Date().toISOString(), sent: true }; sent++; }
+    else if (m && (m.status === 400 || m.status === 409) && /^fix refused: /.test(String(b.error || ""))) { done[f.id] = { at: new Date().toISOString(), refused: String(b.error || "http " + m.status).slice(0, 200) }; refused.push(f.id); }
+    else failed.push({ id: f.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") });
+  }
+  if (sent || refused.length) await env.SALT_QUEUE.put(FIXED_MARK, JSON.stringify(done));
+  return Object.assign({ sent }, refused.length ? { refused } : {}, waiting.length ? { waiting } : {}, failed.length ? { failed } : {});
 }
 
 /* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------

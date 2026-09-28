@@ -1,5 +1,15 @@
 [
  {
+  "v": "v934",
+  "d": "29 Sep 2026",
+  "t": "A LINE THE DESK WROTE BY MISTAKE IS PUT RIGHT ON THE SITE",
+  "n": [
+   "<p><b>A LINE THE DESK WROTE BY MISTAKE IS PUT RIGHT ON THE SITE.</b> Cash received was tapped by mistake on three of CE5-SA's site orders, and the site kept each as money paid in cash after Corrections had put the book right. A committed list of corrections now ships with the version, and the return leg's pass after its fold sends each line once, as one event in the order book under the line's own id, so a repeat is answered and never applied twice. On his answers of 28 Sep 2026: the order of 26 Sep reads Cancelled by us, carried on the order of 27 Sep, with nothing paid, handed over or owed; the rice order of 28 Sep is open again, collected with RM 8 to pay and chased as usual; the order of 27 Sep paid by transfer stays complete, its line and its history reading so.</p>",
+   "<p><b>NOTHING REACHES THE BOOK.</b> Each line lowers what the ledger was told with what the site shows, so the reconcile has nothing to queue. A line the site refuses is kept with its reason and never sent again; any other answer, a Counter deployed a minute behind the desk among them, holds the pass and the next minute sends it again; the site on its kv road refuses a fix, since it keeps no event log; and a line whose order is not on the site waits, recorded nowhere.</p>",
+   "<p><b>PROOFS.</b> One suite section, 8 checks, each of 24 mutations turning one red on its own: the three corrections, a cancellation with money on it or no reason, a way its account does not take, a roster code in the reason, the customer's own claim, an order not on the site, a line sent twice, an answer that is not a refusal, an old Counter's, and the kv road.</p>"
+  ]
+ },
+ {
   "v": "v933",
   "d": "29 Sep 2026",
   "t": "AN ORDER FOLLOWS ITS ROW",

@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2ce0c6fa04eb7d4d";
+var SALT_BUILD_ID="e9135c87e0bd6cdf";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8626,7 +8626,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v933","d":"29 Sep 2026","t":"AN ORDER FOLLOWS ITS ROW","n":["<p><b>A SITE ORDER TAKES ITS ROW'S KEY AND SIDE.</b> A site order names its row by the key its acknowledgement wrote, and a Correction can change that key after it: when CE5-SA's s210 and s212 moved to their resale account at v918, their orders went on naming rows the book no longer held, so a later stage would have waited for good, the return leg lost them, and the Counter, pairing To pay now by the order's side, would have asked for an order at Ready twice. Before the return leg each fold, every order now takes its row's key and its side: found by the row its own approved amendments name, of its own product, or, for an order never amended, only a row a Correction moved onto its own account once its pending row has landed. A key another order names is followed by neither, and an order whose close names its row ahead waits for that close.</p>","<p><b>THE SIDE FIRST, AND HIS WAITING YES WITH IT.</b> The Counter is sent the side alone and the key only once it has taken the side, so a Counter deployed a minute behind moves nothing. A yes of his still waiting on the old key, cash taken at the counter, is pointed at the row before the order takes the key; its draft then differs from what he saw and waits under Approve.</p>","<p><b>PROOFS.</b> One suite section, 35 checks, each of 16 mutations turning one red on its own: the move to the resale account and back, a restatement found by the order's own row over a twin, a key two orders want, a close on its way, his waiting yes pointed at the row and then differing, a Counter a minute behind, and the Counter's To pay now read once where it read twice.</p>"]}];
+const evolution=[{"v":"v934","d":"29 Sep 2026","t":"A LINE THE DESK WROTE BY MISTAKE IS PUT RIGHT ON THE SITE","n":["<p><b>A LINE THE DESK WROTE BY MISTAKE IS PUT RIGHT ON THE SITE.</b> Cash received was tapped by mistake on three of CE5-SA's site orders, and the site kept each as money paid in cash after Corrections had put the book right. A committed list of corrections now ships with the version, and the return leg's pass after its fold sends each line once, as one event in the order book under the line's own id, so a repeat is answered and never applied twice. On his answers of 28 Sep 2026: the order of 26 Sep reads Cancelled by us, carried on the order of 27 Sep, with nothing paid, handed over or owed; the rice order of 28 Sep is open again, collected with RM 8 to pay and chased as usual; the order of 27 Sep paid by transfer stays complete, its line and its history reading so.</p>","<p><b>NOTHING REACHES THE BOOK.</b> Each line lowers what the ledger was told with what the site shows, so the reconcile has nothing to queue. A line the site refuses is kept with its reason and never sent again; any other answer, a Counter deployed a minute behind the desk among them, holds the pass and the next minute sends it again; the site on its kv road refuses a fix, since it keeps no event log; and a line whose order is not on the site waits, recorded nowhere.</p>","<p><b>PROOFS.</b> One suite section, 8 checks, each of 24 mutations turning one red on its own: the three corrections, a cancellation with money on it or no reason, a way its account does not take, a roster code in the reason, the customer's own claim, an order not on the site, a line sent twice, an answer that is not a refusal, an old Counter's, and the kv road.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8741,7 +8741,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 00:23 KL';
+const LAST_UPDATED='29 Sep 2026, 01:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

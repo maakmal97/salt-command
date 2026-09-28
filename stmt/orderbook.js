@@ -332,10 +332,13 @@ export class OrderBook {
     if (op === "desk") {
       const u = String(a.u || ""), id = String(a.id || "");
       const order = this.order(u, id);
+      /* fix 4: a correction from the desk's committed list is one event under its own id: a repeat is answered, never applied */
+      const fx = a.body && a.body.fix && typeof a.body.fix.id === "string" ? "d:" + u + ":" + id + ":fix:" + a.body.fix.id : null;
+      if (fx && order && this.event(fx)) return { ok: true, order, again: true };
       const d = decideDesk(order, a.body, at);
       if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
       if (d.none) return { ok: true, order, none: true };
-      return this.append(null, u, id, d.ev, order);
+      return this.append(d.ev.kind === "fix" ? fx : null, u, id, d.ev, order);
     }
     /* THE CHASE MARK lives here with the orders it follows: true when this slot's wake (S12 12.3) is still to be
        sent, and the mark is then written; a mark two hours old is dropped, as its KV lapse dropped it */

@@ -46094,5 +46094,140 @@ await (async () => {
 })();
 
 
+section("28 Sep 2026, fix 4: a line the desk wrote on a site order by mistake is taken back or restated from a committed list, sent once by the return leg's pass as one event in the order book, and nothing reaches the ledger");
+await (async () => {
+  /* HIS ANSWERS OF 28 SEP 2026 on three orders of one account where Cash received was tapped by mistake: one reopens
+     Collected with its money to pay, one reads Cancelled by us with his reason and nothing paid, handed over or owed, one
+     stays Complete with its money restated as a transfer. The return leg's pass after a fold sends each line of the
+     committed list once, on the list of orders it has read; the order book keeps the line's id, so a repeat is answered
+     and never applied. What the ledger was told comes down with what the site shows, so orderWork, the one place that
+     decides a stage is owed, owes nothing. Driven through the desk's pass and the site's Worker on the order book's road,
+     and on the KV road, which refuses. Codes and usernames invented. */
+  const O = await import("../stmt/orders.js");
+  const { sendFixes, tellSite } = await import("../src/orders.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const J = JSON.stringify, setup = (c, what) => { if (!c) throw new Error("fix 4 setup: " + what); };
+  const road = (store) => {
+    const skv = new KV(), dkv = new KV(), bk = store ? H.orderBook({ STMT: skv, ORDER_STORE: store, ORDER_MOVE_IN: "1" }) : null;
+    const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store, ORDER_MOVE_IN: "1" } : {});
+    /* the mirror as the return leg reads it: a version, and one row that no order here names */
+    const R = { senv, dkv, ver: "vfx4-1", calls: 0 };
+    const D1 = { prepare(sql) { const q = (a) => ({
+      first: async () => (/FROM snapshot/.test(sql) ? { v: R.ver, stamped: null } : null),
+      all: async () => ({ results: /FROM entry WHERE collection/.test(sql) && a[0] === "sales"
+        ? [{ doc: J({ rid: "s9990", customer: "CG9-NQ", date: "2026-09-01", qty: 1, total: 1, delivery: 0 }) }] : [] }),
+      run: async () => ({ meta: { changes: 0 } }) });
+      const self = q([]); self.bind = (...a) => q(a); return self; } };
+    /* R.deny: the site answers a fix with that { status, error }, as any answer that is not its own refusal */
+    R.denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => { R.calls++;
+      if (R.deny && /"fix"/.test(String((init && init.body) || ""))) return new Response(J({ error: R.deny.error }), { status: R.deny.status });
+      return stmtW.fetch(new Request(url, init), senv); } } };
+    return R;
+  };
+  /* an order agreed, made ready, handed over and paid in cash on the desk, as the three were: the ledger told of each */
+  const cashed = async (R, u, code, extra, cash) => {
+    const o = (await O.placeOrder(R.senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" }, extra || {}))).order;
+    await O.deskMove(R.senv, u, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(R.senv, u, o.id, { mark: { ack: "2026-09-27T01:00:00.000Z", ledgerKey: code + "|2026-09-27|" + o.total } });
+    await O.deskMove(R.senv, u, o.id, { status: "ready" });
+    await O.deskMove(R.senv, u, o.id, { handover: { units: o.qty, mode: "collect" } });
+    await O.deskMove(R.senv, u, o.id, { mark: { moved: o.qty } });
+    for (const amount of cash || [o.total]) { await clockPast(new Date().toISOString()); await O.deskMove(R.senv, u, o.id, { cash: { amount } }); }
+    const x = (await O.allOrders(R.senv, true)).find((y) => y.id === o.id);
+    setup(x && x.status === "done" && (x.payments || []).length === (cash || [1]).length && x.queued.paid === o.total,
+      "order " + o.id + " cashed on the desk: " + J(x && { status: x.status, paid: x.paid, q: x.queued }));
+    return x;
+  };
+  const R = road("object+kv"), u = "fx4a-nnnn", code = "CG2-NQ";
+  const T = await cashed(R, u, code, {}), W = await cashed(R, u, code, { qty: 2, unit: 105, total: 210 }), N = await cashed(R, u, code, { product: "rice", unit: 8, total: 8 });
+  const P = await cashed(R, u, code, {}, [50, 60]), Q = await cashed(R, u, code, {});
+  const lineOf = (o, i) => o.payments[i || 0].at;
+  /* and one whose only line is the customer's own claim, waiting for his Received */
+  const C = await (async () => {
+    const o = (await O.placeOrder(R.senv, u, { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" })).order;
+    await O.deskMove(R.senv, u, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(R.senv, u, o.id, { status: "ready" });
+    await O.customerMove(R.senv, u, o.id, "pay", { amount: 110, method: "transfer", account: "wise" });
+    const x = (await O.allOrders(R.senv, true)).find((y) => y.id === o.id);
+    setup(x && (x.payments || []).length === 1 && x.payments[0].claim === "waiting", "order " + o.id + " claimed by its customer: " + J(x && x.payments));
+    return x;
+  })();
+  const FIXES = [
+    { id: "t-carried", order: T.id, line: lineOf(T), unpay: true, unmove: true, cancel: "Carried on your order of 27 Sep" },
+    { id: "n-unpaid", order: N.id, line: lineOf(N), unpay: true },
+    { id: "w-transfer", order: W.id, line: lineOf(W), method: "transfer", account: "tng" },
+    { id: "p-cancel-money", order: P.id, line: lineOf(P), unpay: true, unmove: true, cancel: "Carried on your order of 27 Sep" },
+    { id: "q-no-rail", order: Q.id, line: lineOf(Q), method: "jompay", account: "tng" },
+    { id: "q-code", order: Q.id, line: lineOf(Q), unpay: true, unmove: true, cancel: "Carried to " + code },
+    { id: "q-no-reason", order: Q.id, line: lineOf(Q), unpay: true, unmove: true },
+    { id: "c-their-claim", order: C.id, line: lineOf(C), unpay: true },
+    { id: "x-not-there", order: "20260101000000-abcdef", line: "2026-01-01T00:00:00.000Z", unpay: true }
+  ];
+  const t1 = await tellSite(R.denv, FIXES);
+  const now = async (o) => (await O.allOrders(R.senv, true)).find((y) => y.id === o.id);
+  const t = await now(T), n = await now(N), w = await now(W), p = await now(P), q = await now(Q), c = await now(C);
+  const mark = (await R.dkv.get("orders:fixed", "json")) || {};
+
+  ok(n.status === "ready" && n.paid === 0 && n.queued.paid === 0 && !(n.payments || []).length && !n.history.some((h) => h.at === lineOf(N))
+    && J(O.orderWork(n)) === "[]" && O.isAdvance(n),
+    "the mistaken cash line leaves the order and its history, what the ledger was told comes down with it, and the order is open again, collected with its money to pay and chased: "
+    + J({ status: n.status, paid: n.paid, q: n.queued, work: O.orderWork(n), hist: n.history.map((h) => h.note || h.status) }));
+  const last = t.history[t.history.length - 1];
+  ok(t.status === "cancelled" && last.by === "desk" && last.note === "Carried on your order of 27 Sep" && t.paid === 0 && t.moved === 0
+    && t.queued.paid === 0 && t.queued.moved === 0 && !!t.queued.cancel && J(O.orderWork(t)) === "[]" && !(t.payments || []).length
+    && !t.history.some((h) => /collected|in cash/.test(h.note || "") || h.status === "done"),
+    "the order he carried over reads cancelled by us with his reason, nothing paid, handed over or owed, and owes the ledger nothing: "
+    + J({ status: t.status, q: t.queued, work: O.orderWork(t), hist: t.history.map((h) => [h.status, h.by, h.note || ""]) }));
+  const wl = w.history.find((h) => h.at === lineOf(W));
+  ok(w.status === "done" && w.paid === 210 && w.payments[0].method === "transfer" && w.payments[0].account === "tng"
+    && wl && wl.note === "paid 210.00" && wl.method === "transfer" && wl.account === "tng" && J(O.orderWork(w)) === "[]",
+    "the money that came by transfer stays paid and complete, its line and its history saying so: " + J({ pay: w.payments, line: wl }));
+  ok(t1.ok && t1.fixed === 3 && J(t1.refused) === J(["p-cancel-money", "q-no-rail", "q-code", "q-no-reason", "c-their-claim"]) && !t1.failed
+    && J(t1.waiting) === J(["x-not-there"]) && (await R.dkv.get("orders:told")) === "vfx4-1"
+    && /money would still be on it/.test((mark["p-cancel-money"] || {}).refused) && /way and an account/.test((mark["q-no-rail"] || {}).refused)
+    && /roster code/.test((mark["q-code"] || {}).refused) && /and his reason/.test((mark["q-no-reason"] || {}).refused)
+    && /no line of the desk's/.test((mark["c-their-claim"] || {}).refused) && !mark["x-not-there"]
+    && p.status === "done" && p.paid === 110 && p.payments.length === 2 && q.status === "done" && q.moved === 1 && q.payments[0].method === "cod"
+    && c.status === "ready" && c.claimed === 110 && c.payments.length === 1 && c.payments[0].claim === "waiting",
+    "the return leg's pass sends the list; a fix that would cancel an order with money on it or with no reason, restate a line to a way its account does not take, send a roster code, or take back the customer's own claim is refused and kept, and one whose order is not on the site waits, recorded nowhere, and is reported: "
+    + J({ t1, mark }));
+
+  /* ONCE: the next fold's pass sends nothing, and a line sent again is answered by the order book and changes nothing */
+  const before = J(await O.allOrders(R.senv, true));
+  R.ver = "vfx4-2"; R.calls = 0;
+  const t2 = await tellSite(R.denv, FIXES), c2 = R.calls;
+  await R.dkv.put("orders:fixed", J({}));
+  R.ver = "vfx4-3";
+  const t3 = await tellSite(R.denv, FIXES.slice(0, 3));
+  ok(t2.ok && !t2.fixed && !t2.refused && c2 === 1 && t3.fixed === 3 && !t3.failed && J(await O.allOrders(R.senv, true)) === before,
+    "the next fold's pass sends nothing, and a line sent again is answered by the order book and changes nothing: " + J({ t2, calls: c2, t3 }));
+
+  /* ANY OTHER ANSWER is not the site's refusal: the line is recorded nowhere, the pass is not clean, and the next minute sends it again */
+  const Z = await cashed(R, u, code, { product: "rice", unit: 8, total: 8 }), zf = [{ id: "z-unpaid", order: Z.id, line: lineOf(Z), unpay: true }];
+  /* a Counter deployed a minute behind the mirror reads a fix as an unknown move (its own words), and a 401 is no refusal */
+  R.ver = "vfx4-4"; R.deny = { status: 400, error: "not a state the desk sets" };
+  const t4 = await tellSite(R.denv, zf), z4 = await now(Z), m4 = (await R.dkv.get("orders:fixed", "json")) || {}, told4 = await R.dkv.get("orders:told");
+  R.deny = { status: 401, error: O.FIX_REFUSED + "not now" };
+  const t4b = await tellSite(R.denv, zf), m4b = (await R.dkv.get("orders:fixed", "json")) || {};
+  R.deny = null;
+  const t5 = await tellSite(R.denv, zf), z5 = await now(Z);
+  ok(!t4.fixed && !t4.refused && (t4.failed || []).some((f) => f.id === "z-unpaid" && /400/.test(f.why)) && !m4["z-unpaid"] && told4 === "vfx4-3" && z4.paid === 8
+    && !t4b.refused && (t4b.failed || []).some((f) => f.id === "z-unpaid" && /401/.test(f.why)) && !m4b["z-unpaid"]
+    && t5.fixed === 1 && !t5.failed && z5.paid === 0 && z5.status === "ready" && (await R.dkv.get("orders:told")) === "vfx4-4",
+    "a fix the site answers with anything but its own refusal, an old Counter's unknown move or a 401, is recorded nowhere and holds the pass, and the next minute sends it: " + J({ t4, told4, t4b, t5 }));
+  ok(Object.values(mark).filter((x) => x.refused && !/^its reason /.test(x.refused)).every((x) => x.refused.startsWith(O.FIX_REFUSED)) && Object.keys(mark).length === 8,
+    "every refusal the site kept is its fix road's own, said so at its start: " + J(mark));
+
+  /* THE KV ROAD keeps no event log, so it refuses: the pass is not clean, and the next minute sends the line again */
+  const K = road(null), kn = await cashed(K, "fx4b-nnnn", "CG3-NQ", { product: "rice", unit: 8, total: 8 });
+  const kf = [{ id: "k-unpaid", order: kn.id, line: lineOf(kn), unpay: true }];
+  const tk = await tellSite(K.denv, kf), kk = (await O.allOrders(K.senv, true)).find((y) => y.id === kn.id);
+  ok(!tk.fixed && (tk.failed || []).some((f) => f.id === "k-unpaid") && (await K.dkv.get("orders:told")) !== K.ver && !(await K.dkv.get("orders:fixed"))
+    && kk.paid === 8 && kk.status === "done",
+    "on the KV road the site refuses a fix, the pass is not marked told, and the order is untouched: " + J({ tk, paid: kk.paid }));
+})();
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
