@@ -46252,5 +46252,19 @@ await (async () => {
 })();
 
 
+section("28 Sep 2026: every name the page calls is defined: none the checker cannot find is out of the loaded page's reach, and every inline handler calls a function");
+await (async () => {
+  /* v925's poStat: a name the page never declared threw only when a lot's amendment reached it, and the suite, which
+     never drove that path, stayed green from v492 to v925. tools/freenames.mjs reads the whole page for such names
+     without driving any path; this runs it on the master (SALT_MASTER for a mutation copy). */
+  const F = await import("../tools/freenames.mjs");
+  const r = await F.freeNames();
+  ok(r.names.length === 0,
+    "no name the page's script uses is out of its reach, bar what loads later (" + Object.keys(F.LOADED_LATER).join(", ") + "): " + JSON.stringify(r.names));
+  ok(r.handlers > 0 && r.calls.length === 0,
+    "every one of the page's " + r.handlers + " inline handlers calls a function the page defines: " + JSON.stringify(r.calls));
+})();
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
