@@ -280,7 +280,7 @@ config `wrangler.stmt.jsonc`, every command taking `-c`. Nothing under `stmt/` i
 `tools/` or a node builtin; the suite checks. `statements/_secrets.json` is laptop only and
 gitignored; lose its key and every account is re-issued. `stmt/page.js` `CLIENT_JS`, `stmt/owner.js`
 and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lone backslash, use
-`[+]` and `[/]`. Mechanism for everything below: `docs/STATEMENTS.md`.
+`[+]` and `[/]`, and no backtick, even in a comment. Mechanism for everything below: `docs/STATEMENTS.md`.
 
 - **The site address is never in the public desk.** No address, no QR drawn.
 - **No brand on the customer's page, and no product word either.** Nothing under `stmt/` names
