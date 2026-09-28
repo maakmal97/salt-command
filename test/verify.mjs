@@ -22252,13 +22252,13 @@ await (async () => {
   /* ---- the marks themselves ---- */
   /* v779: the table holds EVERY mark, not exactly two. This pinned the key list as "salt,oil",
      so the third book that the fallback was written for could not be added without it going red. */
-  ok(/^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4\.8 10\.6 12 2\.4/.test(P95.PSYM.oil),
+  ok(/^M12 2\.6 L20\.6/.test(P95.PSYM.salt) && /C4 8\.6 12 2\.6/.test(P95.PSYM.oil),
     "one table holds the marks: a cube for the one and a droplet for the other");
   const cube = P95.psymSvg("salt", 28), drop = P95.psymSvg("oil", 28), odd = P95.psymSvg("tin", 28);
   ok(/stroke="currentColor"/.test(cube) && /fill="none"/.test(cube) && !/<text|Salt|salt/.test(cube)
     && cube !== drop && /aria-hidden="true"/.test(cube),
     "each is drawn as an outline in the ink it sits in, with no word in it and no fill");
-  ok(odd.includes("A7.8 7.8") && odd !== cube && odd !== drop,
+  ok(odd.includes("A8.6 8.6") && odd !== cube && odd !== drop,
     "and a product with no mark of its own gets the ring, never a blank, so an omission does not read as a fault");
   ok(P95.PSHAPE.salt === "Cube" && P95.PSHAPE.oil === "Droplet" && !/salt|oil/i.test(Object.values(P95.PSHAPE).join(" ")),
     "a control holding only a mark is named by its SHAPE, so a screen reader is told what is drawn and not what it is");
@@ -22393,7 +22393,7 @@ await (async () => {
     "asked, psymSvg draws each book's letter in its mark once, in the ink the mark is drawn in, at the size asked and hidden from a reader");
   ok([...Object.keys(P8.PSYM), "spare", "tin", ""].every((k) => [13, 18, 28, 30].every((px) => !/<text/.test(P8.psymSvg(k, px)))),
     "not asked, no mark carries a letter, at any size");
-  ok(["spare", "tin", "", null].every((k) => P8.psymSvg(k, 28, true) === P8.psymSvg(k, 28) && /A7\.8 7\.8/.test(P8.psymSvg(k, 28, true))),
+  ok(["spare", "tin", "", null].every((k) => P8.psymSvg(k, 28, true) === P8.psymSvg(k, 28) && /A8\.6 8\.6/.test(P8.psymSvg(k, 28, true))),
     "the spare book and a product with no mark keep the bare Ring, even asked");
   /* the mark gives its letter room only where a letter sits */
   const dOf8 = (svg) => (/<path d="([^"]*)"/.exec(svg) || [])[1] || "";
@@ -22406,10 +22406,51 @@ await (async () => {
     && dOf8(P8.psymSvg("salt", 28)) === P8.PSYM.salt,
     "the cube's three inner edges stop at radius 5 where the letter sits, reaching the same corners, and meet at the centre everywhere else: "
     + JSON.stringify(iL8.map((e) => +e.r.toFixed(2))));
-  const capL8 = dOf8(P8.psymSvg("rice", 28, true));
-  ok(capL8 === shell8(P8.PSYM.rice) && /M12 8\.2 L12 15\.8/.test(P8.PSYM.rice) && dOf8(P8.psymSvg("rice", 28)) === P8.PSYM.rice
+  const capL8 = dOf8(P8.psymSvg("rice", 28, true)), seam8 = P8.PSYM.rice.slice(P8.PSYM.rice.indexOf("Z") + 1).trim();
+  const sm8 = (/^M([\d.]+) ([\d.]+) L([\d.]+) ([\d.]+)$/.exec(seam8) || []).slice(1).map(Number);
+  ok(capL8 === shell8(P8.PSYM.rice) && sm8.length === 4 && Math.abs((sm8[0] + sm8[2]) / 2 - 12) < 0.01 && Math.abs((sm8[1] + sm8[3]) / 2 - 12) < 0.01
+    && dOf8(P8.psymSvg("rice", 28)) === P8.PSYM.rice
     && dOf8(P8.psymSvg("oil", 28, true)) === P8.PSYM.oil && dOf8(P8.psymSvg("candy", 28, true)) === P8.PSYM.candy,
-    "the capsule gives its seam to the letter and keeps it everywhere else, and the droplet and the lozenge are drawn as they are");
+    "the capsule gives its seam, which crosses its centre, to the letter and keeps it everywhere else, and the droplet and the lozenge are drawn as they are: " + seam8);
+  /* HIS REDRAW OF 28 SEP 2026: "the letters should all be aligned centrally when put next to each other, must be of the
+     same size", and the shapes must look to be of one ratio, 1:1. Read off the drawing: every letter's place and size, and
+     every mark's extent, its arcs and curves walked point by point */
+  const at8 = BOOKS8.map((k) => (/<text[^>]* x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"/.exec(P8.psymSvg(k, 28, true)) || []).slice(1).map(Number));
+  ok(at8.every((a) => a.length === 3) && new Set(at8.map((a) => a.join())).size === 1 && at8[0][0] === 12 && at8[0][2] === 8
+    && Math.abs(at8[0][1] - 0.365 * at8[0][2] - 12) < 0.01,
+    "every letter is the same size, 8 in the 24 grid, on the same line, its capitals centred on the mark's centre: " + JSON.stringify(at8));
+  const pts8 = (d) => { const t = d.match(/[MLCAZ]|-?\d*\.?\d+/g) || [], out = []; let i = 0, c = "", x = 0, y = 0, x0 = 0, y0 = 0; const n = () => +t[i++];
+    while (i < t.length) {
+      if (/[MLCAZ]/.test(t[i])) c = t[i++];
+      if (c === "Z") { x = x0; y = y0; if (i < t.length && !/[MLCAZ]/.test(t[i])) i++; continue; }
+      if (c === "M") { x = x0 = n(); y = y0 = n(); out.push([x, y]); }
+      else if (c === "L") { x = n(); y = n(); out.push([x, y]); }
+      else if (c === "C") { const q = [x, y, n(), n(), n(), n(), n(), n()];
+        for (let k = 1; k <= 64; k++) { const u = k / 64, v = 1 - u, b = [v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u];
+          out.push([b[0] * q[0] + b[1] * q[2] + b[2] * q[4] + b[3] * q[6], b[0] * q[1] + b[1] * q[3] + b[2] * q[5] + b[3] * q[7]]); }
+        x = q[6]; y = q[7]; }
+      else if (c === "A") { /* the SVG arc, endpoint to centre (SVG 1.1 F.6.5), for a circle unrotated */
+        let r = n(); n(); n(); const fa = n(), fs = n(), x2 = n(), y2 = n(), hx = (x - x2) / 2, hy = (y - y2) / 2;
+        r = Math.max(r, Math.hypot(hx, hy));
+        const co = (fa !== fs ? 1 : -1) * Math.sqrt(Math.max(0, (r * r - hx * hx - hy * hy) / (hx * hx + hy * hy)));
+        const ux = co * hy, uy = -co * hx, cx = ux + (x + x2) / 2, cy = uy + (y + y2) / 2, a1 = Math.atan2((hy - uy) / r, (hx - ux) / r);
+        let da = Math.atan2((-hy - uy) / r, (-hx - ux) / r) - a1;
+        if (!fs && da > 0) da -= 2 * Math.PI;
+        if (fs && da < 0) da += 2 * Math.PI;
+        for (let k = 1; k <= 128; k++) out.push([cx + r * Math.cos(a1 + da * k / 128), cy + r * Math.sin(a1 + da * k / 128)]);
+        x = x2; y = y2; }
+      else i++;
+    }
+    return out; };
+  const box8 = (d) => { const p = pts8(d), xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
+    return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map((v) => +v.toFixed(2)); };
+  const boxes8 = Object.fromEntries([...BOOKS8, "spare"].map((k) => [k, box8(dOf8(P8.psymSvg(k, 28)))]));
+  const near8 = (a, b) => Math.abs(a - b) < 0.06;
+  ok(BOOKS8.every((k) => { const [x0, y0, x1, y1] = boxes8[k]; return near8(y0, 2.6) && near8(y1, 21.4) && near8((x0 + x1) / 2, 12); })
+    && near8(boxes8.rice[2] - boxes8.rice[0], boxes8.rice[3] - boxes8.rice[1]) && near8(boxes8.candy[2] - boxes8.candy[0], 18.8)
+    && near8((boxes8.spare[0] + boxes8.spare[2]) / 2, 12) && near8((boxes8.spare[1] + boxes8.spare[3]) / 2, 12) && boxes8.spare[3] - boxes8.spare[1] > 17,
+    "every mark fills the same square about the centre, 2.6 to 21.4 from top to bottom, the capsule and the lozenge as wide as they are tall, and the ring centred and near as large: "
+    + JSON.stringify(boxes8));
 
   /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card and an order ---- */
   const u8 = "abcd-efgh", pass8 = "fixture-pass-f8", ck8 = await C8.contentKey("test-secret", u8), env8 = { STMT: new KV() };
@@ -39011,7 +39052,7 @@ await (async () => {
   ok(Object.keys(PSYM).every((k) => PSHAPE[k]),
     "every mark has a shape word, or a control holding only that mark says nothing to a screen reader");
   ok(PSHAPE.candy === "Lozenge" && PSHAPE.rice === "Capsule", "candy is a Lozenge and rice a Capsule");
-  ok(psymSvg("spare", 24).includes("A7.8 7.8") && psymSvg("spare", 24).includes("<path"),
+  ok(psymSvg("spare", 24).includes("A8.6 8.6") && psymSvg("spare", 24).includes("<path"),
     "a book with no mark draws the Ring rather than a blank, which would read as a fault");
   ok(psymSvg("SALT", 24) === psymSvg("salt", 24), "a mark is found whatever the case of the id");
   const words = Object.values(PSHAPE).join(" ").toLowerCase();

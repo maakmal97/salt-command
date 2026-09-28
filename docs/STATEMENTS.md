@@ -377,9 +377,12 @@ in Prices"). `PLET` in `stmt/page.js`: I in the cube, G in the droplet, E in the
 book's initial in English or Malay and together no product word. A letter is not a word and names nothing.
 `psymSvg` and the page's `psym` draw it only when asked (`lettered`, spliced to the page as `__PLET__`), and only the
 Prices tab asks, for the priced books and those not yet priced alike. Rewards, the order page, Home, the guest board and
-the statement keep their plain marks, and no mark changed size. Where a letter sits, `PLET_DRAW` gives it room: the
-cube's three inner edges stop at radius 5 and the capsule loses its seam, its letter a size down. The spare book's Ring
-stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
+the statement draw their marks with no letter, and no mark changed size on the page. **Every letter is the same size on
+the same line** (`PLET_AT`: 8 in the 24 grid, its capitals centred on the mark's centre), and **every mark fills the same
+square**, 2.6 to 21.4 about the centre, on every surface (his redraw of 28 Sep 2026): the lozenge made square, the
+droplet rounder, the capsule turned to the diagonal, the ring larger, the cube as it was. Where a line of the mark would
+cross its letter, `PLET_ROOM` gives it room: the cube's three inner edges stop at radius 5 and the capsule's seam gives
+way. The spare book's Ring stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
 style policy refuses one.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the

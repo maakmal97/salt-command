@@ -519,15 +519,20 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&am
  * symbol would otherwise draw nothing at all, which reads as a fault rather than as an omission. */
 export const PSYM = {
   salt: 'M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M12 12 L20.6 7.3 M12 12 L3.4 7.3 M12 12 L12 21.4',
-  oil: 'M12 2.4 C12 2.4 19.2 10.6 19.2 15 A7.2 7.2 0 0 1 4.8 15 C4.8 10.6 12 2.4 12 2.4 Z',
-  /* v779, his choice of 22 Sep 2026. A rhombus for the one and a seamed stadium for the other,
+  oil: 'M12 2.6 C12 2.6 20 8.6 20 13.4 A8 8 0 0 1 4 13.4 C4 8.6 12 2.6 12 2.6 Z',
+  /* v779, his choice of 22 Sep 2026. A rhombus for the one and a seamed capsule for the other,
      drawn in the same hairline stroke as the cube and the droplet. The capsule carries its seam
      for the reason the cube carries its three inner edges: without it a stadium is a shape and
-     with it it is a thing. Neither is literal, and neither is a word. */
-  candy: 'M12 2.8 L20.4 12 L12 21.2 L3.6 12 Z',
-  rice: 'M8.2 8.2 L15.8 8.2 A3.8 3.8 0 0 1 15.8 15.8 L8.2 15.8 A3.8 3.8 0 0 1 8.2 8.2 Z M12 8.2 L12 15.8'
+     with it it is a thing. Neither is literal, and neither is a word.
+     HIS REDRAW OF 28 SEP 2026 (F8): EVERY MARK FILLS THE SAME SQUARE, 2.6 to 21.4 about the centre (12, 12), so the
+     row reads as one set and a letter sits alike in each: the rhombus made square, the droplet rounder, the capsule
+     turned to the diagonal (a level one is twice as wide as it is tall), the ring larger; the cube as it was. The
+     capsule's ends are written a hair under half their chord, which a browser scales up to it, so each is an exact
+     semicircle through its rounded ends and the capsule meets the square's sides. */
+  candy: 'M12 2.6 L21.4 12 L12 21.4 L2.6 12 Z',
+  rice: 'M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z M7.76 7.76 L16.24 16.24'
 };
-const RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
+const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
 /* A CONTROL STILL NEEDS A NAME, and the name is the SHAPE, never the product. A button holding
    only a decorative mark is unusable with a screen reader; an aria-label naming the product would
    put the word back for exactly the readers who cannot see that it was taken away. The shape is
@@ -539,18 +544,18 @@ export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "C
    page, Home, the guest board and the statement keep their plain marks at their sizes. The spare book and any product
    with no letter keep the Ring, bare, and the aria stays the shape. */
 export const PLET = { salt: "I", oil: "G", candy: "E", rice: "V" };
-/* THE MARK GIVES ITS LETTER ROOM: the cube's three inner edges stop at radius 5 from its centre, and the capsule's seam,
-   which crosses its centre, gives way. The letter is the mono face (.plet) at size s in the 24 grid, its baseline y half
-   a capital (0.73 of the size) below where its capitals centre: the mark's centre, 12; the droplet's round part, 14.5;
-   and a size down in the capsule, which is shorter than a capital at 8. His drawing, shown before it shipped. */
-const PLET_DRAW = {
-  salt: { d: "M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M16.39 9.6 L20.6 7.3 M7.61 9.6 L3.4 7.3 M12 17 L12 21.4", y: 14.92, s: 8 },
-  oil: { d: PSYM.oil, y: 17.42, s: 8 },
-  candy: { d: PSYM.candy, y: 14.92, s: 8 },
-  rice: { d: "M8.2 8.2 L15.8 8.2 A3.8 3.8 0 0 1 15.8 15.8 L8.2 15.8 A3.8 3.8 0 0 1 8.2 8.2 Z", y: 14.37, s: 6.5 }
+/* EVERY LETTER THE SAME SIZE ON THE SAME LINE (his redraw of 28 Sep 2026): the mono face (.plet) at size 8 in the 24
+   grid, its capitals centred on the mark's centre, so the baseline sits half a capital (0.73 of the size) below 12. */
+const PLET_AT = { y: 14.92, s: 8 };
+/* THE MARK GIVES ITS LETTER ROOM where a line would cross it: the cube's three inner edges stop at radius 5 from its
+   centre, and the capsule's seam gives way. Every other mark is drawn as it is everywhere. His drawing, approved. */
+const PLET_ROOM = {
+  salt: "M12 2.6 L20.6 7.3 L20.6 16.7 L12 21.4 L3.4 16.7 L3.4 7.3 Z M16.39 9.6 L20.6 7.3 M7.61 9.6 L3.4 7.3 M12 17 L12 21.4",
+  rice: "M12.84 19.64 L19.64 12.84 A5.99 5.99 0 0 0 11.16 4.36 L4.36 11.16 A5.99 5.99 0 0 0 12.84 19.64 Z"
 };
-/* one letter's drawing, its letter beside it, for the page's script; null for a product with none */
-const pletOf = (k) => (Object.hasOwn(PLET, k) && Object.hasOwn(PLET_DRAW, k) ? Object.assign({ l: PLET[k] }, PLET_DRAW[k]) : null);
+/* one letter's drawing, its letter and place beside it, for the page's script; null for a product with none */
+const pletOf = (k) => (Object.hasOwn(PLET, k) && Object.hasOwn(PSYM, k)
+  ? { l: PLET[k], d: Object.hasOwn(PLET_ROOM, k) ? PLET_ROOM[k] : PSYM[k], y: PLET_AT.y, s: PLET_AT.s } : null);
 /* THE SHORT MONTHS, NAMED ONCE (24 Sep 2026). Node and every browser write "Sept" for September in en-GB, and
    the house writes Sep: the page, his page, the statement and the price list all read the month from here. */
 export const MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

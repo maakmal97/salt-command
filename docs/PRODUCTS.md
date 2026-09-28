@@ -91,8 +91,9 @@ rather than typed, so declaring a product is the whole of the work; changing it 
 
 `PSYM` maps a product id to an SVG path, and `PSHAPE` maps it to a shape word used for the
 aria-label, both in `stmt/page.js`. `PLET` gives a book the letter drawn inside its mark on the Prices
-tab alone (F8), with `PLET_DRAW` placing it and, where the mark needs room, redrawing the mark; a book
-with no letter draws its plain mark there. **A product with no mark gets the Ring**, deliberately,
+tab alone (F8), every letter at `PLET_AT`, one size on one line; `PLET_ROOM` redraws a mark only where
+a line of it would cross its letter. Every mark fills the same square, 2.6 to 21.4 about the centre (his
+redraw of 28 Sep 2026), and the suite measures it; a book with no letter draws its plain mark there. **A product with no mark gets the Ring**, deliberately,
 because a blank reads as a fault rather than as an omission. Everything else under `stmt/` is
 data-driven: the price list, the guest board, the order form's segment, the order history and
 the associate's card all loop over whatever the published data carries. The associates' two
@@ -164,8 +165,9 @@ but a purchase defaults to null.
    `.salt-product--<id>` and `.salt-producttag--<id>` pairs, and the generated
    `stmt/statement-css.js`. Miss that last one and the product's statement rows silently lose
    their accent, because an undefined `var()` with no fallback resolves to nothing.
-9. A `PSYM` path and a `PSHAPE` word, or accept the Ring. A `PLET` letter only if he gives one, with its
-   `PLET_DRAW`: never the book's initial in English or Malay. The F8 section holds each book's words and
+9. A `PSYM` path filling the same square as the others and a `PSHAPE` word, or accept the Ring. A `PLET`
+   letter only if he gives one, with a `PLET_ROOM` drawing if a line of the mark crosses it: never the book's
+   initial in English or Malay. The F8 section holds each book's words and
    goes red until the new book's are added there, lettered or not. The Ring carries no letter.
 10. Its name and its Malay word in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`.
     The suite fails until both carry the book's name, and holds the desk to every word on the
