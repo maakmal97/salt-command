@@ -1,5 +1,14 @@
 [
  {
+  "v": "v929",
+  "d": "28 Sep 2026",
+  "t": "A DONE ORDER'S MONEY IS ON ITS WAY ONLY UNTIL THE BOOK HAS IT",
+  "n": [
+   "<p><b>A DONE ORDER'S FIGURE IS NO LONGER READ AGAINST THE BOOK.</b> A claim against the account takes each row as owing less the money already on its way to it, and for a site order that was the order's paid read against the cash on the row at the order's key. A finished order's figure is final and outlives what the book holds. Its key outlives its row: once CE5-SA's s210 and s212 moved to the resale account at v918, a new row of theirs on that day at that figure would have read as paid, and a claim against the account would have passed over a row that owed. And its paid outlives the money: a Cash received tapped by mistake and corrected off the row stays paid on the site, where nothing lowers it, and would have kept the row from being paid.</p>",
+   "<p><b>WHAT IS STILL ON ITS WAY IS COUNTED WHERE IT IS.</b> A done order's money now counts only while the book has not heard of it: paid past what the ledger was told, a tap of his held on his yes or queued and not drafted, a claim of theirs queued and not drafted, and its drafts not yet on the mirror, each by the row it names. The entries are looked up by the hundred, the most D1 binds in one statement. An open order is read as before.</p>"
+  ]
+ },
+ {
   "v": "v928",
   "d": "28 Sep 2026",
   "t": "CHASE FIRST NO LONGER WAITS FOR A HABIT",

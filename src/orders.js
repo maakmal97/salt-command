@@ -630,24 +630,53 @@ function pastRoom(room, o, entry, word, claim) {
    allocation takes as owing all that is left on them: an order at Ready is due at once, a cash-on-handover one included
    (his C1). Read off the same list, so nothing more is fetched. An order at Ready with no row on the book yet has no key,
    so what it would take is left over, and Received refuses that on a tap until the fold lands it. */
+/* 28 Sep 2026, s210 TO s212: A DONE ORDER'S FIGURE IS FINAL, AND IT CAN OUTLIVE WHAT THE BOOK HOLDS. Its key can outlive its row: a row
+   moved to the resale account leaves its order naming the old key, which a new row of theirs that day at that figure
+   carries, and the order's paid, read against that row's cash, took it as paid. And its paid can outlive the money: a
+   Cash received tapped by mistake and corrected off the row stays paid on the site, where no road lowers it. So a done
+   order's money is on its way only until the book has it: paid past the ledger's mark of it (queued); its own entries
+   queued and not yet drafted, a tap of his held on his yes or queued (the pre-approval's entry) and a claim of theirs the
+   reconcile queued (named on the order); and its drafts not yet on the mirror, each by the row it names. */
+async function heldPays(db) {
+  let rs = [];
+  try { rs = (await db.prepare("SELECT entry,entry_at FROM preapproval WHERE status IN ('waiting','differs') AND entry IS NOT NULL").all()).results || []; }
+  catch (e) { rs = []; }   /* a store before migrations/0011 */
+  return rs.map((r) => { let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; } return { at: r.entry_at || null, e }; })
+    .filter((p) => p.e && p.e.orderId && p.e.payload && p.e.payload.kind === "Fulfilment" && +p.e.payload.cash > 0.004);
+}
+/* by the hundred: D1 binds at most 100 values a statement, and a claimant's received claims only grow */
+async function draftedOf(db, ids) {
+  const out = new Set();
+  for (let i = 0; i < ids.length; i += 100) {
+    const part = ids.slice(i, i + 100);
+    const rs = (await db.prepare("SELECT id FROM draft WHERE id IN (" + part.map((x, j) => "?" + (j + 1)).join(",") + ")").bind(...part).all()).results || [];
+    for (const r of rs) out.add(r.id);
+  }
+  return out;
+}
 async function inFlight(env, db, c, sales) {
   const all = await listOrders(env, true);
   if (!all.ok) return null;
   const by = {}, cash = {}, keyOf = rowKeyer(sales), ready = [];
-  /* a claim against the account's own rows are its own; an order's own moves are read off the site below, which knows them
-     at once; the rest (other claims against the account, a payment typed on the desk) are on their way to the rows they name */
+  const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
+  const done = new Map(all.orders.filter((o) => o.u === c.u && o.status === "done").map((o) => [o.id, o]));
+  /* a claim against the account's own rows are its own; an open order's own moves are read off the site below, which knows
+     them at once; the rest (other claims against the account, a payment typed on the desk, a done order's own drafts) are
+     on their way to the rows they name */
   for (const e of await paysOnWay(db)) {
-    if ((e.claimId && e.claimId === c.id) || e.orderId) continue;
-    const k = keyOf(e.payload);
-    if (k) by[k] = +((by[k] || 0) + (+e.payload.cash)).toFixed(2);
+    if ((e.claimId && e.claimId === c.id) || (e.orderId && !done.has(e.orderId))) continue;
+    add(keyOf(e.payload), e.payload.cash);
   }
+  const wait = (await heldPays(db)).filter((p) => done.has(p.e.orderId)).map((p) => ({ id: p.at, k: keyOf(p.e.payload), rm: p.e.payload.cash }));
+  for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: ledgerKeyOf(o), rm: p.amount });
+  const drafted = await draftedOf(db, wait.map((w) => w.id).filter(Boolean));
+  for (const w of wait) if (!w.id || !drafted.has(w.id)) add(w.k, w.rm);
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of all.orders) {
     if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
     if (o.status === "ready") ready.push(lk);
-    const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0)).toFixed(2);
-    if (more > 0.004) by[lk] = +((by[lk] || 0) + more).toFixed(2);
+    add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
   }
   return { by, ready };
 }

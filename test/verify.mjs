@@ -45290,5 +45290,130 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("28 Sep 2026: a done order's money is on its way only until the book has it, so a row moved off its key leaves nothing on a new row of that day and figure");
+await (async () => {
+  /* s210 TO s212: a done order's row moved to the resale account and the order still names the old key. A new row of theirs
+     that day at that figure carries that key, and the order's paid, read against the new row's cash, took it as paid: a
+     claim against the account passed over a row that owed. And a Cash received tapped by mistake and corrected off the row
+     stays paid on the site, where no road lowers it. A done order's money now counts only while the book has not heard of
+     it, and each road it can still be on is proved on its own: untold, held on his yes, queued and not drafted (a tap of
+     his and a claim of theirs), and drafted and not folded. Driven through both Workers over the real schema; every key
+     through the engine's ovKey. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so a done order's money on its way was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending, runDrafter } = await import("../src/drafter.js");
+  const { deskPass, reconcileOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const C = "CX6-QE", U = "qrst-vwxy", CR = E.bookR2({}, "customer", C, null).customer;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  /* as D1 does, a statement binding more than 100 values is refused */
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => { if (a.length > 100) throw new Error("D1_ERROR: too many SQL variables"); return { run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } }; };
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* on the book: a done order's row moved to the resale account and paid, and a new row of theirs that day at that figure,
+     goods out and unpaid; three done orders' rows where they were, goods out, their money not on the book: two on its way,
+     one never coming, the cash tapped by mistake and corrected off the row */
+  const sale = (rid, customer, date, total, cash) => ({ rid, customer, product: "salt", date, qty: 1, total, cash, deliveredQty: 1, deliveredOn: date });
+  const moved = sale("s50", CR, "2026-09-20", 110, 110), twin = sale("s51", C, "2026-09-20", 110, 0);
+  const atCounter = sale("s52", C, "2026-09-21", 90, 0), received = sale("s53", C, "2026-09-22", 70, 0), mistaken = sale("s56", C, "2026-09-24", 60, 0);
+  const rows = [moved, twin, atCounter, received, mistaken];
+  rows.forEach((x, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(x)));
+  let bk = { sales: [], state: { OPEN: { byKey: {}, position: {} } } };
+  for (const x of rows) bk = withPending(bk, x);
+  setState("roster", [C]); setState("OPEN", bk.state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v900',NULL,'2026-09-27T10:00:00.000Z')").run();
+  const skv = new KV(), dkv = new KV(), bko = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bko.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  /* bare: the request's tail never runs, as when the tap's own reconcile and pass fail and the minute's pass is the net */
+  const call = async (path, body, bare) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, bare ? {} : { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  /* an order agreed under its row's key as the row was then, and handed over in full */
+  const handed = async (x) => {
+    const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: x.total, total: x.total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: E.ovKey(Object.assign({}, x, { customer: C })), ack: x.date + "T01:00:00.000Z", moved: 1 } });
+    await O.deskMove(senv, U, o.id, { handover: { units: 1, mode: "collect" } });
+    return o;
+  };
+  /* done and folded long since, then its row moved to the resale account */
+  const oA = await handed(moved);
+  await O.deskMove(senv, U, oA.id, { cash: { amount: 110 } });
+  /* done by a Cash received tapped by mistake: on the site for good; on the book its pre spent, its draft folded before the
+     mirror was seeded, and the cash corrected off the row */
+  const oF = await handed(mistaken);
+  await O.deskMove(senv, U, oF.id, { cash: { amount: 60 } });
+  const fAt = "2026-09-26T09:00:00.000Z", fEntry = JSON.stringify({ at: fAt, orderId: oF.id, counter: true, type: "SELL", party: C, status: "Payment", by: "desk",
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: C, rid: null, orderKey: E.ovKey(mistaken), cash: 60 } });
+  db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,amends,amend_kind,drafter,drafted_at,decided_at,decided_by,committed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(fAt, "approved", "sales", fEntry, "{}", "fixture", "[]", C, "salt", "s56", "Fulfilment", "fixture", fAt, fAt, "preapproved", "2026-09-26T12:00:00.000Z");
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,entry,at,tapped_by,shown,status,entry_at,draft_id,decided_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(oF.id + "|cash|" + fAt, oF.id, U, "cash", "h", fEntry, fAt, "desk", "{}", "applied", fAt, fAt, fAt);
+  /* done by his Received on a claim of theirs the ledger has not been told of */
+  const oE = await handed(received);
+  await O.customerMove(senv, U, oE.id, "pay", { amount: 70, method: "transfer", account: "wise" });
+  const pE = ((await O.ordersOf(senv, U)).find((x) => x.id === oE.id).payments || []).find((p) => p.claim === "waiting");
+  if (pE) await O.deskMove(senv, U, oE.id, { verdict: { kind: "received", claim: pE.at, amount: 70 } });
+  /* done by cash at the counter, the desk's own tap, held on his yes until a pass queues it */
+  const oB = await handed(atCounter);
+  const tap = await call("/orders/" + oB.id + "/cash", { amount: 90 }, true);
+  const ids = [oA.id, oB.id, oE.id, oF.id];
+  const st = (await O.ordersOf(senv, U)).filter((x) => ids.includes(x.id)).map((x) => x.status).join(",");
+  const c1 = (await O.claimAccount(senv, U, { amount: 270, method: "transfer", account: "wise" })).claim;
+  const look = async (tag) => {
+    const pv = await call("/claims/" + c1.id + "/preview", {});
+    const d = new Map((pv.j.rows || []).map((x) => [x.rid, x.rm]));
+    const drafts = db.prepare("SELECT COUNT(*) AS n FROM draft WHERE committed_at IS NULL").get().n, held = db.prepare("SELECT COUNT(*) AS n FROM preapproval WHERE entry IS NOT NULL AND entry_at IS NULL").get().n;
+    return { ok: pv.status === 200, d, drafts, held, seen: tag + " " + JSON.stringify({ tap: tap.status, st, drafts, held, rows: [...d], left: pv.j.left, err: pv.j.error }) };
+  };
+
+  /* 1. HIS TAP JUST MADE: nothing queued, the cash held on his yes and the claim untold */
+  const m1 = await look("held and untold");
+  ok(m1.ok && st === "done,done,done,done" && m1.d.get("s51") === 110,
+    "a claim against the account draws the new row of that day and figure in full, the done order whose row moved to the resale account leaving nothing on it: " + m1.seen);
+  ok(m1.ok && m1.d.get("s56") === 60,
+    "and the row of a done order whose Cash received was tapped by mistake, folded and corrected off the row, the site still saying paid: " + m1.seen);
+  ok(m1.ok && m1.drafts === 0 && !m1.d.has("s53"),
+    "and passes over the row of a done order whose claim he received and the ledger has not been told of yet: " + m1.seen);
+  ok(m1.ok && tap.status === 200 && m1.held === 1 && !m1.d.has("s52"),
+    "and over the row of a done order whose cash at the counter waits on his yes for a pass to queue it: " + m1.seen);
+
+  /* 2. THE MINUTE'S PASSES QUEUE BOTH, and the drafter has not drafted them (it stood down, say, while the mirror was seeded) */
+  await reconcileOrders(denv); await deskPass(denv, new Date());
+  const m2 = await look("queued and not drafted");
+  ok(m2.ok && m2.drafts === 0 && m2.held === 0 && !m2.d.has("s52") && !m2.d.has("s53") && m2.d.get("s51") === 110,
+    "and over both once they are queued and not yet drafted, the cash's entry named on his yes and the claim's on the order: " + m2.seen);
+
+  /* 3. DRAFTED, and not folded */
+  await runDrafter(denv);
+  const m3 = await look("drafted and not folded");
+  ok(m3.ok && m3.drafts === 2 && !m3.d.has("s52") && !m3.d.has("s53") && m3.d.get("s51") === 110,
+    "and over both still once drafted and not folded: " + m3.seen);
+
+  /* 4. A CLAIMANT WITH A LONG HISTORY: more entries to look up than D1 binds in one statement */
+  for (let i = 0; i < 101; i++) { const at = new Date(Date.parse("2026-09-27T00:00:00.000Z") + i).toISOString();
+    db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,entry,at,tapped_by,shown,status,entry_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+      .run(oB.id + "|cash|" + at, oB.id, U, "cash", "h", JSON.stringify({ at, orderId: oB.id, payload: { mode: "amend", kind: "Fulfilment", rid: null, orderKey: E.ovKey(atCounter), cash: 0.01 } }),
+        at, "desk", "{}", "waiting", at); }
+  const m4 = await look("a hundred and more to look up");
+  ok(m4.ok && !m4.d.has("s52") && m4.d.get("s51") === 110,
+    "and a claimant with more entries to look up than D1 binds in one statement is still read, by the hundred: " + m4.seen);
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
