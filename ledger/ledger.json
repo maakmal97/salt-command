@@ -1,6 +1,6 @@
 {
- "v": "v917",
- "stamped": "28 Sep 2026, 13:40 KL",
+ "v": "v918",
+ "stamped": "28 Sep 2026, 14:13 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5603,17 +5603,17 @@
     "cost": 280
    },
    {
-    "customer": "CE5-SA",
+    "customer": "CE5-SA-R",
     "qty": 2,
     "total": 210,
     "cash": 210,
     "date": "2026-09-27",
     "deliveredQty": 2,
-    "note": "<b>CORRECTED 28 SEP (v910): CASH FROM RM420 TO RM210, ONE PAYMENT ONLY.</b> <b>CORRECTED 28 SEP: CASH ON S210 FROM RM420 TO RM210.</b> This is CE5-SA's order of 27 Sep for 2 units salt at RM210, collected. RM210 was booked twice, the claim against the account at v902 and cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The dossier gives no floor or ask for this size. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. The dossier states no credit cap. The row carries no cost, since no stock or cash moves. The drafter flagged that the 4-step trail, with two RM210 payments, will no longer add up. The correction is recorded beside it. Outstanding on s210: nothing. <b>PAID IN FULL 27 SEP (v903): RM210 CASH AT THE COUNTER.</b> <b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them. <b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
+    "note": "<b>CORRECTED 28 SEP (v918): MOVED TO CE5-SA-R, STREAM R2.</b> <b>CORRECTION ON S210: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 27 Sep for 2 unit salt at RM210, collected and paid RM210 on 27 Sep. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer. The drafter raised no flags. Outstanding: nothing on s210. <b>CORRECTED 28 SEP (v910): CASH FROM RM420 TO RM210, ONE PAYMENT ONLY.</b> <b>CORRECTED 28 SEP: CASH ON S210 FROM RM420 TO RM210.</b> This is CE5-SA's order of 27 Sep for 2 units salt at RM210, collected. RM210 was booked twice, the claim against the account at v902 and cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The dossier gives no floor or ask for this size. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. The dossier states no credit cap. The row carries no cost, since no stock or cash moves. The drafter flagged that the 4-step trail, with two RM210 payments, will no longer add up. The correction is recorded beside it. Outstanding on s210: nothing. <b>PAID IN FULL 27 SEP (v903): RM210 CASH AT THE COUNTER.</b> <b>CORRECTION ON S210: DELIVEREDQTY, DELIVEREDON, HANDOVER.</b> Roll the shelf by 2 unit, out to CE5-SA: the difference the correction states; correct order s210: deliveredQty to 2, deliveredOn to 2026-09-27, handover to collected. It applies to s210, 2 unit for RM210 with RM0 paid on 27 Sep 2026. CE5-SA: 3 orders on the book, median RM110 a unit, range RM105 to RM110, RM210 outstanding before this row. The drafter flagged: This is an ADVANCE: 2 unit goes out with RM 210 unpaid. Check it against CE5-SA's credit cap. Written by the tool, so the facts stand as the dossier gives them and no judgement is recorded on them. <b>PENDING SALE: 2 UNITS SALT TO CE5-SA FOR RM210, NOTHING PAID OR HANDED OVER.</b> Ordered 27 Sep on the statements site, order 20260927095911-gwepmw, to collect, preapproved by phone. The RM210 total sits above the floor of RM125.65 and below the ask of RM270 for 2 units. Party record: median RM110, range RM110 to RM110, nothing outstanding, none defaulted, no units on credit, cap 1 unit. The terms repeat order s207 of 26 Sep, cancelled 27 Sep (v898). The row carries RM56 a unit, the inventory's own. The drafter raised no flags. Stock stands at 1 unit. Payment and both units stay open.",
     "rid": "s210",
     "deliveredOn": "2026-09-27",
     "handover": "collected",
-    "mod": "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected, then corrected on 2026-09-28: cash 420 to 210",
+    "mod": "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected, then corrected on 2026-09-28: cash 420 to 210, then corrected on 2026-09-28: stream (unset) to R2; party CE5-SA to (cleared); assoc (unset) to CE5-SA",
     "amend": [
      {
       "date": "2026-09-27",
@@ -5649,10 +5649,18 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTED 28 SEP: CASH ON S210 FROM RM420 TO RM210.</b> This is CE5-SA's order of 27 Sep for 2 units salt at RM210, collected. RM210 was booked twice, the claim against the account at v902 and cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The dossier gives no floor or ask for this size. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. The dossier states no credit cap. The row carries no cost, since no stock or cash moves. The drafter flagged that the 4-step trail, with two RM210 payments, will no longer add up. The correction is recorded beside it. Outstanding on s210: nothing."
+     },
+     {
+      "date": "2026-09-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S210: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 27 Sep for 2 unit salt at RM210, collected and paid RM210 on 27 Sep. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer. The drafter raised no flags. Outstanding: nothing on s210."
      }
     ],
     "cost": 112,
-    "paidOn": "2026-09-27"
+    "paidOn": "2026-09-27",
+    "rev": "R2"
    },
    {
     "customer": "CE5-SA",
@@ -5685,18 +5693,18 @@
     "cost": 56
    },
    {
-    "customer": "CE5-SA",
+    "customer": "CE5-SA-R",
     "qty": 1,
     "total": 8,
     "cash": 8,
     "product": "rice",
     "date": "2026-09-28",
     "deliveredQty": 1,
-    "note": "<b>PAID IN FULL 28 SEP (v909): RM8 CASH AT THE COUNTER.</b> <b>CORRECTED 28 SEP (v909): 1 UNIT COLLECTED.</b> <b>CORRECTED 28 SEP: 1 UNIT RICE COLLECTED BY CE5-SA ON S212.</b> Order 20260927221155-ndxqjg, 1 unit for RM8: deliveredQty moves from 0 to 1, deliveredOn from unset to 28 Sep 2026, handover to collected, preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM118 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own. The drafter flagged no committed rice order, which the book confirms, and an advance of 1 unit with RM8 unpaid; the fulfilment folded next in this batch pays it. Outstanding on s212 after that: nothing. <b>PENDING SALE: 1 UNIT RICE TO CE5-SA FOR RM8, NOTHING PAID OR HANDED OVER.</b> Ordered on the statements site, order 20260927221155-ndxqjg, acknowledged, to collect, dated 28 Sep 2026 and preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 4 orders on the book, median RM110 a unit, range RM105 to RM110, RM110 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own cost, so RM4.8 on the goods at 60%. The drafter flagged no committed rice order to compare against; the book confirms it, so the ladder is the only measure. Outstanding: RM8 to be paid and 1 unit to hand over.",
+    "note": "<b>CORRECTED 28 SEP (v918): MOVED TO CE5-SA-R, STREAM R2.</b> <b>CORRECTION ON S212: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 28 Sep for 1 unit rice at RM8, collected and paid RM8 at the counter on the day. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three refused Corrections of 05:00 UTC. The drafter raised no flags. Outstanding: nothing on s212. <b>PAID IN FULL 28 SEP (v909): RM8 CASH AT THE COUNTER.</b> <b>CORRECTED 28 SEP (v909): 1 UNIT COLLECTED.</b> <b>CORRECTED 28 SEP: 1 UNIT RICE COLLECTED BY CE5-SA ON S212.</b> Order 20260927221155-ndxqjg, 1 unit for RM8: deliveredQty moves from 0 to 1, deliveredOn from unset to 28 Sep 2026, handover to collected, preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM118 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own. The drafter flagged no committed rice order, which the book confirms, and an advance of 1 unit with RM8 unpaid; the fulfilment folded next in this batch pays it. Outstanding on s212 after that: nothing. <b>PENDING SALE: 1 UNIT RICE TO CE5-SA FOR RM8, NOTHING PAID OR HANDED OVER.</b> Ordered on the statements site, order 20260927221155-ndxqjg, acknowledged, to collect, dated 28 Sep 2026 and preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 4 orders on the book, median RM110 a unit, range RM105 to RM110, RM110 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own cost, so RM4.8 on the goods at 60%. The drafter flagged no committed rice order to compare against; the book confirms it, so the ladder is the only measure. Outstanding: RM8 to be paid and 1 unit to hand over.",
     "rid": "s212",
     "deliveredOn": "2026-09-28",
     "handover": "collected",
-    "mod": "corrected on 2026-09-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-28; handover (unset) to collected",
+    "mod": "corrected on 2026-09-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-28; handover (unset) to collected, then corrected on 2026-09-28: stream (unset) to R2; party CE5-SA to (cleared); assoc (unset) to CE5-SA",
     "amend": [
      {
       "date": "2026-09-28",
@@ -5718,9 +5726,17 @@
       "cash": 8,
       "kg": 0,
       "note": "<b>PAID IN FULL 28 SEP: RM8 CASH AT THE COUNTER FROM CE5-SA ON S212.</b> Fulfilment against order 20260927221155-ndxqjg, 1 unit rice for RM8, received at the handover and recorded on the desk, preapproved by phone. RM8 a unit is the desk's ask of RM8, above its floor of RM6.31. CE5-SA had RM118 outstanding before this batch, median RM110 a unit, range RM8 to RM110, no defaults. A payment moves no cost; the goods stay costed at RM3.2 a unit, the inventory's own. The drafter raised no flag. Its count of 1 unit left to hand over predates the correction in this batch, which records the unit collected, so s212 is closed: nothing owed, nothing to hand over."
+     },
+     {
+      "date": "2026-09-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S212: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 28 Sep for 1 unit rice at RM8, collected and paid RM8 at the counter on the day. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three refused Corrections of 05:00 UTC. The drafter raised no flags. Outstanding: nothing on s212."
      }
     ],
-    "paidOn": "2026-09-28"
+    "paidOn": "2026-09-28",
+    "rev": "R2"
    },
    {
     "customer": "CE4-CHE",
@@ -6475,9 +6491,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T05:38:47.880Z",
+  "QUEUE_COMMITTED": "2026-09-28T06:05:20.592Z",
   "PRICING": {
-   "takenAt": "2026-09-28T05:40:09.504Z",
+   "takenAt": "2026-09-28T06:13:56.440Z",
    "sizes": [
     0.5,
     1,
@@ -13099,10 +13115,10 @@
      "cards": {}
     }
    },
-   "v": "v917"
+   "v": "v918"
   },
   "OPEN": {
-   "at": "2026-09-28T05:40:09.816Z",
+   "at": "2026-09-28T06:13:56.745Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
@@ -13300,7 +13316,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v917"
+   "v": "v918"
   }
  }
 }

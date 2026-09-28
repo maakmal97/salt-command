@@ -1,5 +1,14 @@
 [
  {
+  "v": "v918",
+  "d": "28 Sep 2026",
+  "t": "CE5-SA ROWS MOVED TO THE RESALE ACCOUNT",
+  "n": [
+   "<p><b>TWO CORRECTIONS FOLDED, BOTH AGAINST CE5-SA.</b> s210, 2 unit salt at RM210, and s212, 1 unit rice at RM8, each have assoc set to CE5-SA and stream set to R2, which moves them to CE5-SA-R, the associate's resale account, where an R2 books since v611. The move is on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. Neither correction moves cash or stock. The drafter raised no flags on either row.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE INVENTORY.</b> Both rows were re-entered from the laptop after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer. This fold keeps CE5-SA on the rows and sets the associate beside it, so the buyer stands. CE5-SA's RM110 outstanding on s211 is untouched. Stock stays at 3 unit at RM56 a unit, and nothing landed or left.</p>"
+  ]
+ },
+ {
   "v": "v917",
   "d": "28 Sep 2026",
   "t": "ONE SALT SALE TO CE4-CHE, PAID AND COLLECTED",
