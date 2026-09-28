@@ -143,10 +143,10 @@ const clockPast = async (moment) => { while (new Date().toISOString() <= String(
 /* A PAGE'S WORK IS COUNTED, NEVER WAITED OUT (28 Sep 2026). "Wait 80 ms, then read the phone's memory" is a stopwatch:
    beside other suites the Counter's PBKDF2 (150,000 rounds) outran it, and S3 3.8 read the memory before the page wrote
    it. pageWork(win), called at the end of beforeParse once the section's own fetch and crypto are in place, counts what
-   the window has in flight, its fetches, the reading of their bodies (a stub may do its own key work inside json()) and
-   its crypto.subtle calls, and quiet() waits until none is left over three turns of the loop: the page has finished,
-   however long that took. A minute without that is a hang, and quiet() says so by returning false. A timer the page
-   sets is not counted; the Counter's flows set none. */
+   the window has in flight, its fetches, the reading of their bodies (json, text and arrayBuffer; a stub may do its own
+   key work inside json()) and its crypto.subtle calls, and quiet() waits until none is left over three turns of the
+   loop: the page has finished, however long that took. A minute without that is a hang, and quiet() says so by
+   returning false. A timer the page sets is not counted; the Counter's flows set none. */
 const pageWork = (win) => {
   let n = 0;
   const track = (p) => { n++; return Promise.resolve(p).finally(() => { n--; }); };
@@ -158,7 +158,7 @@ const pageWork = (win) => {
     return r;
   };
   const f = win.fetch;
-  if (typeof f === "function") win.fetch = function (...a) { return track(Promise.resolve(f.apply(this, a)).then(reads)); };
+  if (typeof f === "function") win.fetch = function (...a) { return track(new Promise((res) => res(f.apply(this, a))).then(reads)); };
   const c = win.crypto, s = c && c.subtle;
   if (s) {
     const subtle = new Proxy(s, { get: (o, k) => (typeof o[k] === "function" ? (...a) => track(o[k](...a)) : o[k]) });
@@ -44338,14 +44338,15 @@ await (async () => {
      another session's suite, a pause that waits for something goes red when nothing is wrong, and a pause before a check
      that something did NOT happen goes green when it has not happened YET. New code waits for the effect: a bounded poll
      on its state, or pageWork(win).quiet() for a page's fetches and crypto (docs/WORKING.md 3, A clock in the check).
-     Counted: every setTimeout promise with a fixed delay, awaited or kept as a helper (a helper counts once, however often
-     it is awaited), and every await of nap, wait, sleep or pause with a number. Not counted: a loop that polls a predicate (its
-     line carries &&, if or return), and a pause directly before a window's close, which lets a late answer land (a
-     Workbench save, docs/WORKING.md 2) and checks nothing. The count may only fall: lower PAUSES when one goes. */
-  const PAUSES = 164;
+     Counted: every setTimeout promise with a fixed delay, awaited or kept as a helper (a helper counts once, however
+     often it is awaited), and every await of nap, wait, sleep or pause with a number. Not counted: a loop that polls a
+     predicate (a for or while line carrying &&, if or return), and a pause directly before a window's close, which lets
+     a late answer land (a Workbench save, docs/WORKING.md 2) and checks nothing. The count may only fall: lower PAUSES
+     when one goes, and meet a new pause with a wait on the effect, never a higher PAUSES. */
+  const PAUSES = 163;
   const pause = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|await (?:nap|wait|sleep|pause)\(\d+\))/g;
   const beforeClose = /(?:new Promise\(\((\w+)\) => setTimeout\(\1, \d+\)\)|(?:nap|wait|sleep|pause)\(\d+\)); (?:try \{ )?[\w.]+\.close\(\)/g;
-  const poll = (l) => /\bfor \(/.test(l) && /&&|\bif \(|\breturn /.test(l);
+  const poll = (l) => /\b(?:for|while) \(/.test(l) && /&&|\bif \(|\breturn /.test(l);
   const lines = readFileSync(join(REPO, "test", "verify.mjs"), "utf8").split("\n");   /* the suite, not a shard of it */
   const n = lines.filter((l) => !poll(l)).reduce((s, l) => s + (l.replace(beforeClose, "").match(pause) || []).length, 0);
   ok(n <= PAUSES, "no new fixed pause: " + n + " in the suite against " + PAUSES + "; wait for the effect instead (a poll on its state, or pageWork(win).quiet())");
