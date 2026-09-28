@@ -174,6 +174,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
   drawn as the engine's oldest-first `claimAlloc`, each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
   is never approved on a tap: nothing books the difference as a refund yet.
+- **Every tap that books money checks what its row can still take** (`rowRoom` in `src/orders.js`:
+  the mirror's figure less every payment on its way to the row by any road), **and the fold's
+  `payFault` is the last check**, refusing a payment measured before other money reached its row.
+  A new road for money reads both. Detail: `docs/STATEMENTS.md`.
 - **What the drafter refuses, the phone does not let you type**: `entryFault` answers both entry
   forms. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is named**,
   through the engine's `bookR2`, which every road calls; a named buyer is `downstream` and credited
@@ -416,12 +420,14 @@ npm test           # the suite split across processes (tools/suite-split.mjs), a
 npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
+node tools/standing.mjs   # the standing-state table a task closes with, about a minute
 ```
 
 Each build patch is anchored on one unique line; a moved anchor aborts. First-time Cloudflare and
 local tools: `docs/DESK.md`. Close every task with the seven-line standing-state table (shelf, live
-credit, written off, pending orders, undated rows, queue and drafts and staged, tree), computed
-from the engine in an `openMaster` window, never by hand.
+credit, written off, pending orders, undated rows, queue and drafts and staged, tree), printed by
+`node tools/standing.mjs` from the engine in an `openMaster` window, never by hand (`--offline`
+skips Cloudflare and the fetch).
 
 ## How a fold is sized
 

@@ -454,7 +454,10 @@ export async function receivedOrder(env, id, body, by, now) {
     shut = new Set((rj.results || []).map((r) => r.id));
     onRows = await acctInFlight(env.SALT_LEDGER, null);
   }
-  return stageTap(env, id, body, by, now, "pay", (o, at) => {
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER) : null;
+  /* 28 Sep 2026, s210: whichever entry his yes answers, it answers to what the row can still take */
+  return stageTap(env, id, body, by, now, "pay", (o, at) => { const b = payTap(o, at); return (b.entry && pastRoom(room, o, b.entry, "received", !!b.site)) || b; });
+  function payTap(o, at) {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
     /* S6 6.5 (D7): A CLAIM OF THEIRS, named by its moment (the oldest waiting when the tap names none). His yes is to
@@ -485,7 +488,7 @@ export async function receivedOrder(env, id, body, by, now) {
     const entry = payEntry(o, o.code, inc, stageAt(o, "pay", at));
     entry.orderId = o.id;
     return { entry, shown: { amount: inc } };
-  });
+  }
 }
 
 /* ---- NOT FOUND (S6 11.14, his decision D7) ---------------------------------------------------------------------
@@ -561,20 +564,78 @@ const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256"
    cash (a claim waiting, one received, cash he took: none of them folded yet). An account claim takes each row as owing
    that much less, and an order claim's Received refuses money a claim against the account booked on its row, so the same
    money is never booked on a row twice. */
-async function acctInFlight(db, except) {
-  const by = {};
-  const rs = await db.prepare("SELECT entry FROM draft WHERE (status='pending' OR (status='approved' AND committed_at IS NULL)) AND entry LIKE ?1").bind('%"claimId":"%').all();
+/* 28 Sep 2026, s210: ON ITS WAY UNTIL THE MIRROR HAS IT. The chain marks a row committed before it re-seeds the mirror,
+   with a push between (cloud-commit.yml), so for those seconds a folded row was neither on its way by committed_at nor on
+   the mirror, and a tap in them saw neither. A row committed after the mirror was seeded (snapshot.at) is still on its way. */
+const ON_ITS_WAY = "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1))))";
+/* every payment on its way to a sale's row: a Fulfilment carrying cash, pending, or approved and not yet on the mirror */
+async function paysOnWay(db) {
+  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND entry LIKE ?1").bind('%"kind":"Fulfilment"%').all();
+  const out = [];
   for (const r of rs.results || []) {
     let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; }
-    const k = e && e.claimId && e.claimId !== except && e.payload && e.payload.orderKey;
+    const p = e && e.payload;
+    if (p && p.mode === "amend" && p.kind === "Fulfilment" && p.direction !== "BUY" && +p.cash > 0.004) out.push(e);
+  }
+  return out;
+}
+/* the row a payment names, by its key: the rid first, as the fold finds it, then the key it was queued under */
+function rowKeyer(sales) {
+  const byRid = new Map();
+  for (const s of sales || []) if (s && s.rid) byRid.set(s.rid, POSITION_ENGINE.ovKey(s));
+  return (p) => (p.rid && byRid.get(p.rid)) || p.orderKey || null;
+}
+async function acctInFlight(db, except) {
+  const by = {};
+  for (const e of await paysOnWay(db)) {
+    const k = e.claimId && e.claimId !== except && e.payload.orderKey;
     if (k) by[k] = +((by[k] || 0) + (+e.payload.cash || 0)).toFixed(2);
   }
   return by;
 }
+/* 28 Sep 2026, s210: WHAT A ROW CAN STILL TAKE, by its key: what the mirror says it owes, the goods and the delivery less
+   what was paid, less every payment on its way to it by any road (a claim against the account, a claim of theirs on an
+   order, cash at the counter, a payment typed on the desk), a tap's own entry left out. The site's figure for an order
+   knows its own moves at once and a claim against the account never; the mirror knows every folded row and nothing on its
+   way; a tap that books money answers to both. null where the mirror has no row by that key yet, and there the fold's own
+   rule measures. */
+async function rowRoom(db) {
+  const book = await readBook(db).catch(() => null);
+  const sales = ((book && book.sales) || []).filter((s) => s && !s.cancelled);
+  const keyOf = rowKeyer(sales), byKey = new Map(sales.map((s) => [POSITION_ENGINE.ovKey(s), s])), on = {};
+  for (const e of await paysOnWay(db)) { const k = keyOf(e.payload); if (k) (on[k] = on[k] || []).push(e); }
+  return (key, own) => {
+    const s = key ? byKey.get(key) : null;
+    if (!s) return null;
+    const way = +((on[key] || []).filter((e) => !own || e.at !== own.at).reduce((n, e) => n + (+e.payload.cash), 0)).toFixed(2);
+    const owes = +Math.max(0, POSITION_ENGINE.txOwed(s) - POSITION_ENGINE.txPaid(s)).toFixed(2);
+    return { owes, on: way, left: +Math.max(0, owes - way).toFixed(2) };
+  };
+}
+/* 28 Sep 2026, s210: the refusal a tap gives when its payment would take the row past what it can still take. A claim of
+   theirs is also told how it is answered: Received, on the book already, which the site takes only once its order has
+   heard of the money (the return leg, in the minute after the mirror is re-seeded), or Not found */
+function pastRoom(room, o, entry, word, claim) {
+  const r = room ? room(o.ledgerKey, entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
+  if (!r || !(rm > r.left + 0.004)) return null;
+  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+  return { status: 409, error: "the row owes RM " + r.owes.toFixed(2)
+    + (r.on > 0.004 ? ", and RM " + r.on.toFixed(2) + " of it is on its way already, received or waiting under Approve and not folded yet" : "")
+    + ", so RM " + rm.toFixed(2) + " " + word + " would pay it past what it owes" + (r.left > 0.004 ? ": RM " + r.left.toFixed(2) + " is what it can still take" : "")
+    + (claim ? ". " + (r.on > 0.004 ? "Once that is folded, answer" : rm > due + 0.004 ? "Answer" : "Within the minute its order hears of the book: then answer")
+      + " it Received, on the book already, if you recorded it, or Not found" : "") };
+}
 async function inFlight(env, db, c, sales) {
   const all = await listOrders(env, true);
   if (!all.ok) return null;
-  const by = await acctInFlight(db, c.id), cash = {};
+  const by = {}, cash = {}, keyOf = rowKeyer(sales);
+  /* a claim against the account's own rows are its own; an order's own moves are read off the site below, which knows them
+     at once; the rest (other claims against the account, a payment typed on the desk) are on their way to the rows they name */
+  for (const e of await paysOnWay(db)) {
+    if ((e.claimId && e.claimId === c.id) || e.orderId) continue;
+    const k = keyOf(e.payload);
+    if (k) by[k] = +((by[k] || 0) + (+e.payload.cash)).toFixed(2);
+  }
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of all.orders) {
     if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
@@ -702,6 +763,7 @@ export async function moveClaim(env, u, id, body) {
  *  stops the chase, and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
 export async function cashOrder(env, id, body, by, now) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "cash");
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER) : null;
   return stageTap(env, id, body, by, now, "cash", (o, at) => {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
@@ -715,6 +777,12 @@ export async function cashOrder(env, id, body, by, now) {
     if ((+o.paid || 0) - own > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
     const entry = payEntry(o, o.code, amount, at, true);
     entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
+    /* 28 Sep 2026, s210: AND WHAT THE ROW CAN STILL TAKE. RM 210 against the account was received and not yet folded when
+       RM 210 cash was taken for the same order, and the site's figure, which a claim against the account never reaches,
+       said RM 210 was owed: the row read cash 420. receivedOrder has had the S6 guard; this is the same question asked of
+       every road the money can come by. */
+    const past = pastRoom(room, o, entry, "cash");
+    if (past) return past;
     /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
        by the same figure, because this Fulfilment is the desk's own and the reconcile must not queue it again */
     return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
@@ -782,6 +850,8 @@ export async function againOrder(env, id, body, by, now) {
   if (stage === "move" && Math.abs((+o.moved || 0) - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) > 0.0004)
     return { ok: false, status: 409, error: "the order has moved on since that handover: record the handover as it stands" };
   const entry = Object.assign({}, rej.entry, { at: at.toISOString() });
+  /* 28 Sep 2026, s210: a payment offered again answers to what the row can still take, as the tap that made it does now */
+  if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
   const pv = await stagePreview(env, o, stage, entry);
   if (!pv.ok) return pv;
   /* a close offered again restates the row once more, so later stages wait for it under the name it will leave, as the

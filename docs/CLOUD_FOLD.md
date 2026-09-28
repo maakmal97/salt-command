@@ -63,8 +63,11 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    the row's `mod` field. The tool refuses a Linked or Rewarded amendment (neither carries
    a figure to check, only a judgement about which other row or which award applies; a
    Modification is mechanical from 24 Aug 2026, see below), an amendment whose key matches no
-   row or more than one, a registration already on the roster, and a new row that would replay
-   one already on the book (same party, date, size and total). If anything is refused, report it
+   row or more than one, a registration already on the roster, a new row that would replay
+   one already on the book (same party, date, size and total), and a payment measured before other
+   money reached its row that would now take the row past what it owes (the engine's `payFault`,
+   28 Sep 2026: s210's RM 210 twice). That last is the same money by two roads: ask him which
+   payment stands. If anything is refused, report it
    and stop; do not edit the
    batch to get past it. A day with no commit is cheap and a wrong row is not.
 

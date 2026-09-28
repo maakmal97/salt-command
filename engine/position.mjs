@@ -688,6 +688,27 @@ function attributionOf(row,partyKey){
    books. The cross-field refusals live here now and all four callers read them from one place.
    WHAT STAYS WITH THE DRAFTER: the per-field type and roster checks. It is the only reader taking
    untyped input off the wire; the other three are handed values the drafter has already typed. */
+/* ====== THE SAME MONEY BY TWO ROADS (28 Sep 2026, s210) =========================================
+   s210 was paid RM 210 against the account, received at 13:08 on 27 Sep and folded as v902, and RM 210
+   cash at the counter on the same order a minute later, folded as v903 onto the row the first had
+   settled: cash 420 on RM 210, read Completed, the second RM 210 nowhere. Both drafts were measured on
+   the row at RM 0 paid and said it settled the order; nobody saw the RM 420. This refuses a payment
+   the drafter MEASURED BEFORE OTHER MONEY REACHED ITS ROW, which would now take the row past what it
+   owes. `drafted` is the row's paid figure the draft was measured on (the drafted row's `cash`, which
+   is ledgerRow's txPaid or poCash). A payment drafted on the row as it stands, flagged past what it
+   owes and approved, is his decision and folds as it always has; with no `drafted` (a hand-written
+   batch) it measures nothing. A ceiling, not a reader of what is owed: txAdvance stays that. A sale
+   owes the goods and the delivery less what was paid, cash and in kind; a lot owes its total less
+   poCash, a pending lot having paid nothing; an unpriced row has no figure to be past. ONE RULE, read
+   by the fold's plan on the row as its batch leaves it and by applyAmend. */
+function payFault(row,cash,isSale,drafted){
+  const c=+cash||0;
+  if(!(c>0.009)||!row||row.unpriced||drafted==null||!isFinite(+drafted))return '';
+  const paid=isSale?txPaid(row):poCash(row),owed=isSale?txOwed(row):(+row.total||0),since=+(paid-(+drafted)).toFixed(2);
+  if(!(since>0.009)||paid+c<=owed+0.009)return '';
+  return 'RM '+since+' reached this row after the payment was measured (RM '+(+(+drafted).toFixed(2))+' paid then, RM '+(+paid.toFixed(2))+' now), so RM '
+    +(+c.toFixed(2))+' more would take it RM '+(+(paid+c-owed).toFixed(2))+' past the RM '+(+(+owed).toFixed(2))+' it owes: the same money booked by two roads is a judgement, left for a person';
+}
 function correctionFaults(row,fields,isSale){
   const f=fields||{};const out=[];
   const partyKey=isSale?'customer':'supplier';
@@ -894,7 +915,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,

@@ -33953,7 +33953,7 @@ await (async () => {
   const e = await place(U2, 2, 210);
   const e1 = await accept(e);
   await call("/orders/" + e.id + "/cash", { amount: 60 });
-  land(e1.j.draft, { cash: 180 });   /* landed other than it was shown (a payment folded beside it), so the cash waits under Approve */
+  land(e1.j.draft, { cash: 150, deliveredQty: 2 });   /* landed other than it was shown (a payment folded beside it and the units handed over, so the cash now settles it), so the cash waits under Approve; the row can still take it, as it must for the offer again (the s210 guard) */
   await deskPass(denv, new Date()); await runDrafter(denv);
   const cOld = drafts(e.id, "Payment")[0];
   ok(cOld && cOld.status === "pending", "the cash Fulfilment, landing other than shown, waits under Approve: " + JSON.stringify(cOld && cOld.status));
@@ -35005,6 +35005,212 @@ await (async () => {
     && (await O.ordersOf(senv, U)).find((x) => x.id === b.id).claimed === 120,
     "and an order claim's Received is refused on a row a claim against the account booked and no fold has landed, the claim still waiting: "
     + JSON.stringify({ acct: yes.j.approved, order: twice.status, error: twice.j.error }));
+})();
+
+section("Paid twice (s210, 27 Sep 2026): no tap books money a row cannot take, and the fold refuses a payment past what a row owes");
+await (async () => {
+  /* HIS ROW s210: RM 210 sent against the account and received (v902), then RM 210 cash at the counter on the same order
+     ninety seconds later (v903), and the row read cash 420 on RM 210, Completed, the second RM 210 nowhere. cashOrder
+     measured the site's order alone, which a claim against the account never touches, while its twin receivedOrder had
+     the S6 guard; the fold then added the second payment to a row the first had settled. Driven through both Workers over
+     the real schema: the tap as it happened, the two windows a folded row spends off the mirror's books, a partial pair
+     as the control, an offer again; then the fold, the writer, the desk's preview and the engine's one rule. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so paying a row twice was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending, runDrafter } = await import("../src/drafter.js");
+  const { payEntry, reconcileOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const { plan, applyAmend } = await import("../tools/fold.mjs");
+  const C = "CX1-AB", U = "abcd-efgh", C2 = "CX2-CD", U2 = "wxyz-mnpq";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* orders of theirs, each handed over and unpaid on the book, one row apiece; a second customer for the last, a customer holding five open orders at most */
+  const row = (rid, date, total, customer) => ({ rid, customer: customer || C, product: "salt", date, qty: 2, total, cash: 0, deliveredQty: 2, deliveredOn: date, handover: "collected" });
+  const rows = [row("s50", "2026-09-27", 210), row("s51", "2026-09-26", 220), row("s52", "2026-09-25", 230), row("s53", "2026-09-24", 240), row("s55", "2026-09-28", 250),
+    row("s56", "2026-09-28", 260, C2)];
+  const seat = () => {
+    db.prepare("DELETE FROM entry").run();
+    rows.forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(r)));
+    let bk = { sales: [], state: { OPEN: { byKey: {}, position: {} } } };
+    for (const r of rows) if (E.txAdvance(r) > 0.009) bk = withPending(bk, r);
+    setState("OPEN", bk.state.OPEN);
+  };
+  seat();
+  setState("roster", [C, C2]);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "2": { floor: 80 } }, inputs: null, sizes: [2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v900',NULL,'2026-09-27T10:00:00.000Z')").run();
+  const skv = new KV(), dkv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  const handed = async (r, u) => {
+    u = u || U;
+    const o = (await O.placeOrder(senv, u, { product: "salt", qty: 2, mode: "collect", unit: r.total / 2, total: r.total, week: "" })).order;
+    await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, u, o.id, { mark: { ledgerKey: E.ovKey(r), ack: r.date + "T01:00:00.000Z" } });
+    await O.deskMove(senv, u, o.id, { handover: { units: 2, mode: "collect" } });
+    return o;
+  };
+  const received = async (amount) => {
+    const c = (await O.claimAccount(senv, U, { amount, method: "transfer", account: "tng" })).claim;
+    const pv = await call("/claims/" + c.id + "/preview", {});
+    return call("/claims/" + c.id + "/received", { hash: pv.j.hash });
+  };
+  const approvedOn = (rid) => db.prepare("SELECT id FROM draft WHERE status='approved' AND entry LIKE ?").all('%"rid":"' + rid + '"%').map((x) => x.id);
+
+  /* 1. AS IT HAPPENED: the claim takes the oldest row owed (s53), his Received approves it and no fold has landed; then the
+     counter's Cash received for the same money on the same order */
+  const o53 = await handed(rows[3]);
+  const y53 = await received(240);
+  const c53 = await call("/orders/" + o53.id + "/cash", { amount: 240 });
+  ok(y53.status === 200 && approvedOn("s53").length === 1 && c53.status === 409 && /on its way/.test(c53.j.error || ""),
+    "Cash received is refused on an order whose row a claim against the account has paid and no fold has landed, as s210 was not: "
+    + JSON.stringify({ claim: y53.status, approved: approvedOn("s53").length, cash: c53.status, error: c53.j.error }));
+
+  /* 2. MARKED COMMITTED, NOT YET ON THE MIRROR: the job marks the row before it re-seeds, so for those seconds the row is
+     neither on its way by committed_at nor on the mirror. Still refused while the mirror is older than the mark. */
+  db.prepare("UPDATE draft SET committed_at='2026-09-27T13:09:30.000Z' WHERE status='approved'").run();
+  const c53b = await call("/orders/" + o53.id + "/cash", { amount: 240 });
+  ok(c53b.status === 409, "and still refused once the row is marked committed while the mirror is older than the mark: " + JSON.stringify({ cash: c53b.status, error: c53b.j.error }));
+
+  /* 3. ON THE MIRROR, BEFORE THE RETURN LEG: the row reads paid, the site's order still reads nothing paid */
+  rows[3] = Object.assign({}, rows[3], { cash: 240, paidOn: "2026-09-27" }); seat();
+  db.prepare("UPDATE snapshot SET v='v902', at='2026-09-27T13:10:00.000Z' WHERE one=1").run();
+  const site53 = (await O.allOrders(senv, true)).find((x) => x.id === o53.id);
+  const c53c = await call("/orders/" + o53.id + "/cash", { amount: 240 });
+  ok(!(+site53.paid > 0) && c53c.status === 409,
+    "and once the mirror carries the payment, before the return leg has told the site, still refused: " + JSON.stringify({ sitePaid: site53.paid, cash: c53c.status, error: c53c.j.error }));
+
+  /* 4. THE CONTROL: RM 100 against the account on its way to s52, and RM 130 cash is exactly what is left; RM 131 is not */
+  const o52 = await handed(rows[2]);
+  const y52 = await received(100);
+  const over52 = await call("/orders/" + o52.id + "/cash", { amount: 131 });
+  const c52 = await call("/orders/" + o52.id + "/cash", { amount: 130 });
+  ok(y52.status === 200 && approvedOn("s52").length === 1 && over52.status === 409 && c52.status === 200,
+    "a partial pair is left alone: RM 100 on its way and RM 130 at the counter make the RM 230 owed, and RM 131 would not: "
+    + JSON.stringify({ claim: y52.status, over: over52.status, cash: c52.status, error: c52.j.error }));
+
+  /* 4b. A PAYMENT TYPED ON THE DESK, approved and not folded, is on its way to s51 too: a claim against the account passes
+     over that row, as it passes over one another claim has booked */
+  const typed = { at: "2026-09-27T12:30:00.000Z", type: "SELL", party: C, qty: 0, total: 220, status: "Payment", by: "desk",
+    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: C, rid: "s51", orderKey: null, date: "2026-09-27", qty: 0, total: 0, cash: 220, kg: 0, note: "fixture" } };
+  db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(typed.at, "approved", "sales", JSON.stringify(typed), "{}", "fixture", "[]", C, "fixture", "2026-09-27T12:30:01.000Z", "2026-09-27T12:31:00.000Z", "desk");
+  const c4b = (await O.claimAccount(senv, U, { amount: 220, method: "transfer", account: "tng" })).claim;
+  const pv4b = await call("/claims/" + c4b.id + "/preview", {});
+  ok(pv4b.status === 200 && !(pv4b.j.rows || []).some((x) => x.rid === "s51") && (pv4b.j.rows || []).some((x) => x.rid === "s50"),
+    "a claim against the account passes over a row a payment typed on the desk is on its way to: " + JSON.stringify((pv4b.j.rows || []).map((x) => [x.rid, x.rm])));
+  db.prepare("UPDATE draft SET status='rejected', decided_by='desk' WHERE id=?").run(typed.at);
+
+  /* 5. OFFERED AGAIN: a RM 220 cash row he rejected is offered again only while the row can take it; RM 100 has folded
+     onto s51 since, so it owes RM 120 */
+  const o51 = await handed(rows[1]);
+  const e51 = Object.assign(payEntry(Object.assign({}, o51, { ledgerKey: E.ovKey(rows[1]) }), C, 220, new Date("2026-09-27T12:00:00.000Z"), true), { orderId: o51.id, counter: true });
+  db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(e51.at, "rejected", "sales", JSON.stringify(e51), "{}", "fixture", "[]", C, "fixture", "2026-09-27T12:00:01.000Z", "2026-09-27T12:01:00.000Z", "desk");
+  rows[1] = Object.assign({}, rows[1], { cash: 100 }); seat();
+  const a51 = await call("/orders/" + o51.id + "/again", { stage: "cash" });
+  ok(a51.status === 409 && /owes RM 120/.test(a51.j.error || ""), "a rejected RM 220 cash row is not offered again onto a row that now owes RM 120: " + JSON.stringify({ again: a51.status, error: a51.j.error }));
+
+  /* 6. RECEIVED, the claim's road: they said on the order that they sent RM 210, and RM 100 against the account has since
+     folded onto its row; the return leg has not told the site, so the card still offers Received for all of it (a row paid
+     in full has left the open list, and its Received was refused before this for want of a row) */
+  const o50 = await handed(rows[0]);
+  await O.customerMove(senv, U, o50.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U, o50.id, "pay", { amount: 210 });
+  const cw50 = (await O.ordersOf(senv, U)).find((x) => x.id === o50.id).payments.find((p) => p.claim === "waiting");
+  rows[0] = Object.assign({}, rows[0], { cash: 100 }); seat();
+  const r50 = await call("/orders/" + o50.id + "/received", { claim: cw50.at, amount: 210 });
+  ok(r50.status === 409 && /owes RM 110.*\. Within the minute its order hears of the book: then answer it Received, on the book already/.test(r50.j.error || ""),
+    "an order claim's Received is refused past what its row can take once the book has part of it paid, before the site has heard, and told to wait for it: "
+    + JSON.stringify({ received: r50.status, error: r50.j.error }));
+  /* 6a. ONCE THE SITE HAS HEARD (the return leg raises what the order reads paid to the row's RM 100), the card is told to
+     answer it Received, on the book already, and that answer is taken */
+  await O.deskMove(senv, U, o50.id, { ledger: { paid: 100 } });
+  const r50b = await call("/orders/" + o50.id + "/received", { claim: cw50.at, amount: 210 });
+  const r50c = await call("/orders/" + o50.id + "/received", { claim: cw50.at, amount: 210, covered: true });
+  ok(r50b.status === 409 && /\. Answer it Received, on the book already/.test(r50b.j.error || "") && r50c.status === 200,
+    "and once the site has heard, it is told to answer Received, on the book already, which is taken: " + JSON.stringify({ received: r50b.status, error: r50b.j.error, covered: r50c.status }));
+
+  /* 6c. MONEY ON ITS WAY THAT THE SITE CANNOT SEE: a payment typed on the desk, approved and not folded, pays s56 in full;
+     their claim on the order for the same RM 260 is refused and told to wait for the fold */
+  const o56 = await handed(rows[5], U2);
+  const typed56 = Object.assign(JSON.parse(JSON.stringify(typed)), { at: "2026-09-28T09:00:00.000Z", party: C2 });
+  Object.assign(typed56.payload, { party: C2, rid: "s56", date: "2026-09-28", cash: 260 });
+  db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(typed56.at, "approved", "sales", JSON.stringify(typed56), "{}", "fixture", "[]", C2, "fixture", "2026-09-28T09:00:01.000Z", "2026-09-28T09:01:00.000Z", "desk");
+  await O.customerMove(senv, U2, o56.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U2, o56.id, "pay", { amount: 260 });
+  const cw56 = (await O.ordersOf(senv, U2)).find((x) => x.id === o56.id).payments.find((p) => p.claim === "waiting");
+  const r56 = await call("/orders/" + o56.id + "/received", { claim: cw56.at, amount: 260 });
+  ok(r56.status === 409 && /on its way already.*\. Once that is folded, answer it Received, on the book already/.test(r56.j.error || ""),
+    "a claim on an order whose row a payment typed on the desk has paid, not yet folded, is refused and told to wait for the fold: " + JSON.stringify({ received: r56.status, error: r56.j.error }));
+  db.prepare("UPDATE draft SET status='rejected', decided_by='desk' WHERE id=?").run(typed56.at);
+
+  /* 6b. THE CONTROL: a claim on an order whose row owes all of it, its own entry drafted and waiting, is received: a tap's
+     own entry is not on its way to itself */
+  const o55 = await handed(rows[4]);
+  await O.customerMove(senv, U, o55.id, "method", { method: "tngbiz", account: "tngbiz" });
+  await O.customerMove(senv, U, o55.id, "pay", { amount: 250 });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cw55 = (await O.ordersOf(senv, U)).find((x) => x.id === o55.id).payments.find((p) => p.claim === "waiting");
+  const own55 = db.prepare("SELECT status FROM draft WHERE entry LIKE ? AND entry LIKE ?").all('%"orderId":"' + o55.id + '"%', '%"claimOf"%').map((x) => x.status);
+  const r55 = await call("/orders/" + o55.id + "/received", { claim: cw55.at, amount: 250 });
+  ok(own55.join() === "pending" && r55.status === 200, "a claim whose own entry is drafted and waiting is received on a row that owes all of it: "
+    + JSON.stringify({ own: own55, received: r55.status, error: r55.j.error }));
+
+  /* 7. THE FOLD, the last line for any road the taps cannot see: a payment measured on the row before other money reached
+     it is refused when it would now take the row past what it owes; two in one batch are measured one after the other; a
+     pair that makes what is owed folds; and a payment drafted on the row as it stands, flagged past what it owes and
+     approved, folds as it always has, that being his decision */
+  const pay = (id, rid, cash, drafted) => ({ id, collection: "sales", amends: rid, amendKind: "Fulfilment", row: { qty: 2, total: 210, cash: drafted },
+    entry: { payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", rid, date: "2026-09-27", qty: 0, total: 0, cash, kg: 0 } } });
+  const paidRow = Object.assign(row("t1", "2026-09-27", 210), { cash: 210, paidOn: "2026-09-27" }), openRow = row("t2", "2026-09-27", 210);
+  const bookF = () => ({ sales: [JSON.parse(JSON.stringify(paidRow)), JSON.parse(JSON.stringify(openRow))], purchases: [] });
+  const p1 = plan(bookF(), { approved: [pay("x1", "t1", 210, 0)] });
+  const p1b = plan(bookF(), { approved: [pay("x2", "t1", 210, 210)] });
+  const p2 = plan(bookF(), { approved: [pay("y1", "t2", 210, 0), pay("y2", "t2", 210, 0)] });
+  const p3 = plan(bookF(), { approved: [pay("z1", "t2", 100, 0), pay("z2", "t2", 110, 0)] });
+  ok(p1.refused.length === 1 && p1.items.length === 0 && /RM 210 reached this row after the payment was measured/.test(p1.refused[0].why),
+    "the fold refuses v903: RM 210 drafted on the row at nothing paid, folding onto it paid in full: " + JSON.stringify(p1.refused));
+  ok(p1b.refused.length === 0 && p1b.items.length === 1,
+    "while the same payment drafted on the row as it stands, flagged and approved, folds as it always has: " + JSON.stringify(p1b.refused));
+  ok(p2.items.length === 1 && p2.refused.length === 1 && p2.refused[0].id === "y2",
+    "two payments in one batch are measured one after the other, so the second RM 210 is refused: " + JSON.stringify({ items: p2.items.map((x) => x.id), refused: p2.refused }));
+  ok(p3.items.length === 2 && p3.refused.length === 0, "and RM 100 and RM 110 in one batch make RM 210 and fold: " + JSON.stringify(p3.refused));
+  const wr = JSON.parse(JSON.stringify(paidRow)); let threw = "";
+  try { applyAmend(wr, { date: "2026-09-27", kind: "Fulfilment", cash: 210, kg: 0, drafted: 0 }, "SELL", null); } catch (e) { threw = String(e.message || e); }
+  ok(/reached this row after the payment was measured/.test(threw) && wr.cash === 210 && !wr.amend,
+    "the writer refuses it too, before touching the row: " + JSON.stringify({ threw, cash: wr.cash }));
+
+  /* 8. THE ONE RULE: what is owed is the goods and the delivery, what is paid counts what was settled in kind, an unpriced
+     row has no figure to be past, a lot is measured with a lot's ruler, and a payment measured on the row as it stands, or
+     with no measure (a hand-written batch), is his */
+  const pf = typeof E.payFault === "function" ? E.payFault : () => "no rule";
+  ok(!pf({ qty: 1, total: 100, delivery: 20, cash: 20 }, 100, true, 0) && !!pf({ qty: 1, total: 100, delivery: 20, cash: 20 }, 101, true, 0)
+    && !!pf({ qty: 1, total: 100, cash: 0, settledRM: 50 }, 60, true, 0) && !pf({ qty: 1, total: 100, cash: 0, settledRM: 50 }, 50, true, 0)
+    && !pf({ qty: 1, total: 0, unpriced: true, cash: 50 }, 50, true, 0)
+    && !pf({ qty: 1, total: 100, cash: 100 }, 100, true) && !pf({ qty: 1, total: 100, cash: 100 }, 100, true, 100)
+    && !!pf({ qty: 10, total: 500, cash: 300 }, 250, false, 0) && !pf({ qty: 10, total: 500, cash: 300 }, 200, false, 0)
+    && !pf({ qty: 10, total: 500, pending: true, cash: 300 }, 500, false, 0),
+    "the rule counts the delivery and what was settled in kind, leaves an unpriced row alone, measures a lot by what it has paid, and leaves a payment measured on the row as it stands to him");
 })();
 
 section("S6 fix: a claim that money he recorded another way already covers is answered Received, on the book already, never Not found");
@@ -42819,5 +43025,192 @@ await (async () => {
       + "), while salt, which does default one, keeps the series and it carries the point (" + JSON.stringify(saltLG && saltLG.labels) + ")");
   } finally { try { wLG.close(); } catch (e) { /* best effort */ } }
 })();
+
+section("tools/standing.mjs: the seven lines a task closes with, each book read under its own view, and a failed read said, never read as nothing");
+await (async () => {
+  /* 28 Sep 2026: every task closes with the standing-state table (CLAUDE.md), and each session built it by hand. The tool
+     reads the book in a window book by book, as the desk shows it, and the queue through the tools' own reads. Driven
+     offline: the book on this master against the desk's own figures for each book, the counts on rows made here, the
+     three reads on their answers (a failure and a folded entry included), a read tried once more, and the table on a
+     state made here. */
+  const T = await import("../tools/standing.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const { openMaster: omSt } = await import("../tools/payload.mjs");
+  const { w: wSt } = await omSt();
+  try {
+    const rdSt = (e) => JSON.parse(wSt.eval("JSON.stringify(" + e + ")"));
+    const st = T.bookState(wSt), want = {};
+    for (const p of rdSt("PROD_IDS")) {
+      wSt.eval("setProdView(" + JSON.stringify(p) + ")");
+      want[p] = rdSt("({shelf:currentStock,free:+(currentStock-defUnits).toFixed(2),credit:+(+arGross).toFixed(2),writtenOff:+(+writtenOffRM).toFixed(2)})");
+    }
+    const got = Object.fromEntries(Object.entries(st.books).map(([p, b]) => [p, { shelf: b.shelf, free: b.free, credit: b.credit, writtenOff: b.writtenOff }]));
+    ok(JSON.stringify(got) === JSON.stringify(want) && st.watermark === rdSt("QUEUE_COMMITTED"),
+      "each live book is read under its own view, as the desk shows it, with the watermark: " + JSON.stringify({ got, want }));
+  } finally { try { wSt.close(); } catch (e) { /* best effort */ } }
+
+  /* the counts, on rows made here: Pending is the engine's own label, nothing paid and nothing moved */
+  const rows = [{ rid: "a1", qty: 1, total: 100, cash: 0, date: "2026-09-01" }, { rid: "a2", qty: 1, total: 100, cash: 50, date: "2026-09-02" },
+    { rid: "a3", qty: 1, total: 100, cash: 0, deliveredQty: 1, date: "2026-09-03" }, { rid: "a4", qty: 1, total: 100, cash: 0, cancelled: true, date: "2026-09-04" },
+    { rid: "a5", qty: 1, total: 100, cash: 0 }];
+  ok(JSON.stringify(T.pendingOf(rows, E.txStat)) === '["a1","a5"]' && T.undatedOf(rows, [{ qty: 1 }, { qty: 1, date: "2026-09-01" }]) === 2,
+    "pending orders are the rows with nothing paid and nothing moved, not a part-paid, handed-over or cancelled one; undated rows count lots too: "
+    + JSON.stringify({ pending: T.pendingOf(rows, E.txStat), undated: T.undatedOf(rows, [{ qty: 1 }, { qty: 1, date: "2026-09-01" }]) }));
+
+  /* the three reads, on the tools' own answers */
+  const failed = { status: 1, out: '  FAIL  could not read a JSON result from wrangler:\n        {\n          "error": {\n            "text": "fetch failed"' };
+  const L0 = T.readList({ status: 0, out: "  ok    nothing is waiting for a decision\n" }), L2 = T.readList({ status: 0, out: "  2 waiting for a decision:\n\n  2026-09-28T01:00:00.000Z   [pending]\n" });
+  const Lf = T.readList(failed), A1 = T.readApproved({ status: 0, out: '{\n "ok": true,\n "count": 1,\n "approved": [{"id":"2026-09-28T01:00:00.000Z"}]\n}' }), Af = T.readApproved(failed);
+  const drain = "KV: 6 device key(s), 0 unreadable, 2 entries.\n  q:orders, the old orders blob: 0; orders keys of their own: 0.\nFile salt_queue_cloud.json: 0 entries.\n"
+    + "Union (dedup by at): 2.\n\n  KV   2026-09-26T17:16:52.294Z  Correction on ZQ7-VRN s1: qty to 2\n  FILE 2026-09-28T01:00:00.000Z  Sale to ZQ7-VRN, 1 unit\n";
+  const Q = T.readQueue({ status: 0, out: drain }, "2026-09-27T13:24:04.148Z"), Qf = T.readQueue({ status: 1, out: "KV unreachable: Command failed: npx wrangler kv key list" }, "2026-09-27T13:24:04.148Z");
+  ok(L0.n === 0 && L2.n === 2 && A1.n === 1 && !("n" in Lf) && /fetch failed/.test(Lf.error || "") && !!Af.error && !!Qf.error
+    && Q.folded.length === 1 && Q.folded[0].at === "2026-09-26T17:16:52.294Z" && Q.waiting.length === 1 && Q.waiting[0].what === "Sale to ZQ7-VRN, 1 unit",
+    "the reads take the tools' counts, a failure is an error and never a count, and an entry at or below the watermark is folded: "
+    + JSON.stringify({ L0, L2, Lf, A1, Af, Q, Qf }));
+  let calls = 0;
+  const again = await T.runTool("drafts.mjs", ["--list"], async () => (++calls === 1 ? { status: 1, out: "timed out" } : { status: 0, out: "ok" }));
+  ok(again.status === 0 && calls === 2, "a read that fails is tried once more before it is said: " + JSON.stringify({ again, calls }));
+
+  /* the table, on a state made here */
+  const state = (queue, tree) => ({ book: { books: { salt: { shelf: 11.5, counted: true, free: -5, credit: 390, writtenOff: 260 },
+    oil: { shelf: 30, counted: true, free: 30, credit: 0, writtenOff: 0 }, candy: { shelf: 14, counted: true, free: 10, credit: 0, writtenOff: 0 }, spare: { shelf: 0, counted: false, free: 0, credit: 0, writtenOff: 0 } }, pending: ["s1"], undated: 0 },
+    queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
+  const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
+  const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
+  ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5: restock now), oil 30, candy 14 (free 10) |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
+    && tb[5] === "| Pending orders | 1 (s1) |" && tb[6] === "| Undated rows | 0 |"
+    && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 1 entry left in a phone's key, already folded: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
+    && tb[8] === "| Tree | master at abc1234, clean, level with origin |"
+    && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
+    "the table names each line, the free shelf only where it differs and a restock now only where it is below nothing, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
+})();
+section("28 Sep 2026: only the agreed figures are struck: a handover or a cash correction strikes no quantity or sum, a corrected size still does");
+await (async () => {
+  /* E242 (s210) read "0 unit" struck beside its 2 units: the handover Correction a collected site order makes
+     (deliveredQty 0 to 2) was drawn as a replaced quantity, and a correction of cash read as a replaced total. A struck
+     figure is the agreement's or a wrong record's (v447); what moved and what was paid are the figure's own state. Three
+     rows written here on a copy of the book, read back off the Ledger's cards by class and text. */
+  const { openMaster: omX } = await import("../tools/payload.mjs");
+  const { execSync: exX } = await import("node:child_process");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const cust = bk.sales.find((x) => x.customer).customer;
+  const row = (rid, extra) => Object.assign({ rid, date: "2026-09-27", customer: cust, product: "salt", qty: 2, total: 210, cash: 0, deliveredQty: 0 }, extra);
+  bk.sales.push(row("g1", { deliveredQty: 2, deliveredOn: "2026-09-27", handover: "collected",
+      mod: "corrected on 2026-09-27: deliveredQty 0 to 2; deliveredOn (unset) to 2026-09-27; handover (unset) to collected",
+      amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "handover" }] }),
+    row("g2", { cash: 210, deliveredQty: 2, deliveredOn: "2026-09-27", mod: "corrected on 2026-09-28: cash 420 to 210",
+      amend: [{ date: "2026-09-28", kind: "Correction", cash: 0, kg: 0, note: "cash" }] }),
+    row("g3", { mod: "corrected on 2026-09-27: qty 1 to 2; total 110 to 210", amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "size" }] }));
+  const B = join(REPO, "test", ".struck-" + process.pid + ".json"), M = join(REPO, "test", ".struck-" + process.pid + ".html");
+  writeFileSync(B, JSON.stringify(bk, null, 1));
+  writeFileSync(M, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  let wX = null;
+  try {
+    exX("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    ({ w: wX } = await omX(M));
+    wX.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
+    const cell = (rid) => JSON.parse(wX.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var f=function(sel){var e=c.querySelector(sel);if(!e)return null;var g=e.querySelector('.lfig'),ws=e.querySelector('.lwas');return {fig:g?g.textContent:'',was:ws?ws.textContent:'',wasCls:ws?ws.className:''};};return {q:f('.lcol.cqty'),t:f('.lcol.ctot')};})())"));
+    const g1 = cell("g1"), g2 = cell("g2"), g3 = cell("g3");
+    ok(!!g1 && g1.q.fig === "2 unit" && g1.q.was === "", "a handover correction strikes no quantity: the order reads its 2 units alone: " + JSON.stringify(g1 && g1.q));
+    ok(!!g2 && g2.t.fig === "RM 210" && g2.t.was === "", "a correction of cash strikes no sum: " + JSON.stringify(g2 && g2.t));
+    ok(!!g3 && g3.q.was === "1 unit" && g3.q.wasCls === "lwas corr" && g3.t.was === "RM 110",
+      "while a corrected size still shows its old quantity and sum struck white: " + JSON.stringify(g3));
+  } finally {
+    try { if (wX) wX.close(); } catch (e) { /* best effort */ }
+    for (const f of [B, M]) { try { rmSync(f); } catch (e) { /* best effort */ } }
+  }
+})();
+
+section("28 Sep 2026: Cash received takes a custom amount, whole or part, and the pill and field survive a redraw");
+await (async () => {
+  /* His instruction, 28 Sep 2026: Cash received always sent the whole of what an order owed. Other amount
+     opens a field, the same shape as the handover part stepper (ORD_PART): the pill reads the typed figure
+     live and carries data-cashpart while it is open, ordAct refuses outside 0 to what is owed, and a
+     part-paid order (paid<=0.004 no longer required) offers cash on the rest too. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 97; w.clearInterval = () => {};
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const o1 = Object.assign({ id: "o1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const o2 = Object.assign({ id: "o2", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 40, movedAt: "2026-09-24T01:00:00.000Z" }, base);
+    const orders = [o1, o2];
+    const posted = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (p === "orders" && !post) return { ok: true, status: 200, json: async () => ({ ok: true, orders: JSON.parse(JSON.stringify(orders)) }) };
+      if (post && /\/cash$/.test(p)) { posted.push(JSON.parse(init.body)); return { ok: true, status: 200, json: async () => ({ ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) }; }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    w.eval("ORD_SEL='o1';ORD_OPENED=true;ordDraw();");
+    const q = (id, sel) => D.querySelector('.ordcard[data-id="' + id + '"] ' + sel);
+    /* a real timer, not just a microtask hop, so a click's own trailing ordLoad (its own fetch, json
+       and redraw, none of it a real delay) is fully drained before the next action reads the card */
+    const wait = async (cond) => { for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 30)); if (cond()) return true; } return cond(); };
+
+    /* (a) untouched, the filled pill posts the whole of what is owed */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 1);
+    ok(posted.length === 1 && posted[0].amount === 100, "the whole pill posts the amount due: " + JSON.stringify(posted[0]));
+    const said = () => (q("o1", '[data-msg="o1"]') || {}).textContent || "";
+    const wholeSaid = said();
+    ok(/^Recorded: RM 100 in cash\. They see it paid and the chase stops\. /.test(wholeSaid), "the whole recorded says it is paid and the chase stops: " + JSON.stringify(wholeSaid));
+
+    /* (b) Other amount opens the field; a typed figure follows on the pill at once, and carries data-cashpart */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    let inp = q("o1", 'input[data-cashamt="o1"]');
+    inp.value = "40"; inp.oninput();
+    let pill = q("o1", 'button[data-ord="cash"]');
+    ok(pill.textContent.trim() === "Cash received, RM 40" && pill.dataset.cashpart === "1",
+      "typing a custom figure follows on the pill at once, and marks it: " + JSON.stringify({ text: pill.textContent, part: pill.dataset.cashpart }));
+
+    /* (e) a poll's redraw mid-type keeps what he typed, the same as the handover part stepper */
+    w.eval("ordDraw();");
+    inp = q("o1", 'input[data-cashamt="o1"]'); pill = q("o1", 'button[data-ord="cash"]');
+    ok(inp.value === "40" && pill.textContent.trim() === "Cash received, RM 40",
+      "the typed figure survives ordDraw(): " + JSON.stringify({ value: inp.value, text: pill.textContent }));
+
+    /* (b) continued: the pill posts the typed figure, not the whole */
+    q("o1", 'button[data-ord="cash"]').click();
+    await wait(() => posted.length === 2);
+    ok(posted.length === 2 && posted[1].amount === 40, "Other amount posts the typed figure: " + JSON.stringify(posted[1]));
+    /* a part leaves the rest owed and the chase going: the answer says what is left, never that it is paid */
+    const partSaid = said();
+    ok(/^Recorded: RM 40 in cash\. They see RM 60 still owed\. /.test(partSaid) && !/paid|chase stops/.test(partSaid),
+      "a part recorded says what is still owed, never paid: " + JSON.stringify(partSaid));
+
+    /* (c) 0, and a figure over what is owed, are refused on the card and send nothing */
+    q("o1", 'button[data-cashopen="o1"]').click();
+    /* an emptied box: the pill says RM 0, what its tap would send and refuse, never the whole */
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = ""; inp.oninput();
+    const emptyPill = q("o1", 'button[data-ord="cash"]').textContent.trim();
+    ok(emptyPill === "Cash received, RM 0", "an emptied box reads RM 0 on the pill: " + JSON.stringify(emptyPill));
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "0";
+    q("o1", 'button[data-ord="cash"]').click();
+    const zeroSaid = (q("o1", '[data-msg="o1"]') || {}).textContent, zeroPosted = posted.length;
+    inp = q("o1", 'input[data-cashamt="o1"]'); inp.value = "200";
+    q("o1", 'button[data-ord="cash"]').click();
+    const overSaid = (q("o1", '[data-msg="o1"]') || {}).textContent;
+    const refused = /^That is not a figure above RM 0 and up to the RM 100 owed; nothing moved\.$/;
+    ok(posted.length === 2 && zeroPosted === 2 && refused.test(zeroSaid || "") && refused.test(overSaid || ""),
+      "0, and a figure above what is owed, are refused on the card and nothing is posted: " + JSON.stringify({ zeroSaid, overSaid, posted: posted.length }));
+
+    /* (d) a part-paid order still offers cash on the rest, and the reason line says what was paid already */
+    const pill2 = q("o2", 'button[data-ord="cash"]'), why2 = q("o2", ".salt-approve__reason:not(.ordtold):not(.ordclaim):not(.ordyes)");
+    ok(!!pill2 && pill2.textContent.trim() === "Cash received, RM 60" && !!why2 && /^Collected 1 unit, RM 40 paid\./.test(why2.textContent || "")
+      && /The chase stops once what is paid keeps up with what was handed over\.$/.test((why2.textContent || "").trim()) && !/so the chase stops/.test(why2.textContent || ""),
+      "a part-paid order offers cash on the rest, and the reason line says what was paid: " + JSON.stringify({ pill: pill2 && pill2.textContent, why: why2 && why2.textContent }));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

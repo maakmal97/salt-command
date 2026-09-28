@@ -688,11 +688,17 @@ that money he recorded another way covers (more than the order still owes, or th
 `covered` the way Not found files it, one event, the claim received with paid unmoved, the wake Payment received. **A claim against the account is received row by
 row** (S6 11.15, D6): the desk Worker drafts the engine's oldest-first allocation (`claimAlloc`: their rows and their
 bucket's with goods out and money owed, by date, each to what it owes, less the money already on its way to it: a claim
-on its order waiting or received, cash not folded, another account claim's booked row) as one Fulfilment a row, against the mirror and
+on its order waiting or received, cash not folded, another account claim's booked row, a payment typed on the desk) as one Fulfilment a row, against the mirror and
 stored nowhere (`POST /claims/<id>/preview`); the card draws it, and Received sends the digest of the rows drawn, which the
 Worker approves only if the rows still stand, each with a yes of its own spent by the drafter (`madeBy` reads `claimId`),
 then tells the site. More than the rows owe is never a tap. An order claim's Received is refused on a row an account claim
-booked and no fold has landed, so no money is booked on a row twice. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
+booked and no fold has landed, so no money is booked on a row twice. **Every tap that books money answers to what its row
+can still take** (28 Sep 2026, after s210 took RM 210 twice, a claim against the account and then Cash received on its
+order): Received, Cash received and a payment offered again are refused past the mirror's figure less every payment on
+its way to the row by any road (`rowRoom` in `src/orders.js`), the tap's own entry left out. A row marked committed is on
+its way until the mirror is re-seeded (`snapshot.at`), since the chain marks before it seeds. A claim of theirs refused so
+is told its answer: Received, on the book already, or Not found, once the money is folded and its order has heard of it
+(the return leg, the minute after the re-seed), and the refusal says which of those it is waiting on. **Cash on handover is withheld** from anyone holding an unpaid advance on any live
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
 order sheet's third way (S6 6.8), never To pay now's, shown dashed with that reason where withheld;
 choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim

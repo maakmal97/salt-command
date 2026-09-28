@@ -1,5 +1,79 @@
 [
  {
+  "v": "v912",
+  "d": "28 Sep 2026",
+  "t": "CASH RECEIVED TAKES THE FIGURE HANDED OVER",
+  "n": [
+   "<p><b>A SITE ORDER'S CASH RECEIVED TAKES A TYPED FIGURE.</b> On his word of 28 Sep 2026, after the counter cash on s210 that was a mistake: the pill sent the whole owed and nothing else could be typed. Other amount opens a box beside it and the pill reads the figure as it is typed; Take the whole shuts it. The card refuses a figure of RM 0 or less, or over what is owed, before anything is sent, and the Worker and what the row can still take check it again. A part-paid order offers Cash received on the rest, its line saying what was paid. A part recorded says what is still owed, and the chase goes on until what is paid keeps up with what was handed over.</p>",
+   "<p><b>NO PRICE OR FIGURE MOVES.</b> The Worker and the Counter already took any figure up to what is owed. Waiting on you still counts Cash only where nothing is paid: a prompt at the handover, not a list of what is owed. <b>THE SUITE.</b> One section draws the card: the whole, a typed part, an emptied box, the refusals, a redraw mid-type and a part-paid order; each of 11 mutations turns a check red.</p>"
+  ]
+ },
+ {
+  "v": "v911",
+  "d": "28 Sep 2026",
+  "t": "ONLY THE AGREED FIGURES ARE STRUCK",
+  "n": [
+   "<p><b>A HANDOVER NO LONGER READS AS A REPLACED ORDER.</b> A collected site order's handover is a Correction of what moved, and the Order book struck its old figure beside the quantity, so E242, s210, read 0 unit struck beside its 2 units, as if it had been ordered at none. A correction of cash was drawn the same way beside the sum. On his word of 28 Sep 2026 only the agreed figures are struck: a quantity or a total that was replaced. What moved and what was paid are drawn by the figure's own state, grey, white or part.</p>",
+   "<p><b>NO PRICE OR FIGURE MOVES.</b> A reading on the Order book. <b>THE SUITE.</b> A new section draws a handover, a cash correction and a corrected size on the Ledger: the first two strike nothing, the third still strikes its old quantity and sum; each of four mutations turns one red.</p>"
+  ]
+ },
+ {
+  "v": "v910",
+  "d": "28 Sep 2026",
+  "t": "ONE PAYMENT, BOOKED TWICE, NOW BOOKED ONCE",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s210, CE5-SA's order of 27 Sep for 2 units salt at RM210, had its cash set from RM420 to RM210. The same RM210 was booked twice, once as a claim against the account at v902 and once as cash at the counter at v903. Only one payment went through, on his word of 28 Sep 2026. The row now reads paid in full, with nothing outstanding.</p>",
+   "<p><b>THE TRAIL NO LONGER ADDS UP, BY DESIGN.</b> The row's 4-step trail still shows two fulfilments of RM210 each. The correction sets the figure directly and does not rewrite them. As the drafter flagged, it is recorded beside the trail saying so. The inventory did not move: stock stays at 5.5 units, costed at RM56 a unit, and the counts of 27 Sep stand.</p>"
+  ]
+ },
+ {
+  "v": "v909",
+  "d": "28 Sep 2026",
+  "t": "TWO COLLECTIONS AND A COUNTER PAYMENT FOR CE5-SA",
+  "n": [
+   "<p><b>THREE AMENDMENTS FOR CE5-SA, ALL PREAPPROVED BY PHONE.</b> Two corrections record collection on 28 Sep 2026: s212, 1 unit rice for RM8 on order 20260927221155-ndxqjg, and s211, 1 unit salt for RM110 on order 20260927220617-thqf5q. A fulfilment then pays s212 in full, RM8 cash at the counter. s212 closes. s211 stands collected with RM110 unpaid, its 1 unit on credit against CE5-SA's cap of 1.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter's fulfilment reasoning left 1 unit to hand over on s212 because it read the row before the correction folded ahead of it; taken together the two close the order. The advance flag on s211 sits exactly at CE5-SA's cap. The shelf rolls 1 unit of salt and 1 unit of rice out, neither a landing, so the cost basis stays at RM56 a unit. Stock stands at 6.5 against a reorder point of 28.77.</p>"
+  ]
+ },
+ {
+  "v": "v908",
+  "d": "28 Sep 2026",
+  "t": "A FIRST RICE ORDER PRICED AT THE ASK",
+  "n": [
+   "<p><b>ONE ROW FOLDED: A PENDING RICE SALE TO CE5-SA.</b> 1 unit of rice for RM8, ordered on the statements site under order 20260927221155-ndxqjg, to collect, dated 28 Sep 2026 and preapproved by phone. Nothing is paid and nothing is handed over, so the row books no revenue and draws no stock until something moves. It is costed at the desk's own rice cost of RM3.2 a unit.</p>",
+   "<p><b>UNUSUAL: NO RICE HISTORY FOR THIS PARTY.</b> The drafter flagged that CE5-SA has no committed rice order, and the book agrees: its median of RM110 and range of RM105 to RM110 come from its other orders. The rate is measured against the desk's own ladder instead, where RM8 sits at the ask. The inventory did not move in this fold.</p>"
+  ]
+ },
+ {
+  "v": "v907",
+  "d": "28 Sep 2026",
+  "t": "ONE PENDING UNIT FOR CE5-SA, THE SHELF UNTOUCHED",
+  "n": [
+   "<p><b>ONE PENDING SALE FOLDED.</b> A single row joins sales: 1 unit of salt to CE5-SA for RM110, order 20260927220617-thqf5q, to collect, preapproved by phone. Nothing is paid and nothing is handed over, so the row books no revenue and draws no stock until something moves. The rate matches CE5-SA's median of RM110 and sits between the desk's floor of RM68.67 and its ask of RM140 for 1 unit.</p>",
+   "<p><b>NO FLAG RAISED, AND THE SHELF STANDS.</b> The drafter raised no flag. CE5-SA carried RM0 outstanding and 0 units on credit before this row, against a credit cap of 1, and no credit is extended while nothing moves. Stock stays at 6.5 unit on the count of 27 Sep 2026, with the cost basis unchanged at RM56 a unit, the inventory's own figure and the one this row is costed at.</p>"
+  ]
+ },
+ {
+  "v": "v906",
+  "d": "28 Sep 2026",
+  "t": "S209 DELIVERED: 5 UNITS OUT TO CE4-AD",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s209 for CE4-AD now reads 5 unit delivered on 28 Sep 2026, with handover set to delivered, against order 20260927071536-4auaew, preapproved by phone. The row was already paid: RM500 on 27 Sep against RM470, with delivery RM30 beside it. This closes the delivery the row's own note left owing. CE4-AD's history holds at a median of RM87 a unit, a range of RM80 to RM94, and RM0 outstanding before this row.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter flagged RM30 overpaid. The RM30 delivery the row carries answers that flag. The row's 2-step trail no longer adds up to the set figure, so the correction is recorded beside the trail rather than rewriting it. The shelf rolls out 5 unit of salt to CE4-AD. Nothing landed, so the cost basis holds at RM56 a unit.</p>"
+  ]
+ },
+ {
+  "v": "v905",
+  "d": "28 Sep 2026",
+  "t": "NO TAP BOOKS MONEY A ROW CANNOT TAKE",
+  "n": [
+   "<p><b>S210 WAS PAID TWICE.</b> RM210 sent against CE5-SA's account was received and folded at v902, and RM210 cash taken at the counter on the same order folded at v903, so the row reads RM420 paid on RM210 owed. Cash received measured the site's order alone, which a claim against the account never reaches, while Received already asked the row; and the fold added the second payment unchecked. Both were measured on the row with nothing paid, so both cards read that the order settled in full.</p>",
+   "<p><b>EVERY TAP THAT BOOKS MONEY ASKS THE ROW.</b> Cash received, Received and a payment offered again are refused past what the row can still take: the mirror's figure less every payment on its way to it by any road. A row marked committed counts as on its way until the mirror is seeded again, and the mirror's figure is read before the site has heard. A claim against the account passes over a row a payment typed on the desk is on its way to. A claim of theirs refused so is told its answer, Received, on the book already, or Not found, and what it waits on.</p>",
+   "<p><b>THE FOLD IS THE LAST CHECK.</b> The engine's payFault refuses a payment measured before other money reached its row when it would now take the row past what it owes, in the plan, where a batch is measured row by row, and in the writer. A payment he approves on the row as it stands, flagged past what it owes, folds as before. Run over 135 past batches it refuses one item, v903's second RM210.</p>",
+   "<p><b>S210 STANDS AS IT IS UNTIL HE SAYS WHICH RM210 STANDS.</b> One payment, a Correction to RM210; both, RM210 is theirs to be refunded. <b>NO PRICE MOVES.</b> <b>THE SUITE.</b> A new section drives both Workers over the real schema, the fold and the rule: 16 checks, 11 of the first 14 red on v904's code, each of 22 mutations turning one red.</p>"
+  ]
+ },
+ {
   "v": "v904",
   "d": "27 Sep 2026",
   "t": "ONE WHOLE TIER OF SALT BOUGHT AT THE QUOTED RATE",
