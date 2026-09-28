@@ -1,5 +1,14 @@
 [
  {
+  "v": "v926",
+  "d": "28 Sep 2026",
+  "t": "S212 RICE ORDER CORRECTED TO UNPAID",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> Order s212, CE5-SA-R's 1 unit of rice at RM8 dated 28 Sep, has its cash set from RM8 to RM0 and its payment date cleared. The RM8 was tapped by mistake: the unit was collected and not paid, on his word of 28 Sep 2026. The row now stands as an advance of RM8, entered from the laptop by the desk. The site's order card still reads it paid until the site's own record is corrected.</p>",
+   "<p><b>WHAT IS UNUSUAL, AND THE INVENTORY.</b> The row's trail of 4 steps no longer adds up to its cash figure, and the correction is recorded beside it saying so. The drafter asked for a check against the credit cap, but the dossier gives no cap figure for CE5-SA-R, so that check stays open. No cash and no stock move: stock stands at 3 units at RM56 a unit, and the cost basis is unchanged.</p>"
+  ]
+ },
+ {
   "v": "v925",
   "d": "28 Sep 2026",
   "t": "A LOT AMENDED ON THE WORKBENCH QUEUES AGAIN",
