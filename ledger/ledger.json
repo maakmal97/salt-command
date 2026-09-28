@@ -1,6 +1,6 @@
 {
- "v": "v915",
- "stamped": "28 Sep 2026, 12:58 KL",
+ "v": "v917",
+ "stamped": "28 Sep 2026, 13:40 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 5.5,
+  "STATED_STOCK": 3,
   "COUNT_ON": {
    "salt": "2026-09-27",
    "oil": "2026-09-27",
@@ -5721,6 +5721,20 @@
      }
     ],
     "paidOn": "2026-09-28"
+   },
+   {
+    "customer": "CE4-CHE",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 140,
+    "cash": 230,
+    "handover": "collected",
+    "date": "2026-09-28",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-28",
+    "paidOn": "2026-09-28",
+    "note": "<b>SALT SELL DATED 28 SEP: 2.5 UNIT FOR RM230, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM92 a unit, no delivery or freight, RM230 cash in and 2.5 unit handed over on 28 Sep, the same terms as s144 and s166. The total clears the desk's floor of RM171.68 for 2.5 unit but sits below its ask of RM330. CE4-CHE: 14 orders, median RM92 a unit, range RM10 to RM107.5, RM0 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM140, RM56 a unit, the inventory's own, leaving RM90 at 39.1% by the drafter's figures. The drafter raised no flags. Outstanding: nothing.",
+    "rid": "s213"
    }
   ],
   "contacts": [
@@ -6461,9 +6475,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T04:57:35.953Z",
+  "QUEUE_COMMITTED": "2026-09-28T05:38:47.880Z",
   "PRICING": {
-   "takenAt": "2026-09-28T04:59:00.174Z",
+   "takenAt": "2026-09-28T05:40:09.504Z",
    "sizes": [
     0.5,
     1,
@@ -6725,12 +6739,12 @@
     "CE4-CHE": {
      "salt": {
       "name": "consistent mid",
-      "orders": 10,
+      "orders": 11,
       "tenureDays": 70,
-      "sinceLastDays": 9,
-      "perMonth": 4.35,
+      "sinceLastDays": 0,
+      "perMonth": 4.78,
       "smallShare": 0,
-      "bigShare": 0.2,
+      "bigShare": 0.18,
       "late": 0,
       "frequent": true,
       "small": false,
@@ -7661,15 +7675,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.3283582089552239
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08304018955618336,
        "avgDel": {
-        "n": 178,
-        "kg": 458.95,
-        "mean": 2.5784
+        "n": 179,
+        "kg": 461.45,
+        "mean": 2.5779
        }
       },
       "policy": {
@@ -13085,10 +13099,10 @@
      "cards": {}
     }
    },
-   "v": "v915"
+   "v": "v917"
   },
   "OPEN": {
-   "at": "2026-09-28T04:59:00.362Z",
+   "at": "2026-09-28T05:40:09.816Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
@@ -13225,14 +13239,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 5.5,
-     "free": -4,
+     "onHand": 3,
+     "free": -6.5,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.99,
+     "rate": 6.11,
      "owedToYou": 500,
      "promised": 9.5,
-     "short": 4
+     "short": 6.5
     },
     "oil": {
      "name": "Oil",
@@ -13286,7 +13300,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v915"
+   "v": "v917"
   }
  }
 }
