@@ -1,5 +1,14 @@
 [
  {
+  "v": "v927",
+  "d": "28 Sep 2026",
+  "t": "ONE PENDING SALT SELL TO CR3-DAM",
+  "n": [
+   "<p><b>ONE ROW FOLDED: A PENDING SALT SELL.</b> CR3-DAM ordered 1 unit of salt for RM110 on the statements site on 28 Sep, order 20260928095231-jvkptq, acknowledged and to collect. Nothing was paid and nothing handed over, so the row is booked as pending. It draws no stock and books no revenue until something moves. The fold was preapproved by phone, and the row is costed at the inventory's own RM56 a unit.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE INVENTORY.</b> The drafter flagged the rate at 37.5% above CR3-DAM's usual RM80 a unit. It also sits above the party's range of RM80 to RM92.5, but within the desk's floor of RM68.67 and ask of RM140 for 1 unit. CR3-DAM carries RM155 outstanding and 1.77 unit on credit against a cap of 2. Nothing moved, so the inventory stays at 3 unit at RM56 a unit.</p>"
+  ]
+ },
+ {
   "v": "v926",
   "d": "28 Sep 2026",
   "t": "S212 RICE ORDER CORRECTED TO UNPAID",

@@ -1,6 +1,6 @@
 {
- "v": "v926",
- "stamped": "28 Sep 2026, 18:17 KL",
+ "v": "v927",
+ "stamped": "28 Sep 2026, 18:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5757,6 +5757,16 @@
     "paidOn": "2026-09-28",
     "note": "<b>SALT SELL DATED 28 SEP: 2.5 UNIT FOR RM230, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM92 a unit, no delivery or freight, RM230 cash in and 2.5 unit handed over on 28 Sep, the same terms as s144 and s166. The total clears the desk's floor of RM171.68 for 2.5 unit but sits below its ask of RM330. CE4-CHE: 14 orders, median RM92 a unit, range RM10 to RM107.5, RM0 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM140, RM56 a unit, the inventory's own, leaving RM90 at 39.1% by the drafter's figures. The drafter raised no flags. Outstanding: nothing.",
     "rid": "s213"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-28",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.",
+    "rid": "s214"
    }
   ],
   "contacts": [
@@ -6497,9 +6507,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T09:56:10.524Z",
+  "QUEUE_COMMITTED": "2026-09-28T10:19:26.622Z",
   "PRICING": {
-   "takenAt": "2026-09-28T10:17:07.839Z",
+   "takenAt": "2026-09-28T10:20:08.370Z",
    "sizes": [
     0.5,
     1,
@@ -6549,10 +6559,10 @@
     "CN3-WM": {
      "salt": "Platinum"
     },
-    "CZ4-MK": {
+    "CR3-DAM": {
      "salt": "Titanium"
     },
-    "CR3-DAM": {
+    "CZ4-MK": {
      "salt": "Titanium"
     },
     "CK4-SEN": {
@@ -6844,6 +6854,24 @@
       "lateTwice": false
      }
     },
+    "CR3-DAM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 17,
+      "tenureDays": 91,
+      "sinceLastDays": 3,
+      "perMonth": 5.69,
+      "smallShare": 0.76,
+      "bigShare": 0.06,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CZ4-MK": {
      "salt": {
       "name": "rare and large",
@@ -6890,24 +6918,6 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CR3-DAM": {
-     "salt": {
-      "name": "small and often",
-      "orders": 17,
-      "tenureDays": 91,
-      "sinceLastDays": 3,
-      "perMonth": 5.69,
-      "smallShare": 0.76,
-      "bigShare": 0.06,
-      "late": 0,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": true,
       "rare": false,
       "lateTwice": false
      }
@@ -8289,7 +8299,7 @@
         1070
        ]
       ],
-      "CZ4-MK": [
+      "CR3-DAM": [
        [
         0.5,
         60
@@ -8339,7 +8349,7 @@
         1060
        ]
       ],
-      "CR3-DAM": [
+      "CZ4-MK": [
        [
         0.5,
         60
@@ -10381,7 +10391,7 @@
         450
        ]
       ],
-      "CZ4-MK": [
+      "CR3-DAM": [
        [
         10,
         130
@@ -10403,7 +10413,7 @@
         450
        ]
       ],
-      "CR3-DAM": [
+      "CZ4-MK": [
        [
         10,
         130
@@ -11487,7 +11497,7 @@
         1500
        ]
       ],
-      "CZ4-MK": [
+      "CR3-DAM": [
        [
         1,
         60
@@ -11509,7 +11519,7 @@
         1500
        ]
       ],
-      "CR3-DAM": [
+      "CZ4-MK": [
        [
         1,
         60
@@ -12496,7 +12506,7 @@
         64
        ]
       ],
-      "CZ4-MK": [
+      "CR3-DAM": [
        [
         1,
         8
@@ -12510,7 +12520,7 @@
         64
        ]
       ],
-      "CR3-DAM": [
+      "CZ4-MK": [
        [
         1,
         8
@@ -13121,11 +13131,11 @@
      "cards": {}
     }
    },
-   "v": "v926"
+   "v": "v927"
   },
   "OPEN": {
-   "at": "2026-09-28T10:17:07.998Z",
-   "count": 9,
+   "at": "2026-09-28T10:20:08.682Z",
+   "count": 10,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
      "d": "2026-09-28",
@@ -13163,6 +13173,20 @@
      "key": "CE5-SA-R|2026-09-28|8|rice",
      "age": 0,
      "exp": 8
+    },
+    "CR3-DAM|2026-09-28|110": {
+     "d": "2026-09-28",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s214",
+     "key": "CR3-DAM|2026-09-28|110"
     },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
@@ -13285,10 +13309,10 @@
      "free": -6.5,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 6.11,
+     "rate": 6.16,
      "owedToYou": 500,
-     "promised": 9.5,
-     "short": 6.5
+     "promised": 10.5,
+     "short": 7.5
     },
     "oil": {
      "name": "Oil",
@@ -13342,7 +13366,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v926"
+   "v": "v927"
   }
  }
 }
