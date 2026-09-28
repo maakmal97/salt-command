@@ -3,9 +3,10 @@
  * session builds them by hand. Shelf, live credit and written off are each live book's, read in an openMaster window
  * after setProdView, as the desk reads them; pending orders (the engine's txStat Pending: nothing paid, nothing moved)
  * and undated rows count every book. The queue line is the tools' own reads (drafts.mjs --list and --approved, drain.mjs
- * --status), each tried once more on a failure (TOOLING.md: one Cloudflare timeout is "run it again"), and an entry at
- * or below QUEUE_COMMITTED is said to be folded, since a phone's own key keeps what it sent. Staged and the tree are
- * git's. A read that fails says so in its line and never reads as nothing, and the tool then exits 1.
+ * --status), each tried once more on a failure (TOOLING.md: one Cloudflare timeout is "run it again"), and a queued entry
+ * is folded or waiting as drain.mjs --status groups it, by its draft where D1 answered and by QUEUE_COMMITTED where it
+ * did not, since a phone's own key keeps what it sent. Staged and the tree are git's. A read that fails says so in its
+ * line and never reads as nothing, and the tool then exits 1.
  *
  *   node tools/standing.mjs             the table, in markdown, for this checkout's master (SALT_MASTER reads another)
  *   node tools/standing.mjs --offline   no Cloudflare and no fetch: the queue line says it was not read
@@ -50,12 +51,25 @@ export function readApproved(r) {
   try { const j = JSON.parse(r.out.slice(r.out.indexOf("{"))); return { n: j.count, ids: j.approved.map((a) => a.id) }; }
   catch (e) { return { error: "no count in its answer" }; }
 }
+/* THE GROUPS ARE DRAIN'S OWN (28 Sep 2026). This judged each entry by the watermark alone, which called folded an entry at
+   or under it that D1 does not know (the drafter drafts it) or that the drafter refused; drain.mjs --status now sets each
+   entry against its draft where D1 answers, and says when only the watermark decided. An entry under no group it prints
+   is an error, never read as nothing. */
 const ENTRY = /^\s+(\S+)\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)\s+(.*)$/;
-export function readQueue(r, watermark) {
+const GROUP = /^(Folded or decided|At or under the watermark, D1 not read|Still to reach the ledger): \d+\./;
+export function readQueue(r) {
   if (r.status !== 0) return { error: why(r) };
-  const entries = String(r.out).split("\n").map((l) => l.match(ENTRY)).filter(Boolean).map((m) => ({ where: m[1], at: m[2], what: m[3].trim() }));
-  const done = (e) => !!watermark && e.at <= watermark;
-  return { waiting: entries.filter((e) => !done(e)), folded: entries.filter(done) };
+  const out = { waiting: [], folded: [], d1: true };
+  let group = null, stray = 0;
+  for (const l of String(r.out).split("\n")) {
+    const g = l.match(GROUP);
+    if (g) { group = g[1]; if (group !== "Folded or decided" && group !== "Still to reach the ledger") out.d1 = false; continue; }
+    const m = l.match(ENTRY);
+    if (!m) continue;
+    if (!group) { stray++; continue; }
+    (group === "Still to reach the ledger" ? out.waiting : out.folded).push({ where: m[1], at: m[2], what: m[3].trim().replace(/\s{2,}/, ": ").replace(/\s+/g, " ") });
+  }
+  return stray ? { error: stray + " queued entr" + (stray === 1 ? "y" : "ies") + " under no group drain.mjs --status prints" } : out;
 }
 /* one run of a tool, its output and stderr together; the three reads run side by side with the window */
 const runOnce = (file, args) => new Promise((done) => {
@@ -104,7 +118,8 @@ export function table(s) {
     "drafts " + said(q.list, (x) => (x.n ? x.n + " waiting" : "none waiting")),
     "approved " + said(q.approved, (x) => (x.n ? plural(x.n, "row not folded", "rows not folded") : "none")),
     "queue " + said(q.queue, (x) => (x.waiting.length ? plural(x.waiting.length, "entry", "entries") + ": " + x.waiting.map((e) => e.what + " (" + e.at + ")").join("; ") : "empty")
-      + (x.folded.length ? ", and " + plural(x.folded.length, "entry", "entries") + " left in a phone's key, already folded: " + x.folded.map((e) => e.what).join("; ") : "")),
+      + (x.folded.length ? ", and " + plural(x.folded.length, "entry", "entries") + " left in a phone's key, "
+        + (x.d1 === false ? "taken as folded with D1 not read: " : "already folded or decided: ") + x.folded.map((e) => e.what).join("; ") : "")),
   ].join("; ");
   const staged = t.staged.length ? "staged " + t.staged.join(", ") : "nothing staged";
   const tree = (t.branch || "?") + " at " + (t.head || "?") + ", "
@@ -126,7 +141,7 @@ if (isMain) {
   const { w } = await openMaster();
   const book = bookState(w);
   w.close();
-  const queue = reads && await reads.then(([l, a, d]) => ({ list: readList(l), approved: readApproved(a), queue: readQueue(d, book.watermark) }));
+  const queue = reads && await reads.then(([l, a, d]) => ({ list: readList(l), approved: readApproved(a), queue: readQueue(d) }));
   const state = { book, queue, tree: treeState(git, fetched) };
   console.log(argv.includes("--json") ? JSON.stringify(state, null, 1) : table(state));
   process.exit(queue && [queue.list, queue.approved, queue.queue].some((x) => x.error) ? 1 : 0);
