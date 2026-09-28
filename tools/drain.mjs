@@ -28,7 +28,10 @@
  *   node tools/drain.mjs --keep        pull KV -> file as above and clear NOTHING: the mode
  *                                      update.mjs runs (09 Sep 2026), so a laptop update never
  *                                      races the cloud drafter for a phone entry.
- *   node tools/drain.mjs --status      read-only: print the KV union and the file, no writes.
+ *   node tools/drain.mjs --status      read-only: print the KV union and the file, no writes. Each entry is set
+ *                                      against QUEUE_COMMITTED in ledger/book.json and, where D1 answers, its
+ *                                      draft: what is folded or decided is listed apart from what is still to
+ *                                      reach the ledger, and --forget is offered for the second alone.
  *   node tools/drain.mjs --forget <at> withdraw ONE entry, from the file and from KV, by
  *                                      its own `at`. For testing the phone leg without
  *                                      leaving a fake sale for the daily run to commit.
@@ -62,6 +65,7 @@ const BLOB = "q:orders";   /* the orders device's old one-key queue; its entries
 
 const DATA = DATA_DIR;
 const OUT = join(DATA, FILE);
+const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
 
 const nowISO = () => new Date().toISOString();
 
@@ -111,6 +115,32 @@ import { mkdtempSync as _mkdtemp, rmSync as _rm, writeFileSync as _write } from 
 import { tmpdir as _tmpdir } from "node:os";
 import { join as _join } from "node:path";
 
+/* THE DRAFTS BEHIND THE LISTED ENTRIES, read by id as the drafter reads them (draftedOf, src/drafter.js), never the
+   whole table, through wrangler's own login as drafts.mjs reads D1, forty ids a read, with the drafter's refusals,
+   which live in `refused` and never in `draft`. Only an `at` of the shape every device mints is asked, since it is
+   written into the SQL and passes a shell. Each id asked maps to its draft, else its refusal (status "refused"), else
+   null; a failure throws, in wrangler's words. */
+const ISO_AT = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z$/;
+function d1Drafts(ats) {
+  const ids = ats.filter((a) => ISO_AT.test(a || "")), found = new Map(ids.map((id) => [id, null]));
+  for (let i = 0; i < ids.length; i += 40) {
+    const inList = "('" + ids.slice(i, i + 40).join("','") + "')";
+    const sql = "SELECT id,status,committed_at,NULL AS why FROM draft WHERE id IN " + inList
+      + " UNION ALL SELECT id,'refused',NULL,why FROM refused WHERE id IN " + inList;
+    const out = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", "--command", JSON.stringify(sql)], {
+      cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: true
+    }));
+    const j = jsonSlice(out, "[", "]");
+    if (!Array.isArray(j) || !j[0] || !Array.isArray(j[0].results)) throw new Error("D1's answer could not be read: " + out.trim().slice(0, 80));
+    for (const r of j[0].results) if (found.has(r.id) && (!found.get(r.id) || r.status !== "refused")) found.set(r.id, r);
+  }
+  return found;
+}
+/* the watermark the fold moves (tools/fold.mjs), as this checkout's book holds it, or null */
+function bookMark() {
+  try { return JSON.parse(readFileSync(BOOK, "utf8")).QUEUE_COMMITTED || null; } catch (e) { return null; }
+}
+
 /* ---- file helpers --------------------------------------------------------------- */
 function readFile() {
   if (!existsSync(OUT)) return { updated: null, desk: "cloud", queue: [] };
@@ -152,6 +182,48 @@ export function forgetOne(queue, at) {
   return (queue || []).filter(e => !(e && e.at === at));
 }
 
+/* WHERE A QUEUED ENTRY STANDS (28 Sep 2026). A device's key is that device's own: the drafter never prunes one
+   (pruneOrders, src/drafter.js), and the device drops a folded entry only when it next loads and posts its queue, so a
+   key can hold entries folded days before. --status listed every one as outstanding under the --forget advice, and on
+   28 Sep two sessions reported as queued a correction approved and committed on 26 Sep, under a watermark of 27 Sep.
+   An entry is closed, folded or decided, by its draft where D1 answered for it, and by QUEUE_COMMITTED alone where it
+   did not, which --status then says. One at or under the watermark that D1 does not know is still to reach the ledger:
+   the drafter drafts it, where it is in a device's key; in the file alone only drafts.mjs --from-queue drafts it.
+   `drafts` maps each id D1 was asked about to its row or null, or is null when D1 was not read. */
+export function standing(e, mark, drafts, inKv = true) {
+  const at = (e && e.at) || "";
+  if (drafts && drafts.has(at)) {
+    const d = drafts.get(at);
+    if (!d) return { closed: false, why: !inKv ? "not drafted, and in the file alone, which only drafts.mjs --from-queue drafts"
+      : mark && at <= mark ? "not drafted, though at or under the watermark" : "not drafted" };
+    if (d.status === "refused") return { closed: false, why: "refused: " + String(d.why || "").slice(0, 80) };
+    if (d.committed_at) return { closed: true, why: "committed " + d.committed_at };
+    if (d.status === "approved") return { closed: true, why: "approved, not yet marked committed; withdrawn only in D1 (docs/CLOUD_FOLD.md)" };
+    if (d.status === "rejected") return { closed: true, why: "rejected" };
+    return { closed: false, why: "drafted, waiting under Approve" };
+  }
+  return mark && at && at <= mark ? { closed: true, why: "at or under the watermark" } : { closed: false, why: "" };
+}
+
+/* what --status prints for the union: the watermark and the drafts it read, then what is folded or decided (or, with
+   D1 not read, what the watermark alone passes), then what is still to reach the ledger, and the --forget advice under
+   that group alone. `kv` is the set of ats KV holds. */
+export function statusLines(all, { kv = new Set(), mark = null, drafts = null, d1 = "" } = {}) {
+  const known = drafts ? [...drafts.values()].filter(Boolean).length : 0;
+  const out = [`Watermark: ${mark ? "QUEUE_COMMITTED " + mark : "none"}, from this checkout's ledger/book.json. `
+    + (drafts ? `D1: ${drafts.size} asked, ${known} drafted or refused.` : `D1 not read${d1 ? " (" + d1 + ")" : ""}, so the watermark alone decides.`)];
+  const rows = all.map((e) => ({ e, s: standing(e, mark, drafts, kv.has(e && e.at)) }));
+  const line = ({ e, s }) => `  ${kv.has(e && e.at) ? "KV " : "file"}  ${e && e.at}  ${s.why ? s.why + "  " : ""}${String((e && e.raw) || "(no description)").slice(0, 96)}`;
+  const closed = rows.filter((r) => r.s.closed), open = rows.filter((r) => !r.s.closed);
+  if (closed.length) out.push("", drafts
+    ? `Folded or decided: ${closed.length}. Listed only because a device's key keeps them until it posts again, the file until --committed.`
+    : `At or under the watermark, D1 not read: ${closed.length}. Folded on the watermark's word alone, until D1 answers.`, ...closed.map(line));
+  if (open.length) out.push("", `Still to reach the ledger: ${open.length}.`, ...open.map(line), "",
+    "  To take one back out before it reaches the ledger:", "    node tools/drain.mjs --forget <at>",
+    "  A drafted one is rejected under Approve instead: --forget leaves its draft there to be approved.");
+  return out;
+}
+
 /* ---- modes ---------------------------------------------------------------------- */
 function runCommitted() {
   const iso = process.argv[3];
@@ -166,7 +238,7 @@ function runCommitted() {
 }
 
 export function runStatus({ io = {} } = {}) {
-  const IO = Object.assign({ list: kvList, get: kvGet, read: readFile }, io);
+  const IO = Object.assign({ list: kvList, get: kvGet, read: readFile, mark: bookMark, drafts: d1Drafts }, io);
   let keys = [];
   try { keys = IO.list(); } catch (e) { console.error("KV unreachable: " + e.message); process.exit(1); }
   const kv = [], bad = [];
@@ -185,16 +257,13 @@ export function runStatus({ io = {} } = {}) {
   /* LIST THEM, because a count cannot be acted on. --forget needs an entry's own `at`,
      and without this the only way to read one was to drain first, which is the very thing
      you do not want to do while deciding whether an entry should reach the ledger.
-     Codes only, never names: this output gets pasted around. */
+     Codes only, never names: this output gets pasted around. A D1 read that fails is said, and the watermark
+     alone decides: it is never read as no drafts. */
   if (all.length) {
+    let drafts = null, d1 = "";
+    try { drafts = IO.drafts(all.map((e) => e && e.at)); } catch (e) { d1 = wranglerSaid(e); }
     console.log("");
-    for (const e of all) {
-      const where = kv.some(k => k && k.at === e.at) ? "KV " : "file";
-      console.log(`  ${where}  ${e.at}  ${String(e.raw || "(no description)").slice(0, 96)}`);
-    }
-    console.log("");
-    console.log("  To take one back out before it reaches the ledger:");
-    console.log("    node tools/drain.mjs --forget <at>");
+    for (const l of statusLines(all, { kv: new Set(kv.map((e) => e && e.at)), mark: IO.mark(), drafts, d1 })) console.log(l);
   }
 }
 

@@ -10405,6 +10405,60 @@ await (async () => {
     "and a mutation no check notices is named and fails the run: " + JSON.stringify(r2.out.trim().slice(0, 400)));
 })();
 
+section("28 Sep 2026: drain --status lists what is folded or decided apart, and offers --forget only for what is still to reach the ledger");
+await (async () => {
+  /* 28 Sep 2026: --status listed every entry in the device keys under the --forget advice, and a device's key keeps an
+     entry until that device posts again, so two sessions reported as queued a correction approved and committed on 26 Sep,
+     under a watermark of 27 Sep. Driven through runStatus with the KV, the file, the book's watermark and D1 stubbed: D1
+     answering (a draft in each state, a refusal, one it does not know at the watermark, one in the file alone, one never
+     asked), D1 failing, and a key holding only what is folded. The entries carry invented codes. */
+  const { runStatus } = await import("../tools/drain.mjs");
+  const MARK = "2026-09-27T13:24:04.148Z";
+  const E = { folded: "2026-09-26T17:16:52.294Z", rejected: "2026-09-27T09:00:00.000Z", atMark: MARK, approved: "2026-09-28T01:00:00.000Z",
+    pending: "2026-09-28T02:00:00.000Z", fresh: "2026-09-28T03:00:00.000Z", refusal: "2026-09-28T04:00:00.000Z", fileOnly: "2026-09-28T05:00:00.000Z", odd: "zz-no-time" };
+  const nameOf = Object.fromEntries(Object.entries(E).map(([k, v]) => [v, k]));
+  const D1 = { [E.folded]: { status: "approved", committed_at: "2026-09-26T17:18:21.339Z" }, [E.rejected]: { status: "rejected", committed_at: null },
+    [E.approved]: { status: "approved", committed_at: null }, [E.pending]: { status: "pending", committed_at: null },
+    [E.refusal]: { status: "refused", committed_at: null, why: "a movement with no date" } };
+  const answers = (ats) => new Map(ats.filter((a) => a !== E.odd).map((a) => [a, D1[a] ? { id: a, ...D1[a] } : null]));
+  const fails = () => { throw Object.assign(new Error("Command failed: npx wrangler d1 execute salt_ledger"), { stdout: "", stderr: "X [ERROR] fetch failed\n" }); };
+  const entry = (n) => ({ at: E[n], raw: "Correction on CX2-AC, entry " + n });
+  const status = (names, files, drafts) => {
+    const store = { "q:phone": JSON.stringify({ device: "phone", queue: names.map(entry) }) };
+    const io = { list: () => Object.keys(store), get: (k) => store[k] ?? null, read: () => ({ updated: null, desk: "cloud", queue: files.map(entry) }), mark: () => MARK, drafts };
+    const lines = [], realLog = console.log;
+    console.log = (...x) => lines.push(x.join(" "));
+    try { runStatus({ io }); } finally { console.log = realLog; }
+    const g = { head: lines.find((l) => l.startsWith("Watermark: ")) || "", closedAs: "", closed: [], open: [], why: {}, where: {}, counts: {}, openAt: -1, forget: [] };
+    let cur = null;
+    lines.forEach((l, i) => {
+      const h = /^(Folded or decided|At or under the watermark, D1 not read|Still to reach the ledger): (\d+)\./.exec(l);
+      if (h) { cur = h[1] === "Still to reach the ledger" ? "open" : "closed"; g.counts[cur] = +h[2]; if (cur === "open") g.openAt = i; else g.closedAs = h[1]; return; }
+      if (/drain\.mjs --forget <at>/.test(l)) g.forget.push(i);
+      const m = /^  (KV |file)  (\S+)  (?:(.+?)  )?Correction on CX2-AC, entry (\w+)$/.exec(l);
+      if (m && cur && nameOf[m[2]] === m[4]) { g[cur].push(m[4]); g.why[m[4]] = m[3] || ""; g.where[m[4]] = m[1]; }
+    });
+    return { g, lines };
+  };
+  const inKv = Object.keys(E).filter((n) => n !== "fileOnly");
+  const a = status(inKv, ["fileOnly"], answers), b = status(inKv, ["fileOnly"], fails), c = status(["folded"], [], answers);
+  const grouped = (x, closed, open) => JSON.stringify([x.g.closed, x.g.open, x.g.counts]) === JSON.stringify([closed, open, { closed: closed.length, ...(open.length ? { open: open.length } : {}) }]);
+  const kvButFile = (x) => Object.entries(x.g.where).every(([n, w]) => w === (n === "fileOnly" ? "file" : "KV ")) && Object.keys(x.g.where).length === Object.keys(E).length;
+  ok(grouped(a, ["folded", "rejected", "approved"], ["atMark", "pending", "fresh", "refusal", "fileOnly", "odd"]) && a.g.closedAs === "Folded or decided" && kvButFile(a)
+      && JSON.stringify(a.g.why) === JSON.stringify({ folded: "committed 2026-09-26T17:18:21.339Z", rejected: "rejected",
+        approved: "approved, not yet marked committed; withdrawn only in D1 (docs/CLOUD_FOLD.md)", atMark: "not drafted, though at or under the watermark",
+        pending: "drafted, waiting under Approve", fresh: "not drafted", refusal: "refused: a movement with no date",
+        fileOnly: "not drafted, and in the file alone, which only drafts.mjs --from-queue drafts", odd: "" })
+      && a.g.head.includes("QUEUE_COMMITTED " + MARK) && a.g.head.endsWith("D1: 8 asked, 5 drafted or refused.") && a.g.forget.length === 1 && a.g.forget[0] > a.g.openAt && a.g.openAt > 0
+      && grouped(b, ["folded", "rejected", "atMark"], ["approved", "pending", "fresh", "refusal", "fileOnly", "odd"]) && b.g.closedAs === "At or under the watermark, D1 not read"
+      && b.g.head.endsWith("D1 not read (fetch failed), so the watermark alone decides.") && kvButFile(b)
+      && ["folded", "rejected", "atMark"].every((n) => b.g.why[n] === "at or under the watermark") && b.g.forget.length === 1 && b.g.forget[0] > b.g.openAt
+      && grouped(c, ["folded"], []) && c.g.closedAs === "Folded or decided" && c.g.forget.length === 0 && c.g.openAt < 0,
+    "--status lists an entry committed, approved or rejected in D1 as folded or decided and the rest as still to reach the ledger, naming a refusal and "
+    + "one in the file alone, and counting one at the watermark that D1 does not know among the rest; with D1 failing, says so and heads what the "
+    + "watermark alone passes as that; and offers --forget under what is still to reach the ledger, never when nothing is: " + JSON.stringify({ a: a.g, b: b.g, c: c.lines }));
+})();
+
 section("v524: roster-only parties on the phone");
 await (async () => {
   const { openMaster: omB } = await import("../tools/payload.mjs");
@@ -24330,7 +24384,8 @@ await (async () => {
     "deviceQueue reads a device key or says it cannot");
   const store = { "q:bad": corrupt, "q:good": JSON.stringify({ device: "good", queue: [{ at: "a1", raw: "one" }, { at: "a2", raw: "two" }] }) };
   const io = { list: () => Object.keys(store), get: (k) => store[k] ?? null, del: (k) => { delete store[k]; return true; },
-    put: (k, obj) => { puts.push([k, obj]); store[k] = JSON.stringify(obj); }, read: () => ({ updated: null, desk: "cloud", queue: [] }), write: () => {} };
+    put: (k, obj) => { puts.push([k, obj]); store[k] = JSON.stringify(obj); }, read: () => ({ updated: null, desk: "cloud", queue: [] }), write: () => {},
+    mark: () => null, drafts: () => new Map() };   /* 28 Sep 2026: --status reads the book and D1 too; no wrangler here */
   const puts = [], realLog = console.log, lines = [];
   console.log = (...x) => lines.push(x.join(" "));
   try { DR.runStatus({ io }); } finally { console.log = realLog; }
