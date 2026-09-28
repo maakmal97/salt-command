@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-28T12:45:57.342Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s214",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-28",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-09-28"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 1 unit for RM 110 dated 2026-09-28 (s214). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-09-28, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 17 orders; this one is RM 110, 37.5% above that.",
+    "This is an ADVANCE: 1 unit goes out with RM 110 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s214",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-28T12:45:57.342Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit collected to CR3-DAM, order 20260928095231-jvkptq, on 2026-09-28",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": null,
+     "orderKey": "CR3-DAM|2026-09-28|110",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-28",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-09-28",
+      "handover": "collected"
+     },
+     "note": "1 unit collected for order 20260928095231-jvkptq."
+    },
+    "orderId": "20260928095231-jvkptq"
+   },
+   "decidedAt": "2026-09-28T12:46:00.263Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
