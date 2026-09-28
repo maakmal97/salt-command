@@ -22498,13 +22498,16 @@ await (async () => {
     return out; };
   const box8 = (d) => { const p = pts8(d), xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
     return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map((v) => +v.toFixed(2)); };
-  const boxes8 = Object.fromEntries([...BOOKS8, "spare"].map((k) => [k, box8(dOf8(P8.psymSvg(k, 28)))]));
+  const MARKS8 = Object.keys(P8.PSYM), boxes8 = Object.fromEntries([...MARKS8, "spare"].map((k) => [k, box8(dOf8(P8.psymSvg(k, 28)))]));
   const near8 = (a, b) => Math.abs(a - b) < 0.06;
-  ok(BOOKS8.every((k) => { const [x0, y0, x1, y1] = boxes8[k]; return near8(y0, 2.6) && near8(y1, 21.4) && near8((x0 + x1) / 2, 12); })
+  ok(MARKS8.length >= 4 && MARKS8.every((k) => { const [x0, y0, x1, y1] = boxes8[k]; return near8(y0, 2.6) && near8(y1, 21.4) && near8((x0 + x1) / 2, 12); })
     && near8(boxes8.rice[2] - boxes8.rice[0], boxes8.rice[3] - boxes8.rice[1]) && near8(boxes8.candy[2] - boxes8.candy[0], 18.8)
     && near8((boxes8.spare[0] + boxes8.spare[2]) / 2, 12) && near8((boxes8.spare[1] + boxes8.spare[3]) / 2, 12) && boxes8.spare[3] - boxes8.spare[1] > 17,
-    "every mark fills the same square about the centre, 2.6 to 21.4 from top to bottom, the capsule and the lozenge as wide as they are tall, and the ring centred and near as large: "
+    "every book's mark stands 2.6 to 21.4 about the centre, the capsule and the lozenge as wide as they are tall, and the ring centred and near as large: "
     + JSON.stringify(boxes8));
+  /* the app's own ring is not the book's: the redraw grew the spare book's Ring, and the door keeps the icon's proportion */
+  ok(/A7\.8 7\.8/.test(P8.glyphSvg("ring", 40)) && dOf8(P8.glyphSvg("ring", 40)) !== dOf8(P8.psymSvg("spare", 40)),
+    "and the app's own ring, on the door and the rail, keeps the home-screen icon's proportion");
 
   /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card and an order ---- */
   const u8 = "abcd-efgh", pass8 = "fixture-pass-f8", ck8 = await C8.contentKey("test-secret", u8), env8 = { STMT: new KV() };

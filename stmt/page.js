@@ -582,8 +582,11 @@ export function unitsOf(q, u) { return unitsIn(EN["unit.one"], EN["unit.many"], 
    The app's ring, the three things inside it, and the phone's own controls (the menu's dots, Share, Add to
    Home Screen, Paste, an install mark), drawn inline in the product marks' own hairline manner and never
    loaded, so a phone set to another language still matches the picture. */
+/* THE APP'S OWN RING is not the spare book's: the mark on the door, the link page, One step to finish and the rail keeps
+   the proportion of the home-screen icon (tools/stmt-icon.mjs), and his redraw of 28 Sep 2026 grew the book's Ring alone */
+const APP_RING = 'M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z';
 const GLYPH = {
-  ring: RING,
+  ring: APP_RING,
   home: "M4 10.6 L12 4 L20 10.6 V20 H14.6 V14.4 H9.4 V20 H4 Z",
   prices: "M3.8 12.6 V4.3 H12.1 L20.2 12.4 L12.4 20.2 Z M9.7 8.6 A1.5 1.5 0 1 1 6.7 8.6 A1.5 1.5 0 1 1 9.7 8.6 Z",
   orders: "M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5",
