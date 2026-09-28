@@ -45265,5 +45265,30 @@ await (async () => {
 })();
 
 
+section("28 Sep 2026: a book where somebody owes and nobody has a habit yet still draws Chase first");
+await (async () => {
+  /* s212: CE5-SA's one rice order read RM 8 owed once its counter cash was corrected off, and the Clients board, drawn only
+     once a customer on the book had two priced orders, hid Chase first while the split named them. A fixture book, so
+     nothing here rides on who owes what today: every row of one book taken out in the window, then one party's one order,
+     goods out and unpaid. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  function probe() {
+    const P = "candy", ago = (n) => new Date(TODAY.getTime() - n * 864e5).toISOString().slice(0, 10);
+    for (let i = BASE_SALES.length - 1; i >= 0; i--) if ((BASE_SALES[i].product || "salt") === P) BASE_SALES.splice(i, 1);
+    if (roster.indexOf("CZ9-OX") < 0) roster.push("CZ9-OX");
+    BASE_SALES.push({ rid: "z928a", customer: "CZ9-OX", product: P, qty: 1, total: 40, cost: 20, cash: 0, deliveredQty: 1, deliveredOn: ago(3), date: ago(3) });
+    queue = []; applyOverlay(); recompute(); setProdView(P); switchTab("concentration");
+    const sec = document.querySelector(".sec.on"), h = sec.querySelector(".aprh.apch");
+    const chips = h ? [].map.call(h.nextElementSibling.querySelectorAll(":scope > .apchip"), (c) => c.firstChild.textContent.trim()) : [];
+    const S = approachSplit();
+    return { prod: PROD, habit: S.approach.filter((r) => r.cad && r.cad.last).length, chase: S.chase.map((x) => x.id), chips };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
+  ok(v.prod === "candy" && v.habit === 0 && v.chase.indexOf("CZ9-OX") >= 0 && v.chips.some((x) => x.indexOf("CZ9-OX") === 0),
+    "a book where nobody has a habit yet and somebody owes draws Chase first with them in it: " + JSON.stringify(v));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="196b59adb26f1f68";
+var SALT_BUILD_ID="1f534abd27940244";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8624,7 +8624,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v927","d":"28 Sep 2026","t":"ONE PENDING SALT SELL TO CR3-DAM","n":["<p><b>ONE ROW FOLDED: A PENDING SALT SELL.</b> CR3-DAM ordered 1 unit of salt for RM110 on the statements site on 28 Sep, order 20260928095231-jvkptq, acknowledged and to collect. Nothing was paid and nothing handed over, so the row is booked as pending. It draws no stock and books no revenue until something moves. The fold was preapproved by phone, and the row is costed at the inventory's own RM56 a unit.</p>","<p><b>WHAT WAS UNUSUAL, AND THE INVENTORY.</b> The drafter flagged the rate at 37.5% above CR3-DAM's usual RM80 a unit. It also sits above the party's range of RM80 to RM92.5, but within the desk's floor of RM68.67 and ask of RM140 for 1 unit. CR3-DAM carries RM155 outstanding and 1.77 unit on credit against a cap of 2. Nothing moved, so the inventory stays at 3 unit at RM56 a unit.</p>"]}];
+const evolution=[{"v":"v928","d":"28 Sep 2026","t":"CHASE FIRST NO LONGER WAITS FOR A HABIT","n":["<p><b>A BOOK WHERE SOMEBODY OWES DRAWS ITS BOARD.</b> The Clients board drew only once a customer on the book in view had two priced orders, so on a book where nobody had a habit yet and somebody owed, Chase first was out of sight while the split named them. Rice showed it at v926: CE5-SA's one rice order read RM 8 owed once its counter cash was corrected off, and the suite's check that the board's Chase first follows Receivables failed on it. The board now draws when anyone owes, whether or not a habit exists yet.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8739,7 +8739,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 18:20 KL';
+const LAST_UPDATED='28 Sep 2026, 18:42 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18498,7 +18498,9 @@ function tabConcentration(){
   ${owes.length?`<div class="insight salt-insight" style="margin-top:4px;color:var(--mut)">${owes.slice(0,3).map(ID).join(', ')}${owes.length>3?` and ${owes.length-3} more`:''} owe${owes.length===1?'s':''} money; a chase comes before an offer.</div>`:''}
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
-  ${S.approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(S,bm)
+  <!-- 28 Sep 2026, s212: the board waited for a customer with two priced orders, so on a book where nobody has a habit yet
+       and somebody owes (rice, one order at RM 8) Chase first was out of sight while the split named them. It draws for either. -->
+  ${S.approach.filter(r=>r.cad&&r.cad.last).length||S.chase.length?approachBoard(S,bm)
     :'<div class="card"><table><tbody><tr><td class="l" style="color:var(--dim)">No customer has two priced orders yet, so there is no habit to read and nothing to place on a calendar.</td></tr></tbody></table></div>'}
 
   <div style="margin-top:16px">${crCard}</div>
