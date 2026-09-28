@@ -1438,6 +1438,96 @@ export async function rejectedOnOrder(env, entry, at) {
  * left the open list. The figures are the engine's own readings, so the desk and the row cannot
  * disagree about what has been paid.
  */
+/* ---- AN ORDER FOLLOWS ITS ROW (28 Sep 2026, his answer on CE5-SA's s211) ---------------------------------------
+ * A site order names its row by the key the acknowledgement wrote, and a row's key can change after it: a Correction
+ * moving it between the associate's own code and their resale bucket (s210 and s212 at v918), or restating its figure.
+ * The order was left naming a row the book no longer held: its later stages waited for good, the return leg lost it,
+ * and the Counter, pairing To pay now by forFriend against the part's bucket, read its figure twice. So each book,
+ * before the return leg, every order takes its row's key and its row's side (forFriend, true on the bucket).
+ * An order whose key names no row finds it by the rid its own approved amendments name, the one way the fold finds a
+ * row (tools/fold.mjs), and only where they name one row of its own product; one whose close names the row ahead of its
+ * fold (closedKey) waits for the close to land or be rejected. An order never amended looks on its own account, its code or
+ * their bucket, at the same day, figure, size and product, and takes only a row a Correction moved (a stream line in
+ * its mod), once its own pending row has landed, so it never takes a twin's. A key another order names, or that two
+ * orders want, is followed by neither. The side is marked first and alone, and the key only once the site's answer
+ * carries the side, so a Counter that does not know the side yet moves nothing. */
+/* what became of the row an entry made: landed on the mirror, rejected, or (null, or neither) still on its way */
+const FATE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE id=?1";
+const fate = async (env, id) => { try { return id ? await env.SALT_LEDGER.prepare(FATE).bind(id).first() : null; } catch (e) { return null; } };
+/* a close names the row as the close will leave it (closedKey) before its Correction folds, and so does a close rejected
+   and offered again (againOrder), whose first draft queued.close still names: so the ORDER'S NEWEST Close draft is read,
+   and one offered again that is not drafted yet is on its way too. A read that fails is read as on its way. */
+const NEWEST_CLOSE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Close\"%' ORDER BY id DESC LIMIT 1";
+async function closeOnItsWay(env, o) {
+  if (!o.queued || !o.queued.close) return false;
+  try {
+    const d = await env.SALT_LEDGER.prepare(NEWEST_CLOSE).bind('%"orderId":"' + o.id + '"%').first();
+    if (!d) return true;
+    if (d.status !== "rejected") return !d.landed;
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='move' AND status IN ('waiting','differs') AND entry LIKE '%\"status\":\"Close\"%'").bind(o.id).first());
+  } catch (e) { return true; }
+}
+const AMENDS = "SELECT amends, json_extract(entry,'$.orderId') AS oid FROM draft WHERE status='approved' AND amends IS NOT NULL AND entry LIKE ?1";
+async function rowOf(env, o, k, idx, amended) {
+  if (await closeOnItsWay(env, o)) return null;
+  const rids = amended.get(o.id), product = o.product || "salt";
+  if (rids) { const hit = [...rids].map((r) => idx.byRid.get(r)).filter((r) => r && (r.product || "salt") === product); return hit.length === 1 ? hit[0] : null; }
+  const day = k.split("|").slice(1), hits = [o.code, bucketFor(o.code)].map((p) => [p].concat(day).join("|")).filter((c) => c !== k && idx.rows.get(c) === 1);
+  const row = hits.length === 1 ? idx.byKey.get(hits[0]) : null;
+  if (!row || +row.qty !== +o.qty || (row.product || "salt") !== product || !/\bstream [^;,]* to /.test(row.mod || "")) return null;
+  const ack = await fate(env, o.queued && o.queued.ack);
+  return ack && ack.landed ? row : null;
+}
+const answerOf = async (m) => Object.assign({ why: m ? " (http " + m.status + ")" : "" }, m && m.ok ? await m.json().catch(() => ({})) : {});
+/* his yes still waiting for the row it amends (cash taken at the counter, 11.12) is pointed at the order's row, its key
+   and party, BEFORE the order takes the key: at the old key it would wait for good, as tg8bpq's did, and a key taken
+   first would leave nothing on a later pass to say which yes still names the old one. Its draft then differs from what
+   he was shown, the key and party being part of it, and waits under Approve for him to look again. */
+async function repoint(db, id, nk, party) {
+  const ps = (await db.prepare("SELECT id,entry FROM preapproval WHERE order_id=?1 AND stage<>'ack' AND status IN ('waiting','differs') AND entry IS NOT NULL AND entry_at IS NULL").bind(id).all()).results || [];
+  for (const p of ps) {
+    const e = JSON.parse(p.entry);
+    if (!e.payload || (e.payload.orderKey === nk && e.party === party && e.payload.party === party)) continue;
+    e.payload.orderKey = nk; e.payload.party = party; e.party = party;
+    await db.prepare("UPDATE preapproval SET entry=?1 WHERE id=?2 AND entry_at IS NULL").bind(JSON.stringify(e), p.id).run();
+  }
+}
+async function followRows(env, orders, idx) {
+  const plan = [], failed = [], amended = new Map(), miss = new Set();
+  for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
+  try {
+    if (miss.size) for (const r of (await env.SALT_LEDGER.prepare(AMENDS).bind('%"orderId":%').all()).results || [])
+      if (miss.has(r.oid)) amended.set(r.oid, (amended.get(r.oid) || new Set()).add(r.amends));
+  } catch (e) { return { followed: 0, failed: [{ id: null, why: "the drafts could not be read, so no order follows its row this pass" }] }; }
+  for (const o of orders) {
+    const k = ledgerKeyOf(o);
+    if (!k || !o.code) continue;
+    const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended);
+    if (!row || POSITION_ENGINE.ownerCode(row.customer) !== o.code) continue;
+    const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
+    if (nk !== k || !!o.forFriend !== friend) plan.push({ o, k, nk, friend, party: row.customer });
+  }
+  const wants = new Map();
+  for (const o of orders) { const k = ledgerKeyOf(o); if (k) wants.set(k, (wants.get(k) || 0) + 1); }
+  for (const p of plan) if (p.nk !== p.k) wants.set(p.nk, (wants.get(p.nk) || 0) + 1);
+  let followed = 0;
+  for (const { o, k, nk, friend, party } of plan) {
+    if (nk !== k && wants.get(nk) !== 1) continue;
+    if (!!o.forFriend !== friend) {
+      const b = await answerOf(await markOrder(env, o.u, o.id, { forFriend: friend }));
+      if (!b.order || b.order.forFriend !== friend) { failed.push({ id: o.id, why: "the site would not take its row's side" + b.why }); continue; }
+      o.forFriend = friend;
+    }
+    try { await repoint(env.SALT_LEDGER, o.id, nk, party); } catch (e) { failed.push({ id: o.id, why: "its waiting yes could not be pointed at the row" }); continue; }
+    if (nk !== k) {
+      const b = await answerOf(await markOrder(env, o.u, o.id, { ledgerKey: nk }));
+      if (!b.order || b.order.ledgerKey !== nk) { failed.push({ id: o.id, why: "the site would not take its row's key" + b.why }); continue; }
+      o.ledgerKey = nk;
+    }
+    followed++;
+  }
+  return { followed, failed };
+}
 export async function tellSite(env) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
@@ -1445,14 +1535,15 @@ export async function tellSite(env) {
   const v = (snap && snap.v) || null;
   if (!v) return { ok: true, told: 0 };
   if ((await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
-  const r = await listOrders(env, false);
+  const r = await listOrders(env, true);   /* every order: a finished one follows its row too */
   if (!r.ok) return { ok: false, error: r.error };
   const book = await readBook(env.SALT_LEDGER).catch(() => null);
   const sales = (book && book.sales) || [];
   if (!sales.length) return { ok: true, told: 0, v };
-  const byKey = new Map();
-  for (const s of sales) byKey.set(POSITION_ENGINE.ovKey(s), s);
-  let told = 0; const failed = [];
+  const byKey = new Map(), rows = new Map(), byRid = new Map();
+  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
+  const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid });
+  let told = 0;
   for (const o of r.orders) {
     if (!o.ledgerKey || ["done", "cancelled", "declined"].includes(o.status)) continue;
     const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
@@ -1471,7 +1562,7 @@ export async function tellSite(env) {
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
   if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
-  return Object.assign({ ok: true, told, v }, failed.length ? { failed } : {});
+  return Object.assign({ ok: true, told, v }, followed ? { followed } : {}, failed.length ? { failed } : {});
 }
 
 /* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------

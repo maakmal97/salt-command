@@ -584,6 +584,9 @@ export function decideDesk(order, body, at) {
   if (body && body.mark) {
     const m = body.mark, c = {};
     if (typeof m.ledgerKey === "string" && m.ledgerKey) c.ledgerKey = m.ledgerKey;
+    /* 28 Sep 2026: AN ORDER FOLLOWS ITS ROW. A row moved between the associate's own code and their resale bucket takes
+       its key with it and the side it books to, which the page pairs To pay now by: the desk states both (tellSite) */
+    if (typeof m.forFriend === "boolean") c.forFriend = m.forFriend;
     for (const k of ["ack", "cancel", "close"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
     /* S6 6.5: each claim queued, by its moment, with the entry that tells the ledger of it */
@@ -770,6 +773,7 @@ export function applyEvent(order, ev) {
   } else if (ev.kind === "mark") {
     const m = ev.mark, q = Object.assign({}, order.queued || {});
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
+    if (typeof m.forFriend === "boolean") order.forFriend = m.forFriend;
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
        return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */

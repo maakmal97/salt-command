@@ -45749,5 +45749,350 @@ await (async () => {
     "and a claimant with more entries to look up than D1 binds in one statement is still read, by the hundred: " + m4.seen);
 })();
 
+section("28 Sep 2026, fix 3: an order follows its row, moved to the resale bucket and back or restated, by the rid its own amendments name; a key two orders want is followed by neither, and a Counter that does not know the side moves nothing");
+await (async () => {
+  /* HIS ANSWER ON CE5-SA'S s211 (28 Sep 2026). A Correction moved an associate's rows to their resale bucket (s210 and s212
+     at v918), and each site order went on naming a row the book no longer held: a later stage would wait for good, the return
+     leg lost it, and the Counter, pairing To pay now by forFriend, read an order at Ready twice. Driven through both Workers
+     over the real schema, on the KV road and the order book's; the fold is played on the mirror by its own applier, as V4a 2
+     plays it. A setup that did not come about throws, so only the checks below can be red. Codes and usernames invented. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the follow was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass, tellSite } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const PE = (await import("../engine/position.mjs")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const J = JSON.stringify, setup = (c, what) => { if (!c) throw new Error("fix 3 setup: " + what); };
+  const views = {};   /* the order at Ready as the Counter is handed it, before the follow and after, from the KV road */
+  for (const store of [null, "object+kv"]) {
+    const tag = store ? "On the order book's road" : "On the KV road";
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    let failFor = null;   /* an order whose waiting yes the ledger will not read, for one pass */
+    const D1 = { prepare(sql) { const st = db.prepare(sql);
+      const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+      const self = mk([]);
+      self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
+      return self; } };
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
+    let seq = 0, ver = 0;
+    const OPEN = { byKey: {}, position: {} };
+    const PRICING = { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } };
+    setState("roster", WHO.flatMap((x) => [x[1], x[1] + "-R"])); setState("OPEN", OPEN); setState("PRICING", PRICING);
+    db.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v900',NULL,?)").run(new Date().toISOString());
+    const sales = () => db.prepare("SELECT doc FROM entry WHERE collection='sales' ORDER BY seq").all().map((x) => JSON.parse(x.doc));
+    const saleOf = (rid) => sales().find((r) => r.rid === rid);
+    const putRow = (row) => db.prepare("UPDATE entry SET doc=? WHERE collection='sales' AND json_extract(doc,'$.rid')=?").run(J(row), row.rid);
+    const addRow = (row) => { db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, J(row)); return row; };
+    /* the fold's re-seed: the open orders keyed as the book now stands, a new version, and the mirror's moment */
+    const reseed = () => {
+      OPEN.byKey = {};
+      for (const r of sales()) { const key = PE.ovKey(r); OPEN.byKey[key] = Object.assign(PE.ledgerRow(r, "S", "salt"), { key }); }
+      setState("OPEN", OPEN);
+      const v = "v9" + String(10 + ++ver);
+      PRICING.v = v; setState("PRICING", PRICING);
+      db.prepare("UPDATE snapshot SET v=?, at=? WHERE one=1").run(v, new Date().toISOString());
+      return v;
+    };
+    /* the fold: every approved draft not yet committed but those held back, a new row landed, an amendment applied to its rid */
+    const held = new Set();
+    const fold = () => {
+      for (const d of db.prepare("SELECT id,amends,entry,row FROM draft WHERE status='approved' AND committed_at IS NULL ORDER BY id").all()) {
+        if (held.has(d.id)) continue;
+        if (!d.amends) addRow(Object.assign(JSON.parse(d.row), { rid: "s9" + (100 + seq) }));
+        else { const r = saleOf(d.amends); applyAmend(r, JSON.parse(d.entry).payload, "SELL", null); putRow(r); }
+        db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), d.id);
+      }
+      return reseed();
+    };
+    /* a Correction he typed, folded: a row moved to the bucket or back, or restated */
+    const correct = (rid, fields) => { const r = saleOf(rid); applyAmend(r, { kind: "Correction", date: r.date, fields }, "SELL", null); putRow(r); reseed(); return r; };
+    const skv = new KV(), dkv = new KV();
+    const bk = store ? H.orderBook({ STMT: skv, ORDER_STORE: store, ORDER_MOVE_IN: "1" }) : null;
+    const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store, ORDER_MOVE_IN: "1" } : {});
+    await dkv.put("stmt-users", J(Object.fromEntries(WHO)));
+    /* every mark the desk sends the site, by order; a Counter deployed before this version keeps a mark's key and drops its side */
+    const marks = [];
+    let oldCounter = false;
+    const siteFetch = (url, init) => {
+      let b = null;
+      try { b = init && typeof init.body === "string" ? JSON.parse(init.body) : null; } catch (e) { b = null; }
+      if (b && b.mark) {
+        marks.push(Object.assign({ id: decodeURIComponent(String(url).split("/").pop()) }, b.mark));
+        if (oldCounter && "forFriend" in b.mark) { delete b.mark.forFriend; init = Object.assign({}, init, { body: J(b) }); }
+      }
+      return stmtW.fetch(new Request(url, init), senv);
+    };
+    const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+      STMT_SITE: { fetch: siteFetch } };
+    const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+    const call = async (path, body) => {
+      const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+        headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: J(body || {}) }), denv, ctx);
+      const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+    };
+    const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+    const drafts = (id) => db.prepare("SELECT id,status,amends,entry FROM draft ORDER BY id").all()
+      .map((d) => Object.assign(d, { e: JSON.parse(d.entry) })).filter((d) => d.e.orderId === id);
+    const place = async (u, extra) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" }, extra || {}))).order;
+    const accept = async (o) => {
+      const pv = await call("/orders/" + o.id + "/preview", {}), a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+      setup(a.j.approved === true, "Accept approved its pending row: " + J(pv.j.error || a.j));
+      return a.j.draft;
+    };
+    /* an order agreed, its pending row landed unless held back, and with `out` collected, its handover folded: an amendment naming its rid */
+    const agreed = async (i, extra, out, hold) => {
+      const [u, code] = WHO[i], o = await place(u, extra), ack = await accept(o), key = (await orderOf(o.id)).ledgerKey;
+      if (hold) { held.add(ack); return { u, code, o, ack, key, row: JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(ack).row) }; }
+      const had = new Set(sales().map((r) => r.rid));
+      fold();
+      const row = sales().find((r) => !had.has(r.rid) && PE.ownerCode(r.customer) === code);
+      setup(!!row && PE.ovKey(row) === key, "the pending row of " + o.id + " landed under its key");
+      if (out) {
+        await call("/orders/" + o.id + "/handed", { qty: 1 });
+        await reconcileOrders(denv); await runDrafter(denv); fold();
+        setup(drafts(o.id).some((d) => d.status === "approved" && d.amends === row.rid), "the handover of " + o.id + " amends " + row.rid);
+      }
+      return { u, code, o, ack, key, rid: row.rid };
+    };
+    const R = (code) => code + "-R";
+    const moveToBucket = (x) => correct(x.rid, { assoc: x.code, stream: "R2" });
+
+    /* A: collected and at Ready, then moved to the bucket, as s211 is to be */
+    const A = await agreed(0, {}, true);
+    await O.deskMove(senv, A.u, A.o.id, { status: "ready" });
+    const rowA = moveToBucket(A);
+    setup(rowA.customer === R(A.code) && /\bstream [^;,]* to /.test(rowA.mod || ""), "the fold's R2 Correction moved " + A.rid + ": " + J(rowA));
+    /* B: never amended, landed, then moved */
+    const B = await agreed(1, {}, false);
+    const rowB = moveToBucket(B);
+    /* C: never amended, its pending row still on its way, and a row on their bucket of that day and figure that a Correction moved */
+    const C = await agreed(2, {}, false, true);
+    addRow({ rid: "s9800", customer: R(C.code), date: C.row.date, qty: 1, total: 110, delivery: 0, cash: 0, deliveredQty: 0, rev: "R2",
+      mod: "corrected on " + C.row.date + ": stream (unset) to R2; party " + C.code + " to (cleared); assoc (unset) to " + C.code });
+    reseed();
+    /* D: never amended, landed, and its row on the bucket by nothing a Correction wrote */
+    const D = await agreed(3, {}, false);
+    const rowD = saleOf(D.rid); rowD.customer = R(D.code); putRow(rowD); reseed();
+    /* E: collected, then its figure restated; and a row a Correction moved onto their bucket at the old figure, the twin the party swap would take */
+    const E = await agreed(4, {}, true);
+    const rowE = correct(E.rid, { total: 120 });
+    addRow({ rid: "s9801", customer: R(E.code), date: rowE.date, qty: 1, total: 110, delivery: 0, cash: 0, deliveredQty: 0, rev: "R2",
+      mod: "corrected on " + rowE.date + ": stream (unset) to R2; party " + E.code + " to (cleared); assoc (unset) to " + E.code });
+    reseed();
+    /* F: an order of their own, collected, and one for a friend at the same figure whose pending row is on its way: the first's row
+       moved to the bucket is then named by the second's key */
+    const F = await agreed(5, {}, true);
+    const F2 = await agreed(5, { forFriend: true }, false, true);
+    const rowF = moveToBucket(F);
+    setup(PE.ovKey(rowF) === (await orderOf(F2.o.id)).ledgerKey, "the friend's order names the moved row's key: " + J([PE.ovKey(rowF), (await orderOf(F2.o.id)).ledgerKey]));
+    /* G: for a friend, collected on the bucket, then moved back to their own code */
+    const G = await agreed(6, { forFriend: true }, true);
+    setup(saleOf(G.rid).customer === R(G.code), "the friend's row books to the bucket");
+    const rowG = correct(G.rid, { assoc: null, stream: null });
+    setup(rowG.customer === G.code, "the Correction moved it back: " + J(rowG));
+    /* I: its row moved and its key already the bucket's, forFriend never set, as rkoi5a's is on the live site */
+    const I = await agreed(7, {}, false);
+    const rowI = moveToBucket(I);
+    await O.deskMove(senv, I.u, I.o.id, { mark: { ledgerKey: PE.ovKey(rowI) } });
+    /* K: collected and moved, then cash taken at the counter: his yes waits for the row at the old key, as tg8bpq's did */
+    const K = await agreed(8, {}, true);
+    const oldK = (await orderOf(K.o.id)).ledgerKey;
+    const rowK = moveToBucket(K);
+    const kc = await call("/orders/" + K.o.id + "/cash", { amount: 50 });
+    await deskPass(denv, new Date());
+    const preK = () => db.prepare("SELECT * FROM preapproval WHERE order_id=? AND stage='cash'").get(K.o.id);
+    setup(kc.status === 200 && preK() && preK().status === "waiting" && !preK().entry_at && JSON.parse(preK().entry).payload.orderKey === oldK,
+      "his cash yes waits at the old key: " + J({ kc: kc.j.error || null, pre: preK() }));
+
+    /* THE PASS ON A COUNTER THAT DOES NOT KNOW THE SIDE: nothing half-applied, the mark left to the next minute */
+    const was = await orderOf(A.o.id);
+    if (!store) views.before = O.customerView(was);
+    oldCounter = true; marks.length = 0;
+    const t0 = await tellSite(denv);
+    const a0 = await orderOf(A.o.id), m0 = marks.filter((m) => m.id === A.o.id);
+    ok(t0.ok && (t0.failed || []).some((f) => f.id === A.o.id) && a0.ledgerKey === was.ledgerKey && !a0.forFriend
+      && J(m0.map((m) => Object.keys(m).filter((k) => k !== "id"))) === J([["forFriend"]]) && (await dkv.get("orders:told")) !== t0.v,
+      tag + ", a Counter that drops the side is asked the side alone, and the key waits: nothing half applied, the pass not marked told: "
+      + J({ failed: t0.failed, key: a0.ledgerKey, forFriend: a0.forFriend, marks: m0 }));
+
+    /* THE PASS ON THIS VERSION'S COUNTER */
+    oldCounter = false; marks.length = 0;
+    const t1 = await tellSite(denv);
+    const now = {};
+    for (const x of [A, B, C, D, E, F, F2, G, I, K]) now[x.o.id] = await orderOf(x.o.id);
+    const mk = (x) => marks.filter((m) => m.id === x.o.id).map((m) => Object.keys(m).filter((k) => k !== "id").map((k) => k + "=" + m[k]).join());
+    ok(t1.ok && !t1.failed && (await dkv.get("orders:told")) === t1.v && now[A.o.id].ledgerKey === PE.ovKey(rowA) && now[A.o.id].forFriend === true
+      && J(mk(A)) === J(["forFriend=true", "ledgerKey=" + PE.ovKey(rowA)]),
+      tag + ", an order whose row was moved to the bucket takes the row's key and side, the side marked first and alone: "
+      + J({ t1, key: now[A.o.id].ledgerKey, row: PE.ovKey(rowA), marks: mk(A) }));
+    if (!store) views.after = O.customerView(now[A.o.id]);
+    ok(now[B.o.id].ledgerKey === PE.ovKey(rowB) && now[B.o.id].forFriend === true,
+      tag + ", one never amended takes the row a Correction moved onto its own bucket, once its pending row has landed: " + J(now[B.o.id].ledgerKey));
+    ok(now[C.o.id].ledgerKey === C.key && !now[C.o.id].forFriend && !mk(C).length,
+      tag + ", one whose pending row is still on its way never takes a row of that day and figure on its bucket: " + J({ key: now[C.o.id].ledgerKey, marks: mk(C) }));
+    ok(now[D.o.id].ledgerKey === D.key && !now[D.o.id].forFriend && !mk(D).length,
+      tag + ", nor does one never amended take a row on its bucket that no Correction moved: " + J({ key: now[D.o.id].ledgerKey, marks: mk(D) }));
+    ok(now[E.o.id].ledgerKey === PE.ovKey(saleOf(E.rid)) && /\|120$/.test(now[E.o.id].ledgerKey) && !now[E.o.id].forFriend,
+      tag + ", a restated row is followed by the rid its handover named, never the twin on the bucket at the old figure: " + J(now[E.o.id].ledgerKey));
+    ok(now[F.o.id].ledgerKey === F.key && !now[F.o.id].forFriend && !mk(F).length && now[F2.o.id].ledgerKey === PE.ovKey(rowF) && !mk(F2).length,
+      tag + ", a key another order names is followed by neither, and nothing is sent: " + J({ own: now[F.o.id].ledgerKey, friend: now[F2.o.id].ledgerKey, marks: [mk(F), mk(F2)] }));
+    ok(now[G.o.id].ledgerKey === PE.ovKey(rowG) && now[G.o.id].forFriend === false,
+      tag + ", a row moved back from the bucket takes the order back to their own side: " + J({ key: now[G.o.id].ledgerKey, forFriend: now[G.o.id].forFriend }));
+    ok(now[I.o.id].ledgerKey === PE.ovKey(rowI) && now[I.o.id].forFriend === true && J(mk(I)) === J(["forFriend=true"]),
+      tag + ", an order already naming its bucket's row is given the side alone: " + J({ marks: mk(I) }));
+
+    /* HIS WAITING YES, pointed at the moved row: its draft differs from what he was shown and waits under Approve */
+    await deskPass(denv, new Date()); await runDrafter(denv);
+    const pk = preK(), kd = drafts(K.o.id).filter((d) => d.e.counter);
+    ok(now[K.o.id].ledgerKey === PE.ovKey(rowK) && pk.status === "differs" && kd.length === 1 && kd[0].status === "pending" && kd[0].amends === K.rid
+      && kd[0].e.payload.orderKey === PE.ovKey(rowK) && kd[0].e.party === R(K.code) && kd[0].e.payload.party === R(K.code),
+      tag + ", cash taken at the counter before the follow is drafted on the moved row, and waits under Approve for him to look again: "
+      + J({ pre: pk.status, drafts: kd.map((d) => [d.status, d.amends, d.e.party]) }));
+
+    /* A LATER STAGE on the moved row: what they send is drafted on it, booked to the bucket, and his Received approves it */
+    await O.customerMove(senv, A.u, A.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    await O.customerMove(senv, A.u, A.o.id, "pay", { amount: 110 });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const rc = await call("/orders/" + A.o.id + "/received", { amount: 110 });
+    const ad = drafts(A.o.id).filter((d) => d.e.claim);
+    ok(rc.status === 200 && ad.length === 1 && ad[0].status === "approved" && ad[0].amends === A.rid && ad[0].e.party === R(A.code) && ad[0].e.payload.orderKey === PE.ovKey(rowA),
+      tag + ", what they send on it after the follow is drafted on the moved row, booked to the bucket, and approved by his Received: "
+      + J({ err: rc.j.error || null, drafts: ad.map((d) => [d.status, d.amends, d.e.party]) }));
+
+    /* AND AN IDLE BOOK: every order already names its row and side, so a new version sends no mark */
+    reseed(); marks.length = 0;
+    const t2 = await tellSite(denv);
+    ok(t2.ok && !t2.followed && !t2.failed && !marks.length,
+      tag + ", a new version with every order naming its row and side asks the site nothing: " + J({ t2, marks }));
+
+    /* HIS WAITING YES IS POINTED AT THE ROW BEFORE THE ORDER TAKES ITS KEY: a pass that cannot reach it leaves the key
+       where it was, and the next pass does both */
+    const K2 = await agreed(9, {}, true);
+    const oldK2 = (await orderOf(K2.o.id)).ledgerKey, rowK2 = moveToBucket(K2);
+    await call("/orders/" + K2.o.id + "/cash", { amount: 40 });
+    await deskPass(denv, new Date());
+    const preK2 = () => JSON.parse(db.prepare("SELECT entry FROM preapproval WHERE order_id=? AND stage='cash'").get(K2.o.id).entry);
+    setup(preK2().payload.orderKey === oldK2, "his second cash yes waits at the old key");
+    failFor = K2.o.id;
+    const t3 = await tellSite(denv);
+    failFor = null;
+    const k3 = (await orderOf(K2.o.id)).ledgerKey;
+    reseed();
+    const t4 = await tellSite(denv), e4 = preK2();
+    ok((t3.failed || []).some((f) => f.id === K2.o.id) && k3 === oldK2 && !t4.failed && (await orderOf(K2.o.id)).ledgerKey === PE.ovKey(rowK2)
+      && e4.payload.orderKey === PE.ovKey(rowK2) && e4.party === R(K2.code),
+      tag + ", a pass that cannot point his waiting yes at the row leaves the order's key where it was, and the next pass does both: "
+      + J({ t3: t3.failed, k3, t4: t4.failed || null, yes: [e4.payload.orderKey, e4.party] }));
+
+    /* A CLOSE NAMES ITS ROW AHEAD of its fold: the order waits for the close, whatever else folds meanwhile */
+    const M = await agreed(10, { qty: 2, unit: 110, total: 220 }, false);
+    await call("/orders/" + M.o.id + "/handed", { qty: 1, close: true });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const mc = drafts(M.o.id).find((d) => d.e.status === "Close");
+    setup(mc && mc.status === "approved" && mc.amends === M.rid, "the close is approved on " + M.rid);
+    held.add(mc.id);
+    const ahead = (await orderOf(M.o.id)).ledgerKey;
+    setup(ahead !== M.key && !sales().some((r) => PE.ovKey(r) === ahead), "the close names the row ahead of its fold: " + ahead);
+    fold(); marks.length = 0;
+    const t5 = await tellSite(denv), m5 = (await orderOf(M.o.id)).ledgerKey, sent5 = marks.filter((m) => m.id === M.o.id).length;
+    held.delete(mc.id); fold();
+    const t6 = await tellSite(denv), m6 = (await orderOf(M.o.id)).ledgerKey;
+    ok(!t5.failed && m5 === ahead && !sent5 && !t6.failed && m6 === ahead && m6 === PE.ovKey(saleOf(M.rid)),
+      tag + ", an order whose close names its row ahead waits for the close to fold, whatever folds meanwhile, and then names it: " + J({ ahead, m5, sent5, m6 }));
+    /* and a close he rejected and offered again names the row ahead once more, while queued.close still names the first */
+    const M2 = await agreed(12, { qty: 2, unit: 110, total: 220 }, true);   /* a unit handed first: an amendment names its rid */
+    await call("/orders/" + M2.o.id + "/handed", { qty: 1, close: true });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const mc1 = drafts(M2.o.id).find((d) => d.e.status === "Close"), fwd = (await orderOf(M2.o.id)).ledgerKey;
+    db.prepare("UPDATE draft SET status='pending', decided_at=NULL, decided_by=NULL WHERE id=?").run(mc1.id);   /* as a close that differed waits */
+    const rj = await call("/drafts/" + encodeURIComponent(mc1.id) + "/reject", {});
+    const back = (await orderOf(M2.o.id)).ledgerKey;
+    /* offered again and not drafted yet: the order marked ahead and his yes on file with the Close, as againOrder leaves them */
+    await O.deskMove(senv, M2.u, M2.o.id, { mark: { ledgerKey: fwd } });
+    db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,'move','h','{}',?,'waiting',?)")
+      .run(M2.o.id + "|move|x", M2.o.id, M2.u, J(Object.assign({}, mc1.e, { at: "2026-09-02T00:00:00.000Z" })), "2026-09-02T00:00:00.000Z");
+    fold(); marks.length = 0;
+    const t10 = await tellSite(denv), m10 = (await orderOf(M2.o.id)).ledgerKey, sent10 = marks.filter((m) => m.id === M2.o.id).length;
+    db.prepare("DELETE FROM preapproval WHERE id=?").run(M2.o.id + "|move|x");
+    await O.deskMove(senv, M2.u, M2.o.id, { mark: { ledgerKey: back } });
+    ok(rj.status === 200 && back === M2.key && !t10.failed && m10 === fwd && !sent10,
+      tag + ", a close rejected and offered again, not drafted yet, is waited for: " + J({ back, fwd, m10, sent10 }));
+    const ag = await call("/orders/" + M2.o.id + "/again", { stage: "move" });
+    await deskPass(denv, new Date()); await runDrafter(denv);
+    const mc2 = drafts(M2.o.id).filter((d) => d.e.status === "Close" && d.id !== mc1.id);
+    setup(rj.status === 200 && back === M2.key && ag.status === 200 && mc2.length === 1 && mc2[0].status === "approved"
+      && (await orderOf(M2.o.id)).queued.close === mc1.id, "the close rejected and offered again: " + J({ rj: rj.j.error || null, back, ag: ag.j.error || null, mc2: mc2.map((d) => d.status) }));
+    held.add(mc2[0].id);
+    const ahead2 = (await orderOf(M2.o.id)).ledgerKey;
+    fold(); marks.length = 0;
+    const t8 = await tellSite(denv), m8 = (await orderOf(M2.o.id)).ledgerKey, sent8 = marks.filter((m) => m.id === M2.o.id).length;
+    held.delete(mc2[0].id); fold();
+    const t9 = await tellSite(denv), m9 = (await orderOf(M2.o.id)).ledgerKey;
+    ok(!t8.failed && ahead2 !== back && m8 === ahead2 && !sent8 && !t9.failed && m9 === ahead2 && m9 === PE.ovKey(saleOf(M2.rid)),
+      tag + ", a close rejected and offered again is waited for by its own draft, not the first one's: " + J({ back, ahead2, m8, sent8, m9 }));
+
+    /* THE RID PATH KEEPS TO THE ORDER'S PRODUCT: an amendment that landed on another book's row is never followed there */
+    const P = await agreed(11, {}, false), pDay = saleOf(P.rid).date, pStale = P.code + "|" + pDay + "|999";
+    addRow({ rid: "s9900", customer: P.code, date: pDay, qty: 1, total: 8, delivery: 0, cash: 0, deliveredQty: 0, product: "rice" });
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by,amends,amend_kind,committed_at) VALUES (?,'approved','sales',?,'{}','','[]',?,'orders',?,?,'desk','s9900','Correction',?)")
+      .run("2026-09-01T00:00:00.000Z", J({ at: "2026-09-01T00:00:00.000Z", orderId: P.o.id, status: "Handover", payload: {} }), P.code, "2026-09-01T00:00:00.000Z", "2026-09-01T00:00:00.000Z", "2026-09-01T00:00:00.000Z");
+    await O.deskMove(senv, P.u, P.o.id, { mark: { ledgerKey: pStale } });
+    reseed(); marks.length = 0;
+    const t7 = await tellSite(denv), p7 = (await orderOf(P.o.id)).ledgerKey;
+    ok(!t7.failed && p7 === pStale && !marks.some((m) => m.id === P.o.id),
+      tag + ", an order is never followed onto another book's row its amendment landed on: " + J({ p7, marks: marks.filter((m) => m.id === P.o.id) }));
+  }
+
+  /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+  const home = async (order) => {
+    const u = order.u, pass = "fixture-pass-fx3", ck = await C.contentKey("test-secret", u), on = order.rowOn;
+    const part = { date: on, since: on, due: on, late: false, rm: 110, whole: 110, product: "salt", qty: 1, got: 1, gotOn: on, resale: true,
+      goods: 110, deliv: 0, less: 0, rate: 110 };
+    const pay = { term: 3, now: { rm: 110, due: on, parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-fx3",
+      env: await C.encryptWith(ck, J({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, J({ at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: 110, pay })),
+      prices: await C.encryptWith(ck, J({ at: new Date().toISOString(), week: { monday: on, label: "This week" },
+        products: [{ product: "salt", unit: "unit", basis: "yours", rate: 110, orders: 1, sizes: [{ q: 1, price: 110 }] }], soon: [] })) };
+    let read = 0;   /* the orders' answer read, which To pay now is drawn from: waited for, never timed */
+    const dom = new JD(lp(u, "nfx3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [order], claims: [] } : null;
+        return { ok: !!j, status: j ? 200 : 404, json: async () => { if (j && p === "/orders") read++; return j || { ok: false }; } };
+      };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#payHead .salt-kpi"));
+      const h = d.getElementById("payHead");
+      return [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
+    } finally { try { dom.window.close(); } catch (x) { /* best effort */ } }
+  };
+  const before = views.before && await home(views.before), after = views.after && await home(views.after);
+  ok(before === "To pay now|RM 220|Pay RM 220" && after === "To pay now|RM 110|Pay RM 110" && views.after.forFriend === true && views.after.rowOn === views.before.rowOn,
+    "the Counter read an order at Ready twice beside its row moved to the bucket, and once the order has followed it asks for RM 110, once: " + J({ before, after }));
+})();
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

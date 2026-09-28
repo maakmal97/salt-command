@@ -790,7 +790,7 @@ export default {
            version on a quiet minute; the site is asked only after a fold. */
         try {
           const ts = await tellSite(env);
-          if (!ts.ok || ts.told || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
+          if (!ts.ok || ts.told || ts.followed || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
         } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
         /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
            leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
