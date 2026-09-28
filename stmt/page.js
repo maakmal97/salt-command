@@ -1293,8 +1293,10 @@ const CLIENT_JS = `
      S6 6.7, HIS D9 OF 24 SEP 2026: THE LINE COUNTS ONLY WHAT IS PAST ITS TERM, the sealed pay.overdue, never
      what is owed (a delivery made yesterday is owed, not overdue). The page shows each part with the day it
      fell due, Prices stays readable, and a claim waiting on him reopens ordering: his acknowledgement of the
-     next order is still the check. */
-  var HOLD_RM=100, hold=false;
+     next order is still the check.
+     28 SEP 2026, HIS INSTRUCTION: ANY AMOUNT past its term holds, and the term is three days from the day the goods
+     were collected or delivered (the publish's due); D9's RM 100 line is retired. */
+  var hold=false;
   /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
      coming up, each part with its dates. Read, never priced here. */
   var payDue=null, liveAt='';
@@ -2821,12 +2823,12 @@ const CLIENT_JS = `
     if(view) top.appendChild(el('p','lead',tw('ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=rdLang(el('div','pane')), od=payDue.overdue, left=odLeft();
+      var dueBox=rdLang(el('div','pane')), od=odNow(), left=odLeft();
       dueBox.appendChild(kpiTile('ember',tw('pay.overdue'),rm(left),odNote(od)));
       dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){
         var L=el('div','salt-ledger salt-ledger--plain');
-        od.parts.forEach(function(x){ L.appendChild(coverTo(lrowN(partSpan(x),rm(x.rm),dueWords(x.due),'odue'),x)); });
+        od.parts.forEach(function(x){ L.appendChild(coverTo(lrowN(partSpan(x),rm(x.rm),dueWords(x),'odue'),x)); });
         dueBox.appendChild(L);
       }
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
@@ -3380,11 +3382,16 @@ const CLIENT_JS = `
   function dayName(s,L){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return day3(L)[d.getUTCDay()]+' '+d.getUTCDate()+' '+mon3(L)[d.getUTCMonth()]; }
   function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
   function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
-  /* "Due by Sat 26 Sep, in 2 days.", or of the first of several parts, "The first is due by ..." */
-  function dueWords(due,first){
-    var n=daysTo(due);
+  /* 28 Sep 2026 (his instruction): a part is overdue from the day its goods went (since) and due is the last day it
+     can be paid with ordering kept open. "Pay by Thu 1 Oct, in 3 days, to keep ordering.", and once the publish has
+     sealed it late, "Overdue by 5 days." counted from that handover; of the first of several parts, "Pay the first by
+     ..." or "The first is overdue by ...". A part past its day that the publish has not yet sealed late reads Today. */
+  function dueWords(p,first){
+    var n=p&&p.due?daysTo(p.due):null;
     if(n==null) return '';
-    return tw('due.'+(first?'first':'')+(n<0?'Late':n===0?'Today':n===1?'Tomorrow':'InN'),{d:Dd(dayName,due), n:n});
+    var from=p.since||p.gotOn||p.date, k=first?'first':'';
+    if(lateNow(p)&&from) return tw('due.'+k+'Late',{n:Math.max(0,-(daysTo(from)||0))});
+    return tw('due.'+k+(n<=0?'Today':n===1?'Tomorrow':'InN'),{d:Dd(dayName,p.due), n:n});
   }
   function unitFor(pr){ var P=prices&&prices.products&&prices.products.filter(function(x){ return x.product===pr; })[0]; return P?P.unit:'unit'; }
   /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part not yet
@@ -3394,7 +3401,7 @@ const CLIENT_JS = `
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,15), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
-      d:function(L){ return dayName(p.gotOn||p.date,L); }});
+      d:function(L){ return dayName(p.since||p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   /* 27 Sep 2026 (his approval, "Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): A NOTE, WITH NO
@@ -3410,27 +3417,36 @@ const CLIENT_JS = `
     return k;
   }
   /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */
-  function odRm(){ return payDue&&payDue.overdue?+payDue.overdue.rm||0:0; }
+  /* 28 Sep 2026 (his instruction): LATE ON THIS PHONE'S CLOCK AS WELL. The publish seals late, but only
+     the Actions chain publishes, hourly at best and not at all on a red run, so a part whose last day has passed on this
+     phone's Kuala Lumpur day is late here whether or not the publish has caught up. It only ever adds: a sealed late
+     stands whatever the clock says, so a phone's date set back lifts nothing. What is overdue is the parts late now. */
+  function lateNow(p){ return !!p&&(!!p.late||(!!p.due&&(daysTo(p.due)||0)<0)); }
+  function odNow(){
+    var ps=payDue&&payDue.now&&payDue.now.parts?payDue.now.parts.filter(lateNow):((payDue&&payDue.overdue&&payDue.overdue.parts)||[]);
+    return {rm:+ps.reduce(function(t,x){ return t+(+x.rm||0); },0).toFixed(2), parts:ps};
+  }
+  function odRm(){ return odNow().rm; }
   /* S6 fix: WHAT IS STILL OVERDUE, less the money he has received since the statement was written that reaches it: a claim
      against the account, which the oldest parts, the overdue ones, take first, and an order's own claim on an overdue part
      (nowOf). His Received used to bring the hold back until the next publish, asking again for what he had just confirmed.
      A claim still waiting lifts the hold whatever its figure (his D9). */
   function odLeft(){ var od=odRm(); if(!(od>0.004)) return 0;
-    var got=nowOf().filter(function(x){ return x.p.late; }).reduce(function(t,x){ return t+x.own+x.acct; },0);
+    var got=nowOf().filter(function(x){ return lateNow(x.p); }).reduce(function(t,x){ return t+x.own+x.acct; },0);
     return Math.max(0,+(od-got).toFixed(2)); }
   /* S7 7.1: the places keep their names over the line; Home leads with what to pay, and Orders is the payment page */
-  function setHold(){ hold=odLeft()>HOLD_RM+0.004&&!(sentWaiting()>0.004); }
+  function setHold(){ hold=odLeft()>0.004&&!(sentWaiting()>0.004); }
   function odNote(od){
     var n=el('span'), ps=od.parts||[];
-    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); coverTo(n,ps[0]); }
-    else n.appendChild(document.createTextNode(tw('pay.odMany',{n:ps.length})+' '+dueWords(ps.length?ps[0].due:null,true)));
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0]))); coverTo(n,ps[0]); }
+    else n.appendChild(document.createTextNode(tw('pay.odMany',{n:ps.length, t:payDue&&payDue.term})+' '+dueWords(ps[0],true)));
     return n;
   }
   /* what To pay now is for, in one line under its figure */
   function nowNote(now){
     var n=el('span'), ps=now.parts||[];
-    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0].due))); coverTo(n,ps[0]); }
-    else n.appendChild(document.createTextNode(tw('pay.nowMany',{n:ps.length})+' '+dueWords(now.due,true)));
+    if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0]))); coverTo(n,ps[0]); }
+    else n.appendChild(document.createTextNode(tw('pay.nowMany',{n:ps.length})+' '+dueWords(ps.filter(function(x){ return x.due; })[0],true)));
     return n;
   }
   /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
@@ -3482,7 +3498,7 @@ const CLIENT_JS = `
      page only where it reads differently, so a poll never takes a tap's focus from its Pay. */
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
-    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=P.overdue||{rm:0,parts:[]}, said=bundle?claimLines():[], fr=fresh();
+    var P=payDue||{}, now=P.now||{rm:0,parts:[]}, od=odNow(), said=bundle?claimLines():[], fr=fresh();
     box.hidden=!bundle||!(fr||payDue||said.length);
     if(box.hidden) return box;
     if(now.rm>0.004){
@@ -3503,7 +3519,7 @@ const CLIENT_JS = `
     if(now.rm>0.004&&od.rm>0.004&&(now.parts||[]).length>1){
       box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',tw('pay.overdue')));
       var L=el('div','salt-ledger salt-ledger--plain');
-      od.parts.forEach(function(p){ L.appendChild(coverTo(lrowN(partSpan(p),rm(p.rm),dueWords(p.due),'odue'),p)); });
+      od.parts.forEach(function(p){ L.appendChild(coverTo(lrowN(partSpan(p),rm(p.rm),dueWords(p),'odue'),p)); });
       box.appendChild(L);
     }
     return box;

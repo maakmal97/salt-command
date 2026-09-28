@@ -5352,6 +5352,8 @@ await (async () => {
   const LOTS = [
     { rid: "t201", date: null, qty: 10, total: 500, supplier: "SF6-KLC", pending: true },
     { rid: "t202", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0 },
+    /* 28 Sep 2026: a lot with no receivedQty has received the lot, which a raw field reads as none */
+    { rid: "t203", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" },
   ];
   /* EVERY KIND THE FOLD HAS A BRANCH FOR (v439). This table held four Fulfilments and nothing
      else, while the sentence beneath it claimed the desk and the fold leave EVERY row in the same
@@ -5368,20 +5370,25 @@ await (async () => {
     { kind: "Default" },
     { kind: "Correction", fields: { total: 640 } },
     { kind: "Correction", fields: { note: "restated by hand" } },
+    /* 28 Sep 2026: a site handover and a receipt restated, whose steps carry the units they moved on both roads */
+    { kind: "Correction", fields: { deliveredQty: 2, deliveredOn: "2026-09-01" } },
+    { kind: "Correction", fields: { receivedQty: 8 } },
   ];
 
   const bk5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
   bk5.sales = bk5.sales.concat(SALES.map((r) => Object.assign({}, r)));
   bk5.purchases = bk5.purchases.concat(LOTS.map((r) => Object.assign({}, r)));
-  const B5 = j5(REPO, "test", ".v420.json"), M5 = j5(REPO, "test", ".v420.html");
+  /* a folder of its own: two runs of this section side by side (section.mjs's mutations) shared test/.v420.* and read each other's master */
+  const T5 = (await import("node:fs")).mkdtempSync(j5((await import("node:os")).tmpdir(), "salt-v420-"));
+  const B5 = j5(T5, "v420.json"), M5 = j5(T5, "v420.html");
   wf5(B5, JSON.stringify(bk5, null, 1));
-  wf5(M5, rf5(j5(REPO, "master", "salt_command.html"), "utf8"));
+  wf5(M5, rf5(process.env.SALT_MASTER || j5(REPO, "master", "salt_command.html"), "utf8"));   /* the run's master, so a mutation reaches it */
   ex5("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B5, SALT_MASTER: M5 }, stdio: "pipe" });
 
   const strip = (r) => { const o = JSON.parse(JSON.stringify(r)); delete o._prov; return o; };
   const { w: wq } = await om5(M5);
   wq.eval("setProd('salt');recompute();");
-  let compared = 0; const differed = [];
+  let compared = 0; const differed = [], moved = {};
   for (const [rows, dir] of [[SALES, "SELL"], [LOTS, "BUY"]]) {
     for (const seed of rows) {
       for (const am of AMENDS) {
@@ -5395,17 +5402,22 @@ await (async () => {
         wq.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: dir, rid: seed.rid }, pay)) + ",{at:'x'})");
         const dr = JSON.parse(wq.eval("JSON.stringify(" + arr + ".find(r=>r.rid===" + JSON.stringify(seed.rid) + "))"));
         compared++;
+        if (am.fields && (am.fields.deliveredQty || am.fields.receivedQty)) moved[seed.rid + (am.fields.deliveredQty ? ".d" : ".r")] = (fr.amend || []).map((x) => x.kind + ":" + x.kg).join();
         const a = JSON.stringify(strip(fr)), b = JSON.stringify(strip(dr));
         if (a !== b) differed.push(seed.rid + " " + dir + " cash " + am.cash + " kg " + am.kg + " | fold " + a.slice(0, 150) + " | desk " + b.slice(0, 150));
       }
     }
   }
-  ok(compared === 50, "fifty row-and-amendment pairs were put through both engines (" + compared + "), five kinds against five seeds");
+  ok(compared === 72, "seventy-two row-and-amendment pairs were put through both engines (" + compared + "), five kinds against six seeds");
+  ok(moved["t103.d"] === "Fulfilment:0,Correction:2" && moved["t102.d"] === "Fulfilment:1,Correction:1" && moved["t203.r"] === "Fulfilment:10,Correction:-2",
+    "and a restated handover or receipt is seeded as the row arrived, its step carrying the units it moved, a lot with no receivedQty "
+    + "read as received: " + JSON.stringify(moved));
   ok(new Set(AMENDS.map((a) => a.kind)).size === 5,
     "and the five are every kind applyAmend has a branch for, so the sentence below is about all of them");
   ok(differed.length === 0,
     "the desk and the fold leave every one in the same state -- " + differed.slice(0, 2).join(" || "));
   for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
+  try { (await import("node:fs")).rmSync(T5, { recursive: true, force: true }); } catch (e) { /* best effort */ }
 })();
 
 
@@ -5598,11 +5610,11 @@ await (async () => {
 
 section("S6 6.1: the publish seals what is to pay now, what is overdue and what is coming up");
 await (async () => {
-  /* HIS DECISION D9 OF 24 SEP 2026: the hold counts only what is past its 10-day term, with each part's
-     due date, so the live statement carries, beside `owed`, TO PAY NOW (the desk's receivable, each part
-     due at its order date plus the term), OVERDUE (a part once that day has passed) and COMING UP (an
-     order agreed and not handed over, with money still to pay on it). The engine computes them; the
-     site only draws them. Fixture rows under invented codes, on a copy of the book, on 24 Sep. */
+  /* HIS DECISION D9 OF 24 SEP 2026, AS HIS INSTRUCTION OF 28 SEP 2026 AMENDS IT: the live statement carries, beside
+     `owed`, TO PAY NOW (the desk's receivable), OVERDUE and COMING UP (an order agreed and not handed over, with money
+     still to pay on it). A part is overdue from the day its goods were collected or delivered (`since`, the engine's
+     txUnpaidSince), `due` is that day plus the three-day term, and past it the part is late, whatever its amount. The
+     engine computes them; the site only draws them. Fixture rows under invented codes, on a copy of the book, on 24 Sep. */
   const { pathToFileURL: pu } = await import("node:url");
   const at = new Date("2026-09-24T04:00:00Z"), P = "CX7-PY";
   const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
@@ -5632,11 +5644,12 @@ await (async () => {
   mkdirSync(tmp, { recursive: true });
   const bookFile = join(tmp, "book.json");
   writeFileSync(bookFile, JSON.stringify(book));
-  /* a fresh copy of the tool on the fixture book, and on a master whose term is 7 (an unset variable is deleted) */
+  /* a fresh copy of the tool on the fixture book, and on the master given, else the one this run reads (SALT_MASTER, as
+     openMaster does, then the checkout's), so a mutation of the master's term reaches it; an unset variable is deleted */
   const load = async (tag, master) => {
     const keep = [process.env.SALT_BOOK, process.env.SALT_MASTER];
     process.env.SALT_BOOK = bookFile;
-    if (master) process.env.SALT_MASTER = master; else delete process.env.SALT_MASTER;
+    if (master) process.env.SALT_MASTER = master;
     try { return await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?" + tag); }
     finally {
       if (keep[0] === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep[0];
@@ -5647,26 +5660,28 @@ await (async () => {
     const M = await load("s6pay");
     const doc = M.liveStatement(P, at), pay = doc && doc.pay;
     const brief = (a) => (a || []).map((x) => (x.date || "undated") + ":" + x.rm + ":" + (x.due || "-")).join(" ");
-    ok(pay && pay.term === 10 && pay.now.rm === 440 && pay.now.due === "2026-09-11"
-      && brief(pay.now.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15 2026-09-14:50:2026-09-24 2026-09-16:70:2026-09-26 2026-09-20:100:2026-09-30 undated:40:-",
+    ok(pay && pay.term === 3 && pay.now.rm === 440 && pay.now.due === "2026-09-08"
+      && brief(pay.now.parts) === "2026-09-05:80:2026-09-08 2026-09-01:100:2026-09-15 2026-09-14:50:2026-09-17 2026-09-16:70:2026-09-19 2026-09-20:100:2026-09-24 undated:40:-",
       "to pay now is the goods handed over and not paid for, their bucket's included, soonest due first, and no gift, write-off, "
       + "cancelled, settled or other party's row, nor one dated after the statement's day: " + JSON.stringify(pay && { term: pay.term, rm: pay.now.rm, due: pay.now.due, parts: brief(pay.now.parts) }));
     const p2 = pay && pay.now.parts.find((x) => x.date === "2026-09-16");
-    ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.product === "salt" && p2.late === false,
-      "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, due by 26 Sep: " + JSON.stringify(p2));
-    /* THE TERM RUNS FROM THE ORDER'S DATE, the desk's rule (its Credit age reads the same), never from the
-       handover: on the book an order of 7 Sep finished going on 19 Sep and fell due on 17 Sep */
+    ok(p2 && p2.rm === 70 && p2.whole === 235 && p2.qty === 2.5 && p2.got === 2.5 && p2.gotOn === "2026-09-16" && p2.since === "2026-09-16"
+      && p2.due === "2026-09-19" && p2.product === "salt" && p2.late === true,
+      "a part says what it is for: the rest, RM 70 of the RM 235 owed on 2.5 units collected 16 Sep, overdue from then and past its three days after 19 Sep: " + JSON.stringify(p2));
+    /* 28 SEP 2026, HIS INSTRUCTION: OVERDUE IS COUNTED FROM THE DAY THE GOODS WERE COLLECTED OR DELIVERED, never the
+       order's date: an order of 1 Sep collected on 12 Sep is overdue from 12 Sep and past its term after 15 Sep */
     const p1 = pay && pay.now.parts.find((x) => x.date === "2026-09-01");
-    ok(p1 && p1.gotOn === "2026-09-12" && p1.due === "2026-09-11" && p1.late === true,
-      "a part falls due at its order's date plus the term even when the goods went later, and is late the day they go: " + JSON.stringify(p1));
+    ok(p1 && p1.gotOn === "2026-09-12" && p1.since === "2026-09-12" && p1.due === "2026-09-15" && p1.late === true,
+      "a part is overdue from the day its goods went, not its order's date, and late three days after: " + JSON.stringify(p1));
     const p5 = pay && pay.now.parts.find((x) => x.date === "2026-09-20");
-    ok(p5 && p5.got === 1 && p5.qty === 2 && p5.gotOn === "2026-09-21",
-      "a part handed over in stages still says when the goods went, the day of its last handover: " + JSON.stringify(p5));
+    ok(p5 && p5.got === 1 && p5.qty === 2 && p5.gotOn === "2026-09-21" && p5.since === "2026-09-21" && p5.due === "2026-09-24" && p5.late === false,
+      "a part handed over in stages counts from the handover of the goods still unpaid, and on its last day it is not yet late: " + JSON.stringify(p5));
     const p3 = pay && pay.now.parts.find((x) => x.date === "2026-09-14"), p13 = pay && pay.now.parts.find((x) => !x.date);
-    ok(pay && pay.overdue.rm === 180 && brief(pay.overdue.parts) === "2026-09-01:100:2026-09-11 2026-09-05:80:2026-09-15"
-      && pay.overdue.parts[1].resale === true && p3 && p3.due === "2026-09-24" && p3.late === false && p13 && p13.due === null && p13.late === false,
-      "overdue is a part once its due day has passed, each with the day it fell due: not on the due day itself, and never an undated one: "
-      + JSON.stringify(pay && { rm: pay.overdue.rm, parts: brief(pay.overdue.parts), today: p3 && p3.late, undated: p13 && p13.late }));
+    ok(pay && pay.overdue.rm === 300 && brief(pay.overdue.parts) === "2026-09-05:80:2026-09-08 2026-09-01:100:2026-09-15 2026-09-14:50:2026-09-17 2026-09-16:70:2026-09-19"
+      && pay.overdue.parts[0].resale === true && p3 && p3.since === "2026-09-14" && p3.due === "2026-09-17" && p3.late === true
+      && p13 && p13.since === null && p13.due === null && p13.late === false,
+      "overdue is every part past its three days whatever its amount, each with its day: a row with no handover day counts from its date, and an undated one is never overdue: "
+      + JSON.stringify(pay && { rm: pay.overdue.rm, parts: brief(pay.overdue.parts), p3: p3 && [p3.since, p3.due, p3.late], undated: p13 && p13.late }));
     const cm = pay ? pay.coming.parts.map((x) => x.date + ":" + x.rm + ":" + x.toCome).join(" ") : "";
     ok(pay && pay.coming.rm === 485 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1 2026-09-26:30:1",
       "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, "
@@ -5679,21 +5694,21 @@ await (async () => {
     ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
       "the live statement seals exactly the engine's reading, party by party");
 
-    /* THE TERM IS THE DESK'S, read out of the master: a copy at 7 days moves every due date, and a master that states none stops the publish */
-    const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const seven = src.replace(/(const RULES=\{[^;]*?\bcreditDays:)10\b/, (all, head) => head + "7");
-    ok(seven !== src, "the fixture master carries a 7-day term");
-    writeFileSync(join(tmp, "m7.html"), seven);
-    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)creditDays:10\b/, (all, head) => head + "creditWeeks:2"));
-    const M7 = await load("s6pay7", join(tmp, "m7.html"));
-    const pay7 = M7.liveStatement(P, at).pay, q2 = pay7.now.parts.find((x) => x.date === "2026-09-16");
-    ok(pay7.term === 7 && q2.due === "2026-09-23" && q2.late === true && pay7.overdue.rm === 300,
-      "the term is the desk's RULES.creditDays: at 7 days the rest of the 16 Sep order falls due on 23 Sep and is overdue: "
-      + JSON.stringify({ term: pay7.term, due: q2.due, late: q2.late, overdue: pay7.overdue.rm }));
+    /* THE TERM IS THE DESK'S RULES.holdDays, read out of the master: a copy at 1 day moves every due date, and a master that states none stops the publish */
+    const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+    const one = src.replace(/(const RULES=\{[^;]*?\bholdDays:)3\b/, (all, head) => head + "1");
+    ok(one !== src, "the fixture master carries a 1-day term");
+    writeFileSync(join(tmp, "m1.html"), one);
+    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)holdDays:3\b/, (all, head) => head + "holdWeeks:2"));
+    const M1 = await load("s6pay1", join(tmp, "m1.html"));
+    const pay1 = M1.liveStatement(P, at).pay, q5 = pay1.now.parts.find((x) => x.date === "2026-09-20");
+    ok(pay1.term === 1 && q5.due === "2026-09-22" && q5.late === true && pay1.overdue.rm === 400,
+      "the term is the desk's RULES.holdDays: at 1 day the part collected on 21 Sep is past its day on 22 Sep and overdue: "
+      + JSON.stringify({ term: pay1.term, due: q5.due, late: q5.late, overdue: pay1.overdue.rm }));
     const M0 = await load("s6pay0", join(tmp, "m0.html"));
     let threw = "";
     try { M0.liveStatement(P, at); } catch (e) { threw = String(e && e.message); }
-    ok(/creditDays/.test(threw), "and a master that states no term stops the publish rather than guessing a due date: " + JSON.stringify(threw));
+    ok(/holdDays/.test(threw), "and a master that states no term stops the publish rather than guessing a due date: " + JSON.stringify(threw));
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 
   /* over the real book, the rule and never a day's figures: every live statement's three reconcile to its own owed */
@@ -5715,6 +5730,37 @@ await (async () => {
   }
   ok(n > 10 && !off.length, "on the book, every live statement's to pay now and coming up reconcile to its owed: " + n + " statements"
     + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
+})();
+
+section("28 Sep 2026: overdue counts from the handover of the goods still unpaid, the engine's txUnpaidSince");
+await (async () => {
+  /* HIS INSTRUCTION OF 28 SEP 2026: an order is due when it is ready, and overdue is counted from the day the goods were
+     collected or delivered. The day is the engine's, one reading for the Counter's hold and the desk's reminders: the
+     handovers walked in date order against the units the money covers, the day of the first that goes past them.
+     Forced rows under an invented code, the third of each being what it should answer. */
+  const E = (await import("../engine/position.mjs")).default;
+  const row = (x) => Object.assign({ customer: "CX7-PY", product: "salt", date: "2026-09-01", qty: 2, total: 200 }, x);
+  const step = (date, kg) => ({ date, kind: "Fulfilment", kg, cash: 0 });
+  const run = (cases) => cases.map(([n, r, want]) => ({ n, got: E.txUnpaidSince(r), want })).filter((x) => x.got !== x.want);
+  const later = run([
+    ["one handover, unpaid", row({ deliveredQty: 2, amend: [step("2026-09-10", 2)] }), "2026-09-10"],
+    ["two handovers, both unpaid: the first", row({ deliveredQty: 2, amend: [step("2026-09-20", 1), step("2026-09-10", 1)] }), "2026-09-10"]]);
+  ok(later.length === 0, "the clock starts at the first handover of the goods unpaid, and a later handover does not restart it: " + JSON.stringify(later));
+  const paid = run([
+    ["the first unit paid: the second's day", row({ deliveredQty: 2, cash: 100, amend: [step("2026-09-10", 1), step("2026-09-20", 1)] }), "2026-09-20"],
+    ["the carriage unpaid keeps the clock", row({ qty: 1, total: 100, delivery: 10, cash: 100, deliveredQty: 1, deliveredOn: "2026-09-12" }), "2026-09-12"]]);
+  ok(paid.length === 0, "money that covers the first units starts no clock, and what is owed is the goods and the delivery: " + JSON.stringify(paid));
+  const days = run([
+    ["units with no step of their own went on deliveredOn", row({ deliveredQty: 2, deliveredOn: "2026-09-15", cash: 100, amend: [step("2026-09-10", 1)] }), "2026-09-15"],
+    ["no step and no deliveredOn: the row's date", row({ deliveredQty: 1 }), "2026-09-01"]]);
+  ok(days.length === 0, "units handed over with no step of their own went on the last handover's day, else the row's date: " + JSON.stringify(days));
+  const none = run([
+    ["paid in full", row({ deliveredQty: 2, cash: 200, amend: [step("2026-09-10", 2)] }), null],
+    ["nothing handed over", row({}), null],
+    ["written off", row({ deliveredQty: 2, defaulted: true, amend: [step("2026-09-10", 2)] }), null],
+    ["cancelled", row({ cancelled: true }), null],
+    ["no day at all", row({ date: null, deliveredQty: 1 }), null]]);
+  ok(none.length === 0, "and nothing where nothing handed over is unpaid, a write-off included, or where no day is known: " + JSON.stringify(none));
 })();
 
 section("v432: the money on a statement is the money on the book");
@@ -28785,6 +28831,41 @@ await (async () => {
     "the book carries the roll of zhim2a's 5 unit, 9.9 less 5 is 4.9: " + live.slice(0, 100));
 })();
 
+section("28 Sep 2026: a correction that restates what moved carries the units on its step, so a handover in stages keeps each stage's day");
+await (async () => {
+  /* HIS INSTRUCTION OF 28 SEP 2026: overdue is counted from the day the goods were collected or delivered. A site handover
+     folds as a Correction stating the running total, and deliveredOn is overwritten at every stage, so a row handed over in
+     two stages kept only the last day, and the engine's txUnpaidSince would have restarted the clock on the first stage's
+     goods. The fold now writes the difference on the Correction's step. Fixture rows under an invented code. */
+  const { apply } = await import("../tools/fold.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+  B.roster.push("CZ9-ST");
+  B.sales.push({ rid: "sS1", customer: "CZ9-ST", date: "2026-09-08", qty: 5, total: 500, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
+  B.sales.push({ rid: "sS2", customer: "CZ9-ST", date: "2026-09-08", qty: 5, total: 500, cash: 100, deliveredQty: 0, product: "salt", note: "fixture" });
+  const run = (rid, id, date, fields) => apply(B, { ok: true, count: 1, approved: [{ id, collection: "sales", amends: rid, amendKind: "Correction", row: {},
+    entry: { at: id, payload: { mode: "amend", direction: "SELL", rid, kind: "Correction", date, fields } } }] },
+    { version: "v9996", date: "28 Sep 2026", title: "FIXTURE", notes: ["fixture"], rows: { [id]: { note: "fixture correction" } }, stockNote: "fixture roll." }, master);
+  const probs = (r) => (r && r.problems) || [];
+  const a1 = run("sS1", "2026-09-10T03:00:00.000Z", "2026-09-10", { deliveredQty: 2, deliveredOn: "2026-09-10", handover: "collected" });
+  const a2 = run("sS1", "2026-09-20T03:00:00.000Z", "2026-09-20", { deliveredQty: 5, deliveredOn: "2026-09-20", handover: "collected" });
+  const s1 = B.sales.find((r) => r.rid === "sS1"), steps = (s1.amend || []).filter((a) => a.kind === "Correction").map((a) => a.date + ":" + a.kg);
+  ok(!probs(a1).length && !probs(a2).length && JSON.stringify(steps) === '["2026-09-10:2","2026-09-20:3"]' && s1.deliveredOn === "2026-09-20",
+    "each stage's Correction carries the units it moved, on its own day, while deliveredOn keeps only the last: " + JSON.stringify({ steps, deliveredOn: s1.deliveredOn, problems: probs(a1).concat(probs(a2)) }));
+  ok(E.txUnpaidSince(s1) === "2026-09-10", "so the first stage's goods, unpaid, are overdue from their own day, not the last handover's: " + E.txUnpaidSince(s1));
+  /* handed 2, one handed back, then 1 more, with 1 paid: the unit still held from the first stage is the paid one */
+  const b1 = run("sS2", "2026-09-10T03:00:01.000Z", "2026-09-10", { deliveredQty: 2, deliveredOn: "2026-09-10", handover: "collected" });
+  const b2 = run("sS2", "2026-09-12T03:00:01.000Z", "2026-09-12", { deliveredQty: 1 });
+  const b3 = run("sS2", "2026-09-15T03:00:01.000Z", "2026-09-15", { deliveredQty: 2, deliveredOn: "2026-09-15" });
+  const s2 = B.sales.find((r) => r.rid === "sS2"), back = (s2.amend || []).filter((a) => a.kind === "Correction").map((a) => a.date + ":" + a.kg);
+  ok(!probs(b1).length && !probs(b2).length && !probs(b3).length && JSON.stringify(back) === '["2026-09-10:2","2026-09-12:-1","2026-09-15:1"]'
+    && E.txUnpaidSince(s2) === "2026-09-15",
+    "a unit handed back is a negative step and leaves the latest stage first, so with one unit paid the goods unpaid date from the last stage: "
+    + JSON.stringify({ back, since: E.txUnpaidSince(s2) }));
+})();
+
 section("v741: the engine's status and dates, the customer's statement and the row editor read what is owed as the goods and the delivery");
 await (async () => {
   /* v738 named six readers and missed four, found by an adversarial read of its own diff the same afternoon: txStat
@@ -40925,31 +41006,52 @@ await (async () => {
     } finally { dom.window.close(); }
   };
   const part = (o) => Object.assign({ late: false, whole: o.rm, product: "salt", qty: 2.5, got: 2.5, resale: false }, o);
-  const one = await open({ term: 10,
-    now: { rm: 70, due: kl(2), parts: [part({ date: kl(-8), due: kl(2), rm: 70, whole: 120, gotOn: kl(-8) })] },
+  /* 28 Sep 2026, his instruction: a part is overdue from the day its goods went (since) and due is the last day it can be
+     paid with ordering kept open, three days after */
+  const one = await open({ term: 3,
+    now: { rm: 70, due: kl(2), parts: [part({ date: kl(-3), since: kl(-1), due: kl(2), rm: 70, whole: 120, gotOn: kl(-1) })] },
     overdue: { rm: 0, parts: [] },
     coming: { rm: 110, parts: [{ date: kl(-1), rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }] } });
   ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70"
-    && one.tile[2] === "The rest of Cube 2.5 units you received " + said(kl(-8)) + ". Due by " + said(kl(2)) + ", in 2 days."
+    && one.tile[2] === "The rest of Cube 2.5 units you received " + said(kl(-1)) + ". Pay by " + said(kl(2)) + ", in 2 days, to keep ordering."
     && one.pill === "Pay RM 70" && one.pills === 1,
     "To pay now heads Home: its figure, what it is for with the day it was received and the day it is due, and the one filled Pay: "
     + JSON.stringify([one.first, one.tile, one.pill]));
+  /* his word of 28 Sep 2026: on its last day the line names no date, "Pay today to keep ordering." */
+  const today = await open({ term: 3,
+    now: { rm: 70, due: kl(0), parts: [part({ date: kl(-4), since: kl(-3), due: kl(0), rm: 70, gotOn: kl(-3) })] },
+    overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
+  ok(today.tile[2] === "Cube 2.5 units you received " + said(kl(-3)) + ". Pay today to keep ordering.",
+    "on its last day the line says to pay today, with no date beside it: " + JSON.stringify(today.tile));
   const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1];
   ok(one.heads.join() === "Coming up" && one.rows.length === 0 && one.coming.length === 1
     && one.coming[0].join("|") === "1 unitCube|Due when you receive it|" + age(kl(-1)) + "|RM 110"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word; one part says its due day in the line above, so no Overdue list: "
     + JSON.stringify([one.heads, one.rows, one.coming]));
-  const two = await open({ term: 10,
-    now: { rm: 300, due: kl(-10), parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
-      part({ date: kl(-7), due: kl(3), rm: 120, qty: 1, got: 1, gotOn: kl(-7), resale: true })] },
-    overdue: { rm: 180, parts: [part({ date: kl(-20), due: kl(-10), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
+  const two = await open({ term: 3,
+    now: { rm: 300, due: kl(-17), parts: [part({ date: kl(-20), since: kl(-20), due: kl(-17), late: true, rm: 180, whole: 250, gotOn: kl(-20) }),
+      part({ date: kl(-7), since: kl(-1), due: kl(2), rm: 120, qty: 1, got: 1, gotOn: kl(-1), resale: true })] },
+    overdue: { rm: 180, parts: [part({ date: kl(-20), since: kl(-20), due: kl(-17), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
     coming: { rm: 0, parts: [] } });
-  ok(two.tile[2] === "2 orders you have received. The first was due by " + said(kl(-10)) + "." && two.pill === "Pay RM 300"
+  ok(two.tile[2] === "2 orders you have received. The first is overdue by 20 days." && two.pill === "Pay RM 300"
     && two.heads.join() === "Overdue" && two.rows.length === 1
-    && two.rows[0].join("|") === "The rest of Cube 2.5 units you received " + said(kl(-20)) + "|RM 180|It was due by " + said(kl(-10)) + ".",
-    "of several parts, the line says the first due day, and each overdue part stands beneath with the day it fell due: "
+    && two.rows[0].join("|") === "The rest of Cube 2.5 units you received " + said(kl(-20)) + "|RM 180|Overdue by 20 days.",
+    "of several parts, the line says how long the first is overdue, counted from the day its goods went, and each overdue part stands beneath: "
     + JSON.stringify([two.tile[2], two.heads, two.rows]));
+  /* 28 SEP 2026: LATE ON THE PHONE'S OWN CLOCK AS WELL. Only the Actions chain publishes, so a part whose last day has passed
+     on this phone's Kuala Lumpur day is overdue, and holds ordering, before the publish has sealed it late */
+  /* and the day it names is the handover of the goods still unpaid (since), not the last handover's (gotOn), so the
+     day it says they received the goods and the days it says they are overdue count from the same day */
+  const stale = await open({ term: 3,
+    now: { rm: 90, due: kl(-2), parts: [part({ date: kl(-6), since: kl(-5), due: kl(-2), rm: 60, whole: 60, gotOn: kl(-3) }),
+      part({ date: kl(-2), since: kl(-1), due: kl(2), rm: 30, whole: 30, qty: 1, got: 1, gotOn: kl(-1) })] },
+    overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
+  ok(stale.heads.join() === "Overdue" && stale.rows.length === 1
+    && stale.rows[0].join("|") === "Cube 2.5 units you received " + said(kl(-5)) + "|RM 60|Overdue by 5 days."
+    && /Please pay the overdue amount of RM 60 before placing another order/.test(stale.text),
+    "a part whose last day has passed on the phone's own Kuala Lumpur day is overdue and holds ordering, though the publish has not yet sealed it late: "
+    + JSON.stringify([stale.heads, stale.rows, stale.text.slice(0, 160)]));
   const none = await open({ term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
   const unsealed = await open(undefined);
   ok(!none.hidden && /To pay nowRM 0 ?Nothing to pay now[.]/.test(none.text) && !none.pills && unsealed.hidden && unsealed.shown,
@@ -41212,8 +41314,8 @@ await (async () => {
   const said = (x) => { const d = new Date(x + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
   const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
   const part = (o) => Object.assign({ late: true, product: "salt", qty: 2, got: 2, resale: false }, o);
-  const parts = [part({ date: kl(-30), due: kl(-20), rm: 180, whole: 180, gotOn: kl(-30) }), part({ date: kl(-14), due: kl(-4), rm: 120, whole: 200, gotOn: kl(-14) })];
-  const pay = { term: 10, now: { rm: 300, due: kl(-20), parts }, overdue: { rm: 300, parts }, coming: { rm: 0, parts: [] } };
+  const parts = [part({ date: kl(-32), since: kl(-30), due: kl(-27), rm: 180, whole: 180, gotOn: kl(-30) }), part({ date: kl(-16), since: kl(-14), due: kl(-11), rm: 120, whole: 200, gotOn: kl(-14) })];
+  const pay = { term: 3, now: { rm: 300, due: kl(-27), parts }, overdue: { rm: 300, parts }, coming: { rm: 0, parts: [] } };
   const list = { at: "2026-09-24T00:00:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 100, orders: 4, basis: "yours", sizes: [{ q: 1, price: 100 }] }], soon: [] };
   const open = async (orders, claims) => {
@@ -41241,6 +41343,7 @@ await (async () => {
       const pane = d.querySelector("#pOrder .pane");
       const out = { tab: t(d.getElementById("tOrder")), onOrder: !d.getElementById("pOrder").hidden, home: !d.getElementById("pHome").hidden, head: t(d.querySelector("#pOrder h2")),
         tile: pane ? [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(pane.querySelector(q))).join(" ") : "",
+        note: pane ? t(pane.querySelector(".salt-kpi__note")) : "",
         rows: pane ? [...pane.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(r.querySelector(q))).join("|")) : [],
         form: !!d.getElementById("oNew"), pricesTab: !d.getElementById("tPrices").hidden, claimLine: t(d.querySelector("#payHead .msg")) };
       d.getElementById("tPrices").click();
@@ -41251,9 +41354,11 @@ await (async () => {
   const held = await open([], []);
   /* S7 merge: Home opens first over the line too, and Orders keeps its name while it is the payment page (S7 7.1) */
   ok(held.home && !held.onOrder && held.tab === "Orders" && held.head === "Payment due" && held.tile === "Overdue RM 300" && !held.form
-    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180|It was due by " + said(kl(-20)) + ".",
-      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120|It was due by " + said(kl(-4)) + "."]),
-    "RM 300 past its term, Orders is the payment page with the overdue figure and each part with the day it fell due, and no order form: " + JSON.stringify(held));
+    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180|Overdue by 30 days.",
+      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120|Overdue by 14 days."]),
+    "RM 300 past its term, Orders is the payment page with the overdue figure and each part with how long it is overdue, counted from the day its goods went, and no order form: " + JSON.stringify(held));
+  ok(held.note === "2 orders unpaid more than 3 days after you received them. The first is overdue by 30 days.",
+    "and the figure's line names the term the publish sealed, counted from when they received the goods: " + held.note);
   ok(held.pricesTab && held.prices, "and the price list stays one tap away and readable while it is held");
   const acct = await open([], [{ id: "c1", at: new Date().toISOString(), amount: 300, method: "transfer", account: "maybank", state: "waiting" }]);
   const ord = await open([{ id: "oZ", product: "salt", qty: 1, mode: "collect", total: 20, delivery: 0, paid: 0, claimed: 20, moved: 0, at: "2026-09-20T03:00:00Z",
@@ -41660,7 +41765,7 @@ await (async () => {
     "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
 })();
 
-section("23 Sep 2026: over RM 100 owed, the account is a payment page");
+section("23 Sep 2026: an amount past its term makes the account a payment page, any amount since 28 Sep 2026");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: "if someone owes more than RM100, their account will only lead
      them to a payment page, which states: please pay the overdue amount before making another order".
@@ -41689,11 +41794,15 @@ await (async () => {
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
-  /* S6 6.7 (his D9): the line counts what is past its term, the sealed pay.overdue, and never what is owed */
+  /* S6 6.7 (his D9): the line counts what is past its term, and never what is owed. 28 SEP 2026, HIS INSTRUCTION: ANY
+     AMOUNT past its term holds (the RM 100 line is retired), the term being three days from the day the goods went */
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const openWith = async (overdue, owed) => {
     const u = "abcd-efgh", pass = "fixture-pass-hold", ck = await C.contentKey("test-secret", u);
-    const part = { date: "2026-09-01", due: "2026-09-11", late: true, rm: overdue, whole: overdue, product: "salt", qty: 2, got: 2, gotOn: "2026-09-01", resale: false };
-    const pay = overdue === undefined ? undefined : { term: 10, now: { rm: owed || overdue, due: "2026-09-11", parts: [part] }, overdue: { rm: overdue, parts: overdue ? [part] : [] }, coming: { rm: 0, parts: [] } };
+    const late = { date: "2026-09-01", since: "2026-09-01", due: "2026-09-04", late: true, rm: overdue, whole: overdue, product: "salt", qty: 2, got: 2, gotOn: "2026-09-01", resale: false };
+    const rest = owed > (overdue || 0) ? { date: kl(-1), since: kl(-1), due: kl(2), late: false, rm: owed - (overdue || 0), whole: owed - (overdue || 0), product: "salt", qty: 1, got: 1, gotOn: kl(-1), resale: false } : null;
+    const parts = [overdue ? late : null, rest].filter(Boolean);
+    const pay = overdue === undefined ? undefined : { term: 3, now: { rm: owed || overdue, due: parts.length ? parts[0].due : null, parts }, overdue: { rm: overdue, parts: overdue ? [late] : [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
       live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay })) };
@@ -41715,7 +41824,7 @@ await (async () => {
         pay: [...d.querySelectorAll("#pOrder .pane button.salt-pill")].map((b) => b.textContent).join(), form: !!d.querySelector("#pOrder select") };
     } finally { dom.window.close(); }
   };
-  const held = await openWith(250.5), under = await openWith(100), none = await openWith(undefined), owedOnly = await openWith(50, 300);
+  const held = await openWith(250.5), small = await openWith(20), owedLate = await openWith(50, 300), none = await openWith(undefined), owedOnly = await openWith(0, 300);
   /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and its Pay; Orders is the payment
      page (S6 6.7: what is past its term, Pay, no order form), and the price list stays readable */
   ok(held.home && !held.orderShown && !held.stmtShown && held.pricesTab && held.stmtTab
@@ -41723,10 +41832,13 @@ await (async () => {
     && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.pay === "Pay RM 250.5" && !held.form,
     "RM 250.50 past its term, Home says to pay the overdue amount first with its Pay, Orders is the payment page with its Pay and no order form, and the price list stays readable: "
     + JSON.stringify({ ...held, order: held.order.slice(0, 90), homeText: held.homeText.slice(0, 90) }));
-  ok(under.home && !under.orderShown && under.pricesTab && !/overdue/.test(under.order + under.homeText)
-    && none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.order + none.homeText)
+  ok(/Please pay the overdue amount of RM 20 before placing another order/.test(small.homeText) && small.pay === "Pay RM 20" && !small.form
+    && /Please pay the overdue amount of RM 50 before placing another order/.test(owedLate.homeText) && owedLate.pay === "Pay RM 50" && !owedLate.form,
+    "any amount past its term holds, since his instruction of 28 Sep 2026: RM 20 alone, and RM 50 of the RM 300 owed, each with its Pay and no order form: "
+    + JSON.stringify({ small: [small.pay, small.form, small.homeText.slice(0, 90)], owedLate: [owedLate.pay, owedLate.form] }));
+  ok(none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.order + none.homeText)
     && owedOnly.home && !owedOnly.orderShown && owedOnly.pricesTab && !/overdue/.test(owedOnly.order + owedOnly.homeText),
-    "at RM 100 overdue exactly, with no figure at all, and owing RM 300 of which only RM 50 is past its term, Home opens with Prices beside it and no overdue line");
+    "with no figure at all, and owing RM 300 with nothing past its term, Home opens with Prices beside it and no overdue line");
 })();
 
 section("S1 1.28: Still to collect is one line a book, never units of different books added");
@@ -43222,21 +43334,23 @@ await (async () => {
       return { lang: D.documentElement.lang, drawn: !!D.querySelector("#payHead .salt-ledger") && !!D.querySelector(".hpart"),
         leak: /coverRM/.test(whole) || whole.includes("13.37"),
         lines: [...D.querySelectorAll(".pcover")].map((x) => ({ t: x.textContent, k: x.getAttribute("data-w"),
-          where: x.closest("#payHead .salt-ledger") ? "overdue" : x.closest(".hpart") ? "coming" : "elsewhere", lang: lang(x) })) };
+          where: x.closest("#payHead .salt-ledger") ? "overdue" : x.closest(".hpart") ? "coming" : x.closest("#pOrder") ? "held" : "elsewhere", lang: lang(x) })) };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const en = await draw(["en-GB", "en"]);
   ok(en.drawn && en.lang === "en" && !en.leak
       && JSON.stringify(en.lines.map((x) => [x.where, x.t, x.k])) === JSON.stringify([["overdue", "Part paid from your reward", "part.cover"],
-        ["overdue", "Part paid from your reward", "part.cover"], ["coming", "Part paid from your reward", "part.cover"]]),
+        ["overdue", "Part paid from your reward", "part.cover"], ["coming", "Part paid from your reward", "part.cover"],
+        ["held", "Part paid from your reward", "part.cover"], ["held", "Part paid from your reward", "part.cover"]]),
     "Home names the reward's part with no amount, once for every covered part (the overdue pair, Fable's case among "
-    + "them, and the one coming up), never for a part without one, and never a leaked figure: " + JSON.stringify(en));
+    + "them, and the one coming up), never for a part without one, and never a leaked figure; any amount overdue holds "
+    + "since 28 Sep 2026, so the payment page names the overdue pair once more, on its own list: " + JSON.stringify(en));
   const ms = await draw(["ms-MY", "ms", "en"]);
   const both = [WD.EN["part.cover"], WD.MS["part.cover"]];
   ok(ms.drawn && ms.lang === "ms" && !ms.leak && typeof WD.MS["part.cover"] === "string" && WD.MS["part.cover"] !== WD.EN["part.cover"]
       && !/\d/.test(WD.EN["part.cover"]) && !/\d/.test(WD.MS["part.cover"])
       && JSON.stringify(ms.lines.map((x) => [x.where, x.t, x.lang])) === JSON.stringify([["overdue", WD.MS["part.cover"], "ms"],
-        ["overdue", WD.MS["part.cover"], "ms"], ["coming", WD.MS["part.cover"], "ms"]])
+        ["overdue", WD.MS["part.cover"], "ms"], ["coming", WD.MS["part.cover"], "ms"], ["held", WD.MS["part.cover"], "ms"], ["held", WD.MS["part.cover"], "ms"]])
       && both.every((w) => O.siteWords(w) === "" && !O.wordsIn(w, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS, O.LEVEL_WORDS_MS)).length),
     "and on a Malay phone it is the Malay table's, with no amount either, and neither language names a product, a level "
     + "or the desk: " + JSON.stringify({ ms, both }));

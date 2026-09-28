@@ -57,6 +57,31 @@ function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
 function txUnpaidOut(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
 function txAdvance(s){return s.defaulted?0:txUnpaidOut(s);}
 function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
+/* 28 SEP 2026, HIS INSTRUCTION: OVERDUE IS COUNTED FROM THE DAY THE GOODS WERE COLLECTED OR DELIVERED. txUnpaidSince
+   names that day for the goods still unpaid: the handovers walked in date order against the units the money covers,
+   the day of the first handover that goes past them, so money paid for the first units starts no clock and a later
+   handover restarts none. A unit step carries its own day: a Fulfilment moving units, or a Correction restating what
+   moved, which the fold writes with the difference since 28 Sep 2026 (a reversal's is negative). Units handed over
+   with no step of their own (a Correction folded before then) went on deliveredOn, the last handover's day, else on
+   the row's date. Null where nothing handed over is unpaid (txAdvance: a write-off or a cancelled row owes nothing),
+   and where no day is known. */
+function txUnpaidSince(s){
+  if(!s||s.cancelled||!(txAdvance(s)>0.009))return null;
+  const p=txPrice(s),phys=txPhys(s),paidU=p>0?txPaid(s)/p:0;
+  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
+    .map(a=>({d:String(a.date),u:+a.kg}));
+  const rest=phys-steps.reduce((t,x)=>t+x.u,0);
+  if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest});
+  steps.sort((a,b)=>a.d.localeCompare(b.d));
+  /* the units they hold, oldest first: units handed back leave the latest handover first, and a trail stating more
+     than deliveredQty is cut from the latest too, so what is walked is what they hold */
+  const held=[],drop=n=>{while(n>0.0001&&held.length){const x=held[held.length-1],t=Math.min(n,x.u);x.u-=t;n-=t;if(x.u<=0.0001)held.pop();}};
+  for(const x of steps){if(x.u>0)held.push({d:x.d,u:x.u});else drop(-x.u);}
+  drop(held.reduce((t,x)=>t+x.u,0)-phys);
+  let cum=0;
+  for(const x of held){cum+=x.u;if(cum>paidU+0.0001)return x.d||null;}
+  return null;
+}
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
    it is the one that turns MONEY into a claim on the shelf. txDeferUnits asks how much salt has
@@ -911,7 +936,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
+return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v914",
+  "d": "28 Sep 2026",
+  "t": "OVERDUE COUNTS FROM THE HANDOVER",
+  "n": [
+   "<p><b>OVERDUE COUNTS FROM THE HANDOVER, AND PAST THREE DAYS ORDERING STOPS.</b> On his word of 28 Sep 2026: an order is overdue from the day it was collected or delivered, not the day it was ordered, and a customer more than 3 days past that cannot order anything else, whatever the amount; the RM 100 line of D9 is retired. The engine's txUnpaidSince names the day for the goods still unpaid: money covers the first units, so it starts no clock, and a later handover restarts none. The publish seals each part's since and due, due being since plus RULES.holdDays (3) read from the master, and late past that day. The Counter holds on any late amount, and judges late on its own Kuala Lumpur day as well, since only the chain publishes.</p>",
+   "<p><b>THE WORDS, ON HIS APPROVAL.</b> Pay by Thu 1 Oct, in 3 days, to keep ordering. Pay today to keep ordering. Overdue by 5 days, counted from the handover, since payment is due before the goods go. 2 orders unpaid more than 3 days after you received them. English and Malay.</p>",
+   "<p><b>A HANDOVER IN STAGES KEEPS EACH STAGE'S DAY.</b> The fold and the desk's preview seed a trail from the row as it arrived and write on each Correction the units it moved, read by the engine and never the raw field. The seed used to be taken after the first handover, putting a site order's units on its order day: s202 (CR3-DAM) is repaired on his yes, its 1.5 unit collected 26 Sep where it read 25 Sep. Seven more rows carry the old seed; none reads a wrong day, each paid, cancelled or collected the day it was ordered, and they are left as booked.</p>",
+   "<p><b>NO PRICE MOVES.</b> The pricing profile keeps RULES.creditDays, ten days from the order date. The desk's reminders, due at Ready, the invoice, the advance reminder and the order sheet follow as versions of their own. <b>THE SUITE.</b> Two sections are new and six changed; the v420 differential drives a handover and a receipt through both engines; each of 25 mutations turns a check red.</p>"
+  ]
+ },
+ {
   "v": "v913",
   "d": "28 Sep 2026",
   "t": "THE DESK INSTALLS AS SALT DESK, AND HIS PAGE IS SALT ACCOUNT",

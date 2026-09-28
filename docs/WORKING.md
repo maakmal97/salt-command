@@ -98,7 +98,9 @@ measurement of the desk.
   string. Run the full suite once before every push regardless.
 - **Mutations.** One mutation per run, but runs may overlap. Master mutations go to their own
   copies, run with `SALT_MASTER=<copy>`; a section that reads the master straight off disk will not
-  see the copy. Tool-file mutations edit the shared checkout: one at a time, restored byte for byte
+  see the copy, so read `process.env.SALT_MASTER ||` the checkout's path. Those copies run side by
+  side, so a section writing fixed files (`test/.v420.*` until 28 Sep 2026) reads its twin's master
+  and fails unmutated: write fixtures into a `mkdtempSync` folder. Tool-file mutations edit the shared checkout: one at a time, restored byte for byte
   in a `finally`, never while the full suite runs. Check that each mutation actually changed the
   text. `tools/section.mjs "<prefix>" --mutations <file.json>` (`[{name, file?, find, replace}]`,
   no file meaning the master) does all of that and names the checks each one turns red; it exits 1

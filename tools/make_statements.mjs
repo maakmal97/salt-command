@@ -798,27 +798,31 @@ export function partyTotals(party, to) {
 
 /* ---- WHAT IS TO PAY NOW, WHAT IS OVERDUE AND WHAT IS COMING UP (S6, his D9 of 24 Sep 2026) ----
    The engine's own readings, so the customer reads what his Order book reads and the site prices
-   nothing. TO PAY NOW is the desk's receivable, `txAdvance`: goods handed over and not paid for,
-   each part due at its order date plus the term, the day his worked example gives ("collected
-   Wed 16 Sep, due by Sat 26 Sep"). OVERDUE is a part once that day has passed, which is the
-   desk's `buyerProfile` reading of late (more than the term since the order date). COMING UP is
-   `txPendRM`: an order agreed and not handed over, with money still to pay on it. A gift counts in
-   none of them, owing nothing on the statement, and nor does a written-off sale, which the desk's
-   own readings of what is owed leave out, or a row the statement's own window has not reached.
-   THE TERM IS THE DESK'S `RULES.creditDays`, READ OUT OF THE MASTER rather than restated, for the
+   nothing. TO PAY NOW is the desk's receivable, `txAdvance`: goods handed over and not paid for.
+   COMING UP is `txPendRM`: an order agreed and not handed over, with money still to pay on it. A
+   gift counts in none of them, owing nothing on the statement, and nor does a written-off sale,
+   which the desk's own readings of what is owed leave out, or a row the statement's own window has
+   not reached.
+   28 SEP 2026, HIS INSTRUCTION, IN PLACE OF D9'S TERM (ten days from the order date, and a hold only
+   over RM 100): an order is due when it is ready, OVERDUE IS COUNTED FROM THE DAY THE GOODS WERE
+   COLLECTED OR DELIVERED, and past three days the customer cannot order anything else, whatever the
+   amount. So a part carries `since`, the engine's `txUnpaidSince` (the handover of the goods still
+   unpaid), and `due`, the last day it can be paid with ordering kept open, `since` plus the term;
+   it is `late`, and in OVERDUE, once that day has passed. An undated part is never late.
+   THE TERM IS THE DESK'S `RULES.holdDays`, READ OUT OF THE MASTER rather than restated, for the
    reason siteBaseUrl reads wrangler.stmt.jsonc: two copies of a due date drift in silence. */
 const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
 let TERM = null;
-export function creditTerm() {
+export function holdTerm() {
   if (TERM != null) return TERM;
   const rules = /const RULES=\{([^;]*)\};/.exec(readFileSync(MASTER, "utf8"));
-  const m = rules && /\bcreditDays:\s*(\d+)/.exec(rules[1]);
-  if (!m) throw new Error("the master states no RULES.creditDays, so no due date can be written");
+  const m = rules && /\bholdDays:\s*(\d+)/.exec(rules[1]);
+  if (!m) throw new Error("the master states no RULES.holdDays, so no due date can be written");
   return (TERM = +m[1]);
 }
 const dayPlus = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOString().slice(0, 10);
 export function payDue(party, day) {
-  const term = creditTerm(), E = POSITION_ENGINE, now = [], coming = [];
+  const term = holdTerm(), E = POSITION_ENGINE, now = [], coming = [];
   const sum = a => +a.reduce((t, x) => t + x.rm, 0).toFixed(2);
   /* the statement's own window (stmtRows): a row not Pending and dated after the day is not on it yet */
   const onIt = s => txStat(s).order === 'Pending' || !(new Date(s.date) > new Date(day));
@@ -834,8 +838,8 @@ export function payDue(party, day) {
     const rm = +E.txAdvance(s).toFixed(2);
     const nowPart = rm > 0.009;
     if (nowPart) {
-      const due = s.date ? dayPlus(s.date, term) : null;
-      now.push(Object.assign({ date: s.date || null, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
+      const since = E.txUnpaidSince(s), due = since ? dayPlus(since, term) : null;
+      now.push(Object.assign({ date: s.date || null, since, due, late: !!due && day > due, rm, whole: +txOwed(s).toFixed(2),
         product, qty: s.qty, got: +(s.deliveredQty || 0), gotOn: gotOn(s), resale }, hasCover ? { cover: 1 } : {}));
     }
     const toPay = +E.txPendRM(s).toFixed(2);

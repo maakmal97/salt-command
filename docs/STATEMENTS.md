@@ -246,17 +246,24 @@ page in the same run that reaches the phone. Its heading names that minute in Ku
 time. The dated issues beside it are the monthly statements exactly as sent, the August archive
 included, and they never change.
 
-**What is to pay, sealed beside `owed`** (S6, his D9 of 24 Sep 2026). `liveStatement` carries `owed`,
-the footer's figure, and `pay` from `payDue` in `tools/make_statements.mjs`: `{term, now: {rm, due,
-parts}, overdue: {rm, parts}, coming: {rm, parts}}`. **To pay now** is the desk's receivable,
-`txAdvance`, row by row: goods handed over and not paid for, each part due at its order date plus
-`term`, the desk's `RULES.creditDays` read out of the master (a master stating none stops the
-publish); `now.due` is the soonest. `due` counts from `date`, never `gotOn`, as the desk's Credit age
-does, so goods handed over after that day are late the day they go. A part is `late`, and listed in **overdue**, only once its due
-day has passed, the desk's `buyerProfile` reading of late; an undated part is never overdue. The
-desk's Credit age breach and its chase flag the same part a day earlier, on the due day itself.
+**What is to pay, sealed beside `owed`** (S6, his D9 of 24 Sep 2026, as his instruction of 28 Sep 2026
+amends it). `liveStatement` carries `owed`, the footer's figure, and `pay` from `payDue` in
+`tools/make_statements.mjs`: `{term, now: {rm, due, parts}, overdue: {rm, parts}, coming: {rm, parts}}`.
+**To pay now** is the desk's receivable, `txAdvance`, row by row: goods handed over and not paid for.
+**Overdue is counted from the day the goods were collected or delivered** (28 Sep 2026, in place of ten
+days from the order date): a part's `since` is the engine's `txUnpaidSince`, the handover of the oldest
+unit still unpaid, walking the unit steps in date order against the units the money covers, so money for
+the first units starts no clock and a later handover restarts none (units with no step of their own went on
+`deliveredOn`, else the row's date; since 28 Sep 2026 the fold writes the units a Correction moved on its step, so
+a site handover in stages keeps each stage's day). `due` is `since` plus `term`, the desk's `RULES.holdDays` (3) read out
+of the master (a master stating none stops the publish): the last day it can be paid with ordering kept
+open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
+whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
+late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
+publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's pricing
+profile keeps `RULES.creditDays`, ten days from the order date, for its own "late", since that moves prices.
 **Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by
-`agreedOn`. A part carries `date`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
+`agreedOn`. A part carries `date`, `since`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
 id, drawn as a mark), `qty`, `got`, `gotOn` (the last handover's day, one in stages included) and `resale`; a coming part `date`, `rm`, `product`,
 `qty`, `toCome` and `resale`. A gift, a write-off and a row the statement has not reached (not agreed, and
 dated after the day) count in none of them, so now plus coming is `owed` plus the

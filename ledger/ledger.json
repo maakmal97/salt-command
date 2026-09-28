@@ -1,6 +1,6 @@
 {
- "v": "v910",
- "stamped": "28 Sep 2026, 06:50 KL",
+ "v": "v914",
+ "stamped": "28 Sep 2026, 09:34 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5369,20 +5369,20 @@
     "rid": "s202",
     "deliveredOn": "2026-09-26",
     "handover": "collected",
-    "mod": "corrected on 2026-09-26: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-09-26; handover (unset) to collected",
+    "mod": "corrected on 2026-09-26: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-09-26; handover (unset) to collected, then repaired on 2026-09-28: the 1.5 unit collected 26 Sep moved off the as-booked step onto the correction that handed it over",
     "amend": [
      {
       "date": "2026-09-25",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 1.5,
+      "kg": 0,
       "note": "as booked"
      },
      {
       "date": "2026-09-26",
       "kind": "Correction",
       "cash": 0,
-      "kg": 0,
+      "kg": 1.5,
       "note": "<b>CORRECTION ON s202: 1.5 UNIT COLLECTED 26 SEP, NOT A SEN IN.</b> Against CR3-DAM's SELL of 1.5 unit for RM130 dated 25 Sep 2026, order 20260925115016-gqlz1q, at RM86.67 a unit. The patch moves deliveredQty 0 to 1.5, deliveredOn unset to 26 Sep 2026 and handover unset to collected, preapproved by phone. Cash stays at RM0, so the whole RM130 stands open as an advance on top of RM155 outstanding, 0.27 unit on credit before this, none defaulted on 17 orders. Median rate RM80, range RM80 to RM92.50. Associate, on the roster. Costed at RM48 a unit, the desk's own inventory cost; the drafter flagged that RM48 is a blend across lot rates and the credit cap needs checking, and these figures settle neither."
      }
     ],
@@ -6461,7 +6461,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-27T22:43:41.205Z",
   "PRICING": {
-   "takenAt": "2026-09-27T22:50:54.518Z",
+   "takenAt": "2026-09-28T01:34:33.489Z",
    "sizes": [
     0.5,
     1,
@@ -13083,10 +13083,10 @@
      "cards": {}
     }
    },
-   "v": "v910"
+   "v": "v914"
   },
   "OPEN": {
-   "at": "2026-09-27T22:50:54.708Z",
+   "at": "2026-09-28T01:34:33.697Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
@@ -13284,7 +13284,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v910"
+   "v": "v914"
   }
  }
 }

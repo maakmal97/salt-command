@@ -692,10 +692,20 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       if (!row.amend || !row.amend.length) {
         /* v439: the undated suffix its two siblings have carried since v420. This was the third
            site of the same seeding and the only one without it, so a correction on an undated row
-           seeded a step that did not say the row was pending. The desk had it; the fold did not. */
-        row.amend = [seedStep(row, dir)];
+           seeded a step that did not say the row was pending. The desk had it; the fold did not.
+           28 Sep 2026: SEEDED FROM THE ROW AS IT ARRIVED (`before`), since the step says "as booked" and the
+           fields above are already written: a first handover folded as a Correction seeded its own units at the
+           booking date, and with the units now on the Correction's step they would have counted twice. */
+        row.amend = [seedStep(before, dir)];
       }
-      row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: 0, note: note || line }]);
+      /* 28 SEP 2026 (his instruction that overdue counts from the handover): A CORRECTION THAT RESTATES WHAT MOVED
+         CARRIES THE UNITS IT MOVED on its step, the difference the shelf is rolled by, so the day each stage of a
+         site handover went survives on the row: deliveredOn is the last handover's, overwritten at every stage, and
+         the engine's txUnpaidSince walks the steps to date the goods still unpaid. A step moving nothing says 0. The
+         units are the engine's reading, never the raw field: a lot with no receivedQty has received the lot. */
+      const units = dir === "BUY" ? E.poRecvUnits : E.txPhys;
+      const moved = +(units(after) - units(before)).toFixed(3);
+      row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: Math.abs(moved) > 0.0009 ? moved : 0, note: note || line }]);
     }
     if (note && !asked("note")) row.note = note + " " + (row.note || "");
     return;
