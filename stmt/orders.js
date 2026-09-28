@@ -256,7 +256,7 @@ export async function checkStores(env) {
    account a username is, `queued` and `sync`. Their order list and every answer to a move of theirs
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
-export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "week",
+export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "week",
   "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn"];
 export const customerView = (o) => {
   const v = {};
@@ -494,14 +494,27 @@ export const mintOrderId = (at) => at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-"
    acknowledgement the check behind its total, as for every quoted total. */
 export const PRICES_MOVED = refusal("pricesMoved").error;
 
-/** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }. */
-export function decidePlace(u, body, open, at, digest) {
+/* V3, HIS POINT 4 OF 28 SEP 2026: AN ORDER OVER THE CAP IS PAID IN ADVANCE. `caps` is the account's credit cap per
+   book, written in the clear beside the list's stamp at publish (tools/make_statements.mjs), and the stamp carries
+   them, so what the page said at Review is what Place stamps. A friend's order books to the associate's bucket, held
+   to its own cap; a friend's order from an account with no bucket reads its own. A book with no cap has none here. */
+export const capOf = (caps, product, forFriend) => {
+  const c = caps && typeof caps === "object" && Object.hasOwn(caps, product) ? caps[product] : null;
+  if (!c || typeof c !== "object") return null;
+  if (forFriend && isNum(c.friend)) return c.friend;
+  return isNum(c.own) ? c.own : null;
+};
+
+/** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }.
+ *  The terms at Place govern the order as its price does: a cap that moves later does not re-rule it. */
+export function decidePlace(u, body, open, at, digest, caps) {
   const c = checkPlacement(body, open);
   if (c.error) return c;
   if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
+  const cap = capOf(caps, c.order.product, c.order.forFriend);
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
-    history: [{ at, status: "placed", by: "customer" }] }, c.order);
+    history: [{ at, status: "placed", by: "customer" }] }, c.order, cap != null && c.order.qty > cap ? { prepay: true } : {});
   return { ev: { kind: "place", at, order } };
 }
 
@@ -862,9 +875,10 @@ export async function dropOrders(env, u) {
 export async function placeOrder(env, u, body) {
   /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
   const rec = await env.STMT.get("u:" + u, "json"), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";
+  const caps = (prices && prices.caps) || null;   /* V3: an order over its book's cap is paid in advance */
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest });
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, caps });
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
@@ -873,7 +887,7 @@ export async function placeOrder(env, u, body) {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest);
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, caps);
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
@@ -914,10 +928,13 @@ export async function customerMove(env, u, id, action, body) {
   return { order };
 }
 
-/* The rail, checked against the pay master, with the one rail his rule withholds. */
+/* The rail, checked against the pay master, with the one rail his rules withhold: on an order paid in advance (V3),
+   since paying at the door is not paying in advance, and while goods are out unpaid. */
 function pickRail(order, body, mine) {
   const method = String((body && body.method) || "");
   if (!METHODS.includes(method)) return Object.assign(refusal("railNone"), { status: 400 });
+  if (method === "cod" && order && order.prepay)
+    return Object.assign(refusal("cashPrepay"), { status: 409 });
   if (method === "cod" && hasUnpaidAdvance(mine))
     return Object.assign(refusal("cashWithheld"), { status: 409 });
   let account = null;

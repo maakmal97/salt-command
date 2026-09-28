@@ -306,7 +306,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   row is named by `ledgerKey`, **the engine's `ovKey` to the character**, which a close moves (a rejected close gives it back); an amendment
   waits until `OPEN.byKey` carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
-  and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance. A
+  and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance, and on an
+  order paid in advance (`prepay`, over its book's credit cap, stamped at Place). A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
   never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
   (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;

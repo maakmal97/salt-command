@@ -22995,7 +22995,7 @@ await (async () => {
   const built = [].concat(x(["dev."], ["phone", "computer"]), x(["place."], ["home", "prices", "order", "stmt", "card"]),
     x(["rew."], ["held", "ask", "none"], ["", "P"]), x(["lnk.opened"], ["1", "N"], ["", "Last"]),
     x(["hist."], ["paid", "sent", "chose"], ["", "By"]), ["hist.delivered", "hist.collected"],
-    x(["oh."], ["deliverTo", "deliver", "collect"], ["", "F"]), x(["pw.", "hc.still"], ["WithYou", "Part", "CashArrives", "CashCollect", "NowArrives", "NowCollect"]), ["pw.DueNow"],
+    x(["oh."], ["deliverTo", "deliver", "collect"], ["", "F"]), x(["pw.", "hc.still"], ["WithYou", "Part", "CashArrives", "CashCollect", "NowArrives", "NowCollect", "Prepay"]), ["pw.DueNow"],
     x(["due."], ["", "first"], ["Late", "Today", "Tomorrow", "InN"]), x(["part.", "part.rest"], ["Got", "Ordered", "Bare"], ["", "F"]),
     x(["ha."], ["deliv", "coll"], ["", "F"]), x(["pr."], ["asAt", "week"], ["", "Tap"]), x(["shape."], Object.values(P.PSHAPE)));
   const miss = named.concat(built).filter((k) => typeof EN[k] !== "string" && !/^(lnk\.opened|hc\.still|part\.rest)$/.test(k));
@@ -25112,7 +25112,7 @@ await (async () => {
   ok(/if \(cards && cards\[code\]\) \{\n\s+rec\.card = Object\.assign\(\{ at: cards\[code\]\.at \}, await encryptWith\(ck, JSON\.stringify\(cards\[code\]\)\)\);/.test(MS6),
     "it is sealed under the same content key as the statement and the price list, and only where there is one");
   const PUB6 = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
-  ok(/const c = associateCard\(rb\.w, row\.id\);/.test(PUB6) && /liveRecords\(root, key, now, pricing, \(opts && opts\.cards\) \|\| null\)/.test(PUB6),
+  ok(/const c = associateCard\(rb\.w, row\.id\);/.test(PUB6) && /liveRecords\(root, key, now, pricing, \(opts && opts\.cards\) \|\| null[,)]/.test(PUB6),
     "and the cards come off the SAME window as the prices, so a card and a price cannot be struck from different states of the book");
 
   /* ---- both doors hand it over, driven ---- */
@@ -41971,6 +41971,231 @@ await (async () => {
       && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
       "choosing it sends the choice and no figure, and the order then says it is paid in cash at the handover, recorded by us: " + JSON.stringify(st.sent));
   } finally { w.close(); }
+})();
+
+section("V3 (28 Sep 2026): each account's credit cap per book is the desk's own, sealed into its price list and written beside the stamp, which carries it");
+await (async () => {
+  /* HIS POINT 4 OF 28 SEP 2026, "Over 1 unit, the customer is reminded that payment must be made in advance", on each
+     book's own credit cap (his Q2). The cap is the desk's capForParty: an associate's figure or a retail one, for a book
+     that states one, and a friend's order books to the associate's bucket, which the desk holds to retail. The expected
+     figures are read off RULES.creditUnits, never off the reading under test. Each assertion was proved red by mutation. */
+  const { openMaster: omV3 } = await import("../tools/payload.mjs");
+  const { creditCaps: ccV3 } = await import("../tools/book.mjs");
+  const { w: wV3 } = await omV3();
+  const rdV3 = (e) => JSON.parse(String(wV3.eval("JSON.stringify(" + e + ")")));
+  /* the borrowed-cap check needs a book that states none; the day every book states one, this window takes the last one's off */
+  if (rdV3("PROD_IDS.every(function(p){return RULES.creditUnits[p]!=null;})")) wV3.eval("delete RULES.creditUnits[PROD_IDS[PROD_IDS.length-1]]");
+  const unitsV3 = rdV3("RULES.creditUnits"), booksV3 = rdV3("PROD_IDS"), statedV3 = booksV3.filter((p) => unitsV3[p] != null).sort();
+  const assocV3 = rdV3("associateIds()[0]"), retailV3 = rdV3("tierCustomers().filter(function(c){return associateIds().indexOf(c)<0;})[0]");
+  const capsV3 = ccV3(wV3, [assocV3, retailV3]), keysV3 = (c) => JSON.stringify(Object.keys(c || {}).sort());
+  ok(statedV3.length >= 2 && booksV3.length > statedV3.length && keysV3(capsV3[retailV3]) === JSON.stringify(statedV3) && keysV3(capsV3[assocV3]) === JSON.stringify(statedV3),
+    "only a book that states a cap carries one, never salt's borrowed: " + JSON.stringify({ stated: statedV3, read: Object.keys(capsV3[retailV3] || {}) }));
+  ok(statedV3.every((p) => capsV3[retailV3][p].own === unitsV3[p].retail && !("friend" in capsV3[retailV3][p])),
+    "a customer holds the retail cap on each book, and no friend's: " + JSON.stringify(capsV3[retailV3]));
+  ok(statedV3.every((p) => capsV3[assocV3][p].own === unitsV3[p].associate && capsV3[assocV3][p].friend === unitsV3[p].retail),
+    "an associate holds the associate cap on their own orders, and a friend's order the retail cap their bucket holds: " + JSON.stringify(capsV3[assocV3]));
+  const vmV3 = await import("node:vm");
+  let unreadV3 = "";
+  try { ccV3({ eval: (e) => vmV3.runInNewContext(e, { PROD_IDS: ["salt"] }) }, ["CX0-DGA"]); } catch (e) { unreadV3 = String(e.message); }
+  ok(/did not read/.test(unreadV3), "a desk the caps cannot be read from is said, never read as nobody paying in advance: " + JSON.stringify(unreadV3));
+
+  const { mkdirSync: mkV3, writeFileSync: wfV3, rmSync: rmV3 } = await import("node:fs");
+  const { liveRecords: lrV3 } = await import("../tools/make_statements.mjs");
+  const { planPublish: ppV3 } = await import("../tools/stmt-publish.mjs");
+  const CV3 = await import("../tools/stmt-crypto.mjs");
+  const { createHmac: hmV3 } = await import("node:crypto");
+  const costV3 = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
+    costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricingV3 = { sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"],
+    tierOf: { "CX0-DGA": { salt: "Silver" }, "CX0-DGB": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost: costV3, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, 190] }] } } };
+  const usersV3 = { "CX0-DGA": "abcd-efgh", "CX0-DGB": "hjkm-npqr" }, A = "abcd-efgh", B = "hjkm-npqr";
+  const tmpV3 = join(REPO, "test", "tmp", "v3-caps-" + Date.now());
+  try {
+    mkV3(join(tmpV3, "2026-09", "_kv"), { recursive: true });
+    wfV3(join(tmpV3, "_users.json"), JSON.stringify(usersV3));
+    const ckV3 = {};
+    for (const u of Object.values(usersV3)) {
+      ckV3[u] = await CV3.contentKey("test-secret", u);
+      wfV3(join(tmpV3, "2026-09", "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
+        verifier: await CV3.makeVerifier("fixture-pass-v3"), wrap: await CV3.wrapKey("fixture-pass-v3", ckV3[u]),
+        env: await CV3.encryptWith(ckV3[u], JSON.stringify({ statements: [] })) }));
+    }
+    const at = new Date("2026-09-28T02:00:00Z");
+    const strike = async (caps) => {
+      const lr = await lrV3(tmpV3, "test-secret", at, pricingV3, null, caps), out = {};
+      for (const rec of lr.records) out[rec.u] = { clear: rec.prices.digest, caps: rec.prices.caps, sealed: JSON.parse(await CV3.decryptWith(ckV3[rec.u], rec.prices)) };
+      return out;
+    };
+    /* the stamp as it was before V3, worked out here: the figures alone, keyed per account */
+    const before = (u, list) => hmV3("sha256", "test-secret").update("prices\n" + u + "\n"
+      + JSON.stringify(list.products.map((p) => [p.product, p.sizes.map((r) => [r.q, r.price])]))).digest("hex");
+    const bare = await strike(null), one = await strike({ "CX0-DGA": { salt: { own: 1 } } }), two = await strike({ "CX0-DGA": { salt: { own: 2, friend: 1 } } });
+    ok(JSON.stringify(one[A].sealed.products[0].cap) === '{"own":1}' && JSON.stringify(one[A].caps) === '{"salt":{"own":1}}'
+      && JSON.stringify(two[A].caps) === '{"salt":{"own":2,"friend":1}}' && !("cap" in one[B].sealed.products[0]) && one[B].caps === undefined,
+      "an account's cap on each book is sealed into its list and written in the clear beside the stamp; an account with none carries none: "
+        + JSON.stringify([one[A].caps, one[A].sealed.products[0].cap, one[B].caps]));
+    ok(one[B].clear === before(B, one[B].sealed) && bare[A].clear === before(A, bare[A].sealed) && one[B].clear === bare[B].clear,
+      "a list with no cap keeps the stamp it always had");
+    ok(one[A].clear !== bare[A].clear && two[A].clear !== one[A].clear && one[A].sealed.digest === one[A].clear && two[A].sealed.digest === two[A].clear,
+      "a cap is in the stamp, so a cap moved since the page opened its list is a moved list at Place: " + JSON.stringify([bare[A].clear.slice(0, 8), one[A].clear.slice(0, 8), two[A].clear.slice(0, 8)]));
+    const plan = await ppV3(tmpV3, "test-secret", at, [], null, pricingV3, null, { caps: { "CX0-DGA": { salt: { own: 1 } } } });
+    const putA = plan.puts.find((p) => p.key === "u:" + A);
+    ok(putA && JSON.stringify(JSON.parse(putA.value).prices.caps) === '{"salt":{"own":1}}',
+      "and the publish carries the caps it is handed onto the record it puts: " + (putA ? JSON.stringify(JSON.parse(putA.value).prices.caps) : "no put"));
+  } finally { rmV3(tmpV3, { recursive: true, force: true }); }
+})();
+
+section("V3 (28 Sep 2026): Place stamps an order over the account's cap on its book as paid in advance, a friend's on the bucket's cap, on both roads, and cash on handover is refused on it");
+await (async () => {
+  /* The terms at Place govern the order as its price does. The caps are the record's, beside the stamp; the Worker reads
+     them and prices nothing. Each assertion was proved red by its own mutation. */
+  const O = await import("../stmt/orders.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const caps = { salt: { own: 2, friend: 1 }, oil: { own: 20, friend: 10 } };
+  const run = async (store, withCaps) => {
+    const kv = new KV(), bk = H.orderBook({});
+    const env = Object.assign({ STMT: kv }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store } : {});
+    const rec = (u) => kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", prices: Object.assign({ at: "2026-09-28T02:00:00.000Z", week: "2026-09-28", digest: "d1" },
+      withCaps ? { caps } : {}, { v: 2, iv: "aXZpdml2aXZpdml2", ct: "Y2lwaGVydGV4dA" }) }));
+    const u1 = "v3aa-p7q2", u2 = "v3bb-m4n6";
+    await rec(u1); await rec(u2);
+    const place = async (u, product, qty, forFriend) => {
+      const r = await O.placeOrder(env, u, { product, qty, mode: "collect", unit: 10, total: 10 * qty, week: "2026-09-28", digest: "d1", forFriend: !!forFriend });
+      return r.order ? O.customerView(r.order) : { error: r.error };
+    };
+    const out = { own2: await place(u1, "salt", 2), own3: await place(u1, "salt", 3), fr1: await place(u1, "salt", 1, true), fr2: await place(u1, "salt", 2, true),
+      oil20: await place(u2, "oil", 20), oil21: await place(u2, "oil", 21), candy: await place(u2, "candy", 100) };
+    /* the rail: cash refused on an order paid in advance, and offered on one that is not */
+    const pick = async (id, body) => { const r = await O.customerMove(env, u1, id, "method", body); return r.error ? (r.code || r.error) + ":" + r.status : "ok"; };
+    await O.deskMove(env, u1, out.own3.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(env, u1, out.own2.id, { status: "acknowledged", mode: "collect" });
+    out.cash3 = await pick(out.own3.id, { method: "cod" });
+    out.bank3 = await pick(out.own3.id, { method: "transfer", account: "wise" });
+    out.cash2 = await pick(out.own2.id, { method: "cod" });
+    return out;
+  };
+  const pp = (o) => (o && o.error ? "error" : o && o.prepay === true ? "prepay" : "-");
+  for (const store of [null, "object", "object+kv"]) {
+    const nm = store || "kv", R = await run(store, true);
+    ok(pp(R.own2) === "-" && pp(R.own3) === "prepay" && pp(R.oil20) === "-" && pp(R.oil21) === "prepay",
+      nm + ": an order over the cap on its own book is paid in advance, and one at the cap is not: " + JSON.stringify([pp(R.own2), pp(R.own3), pp(R.oil20), pp(R.oil21)]));
+    ok(pp(R.fr1) === "-" && pp(R.fr2) === "prepay",
+      nm + ": a friend's order is held to the bucket's cap: " + JSON.stringify([pp(R.fr1), pp(R.fr2)]));
+    ok(pp(R.candy) === "-", nm + ": a book with no cap has nothing paid in advance: " + pp(R.candy));
+    ok(R.cash3 === "cashPrepay:409" && R.bank3 === "ok" && R.cash2 === "ok",
+      nm + ": cash on handover is refused on an order paid in advance, in its own words, and offered on one that is not: " + JSON.stringify([R.cash3, R.bank3, R.cash2]));
+    const N = await run(store, false);
+    ok(pp(N.own3) === "-" && pp(N.oil21) === "-", nm + ": a list published without caps stamps nothing: " + JSON.stringify([pp(N.own3), pp(N.oil21)]));
+  }
+})();
+
+section("V3 (28 Sep 2026): the sheet says a size over the cap is paid in advance, the check carries it from Review, a moved cap re-reads it, and the order says when and offers no cash");
+await (async () => {
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-v3p", ck = await C.contentKey("test-secret", u);
+  const list = (digest, cap) => ({ at: "2026-09-28T02:00:00Z", digest, week: { label: "28 Sep to 4 Oct 2026", monday: "2026-09-28" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", cap, sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await C.encryptWith(ck, JSON.stringify(l)));
+  const now = new Date().toISOString();
+  const orders = [
+    { id: "oP", product: "salt", qty: 2, mode: "collect", total: 190, delivery: 0, paid: 0, moved: 0, at: now, status: "acknowledged", prepay: true, history: [], msgs: [] },
+    { id: "oR", product: "salt", qty: 2, mode: "deliver", place: "Kampung Q", total: 190, delivery: 10, paid: 0, moved: 0, at: now, status: "ready", prepay: true, history: [], msgs: [] },
+    { id: "oN", product: "salt", qty: 1, mode: "collect", total: 100, delivery: 0, paid: 0, moved: 0, at: now, status: "acknowledged", history: [], msgs: [] }];
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const open = async (cap, assoc, answers) => {
+    const posted = [];
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v3p", assoc, prices: await sealed(list("d1", cap)),
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })) };
+    const dom = new JD(lp(u, "nv3p", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+        if (p === "/open") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders, claims: [] });
+        if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j); const a = (answers || [])[posted.length - 1];
+          return a ? res(a.status, a.body) : res(200, { ok: true, order: { id: "20260928040000-v3pz", product: "salt", qty: j.qty, status: "placed", at: now, total: j.total, history: [], msgs: [] } }); }
+        return res(404, { ok: false });
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("oNew") && d.querySelector('#pOrder [data-row="oP"]'));
+    return { w, d, posted };
+  };
+  const size = (d, w, q) => { const r = d.querySelector('#osheet input[name="osize"][value="' + q + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+  const line = (d) => [...d.querySelectorAll("#osheet .salt-insight")].map(t).join(" | ");
+  const rows = (d) => [...d.querySelectorAll("#osheet .salt-ledger__line")].map((l) => [...l.children].map(t).join(" ")).join(" | ");
+
+  /* a customer on the retail cap of 1 unit: the sheet, the check, a cap moved at Place, and their orders */
+  const A = await open({ own: 1 }, false, [{ status: 409, body: { ok: false, error: "prices moved", code: "pricesMoved", prices: await sealed(list("d2", { own: 2 })) } }]);
+  try {
+    const { w, d, posted } = A;
+    d.getElementById("oNew").click();
+    size(d, w, 1); const at1 = line(d);
+    size(d, w, 2); const at2 = line(d);
+    ok(at1 === "" && at2 === "Over 1 unit: paid in advance.",
+      "the sheet says a size over their cap is paid in advance, under the sizes, and says nothing at the cap: " + JSON.stringify([at1, at2]));
+    d.getElementById("oGo").click();
+    const chk = rows(d), say = line(d);
+    ok(/Payment In advance/.test(chk) && say.includes("Paid before we hand it over. Cash on handover is not offered."),
+      "the check carries the terms from Review, a row and the one sentence: " + JSON.stringify([chk, say]));
+    d.querySelector('#osheet [data-k="close"]').click();
+    const tile = [...d.querySelectorAll("#pHome .htile")].find((b) => t(b.querySelector(".mq")) === "2");
+    if (tile) tile.click();
+    ok(!!tile && /Payment In advance/.test(rows(d)), "Order again goes through Review, so its check carries the terms too: " + rows(d));
+    d.getElementById("oPlace").click();
+    await until(() => posted.length === 1 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled && !/Payment/.test(rows(d)));
+    ok(posted.length === 1 && !/Payment/.test(rows(d)) && !line(d).includes("Paid before we hand it over"),
+      "a cap moved since the list was opened is read again from the list Place answered with, before anything is placed: " + JSON.stringify([rows(d), line(d)]));
+    d.getElementById("oPlace").click();
+    await until(() => posted.length === 2);
+    ok(posted.length === 2 && posted[1].digest === "d2" && posted[1].rid !== posted[0].rid && !("prepay" in posted[1]),
+      "and it is a different order under a new request id, the terms left to Place: " + JSON.stringify(posted.map((x) => [x.digest, x.rid && x.rid.slice(0, 6)])));
+    /* Home and the orders */
+    const home = t(d.getElementById("pHome"));
+    ok(home.includes("RM 190 still to pay, before we hand it over") && home.includes("RM 100 still to pay, now or when you collect"),
+      "Coming up says an order paid in advance is paid before it is handed over: " + JSON.stringify(home.slice(0, 400)));
+    d.querySelector('button[data-t="order"]').click();
+    d.querySelector('#pOrder [data-row="oR"]').click();
+    const ready = t(d.querySelector('#pOrder .oscreen [data-part="money"]'));
+    d.querySelector('#pOrder [data-row="oP"]').click();
+    const money = t(d.querySelector('#pOrder .oscreen [data-part="money"]'));
+    ok(/Before we hand it over/.test(money) && /Due now/.test(ready) && !/Before we hand it over/.test(ready),
+      "the order says when: before we hand it over, and due now once it is ready: " + JSON.stringify([money, ready]));
+    const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payO) payO.click();
+    const cod = d.querySelector('#payBody input[name="payHow"][value="cod"]');
+    const why = cod ? t(cod.closest(".salt-option").querySelector(".salt-option__detail")) : "";
+    ok(!!payO && !!cod && cod.disabled && why === "Not offered: this order is paid in advance.",
+      "its pay sheet offers no cash, the tile dashed with the reason: " + JSON.stringify([!!payO, cod && cod.disabled, why]));
+    d.getElementById("payX").click();
+    d.querySelector('#pOrder [data-row="oN"]').click();
+    const payN = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b))); if (payN) payN.click();
+    const codN = d.querySelector('#payBody input[name="payHow"][value="cod"]');
+    ok(!!codN && !codN.disabled, "and an order not paid in advance still offers it");
+  } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
+
+  /* an associate: 2 units of their own, 1 for a friend, whose order books to the bucket */
+  const F = await open({ own: 2, friend: 1 }, true);
+  try {
+    const { w, d } = F;
+    d.getElementById("oNew").click();
+    const who = (k) => { const b = d.querySelector('#osheet [data-k="for:' + k + '"]'); if (b) b.click(); };
+    who(0); size(d, w, 2); const me = line(d);
+    who(1); size(d, w, 2); const friend = line(d);
+    ok(me === "" && friend === "Over 1 unit: paid in advance.",
+      "an associate's own 2 units are on their cap, and a friend's 2 units are over the bucket's: " + JSON.stringify([me, friend]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); F.w.close(); }
 })();
 
 section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");

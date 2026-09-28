@@ -897,8 +897,9 @@ export function liveStatement(party, now, user) {
    document sealed under the same content key. `root` is the statements folder. Without a key
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
-   customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
-export async function liveRecords(root, key, now, pricing, cards) {
+   customer's price list for the week, sealed under the same key (tools/pricelist.mjs). `caps` (V3) is each
+   account's credit cap per book, by code (tools/book.mjs creditCaps), sealed into its list and written beside it. */
+export async function liveRecords(root, key, now, pricing, cards, caps) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -943,10 +944,16 @@ export async function liveRecords(root, key, now, pricing, cards) {
         live++;
       }
       if (pricing) {
-        const list = priceList(code, book, pricing, now);
+        const list = priceList(code, book, pricing, now, caps && caps[code]);
         /* S4 4.1: its stamp, a digest of its figures, sealed inside and in the clear beside it for Place to be checked against */
         list.digest = priceDigest(list, key, rec.u);
-        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await encryptWith(ck, JSON.stringify(list)));
+        /* V3: and the caps on its list IN THE CLEAR beside the stamp, for Place to decide an order paid in advance
+           without opening anything; the stamp carries them, so the page's list and this never disagree. A cap says
+           what the book's policy is for this account, which the assoc mark already says, and nothing of the book. */
+        const capsHere = {};
+        for (const p of list.products) if (p.cap) capsHere[p.product] = p.cap;
+        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest },
+          Object.keys(capsHere).length ? { caps: capsHere } : {}, await encryptWith(ck, JSON.stringify(list)));
         priced++;
       }
       /* v706, his instruction of 18 Sep 2026: an associate sees their own report card, by month,

@@ -94,7 +94,9 @@ export function since(sales, code) {
   return first;
 }
 
-export function priceList(code, book, pricing, now) {
+/* V3: `caps` is this account's credit cap per book, { product: { own, friend? } } from tools/book.mjs creditCaps;
+   each product on the list carries its own, and an order over it is paid in advance */
+export function priceList(code, book, pricing, now, caps) {
   const week = weekOf(now);
   const sizes = (pricing && pricing.sizes) || [];
   const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
@@ -148,7 +150,7 @@ export function priceList(code, book, pricing, now) {
        dropping out above (a level the board has no column for) pushed sizes: [], and the page reads the first size
        to set up the order form, so the Order tab went blank, orders and Notifications with it. */
     if (!rows.length) { out.soon.push({ product: p, name }); continue; }
-    out.products.push({
+    out.products.push(Object.assign({
       product: p,
       name,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
@@ -161,7 +163,7 @@ export function priceList(code, book, pricing, now) {
       tier: fixedBoard ? null : names[t],
       levels: (!fixedBoard && held && typeof held === "object") ? held : null,
       sizes: rows
-    });
+    }, (caps && caps[p]) ? { cap: caps[p] } : {}));
   }
   return out;
 }
@@ -171,8 +173,14 @@ export function priceList(code, book, pricing, now) {
    the hour. It is sealed inside the list and written in the clear beside it, and the Worker compares the two at
    Place (4.2) without reading a price. KEYED, under STMT_KEY and over the username: a bare hash in the clear would
    let a copy of the store test a guessed board against it, and would show which accounts share one. */
+/* V3: AND ITS CAP, where the product has one, so a cap moved since the page's list is the same re-quote as a price
+   moved, and the page and Place never disagree on whether an order is paid in advance. A product with no cap keeps
+   the figures it always had, so its stamp is unchanged. */
 export function priceDigest(list, secret, username) {
-  const figures = ((list && list.products) || []).map((p) => [p.product, (p.sizes || []).map((r) => [r.q, r.price])]);
+  const figures = ((list && list.products) || []).map((p) => {
+    const f = [p.product, (p.sizes || []).map((r) => [r.q, r.price])];
+    return p.cap ? f.concat([[p.cap.own, p.cap.friend == null ? null : p.cap.friend]]) : f;
+  });
   return createHmac("sha256", String(secret)).update("prices\n" + username + "\n" + JSON.stringify(figures)).digest("hex");
 }
 

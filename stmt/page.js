@@ -2508,6 +2508,12 @@ const CLIENT_JS = `
     var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
+  /* V3 (his point 4 of 28 Sep 2026): AN ORDER OVER THE CAP IS PAID IN ADVANCE. The cap is the list's, per product: the
+     desk's credit cap for this account, a friend's order taking their bucket's. Place stamps the order by the same rule
+     (stmt/orders.js capOf) and the list's stamp carries the cap, so the page and Place never disagree */
+  function capOf(p,friend){ var c=p&&p.cap; if(!c||typeof c!=='object') return null;
+    if(friend&&typeof c.friend==='number') return c.friend; return typeof c.own==='number'?c.own:null; }
+  function prepayOf(p,q,friend){ var c=capOf(p,friend); return c!=null&&+q>c; }
   /* ==== THE ORDER IS A SHEET (S4 4.3, 24 SEP 2026; the Counter's redesign, his "all recommended" of that day) ====
      The order form was a pane at the head of the Order tab, filled field by field and reviewed in a second pane under
      it. It is a task laid over the page now, the system's Sheet: the product as its mark, the sizes as Option tiles
@@ -2660,6 +2666,9 @@ const CLIENT_JS = `
       face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
     });
     fs.appendChild(grid); B.appendChild(fs);
+    /* V3: a size over their cap on this book is paid in advance, said under the sizes */
+    var capN=capOf(P,!!(assoc&&draft.forFriend));
+    if(prepayOf(P,draft.q,!!(assoc&&draft.forFriend))) B.appendChild(el('p','salt-insight',tw('sh.prepay',{u:unitsOf(capN,P.unit)})));
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
@@ -2703,6 +2712,8 @@ const CLIENT_JS = `
     draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
       place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
       forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid(),
+      /* V3: paid in advance, read off the list with the price, so the check shows the terms Place will stamp */
+      prepay:prepayOf(qt.p,qt.q,!!(assoc&&draft.forFriend)),
       /* S4 4.4: the stamp of the list this price was read from, and the price as shown, for a moved list to be told against */
       digest:(prices&&prices.digest)||'', shown:qt.total, was:null, gone:false};
     draft.step='check'; draft.snote=''; sheetDraw();
@@ -2726,6 +2737,8 @@ const CLIENT_JS = `
     var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(c.q); })[0];
     c.digest=fresh.digest||'';
     if(!z){ c.gone=true; c.was=null; return; }
+    /* V3: the terms are the list's as well: a cap moved since Review is said on the check, and is a different order */
+    var pp=prepayOf(P,c.q,c.forFriend); if(pp!==!!c.prepay){ c.prepay=pp; c.rid=mintRid(); }
     if(Math.abs(z.price-c.total)>0.004){ c.total=z.price; c.rate=+(z.price/z.q).toFixed(2); c.rid=mintRid(); }
     else draft.snote=twE('sh.stillAt',{rm:rm(c.total)});
     c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
@@ -2785,6 +2798,7 @@ const CLIENT_JS = `
     row(tw('sh.price'),rm(c.total));
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
+    if(c.prepay) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure */
@@ -2792,6 +2806,8 @@ const CLIENT_JS = `
       setW(mv,'sh.moved',{now:esch(rm(c.total)), was:esch(rm(c.was))}); B.appendChild(mv); }
     if(c.gone){ var gn=el('p','salt-insight salt-insight--copper',tw('sh.gone'));
       gn.setAttribute('role','status'); B.appendChild(gn); }
+    /* V3: an order over the cap is checked beside what paying in advance means */
+    if(c.prepay) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
     var F=osh.foot;
@@ -3177,13 +3193,15 @@ const CLIENT_JS = `
   }
   /* when what is still to pay may be paid, in one set of words for the order's screen and, inline, Home's Coming up, which
      said "when it arrives" of an order they collect (S7-R2 of the stage 7 review) */
-  /* S13: which of six, the order's screen saying it as pw.<k> and Home's Coming up as hc.still<k> */
+  /* S13: which of seven, the order's screen saying it as pw.<k> and Home's Coming up as hc.still<k> */
   function payWhenKey(o){
     var mv=+o.moved||0, ar=o.mode==='deliver'?'Arrives':'Collect';
     if(mv>0&&movedAll(o)) return 'WithYou';
     /* V2 (28 Sep 2026, his instruction): an order at Ready is due at once, cash on handover included (his C1) */
     if(o.status==='ready') return 'DueNow';
     if(mv>0) return 'Part';
+    /* V3: an order over the cap is paid before it is handed over, never at the handover */
+    if(o.prepay) return 'Prepay';
     /* S6 6.8: cash chosen for the handover is paid then, never now */
     return (o.method==='cod'?'Cash':'Now')+ar;
   }
@@ -3728,11 +3746,12 @@ const CLIENT_JS = `
   /* ---- S6 6.8: CASH WHEN IT ARRIVES, OFFERED ONLY WHERE THE RULE ALLOWS, AND SAYING WHY WHEN NOT. A third way on an
      order's sheet, never on To pay now's, whose goods they already have. Withheld while goods they hold are unpaid, this
      order's own included (v694): the tile stays, dashed, with the reason in place of its line. Choosing it tells him how
-     they will pay; the cash itself is his to record when he takes it, so the customer never declares it. */
+     they will pay; the cash itself is his to record when he takes it, so the customer never declares it. V3: never on an
+     order paid in advance, whose reason is said first, since paying at the door is not paying in advance. */
   function cashWay(){
-    var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', no=heldUnpaid();
+    var o=oFind(PS.ctx.id), d=o&&o.mode==='deliver', pre=!!(o&&o.prepay), no=pre||heldUnpaid();
     return {v:'cod', label:d?'pay.cashArrives':'pay.cashCollect', g:'cash', off:no,
-      detail:no?'pay.cashOff':'pay.cashOn'};
+      detail:pre?'pay.cashPrepay':no?'pay.cashOff':'pay.cashOn'};
   }
   function cashWord(){ var o=oFind(PS.ctx.id); return tw(o&&o.mode==='deliver'?'pay.cashGoArrives':'pay.cashGoCollect'); }
   async function cashSend(){

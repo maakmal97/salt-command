@@ -1,5 +1,15 @@
 [
  {
+  "v": "v930",
+  "d": "28 Sep 2026",
+  "t": "AN ORDER OVER ITS BOOK'S CREDIT CAP IS PAID IN ADVANCE",
+  "n": [
+   "<p><b>AN ORDER OVER ITS BOOK'S CREDIT CAP IS PAID IN ADVANCE.</b> His point 4 of 28 Sep 2026, on each book's own cap (his Q2): salt 1 unit retail and 2 associate, oil 10 and 20, and a friend's order the cap the associate's -R bucket holds; a book that states no cap has nothing paid in advance. The publish reads each account's cap off the desk (creditCaps, the desk's capForParty), seals it into the price list and writes it in the clear beside the list's stamp, which now carries it, so a cap moved since the page opened its list is the S4 re-quote. Place stamps the order prepay when its size is over the cap, on both roads, and the terms at Place govern the order as its price does. The Counter says so under the sizes (Over 1 unit: paid in advance.), the check carries a Payment row and one sentence, the order and Coming up say Before we hand it over until Ready makes it due now, and cash on handover is refused on it, the tile dashed with its reason.</p>",
+   "<p><b>NOT IN IT.</b> The cap is per order here, while the desk's counts every unit out unpaid; the desk's Accept case waits for Step 1b. Salt and oil's list stamps move once, at the first publish, so an order in review then is re-quoted once.</p>",
+   "<p><b>PROOFS.</b> Three suite sections, 33 checks: the caps read off the master against RULES.creditUnits (a desk they cannot be read from is said, never read as nobody paying in advance), the stamp and the caps in the clear, Place on the KV road, the order book and both at once, cash refused, and the page in jsdom; 30 mutations each turned a check red, and on a master stating a cap on every book the borrowed-cap check stays red. The whole suite passed on v929. In the Browser pane at 375px, Home, the check and the sheet's line fit with no sideways scroll. Fable's final review: no faults.</p>"
+  ]
+ },
+ {
   "v": "v929",
   "d": "28 Sep 2026",
   "t": "A DONE ORDER'S MONEY IS ON ITS WAY ONLY UNTIL THE BOOK HAS IT",

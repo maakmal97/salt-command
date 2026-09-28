@@ -773,7 +773,17 @@ is told its answer: Received, on the book already, or Not found, once the money 
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
 order sheet's third way (S6 6.8), never To pay now's and never at Ready (pay terms V2, his C1: an order at Ready is due
 now, cash on handover chosen or not, and says "Due now"), shown dashed with that reason where withheld;
-choosing it sends no figure, because he records the cash when he takes it. The quote is the customer's claim
+choosing it sends no figure, because he records the cash when he takes it. **An order over the customer's credit cap on
+its book is paid in advance** (pay terms V3, his point 4 of 28 Sep 2026, on each book's own cap, his Q2): the publish
+reads each account's cap per book off the desk (`creditCaps` in `tools/book.mjs`: `capForParty` on a book that states a
+cap, and for an associate the retail cap their `-R` bucket holds, which a friend's order takes), seals it into the price
+list and writes it in the clear beside the stamp (`prices.caps`), and the stamp carries it, so a cap moved since the page
+opened its list is the S4 4.4 re-quote. Place stamps `prepay` when the size is over the cap (`capOf` in
+`stmt/orders.js`), and the terms at Place govern the order as its price does. The sheet says so under the sizes ("Over 1
+unit: paid in advance."), the check carries a Payment row from Review, the order says "Before we hand it over" until
+Ready makes it due now, and cash on handover is refused on it (`cashPrepay`, the tile dashed with its reason). The cap is
+per order here, while the desk's cap counts every unit out unpaid; a book stating no cap has nothing paid in advance.
+The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
 
