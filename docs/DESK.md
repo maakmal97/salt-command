@@ -54,7 +54,8 @@
   customer then bought 1.83 times a month, one and three units were the lower and upper quartiles of size,
   and the whole book was under three months old, so loyalty is counted in orders rather than time. Orders a
   month are read over at least 30 days, or every new customer arrives frequent. **Late** is an order paid
-  past `RULES.creditDays` (10) or still owed past it; a write-off is not counted, having its own rule. On
+  past `RULES.creditDays` (10) or still owed past it; a write-off is not counted, having its own rule (the Credit
+  age breach and Today's chase count instead from the handover, past `RULES.holdDays`, as the Counter does). On
   the book that day: small and often CR3-DAM, CA4-DAM, CC5-OKR; loyal eight; late twice nobody. CH5-KLC,
   who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency does not hand
   a premium buyer the preferential rate. **It prices nothing at v666**; the rules that move a level on it

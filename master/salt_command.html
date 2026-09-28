@@ -8481,7 +8481,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v915","d":"28 Sep 2026","t":"CE5-SA APPOINTED A RESELLER","n":["<p><b>ONE ROSTER ROW FOLDED.</b> This fold appoints CE5-SA a reseller on the R2 stream and appends CE5-SA-R to the roster as their resell account, which holds what they buy to sell on. CE5-SA moves from the retail credit cap to the associate one and to the associate turnover hurdle, and leaves the customer reward table for the network bench. If they have no statement username, one is given for life on the next free spare account where there is one.</p>","<p><b>NOTHING UNUSUAL, NO STOCK MOVED.</b> The row touches no figure: no sale, no payment, no cost. The drafter flagged nothing, and the desk decided it on 28 Sep 2026. The inventory stands where the 27 Sep count left it, at 5.5 units in stock against a reorder point of 28.77, costed at RM56 a unit. No name or place is carried in this fold, because the directory is typed at the laptop and never travels.</p>"]}];
+const evolution=[{"v":"v916","d":"28 Sep 2026","t":"THE DESK'S CHASE COUNTS FROM THE HANDOVER","n":["<p><b>THE DESK'S CREDIT AGE AND ITS CHASE COUNT FROM THE HANDOVER, THREE DAYS, AS THE COUNTER DOES.</b> On his answer of 28 Sep 2026. The Credit age breach on Rules reads the engine's txUnpaidSince, the day the goods still unpaid were collected or delivered: past RULES.holdDays (3) from it, the day the Counter stops their ordering, it is collection, where it was ten days from the order date. Today's chase is Now past the term, with the reminder to copy, This week inside it, and Watch only for an undated part. On the book today CN3-WM joins CJ4-BJ under Now, each 9 days after the handover, and CR3-DAM and CE5-SA move from Watch to This week.</p>","<p><b>THE REMINDER NAMES EACH ORDER BY ITS DATE AND COUNTS FROM THE HANDOVER,</b> as shown to him and approved: RM 50 left of the RM 850 for 12.5 unit of salt ordered on 7 Sep, received 9 days ago. An undated debt names no day. The rest is as he approved it on 23 Sep 2026.</p>","<p><b>THE PROVISION STAYS ON THE ORDER DATE FOR NOW, AND SAYS SO.</b> The chase reads RM 50 at 9d (ordered 21d ago, 100% provisioned), and Receivables' table and ageing chart say they are aged from the order date. He has asked for the ladder to count from the handover too, as a version of its own after the pay terms. The pricing profile keeps RULES.creditDays, ten days from the order date, and the cash-in forecast expects a receivable at it. <b>THE SUITE.</b> One section is new and holds the desk's breaches to the parties the publish seals overdue that day, a bucket's on its associate; v812 reads the label of the button it clicked, since a live customer past three days may now head Today; each of 14 mutations turns a check red.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8596,7 +8596,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 12:58 KL';
+const LAST_UPDATED='28 Sep 2026, 13:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8653,6 +8653,7 @@ function txUnitCost(s,f){return POSITION_ENGINE.txUnitCost(s,f);}    // v496: th
 function txPhys(s){return POSITION_ENGINE.txPhys(s);}                    // physical only -> inventory
 function txAdvance(s){return POSITION_ENGINE.txAdvance(s);}      // delivered-unpaid -> AR; nothing on a written-off default (v634)
 function txWrittenOff(s){return POSITION_ENGINE.txWrittenOff(s);}   // v634: what a defaulted sale had out and unpaid, written off
+function txUnpaidSince(s){return POSITION_ENGINE.txUnpaidSince(s);} // 28 Sep 2026: the handover day of the goods still unpaid, from which overdue counts
 function txEffDeliv(s){return POSITION_ENGINE.txEffDeliv(s);} // physical + offset fulfilment + goods-equivalent of a netted prior advance (valued at the originating orders' rates)
 function txDeferUnits(s){return POSITION_ENGINE.txDeferUnits(s);} // paid ahead of (effective) delivery -> salt you owe
 function txPendUnits(s){return POSITION_ENGINE.txPendUnits(s);} // neither paid nor delivered -> pending order slice
@@ -9109,8 +9110,9 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    default book's, the sizesBy fallback exactly.
    28 SEP 2026, HIS INSTRUCTION: holdDays. Overdue is counted from the day the goods were collected or delivered (the
    engine's txUnpaidSince), and past holdDays the customer cannot order again until it is paid: the Counter's hold,
-   read out of this master by the publish. creditDays stays for the pricing profile's "late", which moves prices (his
-   answer of the same day). */
+   read out of this master by the publish, and the desk's Credit age breach and its chase on Today, which count from
+   the same day. creditDays stays for the pricing profile's "late", which moves prices (his answer of the same day),
+   and for the day the cash-in forecast expects a receivable. */
 const RULES={
   creditUnits:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
   creditDays:10,
@@ -10598,9 +10600,13 @@ function boundaryScan(){
       :b.pursue>0?'; sell nothing further, and keep pursuing the balance'
       :'; the balance is settled, but the ban is not time-limited and does not lift with it')));
   /* 1b. age of credit. Size is not the thing that hurts; time is. Money delivered
-     against and still unpaid past creditDays is a breach on its own terms. */
-  arList.forEach(s=>{const dd=dAge(s.date);if(dd<RULES.creditDays)return;
-    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' out for '+dd+' days','past the '+RULES.creditDays+'-day limit, so it is collection rather than trade');});
+     against and still unpaid past its term is a breach on its own terms.
+     28 SEP 2026, HIS ANSWER (Q4): THE AGE IS COUNTED FROM THE HANDOVER, as the Counter's hold counts it. The engine's
+     txUnpaidSince names the day the goods still unpaid were collected or delivered; past RULES.holdDays from it the
+     customer can order nothing more on the Counter, so the desk calls it collection from the same day. An undated part
+     is never past it, as on the Counter. The pricing profile keeps creditDays, ten days from the order date. */
+  arList.forEach(s=>{const since=txUnpaidSince(s),dd=since?dAge(since):0;if(!(dd>RULES.holdDays))return;
+    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade');});
   /* 2. margin floor, BY ORDER SIZE. A closed sale at 39% is history: the money is
      banked and the price cannot be revisited, so listing every one of them buries the
      handful you can still do something about. Only two kinds get their own row, the
@@ -10744,7 +10750,7 @@ function boundaryPanel(b,r){
   /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
      row and made the table 596px tall at 375px. Each x.why still exists where the rule is
      built, so restoring it is one cell, and the rule names stay self-stating. */
-  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.holdDays} days from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
@@ -14874,8 +14880,8 @@ function tabReceivables(){
     ${hero('r','Refunds you owe',otherBook?'&mdash;':fmt0(cRefTot),otherBook||(cRef.length?`${cRef.length} owed back`:'none owed back'))}
     ${hero('','Pending orders',units(cPenUnits),cPenUnits>0?`worth ${fmt0(cPenRm)}`:'none open')}
   </div>
-  <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
-  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged &amp; provisioned`,cCash.length,
+  <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth, aged from the order date</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
+  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged from the order date &amp; provisioned`,cCash.length,
     `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`
     +(writtenOffRM>0.009?`<div class="wooff" style="margin-top:8px;font-size:12px;color:var(--mut)">Written off, and out of this table: ${fmt0(writtenOffRM)}, ${[...new Set(sales.filter(s=>prodOf(s)===PROD&&txWrittenOff(s)>0.009).map(s=>ID(s.customer)))].join(', ')}.</div>`:''))}
   ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
@@ -17302,13 +17308,18 @@ const ACTSEV={now:{r:0,l:'Now',c:'var(--crim)'},soon:{r:1,l:'This week',c:'var(-
    address, because the desk is public and the message is his: the amount, each order it is for with its date and age, and a
    request. Plain words, as everything he sends a customer is. The dates are built from a fixed month list, never the
    locale's, which writes Sept. */
+/* a chase's debts, the longest since its handover first, an undated one last, a tie by the order's own age (28 Sep 2026) */
+function byHeld(a,b){return (b.held==null?-1:b.held)-(a.held==null?-1:a.held)||b.age-a.age;}
 function remindText(ds,gross){
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const day=d=>d?(+d.slice(8,10))+' '+MON[+d.slice(5,7)-1]:'an undated order';
-  /* a part-paid order says what is left of what total, so RM50 is not read as the price of the whole lot */
-  const line=x=>{const owed=txOwed(x.s),goods=`${units(x.s.qty)} of ${(PRODUCTS[prodOf(x.s)]||{name:'goods'}).name.toLowerCase()} on ${day(x.s.date)}, ${x.age} day${x.age===1?'':'s'} ago`;
+  /* a part-paid order says what is left of what total, so RM50 is not read as the price of the whole lot.
+     28 SEP 2026, HIS ANSWER (Q4): the age is counted from the handover, as the Counter counts it, so each order is named
+     by its date and says how long ago it was received (the engine's txUnpaidSince, held on the debt as `held`). */
+  const ago=n=>n==null?'':`, received ${n} day${n===1?'':'s'} ago`;
+  const line=x=>{const owed=txOwed(x.s),goods=`${units(x.s.qty)} of ${(PRODUCTS[prodOf(x.s)]||{name:'goods'}).name.toLowerCase()}${x.s.date?` ordered on ${day(x.s.date)}`:''}${ago(x.held)}`;
     return x.g<owed-0.009?`${fmt0(x.g)} left of the ${fmt0(owed)} for ${goods}`:`${fmt0(x.g)} for ${goods}`;};
-  return `Hi, a reminder that ${fmt0(gross)} is still outstanding: ${ds.slice().sort((a,b)=>b.age-a.age).map(line).join('; ')}. Could you settle it when you can? Thank you.`;
+  return `Hi, a reminder that ${fmt0(gross)} is still outstanding: ${ds.slice().sort(byHeld).map(line).join('; ')}. Could you settle it when you can? Thank you.`;
 }
 /* the one road to the clipboard for a reminder; a phone that refuses the clipboard API gets the textarea copy */
 let tdRemind=[];
@@ -17383,21 +17394,27 @@ function actions(){
      breaches at v163. The row carries the WHOLE balance, sits at the sharpest severity any
      one of his debts earns, and names each debt with its own age and provision, because the
      ladder is what makes one of them urgent and the total is what makes the call worth it. */
+  /* 28 SEP 2026, HIS ANSWER (Q4): THE CHASE COUNTS FROM THE HANDOVER, as the Counter's hold does. `held` is the days since
+     the goods still unpaid were collected or delivered (the engine's txUnpaidSince); past RULES.holdDays the customer can
+     order nothing more on the Counter, so it is Now and carries the reminder; inside the term it is This week; an undated
+     part, never past the term on the Counter, is Watch. The provision stays on the order date, the ladder's own reading. */
   const chase={};
-  arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date);
-    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:saleProvRate(s,age),s});});
+  arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date),since=txUnpaidSince(s);
+    (chase[s.customer]=chase[s.customer]||[]).push({g,age,held:since?dAge(since):null,pr:saleProvRate(s,age),s});});
   Object.keys(chase).forEach(who=>{
-    const ds=chase[who].sort((a,b)=>b.age-a.age), oldest=ds[0].age;
+    const ds=chase[who].sort(byHeld), oldest=ds[0].held;
     const gross=+ds.reduce((t,x)=>t+x.g,0).toFixed(2);
     const net=+ds.reduce((t,x)=>t+x.g*(1-x.pr),0).toFixed(2);
-    const sev=oldest>=RULES.creditDays?'now':oldest>=RULES.creditDays-3?'soon':'watch';
+    const past=oldest!=null&&oldest>RULES.holdDays;
+    const sev=past?'now':oldest!=null?'soon':'watch';
     add(sev,'collect',`Chase ${ID(who)} for ${fmt0(gross)}`,gross,
-      `On a ${RULES.creditDays}d term: `
-      +ds.map(x=>`${fmt0(x.g)} at ${x.age}d${x.pr>0?`, ${(x.pr*100).toFixed(0)}% provisioned`:''}`).join('; ')
+      `On a ${RULES.holdDays}d term from the handover: `
+      /* the provision is the ladder's, on the order date, so it says so beside it (Fable's review, 28 Sep 2026) */
+      +ds.map(x=>`${fmt0(x.g)} ${x.held==null?'undated':`at ${x.held}d`}${x.pr>0?` (ordered ${x.age}d ago, ${(x.pr*100).toFixed(0)}% provisioned)`:''}`).join('; ')
       +`. ${fmt0(net)} realistic.`
       +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');
     /* v812: past the term, the card carries a reminder he can copy and send as it stands */
-    if(oldest>=RULES.creditDays)out[out.length-1].copy=remindText(ds,gross);});
+    if(past)out[out.length-1].copy=remindText(ds,gross);});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dAge(supplierReceivable.since),pr=provRate(age);
     add(age>=RULES.fullProvDays?'now':'soon','collect',`Settle the ${ID(supplierReceivable.party)} default, ${fmt0(supplierReceivable.amount)}`,

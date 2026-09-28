@@ -42772,18 +42772,102 @@ await (async () => {
     const text = btn ? tdRemind[+btn.dataset.remind] : null;
     Object.defineProperty(navigator, "clipboard", { value: { writeText: (t) => { window.__copied812 = t; return Promise.resolve(); } }, configurable: true });
     if (btn) btn.click();
-    return { hasRm: !!rm, hasOk: !!ok, btn: !!btn, okBtn: !!(ok && ok.querySelector("[data-remind]")), text, ago20: ago(20) };
+    return { hasRm: !!rm, hasOk: !!ok, btn: !!btn, okBtn: !!(ok && ok.querySelector("[data-remind]")), text, ago20: ago(20), idx: btn ? btn.dataset.remind : "" };
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
   await new Promise((r) => setTimeout(r, 50));
-  const after = JSON.parse(w.eval("JSON.stringify({copied:window.__copied812||null,label:(document.querySelector('.sec.on [data-remind]')||{}).textContent||''})"));
+  /* the label of the button clicked: since 28 Sep 2026 (V1b) a live customer past three days from the handover may head Today with a reminder of their own */
+  const after = JSON.parse(w.eval("JSON.stringify({copied:window.__copied812||null,label:(document.querySelector('.sec.on [data-remind=\"" + v.idx + "\"]')||{}).textContent||''})"));
   const day20 = (+v.ago20.slice(8, 10)) + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+v.ago20.slice(5, 7) - 1];
   ok(v.hasRm && v.hasOk && v.btn && !v.okBtn, "the chase past the term carries Copy reminder, and the one inside it does not");
-  ok(v.text && /^Hi, a reminder that RM 150 is still outstanding: /.test(v.text) && v.text.includes("RM 100 for 1 unit of salt on " + day20 + ", 20 days ago")
+  ok(v.text && /^Hi, a reminder that RM 150 is still outstanding: /.test(v.text) && v.text.includes("RM 100 for 1 unit of salt ordered on " + day20 + ", received 20 days ago")
      && v.text.includes("RM 50 left of the RM 200 for 2 unit of salt") && /Could you settle it when you can\? Thank you\.$/.test(v.text),
-    "the reminder states the total, each order with its date and age, and what is left of a part-paid one: " + v.text);
+    "the reminder states the total, each order with its date and the days since it was received, and what is left of a part-paid one: " + v.text);
   ok(v.text && !/CZ9|Sept|http|Salt Command/.test(v.text), "and it names no code, no address and no desk, the desk being public and the message his");
   ok(after.copied === v.text && after.label === "Copied", "and the button copies exactly that text, and says so: " + after.label);
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("V1b (28 Sep 2026): the desk's Credit age and its chase count three days from the handover, as the Counter's overdue does");
+await (async () => {
+  /* HIS ANSWER OF 28 SEP 2026 (Q4): the desk's Credit age breach and its payment reminders follow the Counter, three days
+     from the day the goods were collected or delivered; the pricing profile keeps ten days from the order date. Fixture
+     customers on dates set from the desk's own clock are read on the desk, and on a copy of the book through the publish's
+     payDue for the same day, so the desk and the Counter are held to one verdict. Each assertion was proved red by its own
+     mutation, one at a time. */
+  const { pathToFileURL: pu } = await import("node:url");
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const today = JSON.parse(w.eval("JSON.stringify(TODAY.toISOString().slice(0,10))"));
+  const ago = (n) => new Date(new Date(today + "T00:00:00Z").getTime() - n * 864e5).toISOString().slice(0, 10);
+  const fx = (rid, customer, date, extra) => Object.assign({ rid, customer, product: "salt", date, qty: 1, total: 100, cost: 50, cash: 0, deliveredQty: 1, deliveredOn: date }, extra || {});
+  const rows = [
+    fx("zv1a", "CZ9-HA", ago(12), { deliveredOn: ago(2) }),   // ordered 12 days ago, collected 2 days ago: inside the term
+    fx("zv1b", "CZ9-HB", ago(5)),                             // collected 5 days ago: past it, though ten days from the order are not
+    fx("zv1c", "CZ9-HC", ago(3)),                             // the term's last day: not yet past it
+    fx("zv1d", "CZ9-HD", ago(4)),                             // the first day past it
+    fx("zv1e", "CZ9-HE", ago(11), { qty: 2, total: 200, deliveredQty: 2, deliveredOn: ago(1),   // in stages: the older unpaid unit went 9 days ago
+      amend: [{ kind: "Fulfilment", kg: 1, date: ago(9) }, { kind: "Fulfilment", kg: 1, date: ago(1) }] }),
+    fx("zv1f", "CZ9-HF", null),                               // undated: never past it, as on the Counter
+    fx("zv1g", "CZ9-HG-R", ago(6), { rev: "R2" }),            // an associate's bucket: the desk names the bucket, the Counter its associate
+    fx("zv1h", "CZ9-HB", null)                                // an undated debt beside a dated one: its reminder line names no day
+  ];
+  const owner = (c) => c.replace(/-R$/, "");
+  const owners = [...new Set(rows.map((r) => owner(r.customer)))];
+  function probe(rows) {
+    setProd("salt");
+    rows.forEach((r) => { if (roster.indexOf(r.customer) < 0) roster.push(r.customer); });
+    Array.prototype.push.apply(BASE_SALES, rows); queue = []; applyOverlay(); recompute();
+    const breach = boundaryScan().filter((x) => x.rule === "Credit age" && /^CZ9-H/.test(x.who)).map((x) => ({ who: x.who, what: x.what, why: x.why }));
+    const chase = actions().filter((a) => a.kind === "collect" && /CZ9-H/.test(a.title))
+      .map((a) => ({ who: a.title.split(" ")[1], sev: a.sev, copy: a.copy || null, why: a.why }));
+    return { breach, chase, clear: boundaryPanel([], []), hold: RULES.holdDays };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")(" + JSON.stringify(rows) + "))"));
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const day = (d) => (+d.slice(8, 10)) + " " + MON[+d.slice(5, 7) - 1];
+  const sev = Object.fromEntries(v.chase.map((c) => [c.who, c.sev]).sort());
+  const copied = v.chase.filter((c) => c.copy).map((c) => c.who).sort();
+  const breached = v.breach.map((b) => b.who).sort();
+  const he = v.breach.find((b) => b.who === "CZ9-HE") || {};
+
+  ok(v.hold === 3 && JSON.stringify(breached) === '["CZ9-HB","CZ9-HD","CZ9-HE","CZ9-HG-R"]' && /^RM 200 unpaid 9 days after the handover$/.test(he.what || "")
+     && /past the 3-day limit from the handover/.test(he.why || ""),
+    "the Credit age breach counts from the handover of the goods still unpaid, past three days: collected 5, 4 and 6 days ago, and 9 for the older "
+    + "unit of an order handed over in stages; never inside the term (collected 2 days ago though ordered 12, or on its last day) nor undated: " + JSON.stringify(v.breach));
+  ok(JSON.stringify(sev) === JSON.stringify({ "CZ9-HA": "soon", "CZ9-HB": "now", "CZ9-HC": "soon", "CZ9-HD": "now", "CZ9-HE": "now", "CZ9-HF": "watch", "CZ9-HG-R": "now" })
+     && JSON.stringify(copied) === '["CZ9-HB","CZ9-HD","CZ9-HE","CZ9-HG-R"]',
+    "the chase is Now past the term with a reminder to copy, This week inside it with none, and Watch when undated: " + JSON.stringify({ sev, copied }));
+  const cE = (v.chase.find((c) => c.who === "CZ9-HE") || {}).copy || "", wA = (v.chase.find((c) => c.who === "CZ9-HA") || {}).why || "";
+  const cB = (v.chase.find((c) => c.who === "CZ9-HB") || {}).copy || "";
+  ok(cE.includes("RM 200 for 2 unit of salt ordered on " + day(ago(11)) + ", received 9 days ago") && /^On a 3d term from the handover: RM 100 at 2d \(ordered 12d ago, 50% provisioned\)/.test(wA)
+     && cB.includes("RM 100 for 1 unit of salt ordered on " + day(ago(5)) + ", received 5 days ago; RM 100 for 1 unit of salt. Could you") && !/undated/.test(cB),
+    "the reminder names the order by its date and counts from the handover, an undated debt naming no day, and the card states the term it reads, "
+    + "the provision beside the order's own age: " + JSON.stringify({ cE, cB, wA }));
+  ok(/or 3 days from the handover, nothing under/.test(v.clear) && !/or 10 days/.test(v.clear),
+    "the all-clear says the term is three days from the handover: " + (v.clear.match(/Nobody past[^.]*\./) || [""])[0]);
+
+  /* the Counter, on a copy of the book holding the same rows, for the same day */
+  const tmp = mkdtempSync(join(tmpdir(), "salt-v1b-"));
+  let over = null;
+  try {
+    const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    book.sales = rows; book.customerRefunds = [];
+    writeFileSync(join(tmp, "book.json"), JSON.stringify(book));
+    const keep = process.env.SALT_BOOK;
+    process.env.SALT_BOOK = join(tmp, "book.json");
+    let M;
+    try { M = await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?v1b"); }
+    finally { if (keep === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep; }
+    over = owners.filter((c) => M.payDue(c, today).overdue.parts.length > 0).sort();
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+  /* the Counter publishes an associate's bucket on the associate's account, so the desk's codes are read by owner */
+  const byOwner = (list) => JSON.stringify([...new Set(list.map(owner))].sort());
+  ok(over && JSON.stringify(over) === byOwner(breached) && JSON.stringify(over) === byOwner(copied) && over.includes("CZ9-HG"),
+    "and the desk and the Counter agree: the parties the desk breaches and would remind are exactly those the publish seals overdue that day, a bucket's on its associate: "
+    + JSON.stringify({ desk: breached, counter: over }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

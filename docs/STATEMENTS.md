@@ -260,8 +260,11 @@ of the master (a master stating none stops the publish): the last day it can be 
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
 late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
-publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's pricing
-profile keeps `RULES.creditDays`, ten days from the order date, for its own "late", since that moves prices.
+publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
+breach and its chase on Today count the same way (his answer of 28 Sep 2026): past the term from the handover the chase
+is Now and carries the reminder, inside it This week, and the suite holds the desk's breaches to the parties `payDue`
+seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten days from the order date, for its own
+"late", since that moves prices, and the cash-in forecast expects a receivable at it.
 **Coming up** is `txPendRM`: agreed, not handed over, money still to pay, an undated order dated by
 `agreedOn`. A part carries `date`, `since`, `due`, `late`, `rm`, `whole` (goods and delivery), `product` (an
 id, drawn as a mark), `qty`, `got`, `gotOn` (the last handover's day, one in stages included) and `resale`; a coming part `date`, `rm`, `product`,
