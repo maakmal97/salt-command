@@ -1,6 +1,6 @@
 {
- "v": "v927",
- "stamped": "28 Sep 2026, 18:20 KL",
+ "v": "v931",
+ "stamped": "28 Sep 2026, 20:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5767,6 +5767,17 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.",
     "rid": "s214"
+   },
+   {
+    "customer": "CH4-KS",
+    "qty": 3,
+    "total": 310,
+    "cash": 0,
+    "delivery": 10,
+    "date": "2026-09-28",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 28 SEP: 3 UNIT FOR RM310 PLUS RM10 DELIVERY, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CH4-KS from the statements site, order 20260928120800-zq6mca, acknowledged and to be delivered. RM310 clears the desk's floor of RM206.01 for 3 units but sits below its ask of RM390. CH4-KS: 2 orders, median RM100 a unit, range RM86.67 to RM100, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM142 at 45.8% by the drafter's figures. The drafter flagged RM103.33 a unit as 10.7% above a usual RM93.33. The dossier's median is RM100, so the base differs, but the rate is above the top of the range. Preapproved by phone. Outstanding: RM320 and 3 units to deliver, against a credit cap of 1.",
+    "rid": "s215"
    }
   ],
   "contacts": [
@@ -6507,9 +6518,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T10:19:26.622Z",
+  "QUEUE_COMMITTED": "2026-09-28T12:13:41.199Z",
   "PRICING": {
-   "takenAt": "2026-09-28T10:20:08.370Z",
+   "takenAt": "2026-09-28T12:14:48.411Z",
    "sizes": [
     0.5,
     1,
@@ -6580,6 +6591,9 @@
     "CA2-SEN": {
      "salt": "Ambassador"
     },
+    "CH4-KS": {
+     "salt": "Titanium"
+    },
     "CR4-PJ": {
      "salt": "Platinum"
     },
@@ -6602,9 +6616,6 @@
      "salt": "Gold"
     },
     "CI4-OKR": {
-     "salt": "Titanium"
-    },
-    "CH4-KS": {
      "salt": "Titanium"
     },
     "CM6-PJ": {
@@ -7012,6 +7023,24 @@
       "lateTwice": false
      }
     },
+    "CH4-KS": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 52,
+      "sinceLastDays": 31,
+      "perMonth": 1.17,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CR4-PJ": {
      "salt": {
       "name": "one-off",
@@ -7199,24 +7228,6 @@
       "frequent": false,
       "small": false,
       "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CH4-KS": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 2,
-      "tenureDays": 52,
-      "sinceLastDays": 31,
-      "perMonth": 1.17,
-      "smallShare": 0,
-      "bigShare": 1,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
       "loyal": false,
       "rare": false,
       "lateTwice": false
@@ -8649,6 +8660,56 @@
         1050
        ]
       ],
+      "CH4-KS": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CR4-PJ": [
        [
         0.5,
@@ -9000,56 +9061,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CH4-KS": [
        [
         0.5,
         60
@@ -10545,6 +10556,28 @@
         450
        ]
       ],
+      "CH4-KS": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CR4-PJ": [
        [
         10,
@@ -10700,28 +10733,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CH4-KS": [
        [
         10,
         130
@@ -11651,6 +11662,28 @@
         1500
        ]
       ],
+      "CH4-KS": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CR4-PJ": [
        [
         1,
@@ -11806,28 +11839,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CH4-KS": [
        [
         1,
         60
@@ -12604,6 +12615,20 @@
         64
        ]
       ],
+      "CH4-KS": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CR4-PJ": [
        [
         1,
@@ -12703,20 +12728,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CH4-KS": [
        [
         1,
         8
@@ -13131,11 +13142,11 @@
      "cards": {}
     }
    },
-   "v": "v927"
+   "v": "v931"
   },
   "OPEN": {
-   "at": "2026-09-28T10:20:08.682Z",
-   "count": 10,
+   "at": "2026-09-28T12:14:48.622Z",
+   "count": 11,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
      "d": "2026-09-28",
@@ -13187,6 +13198,21 @@
      "oweUnits": 1,
      "rid": "s214",
      "key": "CR3-DAM|2026-09-28|110"
+    },
+    "CH4-KS|2026-09-28|320": {
+     "d": "2026-09-28",
+     "p": "CH4-KS",
+     "dir": "S",
+     "q": 3,
+     "t": 310,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 320,
+     "oweUnits": 3,
+     "dv": 10,
+     "rid": "s215",
+     "key": "CH4-KS|2026-09-28|320"
     },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
@@ -13309,10 +13335,10 @@
      "free": -6.5,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 6.16,
+     "rate": 6.31,
      "owedToYou": 500,
-     "promised": 10.5,
-     "short": 7.5
+     "promised": 13.5,
+     "short": 10.5
     },
     "oil": {
      "name": "Oil",
@@ -13366,7 +13392,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v927"
+   "v": "v931"
   }
  }
 }
