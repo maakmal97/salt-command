@@ -44709,9 +44709,6 @@ await (async () => {
       + "queue=[];wbRecord();var q=queue[queue.length-1];var k=q&&q.payload?q.payload.orderKey:null;queue=[];return JSON.stringify({key:k});"
       + "}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
     const sold = JSON.parse(String(w.eval(DRIVE("SELL", "xv4a2", "Fulfilment"))));
-    /* the Workbench's lot amendment calls a bare poStat that the engine block no longer puts on the page, and throws (a crash
-       flagged on its own, 28 Sep 2026): the engine's own function stands in here, so what is measured is the key it writes */
-    w.eval("if(typeof poStat==='undefined')window.poStat=POSITION_ENGINE.poStat;");
     const bought = JSON.parse(String(w.eval(DRIVE("BUY", "xv4a3", "Payment"))));
     ok(sold.key === K + "|oil" && bought.key === S + "|" + D + "|100|oil",
       "the Workbench names the oil order and the oil lot it amends by the engine's key, carriage and product in it, never a key spelt by hand: " + J({ sold, bought }));
@@ -45226,6 +45223,47 @@ await (async () => {
   ok(ign.includes("salt_addr.json") && /seed-vault\.mjs --addr/.test(skill) && /pull-vault\.mjs --addr/.test(skill) && /never opens `salt_addr\.json`/.test(skill),
     "F14: salt_addr.json is kept out of the repo, and the update-names-id skill tells of both tools and that the agent never opens the file");
 })();
+
+
+section("28 Sep 2026: a lot's Payment on the Workbench previews, renders and queues its AMEND, the lot read through the engine's poStat and not a bare name that threw");
+await (async () => {
+  /* wbState's lot branch called poStat bare, a name that lives only inside the engine block, so from v492 (05 Sep 2026) a
+     Payment, Receipt or Default on a lot threw ReferenceError before anything was queued, and while a lot stayed picked every
+     render of Enter threw in its preview. Driven on the real master as he uses the form, over an invented bill pushed onto its
+     book: Amend, the lots side, the lot, Payment, a date and RM 50 of its RM 100. Nothing here stands in for poStat. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const J = JSON.stringify, S = "SX0-ZZ", ON = "2026-09-25";
+  const lot = { rid: "xpo1", supplier: S, date: "2026-09-20", qty: 10, total: 100, cash: 0, status: "unpaid" };
+  const { w } = await openMaster();
+  try {
+    w.eval("BASE_PURCHASES.push(" + J(lot) + ");queue=[];applyOverlay();recompute();"
+      + "saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};setProd('salt');switchTab('add');");
+    const r = JSON.parse(String(w.eval("(function(){var out={},set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;return !!e;},"
+      + "pills=function(){var p=document.getElementById('wbPrev');return p?[].map.call(p.querySelectorAll('.tag'),function(x){return x.textContent;}):null;},"
+      + "err=function(e){return (e&&e.name)+': '+(e&&e.message);};"
+      + "wbMode='amend';wbASide='BUY';wbFillKind();wbFillOrders();wbApply();"
+      + "var hit=wbAmendList().filter(function(x){return x.t._buy&&x.t._buy.rid==='xpo1';})[0];if(!hit)return JSON.stringify({no:'the lot is not offered'});"
+      + "out.code=hit.code;out.key=POSITION_ENGINE.ovKey(hit.t._buy);"
+      + "set('wbOrder',hit.code);set('wbKind','Payment');set('wbADate'," + J(ON) + ");set('wbACash','50');set('wbAUnits','0');wbAmendLabels();"
+      + "try{wbPreview();out.pills=pills();var b=document.getElementById('wbRec');out.open=!!b&&!b.disabled;}catch(e){out.preview=err(e);}"
+      + "try{render();out.after=pills();}catch(e){out.render=err(e);}"
+      + "queue=[];try{wbRecord();out.q=queue.slice();}catch(e){out.record=err(e);}queue=[];"
+      + "return JSON.stringify(out);})()")));
+    ok(!r.preview && J(r.pills) === J(["Unpaid", "Received", "Open · Advance", "Partial", "Received", "Open · Advance"]) && r.open === true,
+      "the preview reads the lot through the engine, Unpaid to Partial with the goods received, and leaves Record open: " + J(r));
+    ok(!r.render && Array.isArray(r.pills) && r.pills.length === 6 && J(r.after) === J(r.pills),
+      "and a render of Enter with the lot still picked draws the same pills rather than throwing: " + J({ render: r.render, after: r.after }));
+    const q = (Array.isArray(r.q) && r.q[0]) || {}, p = q.payload || {};
+    ok(!r.record && Array.isArray(r.q) && r.q.length === 1 && q.type === "AMEND" && q.party === S && q.status === "partial" && q.total === 50 && q.qty === 0
+      && p.mode === "amend" && p.direction === "BUY" && p.kind === "Payment" && p.party === S && p.orderKey === r.key && p.orderCode === r.code
+      && p.date === ON && p.cash === 50 && p.total === 50 && p.kg === 0 && p.qty === 0 && p.sameDay === false && / → Open · Advance$/.test(q.raw || ""),
+      "Record queues one AMEND on the lot, keyed as the engine keys it, RM 50 paid and nothing received, part paid after: " + J({ record: r.record, q: r.q }));
+  } finally {
+    await new Promise((res) => setTimeout(res, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
+})();
+
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

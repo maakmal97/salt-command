@@ -1,5 +1,14 @@
 [
  {
+  "v": "v925",
+  "d": "28 Sep 2026",
+  "t": "A LOT AMENDED ON THE WORKBENCH QUEUES AGAIN",
+  "n": [
+   "<p><b>A LOT'S PAYMENT, RECEIPT OR DEFAULT QUEUES AGAIN.</b> From v492 of 05 Sep 2026, amending a lot on the Workbench stopped on an error before anything was queued: the preview asked for the lot's state by a name the page does not carry, since the engine keeps it inside its own block. It now asks the engine by name, as the Ledger's reading of a lot does, so the preview shows the lot before and after, and Record queues the entry. While a lot stayed picked, the same error escaped every redraw of Enter, leaving the lot's preview and the queued entries blank and the rail's counts out of date; that is gone too. No price or figure moves.</p>",
+   "<p><b>WHERE THE ENTRY GOES, AND THE SWEEP.</b> The drafter leaves a lot's Payment, Receipt or Default for a person, as it always has, so the entry waits on the queue, marked refused, for a hand fold. The page was then swept for any other name it calls that nothing on it defines, the handlers on its buttons included: none, beyond the chart library it loads when a chart is first drawn. One new suite section drives a lot's Payment through the preview, a redraw of Enter and Record: red on the page as it was, and under 4 mutations, each on its own. The v922 section that stood the engine's own function in for the missing name no longer does, and its lot check now turns red on the page as it was too.</p>"
+  ]
+ },
+ {
   "v": "v924",
   "d": "28 Sep 2026",
   "t": "ON A PHONE THE SCREEN'S MARGINS ARE EQUAL",

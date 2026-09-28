@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="86d8dd999fed9b14";
+var SALT_BUILD_ID="c55709333dde7656";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8623,7 +8623,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v924","d":"28 Sep 2026","t":"ON A PHONE THE SCREEN'S MARGINS ARE EQUAL","n":["<p><b>ON A PHONE THE SCREEN'S MARGINS ARE EQUAL.</b> His C2 of 28 Sep 2026, with pay terms V2. Under 1080px the Counter kept the statement's 44px above, 20px beside and 60px below, and its shell 24px over the App bar besides, so Home began 44px down and ended 108px above the bar. Now 16px on every side, each safe area added, and the App bar cleared by the same 16px; Home's sections stand one 24px gap apart, and no list leaves its last row's 8px behind (it stood inside Coming up, so the gap after it read 32px). The door gains 16px of width, and Salt Account's shell takes the same frame, its rule placed after the shell's own. From 1080px nothing moves.</p>","<p><b>PROOFS.</b> Measured in the Browser pane at 375px on Home, Orders, Account, the held payment page, the door and Salt Account: 16px on every side and above the bar, Home's gaps 24px as seen. A new suite section reads the page's cascade in jsdom at 375px and 1280px, each width query that holds there made all; 10 mutations red, among them Salt Account's rule moved back before the shell's own, the fault the first draft had.</p>"]}];
+const evolution=[{"v":"v925","d":"28 Sep 2026","t":"A LOT AMENDED ON THE WORKBENCH QUEUES AGAIN","n":["<p><b>A LOT'S PAYMENT, RECEIPT OR DEFAULT QUEUES AGAIN.</b> From v492 of 05 Sep 2026, amending a lot on the Workbench stopped on an error before anything was queued: the preview asked for the lot's state by a name the page does not carry, since the engine keeps it inside its own block. It now asks the engine by name, as the Ledger's reading of a lot does, so the preview shows the lot before and after, and Record queues the entry. While a lot stayed picked, the same error escaped every redraw of Enter, leaving the lot's preview and the queued entries blank and the rail's counts out of date; that is gone too. No price or figure moves.</p>","<p><b>WHERE THE ENTRY GOES, AND THE SWEEP.</b> The drafter leaves a lot's Payment, Receipt or Default for a person, as it always has, so the entry waits on the queue, marked refused, for a hand fold. The page was then swept for any other name it calls that nothing on it defines, the handlers on its buttons included: none, beyond the chart library it loads when a chart is first drawn. One new suite section drives a lot's Payment through the preview, a redraw of Enter and Record: red on the page as it was, and under 4 mutations, each on its own. The v922 section that stood the engine's own function in for the missing name no longer does, and its lot check now turns red on the page as it was too.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8738,7 +8738,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 17:30 KL';
+const LAST_UPDATED='28 Sep 2026, 17:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20227,12 +20227,16 @@ const wbRecvLbl=s=>s==='Delivered'?'Received':s==='Undelivered'?'Not received':s
    lot's state is the lot engine's: status is stripped there so poCash reads the cash given rather
    than "paid" meaning the whole total, and the in-kind and advance fields are zeroed so the four
    scalars are the whole truth of the hypothetical. Returns the engine's cls as well, so the
-   pills take the class the Ledger uses and a fifth copy of that map is not needed. */
+   pills take the class the Ledger uses and a fifth copy of that map is not needed.
+   28 Sep 2026: THE LOT BRANCH NAMES THE ENGINE. poStat lives inside the engine block, and the page
+   never had a bare poStat, so from v492 this line threw ReferenceError: a lot's Payment, Receipt or
+   Default on the Workbench previewed nothing and queued nothing, and while a lot was picked the
+   throw escaped every render of Enter. It now calls the engine by name, as ledgerBuy does. */
 function wbState(total,qty,cash,unitsD,flags){
   const f=flags||{};
   if(f.buy){
     const p=Object.assign({},f,{total:total,qty:qty,cash:cash,receivedQty:unitsD,status:undefined,settledRM:0,settledKg:0});
-    delete p.buy; const st=poStat(p); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
+    delete p.buy; const st=POSITION_ENGINE.poStat(p); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
   }
   const t=Object.assign({},f,{total:total,qty:qty,cash:cash,deliveredQty:unitsD,settledRM:0,settledKg:0,advanceUnits:0});
   const st=txStat(t); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
