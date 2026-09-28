@@ -1,6 +1,6 @@
 {
- "v": "v914",
- "stamped": "28 Sep 2026, 09:34 KL",
+ "v": "v915",
+ "stamped": "28 Sep 2026, 12:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5897,7 +5897,8 @@
    "CS6-DAM",
    "CZ5-TM",
    "CJ2-KUC",
-   "CA6-CYB"
+   "CA6-CYB",
+   "CE5-SA-R"
   ],
   "associates": [
    "CS6-BS",
@@ -5906,7 +5907,8 @@
    "CN3-WM",
    "CI4-OKR",
    "CE4-AD",
-   "CR3-DAM"
+   "CR3-DAM",
+   "CE5-SA"
   ],
   "PEOPLE": {
    "banned": [
@@ -6459,9 +6461,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-27T22:43:41.205Z",
+  "QUEUE_COMMITTED": "2026-09-28T04:57:35.953Z",
   "PRICING": {
-   "takenAt": "2026-09-28T01:34:33.489Z",
+   "takenAt": "2026-09-28T04:59:00.174Z",
    "sizes": [
     0.5,
     1,
@@ -13083,10 +13085,10 @@
      "cards": {}
     }
    },
-   "v": "v914"
+   "v": "v915"
   },
   "OPEN": {
-   "at": "2026-09-28T01:34:33.697Z",
+   "at": "2026-09-28T04:59:00.362Z",
    "count": 8,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
@@ -13284,7 +13286,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v914"
+   "v": "v915"
   }
  }
 }
