@@ -1,0 +1,130 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-28T06:05:20.591Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s210",
+    "qty": 2,
+    "total": 210,
+    "cash": 210,
+    "date": "2026-09-27",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "assoc",
+      "from": null,
+      "to": "CE5-SA"
+     },
+     {
+      "field": "stream",
+      "from": null,
+      "to": "R2"
+     }
+    ],
+    "customer": "CE5-SA"
+   },
+   "reasoning": "Correction against CE5-SA's order of 2 unit for RM 210 dated 2026-09-27 (s210). Sets assoc from unset to CE5-SA, stream from unset to R2. It moves the row from CE5-SA to CE5-SA-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s210",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-28T06:05:20.591Z",
+    "type": "AMEND",
+    "party": "CE5-SA",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE5-SA s210: assoc to CE5-SA, stream to R2, recorded 2026-09-28",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE5-SA",
+     "rid": "s210",
+     "orderKey": "CE5-SA|2026-09-27|210",
+     "kind": "Correction",
+     "date": "2026-09-28",
+     "fields": {
+      "assoc": "CE5-SA",
+      "stream": "R2"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": "Moved to CE5-SA's resale account on his instruction of 28 Sep 2026, CE5-SA having been appointed a reseller at v915; re-entered from the laptop after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer.",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-28T06:13:17.423Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-28T06:05:20.592Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s212",
+    "qty": 1,
+    "total": 8,
+    "cash": 8,
+    "date": "2026-09-28",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "assoc",
+      "from": null,
+      "to": "CE5-SA"
+     },
+     {
+      "field": "stream",
+      "from": null,
+      "to": "R2"
+     }
+    ],
+    "customer": "CE5-SA"
+   },
+   "reasoning": "Correction against CE5-SA's order of 1 unit for RM 8 dated 2026-09-28 (s212). Sets assoc from unset to CE5-SA, stream from unset to R2. It moves the row from CE5-SA to CE5-SA-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s212",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-28T06:05:20.592Z",
+    "type": "AMEND",
+    "party": "CE5-SA",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE5-SA s212: assoc to CE5-SA, stream to R2, recorded 2026-09-28",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE5-SA",
+     "rid": "s212",
+     "orderKey": "CE5-SA|2026-09-28|8",
+     "kind": "Correction",
+     "date": "2026-09-28",
+     "fields": {
+      "assoc": "CE5-SA",
+      "stream": "R2"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": "Moved to CE5-SA's resale account on his instruction of 28 Sep 2026, CE5-SA having been appointed a reseller at v915; re-entered from the laptop after the desk's three Corrections of 05:00 UTC were refused for clearing the buyer.",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-28T06:13:19.370Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
