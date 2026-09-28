@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-28T09:56:10.524Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s212",
+    "qty": 1,
+    "total": 8,
+    "cash": 8,
+    "date": "2026-09-28",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "cash",
+      "from": 8,
+      "to": 0
+     },
+     {
+      "field": "paidOn",
+      "from": "2026-09-28",
+      "to": null
+     }
+    ],
+    "customer": "CE5-SA-R"
+   },
+   "reasoning": "Correction against CE5-SA-R's order of 1 unit for RM 8 dated 2026-09-28 (s212). Sets cash from 8 to 0, paidOn from 2026-09-28 to cleared. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 4 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "This is an ADVANCE: 1 unit goes out with RM 8 unpaid. Check it against CE5-SA's credit cap."
+   ],
+   "amends": "s212",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-28T09:56:10.524Z",
+    "type": "AMEND",
+    "party": "CE5-SA-R",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE5-SA-R s212: cash to 0, paidOn (cleared), recorded 2026-09-28",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE5-SA-R",
+     "rid": "s212",
+     "orderKey": "CE5-SA-R|2026-09-28|8|rice",
+     "kind": "Correction",
+     "date": "2026-09-28",
+     "fields": {
+      "cash": 0,
+      "paidOn": null
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": "The RM 8 Cash received on this order's card was tapped by mistake: the unit of rice was collected and not paid, on his word of 28 Sep 2026. Entered from the laptop; the site's order card still reads it paid until the site's own record is corrected.",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-28T10:16:32.981Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
