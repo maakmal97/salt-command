@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-28T10:19:26.622Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-28",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260928095231-jvkptq, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1 unit of salt to CR3-DAM for RM 110, RM 110/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 54 on the goods at 49.1%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-28 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 17 orders; this one is RM 110, 37.5% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-28T10:19:26.622Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 1,
+    "total": 110,
+    "status": "Pending",
+    "raw": "SELL CR3-DAM 1 salt RM 110, nothing paid, nothing moved (order 20260928095231-jvkptq)",
+    "orderKey": "CR3-DAM|2026-09-28|110",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "newId": null,
+     "date": "2026-09-28",
+     "qty": 1,
+     "total": 110,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260928095231-jvkptq, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260928095231-jvkptq"
+   },
+   "decidedAt": "2026-09-28T10:19:28.854Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
