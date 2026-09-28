@@ -1,6 +1,6 @@
 {
- "v": "v931",
- "stamped": "28 Sep 2026, 20:14 KL",
+ "v": "v932",
+ "stamped": "28 Sep 2026, 20:46 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 3,
+  "STATED_STOCK": 2,
   "COUNT_ON": {
    "salt": "2026-09-27",
    "oil": "2026-09-27",
@@ -5764,9 +5764,30 @@
     "total": 110,
     "cash": 0,
     "date": "2026-09-28",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.",
-    "rid": "s214"
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance. <b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.",
+    "rid": "s214",
+    "deliveredOn": "2026-09-28",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-28; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-09-28",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance.",
+      "cost": 56
+     }
+    ],
+    "cost": 56
    },
    {
     "customer": "CH4-KS",
@@ -6518,9 +6539,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T12:13:41.199Z",
+  "QUEUE_COMMITTED": "2026-09-28T12:45:57.342Z",
   "PRICING": {
-   "takenAt": "2026-09-28T12:14:48.411Z",
+   "takenAt": "2026-09-28T12:46:47.970Z",
    "sizes": [
     0.5,
     1,
@@ -6868,11 +6889,11 @@
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
-      "orders": 17,
+      "orders": 18,
       "tenureDays": 91,
-      "sinceLastDays": 3,
-      "perMonth": 5.69,
-      "smallShare": 0.76,
+      "sinceLastDays": 0,
+      "perMonth": 6.02,
+      "smallShare": 0.78,
       "bigShare": 0.06,
       "late": 0,
       "frequent": true,
@@ -7718,15 +7739,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3283582089552239
+         "v": 0.3235294117647059
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08304018955618336,
        "avgDel": {
-        "n": 179,
-        "kg": 461.45,
-        "mean": 2.5779
+        "n": 180,
+        "kg": 462.45,
+        "mean": 2.5692
        }
       },
       "policy": {
@@ -13142,10 +13163,10 @@
      "cards": {}
     }
    },
-   "v": "v931"
+   "v": "v932"
   },
   "OPEN": {
-   "at": "2026-09-28T12:14:48.622Z",
+   "at": "2026-09-28T12:46:48.291Z",
    "count": 11,
    "byKey": {
     "CE5-SA|2026-09-28|110": {
@@ -13192,12 +13213,15 @@
      "q": 1,
      "t": 110,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 110,
-     "oweUnits": 1,
      "rid": "s214",
-     "key": "CR3-DAM|2026-09-28|110"
+     "deliveredOn": "2026-09-28",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-28|110",
+     "age": 0,
+     "exp": 110
     },
     "CH4-KS|2026-09-28|320": {
      "d": "2026-09-28",
@@ -13331,13 +13355,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 3,
-     "free": -6.5,
+     "onHand": 2,
+     "free": -7.5,
      "owedOut": 9.5,
      "coverDays": 0,
      "rate": 6.31,
-     "owedToYou": 500,
-     "promised": 13.5,
+     "owedToYou": 610,
+     "promised": 12.5,
      "short": 10.5
     },
     "oil": {
@@ -13392,7 +13416,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v931"
+   "v": "v932"
   }
  }
 }

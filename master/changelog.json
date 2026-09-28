@@ -1,5 +1,14 @@
 [
  {
+  "v": "v932",
+  "d": "28 Sep 2026",
+  "t": "CR3-DAM COLLECTS HIS PENDING UNIT ON CREDIT",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s214, CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, now reads collected on 28 Sep, with deliveredQty set to 1. No cash came in, so the full RM110 turns from a pending order into an advance. It sits on top of RM265 outstanding and 1.77 units on credit before this batch. The change was preapproved by phone.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter puts RM110 at 37.5% above CR3-DAM's usual RM80. It is the top of his range across 18 orders and clears the floor of RM68.67. The dossier carries no credit cap to test the advance against. The shelf rolls 1 unit out to CR3-DAM from a stated 3. The stock cost holds at RM56 a unit, as nothing landed.</p>"
+  ]
+ },
+ {
   "v": "v931",
   "d": "28 Sep 2026",
   "t": "THREE UNITS PROMISED TO CH4-KS, NOTHING MOVED",
