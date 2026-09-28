@@ -267,7 +267,7 @@ function stmtRecon(party,rows){
     const keys=[];
     (s.amend||[]).forEach(a=>{(a.refKeys||[]).forEach(k=>{if(k&&POSITION_ENGINE.ownsCode(party,k.split('|')[0]))keys.push(k);});});
     const legs=[...new Set(keys)].map(k=>{
-      const t=sales.find(x=>x.customer+'|'+x.date+'|'+x.total===k);
+      const t=sales.find(x=>POSITION_ENGINE.ovKey(x)===k);   /* V4a: a refKey is spelt as the engine keys the row, carriage and product in it */
       if(!t)return null;
       const billed=+txOwed(t), paidCash=+(t.cash||0);   /* v741 */
       /* v455: THE SHORTFALL IS READ FROM A FIELD THE SETTLEMENT HAS ALREADY FILLED. The fold

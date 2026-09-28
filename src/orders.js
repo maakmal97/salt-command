@@ -285,7 +285,8 @@ export async function ackOnApproval(env, pre) {
   const entry = typeof pre.entry === "string" ? JSON.parse(pre.entry) : pre.entry;
   let shown = {};
   try { shown = typeof pre.shown === "string" ? JSON.parse(pre.shown) : (pre.shown || {}); } catch (e) { shown = {}; }
-  const m = await markOrder(env, pre.u, pre.order_id, { ack: entry.at, ledgerKey: entry.orderKey, sync: { state: "queued", why: "", at: new Date().toISOString() } });
+  /* V4a: a yes given before the row key named the product is told in the key's shape now */
+  const m = await markOrder(env, pre.u, pre.order_id, { ack: entry.at, ledgerKey: POSITION_ENGINE.ovRekey(entry.orderKey, entry.payload && entry.payload.product), sync: { state: "queued", why: "", at: new Date().toISOString() } });
   if (!m || !m.ok) return { ok: false, error: "the row is approved but its mark could not be written to the order" + (m ? " (http " + m.status + ")" : "") };
   /* an order already agreed (a row offered again) has nothing to move; one that ended meanwhile refuses the move,
      and its Cancellation then follows the approved row, as any withdrawal of an agreed order does */
@@ -469,7 +470,7 @@ export async function receivedOrder(env, id, body, by, now) {
       if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
       if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
       /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
-      const onRow = onRows[o.ledgerKey] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
+      const onRow = onRows[ledgerKeyOf(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
       if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
       const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
       const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
@@ -616,7 +617,7 @@ async function rowRoom(db) {
    theirs is also told how it is answered: Received, on the book already, which the site takes only once its order has
    heard of the money (the return leg, in the minute after the mirror is re-seeded), or Not found */
 function pastRoom(room, o, entry, word, claim) {
-  const r = room ? room(o.ledgerKey, entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
+  const r = room ? room(ledgerKeyOf(o), entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
   if (!r || !(rm > r.left + 0.004)) return null;
   const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
   return { status: 409, error: "the row owes RM " + r.owes.toFixed(2)
@@ -643,9 +644,10 @@ async function inFlight(env, db, c, sales) {
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of all.orders) {
     if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
-    if (o.status === "ready") ready.push(o.ledgerKey);
-    const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[o.ledgerKey] || 0)).toFixed(2);
-    if (more > 0.004) by[o.ledgerKey] = +((by[o.ledgerKey] || 0) + more).toFixed(2);
+    const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
+    if (o.status === "ready") ready.push(lk);
+    const more = +((+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0)).toFixed(2);
+    if (more > 0.004) by[lk] = +((by[lk] || 0) + more).toFixed(2);
   }
   return { by, ready };
 }
@@ -855,6 +857,8 @@ export async function againOrder(env, id, body, by, now) {
   if (stage === "move" && Math.abs((+o.moved || 0) - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) > 0.0004)
     return { ok: false, status: 409, error: "the order has moved on since that handover: record the handover as it stands" };
   const entry = Object.assign({}, rej.entry, { at: at.toISOString() });
+  /* V4a: a move rejected before the row key named the product is offered again under the key as it is now */
+  if (entry.payload && entry.payload.orderKey) entry.payload = Object.assign({}, entry.payload, { orderKey: POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product) });
   /* 28 Sep 2026, s210: a payment offered again answers to what the row can still take, as the tap that made it does now */
   if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
   const pv = await stagePreview(env, o, stage, entry);
@@ -971,7 +975,9 @@ export async function moveOrder(env, u, id, body) {
 /* IT IS THE ENGINE'S ovKey AND NOTHING ELSE: `${party}|${date}|${total}`, the total as the row
    carries it. It was written here with toFixed(2) and every amendment missed its row by the two
    noughts, which is the sort of thing that only shows when the chain is driven end to end. */
-export const orderKeyFor = (code, date, total) => code + "|" + date + "|" + (+total);
+/* V4a (28 Sep 2026): AND ovKey BUILDS IT, from the goods, the carriage and the product the row will carry, so the key
+   and the row cannot part: `party|date|amount` on salt, as it always was, and `|product` after it on any other book. */
+export const orderKeyFor = (code, date, total, product, delivery) => POSITION_ENGINE.ovKey({ customer: code, date, total, delivery, product });
 const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now()))
   .toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
@@ -987,6 +993,10 @@ const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now())
  */
 const bucketFor = (code) => POSITION_ENGINE.bookR2({}, "customer", code, null).customer;
 export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFor(code) : code);
+/* V4a: THE KEY AN ORDER NAMES ITS ROW BY, for every stage it builds and every road here that looks the row up: its own
+   ledgerKey, given the product's tail if it was written before V4a, so an order rekeyOrders has not reached yet never
+   names a salt twin's row by the old shape */
+export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;
 
 /** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
 export function pendingEntry(order, code, now) {
@@ -1013,7 +1023,7 @@ export function pendingEntry(order, code, now) {
     + ", nothing paid, nothing moved (order " + order.id + ")";
   return {
     at: at.toISOString(), type: "SELL", party: books, qty: order.qty, total: goods, status: "Pending", raw,
-    orderKey: orderKeyFor(books, date, owed),
+    orderKey: orderKeyFor(books, date, goods, order.product || "salt", delivery),
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
       date, qty: order.qty, total: goods, delivery, cash: 0, kg: 0,
       assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: null,
@@ -1035,7 +1045,7 @@ export function payEntry(order, code, amount, now, cash) {
     at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment", by: cash ? "desk" : "customer",
     raw: "Payment of RM " + rm + " on " + books + ", order " + order.id + ", by " + method,
     payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
-      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: rm, kg: 0,
       note: (cash ? "Cash received at the handover, recorded on the desk, order " + order.id : "Paid on the statements site, order " + order.id + ", by " + method) + "." }
   };
@@ -1062,7 +1072,7 @@ export function handoverEntry(order, code, units, now) {
     at: at.toISOString(), type: "SELL", party: books, qty: moved, total: 0, status: "Handover",
     raw: moved + " unit " + how + " to " + books + ", order " + order.id + ", on " + date,
     payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
-      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       fields: { deliveredQty: moved, deliveredOn: date, handover: how },
       note: moved + " unit " + how + " for order " + order.id + "." }
@@ -1081,7 +1091,7 @@ export function closeEntry(order, code, now) {
     at: at.toISOString(), type: "SELL", party: books, qty, total: goods, status: "Close",
     raw: "Closed at " + qty + " unit " + how + " to " + books + " for RM " + goods + ", order " + order.id + ", of " + was + " ordered",
     payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
-      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       fields: { qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how },
       note: "Closed at " + qty + " unit " + how + " for order " + order.id + ", of the " + was + " ordered." }
@@ -1090,9 +1100,11 @@ export function closeEntry(order, code, now) {
 /* THE ROW'S NAME MOVES WITH ITS TOTAL: the engine's ovKey of the row as the close leaves it, the party and the
    day kept from the key the acknowledgement wrote. Later stages then wait for the close to fold, as a first
    stage waits for its pending row, and the return leg finds the row by the name it will carry. */
-export const closedKey = (order) => {
-  const [party, date] = String(order.ledgerKey || "").split("|");
-  return POSITION_ENGINE.ovKey({ customer: party, date, total: +(+order.total).toFixed(2), delivery: +order.delivery || 0 });
+/* V4a: and the product the order carries, so a close keeps a row's tail. `date` is a day a stage restates in place of
+   the key's own: Step 2's early handover redates the row, and its key moves here as a close's does. */
+export const closedKey = (order, date) => {
+  const [party, was] = String(order.ledgerKey || "").split("|");
+  return POSITION_ENGINE.ovKey({ customer: party, date: date || was, total: +(+order.total).toFixed(2), delivery: +order.delivery || 0, product: order.product });
 };
 
 /** Either side withdrew it: the row is cancelled, and the fold raises any refund itself. */
@@ -1104,7 +1116,7 @@ export function cancelEntry(order, code, why, now) {
     at: at.toISOString(), type: "SELL", party: books, qty: 0, total: 0, status: "Cancellation",
     raw: "Cancellation on " + books + ", order " + order.id + ", recorded " + date,
     payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: books, rid: null,
-      orderKey: order.ledgerKey || null, orderCode: null, linkTo: null, assoc: null, downstream: null,
+      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
       note: "Withdrawn on the statements site by " + (why === "desk" ? "the desk" : "the customer") + ", order " + order.id + "." }
   };
@@ -1220,14 +1232,14 @@ export async function reconcileOrders(env, read) {
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
       const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
       if ((o.work || []).includes("cancel") && q.ack && ended && ended.by === "customer" && !((+order.paid || 0) > 0.004 || (+order.claimed || 0) > 0.004)
-        && !(onBook && onBook[order.ledgerKey]) && (await dropAck(env, q.ack, now)) === "dropped") {
+        && !(onBook && onBook[ledgerKeyOf(order)]) && (await dropAck(env, q.ack, now)) === "dropped") {
         mark.cancel = stageAt(order, "cancel", now).toISOString();
         state = { state: "queued", why: "withdrawn by the customer while its pending row waited under Approve: the row was dropped, so nothing reaches the book" };
         dropped.push(o.id);
       }
       for (const job of mark.cancel ? [] : (o.work || [])) {
         let e = null;
-        if (job !== "ack" && !(onBook && onBook[order.ledgerKey])) {
+        if (job !== "ack" && !(onBook && onBook[ledgerKeyOf(order)])) {
           waiting.push(o.id);
           /* A REJECTED ROW STAYS SAID (24 Sep 2026): a row he rejected never reaches the book, so every
              later stage waits here, and "approve it under Approve" would send him to a row he has already
@@ -1378,7 +1390,7 @@ export async function rejectedOnOrder(env, entry, at) {
   /* A CLOSE HE REJECTS NEVER LANDS, so the row keeps the name it had: the order names it by that key again, and every
      later stage, the return leg and the card's taps find the row the book still carries (offered again, the close
      moves the name once more, againOrder) */
-  if (entry.status === "Close" && entry.payload && entry.payload.orderKey) mark.ledgerKey = entry.payload.orderKey;
+  if (entry.status === "Close" && entry.payload && entry.payload.orderKey) mark.ledgerKey = POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product);   /* V4a: in the key's shape now */
   const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
   });
@@ -1414,7 +1426,7 @@ export async function tellSite(env) {
   let told = 0; const failed = [];
   for (const o of r.orders) {
     if (!o.ledgerKey || ["done", "cancelled", "declined"].includes(o.status)) continue;
-    const row = byKey.get(o.ledgerKey);
+    const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
     if (!row || row.cancelled) continue;
     const ledger = {};
     const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
@@ -1431,6 +1443,32 @@ export async function tellSite(env) {
      rather than waiting for the next fold */
   if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
   return Object.assign({ ok: true, told, v }, failed.length ? { failed } : {});
+}
+
+/* ---- V4a: A KEY WRITTEN BEFORE THE PRODUCT WAS IN IT (28 Sep 2026) -----------------------------------------------
+ * The row key names the product on every book but salt (the engine's ovKey), and an order acknowledged before that
+ * carries the old key as its ledgerKey: on salt it is the same key, on any other book it lacks the tail. ONCE, on the
+ * minute's first pass after the version that brought it and ahead of every other step, each such order is marked with
+ * its key as the engine gives it now (ledgerKeyOf: the tail and nothing else), a finished order too, so nothing on the
+ * site names a row by the old shape. The mark on this store moves only when every order took its key; until then the
+ * next minute tries again, and every road here reads the key through ledgerKeyOf meanwhile. It costs the first minute
+ * one more question to the site, and no minute after it. */
+const KEYED_MARK = "orders:keyed";
+export async function rekeyOrders(env) {
+  if (!env.SALT_QUEUE || !env.STMT_SITE) return { ok: true, rekeyed: 0 };
+  if ((await env.SALT_QUEUE.get(KEYED_MARK)) === "product") return { ok: true, rekeyed: 0 };
+  const r = await listOrders(env, true);
+  if (!r.ok) return { ok: false, error: r.error };
+  let rekeyed = 0; const failed = [];
+  for (const o of r.orders) {
+    const nk = ledgerKeyOf(o);
+    if (!o.ledgerKey || nk === o.ledgerKey) continue;
+    const m = await markOrder(env, o.u, o.id, { ledgerKey: nk });
+    if (m && m.ok) rekeyed++;
+    else failed.push({ id: o.id, why: "the site would not take the key" + (m ? " (http " + m.status + ")" : "") });
+  }
+  if (!failed.length) await env.SALT_QUEUE.put(KEYED_MARK, "product");
+  return Object.assign({ ok: true, rekeyed }, failed.length ? { failed } : {});
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of

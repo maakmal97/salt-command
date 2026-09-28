@@ -508,7 +508,8 @@ export function flagsFor(entry, row, book, priced) {
     /* the FULL total, as the fold compares it (fold.mjs, the replay guard): `total` here is the
        goods after delivery, and a twin with delivery inside was missed on the phone and then
        refused at the fold as a replay (08 Sep 2026) */
-    const twin = (book[isSale ? "sales" : "purchases"] || []).find((x) => x[key] === party && (x.date || null) === (row.date || null) && +x.total === +row.total && +x.qty === +qty);
+    /* V4a: and the product, as the fold's guard compares it: a row of another book is never a replay */
+    const twin = (book[isSale ? "sales" : "purchases"] || []).find((x) => x[key] === party && (x.product || "salt") === (row.product || "salt") && (x.date || null) === (row.date || null) && +x.total === +row.total && +x.qty === +qty);
     if (twin) {
       flags.push((entry && entry.payload && entry.payload.second)
         ? `This matches ${twin.rid || "a row"} on the book by party, date, size and total, and the entry says it is a SECOND order: the fold will take it as one.`

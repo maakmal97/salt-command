@@ -797,7 +797,16 @@ a stage cannot be queued twice by two roads racing (Accept's pending row is the 
 desk back to the site, so the site can never learn it. The desk writes the other identifier the
 drafter takes onto the order at the acknowledgement: `ledgerKey`, which is **the engine's own
 `ovKey`**, `party|date|total`, the total as the row carries it (written with `toFixed(2)` it misses
-every row by two noughts, which is what driving the chain end to end caught). The site records what
+every row by two noughts, which is what driving the chain end to end caught), and since V4a (28 Sep
+2026) `|product` after it on any book but salt, so two lines of one sheet on one day for one figure
+are two keys. An order acknowledged before V4a carries the old shape: the desk's minute gives it its
+tail once (`rekeyOrders`, marked `orders:keyed` in the desk's KV), and every road reads an order's key
+through `ledgerKeyOf` meanwhile. The fold's replay guard and the drafter's twin flag compare the
+product too, so another book's row at the same figures is never a replay. A Linked step's `refKeys`
+are spelt the same way and read through `ovKey`. The pass is one way: code from before V4a reads a
+tailed key as no row's, so a rollback past V4a strips the tails first, and `tools/product.mjs
+--rename` refuses a book with rows until `--orders-done` says no order, entry, draft or fold still
+holds its keys. The site records what
 has been told in `queued` (`ack`, `paid`, `moved`, `cancel`) and `orderWork` reads the difference;
 that is the one place a stage is decided owed.
 

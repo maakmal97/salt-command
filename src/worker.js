@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -722,6 +722,12 @@ export default {
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
           return;
         }
+        /* V4a: an order acknowledged before the row key named the product takes the key as it is now, once, before
+           anything this minute reads its key */
+        try {
+          const rk = await rekeyOrders(env);
+          if (!rk.ok || rk.rekeyed || rk.failed) console.log("orders rekey: " + JSON.stringify(rk));
+        } catch (e) { console.log("orders rekey FAILED: " + String((e && e.stack) || e)); }
         /* v764: what the book already holds, back the other way, before the read of what the orders owe:
            an order brought level here owes nothing for the reconcile to queue. A cheap read of the book's
            version on a quiet minute; the site is asked only after a fold. */

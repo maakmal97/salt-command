@@ -845,7 +845,17 @@ function refundOnCancel(list,row,date){
    written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in
    flight). It is also what stops a collision: on the goods alone, s155 and s157 both become
    CN6-WM-R|2026-09-12|110, and four of the thirteen carriage-bearing rows are still open. */
-function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+((+t.total||0)+(+t.delivery||0));}
+/* V4a (28 Sep 2026): AND IT NAMES THE PRODUCT, ON EVERY BOOK BUT SALT. A salt sale and a candy sale to one party on one
+   day for one figure were one key (s190 and s191), and two lines of one order sheet acknowledged together would be too:
+   findRow refuses a key that names two rows, so every later stage of both would stick. Salt's keys predate products, and
+   a salt row carries no product while an order or an entry names salt, so salt takes no tail whether or not it is named:
+   every salt key, on the book and on a live order, is what it was to the character, and any other product's key is that
+   and `|product`. KEY_PLAIN is the one product this engine names, for this alone; a new book needs nothing here.
+   keyTail is the one place the tail is spelt; ovRekey gives a key written before V4a its tail and changes nothing else. */
+const KEY_PLAIN='salt';
+function keyTail(product){return product&&product!==KEY_PLAIN?'|'+product:'';}
+function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+((+t.total||0)+(+t.delivery||0))+keyTail(t.product);}
+function ovRekey(key,product){return typeof key==='string'&&key.split('|').length===3?key+keyTail(product):key;}
 /* ====== WHICH Add ID KIND APPOINTS AN ASSOCIATE, AND WHICH STREAM IT IS FOR (v570) ========
    THREE READERS AND THEY HAVE TO AGREE, which is the same reason CORRECTABLE sits in this file:
    the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
@@ -948,7 +958,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,

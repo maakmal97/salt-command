@@ -109,17 +109,21 @@ hues, and it is generated, so a new hue is added upstream and synced.
 
 ## 5. Product-agnostic: what a new product never touches
 
-- **`engine/pricing.mjs` and `engine/position.mjs` contain zero product string literals.**
-  Every function takes a cost stack `C`, a policy `P` or a row the caller already resolved for
-  one product; the engine never asks which product it is pricing. The single embedded rule is
-  `walk()`'s `isSalt` gate, which excludes loans and the supplier receivable, and the caller
-  sets it as `PROD === DEFAULT_PROD`, so a new book correctly inherits neither.
+- **`engine/pricing.mjs` and `engine/position.mjs` contain one product string literal between
+  them**, `KEY_PLAIN` in the row key (V4a, 28 Sep 2026): salt's keys predate products, so a salt
+  row keys as it always did, named or not, and every other book's key ends `|product` with
+  nothing added for it; so `tools/product.mjs --rename` moves every key of a book with rows, and
+  refuses one until `--orders-done` says no order, entry, draft or fold still holds them. Every other function takes a cost stack `C`, a policy `P` or a row the
+  caller already resolved for one product; the engine never asks which product it is pricing.
+  The single embedded rule is `walk()`'s `isSalt` gate, which excludes loans and the supplier
+  receivable, and the caller sets it as `PROD === DEFAULT_PROD`, so a new book correctly
+  inherits neither.
 - **`engine/qr.mjs`, `stmt/qr.js`, `stmt/refs.js`, `stmt/send.js`**: no product logic at all.
 - **`src/worker.js` and `src/orders.js`**: the reconcile, the nudge, `queueSale`, `ledgerKey`
-  and `ovKey` (which key on code, date and total, never on product), the order thread and the
-  bulletin all pass a product through opaquely. `siteWords` refuses the desk's name, a roster
-  code's shape and a level's name, in English and Malay, and deliberately does not refuse a
-  product's name; the desk's `siteSafe` warns on one.
+  and `ovKey` (code, date, total and, off salt, the product, all through the engine's `ovKey`),
+  the order thread and the bulletin all pass a product through opaquely. `siteWords` refuses
+  the desk's name, a roster code's shape and a level's name, in English and Malay, and
+  deliberately does not refuse a product's name; the desk's `siteSafe` warns on one.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
   the morning round, not the product. No topic is per-product.
 - **D1.** `product` is unconstrained `TEXT` on both `entry` and `draft`, and no `CHECK`

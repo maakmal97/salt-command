@@ -323,7 +323,10 @@ export function plan(book, staged, notes) {
         r.date = typed;
         entry.does.push(`date the pending row ${typed}, the day it was agreed, from the entry`);
       }
-      const twinOf = (x) => x[key] === r[key] && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty;
+      /* V4a (28 Sep 2026): AND THE PRODUCT. Two lines of one order sheet, a salt and an oil at one size and one figure on
+         one day, are two orders; the second was refused here as a replay and left the batch staged. A replay is the
+         same entry twice, so the same product, as the phone's replayTwin has read it since v526. */
+      const twinOf = (x) => x[key] === r[key] && (x.product || "salt") === (r.product || "salt") && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty;
       /* 08 Sep 2026: AND THE BATCH IS READ AS WELL AS THE BOOK. Two identical approved drafts, from
          two devices or the laptop road, both matched nothing on the book and both folded. */
       const dup = (book[it.collection] || []).find(twinOf)

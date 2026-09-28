@@ -5708,7 +5708,17 @@ function refundOnCancel(list,row,date){
    written onto a LIVE order at acknowledgement, so a key that moved would orphan every order in
    flight). It is also what stops a collision: on the goods alone, s155 and s157 both become
    CN6-WM-R|2026-09-12|110, and four of the thirteen carriage-bearing rows are still open. */
-function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+((+t.total||0)+(+t.delivery||0));}
+/* V4a (28 Sep 2026): AND IT NAMES THE PRODUCT, ON EVERY BOOK BUT SALT. A salt sale and a candy sale to one party on one
+   day for one figure were one key (s190 and s191), and two lines of one order sheet acknowledged together would be too:
+   findRow refuses a key that names two rows, so every later stage of both would stick. Salt's keys predate products, and
+   a salt row carries no product while an order or an entry names salt, so salt takes no tail whether or not it is named:
+   every salt key, on the book and on a live order, is what it was to the character, and any other product's key is that
+   and `|product`. KEY_PLAIN is the one product this engine names, for this alone; a new book needs nothing here.
+   keyTail is the one place the tail is spelt; ovRekey gives a key written before V4a its tail and changes nothing else. */
+const KEY_PLAIN='salt';
+function keyTail(product){return product&&product!==KEY_PLAIN?'|'+product:'';}
+function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+((+t.total||0)+(+t.delivery||0))+keyTail(t.product);}
+function ovRekey(key,product){return typeof key==='string'&&key.split('|').length===3?key+keyTail(product):key;}
 /* ====== WHICH Add ID KIND APPOINTS AN ASSOCIATE, AND WHICH STREAM IT IS FOR (v570) ========
    THREE READERS AND THEY HAVE TO AGREE, which is the same reason CORRECTABLE sits in this file:
    the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
@@ -5811,7 +5821,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
@@ -8491,7 +8501,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v921","d":"28 Sep 2026","t":"AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE","n":["<p><b>AN ORDER AT READY IS DUE AT ONCE, AND TO PAY NOW IS AN INVOICE.</b> His points 1 and 6 of 28 Sep 2026, with his C1 and C2. An order he has made Ready owes all that is left on it at once, cash on handover included: on the Counter it leaves Coming up and becomes a line of To pay now, read off the order itself, so it is due the moment he taps Ready rather than at the next publish. Its own screen says Due now, and its pay sheet offers no cash way. Due is not overdue: the hold still counts only a part more than three days past its handover, so an order at Ready unpaid stops nothing.</p>","<p><b>ONE PAY, BOOKED IN THE DESK'S ORDER.</b> The engine's claimAlloc takes the rows of the orders at Ready, which the desk Worker names from the site's orders at Ready: first the rows with goods out, oldest first, each owing what was handed over, or all that is left on a row at Ready; then the rows at Ready with nothing handed over, oldest first. Without them it is as it was. The page spreads money sent against the account over its lines in the same order, so each line's Less sent is what the desk books there. The account road is proved end to end on a row at Ready: the preview, Received, the drafter, the fold, and no tap after it booking past what the row can take.</p>","<p><b>THE INVOICE.</b> The publish seals each part's line: the goods and the delivery on the units handed over, what is paid, and the rate, adding up to its figure to the sen. Home draws a line a row, its figure and when it is due in a word or three, then Less sent, and the Total with one Pay, his \"less words, but maximum impact\"; the pay sheet draws the same invoice whole, each line's rate, when, goods, delivery and paid, then Goods, Delivery, Less paid, Less sent and the Total.</p>","<p><b>PROOFS.</b> Four new suite sections (the seal, the allocation, the account road and the page, whose last check holds the invoice to Step 1a.2: every mark it draws lettered and 20 px); S6 6.2 rewritten for the invoice, three fixtures given the part their figure stood for, and five checks reading the invoice's words. 27 mutations red: 6 on the allocation, 4 on the account road, 4 on the seal and 13 on the page.</p>"]}];
+const evolution=[{"v":"v922","d":"28 Sep 2026","t":"THE ROW KEY NAMES THE PRODUCT ON EVERY BOOK BUT SALT","n":["<p><b>THE ROW KEY NAMES THE PRODUCT ON EVERY BOOK BUT SALT.</b> Pay terms V4a, 28 Sep 2026. A row's key was party, day and figure, so a salt sale and a candy sale on one day for one figure were one key, and two lines of one order sheet acknowledged together would be: the open orders keep one row a key, and findRow and the fold refuse a key that names two, so every later stage of both would stick. The engine's ovKey now ends with the product on any book but salt, and every salt key, on the book and on a live order, is what it was to the character. It stays the one builder: Accept, the acknowledgement, the Workbench's amendments, the close and the claims against the account all key through it.</p>","<p><b>ORDERS KEYED BEFORE IT.</b> An order of another book acknowledged before this version carries its key without the tail. The desk's minute gives every such order its tail once, ahead of everything else it does, and marks the store when every order has taken it; meanwhile every road reads an order's key through ledgerKeyOf, so a stage never names the salt row beside it, an order at Ready included. A yes, a rejected move or a Close given before it is told in the key's shape now. The pass is one way.</p>","<p><b>NEVER A REPLAY.</b> The fold's replay guard, the drafter's twin flag and the desk's double tap compare the product too, so another book's row at the same party, day, size and figure is the order it is. The reconciliation reads a Linked step's references through the same key, and renaming a book with rows waits for his word that no order, entry, draft or fold still holds its keys.</p>","<p><b>PROOFS.</b> Six new suite sections: the key on every row of the book (one clash before this version, none now); every stage of an oil order beside a salt twin, keyed as before and after the pass; the pass on the minute; the desk's own keys; the reconciliation and the rename; and a claim against the account taking an oil order at Ready by its tailed key, never the salt row. 43 mutations red. Fold 5.6's store and v526's queued entry take the shape every store and entry has after this version.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8606,7 +8616,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 15:44 KL';
+const LAST_UPDATED='28 Sep 2026, 16:12 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13757,9 +13767,9 @@ function tabLedger(){
   const kindLab=(k,buy,a)=>k==='Linked'?'Linked orders'
     :(buy&&k==='Fulfilment'&&a)?((a.cash>0.0001&&a.kg>0.0001)?'Payment and receipt':a.kg>0.0001?'Receipt':a.cash>0.0001?'Payment':k):k;
   // ENTRY CODES: every entry takes a sequential E-number in ledger (date) order, and a stable
-  // party|date|total key so one entry can point at another.
+  // key, the engine's ovKey, so one entry can point at another.
   const codes=all.map((t,i)=>'E'+(i+1));
-  const codeByKey={};all.forEach((t,i)=>{const k=t.who+'|'+t.date+'|'+t.total;if(!(k in codeByKey))codeByKey[k]=codes[i];});
+  const codeByKey={};all.forEach((t,i)=>{const k=ovKey(t._buy||t);if(!(k in codeByKey))codeByKey[k]=codes[i];});   // V4a: the engine's key, as a refKey is spelt
   const refHtml=a=>{const bits=[];
     (a.refKeys||[]).forEach(k=>{const c=codeByKey[k];
       bits.push(c?`<a class="eref elink" href="#ent-${c}" onclick="return goEnt('${c}')">${c}</a>`:`<span class="eref">${k}</span>`);});
@@ -18822,14 +18832,15 @@ function replayTwin(dir,product,party,date,qty,total){
   const key=dir==='BUY'?'supplier':'customer', rows=dir==='BUY'?purchases:sales;
   return (rows||[]).find(x=>x[key]===party&&(x.product||'salt')===(product||'salt')&&(x.date||null)===(date||null)&&+x.total===+total&&+x.qty===+qty)||null;
 }
-function queuedTwin(dir,party,date,qty,total){
-  return (queue||[]).find(q=>q&&q.payload&&q.payload.mode==='new'&&String(q.payload.direction||'').toUpperCase()===dir&&(q.payload.party||null)===(party||null)&&(q.payload.date||null)===(date||null)&&+q.payload.total===+total&&+q.payload.qty===+qty)||null;
+/* V4a: a double tap is the same product twice; another book's entry at the same figures is another order */
+function queuedTwin(dir,product,party,date,qty,total){
+  return (queue||[]).find(q=>q&&q.payload&&q.payload.mode==='new'&&String(q.payload.direction||'').toUpperCase()===dir&&(q.payload.product||'salt')===(product||'salt')&&(q.payload.party||null)===(party||null)&&(q.payload.date||null)===(date||null)&&+q.payload.total===+total&&+q.payload.qty===+qty)||null;
 }
 /* returns {fault} to stop, {second:rid} when he said yes, or {} */
 /* v611: `booked` is the code the row will sit on when that is not the entry's party: a resale's party is the
    associate and its row lands in their bucket, which is the code the fold's replay guard compares. */
 function replayAnswer(dir,product,party,date,qty,total,booked){
-  const q=queuedTwin(dir,party,date,qty,total);
+  const q=queuedTwin(dir,product,party,date,qty,total);
   if(q)return {fault:'The same order is already queued from this device, stamped '+esc(String(q.at).slice(11,16))+' UTC, and is on the Approve view. A second one is a double tap.'};
   const on=booked||party;
   const t=replayTwin(dir,product,on,date,qty,total);
@@ -22542,7 +22553,8 @@ function wbRecord(){
       const raw=kind+' on '+o.code+' · lot from '+codeOf(t.who)+', '+fmt0(ac)+' paid and '+units(ak)+' received on '+date
         +(kind==='Default'?' → supplier default; cash already paid becomes a recoverable':' → '+nxt.state)+(an?', '+an:'');
       queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:ak,total:ac,status:status,raw:raw,
-        payload:{mode:'amend',direction:'BUY',party:t.who,orderKey:t.who+'|'+t.date+'|'+t.total,date:date,qty:ak,total:ac,cash:ac,kg:ak,assoc:null,downstream:null,
+        /* V4a: the engine's key, never one spelt here: it names the product, and a sale's carriage since v694 */
+        payload:{mode:'amend',direction:'BUY',party:t.who,orderKey:ovKey(t._buy),date:date,qty:ak,total:ac,cash:ac,kg:ak,assoc:null,downstream:null,
           kind:kind,orderCode:o.code,linkTo:null,sameDay:(date===t.date),note:an||null}});
     }else{
       const linkTo=kind==='Linked'?wbVal('wbLinkTo'):null;
@@ -22574,7 +22586,7 @@ function wbRecord(){
           +(sameDay?' (same day, folds into the opening)':'')
           +(linkTo?' (settles '+linkTo+')':'')+(an?', '+an:'');
       queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:isCancel?null:ak,total:isCancel?null:ac,status:status,raw:raw,
-        payload:Object.assign({mode:'amend',direction:'SELL',party:t.who,orderKey:t.who+'|'+t.date+'|'+t.total,date:date,
+        payload:Object.assign({mode:'amend',direction:'SELL',party:t.who,orderKey:ovKey(t),date:date,
           assoc:null,downstream:null,kind:kind,orderCode:o.code,linkTo:linkTo,sameDay:sameDay,note:an||null},
           /* NAME THE NUMBERS. A Modification carries newTotal/newQty and NO cash or kg,
              so nothing downstream can read a restatement as a movement; a Fulfilment

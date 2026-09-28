@@ -8,7 +8,7 @@
  *
  *   node tools/product.mjs --list
  *   node tools/product.mjs --add candy --name Candy [--note "..."] [--since 2026-09-22]
- *   node tools/product.mjs --rename spare rice
+ *   node tools/product.mjs --rename spare rice [--orders-done]
  *   node tools/product.mjs --retire spare
  *   node tools/product.mjs --unretire spare
  *
@@ -102,11 +102,16 @@ function add(b, id, name, note, since) {
     console.log(`  no mark: add PSYM.${id} and PSHAPE.${id} in stmt/page.js, or the Counter draws it as the Ring.`);
 }
 
-function rename(b, from, to) {
+function rename(b, from, to, done) {
   if (!b.PRODUCTS[from]) die(`${from} is not a product on this book.`);
   if (b.PRODUCTS[to]) die(`${to} is already a product on this book.`);
   if (!/^[a-z][a-z0-9]{1,19}$/.test(to)) die(`"${to}" is not a product id: lower case, letters and digits, 2 to 20 characters.`);
   if (from === "salt") die("salt is the book's default: a row that names no product is salt, so re-keying it would silently re-attribute every row that names nothing. See docs/PRODUCTS.md section 6.");
+  /* V4a (28 Sep 2026): a row's key names its product off salt, so renaming a book moves the key of every sale and lot on
+     it, while an order on the site, an entry queued, a draft, a yes waiting and a staged fold hold the key as it was.
+     Nothing here can see those, so a book with rows is renamed only on his word that none is left. */
+  const keyed = ["sales", "purchases"].reduce((n, k) => n + (b[k] || []).filter((r) => r && r.product === from).length, 0);
+  if (keyed && !done) die(`${from} has ${keyed} sale(s) and lot(s) on the book, and a row's key names its product: renaming moves every one of those keys, while an unfinished site order of ${from}, and anything of it queued, drafted, waiting for your yes or staged, keeps the old key and would never find its row again. When none is left, run it again with --orders-done.`);
 
   for (const k of MAPS) {
     if (!b[k] || !(from in b[k])) continue;
@@ -152,7 +157,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
   if (a.includes("--list") || !a.length) { list(b); process.exit(0); }
   else if (a.includes("--add")) add(b, flag("--add"), flag("--name"), flag("--note"), flag("--since"));
-  else if (a.includes("--rename")) { const i = a.indexOf("--rename"); rename(b, a[i + 1], a[i + 2]); }
+  else if (a.includes("--rename")) { const i = a.indexOf("--rename"); rename(b, a[i + 1], a[i + 2], a.includes("--orders-done")); }
   else if (a.includes("--retire")) retire(b, flag("--retire"), true);
   else if (a.includes("--unretire")) retire(b, flag("--unretire"), false);
   else die("no command. One of --list, --add, --rename, --retire, --unretire.");

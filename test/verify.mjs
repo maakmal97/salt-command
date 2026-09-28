@@ -10642,7 +10642,7 @@ await (async () => {
   /* the editor is driven on the twin's own product: `real` is the newest live sale, which was oil
      at v542, and a twin is matched on product, so salt would find nothing to ask about */
   w.eval("setProd(" + JSON.stringify(real.product || "salt") + ");recompute();ledOlder=true;switchTab('ledger');");
-  const DRIVE = (answer, prime) => "(function(){try{window.confirm=function(){return " + (answer ? "true" : "false") + ";};queue=" + (prime ? "[{at:'2099-02-01T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',party:" + JSON.stringify(real.customer) + ",date:" + JSON.stringify(real.date) + ",qty:" + real.qty + ",total:" + real.total + "}}]" : "[]") + ";" +
+  const DRIVE = (answer, prime) => "(function(){try{window.confirm=function(){return " + (answer ? "true" : "false") + ";};queue=" + (prime ? "[{at:'2099-02-01T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',product:" + JSON.stringify(real.product || "salt") + ",party:" + JSON.stringify(real.customer) + ",date:" + JSON.stringify(real.date) + ",qty:" + real.qty + ",total:" + real.total + "}}]" : "[]") + ";" +
     "ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(e)e.value=v;};set('party'," + JSON.stringify(real.customer) + ");set('qty'," + JSON.stringify(String(real.qty)) + ");set('total'," + JSON.stringify(String(real.total)) + ");set('cash'," + JSON.stringify(String(real.total)) + ");set('deliveredQty'," + JSON.stringify(String(real.qty)) + ");set('date'," + JSON.stringify(real.date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];return JSON.stringify({pushed:queue.length===n0+1,why:why,second:q&&q.payload?q.payload.second:undefined});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const tap = JSON.parse(String(w.eval(DRIVE(true, true))));
@@ -36136,6 +36136,7 @@ await (async () => {
   const U = "qw7r-t2zx", CODE = "ZQ5-FIC", realLog = console.log;
   const stand = (store, counter, ledger) => {
     const skv = new KV(), dkv = new KV(), asked = [];
+    dkv.m.set("orders:keyed", "product");   /* V4a: a store the one-time re-key has run on, as every store is a minute after that version */
     const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: H.orderBook({}).ns, ORDER_STORE: store } : {});
     const denv = Object.assign({ SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => {
       const u = new URL(url);
@@ -44290,6 +44291,516 @@ await (async () => {
   }
 })();
 
+
+section("V4a 1: the row key names the product on every book but salt, every salt key is what it was to the character, and another book's row is never a replay");
+await (async () => {
+  /* 28 Sep 2026, the pay terms plan's V4a. The key was `party|date|amount`, so a salt sale and a candy sale to one party on
+     one day for one figure were one key (the book's own 21 Sep pair), and two lines of one order sheet would be: the open
+     orders keep one row a key, findRow and the fold refuse a key naming two, and every later stage of both would stick. The
+     fold's replay guard read party, day, size and figure the same way and refused the second line outright. Salt takes no
+     tail, whether its row names it or not, so a salt key is untouched. OLD is the key as it was spelt before V4a, written
+     out here and never read from the code under test. Codes invented, or the book's own. */
+  const PE = (await import("../engine/position.mjs")).default;
+  const { findRow, draftRow } = await import("../src/drafter.js");
+  const { plan } = await import("../tools/fold.mjs");
+  const { pendingEntry, ledgerKeyOf, orderKeyFor } = await import("../src/orders.js");
+  const OLD = (t) => (t.customer || t.supplier) + "|" + t.date + "|" + ((+t.total || 0) + (+t.delivery || 0));
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const rows = [...bk.sales, ...bk.purchases], isSalt = (r) => (r.product || "salt") === "salt";
+
+  /* 1. THE BOOK AS IT STANDS */
+  const saltOff = rows.filter((r) => isSalt(r) && PE.ovKey(r) !== OLD(r)).map((r) => r.rid);
+  const otherOff = rows.filter((r) => !isSalt(r) && PE.ovKey(r) !== OLD(r) + "|" + r.product).map((r) => r.rid);
+  const nSalt = rows.filter(isSalt).length, nOther = rows.length - nSalt;
+  ok(nSalt > 0 && nOther > 0 && !saltOff.length && !otherOff.length,
+    "every salt row on the book, sale and lot, keys as it did before V4a to the character, and every row of another book as that and its product: "
+    + JSON.stringify({ nSalt, nOther, saltOff: saltOff.slice(0, 5), otherOff: otherOff.slice(0, 5) }));
+  const books = (keyOf) => { const m = new Map(); for (const r of rows) { const k = keyOf(r); m.set(k, (m.get(k) || new Set()).add(r.product || "salt")); }
+    return [...m.values()].filter((s) => s.size > 1).length; };
+  const clashNow = books(PE.ovKey), clashBefore = books(OLD);
+  ok(clashNow === 0, "and no key on the book names rows of two books, where " + clashBefore + " did before V4a: " + clashNow);
+  const reOff = rows.filter((r) => PE.ovRekey(OLD(r), r.product) !== PE.ovKey(r) || PE.ovRekey(PE.ovKey(r), r.product) !== PE.ovKey(r)).map((r) => r.rid);
+  ok(!reOff.length && PE.ovRekey(null, "oil") === null,
+    "a key written before V4a is given its tail and nothing else, on every row of the book, and a key that has its tail keeps it: " + JSON.stringify(reOff.slice(0, 5)));
+
+  /* 2. A PAIR ALIKE BUT FOR THE BOOK, sale and lot */
+  const C = "CX0-AA", D = "2026-09-28", K = C + "|" + D + "|120";
+  const sR = { rid: "t1", customer: C, date: D, qty: 1, total: 120 }, cR = { rid: "t2", customer: C, date: D, qty: 1, total: 120, product: "candy" };
+  const lot = { rid: "t3", supplier: "SX0-ZZ", date: D, qty: 10, total: 500, product: "oil" }, saltLot = { rid: "t4", supplier: "SX0-ZZ", date: D, qty: 10, total: 500 };
+  const pairBook = { sales: [sR, cR], purchases: [lot, saltLot] };
+  const found = [sR, cR, lot, saltLot].map((r) => findRow(pairBook, PE.ovKey(r)));
+  ok(PE.ovKey(sR) === K && PE.ovKey(Object.assign({ product: "salt" }, sR)) === K && PE.ovKey(cR) === K + "|candy"
+    && PE.ovKey(lot) === "SX0-ZZ|" + D + "|500|oil" && PE.ovKey(saltLot) === "SX0-ZZ|" + D + "|500"
+    && found.every((f, i) => f.row === [sR, cR, lot, saltLot][i]),
+    "a salt sale and a candy sale to one party on one day for one figure are two keys, salt's as it was whether or not its row names salt, and findRow finds each; a lot likewise: "
+    + JSON.stringify({ keys: [sR, cR, lot].map(PE.ovKey), errs: found.map((f) => f.err).filter(Boolean) }));
+  ok(orderKeyFor(C, D, 120, "salt") === K && orderKeyFor(C, D, 100, "salt", 20) === K && orderKeyFor(C, D, 120, "candy") === K + "|candy"
+    && ledgerKeyOf({ ledgerKey: K, product: "oil" }) === K + "|oil" && ledgerKeyOf({ ledgerKey: K + "|oil", product: "oil" }) === K + "|oil"
+    && ledgerKeyOf({ ledgerKey: K, product: "salt" }) === K && ledgerKeyOf({ ledgerKey: K }) === K && ledgerKeyOf({}) === null,
+    "an order's key names the product its row will carry, none on salt, and is read in the shape the book keys by whether or not the minute has re-keyed it: "
+    + JSON.stringify([orderKeyFor(C, D, 120, "salt"), ledgerKeyOf({ ledgerKey: K, product: "salt" }), ledgerKeyOf({ ledgerKey: K, product: "oil" })]));
+
+  /* 3. THE KEY AN ACKNOWLEDGEMENT WRITES IS THE KEY OF THE ROW IT DRAFTS, goods and carriage apart, on either book */
+  const mirror = { version: "v900", sales: [], purchases: [], state: { roster: [C] },
+    pricing: { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 } } }, oil: { stockCost: 7, floors: { "1": { floor: 9 } } } } } };
+  const keyed = ["salt", "oil"].map((product) => {
+    const e = pendingEntry({ id: "x" + product, qty: 1, total: 99.9, delivery: 10.2, mode: "deliver", product }, C, new Date("2026-09-28T03:00:00Z"));
+    const d = draftRow(e, mirror);
+    return { product, key: e.orderKey, row: d.row ? PE.ovKey(d.row) : "skip: " + d.skip };
+  });
+  ok(keyed.every((k) => k.key === k.row) && keyed[1].key.endsWith("|oil") && !/\|salt$/.test(keyed[0].key),
+    "the key an acknowledgement writes is the engine's key of the row it drafts, RM 99.90 of goods and RM 10.20 of carriage alike: " + JSON.stringify(keyed));
+
+  /* 4. ANOTHER BOOK'S ROW IS NEVER A REPLAY, at the fold or in the drafter's flags; the same book's still is */
+  const last = bk.sales.filter((r) => isSalt(r) && r.date && r.customer && +r.total > 0 && +r.qty > 0 && !r.cancelled).slice(-1)[0];
+  const twin = (product) => Object.assign({ customer: last.customer, date: last.date, qty: last.qty, total: last.total, cash: 0 }, product ? { product } : {});
+  const staged = (row) => ({ ok: true, count: 1, approved: [{ id: "2099-02-01T00:00:00.001Z", collection: "sales", row,
+    entry: { at: "2099-02-01T00:00:00.001Z", payload: { mode: "new", direction: "SELL", second: null } } }] });
+  const pOil = plan(JSON.parse(JSON.stringify(bk)), staged(twin("oil")), null), pSalt = plan(JSON.parse(JSON.stringify(bk)), staged(twin(null)), null);
+  ok(pOil.refused.length === 0 && pOil.items.length === 1 && pSalt.items.length === 0 && pSalt.refused.length === 1 && /would be a replay/.test(pSalt.refused[0].why),
+    "the fold takes an oil row at the party, day, size and figure of salt row " + last.rid + " as the order it is, and still refuses a salt twin as a replay: "
+    + JSON.stringify({ oil: pOil.refused.map((x) => x.why), salt: pSalt.refused.map((x) => x.why) }));
+  const mir = { version: "vX", sales: bk.sales, purchases: bk.purchases, state: { roster: bk.roster, associates: bk.associates, PRODUCTS: bk.PRODUCTS, QUEUE_COMMITTED: bk.QUEUE_COMMITTED },
+    pricing: { v: "vX", byProduct: { salt: { stockCost: 48, floors: { 1: { floor: 54.87 } }, inputs: null }, oil: { stockCost: 7, floors: { 1: { floor: 9 } }, inputs: null } } } };
+  const dOf = (product) => draftRow({ at: "2099-02-01T00:00:00.002Z", payload: { mode: "new", direction: "SELL", party: last.customer, product,
+    qty: last.qty, total: last.total, cash: 0, kg: 0, date: last.date } }, mir);
+  const dOil = dOf("oil"), dSalt = dOf("salt");
+  ok(!dOil.skip && !(dOil.flags || []).some((f) => /replay/.test(f)) && !dSalt.skip && (dSalt.flags || []).some((f) => /refuse it as a replay/.test(f)),
+    "and the drafter names no replay on the oil row while it still names one on the salt twin: " + JSON.stringify({ oil: dOil.skip || (dOil.flags || []).filter((f) => /replay/.test(f)), salt: dSalt.skip || null }));
+})();
+
+section("V4a 2: an order of another book finds its own row at every stage beside a salt twin, keyed as before V4a and after the minute re-keys it");
+await (async () => {
+  /* Driven through both Workers over the real schema. Each party holds a salt order and an oil order on one day for one
+     figure, so the key before V4a named both rows alike; the oil order is then marked with that key, as an Accept before
+     V4a wrote it and as every order of another book on the site carries until the minute's one-time pass (rekeyOrders).
+     Every stage is taken on it so keyed, then again on fresh parties after the pass: each row a stage makes must amend the
+     oil row by its rid, never the salt twin's, and every road that reads the key must read the oil row. Codes and
+     usernames invented. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the stages were not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass, rekeyOrders, tellSite, ackOnApproval, rejectedOnOrder, closedKey } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const OLD = (t) => (t.customer || t.supplier) + "|" + t.date + "|" + ((+t.total || 0) + (+t.delivery || 0));
+  const AL = "23456789abcdefghjkmnpqrstvwxyz", WHO = [];   /* [username, code], a party a scenario, seven before the pass and seven after */
+  for (const w of ["b", "c"]) for (let i = 0; i < 7; i++) WHO.push(["v4a" + AL[i] + "-" + w.repeat(4), "CV" + (i + 2) + "-" + w.toUpperCase() + "Z"]);
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  const OPEN = { byKey: {}, position: {} };
+  const PRICING = { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] },
+    oil: { stockCost: 7, floors: { "1": { floor: 9 }, "2": { floor: 18 } }, inputs: null, sizes: [1, 2] } } };
+  setState("roster", WHO.map((x) => x[1])); setState("OPEN", OPEN); setState("PRICING", PRICING);
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const rowOf = (id) => JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(id).row);
+  /* the fold writes an approved row, and the re-seed keys it into the open orders as the master does; `out` hands it over */
+  const land = (id, out) => { const row = Object.assign(rowOf(id), { rid: "s9" + (100 + seq) });
+    if (out) Object.assign(row, { deliveredQty: row.qty, deliveredOn: row.date });
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), id); return row; };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify(Object.fromEntries(WHO)));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const settle = async () => { while (tails.length) await tails.shift(); };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); await settle(); return { status: r.status, j };
+  };
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const keyOf = async (id) => (await orderOf(id)).ledgerKey;
+  const drafts = (id, status) => db.prepare("SELECT id,status,amends,decided_by,entry FROM draft ORDER BY id").all()
+    .map((d) => Object.assign(d, { e: JSON.parse(d.entry) })).filter((d) => d.e.orderId === id && (!status || d.e.status === status));
+  const place = async (u, product, qty, total) => (await O.placeOrder(senv, u, { product, qty, mode: "collect", unit: total / qty, total, week: "" })).order;
+  const accept = async (o) => { const pv = await call("/orders/" + o.id + "/preview", {}); const a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+    return { draft: a.j.draft, ok: a.j.approved === true, err: pv.j.error || a.j.error || null }; };
+  const pay = async (u, id, amount) => { await O.customerMove(senv, u, id, "method", { method: "tngbiz", account: "tngbiz" }); await O.customerMove(senv, u, id, "pay", { amount }); };
+  /* a salt order and an oil order alike, accepted and landed, and the oil one's key put back as V4a found it */
+  const pair = async ([u], qty, total, out) => {
+    const s = await place(u, "salt", qty, total), l = await place(u, "oil", qty, total);
+    const as = await accept(s), al = await accept(l);
+    const keys = { s: await keyOf(s.id), l: await keyOf(l.id) };
+    const rs = land(as.draft, out), rl = land(al.draft, out);
+    await O.deskMove(senv, u, l.id, { mark: { ledgerKey: OLD(rl) } });
+    return { u, s, l, rs, rl, keys, ok: as.ok && al.ok, err: [as.err, al.err].filter(Boolean) };
+  };
+
+  for (const when of ["before", "after"]) {
+    const K = WHO.slice(when === "before" ? 0 : 7), tag = when === "before" ? "Keyed as before V4a" : "After the pass";
+    const A = await pair(K[0], 2, 240), X = await pair(K[1], 1, 130), Q = await pair(K[2], 1, 120, true), T = await pair(K[4], 1, 150), G = await pair(K[5], 1, 160);
+    /* K[3]: salt orders landed, and oil orders beside them agreed on the site's old road, whose pending rows still wait */
+    const [wu] = K[3];
+    const ws = [await place(wu, "salt", 1, 110), await place(wu, "salt", 1, 115)];
+    for (const o of ws) land((await accept(o)).draft);
+    const wl = [await place(wu, "oil", 1, 110), await place(wu, "oil", 1, 115)];
+    for (const o of wl) await O.deskMove(senv, wu, o.id, { status: "acknowledged", mode: "collect" });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const wk = await Promise.all(wl.map(async (o) => { const x = await orderOf(o.id); return [x.ledgerKey, PE.ovKey(rowOf(x.queued.ack))]; }));
+    for (const o of wl) await O.deskMove(senv, wu, o.id, { mark: { ledgerKey: OLD(rowOf((await orderOf(o.id)).queued.ack)) } });
+    const Y = await place(K[6][0], "oil", 1, 170);   /* K[6]: an order still placed, for a yes given before V4a */
+
+    if (when === "before") {
+      ok(A.ok && A.keys.s === OLD(A.rs) && A.keys.s === PE.ovKey(A.rs) && A.keys.l === OLD(A.rl) + "|oil" && A.keys.l === PE.ovKey(A.rl)
+        && !A.rs.product && A.rl.product === "oil" && OPEN.byKey[A.keys.s].rid === A.rs.rid && OPEN.byKey[A.keys.l].rid === A.rl.rid,
+        "Accept keys the salt order as it always did and the oil order with its product, each the engine's key of its own row, and the open orders hold both: "
+        + JSON.stringify({ keys: A.keys, err: A.err }));
+      ok(wk.every(([k, r]) => k === r && /\|oil$/.test(k)),
+        "and the reconcile's acknowledgement, the site's older road, marks an oil order with its pending row's key, product and all: " + JSON.stringify(wk));
+    } else {
+      const was = await Promise.all([A, X, Q, T, G].map(async (p) => [await keyOf(p.l.id), await keyOf(p.s.id)]));
+      const rk = await rekeyOrders(denv), again = await rekeyOrders(denv);
+      const now = await Promise.all([A, X, Q, T, G].map(async (p) => [await keyOf(p.l.id), await keyOf(p.s.id)]));
+      ok(rk.ok && rk.rekeyed >= 7 && !rk.failed && again.rekeyed === 0 && (await dkv.get("orders:keyed")) === "product"
+        && [A, X, Q, T, G].every((p, i) => was[i][0] === OLD(p.rl) && now[i][0] === OLD(p.rl) + "|oil" && was[i][1] === OLD(p.rs) && now[i][1] === was[i][1]),
+        "the minute's one-time pass gives every oil order its key with the product and leaves every salt key as it was to the character: " + JSON.stringify({ rk, again, now: now.slice(0, 2) }));
+    }
+
+    /* COLLECTED */
+    const h1 = await call("/orders/" + A.l.id + "/handed", { qty: 1 });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const hd = drafts(A.l.id, "Handover");
+    ok(h1.status === 200 && hd.length === 1 && hd[0].status === "approved" && hd[0].amends === A.rl.rid && hd[0].e.payload.orderKey === PE.ovKey(A.rl),
+      tag + ", Collected on the oil order books its handover on the oil row, never the salt twin's: "
+      + JSON.stringify({ err: h1.j.error, drafts: hd.map((d) => [d.status, d.amends]), oil: A.rl.rid, salt: A.rs.rid }));
+    /* CASH RECEIVED */
+    const c1 = await call("/orders/" + A.l.id + "/cash", { amount: 50 });
+    await deskPass(denv, new Date()); await runDrafter(denv);
+    const cd = drafts(A.l.id, "Payment").filter((d) => d.e.counter);
+    ok(c1.status === 200 && cd.length === 1 && cd[0].status === "approved" && cd[0].amends === A.rl.rid,
+      tag + ", cash taken at the counter is the oil row's: " + JSON.stringify({ err: c1.j.error, drafts: cd.map((d) => [d.status, d.amends]) }));
+    /* RECEIVED */
+    await pay(A.u, A.l.id, 30);
+    await reconcileOrders(denv); await runDrafter(denv);
+    const r1 = await call("/orders/" + A.l.id + "/received", { amount: 30 });
+    const rd = drafts(A.l.id, "Payment").filter((d) => d.e.claim);
+    ok(r1.status === 200 && rd.length === 1 && rd[0].status === "approved" && rd[0].amends === A.rl.rid,
+      tag + ", and Received approves what they say they sent as drafted on the oil row: " + JSON.stringify({ err: r1.j.error, drafts: rd.map((d) => [d.status, d.amends]) }));
+    /* THE CLOSE, and the redate the combined plan's Step 2 adds */
+    const cl = await call("/orders/" + A.l.id + "/handed", { qty: 1, close: true });
+    await reconcileOrders(denv); await runDrafter(denv);
+    const cz = drafts(A.l.id, "Close"), shut = await orderOf(A.l.id);
+    const amended = (row, pay) => { const r = JSON.parse(JSON.stringify(row)); applyAmend(r, pay, "SELL", null); return r; };   /* the fold's own applier, which writes the row in place */
+    const closedRow = cz.length ? amended(A.rl, cz[0].e.payload) : null;
+    ok(cl.status === 200 && cz.length === 1 && cz[0].status === "approved" && cz[0].amends === A.rl.rid && !!closedRow
+      && shut.ledgerKey === PE.ovKey(closedRow) && /\|oil$/.test(shut.ledgerKey) && (await keyOf(A.s.id)) === A.keys.s,
+      tag + ", a close at what was handed over restates the oil row, and the order's key moves to that row's as the close leaves it, the salt twin's unmoved: "
+      + JSON.stringify({ err: cl.j.error, drafts: cz.map((d) => [d.status, d.amends]), key: shut.ledgerKey, row: closedRow && PE.ovKey(closedRow) }));
+    const early = "2026-09-01";
+    let redated = null;
+    try { redated = closedRow && amended(closedRow, { kind: "Correction", fields: { date: early } }); } catch (e) { redated = { threw: String(e.message) }; }
+    ok(!!redated && !redated.threw && closedKey(shut) === shut.ledgerKey && closedKey(shut, early) === PE.ovKey(redated) && /\|oil$/.test(closedKey(shut, early)),
+      tag + ", and a stage that redates the row names it by closedKey with that day: " + JSON.stringify({ key: closedKey(shut, early), row: redated && (redated.threw || PE.ovKey(redated)) }));
+    /* CANCELLATION, after its row landed */
+    await O.customerMove(senv, X.u, X.l.id, "cancel", {});
+    await reconcileOrders(denv); await runDrafter(denv);
+    const xd = drafts(X.l.id, "Cancellation");
+    ok(X.ok && xd.length === 1 && xd[0].amends === X.rl.rid && !drafts(X.s.id).some((d) => d.e.status === "Cancellation"),
+      tag + ", withdrawn after its row landed, its Cancellation is drafted on the oil row and the salt twin is left alone: "
+      + JSON.stringify({ drafts: xd.map((d) => [d.status, d.amends]), oil: X.rl.rid, salt: X.rs.rid }));
+    /* A CLAIM AGAINST THE ACCOUNT, beside cash on its way to the oil row */
+    const qc = await call("/orders/" + Q.l.id + "/cash", { amount: 50 });
+    await deskPass(denv, new Date()); await runDrafter(denv);
+    const ac = (await O.claimAccount(senv, Q.u, { amount: 100, method: "transfer", account: "wise" })).claim;
+    const apv = await call("/claims/" + ac.id + "/preview", {});
+    const arows = (apv.j.rows || []).map((r) => [r.rid, r.owed, r.rm]);
+    ok(qc.status === 200 && apv.status === 200 && JSON.stringify(arows) === JSON.stringify([[Q.rs.rid, 120, 100]]) && apv.j.left === 0,
+      tag + ", a claim against the account settles the salt row, and the cash on its way to the oil row is never counted on the salt twin: "
+      + JSON.stringify({ err: qc.j.error || apv.j.error || null, rows: arows }));
+    const ay = await call("/claims/" + ac.id + "/received", { hash: apv.j.hash });
+    await pay(Q.u, Q.l.id, 70);
+    const qr = await call("/orders/" + Q.l.id + "/received", { amount: 70 });
+    ok(ay.status === 200 && qr.status === 200,
+      tag + ", and then Received on the RM 70 they sent for the oil order is measured on the oil row, not the salt row the account's money went to: "
+      + JSON.stringify({ ay: ay.j.error || null, qr: qr.j.error || null }));
+    /* ITS PENDING ROW STILL WAITING, beside a salt row the old key names */
+    await pay(wu, wl[0].id, 20);
+    await reconcileOrders(denv);
+    const w0 = await orderOf(wl[0].id);
+    ok(!ordersQueue(dkv).some((e) => e.orderId === wl[0].id && e.status === "Payment") && !!w0.sync && w0.sync.state === "waiting",
+      tag + ", what they say they sent on an oil order whose pending row waits under Approve waits for that row: " + JSON.stringify(w0.sync));
+    await O.customerMove(senv, wu, wl[1].id, "cancel", {});
+    await reconcileOrders(denv);
+    const w1 = drafts(wl[1].id, "Pending");
+    ok(w1.length === 1 && w1[0].status === "rejected" && w1[0].decided_by === "withdrawn",
+      tag + ", and one withdrawn while its pending row waits has that row dropped: " + JSON.stringify(w1.map((d) => [d.status, d.decided_by])));
+    /* OFFERED AGAIN: a handover drafted before V4a, under the salt twin's key, and rejected */
+    await O.deskMove(senv, G.u, G.l.id, { handover: { units: 1, mode: "collect" } });
+    await O.deskMove(senv, G.u, G.l.id, { mark: { moved: 1 } });   /* as the reconcile marked it when it queued that handover */
+    const gAt = when === "before" ? "2026-09-27T01:00:00.000Z" : "2026-09-27T01:00:00.001Z";
+    const gEntry = { at: gAt, type: "SELL", party: K[5][1], qty: 1, total: 0, status: "Handover", orderId: G.l.id, raw: "1 unit collected, order " + G.l.id,
+      payload: { mode: "amend", kind: "Correction", direction: "SELL", party: K[5][1], rid: null, orderKey: OLD(G.rl), orderCode: null, linkTo: null,
+        assoc: null, downstream: null, date: G.rl.date, qty: 0, total: 0, cash: 0, kg: 0, fields: { deliveredQty: 1, deliveredOn: G.rl.date, handover: "collected" },
+        note: "1 unit collected for order " + G.l.id + "." } };
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,flags,party,drafter,drafted_at,decided_at,decided_by) VALUES (?,'rejected','sales',?,'{}','','[]',?,'orders',?,?,'desk')")
+      .run(gAt, JSON.stringify(gEntry), K[5][1], gAt, gAt);
+    const ga = await call("/orders/" + G.l.id + "/again", { stage: "move" });
+    await deskPass(denv, new Date()); await runDrafter(denv);
+    const gd = drafts(G.l.id, "Handover").filter((d) => d.id !== gAt);
+    ok(ga.status === 200 && gd.length === 1 && gd[0].amends === G.rl.rid && gd[0].e.payload.orderKey === PE.ovKey(G.rl),
+      tag + ", a handover rejected before V4a and offered again is drafted on the oil row under the key as it is now: "
+      + JSON.stringify({ err: ga.j.error || null, drafts: gd.map((d) => [d.status, d.amends]) }));
+    /* A YES GIVEN BEFORE V4A, and a close rejected before it */
+    const yOld = K[6][1] + "|" + A.rl.date + "|170", zOld = K[6][1] + "|" + A.rl.date + "|150";
+    const ya = await ackOnApproval(denv, { id: "v4a-" + when, u: K[6][0], order_id: Y.id,
+      entry: JSON.stringify({ at: "2026-09-27T02:00:00.000Z", orderKey: yOld, payload: { product: "oil", delivery: 0 } }), shown: JSON.stringify({ from: "placed" }) });
+    const yk = await keyOf(Y.id);
+    const yr = await rejectedOnOrder(denv, { orderId: Y.id, status: "Close", payload: { orderKey: zOld } }, new Date().toISOString());
+    const zk = await keyOf(Y.id);
+    ok(ya.ok && yk === yOld + "|oil" && yr === true && zk === zOld + "|oil",
+      tag + ", a yes given before V4a tells its order the key with the product, and so does a close rejected before it: " + JSON.stringify({ ya: ya.error || null, yk, zk }));
+    /* THE RETURN LEG, last: a fold has since booked RM 60 on the oil row */
+    db.prepare("UPDATE entry SET doc=? WHERE json_extract(doc,'$.rid')=?").run(JSON.stringify(Object.assign({}, T.rl, { cash: 60 })), T.rl.rid);
+    const v = when === "before" ? "v901" : "v902";
+    db.prepare("UPDATE snapshot SET v=? WHERE one=1").run(v); PRICING.v = v; setState("PRICING", PRICING);
+    const ts = await tellSite(denv);
+    const tl = await orderOf(T.l.id), tsl = await orderOf(T.s.id);
+    ok(ts.ok && tl.paid === 60 && !((+tsl.paid || 0) > 0),
+      tag + ", the return leg tells the oil order what its own row holds, and the salt twin nothing: " + JSON.stringify({ ts, oil: tl.paid, salt: tsl.paid }));
+  }
+})();
+
+section("V4a 3: the minute re-keys the orders once, before anything reads a key, asks the site nothing more after, and leaves a refusal to the next minute");
+await (async () => {
+  /* The pass is driven through the schedule itself over the real site Worker, the binding writing down every request, as
+     Fold 5.6 drives the minute. A salt order and an oil order carry the key an Accept wrote before V4a, one key for both.
+     Usernames and codes invented. */
+  const { placeOrder, deskMove } = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const U = "v4ak-mmmm", CODE = "CV9-KZ", OLDK = CODE + "|2026-09-20|120", realLog = console.log;
+  const stand = (refuse) => {
+    const skv = new KV(), dkv = new KV(), asked = [];
+    let left = refuse || 0;
+    const senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+    const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: async (url, init) => {
+      const u = new URL(url), said = ((init && init.method) || "GET") + " " + u.pathname + u.search;
+      asked.push(said);
+      if (left > 0 && said.startsWith("POST /desk/orders/")) { left--; return new Response(JSON.stringify({ ok: false, error: "busy" }), { status: 503 }); }
+      return stmtW.fetch(new Request(url, init), senv);
+    } } };
+    return { dkv, senv, denv, asked };
+  };
+  const tick = async (denv, iso) => {
+    const w = [], logs = [];
+    console.log = (...x) => logs.push(x.join(" "));
+    try { await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, denv, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { console.log = realLog; }
+    return logs;
+  };
+  const agreed = async (S, product) => {
+    await S.dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+    const o = (await placeOrder(S.senv, U, { product, qty: 1, mode: "collect", unit: 120, total: 120, week: "" })).order;
+    await deskMove(S.senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await deskMove(S.senv, U, o.id, { mark: { ledgerKey: OLDK, ack: "2026-09-20T01:00:00.000Z" } });
+    return o;
+  };
+  const keyOn = async (S, id) => {
+    const r = await stmtW.fetch(new Request("https://stmt/desk/orders?all=1", { headers: { "X-Stmt-Desk": "desk-key" } }), S.senv);
+    return ((await r.json()).orders.find((x) => x.id === id) || {}).ledgerKey;
+  };
+  const LIST = "GET /desk/orders?all=1";
+
+  /* ---- 1. ONCE, FIRST, AND NEVER AGAIN ---- */
+  const S = stand();
+  const s = await agreed(S, "salt"), l = await agreed(S, "oil");
+  const logs1 = await tick(S.denv, "2026-09-28T02:07:00Z");
+  const first = S.asked.slice(), k1 = { s: await keyOn(S, s.id), l: await keyOn(S, l.id) };
+  const markAt = first.findIndex((a) => a.startsWith("POST /desk/orders/") && a.endsWith("/" + l.id)), readAt = first.indexOf("GET /desk/orders/last?work=1");
+  S.asked.length = 0;
+  await tick(S.denv, "2026-09-28T02:08:00Z");
+  ok(k1.l === OLDK + "|oil" && k1.s === OLDK && first[0] === LIST && first.filter((a) => a === LIST).length === 1 && markAt > 0 && readAt > markAt
+    && !S.asked.includes(LIST) && (await S.dkv.get("orders:keyed")) === "product",
+    "the first minute after V4a lists every order once, before anything else it asks, and gives the oil order its key with the product ahead of the minute's read, "
+    + "the salt key as it was; the next minute lists nothing more: " + JSON.stringify({ k1, first, second: S.asked, logs1 }));
+
+  /* ---- 2. A REFUSAL IS TRIED AGAIN ---- */
+  const R = stand(1);
+  const rl = await agreed(R, "oil");
+  const logs2 = await tick(R.denv, "2026-09-28T02:07:00Z");
+  const kr1 = await keyOn(R, rl.id), mark1 = await R.dkv.get("orders:keyed");
+  await tick(R.denv, "2026-09-28T02:08:00Z");
+  const kr2 = await keyOn(R, rl.id), mark2 = await R.dkv.get("orders:keyed");
+  ok(kr1 === OLDK && mark1 === null && logs2.some((x) => /orders rekey: .*failed/.test(x)) && kr2 === OLDK + "|oil" && mark2 === "product",
+    "a site that would not take the key leaves the pass unmarked and says so, and the next minute gives it: " + JSON.stringify({ kr1, mark1, kr2, mark2, logs2: logs2.filter((x) => /rekey/.test(x)) }));
+})();
+
+section("V4a 4: the desk keys another book's row with its product: the open orders it seeds keep a salt order and its oil twin apart, and the Workbench names each by the engine's key");
+await (async () => {
+  /* On the real master, with invented rows pushed onto its book: a salt order, an oil order whose goods and carriage come
+     to the salt order's figure (one key before V4a), and an oil lot still a bill. The open-order snapshot is the one the
+     chain re-seeds (tools/book.mjs openSnapshot over the desk's own phonePayload); the Workbench is driven as he uses it. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { openSnapshot } = await import("../tools/book.mjs");
+  const J = JSON.stringify, C = "CV8-QZ", S = "SV8-QZ", D = "2026-09-20", K = C + "|" + D + "|120";
+  const { w } = await openMaster();
+  try {
+    const salt = { rid: "xv4a1", customer: C, date: D, qty: 1, total: 120, cost: 60, cash: 0, deliveredQty: 0 };
+    const oil = { rid: "xv4a2", customer: C, product: "oil", date: D, qty: 1, total: 110, delivery: 10, cost: 7, cash: 0, deliveredQty: 0 };
+    const lot = { rid: "xv4a3", supplier: S, product: "oil", date: D, qty: 10, total: 100, cash: 0, status: "unpaid" };
+    w.eval("BASE_SALES.push(" + J(salt) + "," + J(oil) + ");BASE_PURCHASES.push(" + J(lot) + ");queue=[];applyOverlay();recompute();"
+      + "saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};setProd('salt');switchTab('add');");
+    const snap = openSnapshot(w), mine = Object.keys(snap.byKey).filter((k) => k.startsWith(C + "|"));
+    ok(!!snap.byKey[K] && snap.byKey[K].rid === "xv4a1" && !!snap.byKey[K + "|oil"] && snap.byKey[K + "|oil"].rid === "xv4a2" && mine.length === 2,
+      "the open orders the chain re-seeds hold the salt order under its key as it was and the oil order beside it under its own: " + J(mine));
+    const DRIVE = (side, rid, kind) => "(function(){try{var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};"
+      + "wbMode='amend';wbASide=" + J(side) + ";wbFillKind();wbFillOrders();wbApply();"
+      + "var hit=wbAmendList().filter(function(x){var r=x.t&&(x.t._buy||x.t);return r&&r.rid===" + J(rid) + ";})[0];if(!hit)return JSON.stringify({no:'no order'});"
+      + "set('wbOrder',hit.code);set('wbKind'," + J(kind) + ");set('wbADate'," + J(D) + ");set('wbACash','50');set('wbAUnits','0');wbAmendLabels();wbPreview();"
+      + "queue=[];wbRecord();var q=queue[queue.length-1];var k=q&&q.payload?q.payload.orderKey:null;queue=[];return JSON.stringify({key:k});"
+      + "}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+    const sold = JSON.parse(String(w.eval(DRIVE("SELL", "xv4a2", "Fulfilment"))));
+    /* the Workbench's lot amendment calls a bare poStat that the engine block no longer puts on the page, and throws (a crash
+       flagged on its own, 28 Sep 2026): the engine's own function stands in here, so what is measured is the key it writes */
+    w.eval("if(typeof poStat==='undefined')window.poStat=POSITION_ENGINE.poStat;");
+    const bought = JSON.parse(String(w.eval(DRIVE("BUY", "xv4a3", "Payment"))));
+    ok(sold.key === K + "|oil" && bought.key === S + "|" + D + "|100|oil",
+      "the Workbench names the oil order and the oil lot it amends by the engine's key, carriage and product in it, never a key spelt by hand: " + J({ sold, bought }));
+    const dt = JSON.parse(String(w.eval("(function(){window.confirm=function(){return false;};"
+      + "queue=[{at:'2099-01-05T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',product:'salt',party:" + J(C) + ",date:'2099-01-05',qty:1,total:120}}];"
+      + "var a=replayAnswer('SELL','oil'," + J(C) + ",'2099-01-05',1,120),b=replayAnswer('SELL','salt'," + J(C) + ",'2099-01-05',1,120);queue=[];return JSON.stringify({oil:a,salt:b});})()")));
+    ok(!dt.oil.fault && /double tap/.test(dt.salt.fault || ""),
+      "an oil entry at the figures of a salt one queued on this device is another order, and the salt one again is still a double tap: " + J(dt));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("V4a 5: a Linked step's refKey is read as the engine keys its row, and a book with rows is renamed only on his word, its keys moving with it");
+await (async () => {
+  /* 28 Sep 2026, V4a's final review. The reconciliation looked a Linked step's refKeys up by a key spelt by hand, party, day
+     and goods, which already missed a leg with carriage and would miss any other book's: the walk read that leg as missing.
+     And renaming a book moves the key of every row on it, while a live order holds the key as it was. The book's own s018,
+     s003 and s008, and invented ids. */
+  const PE = (await import("../engine/position.mjs")).default;
+  const { readFileSync: rf, writeFileSync: wf, rmSync: rm, mkdtempSync: mk } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { pathToFileURL: pu } = await import("node:url");
+  const live = rf(join(REPO, "ledger", "book.json"), "utf8"), base = JSON.parse(live);
+  const dir = mk(join(tmpdir(), "v4a5-"));
+  try {
+    /* 1. THE WALK'S LEGS: s018 settles s003 and s008, and s003 is made a row of another book carrying carriage */
+    const b = JSON.parse(live);
+    const s018 = b.sales.find((x) => x.rid === "s018"), s003 = b.sales.find((x) => x.rid === "s003");
+    s018.settledKg = 2.0588;
+    Object.assign(s003, { product: "oil", delivery: 20 });
+    const link = s018.amend.find((a) => a.kind === "Linked");
+    link.refKeys = [PE.ovKey(s003), link.refKeys[1]];
+    const B = join(dir, "book.json");
+    wf(B, JSON.stringify(b, null, 1));
+    const prev = process.env.SALT_BOOK; process.env.SALT_BOOK = B;
+    let R = null;
+    try {
+      const m = await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?v4a5");
+      R = m.stmtRecon("CJ4-BJ", []).find((x) => x.order.date === "2026-07-15") || null;
+    } finally { if (prev === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev; }
+    ok(R && R.legs.length === 2 && R.legs.some((l) => l.date === "2026-06-28" && l.billed === 620),
+      "a Linked step's refKey spelt as the engine keys the row finds its leg, carriage and another book included: "
+      + JSON.stringify({ refKeys: link.refKeys, legs: R && R.legs }));
+
+    /* 2. A RENAME OF A BOOK WITH ROWS, on copies of the book and the master */
+    const bk = join(dir, "book2.json"), ms = join(dir, "master.html");
+    wf(bk, live);
+    wf(ms, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    const env = Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms });
+    const run = (args) => spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), ...args], { env, encoding: "utf8" });
+    const oilKeys = base.sales.concat(base.purchases).filter((r) => r.product === "oil").map((r) => PE.ovKey(r));
+    const r1 = run(["--rename", "oil", "zq"]);
+    ok(oilKeys.length > 0 && r1.status !== 0 && /--orders-done/.test(String(r1.stderr)) && rf(bk, "utf8") === live,
+      "renaming a book with rows is refused until he says no order, entry, draft or fold still holds its keys, and the book is untouched: "
+      + String(r1.stderr).slice(0, 160));
+    const r2 = run(["--rename", "oil", "zq", "--orders-done"]);
+    const b2 = JSON.parse(rf(bk, "utf8"));
+    const moved = b2.sales.concat(b2.purchases).filter((r) => r.product === "zq").map((r) => PE.ovKey(r));
+    ok(r2.status === 0 && moved.length === oilKeys.length && moved.every((k, i) => k === oilKeys[i].replace(/\|oil$/, "|zq")),
+      "and on his word it goes through, every key of the book moving with its product: "
+      + JSON.stringify({ status: r2.status, n: moved.length, of: oilKeys.length, err: String(r2.stderr).slice(0, 120) }));
+  } finally { try { rm(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ } }
+})();
+
+section("V4a 6: a claim against the account takes an oil order at Ready by its row's key as the book keys it now, before the pass and after it, never the salt row beside it");
+await (async () => {
+  /* Landing V4a on V2 (28 Sep 2026). V2's inFlight names the claimant's orders at Ready for the engine's claimAlloc, which
+     matches them to rows by ovKey. An oil order agreed before V4a holds its key without the tail until the minute's pass
+     reaches it, and that key is the salt row's beside it on the same day at the same figure: read raw, the account's money
+     would go to the salt order, agreed and not Ready, and the oil order at Ready would get none. Driven as V2's own section
+     drives it, both Workers over the real schema. Codes and usernames invented. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so an oil order at Ready was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending } = await import("../src/drafter.js");
+  const { rekeyOrders } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const C = "CX6-QZ", U = "qzqz-vfsx";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* on the book: a salt row and an oil row alike, nothing handed over; the salt order is agreed, the oil order Ready */
+  const salt = { rid: "s50", customer: C, date: "2026-09-26", qty: 2, total: 180, cash: 0, deliveredQty: 0 };
+  const oil = { rid: "s51", customer: C, product: "oil", date: "2026-09-26", qty: 2, total: 180, cash: 0, deliveredQty: 0 };
+  const OLD = C + "|2026-09-26|180";
+  [salt, oil].forEach((x, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", i, "h" + i, JSON.stringify(x)));
+  let bk = { sales: [], state: { OPEN: { byKey: {}, position: {} } } };
+  for (const x of [salt, oil]) bk = withPending(bk, x);
+  setState("roster", [C]); setState("OPEN", bk.state.OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 30, floors: { "2": { floor: 80 } }, inputs: null, sizes: [2] },
+    oil: { stockCost: 7, floors: { "2": { floor: 18 } }, inputs: null, sizes: [2] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v900',NULL,'2026-09-27T10:00:00.000Z')").run();
+  const skv = new KV(), dkv = new KV(), bko = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bko.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil: (p) => tails.push(p) });
+    const j = await r.json(); await Promise.allSettled(tails.splice(0));
+    return { status: r.status, j };
+  };
+  /* each order agreed and marked with the key it carried before V4a: salt's own, and oil's without its tail */
+  const agreed = async (x) => {
+    const o = (await O.placeOrder(senv, U, { product: x.product || "salt", qty: x.qty, mode: "collect", unit: x.total / x.qty, total: x.total, week: "" })).order;
+    await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+    await O.deskMove(senv, U, o.id, { mark: { ledgerKey: OLD, ack: x.date + "T01:00:00.000Z" } });
+    return o;
+  };
+  const oS = await agreed(salt), oO = await agreed(oil);
+  const made = await O.deskMove(senv, U, oO.id, { status: "ready", mode: "collect" });
+  const siteOf = async (id) => (await O.ordersOf(senv, U)).find((x) => x.id === id);
+  const drawn = async () => { const c = (await O.claimAccount(senv, U, { amount: 100, method: "transfer", account: "wise" })).claim;
+    const pv = await call("/claims/" + c.id + "/preview", {});
+    return pv.status + " " + JSON.stringify((pv.j.rows || []).map((x) => [x.rid, x.owed, x.rm])) + " left " + pv.j.left; };
+
+  const before = await drawn();
+  ok(!made.error && E.ovKey(salt) === OLD && (await siteOf(oO.id)).status === "ready" && (await siteOf(oO.id)).ledgerKey === OLD
+    && before === '200 [["s51",180,100]] left 0',
+    "keyed as before V4a, the oil order at Ready is drawn on its own row, owing its goods, and the salt row its old key also names, agreed and not Ready, is not: " + before);
+  const rk = await rekeyOrders(denv), after = await drawn();
+  ok(rk.ok && (await siteOf(oO.id)).ledgerKey === OLD + "|oil" && (await siteOf(oS.id)).ledgerKey === OLD && after === before,
+    "and after the pass, which tails the oil order's key and leaves the salt order's as it was to the character, the account's money goes the same way: "
+    + JSON.stringify({ rk, oil: (await siteOf(oO.id)).ledgerKey, salt: (await siteOf(oS.id)).ledgerKey, after }));
+})();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
