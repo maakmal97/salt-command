@@ -43061,13 +43061,28 @@ await (async () => {
   const failed = { status: 1, out: '  FAIL  could not read a JSON result from wrangler:\n        {\n          "error": {\n            "text": "fetch failed"' };
   const L0 = T.readList({ status: 0, out: "  ok    nothing is waiting for a decision\n" }), L2 = T.readList({ status: 0, out: "  2 waiting for a decision:\n\n  2026-09-28T01:00:00.000Z   [pending]\n" });
   const Lf = T.readList(failed), A1 = T.readApproved({ status: 0, out: '{\n "ok": true,\n "count": 1,\n "approved": [{"id":"2026-09-28T01:00:00.000Z"}]\n}' }), Af = T.readApproved(failed);
-  const drain = "KV: 6 device key(s), 0 unreadable, 2 entries.\n  q:orders, the old orders blob: 0; orders keys of their own: 0.\nFile salt_queue_cloud.json: 0 entries.\n"
-    + "Union (dedup by at): 2.\n\n  KV   2026-09-26T17:16:52.294Z  Correction on ZQ7-VRN s1: qty to 2\n  FILE 2026-09-28T01:00:00.000Z  Sale to ZQ7-VRN, 1 unit\n";
-  const Q = T.readQueue({ status: 0, out: drain }, "2026-09-27T13:24:04.148Z"), Qf = T.readQueue({ status: 1, out: "KV unreachable: Command failed: npx wrangler kv key list" }, "2026-09-27T13:24:04.148Z");
+  /* drain's answer is its own runStatus on stubbed reads (28 Sep 2026), so its groups, not the watermark, decide here */
+  const { runStatus: drainStatus } = await import("../tools/drain.mjs");
+  const MARK = "2026-09-27T13:24:04.148Z", FOLD = "2026-09-26T17:16:52.294Z", SALE = "2026-09-28T01:00:00.000Z";
+  const drainOut = (drafts) => {
+    const queue = [{ at: FOLD, raw: "Correction on ZQ7-VRN s1: qty to 2" }, { at: MARK, raw: "Pending for ZQ7-VRN, 1 unit" }, { at: SALE, raw: "Sale to ZQ7-VRN, 1 unit" }];
+    const io = { list: () => ["q:phone"], get: () => JSON.stringify({ device: "phone", queue }), read: () => ({ queue: [] }), mark: () => MARK, drafts };
+    const lines = [], realLog = console.log;
+    console.log = (...x) => lines.push(x.join(" "));
+    try { drainStatus({ io }); } finally { console.log = realLog; }
+    return lines.join("\n") + "\n";
+  };
+  const Q = T.readQueue({ status: 0, out: drainOut((ats) => new Map(ats.map((a) => [a, a === FOLD ? { id: a, status: "approved", committed_at: "2026-09-26T17:18:21.339Z" } : null]))) });
+  const Qd = T.readQueue({ status: 0, out: drainOut(() => { throw new Error("fetch failed"); }) });
+  const Qs = T.readQueue({ status: 0, out: "Union (dedup by at): 1.\n\n  KV   " + SALE + "  Sale to ZQ7-VRN, 1 unit\n" });
+  const Qf = T.readQueue({ status: 1, out: "KV unreachable: Command failed: npx wrangler kv key list" });
+  const ats = (list) => JSON.stringify((list || []).map((e) => e.at));   /* an error has no list: a red check, not a crash */
   ok(L0.n === 0 && L2.n === 2 && A1.n === 1 && !("n" in Lf) && /fetch failed/.test(Lf.error || "") && !!Af.error && !!Qf.error
-    && Q.folded.length === 1 && Q.folded[0].at === "2026-09-26T17:16:52.294Z" && Q.waiting.length === 1 && Q.waiting[0].what === "Sale to ZQ7-VRN, 1 unit",
-    "the reads take the tools' counts, a failure is an error and never a count, and an entry at or below the watermark is folded: "
-    + JSON.stringify({ L0, L2, Lf, A1, Af, Q, Qf }));
+    && ats(Q.folded) === JSON.stringify([FOLD]) && ats(Q.waiting) === JSON.stringify([MARK, SALE]) && Q.d1 === true && Q.waiting[1].what === "not drafted: Sale to ZQ7-VRN, 1 unit"
+    && ats(Qd.folded) === JSON.stringify([FOLD, MARK]) && ats(Qd.waiting) === JSON.stringify([SALE]) && Qd.d1 === false && /under no group/.test(Qs.error || ""),
+    "the reads take the tools' counts, a failure is an error and never a count, and a queued entry is folded or waiting as drain.mjs --status groups it: "
+    + "one at the watermark that D1 does not know waits, the watermark decides only when D1 was not read, and an entry under no group is an error: "
+    + JSON.stringify({ L0, L2, Lf, A1, Af, Q, Qd, Qs, Qf }));
   let calls = 0;
   const again = await T.runTool("drafts.mjs", ["--list"], async () => (++calls === 1 ? { status: 1, out: "timed out" } : { status: 0, out: "ok" }));
   ok(again.status === 0 && calls === 2, "a read that fails is tried once more before it is said: " + JSON.stringify({ again, calls }));
@@ -43078,9 +43093,14 @@ await (async () => {
     queue, tree: Object.assign({ branch: "master", head: "abc1234", dirty: [], ahead: 0, behind: 0, fetched: true, staged: [] }, tree) });
   const tb = T.table(state({ list: Lf, approved: { n: 0 }, queue: Q }, {})).split("\n");
   const tb2 = T.table(state(null, { dirty: ["a.js", "b.js"], ahead: 1, fetched: false, staged: ["_to_fold.json"] })).split("\n");
+  const tb3 = T.table(state({ list: { n: 0 }, approved: { n: 0 }, queue: Qd }, {})).split("\n");
   ok(tb.length === 9 && tb[2] === "| Shelf | salt 11.5 units (free -5: restock now), oil 30, candy 14 (free 10) |" && tb[3] === "| Live credit | MYR 390 (salt) |" && tb[4] === "| Written off | MYR 260 (salt) |"
     && tb[5] === "| Pending orders | 1 (s1) |" && tb[6] === "| Undated rows | 0 |"
-    && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 1 entry left in a phone's key, already folded: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
+    && tb[7] === "| Queue, drafts, staged | drafts could not read (FAIL could not read a JSON result from wrangler: fetch failed); approved none; queue 2 entries: "
+      + "not drafted, though at or under the watermark: Pending for ZQ7-VRN, 1 unit (2026-09-27T13:24:04.148Z); not drafted: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), "
+      + "and 1 entry left in a phone's key, already folded or decided: committed 2026-09-26T17:18:21.339Z: Correction on ZQ7-VRN s1: qty to 2; nothing staged |"
+    && tb3[7] === "| Queue, drafts, staged | drafts none waiting; approved none; queue 1 entry: Sale to ZQ7-VRN, 1 unit (2026-09-28T01:00:00.000Z), and 2 entries left in a phone's key, "
+      + "taken as folded with D1 not read: at or under the watermark: Correction on ZQ7-VRN s1: qty to 2; at or under the watermark: Pending for ZQ7-VRN, 1 unit; nothing staged |"
     && tb[8] === "| Tree | master at abc1234, clean, level with origin |"
     && tb2[7] === "| Queue, drafts, staged | not read (--offline); staged _to_fold.json |" && tb2[8] === "| Tree | master at abc1234, 2 files changed (a.js, b.js), 1 ahead of origin, 0 behind, as last fetched |",
     "the table names each line, the free shelf only where it differs and a restock now only where it is below nothing, money in MYR by book, a failed read as not read, and the tree as git has it:\n" + tb.concat(tb2.slice(7)).join("\n"));
