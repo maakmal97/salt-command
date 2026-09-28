@@ -244,7 +244,12 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 
 Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
 with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to KV; the desk auto-locks on
-`visibilitychange`. **A name and ID is committed every time, like an approved row**: Add ID on the
+`visibilitychange`. **The vault is two envelopes under one passphrase; an address or an exact point
+lives only in the second**: names in KV `vault`, places in `vault-addr` (`{<code>: {addr, lat, lng,
+src, at}, _base}`), filed at Add ID and Amend ID from a Maps or Waze link read on the device, while
+`PLACED` keeps the locality to 0.01 degrees. One unlock opens both, and the auto-lock clears both;
+the laptop's copy is `10_Data\salt_addr.json`, through `seed-vault.mjs --addr` and `pull-vault.mjs
+--addr`. **A name and ID is committed every time, like an approved row**: Add ID on the
 phone files the name and place into the vault, encrypted on the device, before the ID is queued.
 **On the laptop run `node tools/pull-vault.mjs` before any seed**; the vault's spelling wins, and
 after a re-key take out the retired codes it brings back. When a fold finds a roster code the
@@ -267,8 +272,9 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
   var, then deploy by hand. **This is the DESK; the statements site's Access is live** and gates
   only `/all` there.
 - **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
-  `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`.** The desk, `/rev`, `/queue/ping` and
-  the vault's ciphertext stay open. Rotate with `npx wrangler secret put SALT_WRITE_KEY` from the
+  `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`, and the places' `/vault/addr` and
+  `/geo/expand`.** The desk, `/rev`, `/queue/ping` and the names vault's ciphertext stay open. Rotate
+  with `npx wrangler secret put SALT_WRITE_KEY` from the
   repo, then clear `saltWriteKey` from the phone's storage. `drain.mjs` and `seed-vault.mjs` go
   through wrangler, unaffected. **`wrangler dev` binds the LIVE KV.**
 - Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`; a drafted one is rejected under Approve instead.

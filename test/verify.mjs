@@ -44802,5 +44802,383 @@ await (async () => {
     + JSON.stringify({ rk, oil: (await siteOf(oO.id)).ledgerKey, salt: (await siteOf(oS.id)).ledgerKey, after }));
 })();
 
+section("F14 (28 Sep 2026): a Maps or Waze link is read on the device in ten shapes and more, and a host that is not a map is not read");
+await (async () => {
+  /* F14: the point and the address a link carries are read by the master's mapsLink, on the device, never fetched from it
+     (rule 4). Each shape is a link as the apps share it. The geohash is made here by the suite's own encoder, so the reading
+     is proved against a point the suite chose, not against the decoder's own answer; the view's @ in the place link is a
+     different point from the pin, so reading the view first cannot pass. Proved red by mutation. */
+  const { openMaster: omL } = await import("../tools/payload.mjs");
+  const { w: wL } = await omL();
+  const rdL = (e) => JSON.parse(String(wL.eval("JSON.stringify(" + e + ")")));
+  const read = (s) => rdL("mapsLink(" + JSON.stringify(s) + ")");
+  const ghEncode = (lat, lng, len) => {
+    const B = "0123456789bcdefghjkmnpqrstuvwxyz", la = [-90, 90], lo = [-180, 180];
+    let even = true, bit = 0, ch = 0, out = "";
+    while (out.length < len) {
+      const r = even ? lo : la, v = even ? lng : lat, mid = (r[0] + r[1]) / 2;
+      if (v >= mid) { ch = ch * 2 + 1; r[0] = mid; } else { ch = ch * 2; r[1] = mid; }
+      even = !even;
+      if (++bit === 5) { out += B[ch]; bit = 0; ch = 0; }
+    }
+    return out;
+  };
+  try {
+    const LAT = 3.147812, LNG = 101.695321;
+    const at = (r) => !!r && typeof r.lat === "number" && Math.abs(r.lat - LAT) < 1e-9 && Math.abs(r.lng - LNG) < 1e-9;
+    const shapes = [
+      ["Waze ul?ll=", "https://waze.com/ul?ll=3.147812,101.695321&navigate=yes", "waze", null],
+      ["Waze ul?ll= with its comma encoded", "https://www.waze.com/ul?ll=3.147812%2C101.695321&navigate=yes&zoom=17", "waze", null],
+      ["Waze's live map, to=ll.", "https://www.waze.com/live-map/directions?to=ll.3.147812%2C101.695321", "waze", null],
+      ["Google @lat,lng", "https://www.google.com/maps/@3.147812,101.695321,17z", "google", null],
+      ["Google's place link, the pin !3d..!4d.. over the view's @, and the place's name", "https://www.google.com/maps/place/Kedai+Zqor/@3.1400,101.6900,17z/data=!3m1!4b1!4m6!3m5!1s0x31cc49:0x1!8m2!3d3.147812!4d101.695321!16s%2Fg%2F11", "google", "Kedai Zqor"],
+      ["Google ?q=lat,lng", "https://maps.google.com/?q=3.147812,101.695321", "google", null],
+      ["Google's search api, query=", "https://www.google.com/maps/search/?api=1&query=3.147812%2C101.695321", "google", null],
+      ["Google's dropped pin, /search/lat,+lng", "https://www.google.com/maps/search/3.147812,+101.695321?entry=tts", "google", null],
+      ["Apple ll=, with its name", "https://maps.apple.com/?ll=3.147812,101.695321&q=Kedai%20Zqor", "apple", "Kedai Zqor"],
+      /* F14 review: a dropped pin opens to its place in degrees and minutes, a raw apostrophe in the link */
+      ["Google's dropped pin as it opens, its place in degrees and minutes with a raw apostrophe", "https://www.google.com/maps/place/3%C2%B008'52.1%22N+101%C2%B041'43.2%22E/@3.1478,101.6953,17z/data=!3m1!4b1!4m4!3m3!8m2!3d3.147812!4d101.695321?entry=ttu", "google", null],
+      ["a link quoted in the text shared", "'https://waze.com/ul?ll=3.147812,101.695321'", "waze", null],
+      ["Waze's own share words, the place before the link", "Use Waze to drive to Kedai Zqor: https://waze.com/ul?ll=3.147812,101.695321&navigate=yes", "waze", "Kedai Zqor"],
+      ["a message around the link, the words after it no address", "Meet me at https://waze.com/ul?ll=3.147812,101.695321 tomorrow", "waze", null],
+      ["Google's dropped pin shared under its label", "Dropped pin\nhttps://maps.google.com/?q=3.147812,101.695321", "google", null],
+      ["words with no letter before the link", "#3 https://waze.com/ul?ll=3.147812,101.695321", "waze", null],
+    ];
+    for (const [what, link, src, addr] of shapes) {
+      const r = read(link);
+      ok(at(r) && r.src === src && r.addr === addr, "F14: " + what + " gives the point" + (addr ? " and the name" : "") + ": " + JSON.stringify(r));
+    }
+    const gh = ghEncode(LAT, LNG, 10), rg = read("https://waze.com/ul/h" + gh);
+    ok(!!rg && Math.abs(rg.lat - LAT) < 1e-4 && Math.abs(rg.lng - LNG) < 1e-4 && rg.src === "waze" && rg.addr === null,
+      "F14: Waze's own short form, ul/h<geohash>, gives the point it was made from: " + gh + " " + JSON.stringify(rg));
+    const pl = read("https://www.google.com.my/maps/place/Jalan+Zqor+12,+Qelvor/");
+    ok(!!pl && pl.lat === null && pl.lng === null && pl.addr === "Jalan Zqor 12, Qelvor" && pl.src === "google", "F14: a place link with no point gives the address alone: " + JSON.stringify(pl));
+    const sh = read("Kedai Zqor, Jalan 1, Qelvor https://maps.app.goo.gl/AbCd123?g_st=ic");
+    ok(!!sh && sh.short === "https://maps.app.goo.gl/AbCd123?g_st=ic" && sh.addr === "Kedai Zqor, Jalan 1, Qelvor" && !("lat" in sh),
+      "F14: a short link is named for opening, the text shared before it taken as the address, and no point read from it: " + JSON.stringify(sh));
+    const refused = ["https://example.com/?ll=3.147812,101.695321", "https://maps.app.goo.gl.evil.com/AbCd", "http://maps.app.goo.gl/AbCd",
+      "https://www.google.com/search?q=3.147812,101.695321", "https://google.evil.com/maps/@3.147812,101.695321,17z",
+      "https://evilwaze.com/ul?ll=3.147812,101.695321", "3.147812,101.695321", "no link here"];
+    const read2 = refused.map((s) => [s, read(s)]).filter(([, r]) => r !== null);
+    ok(read2.length === 0, "F14: a link to anywhere but a map, a lookalike host, a short link over http, bare numbers or no link at all read as nothing: " + JSON.stringify(read2));
+  } finally { try { wL.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F14: /geo/expand opens only a maps.app.goo.gl link, follows one redirect, answers the Location, and keeps and logs nothing");
+await (async () => {
+  /* F14: the desk cannot open a short link itself (rule 4), so the Worker follows its one redirect, keyed, for a
+     maps.app.goo.gl link alone, and answers where it points. The network is a stub that records every call, KV a store that
+     counts every write, and the console is watched for the link. Proved red by mutation. */
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "k-geo-fixture";
+  class SpyKV extends KV { constructor() { super(); this.puts = 0; } async put(k, v, o) { this.puts++; return super.put(k, v, o); } }
+  const kv = new SpyKV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY };
+  const calls = [], logged = [];
+  const realFetch = globalThis.fetch, realCon = { log: console.log, warn: console.warn, error: console.error, info: console.info };
+  const TO = "https://www.google.com/maps/place/Kedai+Zqor/@3.14,101.69,17z/data=!3d3.147812!4d101.695321";
+  let answer = () => new Response(null, { status: 302, headers: { location: TO } });
+  const back = () => Object.assign(console, realCon);
+  const post = async (body, key = KEY) => {
+    try {
+      const r = await deskW.fetch(req("/geo/expand", { method: "POST", headers: { "content-type": "application/json", ...(key ? { "X-Salt-Key": key } : {}) }, body: JSON.stringify(body) }), env);
+      let j = null; try { j = await r.json(); } catch (e) { j = null; }
+      return { status: r.status, j };
+    } catch (e) { return { status: -1, j: null }; }
+  };
+  try {
+    globalThis.fetch = async (u, o) => { calls.push({ u: String(u), redirect: o && o.redirect }); return answer(); };
+    for (const k of Object.keys(realCon)) console[k] = (...a) => { logged.push(a.map(String).join(" ")); };
+    const SHORT = "https://maps.app.goo.gl/AbCd123?g_st=ic";
+    const unkeyed = await post({ url: SHORT }, null);
+    const good = await post({ url: SHORT });
+    const goodCalls = calls.slice();
+    const bad = ["https://www.google.com/maps/@3.1,101.6,17z", "http://maps.app.goo.gl/AbCd123", "https://maps.app.goo.gl.evil.com/AbCd123",
+      "https://user@maps.app.goo.gl/AbCd123", "https://maps.app.goo.gl:8443/AbCd123", "https://evil.com/?u=https://maps.app.goo.gl/AbCd", "javascript:alert(1)", 42];
+    const before = calls.length, badSt = [];
+    for (const u of bad) badSt.push((await post({ url: u })).status);
+    const after = calls.length;
+    answer = () => new Response("a page, not a redirect", { status: 200 });
+    const noRedir = await post({ url: SHORT });
+    let getSt = -1;
+    try { getSt = (await deskW.fetch(req("/geo/expand", { headers: { "X-Salt-Key": KEY } }), env)).status; } catch (e) { getSt = -1; }
+    back();
+    ok(unkeyed.status === 401 && goodCalls.length === 1, "F14: /geo/expand without the key is refused before anything is fetched: " + unkeyed.status);
+    ok(good.status === 200 && good.j && good.j.ok === true && good.j.location === TO && goodCalls[0].u === SHORT && goodCalls[0].redirect === "manual",
+      "F14: a maps.app.goo.gl link is fetched once, redirect manual, and the Location answered as it came: " + JSON.stringify({ good, goodCalls }));
+    ok(after === before && badSt.every((s) => s === 400), "F14: any other host, scheme, port or credential is refused with 400 and nothing is fetched: " + JSON.stringify(badSt) + ", fetched " + (after - before));
+    ok(noRedir.status === 502 && noRedir.j && noRedir.j.ok === false && !("location" in noRedir.j), "F14: a link that does not redirect answers no location: " + JSON.stringify(noRedir));
+    ok(getSt === 405, "F14: a GET of /geo/expand is not a way in: " + getSt);
+    ok(kv.puts === 0 && kv.m.size === 0, "F14: nothing reached KV across every call: " + kv.puts + " write(s), " + kv.m.size + " key(s)");
+    ok(!logged.some((l) => /AbCd|Kedai|goo\.gl|google/.test(l)), "F14: and nothing about the link was logged: " + logged.length + " line(s)");
+  } finally { globalThis.fetch = realFetch; back(); }
+})();
+
+section("F14: the places envelope at /vault/addr is ciphertext alone, read and written with the key, and never cleared");
+await (async () => {
+  /* F14: the vault's second envelope. An exact point is more than a name, so its read is keyed where the names' is open; only
+     the four envelope fields are kept, each read as base64, so a plaintext map, a null, or an address slipped in beside the
+     ciphertext is refused or dropped. Proved red by mutation. */
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "k-vault-addr-fixture";
+  const kv = new KV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY };
+  const H = { "content-type": "application/json", "X-Salt-Key": KEY };
+  const call = async (r) => { try { const x = await deskW.fetch(r, env); let j = null; try { j = await x.json(); } catch (e) { j = null; } return { status: x.status, j }; } catch (e) { return { status: -1, j: null }; } };
+  const post = (body, h = H) => call(req("/vault/addr", { method: "POST", headers: h, body: JSON.stringify(body) }));
+  const get = (h = { "X-Salt-Key": KEY }) => call(req("/vault/addr", { headers: h }));
+  const unkeyedGet = await get({});
+  const empty = await get();
+  const PLAIN = { "CZ9-ADR": { addr: "12 Jalan Zqor, Qelvor", lat: 3.147812, lng: 101.695321, src: "waze", at: "2026-09-28T01:00:00.000Z" } };
+  const refusedSt = [];
+  for (const body of [{ vault: PLAIN }, { vault: null }, { vault: { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "12 Jalan Zqor, Qelvor" } }, {}]) refusedSt.push((await post(body)).status);
+  const afterRefused = kv.m.size;
+  const ENV = { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVy", addr: "12 Jalan Zqor" };
+  const unkeyedPost = await post({ vault: ENV }, { "content-type": "application/json" });
+  const stored = await post({ updated: "2026-09-28T01:00:00.000Z", vault: ENV });
+  const raw = kv.m.get("vault-addr") || "";
+  const back = await get();
+  const names = await call(req("/vault"));
+  ok(unkeyedGet.status === 401 && unkeyedPost.status === 401, "F14: the places envelope is read and written only with the key: GET " + unkeyedGet.status + ", POST " + unkeyedPost.status);
+  ok(empty.status === 200 && empty.j && empty.j.ok === true && empty.j.vault === null, "F14: with none filed, the read answers no envelope: " + JSON.stringify(empty));
+  ok(refusedSt.every((s) => s === 400) && afterRefused === 0, "F14: a plaintext map, a null, a ciphertext that is not base64 and no envelope are refused, and nothing is stored: " + JSON.stringify(refusedSt));
+  ok(stored.j && stored.j.ok === true && back.j && back.j.vault && back.j.vault.ct === "Y2lwaGVy" && back.j.updated === "2026-09-28T01:00:00.000Z" && !raw.includes("Jalan") && !("addr" in back.j.vault),
+    "F14: an envelope is stored as its four fields alone, so an address beside the ciphertext is never kept: " + raw);
+  ok(names.status === 200, "F14: the names vault's ciphertext is still read without the key, as rule 2's line has it: " + names.status);
+  /* F14 review: an envelope sealed by the vault's own vaultEncrypt, so the base64 check is proved on a real one */
+  const { vaultEncrypt: veR, vaultDecrypt: vdR } = await import("../tools/seed-vault.mjs");
+  const realSt = await post({ updated: "2026-09-28T02:00:00.000Z", vault: await veR("pw", PLAIN) });
+  const realBack = await get();
+  let opened = null; try { opened = realBack.j && realBack.j.vault ? await vdR("pw", realBack.j.vault) : null; } catch (e) { opened = null; }
+  ok(realSt.status === 200 && JSON.stringify(opened) === JSON.stringify(PLAIN), "F14: an envelope sealed by the vault's own vaultEncrypt is taken, and opens again to what was sealed: " + realSt.status);
+  /* F14 review: a stored value that will not parse is never read as none, the places' or the names', or the desk's next save
+     would seal one entry over every other */
+  kv.m.set("vault-addr", "{not json"); kv.m.set("vault", "{not json");
+  const badPl = await get(), badNm = await call(req("/vault"));
+  ok(badPl.status === 500 && !!badPl.j && badPl.j.ok === false && badNm.status === 500 && !!badNm.j && badNm.j.ok === false,
+    "F14: an envelope that cannot be read answers not ok, the places' and the names', never none: " + JSON.stringify([badPl, badNm]));
+})();
+
+section("F14: one unlock opens the names and the places on one passphrase, and every lock clears both");
+await (async () => {
+  /* F14: vaultReveal keeps no passphrase, so it opens every envelope on the one it is given; lockVault, which the build hands
+     leaving the app to, clears them together. The envelopes are sealed here by the laptop's own vaultEncrypt, which the desk
+     opens. Proved red by mutation. */
+  const { openMaster: omU } = await import("../tools/payload.mjs");
+  const { webcrypto: wcU } = await import("node:crypto");
+  const { vaultEncrypt: veU } = await import("../tools/seed-vault.mjs");
+  const { w: wU } = await omU();
+  if (!wU.crypto || !wU.crypto.subtle) { try { Object.defineProperty(wU, "crypto", { value: wcU, configurable: true }); } catch (e) { wU.crypto = wcU; } }
+  const rdU = (e) => JSON.parse(String(wU.eval("JSON.stringify(" + e + ")")));
+  try {
+    const PLACE = { addr: "Kedai Zqor", lat: 3.147812, lng: 101.695321, src: "waze", at: "2026-09-28T01:00:00.000Z" };
+    const names = JSON.stringify(await veU("pw", { "CZ9-ADR": "Zed Adr (Qelvor)" }));
+    const places = JSON.stringify(await veU("pw", { "CZ9-ADR": PLACE, _base: { addr: null, lat: 3.1, lng: 101.6, src: "google", at: null } }));
+    const otherPl = JSON.stringify(await veU("not pw", { "CZ9-ADR": PLACE }));
+    const stub = (pl) => "(function(){NAME_VAULT=" + names + ";qSyncState='server';window.__prompts=0;window.prompt=function(){window.__prompts++;return 'pw';};window.__gets=[];"
+      + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(s==='vault/addr'?{ok:true,vault:" + pl + "}:{ok:true});}});};})();";
+    wU.eval("try{cloudMode=function(){return true;};}catch(e){};" + stub(places));
+    const opened = await wU.eval("vaultReveal('pw')");
+    const o = rdU("{names:vaultNames,places:vaultPlaces,msg:vaultRevealMsg,prompts:window.__prompts,gets:window.__gets,shown:namesShown()}");
+    ok(opened === true && o.names["CZ9-ADR"] === "Zed Adr (Qelvor)" && !!o.places["CZ9-ADR"] && o.places["CZ9-ADR"].addr === "Kedai Zqor" && !!o.places._base && o.places._base.lat === 3.1
+      && o.prompts === 0 && o.msg === "" && o.shown === true && o.gets.includes("vault/addr"),
+      "F14: one passphrase opens the names and the places, with no second prompt: " + JSON.stringify({ names: Object.keys(o.names), places: Object.keys(o.places), prompts: o.prompts, msg: o.msg }));
+    wU.eval("lockVault();");
+    const l = rdU("{names:Object.keys(vaultNames).length,places:Object.keys(vaultPlaces).length,shown:namesShown()}");
+    ok(l.names === 0 && l.places === 0 && l.shown === false, "F14: the lock clears the names and the places together: " + JSON.stringify(l));
+    const wrong = await wU.eval("vaultReveal('not the pass')");
+    const wr = rdU("{names:Object.keys(vaultNames).length,places:Object.keys(vaultPlaces).length}");
+    ok(wrong === false && wr.names === 0 && wr.places === 0, "F14: a wrong passphrase opens neither: " + JSON.stringify(wr));
+    wU.eval(stub(otherPl));
+    await wU.eval("vaultReveal('pw')");
+    const half = rdU("{names:Object.keys(vaultNames).length,places:Object.keys(vaultPlaces).length,msg:vaultRevealMsg}");
+    ok(half.names === 1 && half.places === 0 && /places did not open/.test(half.msg), "F14: places sealed under another passphrase stay shut, and the reveal says so: " + JSON.stringify(half));
+    wU.eval("lockVault();");
+    const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+    ok(/visibilityState==='hidden'&&typeof lockVault==='function'/.test(built), "F14: the built desk still locks on leaving the app through lockVault, so the places go there too");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wU.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F14: Add ID and Amend ID file a link's place on the one passphrase, a re-key carries it, his base point files alone, and no link, point or address reaches the queue");
+await (async () => {
+  /* F14: the Enter forms driven as he uses them, over a stub that keeps the two envelopes as the Worker would. What is proved:
+     one prompt files both; the places are read before they are written, so what was on file stays; a re-key copies the place
+     as the name is copied; his base point writes the places alone; the short link's text never leaves the device; and the
+     queue carries the code and the locality at 0.01 degrees, never the link, its point, its address or the name. */
+  const { openMaster: omF } = await import("../tools/payload.mjs");
+  const { webcrypto: wcF } = await import("node:crypto");
+  const { vaultEncrypt: veF, vaultDecrypt: vdF } = await import("../tools/seed-vault.mjs");
+  const { w: wF } = await omF();
+  if (!wF.crypto || !wF.crypto.subtle) { try { Object.defineProperty(wF, "crypto", { value: wcF, configurable: true }); } catch (e) { wF.crypto = wcF; } }
+  const rdF = (e) => JSON.parse(String(wF.eval("JSON.stringify(" + e + ")")));
+  try {
+    const LINK = "https://waze.com/ul?ll=3.147812,101.695321&navigate=yes";
+    const OLD = { addr: "Old Jalan Zqor", lat: 2.712345, lng: 101.954321, src: "google", at: "2026-09-20T01:00:00.000Z" };
+    const EXPANDED = "https://www.google.com/maps/place/Kedai+Qor/@2.9,101.7,17z/data=!3d2.912345!4d101.712345";
+    wF.eval("window.__namesEnv=" + JSON.stringify(await veF("pw", { "CZ9-TBC": "Zed Zed Z (to be confirmed)", "CZ3-QEL": "Zed (Qelvor)" }))
+      + ";window.__placesEnv=" + JSON.stringify(await veF("pw", { "CZ9-TBC": OLD, "CZ9-TBC-R": OLD })) + ";");
+    const stub = "(function(){queue=[];NAME_VAULT=window.__namesEnv;qSyncState='server';window.__prompts=0;window.prompt=function(){window.__prompts++;return 'pw';};window.__posts=[];"
+      + "window.fetch=function(u,o){var s=String(u),post=!!(o&&o.method==='POST'),b=o&&o.body?JSON.parse(o.body):null;window.__posts.push({u:s,m:post?'POST':'GET',body:b});"
+      + "if(post&&s==='vault/addr')window.__placesEnv=b.vault;if(post&&s==='vault')window.__namesEnv=b.vault;"
+      + "var ans=s==='geo/expand'?{ok:true,location:" + JSON.stringify(EXPANDED) + "}:post?{ok:true}:{ok:true,vault:s==='vault/addr'?window.__placesEnv:window.__namesEnv};"
+      + "return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(ans);}});};})();";
+    const settle = async () => { for (let i = 0; i < 80; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(wF.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
+    const postsTo = (path) => rdF("window.__posts").filter((x) => x.u === path && x.m === "POST");
+    const lastOpen = async (path) => { const p = postsTo(path); return p.length ? vdF("pw", p[p.length - 1].body.vault) : null; };
+    const set = (pairs) => "(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};" + pairs.map(([i, v]) => "s(" + JSON.stringify(i) + "," + JSON.stringify(v) + ");").join("") + "})();";
+    wF.eval("try{cloudMode=function(){return true;};}catch(e){};saveQueue=function(){return Promise.resolve(true);};roster.push('CZ9-TBC','CZ9-TBC-R','CZ3-QEL');associates.push('CZ9-TBC');PLACED['CZ3-QEL']=[3.14,101.69,'Qelvor'];"
+      + "setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();WB_GEO={text:null,point:null,how:null};WB_LINK=null;");
+
+    /* 1. Add ID with a Waze link */
+    wF.eval(stub + set([["wbApKind", "customer"]]) + "wbApply();" + set([["wbApWho", ""], ["wbApName", "Zed Qor"], ["wbApPlace", "Seg Town"], ["wbApLink", LINK]])
+      + "WB_GEO={text:'Seg Town',point:[2.7,101.95],how:'tap'};wbPreview();");
+    const prevA = rdF("(document.getElementById('wbMsgs')||{}).textContent||''"), codeA = rdF("wbApCodeNow()");
+    wF.eval("wbRecord();");
+    const stA = await settle(), plA = await lastOpen("vault/addr"), nmA = await lastOpen("vault"), qA = rdF("queue.map(function(x){return {raw:x.raw,payload:x.payload};})");
+    ok(/The link gives the point, filed in the places vault/.test(prevA), "F14: the preview says what the link gives and where it goes: " + prevA);
+    ok(/Registered/.test(stA) && rdF("window.__prompts") === 1 && !!plA && !!plA[codeA] && plA[codeA].lat === 3.147812 && plA[codeA].lng === 101.695321 && plA[codeA].src === "waze" && plA[codeA].addr === null
+      && !!nmA && nmA[codeA] === "Zed Qor (Seg Town)", "F14: Add ID files the name and the link's point on one prompt, the point under the new code in the places envelope: " + stA + " " + JSON.stringify(plA && plA[codeA]));
+    ok(!!plA && JSON.stringify(plA["CZ9-TBC"]) === JSON.stringify(OLD) && JSON.stringify(plA["CZ9-TBC-R"]) === JSON.stringify(OLD), "F14: the places on file are read before they are written, so every other entry stays: " + JSON.stringify(plA && Object.keys(plA)));
+    const qsA = JSON.stringify(qA);
+    ok(qA.length === 1 && JSON.stringify(qA[0].payload.geo) === '[2.7,101.95,"Seg Town"]' && !/3\.1478|101\.6953|waze|Zed Qor/.test(qsA),
+      "F14: the queue carries the code and the locality at 0.01 degrees, never the link, its point or the name: " + qsA);
+
+    /* 2. Amend ID to a new code, no link: the place on file follows it, and the resale account's with it */
+    wF.eval(stub + "WB_LINK=null;switchTab('add');wbMode='amendid';wbApply();" + set([["wbAmWho", "CZ9-TBC"], ["wbAmName", "Zed Zed Z"], ["wbAmPlace", "Seg Town"], ["wbAmLink", ""]])
+      + "WB_GEO={text:'Seg Town',point:[2.7,101.95],how:'tap'};wbPreview();");
+    const apB = rdF("amendIdPlan()");
+    wF.eval("wbRecord();");
+    const stB = await settle(), plB = await lastOpen("vault/addr"), qB = rdF("queue.map(function(x){return x.payload;})");
+    ok(/queued for approval/.test(stB) && apB.to === "CZ9-ST" && !!plB && JSON.stringify(plB["CZ9-ST"]) === JSON.stringify(OLD) && JSON.stringify(plB["CZ9-ST-R"]) === JSON.stringify(OLD)
+      && JSON.stringify(plB["CZ9-TBC"]) === JSON.stringify(OLD) && rdF("window.__prompts") === 1,
+      "F14: a re-key copies the place on file to the new code and the resale account's to its own, the old kept until the laptop takes it out, on one prompt: " + stB);
+    ok(qB.length === 1 && qB[0].mode === "rename" && !/2\.7123|101\.9543|Old Jalan/.test(JSON.stringify(qB)), "F14: and the rename carries codes and the locality, never the place on file: " + JSON.stringify(qB));
+
+    /* 2b. with the vault open, the place on file shows where the link box is empty (F14 review: never driven before) */
+    const FILED = { addr: "Old Jalan Qelvor", lat: 3.1, lng: 101.6, src: "google", at: "2026-09-20T17:00:00.000Z" };
+    wF.eval(stub + "WB_LINK=null;vaultPlaces=" + JSON.stringify({ "CZ3-QEL": FILED }) + ";wbApply();" + set([["wbAmWho", "CZ3-QEL"], ["wbAmName", "Zed"], ["wbAmPlace", "Qelvor"], ["wbAmLink", ""]])
+      + "WB_GEO={text:'Qelvor',point:[3.14,101.69],how:'tap'};wbPreview();");
+    const prevF = rdF("(document.getElementById('wbMsgs')||{}).textContent||''");
+    wF.eval("vaultPlaces={};");
+    ok(/On file: Old Jalan Qelvor with its point, from Google Maps, 21 Sep 2026\. A new link replaces it\./.test(prevF),
+      "F14: with the vault open, Amend ID shows the place on file, its day in Kuala Lumpur, and that a new link replaces it: " + prevF);
+
+    /* 3. Amend ID keeping the code, with a link: the new point replaces the one on file, and nothing is queued */
+    wF.eval(stub + "WB_LINK=null;wbApply();" + set([["wbAmWho", "CZ3-QEL"], ["wbAmName", "Zed"], ["wbAmPlace", "Qelvor"], ["wbAmLink", LINK]])
+      + "WB_GEO={text:'Qelvor',point:[3.14,101.69],how:'tap'};wbPreview();");
+    wF.eval("wbRecord();");
+    const stC = await settle(), plC = await lastOpen("vault/addr");
+    ok(/code stays CZ3-QEL/.test(stC) && /place from the link beside it/.test(stC) && !!plC && plC["CZ3-QEL"] && plC["CZ3-QEL"].lat === 3.147812 && rdF("queue.length") === 0,
+      "F14: a link on an amendment that keeps the code files its point, and queues nothing: " + stC);
+
+    /* 4. his base point, from a short link shared with its text: opened through the Worker, the text kept on the device */
+    const SHARED = "Kedai Qor base https://maps.app.goo.gl/AbCd123";
+    wF.eval(stub + "WB_LINK=null;wbApply();" + set([["wbAmWho", "_base"], ["wbAmLink", SHARED]]) + "wbPreview();");
+    const hid = rdF("[document.getElementById('wbAmNameCell').style.display,document.getElementById('wbAmPlaceCell').style.display]");
+    for (let i = 0; i < 40 && rdF("WB_LINK&&WB_LINK.state") === "looking"; i++) await new Promise((r) => setTimeout(r, 25));
+    wF.eval("wbPreview();");
+    const prevD = rdF("{msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled}");
+    const namesBefore = postsTo("vault").length;
+    wF.eval("wbRecord();");
+    const stD = await settle(), plD = await lastOpen("vault/addr"), ex = postsTo("geo/expand");
+    ok(hid[0] === "none" && hid[1] === "none" && !prevD.dis && /The link gives the point and the address/.test(prevD.msgs), "F14: his base point asks for the link alone, and the short link is opened before Record: " + JSON.stringify(prevD));
+    ok(/Your base point is filed in the places vault/.test(stD) && !!plD && plD._base && plD._base.lat === 2.912345 && plD._base.lng === 101.712345 && plD._base.addr === "Kedai Qor base" && plD._base.src === "google"
+      && postsTo("vault").length === namesBefore && rdF("queue.length") === 0 && rdF("window.__prompts") === 1,
+      "F14: his base point files the places alone, from where the short link led, on one prompt, with nothing queued: " + stD + " " + JSON.stringify(plD && plD._base));
+    ok(ex.length === 1 && JSON.stringify(ex[0].body) === JSON.stringify({ url: "https://maps.app.goo.gl/AbCd123" }), "F14: only the short link goes to the Worker, never the text shared with it: " + JSON.stringify(ex.map((x) => x.body)));
+
+    /* 5. a link that gives nothing holds Record back, and Record refuses it */
+    wF.eval(stub + "WB_LINK=null;wbApply();" + set([["wbAmWho", "CZ3-QEL"], ["wbAmName", "Zed"], ["wbAmPlace", "Qelvor"], ["wbAmLink", "https://example.com/somewhere"]])
+      + "WB_GEO={text:'Qelvor',point:[3.14,101.69],how:'tap'};wbPreview();");
+    const prevE = rdF("{msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled}");
+    wF.eval("wbRecord();");
+    await new Promise((r) => setTimeout(r, 200));
+    ok(prevE.dis && /not a Google Maps or Waze link/.test(prevE.msgs) && /not read yet, or gives nothing/.test(rdF("document.getElementById('wbOk').textContent")) && postsTo("vault").length === 0 && postsTo("vault/addr").length === 0,
+      "F14: a link that gives nothing holds Record back, and Record files nothing: " + JSON.stringify(prevE));
+
+    /* 6. a places vault that cannot be read refuses the filing, and nothing is written over it (F14 review) */
+    const stubDown = stub.replace("var ans=s==='geo/expand'", "if(s==='vault/addr'&&!post)return Promise.resolve({ok:false,status:500,json:function(){return Promise.resolve({ok:false});}});var ans=s==='geo/expand'");
+    wF.eval(stubDown + "WB_LINK=null;wbApply();" + set([["wbAmWho", "CZ3-QEL"], ["wbAmName", "Zed"], ["wbAmPlace", "Qelvor"], ["wbAmLink", LINK]])
+      + "WB_GEO={text:'Qelvor',point:[3.14,101.69],how:'tap'};wbPreview();");
+    wF.eval("wbRecord();");
+    const stG = await settle();
+    ok(stubDown !== stub && /The places vault could not be read/.test(stG) && postsTo("vault/addr").length === 0 && postsTo("vault").length === 0,
+      "F14: a places vault that cannot be read refuses the filing, and nothing is written over it or over the names: " + stG);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wF.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F14: the public desk and the book carry no address, and PLACED stays at 0.01 degrees");
+await (async () => {
+  /* F14: an exact point and an address live only in the places envelope. The book, which the fold writes and the build bakes
+     into the public desk, holds no addr, no base point and no places envelope under any key, and every point in PLACED is at
+     0.01 degrees with at most its locality beside it; the desk's PLACED is read out of the page as the phone gets it. The
+     queue side is proved where Add ID and Amend ID are driven. Proved red by mutation (a point filed in PLACED). */
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const keysDeep = (o, out = new Set()) => { if (o && typeof o === "object") for (const k of Object.keys(o)) { out.add(k); keysDeep(o[k], out); } return out; };
+  const two = (x) => typeof x === "number" && Math.round(x * 100) / 100 === x;
+  const off = (P) => Object.entries(P || {}).filter(([, g]) => !(Array.isArray(g) && (g.length === 2 || (g.length === 3 && typeof g[2] === "string")) && two(g[0]) && two(g[1])));
+  const n = Object.keys(book.PLACED || {}).length, badBook = off(book.PLACED);
+  ok(n > 0 && badBook.length === 0, "F14: every point in the book's PLACED is at 0.01 degrees, with at most its locality: " + n + " points, off: " + JSON.stringify(badBook));
+  const bk = keysDeep(book);
+  ok(!bk.has("addr") && !bk.has("_base") && !bk.has("vault-addr"), "F14: the book holds no addr, no base point and no places envelope, under any key");
+  const m = /const PLACED=(\{[\s\S]*?\n\});/.exec(desk);
+  let dp = null; try { dp = m ? JSON.parse(m[1]) : null; } catch (e) { dp = null; }
+  ok(!!dp && JSON.stringify(dp) === JSON.stringify(book.PLACED) && off(dp).length === 0, "F14: the public desk's PLACED is the book's, at 0.01 degrees");
+  ok(!/"addr"\s*:/.test(desk) && !/"_base"\s*:/.test(desk) && !/"vault-addr"\s*:/.test(desk), "F14: and the public desk carries no address, base point or places envelope as data");
+})();
+
+section("F14: seed-vault --addr and pull-vault --addr: one passphrase for both envelopes, five fields sealed, the phone's entry wins");
+await (async () => {
+  /* F14: the laptop's road for the places, 10_Data\salt_addr.json, which is never committed and never opened by an agent: the
+     tools read it and print codes and counts. Driven on their pure parts, the reads handed in as the seed's own guard is.
+     Proved red by mutation. */
+  const S = await import("../tools/seed-vault.mjs"), P = await import("../tools/pull-vault.mjs");
+  const pass = "correct horse";
+  const file = { updated: "t", addr: {
+    "CZ9-A": { addr: "12 Jalan Zqor", lat: 3.147812, lng: 101.695321, src: "waze", at: "2026-09-28T01:00:00.000Z", was: { addr: "old" }, note: "a note typed here" },
+    "_base": { lat: "3.1", lng: "101.6" },
+    "CZ9-B": { addr: "  " },
+    "CZ9-C": { lat: 95, lng: 101 },
+    "CZ9-D": { addr: "Jalan Qor" } } };
+  const am = S.addrMap(file);
+  ok(JSON.stringify(Object.keys(am.map).sort()) === JSON.stringify(["CZ9-A", "CZ9-D", "_base"]) && JSON.stringify(am.bad.slice().sort()) === JSON.stringify(["CZ9-B", "CZ9-C"])
+    && JSON.stringify(Object.keys(am.map["CZ9-A"]).sort()) === JSON.stringify(["addr", "at", "lat", "lng", "src"]) && am.map._base.lat === 3.1 && am.map._base.src === "file",
+    "F14: the seed seals five fields and no more, a `was` and a note left behind; an entry with no point in range and no address is named, never sealed: " + JSON.stringify({ map: Object.keys(am.map), bad: am.bad }));
+  const names = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": "Zed (Qelvor)" }) });
+  const other = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt("another pass", { "CZ9-A": "Zed (Qelvor)" }) });
+  const livePl = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": am.map["CZ9-A"], "CZ9-Z": { addr: "x", lat: null, lng: null, src: "waze", at: null } }) });
+  const said = (words) => Object.assign(new Error("Command failed"), { status: 1, stdout: "\n", stderr: "X [ERROR] " + words + "\n" });
+  const NOT_THERE = said("Failed to fetch https://api.cloudflare.com/client/v4/accounts/0/storage/kv/namespaces/0/values/vault-addr - 404: Not Found");
+  const v = async (readAddr, readNames, force = false, m = am.map) => { try { return await S.addrSeedRefusal(pass, m, readAddr, readNames, force); } catch (e) { return e; } };
+  const wrongNames = await v(() => { throw NOT_THERE; }, () => other);
+  ok(Array.isArray(wrongNames) && /does not open the names vault/.test(wrongNames[0]), "F14: a passphrase that does not open the live names vault is refused, so the two envelopes share one: " + JSON.stringify(wrongNames));
+  const forced = await v(() => livePl, () => other, true);
+  ok(Array.isArray(forced) && /does not open the names vault/.test(forced[0]), "F14: and --force does not skip that: " + JSON.stringify(forced));
+  const missing = await v(() => livePl, () => names);
+  ok(Array.isArray(missing) && missing[0] === "REFUSED: the places vault holds 1 code(s) this file does not: CZ9-Z", "F14: a code the live places hold and the file lacks is refused, pull first: " + JSON.stringify(missing));
+  ok(await v(() => livePl, () => names, true) === null && await v(() => { throw NOT_THERE; }, () => names) === null && await v(() => livePl, () => names, false, { ...am.map, "CZ9-Z": { addr: "x" } }) === null,
+    "F14: --force goes past what the places hold, a first seed goes on, and a file holding every code goes on");
+  /* F14 review: a place filed on the phone after the pull carries a later day than the file's */
+  const newerLive = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": { ...am.map["CZ9-A"], addr: "Phone Jalan", at: "2026-09-29T01:00:00.000Z" }, "CZ9-D": am.map["CZ9-D"], _base: am.map._base }) });
+  const editedLive = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": { ...am.map["CZ9-A"], addr: "Jalan as pulled" }, "CZ9-D": am.map["CZ9-D"], _base: am.map._base }) });
+  const nw = await v(() => newerLive, () => names);
+  ok(Array.isArray(nw) && nw[0] === "REFUSED: the places vault holds a newer entry than this file for 1 code(s): CZ9-A" && await v(() => newerLive, () => names, true) === null,
+    "F14: a place filed on the phone since the pull is newer than the file's, so the seed is refused, and --force goes past it: " + JSON.stringify(nw));
+  ok(await v(() => editedLive, () => names) === null, "F14: an entry edited in the file since the pull, its day as the pull gave it, goes on");
+  const dead = await v(() => { throw said("fetch failed"); }, () => names);
+  ok(Array.isArray(dead) && /^STOPPED/.test(dead[0]), "F14: a read that failed stops the seed, and never passes for no places: " + JSON.stringify(dead));
+  let seen = null; try { S.wrGetAddr((cmd, args, opts) => { seen = { cmd, args, opts }; return "{}"; }); } catch (e) { seen = null; }
+  ok(!!seen && seen.cmd === "npx" && seen.args.join(" ") === "wrangler kv key get vault-addr --binding SALT_QUEUE --remote" && seen.opts.cwd === REPO && seen.opts.shell === (process.platform === "win32"),
+    "F14: the places are read through wrangler, which needs no write key");
+  const mg = P.mergeAddr({ updated: "t0", addr: { "CZ9-A": { addr: "Old Jalan", lat: 3.1, lng: 101.6, src: "file", at: null, note: "kept" }, "CZ9-D": { addr: "Jalan Qor", lat: null, lng: null, src: "file", at: null } } },
+    { "CZ9-A": am.map["CZ9-A"], "CZ9-N": { addr: "New", lat: 3.2, lng: 101.7, src: "google", at: "2026-09-28T02:00:00.000Z" }, "CZ9-D": { addr: "Jalan Qor", lat: null, lng: null, src: "file", at: null } });
+  ok(mg.amended.join() === "CZ9-A" && mg.added.join() === "CZ9-N" && mg.kept.join() === "CZ9-D" && mg.file.addr["CZ9-A"].addr === "12 Jalan Zqor"
+    && !!mg.file.addr["CZ9-A"].was && mg.file.addr["CZ9-A"].was.addr === "Old Jalan" && mg.file.addr["CZ9-A"].note === "kept" && !("was" in mg.file.addr["CZ9-N"]) && !mg.file.addr["CZ9-A"].was.was,
+    "F14: the pull takes the phone's entry where it differs, keeps the old one as was, never nested, and the rest of the file as it was: " + JSON.stringify({ added: mg.added, amended: mg.amended, kept: mg.kept }));
+  const ign = readFileSync(join(REPO, ".gitignore"), "utf8").split(/\r?\n/);
+  const skill = readFileSync(join(REPO, ".claude", "skills", "update-names-id", "SKILL.md"), "utf8");
+  ok(ign.includes("salt_addr.json") && /seed-vault\.mjs --addr/.test(skill) && /pull-vault\.mjs --addr/.test(skill) && /never opens `salt_addr\.json`/.test(skill),
+    "F14: salt_addr.json is kept out of the repo, and the update-names-id skill tells of both tools and that the agent never opens the file");
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

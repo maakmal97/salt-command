@@ -19,6 +19,10 @@
  *   node tools/seed-vault.mjs             encrypt the current names and push to KV
  *   node tools/seed-vault.mjs --dry-run   encrypt only; write the envelope (ciphertext) to
  *                                         test/tmp for inspection, push nothing
+ *   node tools/seed-vault.mjs --addr      F14: the places instead, 10_Data\salt_addr.json sealed under the SAME
+ *                                         passphrase into KV "vault-addr". Refused unless the passphrase opens the
+ *                                         live names vault, and while the live places hold a code the file lacks
+ *                                         (--force skips the second check, never the first). Prints codes, never a place.
  */
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
 import { webcrypto as wc } from "node:crypto";
@@ -31,6 +35,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const VKEY = "vault";
+const AKEY = "vault-addr";   // F14: the places envelope, beside the names, on the same passphrase
 import { DATA_DIR } from "./book.mjs";
 const DEFAULT_DATA = DATA_DIR;
 const DATA = process.env.SALT_DATA || DEFAULT_DATA;
@@ -71,8 +76,8 @@ function loadBio() {
   return { map, ids };
 }
 
-function wrPut(jsonPath) {
-  return againIfLapsed(() => execFileSync("npx", ["wrangler", "kv", "key", "put", VKEY, "--path", jsonPath, "--binding", BINDING, "--remote"],
+function wrPut(jsonPath, key = VKEY) {
+  return againIfLapsed(() => execFileSync("npx", ["wrangler", "kv", "key", "put", key, "--path", jsonPath, "--binding", BINDING, "--remote"],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
 }
 /* THE READ TAKES THE PUT'S ROAD (27 Sep 2026): from the repo, through a shell on Windows, stderr
@@ -81,6 +86,11 @@ function wrPut(jsonPath) {
    in seedRefusal never ran. exec is the suite's way in. */
 export function wrGet(exec = execFileSync) {
   return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "get", VKEY, "--binding", BINDING, "--remote"],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
+}
+/* F14: the places envelope, read the same road. Its GET on the Worker is keyed; wrangler needs no key. */
+export function wrGetAddr(exec = execFileSync) {
+  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "get", AKEY, "--binding", BINDING, "--remote"],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
 }
 
@@ -113,6 +123,105 @@ export async function seedRefusal(pass, map, read = wrGet) {
     "  A seed replaces the whole vault, so pushing now would drop them.",
     "  Pull them down first:  node tools/pull-vault.mjs",
     "  Or, if the vault is the thing that is wrong:  node tools/seed-vault.mjs --force"];
+}
+
+/* F14 (28 Sep 2026): THE PLACES, 10_Data\salt_addr.json: {updated, addr: {<code>: {addr, lat, lng, src, at}, _base: {...}}}.
+   Only those five fields are sealed, so a `was` the pull keeps, or a note typed beside an entry, never reaches the envelope.
+   An entry carries a point, both numbers in range, or an address, or it is named and refused. The file is read here and in
+   pull-vault.mjs and nowhere else, and neither prints a place, only codes and counts. */
+export function addrEntry(e) {
+  if (!e || typeof e !== "object") return null;
+  const num = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
+  const lat = num(e.lat), lng = num(e.lng);
+  const hasPt = lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  if ((lat !== null || lng !== null) && !hasPt) return null;
+  const addr = typeof e.addr === "string" && e.addr.trim() ? e.addr.trim().slice(0, 200) : null;
+  if (!hasPt && !addr) return null;
+  return { addr, lat: hasPt ? lat : null, lng: hasPt ? lng : null,
+    src: typeof e.src === "string" && e.src.trim() ? e.src.trim().slice(0, 20) : "file",
+    at: typeof e.at === "string" && e.at.trim() ? e.at.trim().slice(0, 40) : null };
+}
+export function addrMap(fileJson) {
+  const from = (fileJson && fileJson.addr) || {}, map = {}, bad = [];
+  for (const code of Object.keys(from)) { const e = addrEntry(from[code]); if (e) map[code] = e; else bad.push(code); }
+  return { map, bad };
+}
+function loadAddr() {
+  const p = join(DATA, "salt_addr.json");
+  if (!existsSync(p)) throw new Error("salt_addr.json not found at " + p + " (set SALT_DATA)");
+  let text = readFileSync(p, "utf8");
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);   // Notepad writes one
+  return addrMap(JSON.parse(text));
+}
+/* THE PLACES SEED IS REFUSED ON THE NAMES' GROUNDS, AND ONE MORE: the passphrase must open the live NAMES vault, so the two
+   envelopes are never sealed under two passphrases and the desk's one unlock opens both. --force skips the check of what the
+   live places hold, never the passphrase. Answers the lines to refuse with, or null to go on; the reads are the suite's way in. */
+export async function addrSeedRefusal(pass, map, readAddr = wrGetAddr, readNames = wrGet, force = false) {
+  const got = (read, what) => {
+    try { return { j: JSON.parse(read()) }; } catch (e) {
+      if (/ - 404:/.test(wranglerSaid(e))) return { j: null };
+      return { stop: ["STOPPED: wrangler could not read the live " + what + ". Nothing was pushed.",
+        "  wrangler said: " + wranglerSaid(e),
+        "  Timed out: run it again."] };
+    }
+  };
+  const names = got(readNames, "names vault");
+  if (names.stop) return names.stop;
+  if (names.j && names.j.vault) {
+    try { await vaultDecrypt(pass, names.j.vault); } catch (e) {
+      return ["REFUSED: this passphrase does not open the names vault, and the places are sealed under the same one. Nothing was pushed."];
+    }
+  }
+  if (force) return null;
+  const live = got(readAddr, "places vault");
+  if (live.stop) return live.stop;
+  if (!live.j || !live.j.vault) return null;
+  let there;
+  try { there = await vaultDecrypt(pass, live.j.vault); } catch (e) {
+    return ["The places vault is there but this passphrase did not open it. Nothing was pushed.",
+      "  A seed replaces the whole of it, so it will not run blind over places it cannot read."];
+  }
+  const missing = Object.keys(there).filter((c) => !(c in map));
+  /* F14 review: a place filed on the phone since the pull carries a later `at` than the file's, and a seed would put the older
+     one back; an entry edited in the file keeps the `at` the pull gave it, so it goes on */
+  const newer = Object.keys(there).filter((c) => c in map && there[c] && String(there[c].at || "") > String(map[c].at || "")
+    && JSON.stringify(there[c]) !== JSON.stringify(map[c]));
+  if (!missing.length && !newer.length) return null;
+  return [...(missing.length ? [`REFUSED: the places vault holds ${missing.length} code(s) this file does not: ${missing.join(", ")}`] : []),
+    ...(newer.length ? [`REFUSED: the places vault holds a newer entry than this file for ${newer.length} code(s): ${newer.join(", ")}`] : []),
+    "  A seed replaces the whole of it, so pushing now would lose them.",
+    "  Pull them down first:  node tools/pull-vault.mjs --addr",
+    "  Or, if the places vault is the thing that is wrong:  node tools/seed-vault.mjs --addr --force"];
+}
+async function seedAddr(pass, dry) {
+  const { map, bad } = loadAddr();
+  if (bad.length) { console.error(`REFUSED: ${bad.length} entr${bad.length === 1 ? "y" : "ies"} in salt_addr.json carry neither a point in range nor an address: ${bad.join(", ")}. Nothing was pushed.`); process.exit(2); }
+  const n = Object.keys(map).length;
+  if (!n) { console.error("No places found in salt_addr.json; nothing to seed."); process.exit(1); }
+  const refused = await addrSeedRefusal(pass, map, wrGetAddr, wrGet, process.argv.includes("--force"));
+  if (refused) { for (const l of refused) console.error(l); process.exit(2); }
+  const envelope = { updated: new Date().toISOString(), vault: await vaultEncrypt(pass, map) };
+  const back = await vaultDecrypt(pass, envelope.vault);
+  if (Object.keys(back).length !== n) throw new Error("round-trip check failed");
+  mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
+  if (dry) {
+    const out = join(REPO, "test", "tmp", "vault-addr-seed.json");
+    writeFileSync(out, JSON.stringify(envelope, null, 1));   // ciphertext only, safe to write
+    console.log(`DRY RUN: encrypted ${n} place(s), round-trip OK. Envelope (ciphertext) at ${out}. Pushed nothing.`);
+    return;
+  }
+  const tmp = join(REPO, "test", "tmp", "vault-addr-push.json");
+  writeFileSync(tmp, JSON.stringify(envelope));
+  try {
+    wrPut(tmp, AKEY);
+    console.log(`SEEDED: ${n} place(s) encrypted and pushed to KV "${AKEY}". The desk opens them with the names, on the one passphrase.`);
+  } catch (e) {
+    console.error("PUSH FAILED: wrangler could not write the KV key.");
+    console.error("  wrangler said: " + wranglerSaid(e));
+    process.exitCode = 1;
+  } finally {
+    try { rmSync(tmp, { force: true }); } catch (e) {}   // never leave the envelope on disk
+  }
 }
 
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
@@ -161,6 +270,7 @@ async function main() {
     console.error('  PowerShell:  $env:SALT_VAULT_PASS="..."; node tools/seed-vault.mjs');
     process.exit(2);
   }
+  if (process.argv.includes("--addr")) return seedAddr(pass, dry);   // F14: the places, not the names
   const { map, ids } = loadBio();
   const named = Object.keys(map).length;
   if (!named) { console.error("No names found in salt_bio.json; nothing to seed."); process.exit(1); }

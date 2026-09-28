@@ -8501,7 +8501,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v922","d":"28 Sep 2026","t":"THE ROW KEY NAMES THE PRODUCT ON EVERY BOOK BUT SALT","n":["<p><b>THE ROW KEY NAMES THE PRODUCT ON EVERY BOOK BUT SALT.</b> Pay terms V4a, 28 Sep 2026. A row's key was party, day and figure, so a salt sale and a candy sale on one day for one figure were one key, and two lines of one order sheet acknowledged together would be: the open orders keep one row a key, and findRow and the fold refuse a key that names two, so every later stage of both would stick. The engine's ovKey now ends with the product on any book but salt, and every salt key, on the book and on a live order, is what it was to the character. It stays the one builder: Accept, the acknowledgement, the Workbench's amendments, the close and the claims against the account all key through it.</p>","<p><b>ORDERS KEYED BEFORE IT.</b> An order of another book acknowledged before this version carries its key without the tail. The desk's minute gives every such order its tail once, ahead of everything else it does, and marks the store when every order has taken it; meanwhile every road reads an order's key through ledgerKeyOf, so a stage never names the salt row beside it, an order at Ready included. A yes, a rejected move or a Close given before it is told in the key's shape now. The pass is one way.</p>","<p><b>NEVER A REPLAY.</b> The fold's replay guard, the drafter's twin flag and the desk's double tap compare the product too, so another book's row at the same party, day, size and figure is the order it is. The reconciliation reads a Linked step's references through the same key, and renaming a book with rows waits for his word that no order, entry, draft or fold still holds its keys.</p>","<p><b>PROOFS.</b> Six new suite sections: the key on every row of the book (one clash before this version, none now); every stage of an oil order beside a salt twin, keyed as before and after the pass; the pass on the minute; the desk's own keys; the reconciliation and the rename; and a claim against the account taking an oil order at Ready by its tailed key, never the salt row. 43 mutations red. Fold 5.6's store and v526's queued entry take the shape every store and entry has after this version.</p>"]}];
+const evolution=[{"v":"v923","d":"28 Sep 2026","t":"A MAPS OR WAZE LINK FILES A PLACE IN THE VAULT","n":["<p><b>A MAPS OR WAZE LINK AT ADD ID AND AMEND ID, READ ON THIS DEVICE.</b> F14 of the feature wave. Enter's Add ID and Amend ID take a Google Maps or Waze link beside the name and place: a dropped pin, a shared point, a view's centre, a place's name, or the words shared before the link. The preview says what the link gives, the address in full, before Record, and a link that gives nothing holds Record back. A short maps.app.goo.gl link is opened by the Worker, with the write key, which follows its one redirect and answers where it leads, storing and logging nothing; the words shared with it never leave the device.</p>","<p><b>THE PLACE IS SEALED IN A SECOND VAULT ENVELOPE, UNDER THE SAME PASSPHRASE.</b> The point and the address are encrypted on the device, as the names are, into the places envelope, which the Worker keeps as ciphertext alone and serves only with the write key. One unlock opens the names and the places, and the auto-lock shuts both. A re-key carries the place to the new code as it carries the name, the resale account's with it. His own base point is filed from Amend ID as Your base point, the first choice under Who, and writes the places alone. The queue, the book and the map keep the code and the locality at 0.01 degrees, never the link, its point or the address.</p>","<p><b>ON THE LAPTOP, AND WHAT WAITS.</b> seed-vault --addr and pull-vault --addr carry the places to and from the laptop's own copy, which is never committed, and the seed refuses a passphrase that does not open the names vault, and an entry filed on the phone since the pull. <b>A VAULT THE WORKER CANNOT READ IS NOW SAID TO BE SO.</b> Names or places, a stored envelope that will not parse answers that it could not be read, where it answered that none was filed, so no save seals one entry over the rest. The fee from his location (F15) waits for V4b, and the slip key comes as a version of its own. <b>THE SUITE.</b> Seven sections are new: the link reader, the short-link route, the places envelope, the one unlock, the filing at Add ID and Amend ID, the public desk and the book, and the laptop tools. Each of their 52 mutations turned a check red.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8616,7 +8616,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Sep 2026, 16:12 KL';
+const LAST_UPDATED='28 Sep 2026, 16:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15854,6 +15854,22 @@ function namesShown(){
   return revealed && !!(vaultNames && Object.keys(vaultNames).length);
 }
 let vaultRevealBusy=false, vaultRevealMsg='';
+/* F14 (28 Sep 2026): THE PLACES ENVELOPE, KV vault-addr, the vault's second: {<code>: {addr, lat, lng, src, at}, _base: {...}},
+   sealed by vaultEncrypt under the one passphrase. An exact point is more than a name, so it is read and written with the
+   write key (/vault/addr), where the names' ciphertext is open. Held in memory while the names are open, cleared with them.
+   vaultPlacesOpen answers the map, {} when none is filed, or null when it could not be read or would not open. */
+let vaultPlaces={};
+async function vaultPlacesRead(){
+  try{const r=await fetch('vault/addr',{cache:'no-store',headers:qHeaders()});if(!r.ok)return null;const j=await r.json();return j&&j.ok?j:null;}catch(e){return null;}
+}
+async function vaultPlacesOpen(pass){
+  const j=await vaultPlacesRead();if(!j)return null;if(!j.vault)return {};
+  try{const m=await vaultDecrypt(pass,j.vault);return m&&typeof m==='object'?m:null;}catch(e){return null;}
+}
+async function vaultPlacesSave(envl){
+  try{const r=await fetch('vault/addr',{method:'POST',headers:qHeaders(),body:JSON.stringify({updated:new Date().toISOString(),vault:envl})});
+    return r.ok&&(await r.json()).ok;}catch(e){return false;}
+}
 function qServed(){try{return qSyncState==='server';}catch(e){return false;}}
 /* v277: THE PHONE'S REVEAL. Decrypts the synced envelope with a passphrase typed here and
    held only in this tab, exactly as the legacy import did, but WITHOUT writing anything back
@@ -15870,10 +15886,14 @@ async function vaultReveal(pass){
     const map=await vaultDecrypt(pass,NAME_VAULT);
     const n=map&&typeof map==='object'?Object.keys(map).length:0;
     if(!n){vaultRevealMsg='It opened, but the vault holds no names.';vaultRevealBusy=false;try{renderReveal();}catch(e){}return false;}
+    /* F14 (28 Sep 2026): ONE UNLOCK OPENS EVERY ENVELOPE. The passphrase is not kept, so each envelope is opened here on
+       the one given or not at all: the names, then the places; the slip key joins them in Step 5. */
+    const places=await vaultPlacesOpen(pass);
     vaultNames={};Object.keys(map).forEach(k=>{if(map[k])vaultNames[k]=map[k];});
+    vaultPlaces=places||{};
     try{fillNameLookup(vaultNames);}catch(e){}
     revealed=true;                        /* the passphrase is not kept: it is not needed again */
-    vaultRevealMsg='';vaultRevealBusy=false;
+    vaultRevealMsg=places?'':'The names are open; the places did not open on this device.';vaultRevealBusy=false;
     render();try{renderReveal();}catch(e){}
     return true;
   }catch(e){
@@ -15883,7 +15903,8 @@ async function vaultReveal(pass){
     return false;
   }
 }
-function lockVault(){vaultNames={};revealed=false;try{fillNameLookup({});}catch(e){}}
+/* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other */
+function lockVault(){vaultNames={};vaultPlaces={};revealed=false;try{fillNameLookup({});}catch(e){}}
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -20298,10 +20319,11 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
+        <div class="qfield" id="wbApLinkCell"><label>Maps or Waze link <span style="color:var(--dim)">optional</span></label><input id="wbApLink" type="text" inputmode="url" placeholder="paste the link; it stays in the vault" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${/* v780: THE LAST LEVEL IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${tieredBooks().map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n===TIER_NAMES[TIER_NAMES.length-1])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
-      <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
+      <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue. A Maps or Waze link is read on this device: its point and address go into the places vault beside the name, and the queue and the map keep only the place, to about a kilometre.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
     </div>
 
     <!-- v628, AMEND ID, his instruction of 14 Sep 2026: a party's name or place is corrected here. The name is
@@ -20310,10 +20332,11 @@ function tabWorkbench(){
     <div id="wbPaneAmendid" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Who</label><select id="wbAmWho"></select></div>
-        <div class="qfield"><label>Name</label><input id="wbAmName" type="text" placeholder="as they are known" autocomplete="off"></div>
-        <div class="qfield"><label>Place</label><input id="wbAmPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
+        <div class="qfield" id="wbAmNameCell"><label>Name</label><input id="wbAmName" type="text" placeholder="as they are known" autocomplete="off"></div>
+        <div class="qfield" id="wbAmPlaceCell"><label>Place</label><input id="wbAmPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
+        <div class="qfield" id="wbAmLinkCell"><label>Maps or Waze link <span style="color:var(--dim)">optional</span></label><input id="wbAmLink" type="text" inputmode="url" placeholder="paste the link; it stays in the vault" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       </div>
-      <div class="dsc">Type the name and the place as they should read. The code is derived again by the Add ID rule: if it comes out the same, only the vault changes; if it differs, the new code replaces the old one everywhere once you approve it. The statement username never changes.</div>
+      <div class="dsc">Type the name and the place as they should read. The code is derived again by the Add ID rule: if it comes out the same, only the vault changes; if it differs, the new code replaces the old one everywhere once you approve it. The statement username never changes. A Maps or Waze link files a new point in the places vault; left blank, the point on file stays and follows a new code. <b>Your base point</b> is the first choice under Who.</div>
     </div>
 
     <datalist id="wbPlaces">${[...placePicks().keys()].map(l=>`<option value="${esc(l)}">`).join('')}</datalist>
@@ -22160,7 +22183,7 @@ function wbPreview(){
        they first bought; asking again would either duplicate the vault entry or invite a second,
        different spelling of a name already filed. A bucket has no name for its own reason. */
     const hideNm=kind==='bucket'||apl.elevate;
-    const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell');if(nc)nc.style.display=hideNm?'none':'';if(pc)pc.style.display=hideNm?'none':'';
+    const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell'),lc=wbEl('wbApLinkCell');if(nc)nc.style.display=hideNm?'none':'';if(pc)pc.style.display=hideNm?'none':'';if(lc)lc.style.display=hideNm?'none':'';   // F14: the link goes with them
     const tc=wbEl('wbApTierCell');if(tc)tc.style.display=wbTierKind(kind,apl)?'':'none';   // v645
     if(!hideNm){
       if(!(wbVal('wbApName')||'').trim())errs.push('Type the name. It is filed into the vault, encrypted, and never into the queue.');
@@ -22171,9 +22194,17 @@ function wbPreview(){
       if(!(wbVal('wbApPlace')||'').trim()&&code)goods.push('No place yet, so the code ends in <b>TBC</b>, and it is re-keyed once the place is known.');   // v587: derived, never refused
       if(!NAME_VAULT&&qSyncState==='server')warns.push('No vault has synced to this device yet; the first name filed here starts one.');
       body+=wbGeoPreview((wbVal('wbApPlace')||'').trim(),errs,goods);   // v633: where the typed place is on the map
+      body+=wbLinkPreview(wbVal('wbApLink'),errs,goods,warns);   // F14: what the link gives, for the places vault alone
     }
+  }else if(wbMode==='amendid'&&wbVal('wbAmWho')==='_base'){
+    /* F14: his base point is a link and nothing else, so the name and the place stand aside for it */
+    {const nc=wbEl('wbAmNameCell'),pc=wbEl('wbAmPlaceCell');if(nc)nc.style.display='none';if(pc)pc.style.display='none';}
+    body=`<div style="font-size:13px;color:var(--mut)">Your base point goes into the places vault, encrypted, from the link. Nothing goes to Approve.</div>`;
+    if(!(wbVal('wbAmLink')||'').trim())errs.push('Paste the Maps or Waze link for your base point.');
+    body+=wbLinkPreview(wbVal('wbAmLink'),errs,goods,warns,vaultPlaces._base);
   }else if(wbMode==='amendid'){
     const ap=amendIdPlan();
+    {const nc=wbEl('wbAmNameCell'),pc=wbEl('wbAmPlaceCell');if(nc)nc.style.display='';if(pc)pc.style.display='';}
     if(!ap.from)errs.push('Choose whose name or place to amend.');
     else if(!ap.nm)errs.push('Type the name as it should read. It is filed into the vault, encrypted, and never into the queue.');
     else if(amendQueued(ap.from))errs.push(`<b>${esc(ap.from)}</b> already has a rename waiting for approval.`);
@@ -22182,6 +22213,7 @@ function wbPreview(){
       :`<b style="color:var(--ink)">${esc(ap.from)}</b> becomes <b style="color:var(--ink)">${esc(ap.to)}</b> on every order and list that names it, once approved${ap.pairs.length>1?', and '+ap.pairs.slice(1).map(x=>esc(x[0])+' becomes '+esc(x[1])).join(', ')+' with it':''}. The statement username stays; notes and history keep the old code.`}</div>`;
     if(ap.to&&!ap.pl)goods.push('No place yet, so the code ends in <b>TBC</b>, and it can be amended again once the place is known.');
     if(ap.to)body+=wbGeoPreview(ap.pl,errs,goods);   // v633
+    if(ap.from)body+=wbLinkPreview(wbVal('wbAmLink'),errs,goods,warns,vaultPlaces[ap.from]);   // F14: and the point on file, while the names are open
   }else{
     const el=wbEl('wbCountUnits'),w=wbNum('wbCountUnits'),has=el&&el.value!=='';
     const diff=+(w-currentStock).toFixed(2);
@@ -22300,6 +22332,113 @@ function pickPlace(e){
   WB_GEO={text:WB_GEO.text,point:[Math.round(lat*100)/100,Math.round(lng*100)/100],how:'tap'};
   wbPreview();
 }
+/* ============ F14 (28 Sep 2026): AN ADDRESS FROM A MAPS OR WAZE LINK ============
+   A link pasted at Add ID or Amend ID is read on this device and never fetched from it (rule 4). What it gives, the exact
+   point and the address, goes only into the places envelope, sealed under the vault's passphrase: the queue and PLACED keep
+   the locality at 0.01 degrees, found as before, and nothing read from a link reaches either. A maps.app.goo.gl short link
+   carries nothing until it is opened, so the desk Worker's keyed /geo/expand follows its one redirect and answers where it
+   points, keeping nothing, and the answer is read here like any other link.
+   The reading: {lat, lng, addr, src}, the point null when the link names only an address; {short, addr} for a short link;
+   null when the text holds no map link. The address is the text shared before the link (a share puts the place first, and
+   words after it are a message), else the place named in it, else its search words; a pair of numbers, a point in degrees
+   and words with no letter are never an address. A dropped pin names its place in degrees and minutes with a raw
+   apostrophe, so an apostrophe belongs to the link, and only at its end is it a quote around it (F14 review). */
+function mapsLink(text){
+  const s=String(text==null?'':text).trim(),m=/https?:\/\/[^\s<>"]+/i.exec(s);
+  if(!m)return null;
+  let u;try{u=new URL(m[0].replace(/[)\].,;!?']+$/,''));}catch(e){return null;}
+  const dec=x=>{try{return decodeURIComponent(String(x).replace(/\+/g,' '));}catch(e){return String(x);}};
+  const pt=(a,b)=>(Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180&&(a||b))?{lat:Math.round(a*1e6)/1e6,lng:Math.round(b*1e6)/1e6}:null;
+  const pair=t=>{const x=/^\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(t==null?'':String(t));return x?pt(+x[1],+x[2]):null;};
+  const q=k=>u.searchParams.get(k);
+  const words=t=>{const w=String(t==null?'':t).replace(/\s+/g,' ').trim();return w&&/\p{L}/u.test(w)&&!pair(w)&&!/\d\s*°/.test(w)?w.slice(0,200):null;};
+  const before=words(s.slice(0,m.index).replace(/^\s*(use waze to drive to|drive to|meet me at|here'?s my location|my location|dropped pin)\b\s*:?/i,'').replace(/[\s:,'"-]+$/,''));
+  const h=u.hostname.toLowerCase();
+  if(u.protocol!=='https:'&&u.protocol!=='http:')return null;
+  if(h==='maps.app.goo.gl')return (u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&/^\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname))?{short:u.origin+u.pathname+u.search,addr:before}:null;
+  const google=/^(www\.|maps\.)?google\.(com|com?\.[a-z]{2}|[a-z]{2})$/.test(h)&&(h.indexOf('maps.')===0||/^\/maps(\/|$)/.test(u.pathname));
+  const src=google?'google':/(^|\.)waze\.com$/.test(h)?'waze':h==='maps.apple.com'?'apple':null;
+  if(!src)return null;
+  let p=null,addr=null;
+  if(src==='google'){
+    const pin=/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/.exec(u.pathname+u.search);   /* the place's own pin, before the view's centre */
+    if(pin)p=pt(+pin[1],+pin[2]);
+    ['q','query','ll','destination','daddr','center'].forEach(k=>{if(!p)p=pair(q(k));});
+    let view=null;const segs=u.pathname.split('/').map(dec);
+    segs.forEach((x,i)=>{
+      const at=/^@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(x);
+      if(at){view=view||pt(+at[1],+at[2]);return;}
+      const c=pair(x);if(c){p=p||c;return;}
+      if(!addr&&(segs[i-1]==='place'||segs[i-1]==='search'))addr=words(x);
+    });
+    p=p||view;
+    ['q','query','destination','daddr'].forEach(k=>{if(!addr)addr=words(q(k));});
+  }else if(src==='waze'){
+    const to=/^ll\.(.+)$/.exec(q('to')||''),gh=/^\/ul\/h([0-9b-hjkmnp-z]{4,12})\/?$/i.exec(u.pathname),lo=q('lon')||q('lng');
+    p=pair(q('ll'))||(to&&pair(to[1]))||(q('lat')&&lo?pt(+q('lat'),+lo):null)||(gh&&geohashPoint(gh[1]))||null;
+    addr=words(q('q'));
+  }else{
+    ['ll','coordinate','q','sll','daddr'].forEach(k=>{if(!p)p=pair(q(k));});
+    addr=words(q('address'))||words(q('q'))||words(q('name'));
+  }
+  return {lat:p?p.lat:null,lng:p?p.lng:null,addr:before||addr||null,src:src};
+}
+/* Waze's own short form, waze.com/ul/h<geohash>: the cell halved, longitude first, five bits a character */
+function geohashPoint(g){
+  const B='0123456789bcdefghjkmnpqrstuvwxyz',lat=[-90,90],lng=[-180,180];let even=true;
+  for(const ch of String(g).toLowerCase()){const v=B.indexOf(ch);if(v<0)return null;
+    for(let b=4;b>=0;b--){const r=even?lng:lat,mid=(r[0]+r[1])/2;if((v>>b)&1)r[0]=mid;else r[1]=mid;even=!even;}}
+  return {lat:Math.round((lat[0]+lat[1])/2*1e6)/1e6,lng:Math.round((lng[0]+lng[1])/2*1e6)/1e6};
+}
+/* the link as typed now, read once: {text, state: looking, done or failed, res, why}. A short link is opened through the
+   Worker as it is typed, as a place is looked up, and the preview is drawn again when the answer comes. */
+let WB_LINK=null;
+function wbLinkRead(text){
+  const t=String(text==null?'':text).trim();
+  if(WB_LINK&&WB_LINK.text===t)return WB_LINK;
+  const r=mapsLink(t);
+  if(!r||!r.short){WB_LINK={text:t,state:'done',res:r};return WB_LINK;}
+  WB_LINK={text:t,state:'looking',res:null};
+  const go=()=>fetch('geo/expand',{method:'POST',headers:qHeaders(),body:JSON.stringify({url:r.short})});
+  (async()=>{
+    let got=null,why='The short link could not be opened: paste the full link from the map instead.';
+    try{let x=await go();if(x.status===401&&saltAskWriteKey())x=await go();
+      let j=null;try{j=await x.json();}catch(e){}
+      if(j&&j.ok&&j.location){const e=mapsLink(j.location);if(e&&!e.short)got=Object.assign(e,{addr:r.addr||e.addr});else why='The short link opened to a page with no map in it: paste the full link instead.';}
+    }catch(e){}
+    if(!WB_LINK||WB_LINK.text!==t)return;
+    WB_LINK=got?{text:t,state:'done',res:got}:{text:t,state:'failed',res:null,why:why};
+    try{wbPreview();}catch(e){}
+  })();
+  return WB_LINK;
+}
+/* what Record files from a link box: null when it is empty, the reading when it gives a point or an address, false while
+   it is being opened or gives nothing, which Record refuses */
+function wbLinkNow(id){
+  const t=String(wbVal(id)||'').trim();if(!t)return null;
+  const L=wbLinkRead(t),r=L.res;
+  return (L.state==='done'&&r&&!r.short&&(r.lat!=null||r.addr))?r:false;
+}
+/* a place as the vault files it, and as the preview says it: never with its figures */
+const placeEntry=r=>({addr:r.addr||null,lat:r.lat!=null?r.lat:null,lng:r.lng!=null?r.lng:null,src:r.src||null,at:new Date().toISOString()});
+function placeSaid(e){
+  const w={waze:'Waze',google:'Google Maps',apple:'Apple Maps',file:'the laptop'}[e.src]||'';
+  const d=e.at?new Date(e.at):null,k=d&&!isNaN(d)?d.toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'}):'';
+  const day=/^\d{4}-\d{2}-\d{2}$/.test(k)?k.slice(8,10)+' '+MAP_MON[+k.slice(5,7)-1]+' '+k.slice(0,4):'';
+  return (e.addr?'<b>'+esc(e.addr)+'</b>'+(e.lat!=null?' with its point':''):(e.lat!=null?'a point':'nothing'))+(w?', from '+w:'')+(day?', '+day:'');
+}
+function wbLinkPreview(text,errs,goods,warns,filed){
+  const t=String(text==null?'':text).trim();
+  if(!t){if(filed&&typeof filed==='object')goods.push('On file: '+placeSaid(filed)+'. A new link replaces it.');return '';}
+  const L=wbLinkRead(t),r=L.res;
+  if(L.state==='looking'){errs.push('Opening the short link.');return '';}
+  if(L.state==='failed'){errs.push(esc(L.why));return '';}
+  if(!r){errs.push('That is not a Google Maps or Waze link: clear it, or paste the link itself.');return '';}
+  if(r.lat==null&&!r.addr){errs.push('That link carries no point and no address: clear it, or paste another.');return '';}
+  if(r.lat==null)warns.push('That link names an address but carries no point, so the address alone is filed.');
+  goods.push((r.lat!=null?'The link gives the point'+(r.addr?' and the address, <b>'+esc(r.addr)+'</b>':''):'The address, <b>'+esc(r.addr)+'</b>')+', filed in the places vault, encrypted; the queue and the map keep only the place.');
+  return '';
+}
 /* v645, HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER STARTS AT THE TIER CHOSEN AT ADD ID. A customer and either kind of
    associate hold a tier; an end buyer, a bucket, a supplier and an appointment of a party already registered do not. */
 function wbTierKind(kind,apl){return !(apl&&apl.elevate)&&(kind==='customer'||kind==='reseller'||kind==='referral');}
@@ -22320,14 +22459,18 @@ function wbAddIdQueue(code,kind,parent,an,geo,tiers){
   queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
     raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(tiers?', starting at '+tierSay(tiers):'')+(an?', '+an:''),
     payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null,tiers:tiers||null}});
-  ['wbApWho','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+  ['wbApWho','wbApNote','wbApName','wbApPlace','wbApLink'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
 }
 /* v628: THE VAULT WRITE, ONE FOR ADD ID AND AMEND ID. The passphrase is asked here and used once; `edit`
    changes the opened map; the map is sealed and saved, and the names on screen follow. Returns null when
    the name is filed, or why nothing was. */
-async function wbVaultFile(edit){
+/* F14 (28 Sep 2026): AND THE PLACES ON THE SAME PASSPHRASE. `editPlaces` changes the opened places envelope; the places are
+   read before anything is written, so a passphrase that opens the names and not the places files neither, and saved before
+   the names, so a save that fails leaves at worst a place under a code nothing names yet, never a party whose place was
+   lost. A places map left as it was is not written. With no `edit`, the names are opened only to prove the passphrase. */
+async function wbVaultFile(edit,editPlaces){
   const pass=prompt('Vault passphrase, to file the name encrypted. It is used once and not kept.');
   if(!pass)return 'The name needs the passphrase to be filed.';
   /* v612: THE VAULT IS READ AGAIN HERE, NEVER TAKEN FROM MEMORY. NAME_VAULT is loaded once, when the
@@ -22339,11 +22482,23 @@ async function wbVaultFile(edit){
   if(!cloud||!cloud.ok)return 'The vault could not be read (offline, or the server did not answer).';
   let map={};
   if(cloud.vault){try{map=await vaultDecrypt(pass,cloud.vault);}catch(e){return 'That passphrase did not open the vault.';}}
-  edit(map);
-  let envl;try{envl=await vaultEncrypt(pass,map);}catch(e){return 'The name could not be encrypted on this device.';}
-  const prev=NAME_VAULT;NAME_VAULT=envl;
-  if(!(await vaultSave())){NAME_VAULT=prev;return 'The vault could not be saved (offline, or the write key was refused).';}
-  if(Object.keys(vaultNames||{}).length){Object.assign(vaultNames,map);try{fillNameLookup(vaultNames);}catch(e){}}
+  let pmap=null;
+  if(editPlaces){
+    const pj=await vaultPlacesRead();
+    if(!pj)return 'The places vault could not be read (offline, or the write key was refused).';
+    pmap={};
+    if(pj.vault){try{pmap=await vaultDecrypt(pass,pj.vault);}catch(e){return 'That passphrase opened the names but not the places vault.';}}
+  }
+  let penv=null;
+  if(pmap){const was=JSON.stringify(pmap);editPlaces(pmap);
+    if(JSON.stringify(pmap)!==was){try{penv=await vaultEncrypt(pass,pmap);}catch(e){return 'The place could not be encrypted on this device.';}}}
+  let envl=null;
+  if(edit){edit(map);try{envl=await vaultEncrypt(pass,map);}catch(e){return 'The name could not be encrypted on this device.';}}
+  if(penv&&!(await vaultPlacesSave(penv)))return 'The places vault could not be saved (offline, or the write key was refused).';
+  if(envl){const prev=NAME_VAULT;NAME_VAULT=envl;
+    if(!(await vaultSave())){NAME_VAULT=prev;return 'The vault could not be saved (offline, or the write key was refused).';}}
+  if(Object.keys(vaultNames||{}).length){Object.assign(vaultNames,map);try{fillNameLookup(vaultNames);}catch(e){}
+    if(pmap)vaultPlaces=pmap;}   /* F14: the places on screen follow, only while the names are open */
   return null;
 }
 /* v628, AMEND ID: WHAT THE TAP WILL DO, one answer for the preview and the record. The code is derived again by
@@ -22351,6 +22506,8 @@ async function wbVaultFile(edit){
    moves with a new code is the engine's renamePairs, the list the card and the fold read too. */
 function amendIdPlan(){
   const from=wbVal('wbAmWho'),nm=(wbVal('wbAmName')||'').trim(),pl=(wbVal('wbAmPlace')||'').trim();
+  /* F14: his own base point is a place with no party: no name, no code, nothing for Approve */
+  if(from==='_base')return {from:from,base:true,nm:'',pl:'',to:from,geo:null,move:false,pairs:[]};
   const to=from&&nm?deriveFreeCode(nm,pl||'TBC',from[0]==='S'?'supplier':'customer',null,from):null;
   /* v633: the point the place is found or tapped at, and whether it moves the party on the map */
   const geo=pl?geoWhere(wbGeoPoint(pl),pl):null,had=from?PLACED[from]:null;
@@ -22361,29 +22518,39 @@ const amendQueued=from=>queue.some(q=>q&&q.payload&&q.payload.mode==='rename'&&q
 async function wbAmendIdNamed(ap){
   /* the new spelling goes under the code it derives; a rename leaves the old entry for the code still on the book
      until the fold, and an end buyer's name is copied to their new code */
-  const why=await wbVaultFile(map=>{
+  /* F14: THE PLACES FOLLOW THE NAMES. A link typed files its point under the code the amendment ends on; a new code takes
+     the old one's place, and each account that follows it its own, as the names are copied, the old entries staying until
+     the laptop takes them out. His base point files the place alone. */
+  const link=wbLinkNow('wbAmLink');
+  const places=(link||ap.pairs.length)?(pm=>{
+    if(link)pm[ap.base?'_base':ap.to]=placeEntry(link);
+    ap.pairs.forEach(x=>{if(pm[x[0]]&&!pm[x[1]])pm[x[1]]=pm[x[0]];});
+  }):null;
+  const why=await wbVaultFile(ap.base?null:(map=>{
     map[ap.to]=ap.nm+' ('+(ap.pl||'to be confirmed')+')';
     ap.pairs.slice(1).forEach(x=>{if(map[x[0]]&&!map[x[1]])map[x[1]]=map[x[0]];});
-  });
+  }),places);
   if(why){const o=wbEl('wbOk');if(o){o.textContent=why+' Nothing amended.';o.style.color='var(--crim)';}return;}
   if(ap.to!==ap.from)queue.push({at:new Date().toISOString(),type:'RENAME',party:ap.from,qty:null,total:null,status:'rename',
     raw:'Amend ID: re-key '+ap.from+' to '+ap.to+' wherever the book names it',
     payload:{mode:'rename',from:ap.from,to:ap.to,geo:ap.geo||null}});
   else if(ap.move)queue.push({at:new Date().toISOString(),type:'PLACE',party:ap.from,qty:null,total:null,status:'place',
     raw:'Place '+ap.from+' on the map at its recorded place',payload:{mode:'place',places:{[ap.from]:ap.geo}}});
-  ['wbAmName','wbAmPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+  ['wbAmName','wbAmPlace','wbAmLink'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
   const o2=wbEl('wbOk');   /* render() rebuilt the tab */
-  if(o2){o2.textContent=ap.to===ap.from?'Filed in the vault, encrypted. The code stays '+ap.from+(ap.move?'; its new point on the map is queued for approval.':'.'):'Filed in the vault, encrypted. '+ap.from+' to '+ap.to+' is queued for approval.';o2.style.color='var(--grn)';}
+  const put='Filed in the vault, encrypted'+(link?', and the place from the link beside it':'')+'. ';
+  if(o2){o2.textContent=ap.base?'Your base point is filed in the places vault, encrypted. Nothing goes to Approve.':ap.to===ap.from?put+'The code stays '+ap.from+(ap.move?'; its new point on the map is queued for approval.':'.'):put+ap.from+' to '+ap.to+' is queued for approval.';o2.style.color='var(--grn)';}
 }
-async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tiers){
+async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tiers,link){
   const ok=wbEl('wbOk');
-  const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';});
+  /* F14: a link's point and address go under the new code in the places envelope, on the one passphrase */
+  const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';},link?(pm=>{pm[code]=placeEntry(link);}):null);
   if(why){if(ok){ok.textContent=why+' Nothing registered.';ok.style.color='var(--crim)';}return;}
   wbAddIdQueue(code,kind,parent,an,geo,tiers);
   const o2=wbEl('wbOk')||ok;   /* render() rebuilt the tab, so the status node captured above is detached */
-  if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted; the ID is queued for approval.';o2.style.color='var(--grn)';}
+  if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted'+(link?', and the place from the link beside it':'')+'; the ID is queued for approval.';o2.style.color='var(--grn)';}
 }
 function wbRecord(){
   const ok=wbEl('wbOk');if(!ok)return;
@@ -22623,6 +22790,8 @@ function wbRecord(){
   }else if(wbMode==='amendid'){
     const ap=amendIdPlan();
     if(!ap.to){ok.textContent='Choose the party and type the name first.';ok.style.color='var(--crim)';return;}
+    /* F14: a link typed is read before anything is filed, and his base point is a link or nothing */
+    {const lk=wbLinkNow('wbAmLink');if(lk===false||(ap.base&&!lk)){ok.textContent=lk===false?'The Maps or Waze link is not read yet, or gives nothing to file: wait for it, or clear it.':'Paste the Maps or Waze link for your base point first.';ok.style.color='var(--crim)';return;}}
     if(amendQueued(ap.from)){ok.textContent=ap.from+' already has a rename waiting for approval.';ok.style.color='var(--crim)';return;}
     if(ap.pl&&!/^(to be confirmed|tbc)$/i.test(ap.pl)&&!ap.geo){ok.textContent='Find the place on the map first: tap where they are.';ok.style.color='var(--crim)';return;}   // v633
     ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
@@ -22649,7 +22818,9 @@ function wbRecord(){
       const geo=wbGeoPoint(pl);   // v633
       if(!geo&&!/^(to be confirmed|tbc)$/i.test(pl)){ok.textContent='Find the place on the map first: tap where they are.';ok.style.color='var(--crim)';return;}
       ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
-      wbAddIdNamed(code,kind,parent,an,nm,pl,geoWhere(geo,pl),wbTierKind(kind,apl)?wbTiersChosen():null);   // v679: and its locality
+      const lk=wbLinkNow('wbApLink');   /* F14: a link typed is read before anything is filed, and files only into the places vault */
+      if(lk===false){ok.textContent='The Maps or Waze link is not read yet, or gives nothing to file: wait for it, or clear it.';ok.style.color='var(--crim)';return;}
+      wbAddIdNamed(code,kind,parent,an,nm,pl,geoWhere(geo,pl),wbTierKind(kind,apl)?wbTiersChosen():null,lk);   // v679: and its locality
       return;
     }
     wbAddIdQueue(code,kind,parent,an);
@@ -22759,7 +22930,8 @@ function wbApply(){
   const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loan:'wbPaneLoan',addid:'wbPaneAddid',amendid:'wbPaneAmendid'};
   /* v628: Amend ID picks from the roster, keeping the choice; a resale account and an end buyer follow their associate's code, so neither is offered */
   const amw=wbEl('wbAmWho');
-  if(amw){const cur=amw.value;amw.innerHTML='<option value="">Choose</option>'+roster.filter(id=>!POSITION_ENGINE.isBucket(id)&&!/-\d+-/.test(id)).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');amw.value=cur;}
+  /* F14: his own base point first, a place with no party */
+  if(amw){const cur=amw.value;amw.innerHTML='<option value="">Choose</option><option value="_base">Your base point</option>'+roster.filter(id=>!POSITION_ENGINE.isBucket(id)&&!/-\d+-/.test(id)).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');amw.value=cur;}
   /* v527: the loan's party is any roster code, filled once */
   const lpSel=wbEl('wbLoanParty');if(lpSel&&!lpSel.options.length)lpSel.innerHTML='<option value="">Choose</option>'+(roster||[]).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
   /* v589: a loan is salt, in units, or cash, in ringgit, and only the box that applies is shown */
@@ -22910,11 +23082,11 @@ function wireWorkbench(){
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
-  ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
+  ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote','wbApLink'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
   /* v628: picking a party fills in the vault's spelling when the names are open, "Name (Place)", so the amendment starts from what is filed */
   const amw=wbEl('wbAmWho');if(amw)amw.onchange=()=>{const v=(vaultNames||{})[amw.value]||'',m=/^(.*?)\s*\((.*)\)\s*$/.exec(v),n=wbEl('wbAmName'),pe=wbEl('wbAmPlace');
     if(n)n.value=m?m[1]:v;if(pe)pe.value=m&&!/^(to be confirmed|TBC)$/i.test(m[2])?m[2]:'';wbPreview();};
-  ['wbAmName','wbAmPlace'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});
+  ['wbAmName','wbAmPlace','wbAmLink'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});
   const ds=wbEl('wbDirSw');if(ds)ds.onclick=e=>{const d=e.target.dataset.d;if(!d)return;wbDir=d;wbFillParty();wbApply();wbPreview();};
   const asw=wbEl('wbASideSw');if(asw)asw.onclick=e=>{const s=e.target.dataset.s;if(!s)return;wbASide=s;
     wbFillKind();wbFillOrders();wbApply();wbEl('wbOk').textContent='';wbPreview();};

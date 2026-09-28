@@ -72,6 +72,25 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
    the cloud, and the desk shows it after the passphrase, hiding it again when the app leaves
    the foreground. Nothing was committed, because nothing in the repo changed.
 
+## Places, the vault's second envelope (F14, 28 Sep 2026)
+
+The vault is two envelopes under one passphrase: names in KV `vault`, places in KV `vault-addr`.
+A place is `{addr, lat, lng, src, at}` under the party's code, and his base point is `_base`. On the
+phone, Add ID and Amend ID file a place from a Maps or Waze link. On the laptop the places live in
+`10_Data\salt_addr.json`, `{updated, addr: {<code>: {...}, _base: {...}}}`, beside `salt_bio.json`
+and never in the repo. **The agent never opens `salt_addr.json`**: the tools read it, and they print
+codes and counts, never a place.
+
+- **Pull first**, as for names: `node tools/pull-vault.mjs --addr`. The phone's entry wins where it
+  differs, and the file's old one is kept beside it as `was`, which the seed never reads.
+- **He edits the file himself**, if at all. An entry needs a point (`lat` and `lng`) or an `addr`.
+- **Seed** in his own terminal, the same passphrase as the names, hidden or in
+  `$env:SALT_VAULT_PASS`: `node tools/seed-vault.mjs --addr`. It is refused unless the passphrase
+  opens the live names vault, and while the live places hold a code the file lacks or an entry filed
+  on the phone since the pull, with a later `at` (pull first).
+- **Prove it landed** by the tool's own `SEEDED:` line. The places' read is keyed, so `/vault/addr`
+  answers 401 to `curl`; that is the gate, not a fault.
+
 ## Why the passphrase step is his and stays his
 
 The phone-side rule is that the passphrase never leaves the browser; the laptop-side rule is

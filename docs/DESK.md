@@ -128,6 +128,24 @@
   LAST in its batch as a re-key wherever the book holds the code (`renamePairs`/`renameInBook`
   in the engine), the `-R` account with it, plus the statement key (username kept), a place
   override in `geo/places.json` and the suite's fixtures.
+- **Places** (F14, 28 Sep 2026): a Maps or Waze link at Add ID or Amend ID is read on the device
+  (`mapsLink`: Waze `ll=`, `to=ll.` and `/ul/h<geohash>`; Google's pin `!3d..!4d..` before a point
+  in `q=`, `query=`, `destination=` or a `/search/` or `/dir/` segment, then `@lat,lng`, and the
+  address from the text shared before the link, else `/place/<name>/`, never words with no letter or
+  a point in degrees; an apostrophe belongs to the link, a dropped pin's minutes; Apple's `ll=`). A
+  `maps.app.goo.gl` link is opened by the keyed `POST /geo/expand`, which follows one redirect with
+  `redirect: "manual"` and answers the `Location`, storing and logging nothing. The point and the
+  address go only into the vault's second envelope, KV `vault-addr` (`{<code>: {addr, lat, lng, src,
+  at}, _base}`), sealed by `vaultEncrypt` under the names' passphrase and read and written through the
+  keyed `/vault/addr`; `PLACED` keeps the locality. `wbVaultFile` reads both envelopes before writing
+  either and saves the places first; an envelope the Worker cannot parse answers 500 on `/vault`
+  and `/vault/addr` alike, never none, so no save seals one entry over the rest. A re-key copies
+  `vault-addr[from]` to `[to]` as the name is copied. `vaultReveal` opens every envelope on the one
+  passphrase it is given (names and places, the
+  slip key from Step 5) and `lockVault` clears them together. His base point, `_base`, is Amend ID's
+  first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
+  opens the live names vault, and, short of `--force`, while the live places hold a code the file
+  lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
 - **Codes are derived** (`deriveCode`, phone and laptop alike): C or S, the name's first letter,
   the length of the saved name counting spaces, a dash, then the place's initials when it is
   several words or its first three letters when it is one; a blank place is TBC. A downstream
@@ -227,7 +245,7 @@
 
 | Path | What it is |
 |---|---|
-| `src/worker.js` | `/queue`, `/vault`, `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval, and again on the minute cron's ladder (`redispatchStale`) |
+| `src/worker.js` | `/queue`, `/vault`, `/vault/addr` and `/geo/expand` (keyed, F14), `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval, and again on the minute cron's ladder (`redispatchStale`) |
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
 | `tools/drafts.mjs` | `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`, `--from-queue`; via wrangler, no key |

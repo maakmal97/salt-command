@@ -14,16 +14,19 @@
  *
  *   node tools/pull-vault.mjs             merge the vault's names into salt_bio.json
  *   node tools/pull-vault.mjs --dry-run   say what would be added, write nothing
+ *   node tools/pull-vault.mjs --addr      F14: the places instead, KV "vault-addr" into 10_Data\salt_addr.json, the
+ *                                         phone's entry winning where it differs and the old one kept as `was`;
+ *                                         read through wrangler, since the Worker keys the places' read
  *   SALT_VAULT_PASS                       the passphrase, when there is no terminal to ask
  *   SALT_DATA                             override the 10_Data folder
  *
  * The passphrase is asked hidden, used once, never stored or printed. Laptop only.
  */
-import "./cloudflare.mjs";
+import { wranglerSaid } from "./cloudflare.mjs";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { vaultDecrypt } from "./seed-vault.mjs";
+import { vaultDecrypt, wrGetAddr, addrEntry } from "./seed-vault.mjs";
 import { DATA_DIR } from "./book.mjs";
 
 const BASE = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
@@ -44,6 +47,47 @@ export function mergeBio(bioJson, map) {
   }
   if (added.length || amended.length) out.updated = new Date().toISOString();
   return { bio: out, added, kept, amended };
+}
+
+/* F14: the places pulled as the names are: the cloud's entry wins where it differs and the file's old one is kept beside it
+   as `was`, which the seed never reads (it seals five fields and no more). Pure; it counts and names codes, never a place. */
+export function mergeAddr(fileJson, map) {
+  const out = JSON.parse(JSON.stringify(fileJson || {}));
+  out.addr = out.addr || {};
+  const added = [], kept = [], amended = [];
+  const five = (e) => ({ addr: e.addr ?? null, lat: e.lat ?? null, lng: e.lng ?? null, src: e.src ?? null, at: e.at ?? null });
+  for (const code of Object.keys(map || {})) {
+    const e = addrEntry(map[code]);
+    if (!e) continue;
+    const cur = out.addr[code] && typeof out.addr[code] === "object" ? five(out.addr[code]) : null;
+    if (cur && JSON.stringify(cur) === JSON.stringify(five(e))) { kept.push(code); continue; }
+    const next = Object.assign({}, out.addr[code] || {}, five(e));
+    if (cur) next.was = cur; else delete next.was;
+    out.addr[code] = next;
+    (cur ? amended : added).push(code);
+  }
+  if (added.length || amended.length) out.updated = new Date().toISOString();
+  return { file: out, added, kept, amended };
+}
+async function pullAddr(pass, dry) {
+  const file = join(DATA_DIR, "salt_addr.json");
+  let raw;
+  try { raw = wrGetAddr(); } catch (e) {
+    if (/ - 404:/.test(wranglerSaid(e))) { console.error("The cloud holds no places vault."); process.exit(1); }
+    console.error("wrangler could not read the places vault: " + wranglerSaid(e)); process.exit(1);
+  }
+  let j = null;
+  try { j = JSON.parse(raw); } catch (e) { j = null; }
+  if (!j || !j.vault) { console.error("The cloud holds no places vault."); process.exit(1); }
+  let map;
+  try { map = await vaultDecrypt(pass, j.vault); } catch (e) { console.error("That passphrase did not open the places vault. Nothing written."); process.exit(1); }
+  let cur = {};
+  if (existsSync(file)) { let t = readFileSync(file, "utf8"); if (t.startsWith(BOM)) t = t.slice(1); cur = JSON.parse(t); }
+  const m = mergeAddr(cur, map);
+  console.log(`places vault updated ${j.updated || "?"}: ${Object.keys(map).length} place(s); the file has ${Object.keys(cur.addr || {}).length}; ${m.added.length} to add (${m.added.join(", ") || "none"}), ${m.amended.length} changed on the phone (${m.amended.join(", ") || "none"}), ${m.kept.length} already the same here.`);
+  if (dry || !(m.added.length || m.amended.length)) { console.log(dry ? "DRY RUN: nothing written." : "Nothing to write."); return; }
+  writeFileSync(file, JSON.stringify(m.file, null, 2) + "\n");
+  console.log(`wrote ${file}: ${m.added.length} added, ${m.amended.length} changed, each old entry kept as was. The places are on the laptop; nothing in the repo moved.`);
 }
 
 function promptHidden(question) {
@@ -70,6 +114,7 @@ async function main() {
   if (!existsSync(file)) { console.error("salt_bio.json not found at " + file + " (set SALT_DATA). This runs on the laptop only."); process.exit(2); }
   let pass = process.env.SALT_VAULT_PASS || await promptHidden("vault passphrase (hidden): ");
   if (!pass) { console.error("No passphrase. Set SALT_VAULT_PASS or run in a terminal."); process.exit(2); }
+  if (process.argv.includes("--addr")) return pullAddr(pass, dry);   // F14: the places, not the names
   const r = await fetch(BASE + "/vault", { cache: "no-store" });
   const j = r.ok ? await r.json() : null;
   if (!j || !j.vault) { console.error("The cloud holds no vault."); process.exit(1); }

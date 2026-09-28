@@ -20,6 +20,7 @@
 ## Endpoints
 - `GET /drafts?status=…`
 - `POST /drafts/<id>/approve|reject|committed`
+- `GET|POST /vault/addr` (the places envelope, KV `vault-addr`, ciphertext only) and `POST /geo/expand` (a `maps.app.goo.gl` link followed one redirect, nothing kept), both keyed
 - `POST /draft-now?dry=1`
 - `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never the dry run)
 - `/accept|handed|cash|received|notfound|again` (the card's taps)

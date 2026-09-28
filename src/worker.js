@@ -72,6 +72,7 @@ const locked = () => new Response(LOCKED_HTML, {
 
 const QKEY = (device) => "q:" + device;
 const VKEY = "vault";                 // the encrypted name vault, ciphertext only
+const AKEY = "vault-addr";            // F14: the places envelope, ciphertext only, read and written with the key
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
 /* THE DAY IS KUALA LUMPUR'S (08 Sep 2026). COUNT_ON is written by the fold in MYT; "today" here
    was the UTC day, so between midnight and 08:00 a morning count read as not taken and
@@ -314,7 +315,7 @@ async function handleVaultGet(env) {
     if (v.ids) out.ids = v.ids;
     if (v.locs) out.locs = v.locs;
     return json(out);
-  } catch (e) { return json({ ok: true, vault: null }); }
+  } catch (e) { return json({ ok: false, error: "the vault could not be read" }, 500); }   // F14 review: read as none, the desk's next Add ID would seal one name over them all
 }
 async function handleVaultPost(request, env) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
@@ -330,6 +331,62 @@ async function handleVaultPost(request, env) {
     updated: body.updated || null, vault: v, ids: body.ids || null, locs: body.locs || null
   }));
   return json({ ok: true });
+}
+
+/* F14 (28 Sep 2026): THE PLACES ENVELOPE, the vault's second. The desk seals {<code>: {addr, lat, lng, src, at}, _base} with
+ * the vault's own passphrase and posts only the envelope; an exact point is more than a name, so the read is keyed as well
+ * as the write (the route sits in the keyed list in fetch). Only the four envelope fields are kept, and each must read as
+ * base64, so a plaintext map, or an address slipped in beside the ciphertext, is refused and never stored. There is no
+ * null: nothing on the desk clears the places, and a stray null would. */
+const B64 = /^[A-Za-z0-9+/]+={0,2}$/;
+const isSealed = (v) => isEnvelope(v) && B64.test(v.salt) && B64.test(v.iv) && B64.test(v.ct);
+async function handleVaultAddr(request, env, m) {
+  if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
+  if (m === "GET") {
+    const raw = await env.SALT_QUEUE.get(AKEY);
+    if (!raw) return json({ ok: true, vault: null });
+    try { const v = JSON.parse(raw); return json({ ok: true, vault: v.vault || null, updated: v.updated || null }); }
+    catch (e) { return json({ ok: false, error: "the places vault could not be read" }, 500); }   // never read as none: the next save would seal one place over them all
+  }
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
+  const v = body && body.vault;
+  if (!isSealed(v)) return json({ ok: false, error: "vault must be the encrypted {v,salt,iv,ct} envelope" }, 400);
+  const at = typeof body.updated === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(body.updated) ? body.updated : null;
+  await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: at,
+    vault: Object.assign({ v: 1, salt: v.salt, iv: v.iv, ct: v.ct }, Number.isInteger(v.it) && v.it > 0 ? { it: v.it } : {}) }));
+  return json({ ok: true });
+}
+
+/* F14: A MAPS SHORT LINK OPENED FOR THE DESK, AND NOTHING KEPT. A maps.app.goo.gl link carries no point until it is
+ * followed, and the desk cannot follow it itself (rule 4: its CSP is self only, and it loads nothing third party). So the
+ * desk posts the link here, keyed, and this follows ONE redirect with redirect "manual" and answers the Location, which the
+ * desk reads as it reads any link. Only https://maps.app.goo.gl/<id> is opened: any other host, scheme, port or a
+ * credential is refused before a fetch is made, so this is never a door to anywhere else. Nothing is stored and nothing is
+ * logged: the link rides in the body, which the invocation log does not keep, and traces are off (wrangler.jsonc). Google
+ * is an allowed service, and a redirect needs no key. */
+function shortMapsUrl(s) {
+  if (typeof s !== "string" || s.length > 300) return null;
+  let u;
+  try { u = new URL(s.trim()); } catch (e) { return null; }
+  return (u.protocol === "https:" && u.hostname === "maps.app.goo.gl" && !u.username && !u.password && !u.port
+    && /^\/[A-Za-z0-9_-]{1,64}$/.test(u.pathname)) ? u.origin + u.pathname + u.search : null;
+}
+async function handleGeoExpand(request) {
+  let b = null;
+  try { b = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
+  const u = shortMapsUrl(b && b.url);
+  if (!u) return json({ ok: false, error: "only a maps.app.goo.gl link is opened here" }, 400);
+  let res;
+  try { res = await fetch(u, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(8000) }); }
+  catch (e) { return json({ ok: false, error: "the link did not answer" }, 502); }
+  try { if (res.body) await res.body.cancel(); } catch (e) { /* nothing to free */ }
+  const loc = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
+  let to = null;
+  try { to = loc ? new URL(loc, u) : null; } catch (e) { to = null; }
+  if (!to || (to.protocol !== "https:" && to.protocol !== "http:")) return json({ ok: false, error: "the link did not lead to a map" }, 502);
+  return json({ ok: true, location: to.href });
 }
 
 /* THE LEDGER STORE, READ ONLY (v294).
@@ -792,6 +849,7 @@ export default {
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
     if (!accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
+        || p === "/vault/addr" || p === "/geo/expand"
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
@@ -817,6 +875,7 @@ export default {
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
+      || p === "/vault/addr" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -1119,6 +1178,11 @@ export default {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only
       if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext
       return json({ ok: false }, 405);
+    }
+    if (p === "/vault/addr") return handleVaultAddr(request, env, m);   // F14: the places, ciphertext only, keyed both ways
+    if (p === "/geo/expand") {                                          // F14: a short Maps link, one redirect, nothing kept
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return handleGeoExpand(request);
     }
     if (p === "/bio") {
       if (m === "GET") return json({ ok: true, bio: {} });       // plaintext directory never ships

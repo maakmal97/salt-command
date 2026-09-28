@@ -12,6 +12,7 @@ node_modules/
 # Never commit real names. The desk ships codes only; the plaintext directory and the
 # encrypted vault live on the laptop, never here. These are a safety net.
 salt_bio.json
+salt_addr.json
 salt_vault.json
 *.vault
 

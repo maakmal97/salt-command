@@ -1,5 +1,15 @@
 [
  {
+  "v": "v923",
+  "d": "28 Sep 2026",
+  "t": "A MAPS OR WAZE LINK FILES A PLACE IN THE VAULT",
+  "n": [
+   "<p><b>A MAPS OR WAZE LINK AT ADD ID AND AMEND ID, READ ON THIS DEVICE.</b> F14 of the feature wave. Enter's Add ID and Amend ID take a Google Maps or Waze link beside the name and place: a dropped pin, a shared point, a view's centre, a place's name, or the words shared before the link. The preview says what the link gives, the address in full, before Record, and a link that gives nothing holds Record back. A short maps.app.goo.gl link is opened by the Worker, with the write key, which follows its one redirect and answers where it leads, storing and logging nothing; the words shared with it never leave the device.</p>",
+   "<p><b>THE PLACE IS SEALED IN A SECOND VAULT ENVELOPE, UNDER THE SAME PASSPHRASE.</b> The point and the address are encrypted on the device, as the names are, into the places envelope, which the Worker keeps as ciphertext alone and serves only with the write key. One unlock opens the names and the places, and the auto-lock shuts both. A re-key carries the place to the new code as it carries the name, the resale account's with it. His own base point is filed from Amend ID as Your base point, the first choice under Who, and writes the places alone. The queue, the book and the map keep the code and the locality at 0.01 degrees, never the link, its point or the address.</p>",
+   "<p><b>ON THE LAPTOP, AND WHAT WAITS.</b> seed-vault --addr and pull-vault --addr carry the places to and from the laptop's own copy, which is never committed, and the seed refuses a passphrase that does not open the names vault, and an entry filed on the phone since the pull. <b>A VAULT THE WORKER CANNOT READ IS NOW SAID TO BE SO.</b> Names or places, a stored envelope that will not parse answers that it could not be read, where it answered that none was filed, so no save seals one entry over the rest. The fee from his location (F15) waits for V4b, and the slip key comes as a version of its own. <b>THE SUITE.</b> Seven sections are new: the link reader, the short-link route, the places envelope, the one unlock, the filing at Add ID and Amend ID, the public desk and the book, and the laptop tools. Each of their 52 mutations turned a check red.</p>"
+  ]
+ },
+ {
   "v": "v922",
   "d": "28 Sep 2026",
   "t": "THE ROW KEY NAMES THE PRODUCT ON EVERY BOOK BUT SALT",
