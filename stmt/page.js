@@ -226,6 +226,22 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .hfill{width:100%;margin-top:14px}
 .hlab{display:flex;justify-content:space-between;gap:12px;margin:0 0 10px}
 .home .salt-inbox-row{margin:0 0 8px}
+/* 28 SEP 2026 (his instruction, with pay terms V2's C2): ON A PHONE THE SCREEN'S MARGINS ARE EQUAL AND THE PAGE USES ALL
+   OF IT. The body kept the statement's 44px above, 20px beside and 60px below, and the shell 24px over the App bar
+   besides, so a page began under a saved app's status bar and ended 84px above the bar. Under 1080px: 16px on every side,
+   each safe area added, the App bar cleared by the same 16px, and Home's sections one gap apart with nothing after the last,
+   a list's last row included (its 8px stood inside Coming up, so the gap after it read 32px). The rows' resets are
+   shorthands, as the rules they undo are. */
+@media (max-width:1079.98px){
+  body{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
+  .cshell{padding-bottom:var(--salt-bar-h)}
+  .gate{padding:0}
+  .home .hcol{display:flex;flex-direction:column;gap:24px}
+  .home .hcol>div{margin:0}
+  .home .hcol+.hcol{margin-top:24px}
+  .home .salt-inbox-row:last-child,.olist .salt-inbox-row:last-child{margin:0}
+  .olist>:last-child{margin-bottom:0}
+}
 /* S7 7.2: FROM 1080PX THE BAR IS THE RAIL, beside the page (the recipe's own switch), and each place takes two columns:
    Home its money and what needs them beside what is coming, Account the statement beside This device (S7 7.3's .acct,
    below), Prices a book a column; Orders keeps stage 5's list beside the open order. A sheet is the recipe's drawer on
@@ -424,6 +440,9 @@ body.ended>*:not(#aEnded){display:none}
   #nopen{position:sticky;top:24px}
 }
 @media (max-width:1079.98px){
+  /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
+     after the shell's own rule, or that rule would win */
+  .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
   #oAccts.open .afind,#oAccts.open .alist,#oAccts.open #scount{display:none}
   #nopen{display:none}
 }

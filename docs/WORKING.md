@@ -115,6 +115,11 @@ measurement of the desk.
   `xref` and every table offset on its own `<n> 0 obj`; a JPEG's `FFD8` and `FFD9`. A screenshot
   proves nothing. From jsdom 30.1.0 a closed window keeps its document: prove `close()` by the
   timers it stops, with an open window as the control.
+- **jsdom's `getComputedStyle` runs the cascade but applies no width query** (only `all` and
+  `screen`), so a phone rule reads as absent. Read a width by rewriting each width query that holds
+  there to `@media all` (the phone frame's section, 28 Sep 2026). It also lets a LATER shorthand beat
+  an earlier, more specific longhand (`margin:0 0 8px` over `…:last-child{margin-bottom:0}`), which
+  no browser does: undo a shorthand with a shorthand, or measure in the Browser pane.
 - **Declaring things to the extract.** A new top-level object or array const in the master fails
   the extract until it is added to `NOT_LEDGER` (configuration) or `LEDGER_KEYS` (the book) in
   `tools/ledger.mjs`. A date field is drawn with `dateIn(id,val,attrs)`: the suite allows one

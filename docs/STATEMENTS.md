@@ -476,7 +476,10 @@ Three things sit behind the one password since v499: the statements, a **price l
 the week, and an **order**. The page shows them in PLACES once the password has opened the record (S7 7.1, his
 D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens first, **Prices**, **Orders**, **Account**
 (the statement and This device, whose Sign out is the one Log out) and **Rewards** for an associate. They sit on the system's App bar
-at the foot of a phone and on its rail from 1080px. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
+at the foot of a phone and on its rail from 1080px. **Under 1080px the frame is equal** (his C2 of 28 Sep 2026): 16px on
+every side, each safe area added, the App bar cleared by the same 16px, Home's sections one 24px gap apart and no row's
+margin left after a list; Salt Account's shell takes the same frame, its rule placed after the shell's own, which would
+otherwise win. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
 address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
 banner's `#o=<id>` still opens Orders at that order. **Home** reads To pay now (S6 6.2, `drawPayHead`; since pay terms

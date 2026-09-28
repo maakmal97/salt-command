@@ -1,5 +1,14 @@
 [
  {
+  "v": "v924",
+  "d": "28 Sep 2026",
+  "t": "ON A PHONE THE SCREEN'S MARGINS ARE EQUAL",
+  "n": [
+   "<p><b>ON A PHONE THE SCREEN'S MARGINS ARE EQUAL.</b> His C2 of 28 Sep 2026, with pay terms V2. Under 1080px the Counter kept the statement's 44px above, 20px beside and 60px below, and its shell 24px over the App bar besides, so Home began 44px down and ended 108px above the bar. Now 16px on every side, each safe area added, and the App bar cleared by the same 16px; Home's sections stand one 24px gap apart, and no list leaves its last row's 8px behind (it stood inside Coming up, so the gap after it read 32px). The door gains 16px of width, and Salt Account's shell takes the same frame, its rule placed after the shell's own. From 1080px nothing moves.</p>",
+   "<p><b>PROOFS.</b> Measured in the Browser pane at 375px on Home, Orders, Account, the held payment page, the door and Salt Account: 16px on every side and above the bar, Home's gaps 24px as seen. A new suite section reads the page's cascade in jsdom at 375px and 1280px, each width query that holds there made all; 10 mutations red, among them Salt Account's rule moved back before the shell's own, the fault the first draft had.</p>"
+  ]
+ },
+ {
   "v": "v923",
   "d": "28 Sep 2026",
   "t": "A MAPS OR WAZE LINK FILES A PLACE IN THE VAULT",

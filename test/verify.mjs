@@ -39846,6 +39846,53 @@ await (async () => {
   } finally { dom.window.close(); }
 })();
 
+section("Phone frame (28 Sep 2026): under 1080px the Counter and Salt Account keep 16px on every side, each safe area added, clear the App bar by the same 16px, and Home's sections stand one gap apart with no row's margin after a list; from 1080px nothing moves");
+await (async () => {
+  /* HIS C2 OF 28 SEP 2026, with pay terms V2: "when it is on a phone, the margin and buffer for the screen are all treated
+     equally, and the app maximises the use of the screen". jsdom runs the cascade (specificity, then order) but applies no
+     width query, so the page is read at a width by making each width query that holds there `all`: what is proved is
+     which rule WINS at that width, the fault a phone block placed before the rule it overrides would hide (Salt Account's
+     own .gate.adm rule came after the first draft's). The geometry itself was measured in the Browser pane at 375px. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const { JSDOM: JD } = await import("jsdom");
+  const holds = (q, W) => q.split(",").some((one) => {
+    const fs = one.split(/\band\b/).map((s) => s.trim()).filter(Boolean);
+    return fs.length > 0 && fs.every((f) => { const x = /^\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)$/.exec(f); return !!x && (x[1] === "min" ? W >= +x[2] : W <= +x[2]); });
+  });
+  const at = (html, W) => html.replace(/@media\s*([^{]+)\{/g, (m, q) => (holds(q, W) ? "@media all{" : m));
+  const read = (html, W) => {
+    const dom = new JD(at(html, W)), d = dom.window.document, cs = (e, p) => (e ? dom.window.getComputedStyle(e).getPropertyValue(p) : "none");
+    /* Home's two columns, a list of rows in the first section, and Orders' list, as the page draws them */
+    const x = d.createElement("div");
+    x.innerHTML = '<div class="home"><div class="hcol"><div><button class="salt-inbox-row">a</button><button class="salt-inbox-row">b</button></div><div>c</div></div>'
+      + '<div class="hcol"><div>d</div></div></div><div class="olist"><button class="salt-inbox-row">e</button><button class="salt-inbox-row">f</button></div>';
+    d.body.appendChild(x);
+    const q = (s) => d.querySelector(s), cols = x.querySelectorAll(".hcol");
+    const out = { body: ["top", "right", "bottom", "left"].map((s) => cs(d.body, "padding-" + s)), shell: cs(q(".cshell"), "padding-bottom"),
+      door: cs(q("#gate"), "padding-left") + "|" + cs(q("#gate"), "padding-right"),
+      roster: q("#roster") ? cs(q("#roster"), "margin-top") + "|" + cs(q("#roster"), "padding-bottom") : "",
+      hcol: [cs(cols[0], "display"), cs(cols[0], "gap"), cs(cols[0].firstElementChild, "margin-bottom"), cs(cols[1], "margin-top")].join("|"),
+      rows: [...x.querySelectorAll(".home .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|"),
+      orows: [...x.querySelectorAll(".olist .salt-inbox-row")].map((r) => cs(r, "margin-bottom")).join("|") };
+    dom.window.close();
+    return out;
+  };
+  const cust = lp("abcd-efgh", "npf", null), own = lp("", "npo", { master: "mpf", accounts: [] });
+  const phone = read(cust, 375), phoneOwn = read(own, 375), desk = read(cust, 1280), deskOwn = read(own, 1280);
+  const sides = ["top", "right", "bottom", "left"];
+  ok(phone.body.every((v, i) => v === "calc(16px + env(safe-area-inset-" + sides[i] + ", 0px))") && phone.shell === "var(--salt-bar-h)" && phone.door === "0px|0px",
+    "on a phone the body keeps 16px on every side with that side's safe area added, the shell keeps only the App bar's height under it, and the door adds nothing beside: "
+    + JSON.stringify(phone));
+  ok(phoneOwn.roster === "0px|var(--salt-bar-h)" && phoneOwn.body.join() === phone.body.join(),
+    "and Salt Account's shell, whose own rule comes after the Counter's block, starts at the body's edge and clears the bar by the same 16px: " + JSON.stringify(phoneOwn));
+  ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
+    "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
+    + JSON.stringify(phone));
+  ok(desk.body.join() === "44px,20px,60px,20px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "24px|48px"
+    && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
+    "from 1080px nothing moves: the desk keeps its own frame: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+})();
+
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
 await (async () => {
   /* HIS "ALL RECOMMENDED" OF 24 SEP 2026 (the plan's Ordering: "two taps"). A tile on Home for each size, way and place
