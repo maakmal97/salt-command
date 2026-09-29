@@ -182,9 +182,20 @@ own position under the list does not move with the filter.
 
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
-own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
-sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
-Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: notifications on or
+own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
+document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter, kept on disk and on
+his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
+publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
+A re-read that meets either keeps the hold where it last stood; a first open has no last state, so the gate is open
+until the document reads. A failed read of orders says so on Orders and Home with Try again (C14), and a fault's own
+words never reach a customer: a 5xx is the site busy, a codeless body takes the page's words (C16). **The live document inside the Counter** (C2 to C11,
+C21, C25, the same yes): an h2 under the place's h1, the header naming the username so the document names nobody; every fully
+paid row says the day it was paid under its state word; the footer and the workings carry RM; units above one and at nought,
+the workings included, and goods, never the product's word; a refund row carries its month, and the line under the filter
+names what stays the whole account's; No orders yet, never a period; Refunds and Still to collect are h3; a book's day is
+written from its digits, never a clock. An issue keeps every word it was sent with. The page prints money as RM and two
+places, every date DD Mon YYYY with a weekday only before a due date, the bar is the Places landmark, and a guest page opens
+on its h1 (C5, C17, C19, C21, C22). **This device** follows (beside it from 1080px), ONE card: notifications on or
 off (where the bell's plain tap lands; Step 1b), Saved as an app, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
 subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
 wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.
@@ -238,6 +249,21 @@ Each statement carries a QR code and prints the customer's **username**. The QR 
 with the username filled in; the password goes by a different channel. The page checks the
 pair, decrypts in his own browser, and opens on **"Now"**, with every issue by its date at the foot. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
+
+**A passkey opens it too (Step 6, his decisions of 29 Sep 2026).** Signed in, This device offers **Save a passkey**; the
+customer's own store keeps it under Salt Counter (NordPass, Apple, Google: any passkey works), and the door's **Open with
+a passkey** signs them in with the face or finger that store asks for. The Worker (`stmt/passkey.js`) checks the client
+data's type, challenge and origin, the authenticator data's relying party (this address) and its user-present and
+user-verified flags, and the signature with the public key filed at saving (ES256, EdDSA, RS256); only then does it hand
+back its share of the unlock key. The other half is 32 bytes the device keeps, or the secret the passkey returns where
+its store gives one (PRF: Apple Passwords, Google Password Manager), which is the same on every device the passkey
+reaches, so such a passkey opens the account anywhere. With neither on a device, the open answers `once` with no session:
+the door fills the username, asks for the password once, and files that device's wrap after it (his decision: the password
+once a new device, so the Worker still holds no key that opens an account). A device signed in by password first offers
+**Use your passkey on this device** where the account has one. A passkey lasts a year from its last use; **Log out keeps
+it** (the passkey still asks for the face), **Remove this passkey** ends it, and so do Sign out everywhere, Sign out other
+devices and his own Sign out, with every device's wrap. The test accounts save and use passkeys as any account does; a
+passkey is a credential, not fixture data, and counts nowhere.
 
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
 written.** The deploy rewrites it after every fold, so an approved row reaches the customer's
@@ -316,6 +342,9 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 | the passwords | `statements\<YYYY-MM>\_passwords.json` | sealed under `STMT_MASTER` as `pwMaster`, served only behind Access | One per customer, one live month. In the clear on the laptop alone (v688), and since v710 no message carries one at all. |
 | a sign-in link | nowhere | KV `ot:<sha256(token)>`, 3 days (7 until his D1), one use | The content key wrapped under a token his page mints (v710). The token is stored nowhere, so the record opens only for whoever holds the link. Its page asks which account first (`peek`, spending nothing) and spends it on Continue; spent, the record answers the nonce of the page that spent it for two minutes (`RETRY_TTL`), its peek included, so a lost answer is tried again, from a reload of that tab too, and a second device is refused (S3 3.3). Continue also remembers the phone with the door's own split key, and the message says so and names the username (S3 3.4, his D1). |
 | a remembered phone | nowhere | KV `rem:<sha256(token)>`, 30 days from the last open (S3 3.6; from the tick until then) | The content key wrapped under a key that never leaves that browser (v692). Filed under the token's hash since S3 3.1, so a copy of the store names no token; a record filed the old way is re-filed on its next open, keeping the end it had, thirty days from its tick, and never sliding, so a copy taken before then dies on time (S3 fix). |
+| a passkey (Step 6) | nowhere | KV `pk:<sha256(credential id)>`, a year from its last use | A customer's passkey, saved on a session (his decisions of 29 Sep 2026): its public key and algorithm, the share of the unlock key the Worker hands back once the passkey's signature checks, and the roaming wrap once a device whose passkey gives a secret has made one. Listed with the account's devices through its `dev:` pointer; Log out keeps it; Remove, Sign out everywhere, Sign out other devices and his own Sign out end it with its devices' wraps. Nothing here opens an account: the share is half of the key. |
+| a device's passkey wrap (Step 6) | nowhere | KV `pkd:<credential hash>:<sha256(device token)>`, a year from its last use | The content key wrapped under the share and 32 bytes that never leave that browser (`salt-stmt-passkey`), for a passkey whose store gives no secret (NordPass). A new device signs in by password once, after Open with a passkey answers `once`, and files its own. |
+| a passkey challenge (Step 6) | nowhere | KV `pkc:<sha256(challenge)>`, five minutes, spent once | What a save, a link or an open is signed over; a session's names the account and the share a new passkey keeps. |
 | where an account is signed in | nowhere | KV `dev:<username>:<sha256(key)>`, as long as what it names | A pointer per remembered phone (`rem:`) and per session an open mints (`sess:<sha256(token)>`, a session being filed under its token's hash since an S3 fix, as a phone is), with `how` it came, `at` and `last` (S3 3.2); since S9 9.4 also per sign-in link and hand-over not yet opened (`ot:`, `ho:` with its code's record as `pair`, dropped when spent), and a device's pointer carries its name in the site's words (`label`, `kind`, from `deviceOf`), a remembered phone's the sessions it opened (`sess`, `was`), so it is listed once. Listed by the prefix, it is an account's phones and computers (`devicesIn`) on his account screen and the customer's This device card (`POST /devices` on their session), and what signs them out: one (`POST /all/signout {u, id}`), its alerts with it, since a `push:` record names the session and the remembered phone it was filed from (`sess`, `dev`), the customer's others (`POST /devices/signout`, sparing this phone and its alerts), or everything (`{u, keep}`, which also burns every link and code not yet opened, bar the one his page made and still holds unsent, named by its hash, and drops every alert, answering how many devices, links and codes, and phones, a link counted only once his page has shared or copied it (`out`, set by `POST /all/out`), and never kept then; a link made before S9 9.4 carries no pointer and is not reached, lapsing within three days of that deploy), never the account's own `u:` record; it names hashes, so it opens nothing. |
 | `STMT_HANDOVER_KEY` | nowhere | Cloudflare secret on the site, set by hand (S3 3.9) | Keys the hash a hand-over's code and key are filed under and seals the wrap beside them. Unset, the hand-over routes answer 503. Changing it only strands the codes alive at that moment. |
 | a hand-over | nowhere | KV `ho:<HMAC(STMT_HANDOVER_KEY, code or key)>`, 15 minutes, one use | The content key wrapped under a key the signed-in page mints, filed under the code and the key, sealed. The contract is below. |
@@ -592,7 +621,7 @@ wherever nothing else is (the limit in New order's place, the payment page, a ph
 New order, and the sheet opens on the open orders, each in stage 5's word for it (goods handed over in part say so),
 Cancel on each whose goods have not moved, going on to the form once
 one is gone; a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
-the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at Thu 24 Sep, 11:59"**
+the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at 24 Sep 2026, 11:59" (C17: every Counter date DD Mon YYYY, a weekday only before a due date)**
 in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of". **One delivery sentence**
 (`DELIVERY` in `stmt/page.js`, S4 4.9) wherever the charge is explained: Prices, a delivery's check and a guest's
 board: "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you
@@ -648,6 +677,14 @@ line of at most sixty characters, a neighbourhood and not an address, refused em
 dropped on a collection. It is shown on his card and **never rides into the ledger row's note**: a
 note reaches the committed book, and free text a customer typed is the one thing here that could
 carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
+
+**AN ORDER MAY BE WANTED BY A DAY** (29 Sep 2026, the plan's future-dated orders): the sheet asks When you want it, As
+soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` (60) days on in Kuala Lumpur. The Worker's
+`wantByFault` (`stmt/orders.js`) is the check, a real YYYY-MM-DD in range or nothing; `wantBy` rides on the order, in
+`CUSTOMER_FIELDS`, and a sheet's lines share it. **It is a day they asked for and nothing more**: the Pending row stays
+dated at the acknowledgement under the same key, its note carrying ", wanted by YYYY-MM-DD" in fixed words
+(`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
+reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
 
 **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
 2026). `associateCard(w, code)` in `tools/book.mjs` builds one associate's own document off the same

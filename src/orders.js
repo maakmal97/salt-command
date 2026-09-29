@@ -1096,7 +1096,10 @@ export function pendingEntry(order, code, now) {
   const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
     + (friend ? ", on behalf of a friend" : "")
     + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
-    + (delivery > 0 ? ", delivery RM " + delivery : "") + ". Nothing paid and nothing handed over yet.";
+    + (delivery > 0 ? ", delivery RM " + delivery : "")
+    /* 29 Sep 2026: the day they asked for rides as fixed words, never their text; the row stays dated at the acknowledgement */
+    + (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "") ? ", wanted by " + order.wantBy : "")
+    + ". Nothing paid and nothing handed over yet.";
   const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + owed
     + ", nothing paid, nothing moved (order " + order.id + ")";
   return {

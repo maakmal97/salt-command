@@ -1,5 +1,17 @@
 [
  {
+  "v": "v958",
+  "d": "30 Sep 2026",
+  "t": "A CUSTOMER'S PASSKEY OPENS THE COUNTER",
+  "n": [
+   "<p><b>A PASSKEY OPENS THE ACCOUNT.</b> His decisions of 29 Sep 2026. Signed in, a customer taps Save a passkey on This device, and whatever keeps their passkeys, NordPass, Apple or Google, keeps it under Salt Counter. The door's Open with a passkey then signs them in with the face or finger that store asks for. The Worker checks the passkey's signature, this address and that the face was checked, and only then hands back its half of the key; the other half never leaves the device, so the site still holds nothing that opens an account.</p>",
+   "<p><b>THE PASSWORD ONCE ON A NEW DEVICE.</b> A passkey that gives no secret, as NordPass does, opens each device once that device has signed in by password: the door says so, fills the username, and files the device's half after the password. A passkey that gives one, as Apple and Google do, opens every device it reaches. A device signed in by password first offers Use your passkey on this device.</p>",
+   "<p><b>A YEAR FROM ITS LAST USE; LOG OUT KEEPS IT.</b> The passkey is listed with the account's phones and computers. Remove this passkey ends it, and so do Sign out everywhere, Sign out other devices and his own Sign out on Salt Account, with every device's half. His account view names a passkey way in. Nothing here is his: no master passkey and no Face ID on the desk's vault, his word.</p>",
+   "<p><b>THE TEST PAGE WENT FIRST.</b> On his PC and Mac, NordPass made the test passkey and checked the face but gave no secret, which is why the Worker checks the signature itself. The Face ID test page is gone from both addresses.</p>",
+   "<p><b>PROOFS.</b> Two new suite sections, one driving the Worker with a real P-256 key and one the door; 15 mutations each turned a check red. The whole suite passed on this tree.</p>"
+  ]
+ },
+ {
   "v": "v957",
   "d": "30 Sep 2026",
   "t": "CH4-KS PAYS RM320 IN CASH; S215 SETTLES IN FULL",
