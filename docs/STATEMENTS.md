@@ -1002,6 +1002,11 @@ Theirs: 200 characters, 20 a Kuala Lumpur day (`e.threadCap`); his uncapped; the
 `m-thread-<at>`, a push topic of its own), a tap opening `#thread`. The page opens it in a Sheet from Home's card and a
 row on Account and reads it every `THREAD_POLL_MS` (2 seconds) only while the Sheet is open and the page showing. A test
 account's thread lives in its fixture (`exampleThread`, `exampleSay`); the desk cannot write one.
+**His side** (7b): the desk Worker's keyed `GET /threads` (each with its desk code) and `POST /threads/<username>`, which
+sends on only `{message}`, past `siteWords`, or `{noReply: true}`; `GET /orders` carries `threads`, and `/push/summary`'s
+lines take their thread lines too. On the desk each thread is a card of Waiting on you (`thrCard`): an Asked act while
+their line is the last and not marked No reply needed, else under Chat; read every 2 seconds (`THR_POLL`) only while one is
+open and the desk showing. `public/sw.js` never caches `/threads` (`salt-shell-v7`).
 
 **A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
 cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:

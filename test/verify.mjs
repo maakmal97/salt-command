@@ -48604,5 +48604,153 @@ await (async () => {
     "POST /thread on a test account's session lands in its fixture, and the order book holds nothing: " + JSON.stringify({ status: r.status, n: after.msgs.length }));
 })();
 
+section("Step 7b: the desk Worker reads every account's thread on its key, sends his line only past siteWords, and his banner carries their thread lines");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the relay was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", C = "CX1-AB";
+  const kv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const siteHits = [], sent = [];
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (x, i) => { siteHits.push((i && i.method) || "GET"); if (i && i.method === "POST") sent.push(String(x).replace(/^https:[/][/]stmt/, "") + " " + i.body);
+      return stmtW.fetch(new Request(x, i), senv); } } };
+  const desk = async (path, body, key) => {
+    const h = key === null ? {} : { "X-Salt-Key": key || "k-fixture" };
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), denv, { waitUntil: () => {} });
+    return { status: r.status, b: await r.json().catch(() => ({})) };
+  };
+  await O.sayThread(senv, U, { text: "Do you deliver to <b>Jalan Contoh</b>?" });
+  const list = await desk("/threads"), anon = await desk("/threads", undefined, null);
+  ok(list.status === 200 && list.b.threads.length === 1 && list.b.threads[0].code === C && list.b.threads[0].u === U && anon.status === 401,
+    "the desk Worker reads every thread on the write key, each with its desk code, and nobody else: " + JSON.stringify({ list: list.b, anon: anon.status }));
+  const orders = await desk("/orders");
+  ok(orders.status === 200 && (orders.b.threads || []).length === 1 && orders.b.threads[0].code === C,
+    "and the desk's orders read carries the threads beside the orders and the claims: " + JSON.stringify(orders.b.threads));
+  const n0 = siteHits.filter((m) => m === "POST").length;
+  const bad = await desk("/threads/" + U, { message: "From Salt Command with thanks" });
+  const code = await desk("/threads/" + U, { message: "for CX1-AB only" });
+  const level = await desk("/threads/" + U, { message: "your Gold price holds" });
+  ok(bad.status === 400 && code.status === 400 && level.status === 400 && siteHits.filter((m) => m === "POST").length === n0
+    && /names the desk/.test(bad.b.error) && /roster code/.test(code.b.error) && /names a level/.test(level.b.error),
+    "his line naming the desk, a roster code or a level is refused before it leaves the desk: " + JSON.stringify([bad.b.error, code.b.error, level.b.error]));
+  const good = await desk("/threads/" + U, { message: "Yes, any weekday.", extra: "dropped" });
+  const t = (await O.threadOf(senv, U));
+  ok(good.status === 200 && good.b.thread.code === C && t.msgs.slice(-1)[0].by === "desk" && t.msgs.slice(-1)[0].text === "Yes, any weekday.",
+    "a clean line reaches their thread as his: " + JSON.stringify(good.b.thread && good.b.thread.msgs));
+  await O.sayThread(senv, U, { text: "thanks" });
+  const q = await desk("/threads/" + U, { noReply: true, message: "Salt Command" });
+  ok(q.status === 200 && q.b.thread.quiet === q.b.thread.msgs.slice(-1)[0].at && q.b.thread.msgs.length === 3,
+    "No reply needed passes as itself alone, whatever else rides with it, and adds no line: " + JSON.stringify(q.b.thread && { quiet: q.b.thread.quiet, n: q.b.thread.msgs.length }));
+  ok(sent.includes("/desk/threads/" + U + ' {"message":"Yes, any weekday."}') && sent.includes("/desk/threads/" + U + ' {"noReply":true}'),
+    "only his message, or No reply needed alone, is what reaches the site: " + JSON.stringify(sent));
+  const test = await desk("/threads/0000-0000", { message: "hello" }), n1 = sent.length, odd = await desk("/threads/not-a-user", { message: "hello" });
+  ok(test.status === 404 && odd.status === 404 && sent.length === n1,
+    "a test account or no account at all is not a thread the desk can write, and a name not shaped as one never reaches the site: " + JSON.stringify([test.status, odd.status]));
+  /* his banner: the summary lines carry what they wrote on the thread since the mark */
+  const sum = await desk("/push/summary?since=" + encodeURIComponent("2020-01-01T00:00:00.000Z"));
+  ok(sum.status === 200 && (sum.b.lines || []).some((l) => l.t === "thanks") && (sum.b.lines || []).some((l) => /Jalan Contoh/.test(l.t)) && !(sum.b.lines || []).some((l) => /any weekday/.test(l.t)),
+    "his banner's summary carries their lines on the thread, never his own: " + JSON.stringify(sum.b.lines));
+})();
+
+section("Step 7b: the desk's service worker never answers /threads from its cache, and its cache name moved");
+await (async () => {
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const answered = (path) => {
+    const L = {}, told = [];
+    const ctx = { URL, console,
+      caches: { match: async () => undefined, open: async () => ({ put() {} }) },
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" } },
+      fetch: async () => ({ status: 200, type: "basic", redirected: false, clone() { return this; } }) };
+    vm.createContext(ctx); vm.runInContext(sw, ctx);
+    L.fetch({ request: { method: "GET", url: "https://salt-command.example" + path, mode: "cors" }, respondWith: (p) => told.push(p) });
+    return told.length;
+  };
+  const was = +((/salt-shell-v(\d+)/.exec(execFileSync("git", ["show", "c5b7a100:public/sw.js"], { cwd: REPO, encoding: "utf8" })) || [])[1] || 0);
+  const now = +((/salt-shell-v(\d+)/.exec(sw) || [])[1] || 0);
+  ok(answered("/threads") === 0 && answered("/threads/abcd-efgh") === 0 && answered("/icon-192.png") === 1 && now > was,
+    "a GET /threads goes to the network, never the cache, and the cache name moved past the one a phone may hold: " + JSON.stringify({ was, now }));
+})();
+
+section("Step 7b: his Chat in Enter: a thread waiting is a question under Waiting on you, the rest under Chat, his line checked and sent to the thread, read every 2 seconds only while one is open");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    const timers = [];
+    w.setInterval = (f, ms) => { timers.push({ f, ms, on: true }); return timers.length; };
+    w.clearInterval = (id) => { if (timers[id - 1]) timers[id - 1].on = false; };
+    const T = (u, code, msgs, quiet) => Object.assign({ id: "thread", u, code, kind: "thread", at: msgs[msgs.length - 1].at, msgs }, quiet ? { quiet } : {});
+    let threads = [T("abcd-efgh", "CC9-OKR", [{ at: "2026-09-29T01:00:00.000Z", by: "customer", text: "Open on <b>Sunday</b>?" }]),
+      T("hjkm-npqr", "CC8-TWO", [{ at: "2026-09-28T01:00:00.000Z", by: "customer", text: "thanks" }, { at: "2026-09-28T02:00:00.000Z", by: "desk", text: "Any time." }])];
+    const calls = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      calls.push({ p, post, body: init && init.body ? JSON.parse(init.body) : null });
+      const j = p === "orders" && !post ? { ok: true, orders: [], claims: [], threads: JSON.parse(JSON.stringify(threads)) }
+        : p === "threads" && !post ? { ok: true, threads: JSON.parse(JSON.stringify(threads)) } : { ok: true, push: { sent: 1 } };
+      return { ok: true, status: 200, json: async () => j };
+    };
+    const settle = () => new Promise((r) => setTimeout(r, 30));
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const box = D.getElementById("ordBox");
+    const acts = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
+    const groups = [...box.querySelectorAll(".ordlist .ordrows")].map((g) => [...g.querySelectorAll("button[data-row]")].map((b) => b.getAttribute("data-row")));
+    const eyebrows = [...box.querySelectorAll(".ordlist .ordrest")].map((e) => e.textContent);
+    ok(JSON.stringify(acts) === '["asked:t:abcd-efgh"]' && groups[0].join() === "t:abcd-efgh" && eyebrows.includes("Chat") && groups[groups.length - 1].join() === "t:hjkm-npqr"
+      && box.querySelector('button[data-of="asked"] .salt-tabs__count').textContent === "1",
+      "a thread whose last line is theirs is a question waiting on him, counted under Asked; an answered one is listed under Chat: " + JSON.stringify({ acts, groups, eyebrows }));
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const c1 = card("t:abcd-efgh");
+    ok(!!c1 && !c1.hidden && c1.innerHTML.includes("Open on &lt;b&gt;Sunday&lt;/b&gt;?") && !c1.querySelector(".ordthr b + span + br + b")
+      && /Chat, waiting for an answer/.test(c1.textContent) && !!c1.querySelector('button[data-ord="noreply"]'),
+      "its card draws the thread, their words escaped, says it waits, and offers No reply needed: " + c1.textContent.replace(/\s+/g, " ").slice(0, 160));
+    /* the 2-second read, only while a thread is open */
+    w.eval("ORD_SEL='t:abcd-efgh';ORD_OPENED=true;ordDraw();");
+    const poll = () => timers.filter((t) => t.on && t.ms === 2000);
+    ok(poll().length === 1, "a thread open on his screen is read every 2 seconds: " + JSON.stringify(timers.map((t) => [t.ms, t.on])));
+    threads = threads.map((t) => t.u === "abcd-efgh" ? Object.assign({}, t, { msgs: t.msgs.concat([{ at: "2026-09-29T01:01:00.000Z", by: "customer", text: "or Saturday" }]) }) : t);
+    const n0 = calls.filter((c) => c.p === "threads").length;
+    poll()[0].f(); await settle();
+    ok(calls.filter((c) => c.p === "threads").length === n0 + 1 && /or Saturday/.test(card("t:abcd-efgh").textContent),
+      "the tick reads the threads, and a new line of theirs is on the card within it");
+    Object.defineProperty(D, "hidden", { value: true, configurable: true });
+    poll()[0].f(); await settle();
+    Object.defineProperty(D, "hidden", { value: false, configurable: true });
+    ok(calls.filter((c) => c.p === "threads").length === n0 + 1, "a desk that is not showing reads nothing on the tick");
+    /* his line: checked here, then to the thread's own road */
+    const say = (t) => { card("t:abcd-efgh").querySelector('input[data-say="t:abcd-efgh"]').value = t; card("t:abcd-efgh").querySelector('button[data-ord="say"]').click(); };
+    const posts0 = calls.filter((c) => c.post).length;
+    say("for CC9-OKR only"); await settle();
+    ok(calls.filter((c) => c.post).length === posts0 && /roster code/.test(card("t:abcd-efgh").querySelector('[data-msg="t:abcd-efgh"]').textContent),
+      "a line carrying a roster code is refused on the desk and nothing is sent");
+    say("Saturday from nine."); await settle();
+    const sent = calls.filter((c) => c.post).pop();
+    ok(sent && sent.p === "threads/abcd-efgh" && JSON.stringify(sent.body) === '{"message":"Saturday from nine."}',
+      "a clean line goes to threads/<username> as his message: " + JSON.stringify(sent));
+    card("t:abcd-efgh").querySelector('button[data-ord="noreply"]').click(); await settle();
+    const nr = calls.filter((c) => c.post).pop();
+    ok(nr && nr.p === "threads/abcd-efgh" && JSON.stringify(nr.body) === '{"noReply":true}', "No reply needed goes the same road: " + JSON.stringify(nr));
+    /* an order's card open instead: the read stops */
+    w.eval("ORD_SEL='t:hjkm-npqr';ORD_OPENED=false;ordDraw();");
+    const sideBySide = String(w.eval("ordSideBySide()")) === "true";
+    ok(sideBySide || poll().length === 0, "with no thread open on his screen the 2-second read stops: " + poll().length);
+  } finally {
+    await new Promise((r2) => setTimeout(r2, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
