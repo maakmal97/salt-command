@@ -217,6 +217,21 @@ function listKeys(prefix, run = execFileSync) {
   return i < 0 ? [] : JSON.parse(t.slice(i)).map(k => String(k.name));
 }
 
+/* ---- HIS TEST ACCOUNT'S FIXTURE (29 Sep 2026, his instruction that it show every feature) ------------------------
+   The publish writes the test account's record no more than it did (v689); it writes BESIDE it, at testfix, an invented
+   account holding a case of every feature a customer sees (tools/testfix.mjs), sealed under the test account's key,
+   which its public password opens. `recText` is the store's u:0000-0000, or null where there is none: then nothing is
+   written, and a fixture left from before is inert, sealed for no account there is (making or unmaking one deletes it).
+   The Worker lays it over the test account alone (stmt/testfix.js), so nothing that counts reads it. Returns the put. */
+export async function fixtureEntry(recText, now = new Date()) {
+  const { FIX_KEY, TEST_PASS } = await import("../stmt/testfix.js");
+  let rec = null;
+  try { rec = recText ? JSON.parse(recText) : null; } catch (e) { rec = null; }
+  if (!rec || rec.test !== true || !rec.wrap) return null;
+  const { build, sealFixture } = await import("./testfix.mjs");
+  return { key: FIX_KEY, value: JSON.stringify(await sealFixture(build(now), rec, TEST_PASS)) };
+}
+
 /* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own */
 export async function main(argv = process.argv, { run = execFileSync, out = join(REPO, "statements", ".publish") } = {}) {
   const dryAt = argv.indexOf("--dry");
@@ -400,6 +415,17 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       + (standing ? " the " + standing + " standing link" + (standing === 1 ? "" : "s") + " read" : "")
       + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
       + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
+  }
+  /* the test account's fixture, read off its record in the store: a read that fails leaves the fixture as it is and
+     says so, since the test account is his and counts nowhere, and the publish of every real account goes on */
+  if (!dry) {
+    try {
+      let recText = null;
+      try { recText = String(againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "u:0000-0000"], { stdio: ["ignore", "pipe", "pipe"] }, run))); }
+      catch (e) { if (!/ - 404:/.test(wranglerSaid(e))) throw e; }
+      const fx = await fixtureEntry(recText && recText.indexOf("{") >= 0 ? recText.slice(recText.indexOf("{")) : null);
+      if (fx) { plan.puts.push(fx); console.log("and the test account's fixture, every feature a customer sees"); }
+    } catch (e) { console.log("::warning::the test account's fixture was not written: " + String((e && e.message) || e)); }
   }
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));

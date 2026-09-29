@@ -423,7 +423,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows
   the customer's username, never the roster code.
-- **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere.
+- **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere. **It shows every feature a
+  customer sees**: the publish seals an invented account (`tools/testfix.mjs`, a case of each) at KV `testfix`, and
+  the Worker lays it over the test account alone (`stmt/testfix.js` `accountRecord`, the one read of a `u:` record on
+  a customer road), never under `order:`, `aclaim:` or `g:`, so no count reads it; an example order is shown and never
+  moves (`e.example`), and it makes no link (`e.exampleLink`). **A feature a customer sees lands with its case**: a line in `FEATURES` and the case in
+  `build()`, or the suite is red; states, ways, rails and claim answers are asked for off the code itself.
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404

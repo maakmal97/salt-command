@@ -60,6 +60,7 @@ import { wakeCustomer } from "./push.js";
 import { sessKey } from "./signin.js";
 import { refusal } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
+import { accountRecord } from "./testfix.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -1058,7 +1059,7 @@ export async function dropOrders(env, u) {
 
 export async function placeOrder(env, u, body) {
   /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
-  const rec = await env.STMT.get("u:" + u, "json"), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";
+  const rec = await accountRecord(env, u), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";   /* the test account's fixture list */
   const caps = (prices && prices.caps) || null;   /* V3: an order over its book's cap is paid in advance */
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   if (onBook(env)) {

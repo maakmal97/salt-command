@@ -36,6 +36,7 @@ import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES } from "./orders.js";
+import { TEST_USER } from "./testfix.js";
 import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
@@ -1179,7 +1180,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
-      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
+      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USER__", JSON.stringify(TEST_USER))
       /* S7 7.1: the places, so the script names them as the markup does */
       .replace("__PLACES__", JSON.stringify(PLACES))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
@@ -1214,9 +1215,11 @@ const CLIENT_JS = `
     var lines=BULL.lines||[]; box.hidden=!lines.length; box.textContent='';
     lines.forEach(function(l){ var p=document.createElement('p'); p.textContent=l; box.appendChild(p); });
   }
+  /* the test account asks on its session, and is answered the fixture's notice while none of his is set (stmt/testfix.js) */
+  var TESTU=__TEST_USER__;
   async function bullRead(){
     try{
-      var r=await fetch('/bulletin',{cache:'no-store'}); var j=await r.json();
+      var r=await fetch('/bulletin',{cache:'no-store',headers:user===TESTU&&session?{'X-Stmt-Session':session}:{}}); var j=await r.json();
       if(!j||!j.ok) return;
       if(JSON.stringify(j.lines||[])!==JSON.stringify(BULL.lines||[])) bullDraw({lines:j.lines||[]});
     }catch(e){}
@@ -4570,7 +4573,7 @@ const CLIENT_JS = `
     }
   }
   async function follow(stale){
-    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
+    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(user===TESTU) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */

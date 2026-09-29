@@ -20495,11 +20495,13 @@ await (async () => {
     const C89 = await import("../tools/stmt-crypto.mjs"), key89 = crypto.getRandomValues(new Uint8Array(32));
     const make89 = { make: true, key: Buffer.from(key89).toString("base64"), wrap: await C89.wrapKey(TP89, key89), wrapMaster: await C89.wrapKey("mp89", key89) };
     ok((await post89("/all/test", make89, null)).status === 401, "making one needs Access");
+    await kv89.put("testfix", JSON.stringify({ v: 1, salt: "b2xk" }));   /* a fixture sealed for a making before this one */
     const made = await (await post89("/all/test", make89)).json();
     const rec89 = await kv89.get("u:0000-0000", "json");
     ok(made.ok && made.made && made.username === TU89 && made.password === TP89 && rec89 && rec89.test === true
       && rec89.verifier && rec89.wrap && rec89.wrapMaster && rec89.env && rec89.live && rec89.prices,
       "one tap makes it, with its own key, its own statement and its own price list");
+    ok((await kv89.get("testfix")) === null, "and the fixture sealed for a making before goes with the tap, for the next publish to seal again (29 Sep 2026)");
 
     /* it opens like any account, and nothing about it came from the laptop */
     const open89 = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
@@ -20540,6 +20542,7 @@ await (async () => {
     await kv89.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
     await kv89.put("aclaim:0000-0000:a20260918000000-aaaa", JSON.stringify({ id: "a20260918000000-aaaa", u: TU89 }));   /* S6: a claim against the account */
     await kv89.put("aclaim:aaaa-bbbb:a20260918000000-bbbb", JSON.stringify({ id: "a20260918000000-bbbb", u: "aaaa-bbbb" }));
+    await kv89.put("testfix", JSON.stringify({ v: 1, salt: rec89.wrap.salt }));
     const gone = await (await post89("/all/test", { make: false })).json();
     ok(gone.ok && gone.made === false && gone.removed >= 5 && !(await kv89.get("u:0000-0000"))
       && !(await kv89.get("order:0000-0000:20260918-aaaa")) && !(await kv89.get("push:0000-0000:abc"))
@@ -20548,10 +20551,143 @@ await (async () => {
       && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb"))
       && !(await kv89.get("aclaim:0000-0000:a20260918000000-aaaa")) && !!(await kv89.get("aclaim:aaaa-bbbb:a20260918000000-bbbb")),
       "one tap takes it away with its orders, its claims, its opens, its ticks and its phones, and touches no one else's");
+    ok((await kv89.get("testfix")) === null, "and unmaking it takes its fixture too");
     const after = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
       headers: { "content-type": "application/json" }, body: JSON.stringify({ u: TU89, password: TP89 }) }), env89);
     ok(after.status === 401, "and the zeros open nothing once it is gone");
   } finally { globalThis.fetch = realFetch89; }
+})();
+section("29 Sep 2026: the test account shows every feature a customer sees, and counts nowhere");
+await (async () => {
+  /* HIS INSTRUCTION OF 29 SEP 2026: the test account always shows every current feature, so he can try any of them by
+     signing in. tools/testfix.mjs builds an invented account, the publish seals it at testfix, and the Worker lays it over
+     the test account alone (stmt/testfix.js). Every code and word is invented; each assertion was proved red by mutation. */
+  const F = await import("../tools/testfix.mjs"), TF = await import("../stmt/testfix.js"), P = await import("../tools/stmt-publish.mjs");
+  const C = await import("../tools/stmt-crypto.mjs"), M = await import("../tools/make_statements.mjs"), O = await import("../stmt/orders.js");
+  const E = (await import("../engine/position.mjs")).default;
+  const sw = (await import("../stmt/worker.js")).default;
+  const now = new Date(), TU = TF.TEST_USER, TP = TF.TEST_PASS;
+  /* a real account's position, read before anything invented is built */
+  const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")), day = "2026-09-29";
+  const code = E.ownerCode(B.sales.find((s) => s.customer).customer), before = JSON.stringify(M.partyTotals(code, day));
+  const fix = F.build(now);
+
+  /* ---- 1. A CASE OF EVERY FEATURE, and the check is red on a fixture missing one ---- */
+  const missing = (f) => F.FEATURES.filter(([, t]) => !t(f)).map(([n]) => n).concat(F.derivedCases(f).filter((c) => !c[1]).map((c) => c[0]));
+  ok(missing(fix).length === 0 && F.FEATURES.length >= 27 && F.derivedCases(fix).length >= 14,
+    "the test account holds a case of every feature a customer sees, each line and each state, way, rail and claim answer the code names: "
+      + JSON.stringify(missing(fix)));
+  /* a rail the site stops taking is no fixture lost: with no account taking a transfer, the rest is still built */
+  const { PAY_ACCOUNTS: PA } = await import("../stmt/pay.js"), shut = PA.filter((a) => a.transfer);
+  let offTransfer = null;
+  try { shut.forEach((a) => { a.transfer = false; }); offTransfer = missing(F.build(now)); } catch (e) { offTransfer = ["threw: " + e.message]; }
+  finally { shut.forEach((a) => { a.transfer = true; }); }
+  ok(shut.length > 0 && JSON.stringify(offTransfer) === JSON.stringify(["a transfer he received"]),
+    "and a rail the site stops taking costs its own case and nothing else: " + JSON.stringify(offTransfer));
+  const noDecl = Object.assign({}, fix, { orders: fix.orders.filter((o) => o.status !== "declined") });
+  ok(missing(noDecl).includes("state declined") && missing(noDecl).includes("not taken, with his reason")
+    && missing(Object.assign({}, fix, { bulletin: { lines: [] } })).join() === "the bulletin",
+    "and a fixture without a case is red, by its line and off the code: " + JSON.stringify(missing(noDecl)));
+
+  /* ---- 2. THE REAL BOOK IS NEVER READ WITH THE INVENTED ROWS IN IT ---- */
+  let threw = false;
+  try { M.liveFor({ sales: [{ date: "2026-09-01", customer: F.FIX_CODE, qty: 1, total: 1, get cash() { throw new Error("invented"); } }] }, F.FIX_CODE, now); }
+  catch (e) { threw = true; }
+  ok(threw && before === JSON.stringify(M.partyTotals(code, day)) && M.liveFor({ sales: [] }, code, now) === null
+    && !B.sales.concat(B.purchases || []).some((s) => String(s.customer || "").startsWith(F.FIX_CODE)),
+    "the invented statement is written off the invented book alone, and the real book is back as it was, a throw included");
+
+  /* ---- 3. THE WORKER: the test account opens on the fixture, and nobody else does ---- */
+  const kv = new KV(), key = crypto.getRandomValues(new Uint8Array(32));
+  const trec = { u: TU, test: true, issued: day, issues: [day], verifier: await C.makeVerifier(TP), wrap: await C.wrapKey(TP, key),
+    env: await C.encryptWith(key, JSON.stringify({ statements: [] })), prices: Object.assign({ digest: "own-stub" }, await C.encryptWith(key, "{}")) };
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const rrec = { u: un, issued: day, issues: [day], verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })), prices: Object.assign({ digest: "real-digest" }, await C.encryptWith(ck, "{}")) };
+  await kv.put("u:" + TU, JSON.stringify(trec)); await kv.put("u:" + un, JSON.stringify(rrec));
+  const put = await P.fixtureEntry(JSON.stringify(trec), now), stored = JSON.parse(put.value);
+  await kv.put(put.key, put.value);
+  const senv = { STMT: kv, STMT_MASTER: "master-pass", STMT_DESK_KEY: "desk-key" };
+  const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+  const sj = (path, body, headers = {}) => sreq(path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const open = async (u, p) => (await sw.fetch(sj("/open", { u, password: p }), senv)).json();
+  const o1 = await open(TU, TP), S = { "X-Stmt-Session": o1.session };
+  const acct = await (await sw.fetch(sreq("/account", { headers: S }), senv)).json();
+  const live1 = o1.live ? JSON.parse(await C.decryptWith(key, o1.live)) : null;
+  ok(put.key === "testfix" && o1.ok && o1.assoc === true && o1.prices.digest === stored.prices.digest && !!o1.card && live1 && live1.pay.overdue.rm > 0
+    && acct.assoc === true && acct.live.ct === stored.live.ct && acct.prices.ct === stored.prices.ct,
+    "the test account opens, and re-reads, on the fixture's statement, list and card, sealed so its own zeros open them");
+  await kv.put("testfix", JSON.stringify(Object.assign({}, stored, { salt: "c2FsdA==" })));
+  const o2 = await open(TU, TP), r2 = await open(un, pw);
+  await kv.put(put.key, put.value);
+  ok(o2.ok && o2.assoc === false && o2.prices.digest === "own-stub" && !o2.card && r2.ok && r2.assoc === false && r2.prices.digest === "real-digest",
+    "a fixture sealed for another making of the account is not served, and no other account is ever served one");
+
+  /* Place reads the fixture's list, so an order over its cap is paid in advance */
+  const placed = await (await sw.fetch(sj("/orders", { product: "salt", qty: 12.5, mode: "collect", unit: 104, total: 1300, week: "", digest: stored.prices.digest }, S), senv)).json();
+  ok(placed.ok && placed.order.prepay === true, "an order he places on it is quoted off the fixture's list, and over its cap is paid in advance: " + JSON.stringify(placed.error || ""));
+  const got = await (await sw.fetch(sreq("/orders", { headers: S }), senv)).json(), ids = got.orders.map((o) => o.id);
+  ok(stored.orders.every((o) => ids.includes(o.id)) && ids.includes(placed.order.id) && stored.claims.every((c) => got.claims.some((x) => x.id === c.id))
+    && !got.orders.some((o) => "ledgerKey" in o),
+    "its orders are its own and the examples, the claims beside them, as the page is handed any account's: " + ids.length);
+  const ex = await sw.fetch(sj("/orders/" + stored.orders[0].id + "/cancel", {}, S), senv), exb = await ex.json();
+  ok(ex.status === 409 && exb.code === "example", "a move on an example order is refused in its own words, never as a missing order: " + JSON.stringify(exb));
+  const refs = await (await sw.fetch(sreq("/my/refs", { headers: S }), senv)).json();
+  ok(refs.ok && ["open", "waiting", "declined", "withdrawn"].every((s) => refs.refs.some((r) => r.state === s)),
+    "its links, as an associate's, are there in each state: " + JSON.stringify((refs.refs || []).map((r) => r.state)));
+  const mint = await sw.fetch(sj("/my/refs", {}, S), senv), mintb = await mint.json();
+  let wd = {}; try { wd = JSON.parse(await (await sw.fetch(sj("/my/refs/" + stored.refs[0].id + "/revoke", {}, S), senv)).text()); } catch (e) { wd = {}; }
+  ok(mint.status === 409 && mintb.code === "exampleLink" && wd.code === "exampleLink" && !(await kv.list({ prefix: "g:" })).keys.length,
+    "and it makes no real link, which would wait on him and outlive it, nor withdraws an example: " + JSON.stringify([mintb.code, wd.code]));
+  const bull = async (h) => (await (await sw.fetch(sreq("/bulletin", { headers: h }), senv)).json()).lines.join("|");
+  const b1 = await bull(S), b0 = await bull({});
+  await kv.put("bulletin", JSON.stringify({ lines: ["Set by him"] }));
+  const b2 = await bull(S);
+  await kv.delete("bulletin");
+  ok(b1 === stored.bulletin.lines.join("|") && b0 === "" && b2 === "Set by him",
+    "asked on its session it reads the fixture's notice while none is set, and his own once one is: " + JSON.stringify([b1, b0, b2]));
+
+  /* and every road that hands a customer their record reads it through the one overlay: a raw read of a record's JSON
+     anywhere else on the site would open the test account on its stub (stmt/testfix.js accountRecord). A tripwire on
+     the two spellings the site uses, a key read where it is built; a key built first and read later passes it */
+  const raw = readdirSync(join(REPO, "stmt")).filter((f) => f.endsWith(".js") && f !== "testfix.js")
+    .filter((f) => /STMT\.get\((?:"u:" \+|UKEY\()[^)]*\)?, "json"\)/.test(readFileSync(join(REPO, "stmt", f), "utf8")));
+  ok(raw.length === 0, "no customer road reads an account's record around the overlay: " + raw.join());
+
+  /* ---- 4. COUNTED NOWHERE: every reading the desk and the chase make is the same with the fixture as without ---- */
+  const reads = async () => JSON.stringify([await O.allOrders(senv, true), await O.allClaims(senv, true), await O.ordersOwing(senv), await O.toChase(senv, now)]);
+  const withFix = await reads();
+  await kv.delete("testfix");
+  const without = await reads();
+  await kv.put(put.key, put.value);
+  ok(withFix === without && withFix.includes(placed.order.id) && !/-ex[0-9]{2}"/.test(withFix),
+    "the desk's reconcile, its claims and the chase read the same with the fixture as without: only what he placed himself");
+
+  /* ---- 5. THE PAGE, signed in with the zeros through the real Worker: the examples drawn and the notice read on its session ---- */
+  const { landingPage } = await import("../stmt/page.js");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const asked = [];
+  const dom = new JSDOM(landingPage("", "n29", null), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.fetch = async (path, opts = {}) => {
+      const h = Object.assign({}, opts.headers || {});
+      if (String(path) === "/bulletin") asked.push(h["X-Stmt-Session"] || "");
+      return sw.fetch(sreq(String(path), Object.assign({}, opts, { headers: h })), senv);
+    };
+  } });
+  const d = dom.window.document;
+  try {
+    d.getElementById("un").value = TU; d.getElementById("pw").value = TP;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    const bl = () => [...d.querySelectorAll("#bull > p")].map((x) => x.textContent).join("|");
+    for (let i = 0; i < 150 && bl() !== stored.bulletin.lines.join("|"); i++) await new Promise((r) => setTimeout(r, 100));
+    ok(bl() === stored.bulletin.lines.join("|") && asked.some((x) => x.length > 0)
+      && !d.getElementById("payHead").hidden,
+      "signed in with the zeros, the page reads the notice on its session at once and draws what is to pay: " + JSON.stringify([bl(), asked.length]));
+  } finally { dom.window.close(); }
 })();
 section("Fold 2.7: the test account is wrapped on his page, the Worker never derives above 100,000 rounds, and unmaking it empties the order book");
 await (async () => {
@@ -24330,8 +24466,23 @@ await (async () => {
       && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
       "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 9,
-      "in nine spawns where it took nineteen: the links in one bulk get, no get per link, and no list but the links': " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 10 && cP.includes("kv key get u:0000-0000"),
+      "in ten spawns where it took nineteen: the links in one bulk get, no get per link, no list but the links', and the test account's record read for its fixture: " + cP.join());
+
+    /* ---- 29 Sep 2026: the test account's fixture, sealed beside its record and never in it ---- */
+    const TK55 = crypto.getRandomValues(new Uint8Array(32)), trec55 = JSON.stringify({ u: "0000-0000", test: true, wrap: await C55.wrapKey("0000-0000-0000-0000", TK55) });
+    const sT = site0(); sT.set("u:0000-0000", trec55);
+    const cT = [], saidT = await run55(["--no-prices", "--no-retire"], wr55(sT, new Map(), cT));
+    let fx55 = null; try { fx55 = JSON.parse(sT.get("testfix")); } catch (e) { fx55 = null; }
+    const live55 = fx55 && fx55.live ? JSON.parse(await C55.decryptWith(TK55, fx55.live)) : null;
+    ok(saidT.includes("returned") && sT.get("u:0000-0000") === trec55 && live55 && live55.pay && fx55.orders.length > 0 && !sP.has("testfix"),
+      "a publish seals the test account's fixture beside its record, under the key its zeros open, the record untouched; none where there is no test account: " + saidT.slice(-2));
+    const cQ = [], sQ = site0(), wQ = wr55(sQ, new Map(), cQ);
+    const saidQ = await run55(["--no-prices", "--no-retire"], (cmd, argv, o) => {
+      if (argv[argv.length - 1] === "u:0000-0000") throw Object.assign(new Error("Command failed"), { status: 1, stderr: "X [ERROR] fetch failed\n" });
+      return wQ(cmd, argv, o); });
+    ok(saidQ.includes("returned") && saidQ.some((l) => /^::warning::the test account's fixture was not written/.test(l)) && sQ.has("roster"),
+      "and a read of the test account that fails says so and publishes every real account as ever: " + saidQ.slice(-3));
 
     /* ---- 27 Sep 2026: a failed read of the store's issue is not a fresh store ---- */
     /* the issue read failing as execFileSync hands wrangler's failure back: its [ERROR] line reaches the error only down

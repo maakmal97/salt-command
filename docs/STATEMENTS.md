@@ -1146,6 +1146,29 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `approved === false` test), and its rail's foot says "N links wait in Salt Account".
 - **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
   system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
+- **The test account shows every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
+  by signing in with the zeros. `tools/testfix.mjs` `build(now)` makes an invented account: its orders driven through
+  the order book's own `decidePlace`, `decideDesk`, `decideCustomer` and `applyEvent`, so their shape cannot drift;
+  an invented book derived from those orders (each order on the book a row, dated its placing day, with two rows he
+  entered on the desk, one on credit and one overdue), whose live statement is the real renderer's (`liveFor` in
+  `tools/make_statements.mjs`, which swaps the book's two lists for the call and puts them back); an invented price
+  list with a cap on salt and a book priced soon; account claims, guest links, an associate's card and a bulletin.
+  Every publish (`tools/stmt-publish.mjs` `fixtureEntry`) reads `u:0000-0000`, opens its content key with the public
+  zeros, seals the statement, the list and the card under it, and puts the lot at KV `testfix`, stamped with the
+  record's wrap salt; with no test account it writes nothing, and a read that fails warns and publishes the rest.
+  **The Worker lays it over the test account alone** (`stmt/testfix.js`): `accountRecord` is the one read of a `u:`
+  record on every customer road (open, re-read, remembered, link, hand-over, Place, links, his view of the account),
+  and serves the fixture's documents and the associate mark only for the test account whose salt it carries;
+  `GET /orders` adds its orders and claims, `/my/refs` its links, and `/bulletin`, asked on the test account's session,
+  its notice while he has none set. **Nothing of it is written where an order, a claim or a link lives**, so the desk's
+  reconcile, his lists, the chase and the report card cannot read it; a move on an example order (`-exNN`) answers
+  `e.example`, and it makes and withdraws no link (`e.exampleLink`): a real one would wait on him in Salt Account and
+  outlive the account. Making or unmaking the account deletes `testfix`, and the next publish seals a new one.
+  **The fixture carries a waiting claim**, which reopens ordering (his D9, amended), so the test account can place an
+  order; the held page is not shown there and stays the suite's. **A feature a customer sees lands with its case**:
+  `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
+  offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
+  Features that land later (Step 1b's notices, F10 feedback, F15's delivery fee) are added by the lane that builds them.
 - **The test account is wrapped on his page** (fold 2.7): Make a test account makes the key and wraps it under the
   zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`), and
   `POST /all/test` takes `{make: true, key, wrap, wrapMaster}`, checks their shape and seals under the key. The

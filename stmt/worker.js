@@ -50,6 +50,7 @@ import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
+import { TEST_USER, TEST_PASS, FIX_KEY, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample, exampleRefusal, exampleLinkRefusal } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -79,13 +80,11 @@ const notFound = () => new Response("Not found", {
 });
 
 /* ---- THE TEST ACCOUNT (v689, his instruction of 18 Sep 2026) ---------------------------------
- * One account he can open anywhere, that counts nowhere, and that he can destroy with one tap.
- * ITS NAME IS THE POINT: zeros are not in the alphabet a real username is drawn from, so this one
- * cannot collide with an account and cannot be arrived at by mistyping one. Both are the exception
- * stated here and nowhere else. It is made with a random key of its own, so no statement, no price
- * list and no laptop secret is involved in it; his page makes the key and its wraps (makeTest). */
-export const TEST_USER = "0000-0000";
-export const TEST_PASS = "0000-0000-0000-0000";
+ * One account he can open anywhere, that counts nowhere, and that he can destroy with one tap. Its
+ * name and password are stated in stmt/testfix.js, with the fixture laid over it (29 Sep 2026). It is
+ * made with a random key of its own, so no statement, no price list and no laptop secret is involved
+ * in it; his page makes the key and its wraps (makeTest). */
+export { TEST_USER, TEST_PASS };
 const TEST_REC = "u:" + TEST_USER;
 
 /** Case and punctuation are forgiven; anything that is not eight symbols of the alphabet is "". */
@@ -243,7 +242,7 @@ async function handleOpen(request, env) {
      a different value; the checks keep their order (address, empty username, override, account lockout). An
      empty username reads no record, as before. */
   const [ipFails, got, mFails, uFails] = await Promise.all([
-    readN(ipKey), u ? env.STMT.get(UKEY(u), "json") : null, readN(mKey), readN(uKey)]);
+    readN(ipKey), u ? accountRecord(env, u) : null, readN(mKey), readN(uKey)]);   /* the test account with its fixture */
   if (ipFails >= MAX_IP_FAILS) return tooMany();
   if (!u) { await bump(ipKey, ipFails); return refused(); }
 
@@ -351,7 +350,7 @@ async function handleCustomer(request, env, p, m) {
      and never a wrap, because the page still holds the key it opened them with */
   if (p === "/account") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    const acct = await env.STMT.get("u:" + u, "json");
+    const acct = await accountRecord(env, u);
     if (!acct) return signinAgain("signinOrders");
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
@@ -394,7 +393,7 @@ async function handleCustomer(request, env, p, m) {
   }
   if (p === "/orders") {
     /* S6 6.6: and their claims against the account beside the orders */
-    if (m === "GET") return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView), claims: (await claimsOf(env, u)).map(claimView) });
+    if (m === "GET") return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView))));
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
@@ -443,6 +442,7 @@ async function handleCustomer(request, env, p, m) {
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (isExample(u, mm[1])) return refuse(exampleRefusal());   /* the test account's examples are shown and never move */
   /* F13: a claim on an order carries its slip the same way; on any other move no claim names it, so none is filed */
   const big = mm[2] === "pay" ? slipTooBig(request) : null;
   if (big) return refuse(big);
@@ -501,12 +501,13 @@ async function handleMyRefs(request, env, p, m, origin) {
   const u = await sessionUser(request, env);
   if (!u) return signinAgain("signinLinks");
   let acct = null;
-  try { acct = await env.STMT.get("u:" + u, "json"); } catch (e) { acct = null; }
+  try { acct = await accountRecord(env, u); } catch (e) { acct = null; }
   if (!acct || acct.assoc !== true) return notFound();
 
   if (p === "/my/refs") {
-    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
+    if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).concat(await examplesRefs(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (u === TEST_USER) return refuse(exampleLinkRefusal());   /* its links are the fixture's (stmt/testfix.js) */
     const mine = await refsBy(env, u);
     /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
     if (mine.filter((r) => !r.revoked).length >= MAX_PER_ASSOC)
@@ -519,6 +520,7 @@ async function handleMyRefs(request, env, p, m, origin) {
   }
   const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
   if (!mm) return notFound();
+  if (u === TEST_USER && m === "POST") return refuse(exampleLinkRefusal());
   const id = normRef(mm[1]);
   if (!id) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -539,7 +541,7 @@ async function handleRemember(request, env) {
   const tok = b && typeof b.token === "string" && REM_RE.test(b.token) ? b.token : null;
   const { key, rec, raw } = tok ? await readRem(env, tok) : {};
   if (!rec || !rec.u) return refused();
-  const acct = await env.STMT.get("u:" + rec.u, "json");
+  const acct = await accountRecord(env, rec.u);
   if (!acct) { await env.STMT.delete(key); if (raw) await env.STMT.delete(raw); await unpoint(env, rec.u, key); return refused(); }
   await markSeen(env, rec.u, acct, "remembered", request);
   /* S3 3.6, HIS DECISION D1 OF 24 SEP 2026: KEEP ME SIGNED IN RUNS THIRTY DAYS FROM THE LAST OPEN, not from the tick,
@@ -599,7 +601,7 @@ async function handleSignin(request, env) {
   }
   const rec = tok ? await burnSignin(env, tok, b && b.nonce) : null;
   if (!rec) return refused();
-  const acct = await env.STMT.get("u:" + rec.u, "json");
+  const acct = await accountRecord(env, rec.u);
   if (!acct) return refused();
   await markSeen(env, rec.u, acct, "link", request);
   const session = await openSession(env, rec.u, "link", request);
@@ -655,7 +657,7 @@ async function handleHandover(request, env, p, m) {
   const ipN = byKey ? 0 : await readN(HO_FAIL(who)), siteN = byKey ? 0 : await readN(HO_SITE);
   if (ipN >= MAX_HO_FAILS || siteN >= MAX_HO_SITE) return tooManyNow();
   const rec = await burnHandover(env, b);
-  const acct = rec ? await env.STMT.get("u:" + rec.u, "json") : null;
+  const acct = rec ? await accountRecord(env, rec.u) : null;
   if (!acct && byKey) return refused();
   if (!acct) {
     /* KV takes one write to a key a second, and the site-wide count is one key: a put it refuses is a brake that
@@ -1063,10 +1065,12 @@ async function makeTest(env, body) {
   };
   if (wrapMaster) rec.wrapMaster = wrapMaster;
   await env.STMT.put(TEST_REC, JSON.stringify(rec));
+  /* a fixture sealed for an account made before is inert, its salt not this one's; it goes, and the next publish seals one */
+  await env.STMT.delete(FIX_KEY);
   return rec;
 }
 async function unmakeTest(env) {
-  const gone = [TEST_REC, "seen:" + TEST_USER];
+  const gone = [TEST_REC, "seen:" + TEST_USER, FIX_KEY];
   for (const pre of ["order:" + TEST_USER + ":", "aclaim:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {   /* S6: and its claims */
     let cursor;
     do {
@@ -1419,11 +1423,11 @@ export default {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
         const u = normUser(om[1]);
         if (!u) return notFound();
-        const acct = await env.STMT.get("u:" + u, "json");
+        const acct = await accountRecord(env, u);
         if (!acct) return notFound();
-        const refs = acct.assoc === true ? (await refsBy(env, u)).map((r) => mineOut(url.origin, r)) : [];
-        /* S6 fix: their orders as their page is handed them, so his view nets what theirs nets */
-        return json({ ok: true, orders: (await ordersOf(env, u)).map(customerView), claims: (await claimsOf(env, u)).map(claimView), refs, max: MAX_PER_ASSOC });   /* S6 6.6 */
+        const refs = acct.assoc === true ? (await refsBy(env, u)).concat(await examplesRefs(env, u)).map((r) => mineOut(url.origin, r)) : [];
+        /* S6 fix: their orders as their page is handed them, so his view nets what theirs nets; the test account's with its examples */
+        return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView)), { refs, max: MAX_PER_ASSOC }));   /* S6 6.6 */
       }
       /* S9 9.3: AN ACCOUNT'S OWN SCREEN, read as it opens: how they got in, each way in with its moment and the kind
          of device, off the account's seen: record. Reading only. */
@@ -1579,7 +1583,13 @@ export default {
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      return json(Object.assign({ ok: true }, await readBulletin(env)));
+      /* the test account, asking on its session, sees the fixture's notice while he has none of his own set */
+      const bull = await readBulletin(env);
+      if (!bull.lines.length && env.STMT && request.headers.get("X-Stmt-Session")) {
+        const ex = await exampleBulletin(env, await sessionUser(request, env));
+        if (ex && Array.isArray(ex.lines)) bull.lines = ex.lines.filter((l) => typeof l === "string");
+      }
+      return json(Object.assign({ ok: true }, bull));
     }
     /* v710: THE LINK SERVES THE ORDINARY DOOR, whatever the token is. The page reads the token off
        its own address and posts it; an expired or invented one lands the reader on the door rather

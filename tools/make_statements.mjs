@@ -61,8 +61,8 @@ const BASE_URL = siteBaseUrl();
 const book = JSON.parse(readFileSync(BOOK, "utf8"));
 
 /* the desk globals the lifted functions read, bound to the same sources the desk binds
-   them to: the book's own declarations, and the position engine's own functions */
-const sales = book.sales;
+   them to: the book's own declarations, and the position engine's own functions. `let`, for liveFor alone */
+let sales = book.sales;
 /* v782: the books in the BOOK's own order, salt first. His standing instruction of 11 Aug,
    restated on the 13th: salt before oil wherever the two appear separately. An id the order does
    not name sorts last rather than being dropped, which is the same rule PROD_IDS keeps on the
@@ -74,7 +74,7 @@ const bookOrder = (ids) => {
     return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
   });
 };
-const customerRefunds = book.customerRefunds || [];
+let customerRefunds = book.customerRefunds || [];
 const { txStat, txDates, txOwed } = POSITION_ENGINE;   /* v741: what they owe is the goods and the delivery together */
 const esc = x => ('' + (x == null ? '' : x)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 /* "03 Sep 2026" off a Date's own clock; the month from MON3, because en-GB writes Sept (24 Sep 2026) */
@@ -902,6 +902,16 @@ export function liveStatement(party, now, user) {
   const owed = +accountTotals(rows, o.refunds).owed.toFixed(2);
   /* S6: and beside it what is to pay now, overdue and coming up, sealed the same way */
   return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)), owed, pay: payDue(party, today) };
+}
+
+/* THE TEST ACCOUNT'S LIVE DOCUMENT (29 Sep 2026, his instruction that it show every feature): the same renderer over an
+   INVENTED book (tools/testfix.mjs), so its statement, owed and pay are what a real account's would be. The book's two
+   lists are swapped for the call and put back whatever happens; nothing here is asynchronous, so no other reading can
+   come between. The real book is never written and never read with the invented rows in it. */
+export function liveFor(invented, party, now, user) {
+  const was = [sales, customerRefunds];
+  sales = (invented && invented.sales) || []; customerRefunds = (invented && invented.customerRefunds) || [];
+  try { return liveStatement(party, now, user); } finally { [sales, customerRefunds] = was; }
 }
 
 /* THE RECORDS AS THE DEPLOY PUBLISHES THEM: the newest issue's records, each with the live
