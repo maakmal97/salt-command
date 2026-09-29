@@ -23225,13 +23225,13 @@ await (async () => {
     return shown[0];
   };
   /* Step 1b: a kind is a title key with no dot after news.; its body is news.<kind>.b, or news.<kind>.<case> for the case
-     the wake carries, else Tap to open it (Open Salt Counter to see it for a decline or cancel with no reason) */
+     the wake carries, else Tap to open it (Open Salt Counter to see it for a decline, cancel or line with no words) */
   const kinds = Object.keys(WD.EN).filter((k) => /^news[.][a-z-]+$/.test(k) && !/^news[.](tap|open|order|update)$/.test(k)).map((k) => k.slice(5));
   const seen = [];
   for (const k of kinds) {
     const subs = Object.keys(WD.EN).filter((x) => x.startsWith("news." + k + ".")).map((x) => x.slice(6 + k.length));
     for (const v of subs.length ? subs : [""]) {
-      const want = [WD.EN["news." + k], WD.EN["news." + k + "." + (v || "b")] || WD.EN[/^(declined|cancelled)$/.test(k) ? "news.update" : "news.tap"]];
+      const want = [WD.EN["news." + k], WD.EN["news." + k + "." + (v || "b")] || WD.EN[/^(declined|cancelled|reply)$/.test(k) ? "news.update" : "news.tap"]];
       seen.push([k + (v ? "." + v : ""), await show(v && v !== "b" ? { k, o: "20260925101500-ab12", v } : { k, o: "20260925101500-ab12" }), want]);
     }
   }
