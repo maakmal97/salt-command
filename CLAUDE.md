@@ -412,7 +412,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from
   their oldest unpaid handover, then at 10:00, 14:00 and 18:00 (`chaseDue`), from
   the day after the handover (`graceOver`), paused while a claim of theirs waits (`claimWaits`), in its own words (`due`); one wake a slot per customer, capped by the chase
-  mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
+  mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test accounts are
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.
 - **An associate's own card** (`rec.card`), every book's sales progress; the reward on the tiered books
@@ -423,12 +423,16 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows
   the customer's username, never the roster code.
-- **The test account** `0000-0000`, password `0000-0000-0000-0000`, counts nowhere. **It shows every feature a
-  customer sees**: the publish seals an invented account (`tools/testfix.mjs`, a case of each) at KV `testfix`, and
-  the Worker lays it over the test account alone (`stmt/testfix.js` `accountRecord`, the one read of a `u:` record on
-  a customer road), never under `order:`, `aclaim:` or `g:`, so no count reads it; an example order is shown and never
-  moves (`e.example`), and it makes no link (`e.exampleLink`). **A feature a customer sees lands with its case**: a line in `FEATURES` and the case in
-  `build()`, or the suite is red; states, ways, rails and claim answers are asked for off the code itself.
+- **The test accounts** `0000-0000` (open) and `0000-0001` (locked, his answer of 29 Sep 2026), password
+  `0000-0000-0000-0000` for both, count nowhere, and are made and unmade together. **Between them they show every
+  feature a customer sees**: the publish seals an invented account for each (`tools/testfix.mjs`, a case of each) at
+  KV `testfix:<username>`, and the Worker lays it over that account alone (`stmt/testfix.js` `accountRecord`, the one
+  read of a `u:` record on a customer road), never under `order:`, `aclaim:` or `g:`, so no count reads it. **They are
+  for his acceptance tests, so every tap answers as it would a customer's**: a move on an example order, a claim, a
+  link made or withdrawn, each by the order book's own rules, a retry once, written into the fixture alone; with no
+  fixture yet nothing real is made. Held and prices hidden are the suite's alone. **A feature a customer sees lands with
+  its case**: a line in `FEATURES` and the case in `build()`, or the suite is red; states, ways, rails and claim answers
+  are asked for off the code itself.
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404

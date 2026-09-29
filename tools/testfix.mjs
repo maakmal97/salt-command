@@ -1,10 +1,11 @@
-/* tools/testfix.mjs: WHAT HIS TEST ACCOUNT SHOWS (29 Sep 2026, his instruction that it show every feature).
+/* tools/testfix.mjs: WHAT HIS TEST ACCOUNTS SHOW (29 Sep 2026, his instruction that they show every feature).
  *
  * The test account (0000-0000, stmt/testfix.js) is his to try the Counter with, and counts nowhere. It showed a
  * one-line statement and whatever he ordered on it, so most of what a customer sees could not be tried without a
  * real customer's account. This builds, for the moment it is given, an invented account holding a case of every
  * feature a customer sees, and the publish seals it for the test account alone (sealFixture). The Worker lays it
- * over the test account's own record and orders and nothing else (stmt/testfix.js), so no count reads it.
+ * over the test account's own record and orders and nothing else (stmt/testfix.js), so no count reads it. There are
+ * two (his answer of 29 Sep 2026): 0000-0000 open, a claim of theirs waiting so it can order, and 0000-0001 locked.
  *
  * EVERYTHING HERE IS INVENTED: the code, the places, the words, the prices. The orders are made by the order
  * book's own decide and apply functions, so an order here has the shape a real one has and cannot drift from it;
@@ -17,13 +18,13 @@ import { createHash } from "node:crypto";
 import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
   ROWED, customerView, rateDue } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
-import { TEST_USER, FIX_VERSION } from "../stmt/testfix.js";
+import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
-import { liveFor } from "./make_statements.mjs";
+import { liveFor, holdTerm, stageDays } from "./make_statements.mjs";
 
 /* the invented account on the invented book: no roster holds either code */
 export const FIX_CODE = "TX0-FIX";
-const U = TEST_USER;
+let U = TEST_USER;   /* the account a build is for, set by build() */
 
 const klDay = (d) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 /* `n` days before `now` and an hour earlier, with `m` minutes on (under sixty), so every moment is past and the history
@@ -75,9 +76,19 @@ function order(id, list, placedAt, place, steps) {
   return o;
 }
 
-/** The fixture for the moment `now`: the invented book, the orders, the claims, the links, the card and the rest. */
-export function build(now = new Date()) {
+/* HOW OLD THE OVERDUE GOODS ARE IN EACH ACCOUNT'S STATE (stmt/testfix.js TESTS), in days since the handover, off the
+   desk's own stages: locked past the lock day, and open past it too with a claim waiting, which lifts every stage */
+export function overdueDays(state) {
+  const term = holdTerm(), st = stageDays(), hide = st.hide != null ? st.hide : term + 1, lock = st.lock != null ? st.lock : hide + 1;
+  return { open: lock + 3, locked: lock + 1 }[state];
+}
+
+/** The fixture for the moment `now`, in one state: the invented book, the orders, the claims, the links, the card and the rest. */
+export function build(now = new Date(), state = "open", u = TEST_USER) {
   now = new Date(now);
+  U = u;
+  /* ONLY OPEN HAS A CLAIM WAITING, since any claim of theirs waiting lifts the hold and every stage */
+  const W = state === "open";
   const list = priceList(now), T = (n, m) => ago(now, n, m);
   const oid = (n, k) => T(n, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-ex" + k;
   /* a rail the site does not take today falls back to one it does, never to nothing */
@@ -94,14 +105,14 @@ export function build(now = new Date()) {
     [T(2, 30), "desk", { status: "acknowledged", delivery: 5 }],
     [T(2, 40), "customer", { action: "say", text: "Could it come after three?" }],
     [T(2, 55), "desk", { message: "After three is fine." }],
-    [T(1), "customer", pay("transfer")],
-    [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120, slip: "e0a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]]));   /* F13: with a slip */
+    [T(1), "customer", pay("transfer")]].concat(W ? [
+    [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120, slip: "e0a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [])));   /* F13: with a slip */
   /* READY to collect, due at Ready, for a friend of an associate's; part of it said sent with a slip long past its thirty
      days, so the page says the slip is no longer kept (F13) */
   O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
-    [T(35, 20), "desk", { status: "acknowledged" }],
-    [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))],
-    [T(1, 10), "desk", { status: "ready" }]]));
+    [T(35, 20), "desk", { status: "acknowledged" }]].concat(W ? [
+    [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
+    [T(1, 10), "desk", { status: "ready" }]])));
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", { status: "ready" }],
@@ -169,10 +180,11 @@ export function build(now = new Date()) {
   }
   /* AND TWO ROWS HE ENTERED ON THE DESK: goods with them on credit, inside the term, and goods past it, overdue */
   row({ date: klDay(new Date(T(1))), customer: FIX_CODE, qty: 1, total: 110, product: "salt", deliveredQty: 1, deliveredOn: klDay(new Date(T(1))), handover: "collected" });
-  row({ date: klDay(new Date(T(7))), customer: FIX_CODE, qty: 4, total: 45, product: "candy", deliveredQty: 4, deliveredOn: klDay(new Date(T(7))), handover: "collected" });
+  const od = overdueDays(state);
+  row({ date: klDay(new Date(T(od))), customer: FIX_CODE, qty: 4, total: 45, product: "candy", deliveredQty: 4, deliveredOn: klDay(new Date(T(od))), handover: "collected" });
 
-  /* A CLAIM AGAINST THE ACCOUNT, waiting on him, for the overdue goods: it is what reopens ordering (his D9, amended),
-     so the test account can still place an order to try the sheet; and one he received, by a DuitNow QR */
+  /* A CLAIM AGAINST THE ACCOUNT, waiting on him, for the overdue goods, when open: it is what reopens ordering (his D9,
+     amended) and lifts every stage; and one he received, by a DuitNow QR */
   const claims = [];
   const aclaim = (at, amount, method, verdict, answeredAt) => {
     const d = decideAccountClaim(U, Object.assign({ amount }, rail(method)), [], at);
@@ -182,7 +194,7 @@ export function build(now = new Date()) {
     if (verdict) c = applyEvent(c, { kind: "verdict", at: answeredAt, verdict }).order;
     claims.push(c);
   };
-  aclaim(T(0, 1), 45, "transfer");
+  if (W) aclaim(T(0, 1), 45, "transfer");
   aclaim(T(30), 60, "qr", "received", T(29));
 
   /* HIS GUEST LINKS AS AN ASSOCIATE SEES THEM: one open, one waiting on him, one he declined, one withdrawn. The ids are
@@ -203,7 +215,7 @@ export function build(now = new Date()) {
       lines: [{ date: T(2).slice(0, 10), kind: "own", qty: 3, rm: 115 }] }] };
 
   const book = { sales, customerRefunds: [] };
-  return { v: FIX_VERSION, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
+  return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
     caps: { salt: list.products[0].cap }, orders: O, claims, refs, card, assoc: true,
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
 }
@@ -232,6 +244,9 @@ export const FEATURES = [
     const P = f.live && f.live.pay, day = f.at.slice(0, 10);
     return !!P && P.lock != null && P.hide != null && f.claims.some((c) => c.state === "waiting")
       && P.overdue.parts.some((p) => p.since && Date.parse(day) - Date.parse(p.since) >= P.lock * 864e5); }],
+  /* held and prices hidden are no test account's (his answer of 29 Sep 2026: an open one and a locked one); the suite
+     keeps them */
+  ["locked, only for paying (V5)", (f) => stageOf(f) === 3],
   ["a rating given (F10)", (f) => has(f, (o) => o.rating && o.rating.stars >= 1)],
   ["asked how an order was (F10)", (f) => has(f, (o) => rateDue(o, new Date(f.at)))],
   ["on credit: goods with them inside the term", (f) => f.live && f.live.pay.now.parts.some((p) => !p.late)],
@@ -254,6 +269,27 @@ export const FEATURES = [
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
+/* THE STAGE THE PAGE DRAWS (stmt/page.js stageNow): nothing while a claim of theirs waits or nothing is overdue, else by
+   the days since the oldest overdue handover, against the sealed hide and lock days */
+export function stageOf(f) {
+  const P = f.live && f.live.pay;
+  if (!P || !(P.overdue.rm > 0.004)) return 0;
+  const waiting = f.claims.some((c) => c.state === "waiting")
+    || f.orders.some((o) => !["cancelled", "declined"].includes(o.status) && (o.payments || []).some((p) => p.claim === "waiting"));
+  if (waiting) return 0;
+  const day = new Date(f.at).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const d = Math.max(...P.overdue.parts.map((p) => Math.round((Date.parse(day) - Date.parse(p.since || p.date)) / 864e5)));
+  return P.lock != null && d >= P.lock ? 3 : P.hide != null && d >= P.hide ? 2 : 1;
+}
+/** Both test accounts' fixtures, built at one moment, by username. */
+export const buildAll = (now = new Date()) => Object.fromEntries(TEST_USERS.map((t) => [t, build(now, TESTS[t], t)]));
+/** What the fixtures lack: each line no account has a case of, and each state, way, rail or claim answer none holds. */
+export function missing(all) {
+  const fs = Object.values(all);
+  const lines = FEATURES.filter(([, t]) => !fs.some((f) => t(f))).map(([n]) => n);
+  const names = [...new Set(fs.flatMap((f) => derivedCases(f).map((c) => c[0])))];
+  return lines.concat(names.filter((n) => !fs.some((f) => derivedCases(f).some((c) => c[0] === n && c[1]))));
+}
 export const refState = (r) => (r.revoked ? "withdrawn" : r.declined === true ? "declined" : r.approved === false ? "waiting" : "open");
 
 /** The cases the code itself names, each with whether the fixture holds one: a state, a way, a rail, a claim answer. */
@@ -276,9 +312,10 @@ export function derivedCases(f) {
 export async function sealFixture(fix, rec, pass) {
   const ck = await unwrapKey(pass, rec.wrap);
   const seal = async (obj) => encryptWith(ck, JSON.stringify(obj));
-  return { v: fix.v, at: fix.at, salt: rec.wrap.salt, assoc: true,
-    live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null,
+  /* the statement bundle of an account minted today: no sealed issue, the live document is the statement */
+  return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: true,
+    live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
+    env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest, caps: fix.caps }, await seal(fix.prices)),
-    card: Object.assign({ at: fix.card.at }, await seal(fix.card)),
-    orders: fix.orders.map(customerView), claims: fix.claims, refs: fix.refs, bulletin: fix.bulletin };
+    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin };
 }

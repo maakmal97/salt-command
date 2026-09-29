@@ -328,7 +328,7 @@ export const OWNER_JS = `
     var u=a.username, none=a.account===false, why='No account behind this username yet';
     var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
     var h=el('div','ahead srow');
-    h.appendChild(el('h2',null,a.test?'Test account':(a.code||u)));
+    h.appendChild(el('h2',null,a.test?testName(a):(a.code||u)));
     h.appendChild(el('span','un',u));
     c.appendChild(h);
     var cs=el('div','achips');
@@ -448,6 +448,8 @@ export const OWNER_JS = `
      one road recorded, was by password. */
   var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code'};
   function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
+  /* the two test accounts, told apart by the state each stands in (his answer of 29 Sep 2026) */
+  function testName(a){ return a.state==='locked'?'Test account, locked':'Test account, open'; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }
   function chipsOf(a){
     if(a.test) return [chip('mist','Test, counts nowhere')];
@@ -464,7 +466,7 @@ export const OWNER_JS = `
     var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username);
     if(aOpen===a.username) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(el('span',null,a.test?'Test account':(a.code||a.username)));
+    t.appendChild(el('span',null,a.test?testName(a):(a.code||a.username)));
     if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
     main.appendChild(t);
     /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
@@ -987,27 +989,34 @@ export const OWNER_JS = `
      FOLD 2.7: ITS KEY AND WRAPS ARE MADE HERE, at the 150,000 rounds every account's wraps take, because
      the Worker's runtime refuses PBKDF2 above 100,000 (stmt/worker.js makeTest). The page's own wrapUnder
      does the wrapping, so these open under the same unwrap a customer's page runs; the master stays here. */
-  async function testKeys(){
+  async function testKeys(u){
     var raw=crypto.getRandomValues(new Uint8Array(32));
     var ck=await crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['encrypt','decrypt']);
-    var body={make:true, key:b64e(raw), wrap:await wrapUnder(new TextEncoder().encode('0000-0000-0000-0000'), ck)};
+    var body={make:true, u:u, key:b64e(raw), wrap:await wrapUnder(new TextEncoder().encode('0000-0000-0000-0000'), ck)};
     if(OWNER.master) body.wrapMaster=await wrapUnder(new TextEncoder().encode(OWNER.master), ck);
     return body;
   }
+  /* TWO TEST ACCOUNTS (his answer of 29 Sep 2026: a second account, not a switch), made and taken away together: one open,
+     where a claim of theirs waits so it can order, and one locked, only for paying. The same zeros open both. */
+  var TEST_LINE='Password 0000-0000-0000-0000 for both. Username 0000-0000 is a customer who can order; 0000-0001 is locked, only for paying.';
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;
-    var on=sheetRows.some(function(a){ return a.test; });
+    /* a pair made by halves (a tap cut off between its two sends) keeps Make, for the one missing (Fable's review) */
+    var have=sheetRows.filter(function(a){ return a.test; }).map(function(a){ return a.username; });
+    var need=['0000-0000','0000-0001'].filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
     box.textContent='';
     box.appendChild(el('p','lead', on
-      ? 'A test account is live: username 0000-0000, password 0000-0000-0000-0000. It is on no list that counts and orders nothing onto the book.'
-      : 'No test account. One tap makes an account you can open anywhere, that counts nowhere.'));
-    var b=el('button','btn quiet salt-ghost', on?'Delete the test account':'Make a test account'); b.type='button';
+      ? 'Two test accounts are live. '+TEST_LINE+' They are on no list that counts, and nothing they do is booked.'
+      : have.length ? 'Only test account '+have[0]+' is live. One tap makes the other.'
+      : 'No test accounts. One tap makes two you can open anywhere, that count nowhere: one that can order, one locked.'));
+    var b=el('button','btn quiet salt-ghost', on?'Delete the test accounts':'Make the test accounts'); b.type='button';
     b.addEventListener('click', async function(){
       b.disabled=true; say(on?'Deleting...':'Making...','wait');
       try{
-        await refs('/all/test', on?{make:false}:await testKeys());
+        if(on) await refs('/all/test',{make:false});
+        else for(var i=0;i<need.length;i++) await refs('/all/test',await testKeys(need[i]));
         sheet=null; await loadSheet();
-        say(on?'Gone, with everything it wrote.':'Made. Username 0000-0000, password 0000-0000-0000-0000.');
+        say(on?'Gone, with everything they wrote.':'Made. '+TEST_LINE+' Their examples appear after the next publish.');
       }catch(e){ say(e.message,'bad'); }
       b.disabled=false; drawTest();
     });

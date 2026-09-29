@@ -980,7 +980,7 @@ asked, whose last handover (`movedOn`) is at least `RATE_AFTER` (2) days before 
 order from before F10 is never asked about. `markRateAsk` writes the ask on the order first, as its own event
 (`rateask`, one of the book's writes, refused while it moves in; `rateAsk` on the KV road), and only the call that
 wrote it wakes: a tick firing twice asks once. One wake a customer a slot, kind `rate`, **How was your order?**,
-opening the newest order it asks about; the test account is skipped, and so is a customer owed a chase that slot
+opening the newest order it asks about; the test accounts are skipped, and so is a customer owed a chase that slot
 (nothing written, so a later slot asks: the two banners share an order's tag and the later would replace "A payment is due"); the handler logs `rate: {slot, asked, quiet}`.
 A phone with no push meets the same ask as Home's card (`homeRate`, the same two days and fortnight), and the order
 itself asks for good once the two days are past (`oRate`). **The rating** is the customer's `rate` move, `POST
@@ -1144,36 +1144,49 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
   `approved === false` test), and its rail's foot says "N links wait in Salt Account".
-- **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test account), the
+- **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test accounts), the
   system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
-- **The test account shows every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
-  by signing in with the zeros. `tools/testfix.mjs` `build(now)` makes an invented account: its orders driven through
+- **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
+  by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
+  Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
+  ordering (his D9, amended) and lifts every stage of V5, so he can place an order; and `0000-0001`, locked, only for
+  paying, its overdue part past the lock day and nothing of theirs waiting. The same zeros open both; a one is outside
+  the alphabet, as a zero is, and the door lets it through (`normUser`, the page's `shaped` and `unfit`). Held and
+  prices hidden are shown by neither and stay the suite's. `tools/testfix.mjs` `build(now, state, u)` makes an
+  invented account: its orders driven through
   the order book's own `decidePlace`, `decideDesk`, `decideCustomer` and `applyEvent`, so their shape cannot drift;
   an invented book derived from those orders (each order on the book a row, dated its placing day, with two rows he
   entered on the desk, one on credit and one overdue), whose live statement is the real renderer's (`liveFor` in
   `tools/make_statements.mjs`, which swaps the book's two lists for the call and puts them back); an invented price
   list with a cap on salt and a book priced soon; account claims, guest links, an associate's card and a bulletin.
-  Every publish (`tools/stmt-publish.mjs` `fixtureEntry`) reads `u:0000-0000`, opens its content key with the public
-  zeros, seals the statement, the list and the card under it, and puts the lot at KV `testfix`, stamped with the
-  record's wrap salt; with no test account it writes nothing, and a read that fails warns and publishes the rest.
-  **The Worker lays it over the test account alone** (`stmt/testfix.js`): `accountRecord` is the one read of a `u:`
+  Every publish (`tools/stmt-publish.mjs` `fixtureEntry`) reads each test account's `u:` record, opens its content
+  key with the public zeros, seals the statement, the list and the card under it, with the statement bundle of an
+  account minted today (no sealed issue), and puts the lot at KV `testfix:<username>`, stamped with the record's wrap
+  salt; with no such account it writes nothing, and a read that fails warns and publishes the rest.
+  **The Worker lays it over that test account alone** (`stmt/testfix.js`): `accountRecord` is the one read of a `u:`
   record on every customer road (open, re-read, remembered, link, hand-over, Place, links, his view of the account),
   and serves the fixture's documents and the associate mark only for the test account whose salt it carries;
-  `GET /orders` adds its orders and claims, `/my/refs` its links, and `/bulletin`, asked on the test account's session,
+  `GET /orders` adds its orders and claims, `/my/refs` its links, and `/bulletin`, asked on a test account's session,
   its notice while he has none set. **Nothing of it is written where an order, a claim or a link lives**, so the desk's
-  reconcile, his lists, the chase and the report card cannot read it; a move on an example order (`-exNN`) answers
-  `e.example`, and it makes and withdraws no link (`e.exampleLink`): a real one would wait on him in Salt Account and
-  outlive the account. Making or unmaking the account deletes `testfix`, and the next publish seals a new one.
-  **The fixture carries a waiting claim**, which reopens ordering (his D9, amended) and lifts every stage of V5, so the
-  test account can place an order; the held page, hidden prices and the locked account are not shown there, their part
-  overdue past the lock day notwithstanding, and stay the suite's. **A feature a customer sees lands with its case**:
+  reconcile, his lists, the chase and the report card cannot read it. **Every tap answers as it would a customer's**:
+  a move on an example order (`-exNN`) is decided by `decideCustomer` and applied by `applyEvent`, a claim against the
+  account by `decideAccountClaim`, and each is written back into that fixture, a retry under the same `rid` landing
+  once as a customer's does; a link it makes waits on him inside the fixture (its id holds an `l`, which no real link's
+  can), never a `g:` record, which would wait in Salt Account and outlive the account, and a link it withdraws is
+  withdrawn there. None of its slips is filed. **Until the first publish seals a fixture, nothing real is made**: the
+  account is no associate, so Links answers the site's 404, and a claim is refused (`e.testSoon`). One KV value an
+  account, read and written whole: a tap may take a minute to show on another phone, and two at once may lose one,
+  which the next publish puts right. Orders it places are real orders on the book, as before, under a username no code
+  maps to. Making an account deletes its fixture, unmaking takes both accounts and both fixtures, and the next publish
+  seals new ones. **A feature a customer sees lands with its case**:
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
   offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
   Step 1b, F10, F15, V4b.2, V5 and F13 (a slip sent, and one no longer kept) have their cases; a feature that lands
   later is added by the lane that builds it.
-- **The test account is wrapped on his page** (fold 2.7): Make a test account makes the key and wraps it under the
-  zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`), and
-  `POST /all/test` takes `{make: true, key, wrap, wrapMaster}`, checks their shape and seals under the key. The
+- **The test accounts are wrapped on his page** (fold 2.7): Make the test accounts makes a key for each and wraps it
+  under the zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`),
+  and `POST /all/test` takes `{make: true, u, key, wrap, wrapMaster}` once per account, checks the name and their shape
+  and seals under the key. The
   Worker never derives above 100,000: the production runtime refuses PBKDF2 above that and the local one does not,
   so only the suite's spy on SubtleCrypto sees it. A bare `{make: true}` answers 400 with a reason.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips

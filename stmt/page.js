@@ -36,7 +36,7 @@ import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES } from "./orders.js";
-import { TEST_USER } from "./testfix.js";
+import { TEST_USERS } from "./testfix.js";
 import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
@@ -1180,7 +1180,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
-      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USER__", JSON.stringify(TEST_USER))
+      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
       .replace("__PLACES__", JSON.stringify(PLACES))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
@@ -1216,10 +1216,10 @@ const CLIENT_JS = `
     lines.forEach(function(l){ var p=document.createElement('p'); p.textContent=l; box.appendChild(p); });
   }
   /* the test account asks on its session, and is answered the fixture's notice while none of his is set (stmt/testfix.js) */
-  var TESTU=__TEST_USER__;
+  var TESTS=__TEST_USERS__;
   async function bullRead(){
     try{
-      var r=await fetch('/bulletin',{cache:'no-store',headers:user===TESTU&&session?{'X-Stmt-Session':session}:{}}); var j=await r.json();
+      var r=await fetch('/bulletin',{cache:'no-store',headers:TESTS.indexOf(user)>=0&&session?{'X-Stmt-Session':session}:{}}); var j=await r.json();
       if(!j||!j.ok) return;
       if(JSON.stringify(j.lines||[])!==JSON.stringify(BULL.lines||[])) bullDraw({lines:j.lines||[]});
     }catch(e){}
@@ -1457,7 +1457,7 @@ const CLIENT_JS = `
     while((m=re.exec(low))){
       var got=m.slice(1).join('');
       if(!first) first=got;
-      if(/^0+$/.test(got)||!ALPHA.test(got)){ raw=got; break; }
+      if(/^0+1?$/.test(got)||!ALPHA.test(got)){ raw=got; break; }
       re.lastIndex=m.index+1;
     }
     raw=raw||first||clean(low);
@@ -1480,10 +1480,10 @@ const CLIENT_JS = `
   pwShow.addEventListener('click', function(){ showPw(pw.type==='password'); try{ pw.focus(); }catch(e){} });
   /* what this phone can say about a value before it is sent: that one of the right length holds a symbol the
      alphabet never uses, which is a typing slip and never a fact about an account. Anything else goes to the site
-     and its one answer. The test account's zeros are its own (v689). */
+     and its one answer. The test accounts' zeros, and the second's one, are their own (v689). */
   function unfit(v, n, what){
     var raw=clean(v);
-    return raw.length===n&&!/^0+$/.test(raw)&&ALPHA.test(raw)?tw(what==='username'?'door.unfitUn':'door.unfitPw'):'';
+    return raw.length===n&&!/^0+1?$/.test(raw)&&ALPHA.test(raw)?tw(what==='username'?'door.unfitUn':'door.unfitPw'):'';
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
@@ -4573,7 +4573,7 @@ const CLIENT_JS = `
     }
   }
   async function follow(stale){
-    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(user===TESTU) bullRead(); }
+    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */

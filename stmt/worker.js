@@ -50,7 +50,8 @@ import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
-import { TEST_USER, TEST_PASS, FIX_KEY, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample, exampleRefusal, exampleLinkRefusal } from "./testfix.js";
+import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
+  exampleMove, exampleClaim, exampleMint, exampleRevoke } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -84,15 +85,14 @@ const notFound = () => new Response("Not found", {
  * name and password are stated in stmt/testfix.js, with the fixture laid over it (29 Sep 2026). It is
  * made with a random key of its own, so no statement, no price list and no laptop secret is involved
  * in it; his page makes the key and its wraps (makeTest). */
-export { TEST_USER, TEST_PASS };
-const TEST_REC = "u:" + TEST_USER;
+export { TEST_USER, TEST_PASS, TEST_USERS };
 
 /** Case and punctuation are forgiven; anything that is not eight symbols of the alphabet is "". */
 export function normUser(s) {
   s = String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   if (s.length !== 8) return "";
   s = s.slice(0, 4) + "-" + s.slice(4);
-  if (s === TEST_USER) return s;
+  if (isTest(s)) return s;
   return USER_RE.test(s) ? s : "";
 }
 
@@ -364,6 +364,9 @@ async function handleCustomer(request, env, p, m) {
     if (big) return refuse(big);
     const f = await takeSlip(await readJson(request));
     if (f.error) return refuse(f);
+    /* a test account's waits in its fixture, as a customer's waits on him, and its slip is not filed */
+    const ex = isTest(u) ? await exampleClaim(env, u, f.body) : null;
+    if (ex) return ex.error ? refuse(ex) : json({ ok: true, claim: claimView(ex.claim) });
     const r = await claimAccount(env, u, f.body);
     if (r.error) return refuse(r);
     await keepSlip(env, u, f.slip, r.claim && r.claim.slip);
@@ -442,13 +445,14 @@ async function handleCustomer(request, env, p, m) {
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  if (isExample(u, mm[1])) return refuse(exampleRefusal());   /* the test account's examples are shown and never move */
   /* F13: a claim on an order carries its slip the same way; on any other move no claim names it, so none is filed */
   const big = mm[2] === "pay" ? slipTooBig(request) : null;
   if (big) return refuse(big);
   const raw = await readJson(request);
   const f = await takeSlip(raw);
   if (f.error) return refuse(f);
+  /* the test account's examples move by the same rules, in its fixture; a slip on one is not filed */
+  if (isExample(u, mm[1])) { const x = await exampleMove(env, u, mm[1], mm[2], f.body); return x.error ? refuse(x) : json({ ok: true, order: customerView(x.order) }); }
   const r = await customerMove(env, u, mm[1], mm[2], f.body);
   if (r.error) return refuse(r);
   /* the claim this move recorded is the newest waiting one; a repeat answered with an earlier claim names another slip */
@@ -507,7 +511,13 @@ async function handleMyRefs(request, env, p, m, origin) {
   if (p === "/my/refs") {
     if (m === "GET") return json({ ok: true, refs: (await refsBy(env, u)).concat(await examplesRefs(env, u)).map((r) => mineOut(origin, r)), max: MAX_PER_ASSOC });
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    if (u === TEST_USER) return refuse(exampleLinkRefusal());   /* its links are the fixture's (stmt/testfix.js) */
+    /* a test account's link is the fixture's, waiting as an associate's does, never a g: record (stmt/testfix.js) */
+    if (isTest(u)) {
+      const x = await exampleMint(env, u, MAX_PER_ASSOC);
+      if (!x) return notFound();
+      if (x.full) return json(Object.assign({ ok: false }, refusal("linksMax", { n: MAX_PER_ASSOC })), 409);
+      return json({ ok: true, ref: mineOut(origin, x.ref) });
+    }
     const mine = await refsBy(env, u);
     /* the same shape as the open-order cap: a count, a plain refusal, and a reason */
     if (mine.filter((r) => !r.revoked).length >= MAX_PER_ASSOC)
@@ -520,7 +530,7 @@ async function handleMyRefs(request, env, p, m, origin) {
   }
   const mm = /^\/my\/refs\/([^/]+)\/(revoke)$/.exec(p);
   if (!mm) return notFound();
-  if (u === TEST_USER && m === "POST") return refuse(exampleLinkRefusal());
+  if (isTest(u) && m === "POST") { const x = await exampleRevoke(env, u, mm[1]); if (x) return json({ ok: true, ref: mineOut(origin, x.ref) }); }
   const id = normRef(mm[1]);
   if (!id) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -808,8 +818,8 @@ async function handleDesk(request, env, p, m) {
 async function roster(env) {
   /* v689: the test account is on the list so he can open it, and marked so every count leaves it
      out. The publish never writes it into `roster`, so it is added here or not at all. Both are read at once. */
-  const [named, made] = await Promise.all([env.STMT.get("roster", "json"), env.STMT.get("u:" + TEST_USER)]);
-  const test = made ? [{ code: "TEST", username: TEST_USER, test: true }] : [];
+  const [named, ...made] = await Promise.all([env.STMT.get("roster", "json")].concat(TEST_USERS.map((t) => env.STMT.get("u:" + t))));
+  const test = TEST_USERS.filter((t, i) => made[i]).map((t) => ({ code: "TEST", username: t, test: true, state: TESTS[t] }));
   if (Array.isArray(named) && named.length) return named.concat(test);
   const out = [];
   let cursor;
@@ -817,7 +827,7 @@ async function roster(env) {
     const page = await env.STMT.list({ prefix: "u:", cursor });
     for (const k of page.keys) {
       const username = k.name.slice(2);
-      out.push(username === TEST_USER ? { code: "TEST", username, test: true } : { code: null, username });
+      out.push(isTest(username) ? { code: "TEST", username, test: true, state: TESTS[username] } : { code: null, username });
     }
     cursor = page.list_complete ? null : page.cursor;
   } while (cursor);
@@ -969,7 +979,7 @@ async function ownerSheet(env, origin) {
        fact he needed. The test account is made here and is never in the sheet, so it is not one. */
     const account = !!a.test || !!s;
     out.push({
-      code: a.code, username: a.username, test: !!a.test, account,
+      code: a.code, username: a.username, test: !!a.test, account, state: a.test ? a.state : undefined,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
       url, msg: linkMessage({ url, user: a.username }), tot: s ? totalsLine(s.t) : "",
       qr: cardQr(url),
@@ -1043,7 +1053,8 @@ const testWrap = (w) => (w && typeof w === "object" && w.v === 2 && Object.keys(
   ? { v: 2, salt: w.salt, iv: w.iv, ct: w.ct } : null);
 const TEST_STALE = "This page is older than the site. Reload it and tap again.";
 async function makeTest(env, body) {
-  const b = body || {};
+  const b = body || {}, t = b.u === undefined ? TEST_USER : b.u;
+  if (!isTest(t)) return { error: "a test account is one of " + TEST_USERS.join(", ") };
   const wrap = testWrap(b.wrap), wrapMaster = env.STMT_MASTER ? testWrap(b.wrapMaster) : null;
   if (b64Len(b.key) !== 32 || !wrap || (env.STMT_MASTER && !wrapMaster)) return { error: TEST_STALE };
   const ck = await crypto.subtle.importKey("raw", b64d(b.key), { name: "AES-GCM" }, false, ["encrypt"]);
@@ -1057,25 +1068,31 @@ async function makeTest(env, body) {
   const vbits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: vsalt, iterations: 10000, hash: "SHA-256" }, vbase, 256);
   const bundle = await testStatement();
   const rec = {
-    u: TEST_USER, test: true, issued: bundle.issued, issues: [bundle.issued],
+    u: t, test: true, issued: bundle.issued, issues: [bundle.issued],
     verifier: { salt: b64e(vsalt), hash: b64e(new Uint8Array(vbits)), rounds: 10000 },
     wrap, env: await sealed(bundle),
     live: Object.assign({ at: new Date().toISOString() }, await sealed({ at: new Date().toISOString(), body: bundle.statements[0].body })),
     prices: Object.assign({ at: new Date().toISOString(), week: testPrices().week.monday }, await sealed(testPrices()))
   };
   if (wrapMaster) rec.wrapMaster = wrapMaster;
-  await env.STMT.put(TEST_REC, JSON.stringify(rec));
+  await env.STMT.put("u:" + t, JSON.stringify(rec));
   /* a fixture sealed for an account made before is inert, its salt not this one's; it goes, and the next publish seals one */
-  await env.STMT.delete(FIX_KEY);
+  await env.STMT.delete(fixKey(t));
   return rec;
 }
+/* both test accounts go with one tap */
 async function unmakeTest(env) {
-  const gone = [TEST_REC, "seen:" + TEST_USER, FIX_KEY];
-  for (const pre of ["order:" + TEST_USER + ":", "aclaim:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:", devPrefix(TEST_USER)]) {   /* S6: and its claims */
+  let n = 0;
+  for (const t of TEST_USERS) n += await unmakeOne(env, t);
+  return n;
+}
+async function unmakeOne(env, t) {
+  const gone = ["u:" + t, "seen:" + t, fixKey(t)];
+  for (const pre of ["order:" + t + ":", "aclaim:" + t + ":", "push:" + t + ":", "sent:", devPrefix(t)]) {   /* S6: and its claims */
     let cursor;
     do {
       const page = await env.STMT.list({ prefix: pre, cursor });
-      for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + TEST_USER)) gone.push(k.name);
+      for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + t)) gone.push(k.name);
       /* S3 3.2: its remembered phones and live sessions, found through their pointers */
       if (pre.startsWith("dev:")) for (const k of page.keys) {
         const at = await env.STMT.get(k.name, "json");
@@ -1087,7 +1104,7 @@ async function unmakeTest(env) {
   }
   for (const k of gone) await env.STMT.delete(k);
   /* S10: and its orders in the order book, where they live on the object road */
-  return gone.length + await dropOrders(env, TEST_USER);
+  return gone.length + await dropOrders(env, t);
 }
 
 /* S3 FIX, 24 SEP 2026: SIGN OUT EVERYWHERE, fold 9.4's server half, shipped with the sign-in that no longer ages out
@@ -1485,7 +1502,7 @@ export default {
         if (b.make === false) return json({ ok: true, made: false, removed: await unmakeTest(env) });
         const made = await makeTest(env, b);
         if (made.error) return json({ ok: false, error: made.error }, 400);
-        return json({ ok: true, made: true, username: TEST_USER, password: TEST_PASS });
+        return json({ ok: true, made: true, username: made.u, password: TEST_PASS });
       }
       /* the tick, so both his devices agree on what has gone out */
       const sm = /^\/all\/sent\/([^/]+)$/.exec(p);
@@ -1583,7 +1600,7 @@ export default {
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      /* the test account, asking on its session, sees the fixture's notice while he has none of his own set */
+      /* a test account, asking on its session, sees the fixture's notice while he has none of his own set */
       const bull = await readBulletin(env);
       if (!bull.lines.length && env.STMT && request.headers.get("X-Stmt-Session")) {
         const ex = await exampleBulletin(env, await sessionUser(request, env));
@@ -1651,7 +1668,7 @@ export default {
         for (const { u, orders } of await toChase(env, now)) {
           owing.add(u);
           /* his own test account is counted nowhere, and that includes being chased */
-          if (u === TEST_USER) continue;
+          if (isTest(u)) continue;
           /* V5: hourly for the first three days after the handover, then three a day (chaseDue) */
           if (!chaseDue(orders, now)) continue;
           /* S10: the mark is read and written in one step, where the orders live (markChased); S12: it is the slot's */
@@ -1666,7 +1683,7 @@ export default {
         for (const { u, orders } of await toRate(env, now)) {
           /* NEVER OVER THE CHASE: a customer owed a chase this slot hears only that a payment is due, since the two
              banners share an order's tag and the later would replace it; nothing is written, so a later slot asks */
-          if (u === TEST_USER || owing.has(u)) continue;
+          if (isTest(u) || owing.has(u)) continue;
           const fresh = [];
           for (const o of orders) if (await markRateAsk(env, u, o.id)) fresh.push(o);
           if (!fresh.length) continue;

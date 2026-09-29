@@ -18,6 +18,7 @@
  * proves it. It stands down while wrangler.stmt.jsonc still carries the placeholder store id.
  */
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
+import { TEST_USERS } from "../stmt/testfix.js";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -87,10 +88,10 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   const deletes = [];
   /* NOTHING PUBLISHABLE MEANS NOTHING TOUCHED: an issue of stale records must not retire what
      is already in the store, or a botched regeneration would take every account down. */
-  /* v689: HIS TEST ACCOUNT IS NOT AN ACCOUNT OF THE BOOK'S. The Worker makes it and the Worker
-     unmakes it; the publish neither writes it nor retires it, or every deploy would take away the
-     one account he keeps for trying the page out. stmt/worker.js states the name. */
-  const TEST_REC = "u:0000-0000";
+  /* v689: HIS TEST ACCOUNTS ARE NOT ACCOUNTS OF THE BOOK'S. The Worker makes them and the Worker
+     unmakes them; the publish neither writes nor retires them, or every deploy would take away the
+     accounts he keeps for trying the page out. stmt/testfix.js states the names. */
+  const TEST_RECS = TEST_USERS.map((t) => "u:" + t);
   /* v698: WRITING IS HOURLY, RETIRING IS NOT (his instruction of 18 Sep 2026 that prices always
      follow the desk). The hourly refresh runs with --no-retire, because retiring an account whose
      record the newest issue does not carry is a judgement about a deploy he made, not about a
@@ -100,7 +101,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   const retire = !(opts && opts.noRetire);
   if (r.records.length && retire) {
     for (const k of existingKeys || []) {
-      if (k.startsWith("u:") && !keep.has(k) && k !== TEST_REC) deletes.push(k);
+      if (k.startsWith("u:") && !keep.has(k) && !TEST_RECS.includes(k)) deletes.push(k);
       if (newIssue && k.startsWith("fail:")) deletes.push(k);
       /* a tick no longer lapses (23 Sep 2026), so a new sealed issue, which has to be sent again,
          is what clears the last one's; the new issue's own ticks are a different key */
@@ -217,19 +218,20 @@ function listKeys(prefix, run = execFileSync) {
   return i < 0 ? [] : JSON.parse(t.slice(i)).map(k => String(k.name));
 }
 
-/* ---- HIS TEST ACCOUNT'S FIXTURE (29 Sep 2026, his instruction that it show every feature) ------------------------
-   The publish writes the test account's record no more than it did (v689); it writes BESIDE it, at testfix, an invented
-   account holding a case of every feature a customer sees (tools/testfix.mjs), sealed under the test account's key,
-   which its public password opens. `recText` is the store's u:0000-0000, or null where there is none: then nothing is
-   written, and a fixture left from before is inert, sealed for no account there is (making or unmaking one deletes it).
-   The Worker lays it over the test account alone (stmt/testfix.js), so nothing that counts reads it. Returns the put. */
+/* ---- HIS TEST ACCOUNTS' FIXTURES (29 Sep 2026, his instruction that they show every feature) ----------------------
+   The publish writes a test account's record no more than it did (v689); it writes BESIDE it, at testfix:<username>, an
+   invented account holding a case of every feature a customer sees in that account's state (tools/testfix.mjs), sealed
+   under its key, which the public password opens. `recText` is the store's u:<username>, or null where there is none:
+   then nothing is written, and a fixture left from before is inert, sealed for no account there is (making or unmaking
+   one deletes it). The Worker lays it over that account alone (stmt/testfix.js), so nothing that counts reads it.
+   Returns the put. */
 export async function fixtureEntry(recText, now = new Date()) {
-  const { FIX_KEY, TEST_PASS } = await import("../stmt/testfix.js");
+  const { TEST_PASS, TESTS, isTest, fixKey } = await import("../stmt/testfix.js");
   let rec = null;
   try { rec = recText ? JSON.parse(recText) : null; } catch (e) { rec = null; }
-  if (!rec || rec.test !== true || !rec.wrap) return null;
+  if (!rec || rec.test !== true || !rec.wrap || !isTest(rec.u)) return null;
   const { build, sealFixture } = await import("./testfix.mjs");
-  return { key: FIX_KEY, value: JSON.stringify(await sealFixture(build(now), rec, TEST_PASS)) };
+  return { key: fixKey(rec.u), value: JSON.stringify(await sealFixture(build(now, TESTS[rec.u], rec.u), rec, TEST_PASS)) };
 }
 
 /* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own */
@@ -416,16 +418,16 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
       + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
   }
-  /* the test account's fixture, read off its record in the store: a read that fails leaves the fixture as it is and
-     says so, since the test account is his and counts nowhere, and the publish of every real account goes on */
-  if (!dry) {
+  /* each test account's fixture, read off its record in the store: a read that fails leaves that fixture as it is and
+     says so, since the test accounts are his and count nowhere, and the publish of every real account goes on */
+  if (!dry) for (const t of TEST_USERS) {
     try {
       let recText = null;
-      try { recText = String(againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "u:0000-0000"], { stdio: ["ignore", "pipe", "pipe"] }, run))); }
+      try { recText = String(againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "u:" + t], { stdio: ["ignore", "pipe", "pipe"] }, run))); }
       catch (e) { if (!/ - 404:/.test(wranglerSaid(e))) throw e; }
       const fx = await fixtureEntry(recText && recText.indexOf("{") >= 0 ? recText.slice(recText.indexOf("{")) : null);
-      if (fx) { plan.puts.push(fx); console.log("and the test account's fixture, every feature a customer sees"); }
-    } catch (e) { console.log("::warning::the test account's fixture was not written: " + String((e && e.message) || e)); }
+      if (fx) { plan.puts.push(fx); console.log("and test account " + t + "'s fixture, every feature a customer sees"); }
+    } catch (e) { console.log("::warning::test account " + t + "'s fixture was not written: " + String((e && e.message) || e)); }
   }
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));
