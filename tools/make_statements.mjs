@@ -654,7 +654,7 @@ function stmtDoc(party,rows,o){
                '<b>'+uw(gone)+'</b> of that order was held back and applied to a separate '
                +'arrangement between us, rather than being collected or refunded. No money '
                +'changed hands on it.')
-         +step(R.owed>0.009?'So the '+goods+' still due to you is what is left.'
+         +step(R.owed>0.009?'So the '+goods+' still due to you '+(lines?'are':'is')+' what is left.'
                            :'So the balance of the order was collected in full.',
                box('<table class="mini calc"><tbody>'
                +'<tr><td class="l">Bought</td><td class="r">'+uw(R.order.qty)+'</td></tr>'
@@ -668,7 +668,7 @@ function stmtDoc(party,rows,o){
          +'and it will be gone through line by line.</p></div>';
      }
      return '<div class="rec"><p class="recl">'+(R.owed>0.009
-        ?'How the '+uw(R.owed)+' is arrived at'
+        ?'How the '+uw(R.owed)+' '+(lines&&+R.owed>1?'are':'is')+' arrived at'
         :'How your '+e(dLong(R.order.date))+' order was settled')+'</p>'
        +step('Earlier orders were not paid in full.',
              box('<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
@@ -679,8 +679,8 @@ function stmtDoc(party,rows,o){
        +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
              uw(R.order.qty)+' at '+fig(R.order.total/R.order.qty)+' a unit is '+fig(R.order.total)+', received as '+pays+'.')
        +step(R.owed>0.009
-             ?'So the '+goods+' due to you is what you bought, less what settled the balance, less what you have taken.'
-             :'So the '+goods+' due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
+             ?'So the '+goods+' due to you '+(lines?'are':'is')+' what you bought, less what settled the balance, less what you have taken.'
+             :'So the '+goods+' due to you '+(lines?'were':'was')+' what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
              box('<table class="mini calc"><tbody>'
              +'<tr><td class="l">Bought</td><td class="r">'+uw(R.order.qty)+'</td></tr>'
              +'<tr><td class="l">Less applied to the '+fig(R.shortTot)+' balance</td><td class="r">&minus; '+uw(R.unitsOff)+'</td></tr>'

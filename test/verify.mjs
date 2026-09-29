@@ -17824,7 +17824,7 @@ await (async () => {
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
     ok(/refused at one address/.test(kc.querySelector(".salt-approve__entry").textContent) && !/locked/i.test(kc.textContent)
-      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
+      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 02 Sep 2026[.]/.test(kc.textContent),
       "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
     sl.click();
@@ -17923,7 +17923,7 @@ await (async () => {
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
     const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
-    ok(chips(uO).includes("Owes RM 272.00") && chips(uO).includes("Opened 14 Sep by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 3 Sep"),
+    ok(chips(uO).includes("Owes RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 03 Sep 2026"),
       "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
     ok(chips(uL).some((t) => /^Refused at 1 address till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
       "an account refused at an address, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
@@ -18726,13 +18726,13 @@ await (async () => {
     } }).window;
     const D = win.document;
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
-    ok(await until(() => kc() && /Last got in by a typed code, 3 Sep[.]/.test(kc().textContent)),
+    ok(await until(() => kc() && /Last got in by a typed code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="accounts"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
-    ok(await until(() => chips(us[0]).includes("Opened 3 Sep by a scanned code")) && chips(us[1]).includes("Opened 3 Sep by a typed code"),
+    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by a scanned code")) && chips(us[1]).includes("Opened 03 Sep 2026 by a typed code"),
       "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
-    ok(chips(us[2]).includes("Opened 3 Sep by password") && chips(us[3]).includes("Opened 3 Sep"),
+    ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
       "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -19974,7 +19974,7 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
-    ok(await until(() => /Last opened26 Sep, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
       && !/25 Sep/.test(story()),
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -21201,6 +21201,28 @@ await (async () => {
     oArea().querySelector("[data-unread] button").click();
     ok(await until(() => oArea().textContent.includes(EN["ord.noneYet"])) && !D.querySelector('[data-unread="ord.unread"]'),
       "and Try again reads them, the line gone with the failure");
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* C9 (Fable's review of fold 2): a month that leaves the refunds empty takes their heading with them, and All brings both back */
+    const r9 = (x) => Object.assign({ product: "salt", gift: false, resale: false, delivery: 0, cover: false, inKind: 0, inKindUnits: 0, owed: 0,
+      pendingOrder: false, cancelled: false, cancelledOn: null, agreedOn: null, got: x.qty, toGet: 0, deliverable: x.qty, unit: x.total / x.qty }, x);
+    const body9 = M.docBody(M.stmtDoc("ZZ9-TST", [r9({ date: "2026-09-20", qty: 1, total: 100, paidCash: 100, paidOn: "2026-09-20" }),
+      r9({ date: "2026-08-05", qty: 2, total: 200, paidCash: 200, paidOn: "2026-08-05" })],
+      { dates: true, brand: null, issued: "24 Sep 2026 12:00", live: true, user: u, recon: [], refunds: [{ date: "2026-08-10", amount: 30, paidOn: null, cancelled: false }] }));
+    st.open = [async () => answer(await sealLive(Object.assign({}, live, { body: body9 }), ck))];
+    st.orders = [async () => js({ ok: true, orders: [] })];
+    signIn();
+    ok(await until(() => D.querySelectorAll("#mfil button").length === 3), "the fixture: two months and All");
+    const refH = () => [...D.querySelectorAll("#out h3")].find((h) => h.textContent === "Refunds");
+    const seen9 = (x) => !!x && x.style.display !== "none";
+    D.querySelector('#mfil button[data-mf="2026-09"]').click();
+    const sep9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
+    D.querySelector('#mfil button[data-mf="2026-08"]').click();
+    const aug9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
+    D.querySelector('#mfil button[data-mf=""]').click();
+    ok(sep9.join() === "false,false" && aug9.join() === "true,true" && seen9(refH()),
+      "a month with no refund hides Refunds, heading and list, and a month with one or All shows them (C9): " + JSON.stringify([sep9, aug9]));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("C2, C4 to C11, C21, C22 and C25: the live document says what it is, dates every paid row, prints money one way, says units, names no product, and the Counter's headings and landmarks read in order");
@@ -21242,6 +21264,9 @@ await (async () => {
   /* C11: no product word in the live document's prose; an issue keeps it */
   ok(!/\bsalt\b/i.test(text(live)) && /\bgoods\b/.test(text(live)) && /\bsalt\b/.test(text(issue)),
     "the live document's workings say goods, never the product's word, and an issue keeps its words (C11)");
+  ok(/How the 1\.5 units are arrived at/.test(text(live)) && /So the goods due to you are what you bought/.test(text(live)) && !/goods (still )?due to you is/.test(text(live))
+    && /How the 1\.5 unit is arrived at/.test(text(issue)) && /So the salt due to you is what you bought/.test(text(issue)),
+    "and the goods are plural where the salt was not, the units counted as they read; an issue keeps its words (C7, C11)");
   /* C9: a refund row belongs to its month, so the month filter reaches it */
   ok(/<div class="salt-lines__row" role="row" data-m="2026-08"><div class="salt-lines__date" role="cell">10 Aug 2026<\/div><div class="salt-lines__what" role="cell">Overpayment/.test(live),
     "a refund row carries its month, so a month chosen filters it with the orders (C9)");

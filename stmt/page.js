@@ -2149,6 +2149,15 @@ const CLIENT_JS = `
       var m=rows[i].getAttribute('data-m');
       rows[i].style.display=(!mfPick||m===mfPick)?'':'none';
     }
+    /* C9: a list the month leaves empty goes with its heading, Refunds with nothing of that month under it */
+    var ls=out.querySelectorAll('.salt-lines');
+    for(var j=0;j<ls.length;j++){
+      var rs=ls[j].querySelectorAll('.salt-lines__row'), any=false;
+      for(var q=0;q<rs.length;q++) if(rs[q].style.display!=='none') any=true;
+      var gone=rs.length>0&&!any, hd=ls[j].previousElementSibling;
+      ls[j].style.display=gone?'none':'';
+      if(hd&&hd.tagName==='H3') hd.style.display=gone?'none':'';
+    }
     var bs=mfil.querySelectorAll('button');
     for(var k=0;k<bs.length;k++){ var on=bs[k].getAttribute('data-mf')===(mfPick||''); bs[k].className='salt-tabs__pill'+(on?' salt-tabs__pill--active':''); bs[k].setAttribute('aria-pressed',on?'true':'false'); }
     mfnote.textContent=mfPick?tw('acct.showing',{m:Dd(monthLabel,mfPick)}):tw('acct.all');
@@ -2173,6 +2182,8 @@ const CLIENT_JS = `
     });
     /* beside the list it filters, not above the document's heading */
     var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
+    /* above the heading of a list that has one (C9: an account whose first dated rows are its refunds) */
+    if(list&&list.previousElementSibling&&list.previousElementSibling.tagName==='H3') list=list.previousElementSibling;
     if(list&&list.parentNode){ list.parentNode.insertBefore(mfil,list); list.parentNode.insertBefore(mfnote,list); }
     mfil.hidden=false;
     applyMonths();
