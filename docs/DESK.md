@@ -153,6 +153,21 @@
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
+- **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
+  and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
+  device: `navigator.geolocation` read once, fresh (`hereNow`, kept nowhere), else `_base`; to the
+  party's exact point in `vault-addr` (a `-R` bucket's associate's when it has none), else its
+  `PLACED` locality, said as about a kilometre out (`RULES.delivery.localityFallback`, his answer at
+  design); `haversineKm` times `roadFactor` at `rmPerKm`, rounded to `roundTo` (`deliveryFeeFor`).
+  Only with the vault open on the phone (`feeOpen`), and on the card only once it is on screen
+  (opened on the phone, or beside the list at 1080px); `lockVault` drops every offer, so an unlock
+  reads again. On the card the figure fills Other on a trip's first order alone, and once that order
+  is agreed no later order of the sheet takes one (a V4b sheet is one trip); the box keeps what it
+  holds past a lock, and a fresh read replaces only the figure the desk put there (`ORD_PUT`). The
+  line under the chips names the two points used, never a point. On the Workbench it fills Delivery
+  only while that stands at nought, an R2 sale measured to the associate. His figure wins: the preview and Accept send what the box holds. A setting, not a
+  price: the goods, the floor and the board never read it. The desk's `Permissions-Policy` carries
+  `geolocation=(self)`, nothing wider; `_headers` is outside the build id, so it ships in a version.
 - **Codes are derived** (`deriveCode`, phone and laptop alike): C or S, the name's first letter,
   the length of the saved name counting spaces, a dash, then the place's initials when it is
   several words or its first three letters when it is one; a blank place is TBC. A downstream

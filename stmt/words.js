@@ -74,7 +74,7 @@ export const EN = {
   "day3": "Sun Mon Tue Wed Thu Fri Sat",
   "unit.one": "{n} {u}",
   "unit.many": "{n} {u}s",
-  "deliv": "Delivery is charged by area. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.",
+  "deliv": "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.",
   /* ---- THE PLACES, and whose account it is ---- */
   "place.home": "Home",
   "place.prices": "Prices",

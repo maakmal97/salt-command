@@ -42,9 +42,10 @@ by his decision, no sign-in.
      kg. Copy is terse: noun-phrase headings, the number first. Dated records (the Journal,
      sealed issues) are never corrected in place.
    - **COGS, purchase plus freight, is the line no price goes under; the floor is COGS plus
-     leakage**, one per size, with no delivery and no time in it. A sale carries `delivery` and a
-     lot `freight`, typed per row; `txGoods` strikes every rate on the goods. **What the customer
-     owes is goods plus delivery, the engine's `txOwed`**; nothing reads the total less the cash.
+     leakage**, one per size, with no delivery and no time in it. A sale carries `delivery`, typed per
+     row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
+     typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
+     delivery, the engine's `txOwed`**; nothing reads the total less the cash.
    - **THE BOARD IS THE LADDER.** A stranger is quoted the LAST level, Silver: `pxPolicy.tierRule`
      feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
      ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is

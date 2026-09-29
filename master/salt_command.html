@@ -9141,8 +9141,55 @@ const RULES={
   creditDays:10,
   holdDays:3,
   fullProvDays:21,
-  reorderUnits:{salt:15, oil:20}
+  reorderUnits:{salt:15, oil:20},
+  /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
+     delivery box, his figure wins, and the goods, the floor and the board never read it. roadFactor 1.3 is an assumption
+     for the Klang Valley. localityFallback: a party with no exact point is measured to its PLACED locality (0.01 degrees,
+     about a kilometre out), his answer at design. */
+  delivery:{rmPerKm:1.5, roadFactor:1.3, roundTo:0.5, minRm:0, maxRm:null, localityFallback:true}
 };
+/* F15: THE FEE BY DISTANCE. Worked on the device from two points: where he is, read once when the delivery box opens and
+   kept nowhere, else his base point in the places vault (_base); and the party's exact point in the places vault, else its
+   locality. The great-circle distance times the road factor at RM a km, rounded to roundTo. No key, no third party. It needs
+   the vault open on the phone; locked, or on the laptop, nothing is offered and the box stands as it was. */
+function haversineKm(a,b){const r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*6371.0088*Math.asin(Math.min(1,Math.sqrt(h)));}
+function deliveryFeeFor(km){const d=RULES.delivery;if(!(km>=0))return null;
+  let f=Math.round(km*d.roadFactor*d.rmPerKm/d.roundTo)*d.roundTo;f=Math.max(d.minRm||0,f);if(d.maxRm!=null)f=Math.min(d.maxRm,f);return +f.toFixed(2);}
+const feePt=p=>p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng)?{lat:p.lat,lng:p.lng}:null;
+/* the party's point: its own, else its associate's for a resale bucket (the goods go to the associate); exact first */
+function feeTo(code){
+  const c=String(code||''),ids=/-R$/.test(c)?[c,c.slice(0,-2)]:[c];
+  for(const id of ids){const p=feePt(vaultPlaces&&vaultPlaces[id]);if(p)return Object.assign(p,{how:'exact',code:id});}
+  if(RULES.delivery.localityFallback)for(const id of ids){const g=PLACED[id];if(Array.isArray(g)){const p=feePt({lat:g[0],lng:g[1]});if(p)return Object.assign(p,{how:'locality',code:id});}}
+  return null;
+}
+/* where he is, once: fresh (no cached fix), eight seconds at most, null when refused, timed out or absent */
+function hereNow(){return new Promise(res=>{let g=null;try{g=navigator.geolocation;}catch(e){}
+  if(!g||typeof g.getCurrentPosition!=='function')return res(null);
+  let done=false;const end=v=>{if(!done){done=true;res(v);}};setTimeout(()=>end(null),9000);
+  try{g.getCurrentPosition(p=>end(p&&p.coords?feePt({lat:p.coords.latitude,lng:p.coords.longitude}):null),()=>end(null),{enableHighAccuracy:false,maximumAge:0,timeout:8000});}catch(e){end(null);}});}
+async function feeFrom(){const h=await hereNow();if(h)return Object.assign(h,{how:'here'});
+  const b=feePt(vaultPlaces&&vaultPlaces._base);return b?Object.assign(b,{how:'base'}):null;}
+/* the offer: {fee, km, road, from, to, code} when both points stand, {why} when one does not, null when nothing may be offered */
+function feeOpen(){try{return cloudMode()&&namesShown();}catch(e){return false;}}
+async function deliveryOffer(code){
+  if(!feeOpen()||!code)return null;
+  const to=feeTo(code);if(!to)return {why:'none',code};
+  const from=await feeFrom();if(!from)return {why:'nofrom',code,to:to.how};
+  const km=haversineKm(from,to);
+  return {fee:deliveryFeeFor(km),km:+km.toFixed(1),road:+(km*RULES.delivery.roadFactor).toFixed(1),from:from.how,to:to.how,code:to.code};
+}
+/* the offer said in words: the figure, the distance, and which two points it was worked between; never a point itself */
+function feeLine(off){
+  if(!off)return '';
+  if(off.why==='none')return 'No distance fee: '+codeOf(off.code)+' has no point filed.';
+  if(off.why==='nofrom')return 'No distance fee: your location was not read and no base point is filed.';
+  const d=RULES.delivery;
+  return fmt(off.fee)+' by distance: '+off.road+' km by road ('+off.km+' km straight, times '+d.roadFactor+') at '+fmt(d.rmPerKm)+' a km, one way, '
+    +(off.from==='here'?'from where you are':'from your base point, as your location was not read')+' to '
+    +(off.to==='exact'?codeOf(off.code)+'’s filed point.':codeOf(off.code)+'’s locality, about a kilometre out: no exact point is filed.');
+}
 function creditCapFor(prod,tier){const c=RULES.creditUnits[prod||PROD]||RULES.creditUnits[DEFAULT_PROD];return c[tier==='associate'?'associate':'retail'];}
 /* 24 SEP 2026, HIS INSTRUCTION: THE REORDER POINT IS MEASURED. It is restockFor's, forecast demand over
    4 to 14 days, and every reader of the mark follows. RULES.reorderUnits is kept ONLY as the fallback for a
@@ -15937,7 +15984,8 @@ async function vaultReveal(pass){
   }
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
-function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}}
+function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}
+  try{ORD_FEE={};WB_FEE=null;}catch(e){}}   /* F15: a fee worked from the places goes with them */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -19507,6 +19555,37 @@ async function ordTell(){
 let ORD_PV={},ORD_PV_GEN=0;
 /* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
 let ORD_CHIP={};
+/* F15: THE DISTANCE FEE, offered when a delivery's card opens, one read a trip (a V4b sheet is one trip): the offer by
+   trip, and the figure put in Other on the trip's first order alone, so a sheet is never charged twice. He may choose
+   any other chip or type over it; what he sends is what the preview drafts. Cleared with the vault. */
+/* ORD_PUT: the figure the desk put in a box, a figure alone, kept past a lock so the box is drawn with it while the offer
+   is gone (F15 review), and replaced by a fresh read only while the box still holds it */
+let ORD_FEE={},ORD_PUT={};
+const ordFeeKey=o=>o.sheet?'s:'+o.sheet:'o:'+o.id;
+/* the order whose card carries the trip's charge: a sheet agreed together, its first order (V4b.2's ordSheetLead); else the
+   trip's first delivery, whatever its stage, declined and cancelled aside, so once it is agreed the trip's charge is its and
+   no later order of the sheet becomes the carrier (F15 review: that charged a sheet twice) */
+function ordFeeCarrier(o){if(o.status!=='placed')return false;if(!o.sheet)return true;
+  const L=ordSheetLead(o);if(L)return L.id===o.id;
+  const t=ORD_OPEN.filter(x=>x&&x.sheet===o.sheet&&x.u===o.u&&x.kind!=='account'&&x.mode==='deliver'&&!['declined','cancelled'].includes(x.status)).map(x=>x.id).sort();return t[0]===o.id;}
+async function ordFeeRead(o){
+  if(!o||o.status!=='placed'||o.mode!=='deliver'||ordAgainAck(o)||!feeOpen())return;
+  const k=ordFeeKey(o);if(ORD_FEE[k])return;
+  const mine={st:'looking'};ORD_FEE[k]=mine;
+  const off=await deliveryOffer(o.code);
+  if(ORD_FEE[k]!==mine)return;   /* locked, or read again, meanwhile */
+  if(!off){delete ORD_FEE[k];return;}
+  ORD_FEE[k]={st:'ok',off};
+  /* the trip's first order takes it, whichever of its cards was opened */
+  const car=ORD_OPEN.find(x=>x&&ordFeeKey(x)===k&&x.status==='placed'&&x.mode==='deliver'&&ordFeeCarrier(x));
+  if(off.fee!=null&&car&&!ORD_CHIP[car.id])ORD_CHIP[car.id]='other';
+  if(off.fee!=null&&car){const i=document.querySelector('input[data-fee="'+car.id+'"]');
+    if(!i||i.value===''||+i.value===ORD_PUT[car.id]){if(i)i.value=String(off.fee);ORD_PUT[car.id]=off.fee;}}
+  ordDraw();
+}
+/* the card is on screen: opened on the phone, or beside the list on a wide screen (the 1080px of the layout) */
+function ordSideBySide(){try{return window.matchMedia('(min-width:1080px)').matches;}catch(e){return false;}}
+function ordFeeOffer(o){const f=ORD_FEE[ordFeeKey(o)];return f&&f.st==='ok'?f.off:null;}
 function ordFeeNow(o){const c=ORD_CHIP[o.id];if(!c)return null;if(c!=='other')return +c;
   const i=document.querySelector('input[data-fee="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(2):null;}
 /* S11 11.13 (D6): an agreed order whose pending row he rejected offers that row again, by Accept against its
@@ -19795,12 +19874,17 @@ function ordCard(o){
      row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
      agreed at a charge nobody set. The choice is kept per order across every poll. */
   const chip=ORD_CHIP[o.id]||'';
+  /* F15: the offer by distance, its figure the Other box's own on the trip's first order, said under the chips */
+  const fOff=o.status==='placed'&&o.mode==='deliver'?ordFeeOffer(o):null,fLook=!!(ORD_FEE[ordFeeKey(o)]&&ORD_FEE[ordFeeKey(o)].st==='looking');
+  const fCar=fOff&&fOff.fee!=null&&ordFeeCarrier(o);
+  const fSay=fLook?'Working out the fee by distance.':fOff?feeLine(fOff)+(fOff.fee!=null&&!fCar?' One trip: it goes on the first order of this sheet, so nothing is put here.':''):'';
   const opt=(v,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="fee-${esc(o.id)}" value="${v}" data-chip="${esc(o.id)}"${chip===v?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${w}</span></span></label>`;
   const fee=(o.status==='placed'&&o.mode==='deliver'&&!sSib)
     ? `<fieldset class="salt-options ordfee"><legend class="salt-options__legend">Delivery charge</legend>
         <div class="salt-options__grid salt-options__grid--2">${opt('0','RM 0')+opt('10','RM 10')+opt('15','RM 15')+opt('other','Other')}</div>
         <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
-          <input type="number" inputmode="decimal" min="0" step="0.5" value="" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label></fieldset>` : '';
+          <input type="number" inputmode="decimal" min="0" step="0.5" value="${fCar?fOff.fee:chip==='other'&&ORD_PUT[o.id]!=null?ORD_PUT[o.id]:''}" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label>
+        ${fSay?`<p class="salt-approve__reason ordfeeby" data-feeby="${esc(o.id)}">${esc(fSay)}</p>`:''}</fieldset>` : '';
   /* 28 Sep 2026: the "Other amount" field for Cash received, the same shape as the fee's Other, RM box */
   const cash=cashNow
     ? `<label class="salt-field ordother"${cashPart?'':' hidden'}><span class="salt-field__label">Cash received, RM</span>
@@ -19940,6 +20024,8 @@ function ordDraw(){
   if(selO)(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
   /* V4b.2: and the other orders of a sheet agreed on its card, each at RM 0 */
   if(selO&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
+  /* F15: and a delivery's card, opened, reads where he is for its fee, once a trip */
+  if(selO&&selO.kind!=='account'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
@@ -20314,9 +20400,10 @@ function tabWorkbench(){
              it any more, so the next delivered sale typed here would have been booked as owing its
              carriage twice. Goods and carriage are two boxes now, as they are two columns on the row. -->
         <div class="qfield qunits"><label id="wbTotalLbl">Goods (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
-        <div class="qfield qunits" id="wbDeliveryCell"><label id="wbDeliveryLbl">Delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbDeliveryCell"><label id="wbDeliveryLbl">Delivery (RM)</label><input id="wbDelivery" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield qunits" id="wbFreightCell"><label id="wbFreightLbl">Freight (RM)</label><input id="wbFreight" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
       </div>
+      <p class="dsc" id="wbFeeBy" role="status" style="display:none;margin:-4px 0 10px"></p>
       <div class="qrow" style="margin-bottom:10px">
         <!-- v387: THESE TWO WERE THE WRONG WAY ROUND AND THE COLUMNS CROSSED. .qrow is a fixed
              three-column grid, so the field above each of these is the one in its own column:
@@ -23035,6 +23122,29 @@ function wbAmendLabels(){
   if(k==='Cancellation'){cl.textContent='Cash (not used)';kl.textContent='Units (not used)';return;}
   cl.textContent='Cash moved (RM)';kl.textContent='Units moved (unit)';
 }
+/* F15: THE DISTANCE FEE ON A SALE TYPED HERE. Read when the delivery box opens for a party, and again only when it closes
+   and opens or the party changes; put in the box only while it stands at nought, so a figure he typed is never replaced. */
+/* WB_PUT {code, fee}: the figure the desk last put in Delivery and whose it was. Another party, or none, takes it out while
+   the box still holds it (F15 review: a sale to a party with no point went at the last party's distance); a figure he
+   typed is never touched */
+let WB_FEE=null,WB_PUT=null;
+function wbFeeUnput(code){if(!WB_PUT||WB_PUT.code===code)return;const di=wbEl('wbDelivery');
+  if(di&&!di.disabled&&+di.value===WB_PUT.fee)di.value='0';WB_PUT=null;}
+function wbFeeSay(){const e=wbEl('wbFeeBy');if(!e)return;const f=WB_FEE;
+  const t=!f?'':f.st==='looking'?'Working out the fee by distance.':feeLine(f.off)+(f.off.fee==null?'':f.put!=null?' It is in Delivery; type over it to charge another.':' Delivery keeps your figure.');
+  e.textContent=t;e.style.display=t?'':'none';}
+function wbFeeOpen(code){
+  wbFeeUnput(code);
+  if(!code||!feeOpen()){WB_FEE=null;wbFeeSay();return;}
+  if(WB_FEE&&WB_FEE.code===code){wbFeeSay();return;}
+  const mine={code,st:'looking'};WB_FEE=mine;wbFeeSay();
+  deliveryOffer(code).then(off=>{if(WB_FEE!==mine)return;
+    if(!off){WB_FEE=null;wbFeeSay();return;}
+    mine.st='ok';mine.off=off;
+    const di=wbEl('wbDelivery');
+    if(di&&!di.disabled&&off.fee!=null&&(!(+di.value>0)||(WB_PUT&&+di.value===WB_PUT.fee))){di.value=String(off.fee);mine.put=off.fee;WB_PUT={code,fee:off.fee};try{wbPreview();}catch(e){}}
+    wbFeeSay();});
+}
 function wbApply(){
   const ms=wbEl('wbModeSw');if(ms)[...ms.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===wbMode));
   const ds=wbEl('wbDirSw');if(ds)[...ds.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.d===wbDir));
@@ -23090,6 +23200,9 @@ function wbApply(){
     const gift=!!(wbEl('wbGift')&&wbEl('wbGift').checked&&wbDir==='SELL'&&wbMode==='new');
     const dShut=gift||(wbDir==='SELL'&&hv==='collected'), fShut=wbDir==='BUY'&&hv==='delivered';
     if(di){di.disabled=dShut;if(dShut)di.value='0';}
+    /* F15: the delivery box open on a new sale to a chosen party reads the fee by distance, once each time it opens */
+    {const r2=!!(wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&wbStream==='R2');   /* an R2 sale goes to the associate */
+     wbFeeOpen(!dShut&&wbDir==='SELL'&&wbMode==='new'?(r2?wbVal('wbAssocSel'):wbVal('wbParty')):'');}
     if(fi){fi.disabled=fShut;if(fShut)fi.value='0';}
     if(dl)dl.textContent=gift?'Delivery (RM), a gift carries none':(dShut?'Delivery (RM), they collected':'Delivery (RM)');
     if(fl)fl.textContent=fShut?'Freight (RM), they delivered':(wbDir==='BUY'&&hv==='collected'?'Freight (RM), required':'Freight (RM)');
@@ -23259,6 +23372,7 @@ function wireWorkbench(){
   const kq=wbEl('wbUnitsQ');if(kq)kq.onclick=e=>{const k=e.target.dataset.k;if(!k)return;
     wbEl('wbUnits').value=k==='none'?0:wbNum('wbQty');wbPreview();};
   const ac=wbEl('wbAssoc');if(ac)ac.onchange=()=>{const b=wbEl('wbAssocBox');if(b)b.style.display=ac.checked?'':'none';wbApply();wbPreview();};
+  const asl=wbEl('wbAssocSel');if(asl)asl.onchange=()=>{wbApply();wbPreview();};   /* F15: an R2 sale's fee follows the associate */
   const cvb=wbEl('wbCover');if(cvb)cvb.onchange=wbPreview;   // v620
   /* v313: the reveal handlers went with the boxes they revealed. */
   /* v313: the associate reveal handler went with the box it revealed. */

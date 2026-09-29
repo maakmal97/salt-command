@@ -15569,7 +15569,7 @@ await (async () => {
   const C9 = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc9 } = await import("node:crypto");
   const { JSDOM: JD9 } = await import("jsdom");
-  const ONE = "Delivery is charged by area. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.";
+  const ONE = "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.";
   ok(PG.DELIVERY === ONE, "the sentence is the plan's, word for word");
   const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "n49");
   ok(board.includes(ONE) && !/quoted when you order|charged separately/.test(board), "a guest's board says it, and no longer says the charge is quoted when they order");
@@ -47235,6 +47235,193 @@ await (async () => {
     ok(r.ack === both && r.part === both && r.whole === "" && r.none === "",
       "Ready shows again at ready with units handed over and units still owed, and not at ready with nothing owed or nothing handed over: " + JSON.stringify(r));
   } finally { try { w.close(); } catch (x) { /* best effort */ } }
+})();
+
+section("F15 (29 Sep 2026): the delivery fee by distance: RM 1.50 a km by road at 1.3, one way, rounded to RM 0.50, worked from where he is, else his base point, to the party's point, else its locality");
+await (async () => {
+  /* F15: the fee is worked on the device from two points and offered, never charged: deliveryOffer reads where he is once
+     (navigator.geolocation, stubbed here as the phone answers it), else _base in the places vault, and measures to the
+     party's exact point there, else its PLACED locality (his answer at design). A setting in RULES, never a price. Each
+     assertion proved red by mutation on its own. */
+  const { openMaster: om15 } = await import("../tools/payload.mjs");
+  const { w } = await om15();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  const KM = 1 / 111.19508;   /* a degree of latitude on the 6371.0088 km sphere, so 10 * KM is ten kilometres north */
+  const geo = (ans) => { w.__geo = 0; Object.defineProperty(w.navigator, "geolocation", { configurable: true, value: { getCurrentPosition(yes, no, opt) {
+    w.__geo++; w.__geoOpt = opt; setTimeout(() => ans ? yes({ coords: { latitude: ans[0], longitude: ans[1] } }) : no({ code: 1 }), 5); } } }); };
+  try {
+    const fees = rd("[deliveryFeeFor(10),deliveryFeeFor(10.1),deliveryFeeFor(10.3),deliveryFeeFor(0),+haversineKm({lat:3,lng:101.5},{lat:3+10*" + KM + ",lng:101.5}).toFixed(3)]");
+    ok(fees.join() === "19.5,19.5,20,0,10",
+      "F15: 10 km at a road factor of 1.3 and RM 1.50 a km is RM 19.50, rounded to the nearest RM 0.50, nought at nought, and ten kilometres north measures 10: " + JSON.stringify(fees));
+    ok(JSON.stringify(rd("RULES.delivery")) === JSON.stringify({ rmPerKm: 1.5, roadFactor: 1.3, roundTo: 0.5, minRm: 0, maxRm: null, localityFallback: true }),
+      "F15: the rate is a setting in RULES, as he confirmed: RM 1.50 a km, 1.3, RM 0.50, no minimum, no cap, the locality as the fallback");
+    const P = { "CZ9-ADR": { addr: null, lat: 3 + 10 * KM, lng: 101.5, src: "waze", at: "2026-09-28T01:00:00.000Z" },
+      "CZ9-AS": { addr: null, lat: 3 + 20 * KM, lng: 101.5, src: "waze", at: null }, "CZ9-TXT": { addr: "Jalan Zqor", lat: null, lng: null, src: "google", at: null },
+      _base: { addr: null, lat: 3, lng: 101.5, src: "google", at: null } };
+    w.eval("SALT_CLOUD=true;vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces=" + JSON.stringify(P) + ";PLACED['CZ9-LOC']=[3.09,101.5,'Qelvor'];PLACED['CZ9-TXT']=[3.09,101.5,'Qelvor'];");
+    geo([3 - 10 * KM, 101.5]);
+    const here = await w.eval("deliveryOffer('CZ9-ADR')");
+    ok(here && here.fee === 39 && here.from === "here" && here.to === "exact" && here.km === 20 && w.__geo === 1 && w.__geoOpt && w.__geoOpt.maximumAge === 0,
+      "F15: where he is is read once, fresh, and the fee runs from there to the party's filed point: " + JSON.stringify(here));
+    geo(null);
+    const base = await w.eval("deliveryOffer('CZ9-ADR')"), baseLine = String(w.eval("feeLine(" + JSON.stringify(base) + ")"));
+    ok(base && base.fee === 19.5 && base.from === "base" && /from your base point, as your location was not read/.test(baseLine),
+      "F15: a location refused falls to his base point, and the line says so: " + baseLine);
+    const loc = await w.eval("deliveryOffer('CZ9-LOC')"), locLine = String(w.eval("feeLine(" + JSON.stringify(loc) + ")"));
+    ok(loc && loc.to === "locality" && loc.fee === 19.5 && /CZ9-LOC’s locality, about a kilometre out: no exact point is filed\./.test(locLine),
+      "F15: a party with no exact point is measured to its locality, and the line says it is about a kilometre out: " + locLine);
+    const txt = await w.eval("deliveryOffer('CZ9-TXT')");
+    ok(txt && txt.to === "locality", "F15: an address filed with no point is no point, so its locality is used: " + JSON.stringify(txt));
+    const bucket = await w.eval("deliveryOffer('CZ9-AS-R')");
+    ok(bucket && bucket.to === "exact" && bucket.code === "CZ9-AS" && bucket.fee === 39, "F15: a resale bucket with no point of its own is measured to its associate's: " + JSON.stringify(bucket));
+    const none = await w.eval("deliveryOffer('CZ9-NONE')"), noneLine = String(w.eval("feeLine(" + JSON.stringify(none) + ")"));
+    ok(none && none.why === "none" && none.fee === undefined && /has no point filed/.test(noneLine), "F15: a party with no point gets no figure, and is told why: " + noneLine);
+    w.eval("delete vaultPlaces._base;");
+    const nofrom = await w.eval("deliveryOffer('CZ9-ADR')");
+    ok(nofrom && nofrom.why === "nofrom" && nofrom.fee === undefined, "F15: refused, with no base point filed, nothing is offered: " + JSON.stringify(nofrom));
+    w.eval("lockVault();");
+    geo([3, 101.5]);
+    const locked = await w.eval("deliveryOffer('CZ9-ADR')");
+    ok(locked === null && w.__geo === 0, "F15: with the vault locked nothing is offered and his location is not asked for: " + JSON.stringify({ locked, asked: w.__geo }));
+    const lines = [baseLine, locLine, String(w.eval("feeLine(" + JSON.stringify(here) + ")"))].join(" ");
+    ok(!/3\.0|101\.5|Jalan|Zed/.test(lines), "F15: the line names the points it used and never a point, an address or a name: " + lines);
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F15: a delivery's card offers the fee in Other on the trip's first order, the preview drafts what the box holds, and Accept sends his figure");
+await (async () => {
+  /* F15 on the Site orders card, driven through ordDraw and ordAct over a stubbed Worker: the card, opened, reads the fee once
+     a trip, chooses Other with the figure on the sheet's first order alone, and the preview asked is at that figure; his own
+     figure typed over it is what the preview drafts and Accept sends. Proved red by mutation, each on its own. */
+  const { openMaster: om15c } = await import("../tools/payload.mjs");
+  const { w } = await om15c();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const KM = 1 / 111.19508;
+  try {
+    w.__geo = 0;
+    Object.defineProperty(w.navigator, "geolocation", { configurable: true, value: { getCurrentPosition(yes) { w.__geo++; setTimeout(() => yes({ coords: { latitude: 3, longitude: 101.5 } }), 5); } } });
+    w.eval("SALT_CLOUD=true;vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces={'CZ9-ADR':{addr:null,lat:" + (3 + 10 * KM) + ",lng:101.5,src:'waze',at:null}};"
+      + "window.__calls=[];window.fetch=function(u,o){var s=String(u),b=o&&o.body?JSON.parse(o.body):null;window.__calls.push({u:s,b:b});"
+      + "var ans=/\\/preview$/.test(s)?{ok:true,hash:'h'+b.delivery,row:{total:200,qty:2},card:200,flags:[]}:{ok:true,approved:true};"
+      + "return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(ans);}});};");
+    const D = w.document, box = D.createElement("div"); box.className = "ordgrid"; box.id = "ordBox"; D.body.appendChild(box);
+    const base = { u: "abcd-efgh", code: "CZ9-ADR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, history: [], msgs: [], payments: [],
+      status: "placed", mode: "deliver", place: "Qelvor", at: "2026-09-29T02:00:00.000Z", sheet: "f15Sheet0001" };
+    const A = Object.assign({}, base, { id: "f15-a" }), B = Object.assign({}, base, { id: "f15-b", product: "oil", qty: 10, total: 95 });
+    /* F15 review: the phone's list, no card opened, asks nothing */
+    w.eval("ORD_OPEN=" + JSON.stringify([A, B]) + ";ORD_SEL='';ORD_OPENED=false;ordDraw();");
+    ok(rd("Object.keys(ORD_FEE).length") === 0 && w.__geo === 0, "F15: the list on the phone, no card opened, asks nothing of where he is: " + JSON.stringify({ fee: rd("ORD_FEE"), geo: w.__geo }));
+    w.eval("ORD_SEL='f15-b';ORD_OPENED=true;ordDraw();");
+    const pv = (d) => rd("window.__calls").filter((c) => /\/preview$/.test(c.u) && c.b && c.b.delivery === d);
+    await until(() => rd("!!(ORD_FEE['s:f15Sheet0001']&&ORD_FEE['s:f15Sheet0001'].st==='ok')"));
+    const bCard = rd("(document.querySelector('.ordcard[data-id=\"f15-b\"]')||{}).textContent||''").replace(/\s+/g, " ");
+    ok(rd("ORD_CHIP['f15-b']||null") === null && !rd("!!document.querySelector('input[data-fee=\"f15-b\"]')") && /whose card carries the delivery charge/.test(bCard) && w.__geo === 1,
+      "F15: a later order of a sheet agreed together (v938) carries no charge and is chosen nothing, the read opening its card made for the trip: " + (/Accept them together.{0,120}/.exec(bCard) || [""])[0]);
+    w.eval("ORD_SEL='f15-a';ordDraw();");
+    await until(() => pv(19.5).length > 0);
+    const aIn = rd("(document.querySelector('input[data-fee=\"f15-a\"]')||{}).value||''");
+    ok(rd("ORD_CHIP['f15-a']||null") === "other" && aIn === "19.5" && pv(19.5).length > 0 && w.__geo === 1,
+      "F15: the trip's first order has Other chosen with RM 19.50 in it, the row is drafted at it, and his location was read once for the trip: " + JSON.stringify({ chip: rd("ORD_CHIP['f15-a']||null"), aIn, geo: w.__geo }));
+    /* F15 review: a lock drops the offer, never the figure in the box; the next unlock puts a fresh figure in over the desk's
+       own, and never over one he typed */
+    const unlock = (km) => w.eval("vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces={'CZ9-ADR':{addr:null,lat:" + (3 + km * KM) + ",lng:101.5,src:'waze',at:null}};ordDraw();");
+    w.eval("lockVault();ordDraw();");
+    const kept = rd("{v:document.querySelector('input[data-fee=\"f15-a\"]').value,chip:ORD_CHIP['f15-a']||null,now:ordFeeNow(ORD_OPEN[0])}");
+    ok(kept.v === "19.5" && kept.chip === "other" && kept.now === 19.5, "F15: a lock drops the offer and keeps the figure in the box under Other: " + JSON.stringify(kept));
+    /* F15 re-check: and a view rebuilt while locked (Site orders left and come back to) draws it again from what was put */
+    const bx = D.getElementById("ordBox"); bx.innerHTML = ""; w.eval("ordDraw();");
+    const rebuilt = rd("document.querySelector('input[data-fee=\"f15-a\"]').value");
+    ok(rebuilt === "19.5", "F15: a view rebuilt while locked draws the put figure again under Other: " + rebuilt);
+    unlock(20);
+    await until(() => rd("document.querySelector('input[data-fee=\"f15-a\"]').value") === "39");
+    const fresh = rd("document.querySelector('input[data-fee=\"f15-a\"]').value");
+    const i = D.querySelector('input[data-fee="f15-a"]'); i.value = "25"; i.onchange();
+    w.eval("lockVault();ordDraw();");
+    unlock(10);
+    await until(() => rd("!!(ORD_FEE['s:f15Sheet0001']&&ORD_FEE['s:f15Sheet0001'].st==='ok')"));
+    const typedKept = rd("document.querySelector('input[data-fee=\"f15-a\"]').value");
+    ok(fresh === "39" && typedKept === "25", "F15: after an unlock the fresh figure replaces the desk's own, and a figure he typed stays: " + JSON.stringify({ fresh, typedKept }));
+    await until(() => pv(25).length > 0 && rd("!!(ORD_PV['f15-a']&&ORD_PV['f15-a'].st==='ok'&&ORD_PV['f15-a'].d===25&&ORD_PV['f15-b']&&ORD_PV['f15-b'].st==='ok'&&ORD_PV['f15-b'].d===0)"));
+    w.eval("ordDraw();");
+    const acc = D.querySelector('.ordcard[data-id="f15-a"] button[data-ord="acknowledged"]');
+    await w.eval("ordAct(document.querySelector('.ordcard[data-id=\"f15-a\"] button[data-ord=\"acknowledged\"]'))");
+    const sent = rd("window.__calls").filter((c) => /\/accept$/.test(c.u)).map((c) => ({ id: c.u.split("/")[1], d: c.b.delivery, h: c.b.hash }));
+    ok(!!acc && /Accept all 2, RM 320/.test(acc.textContent) && JSON.stringify(sent) === JSON.stringify([{ id: "f15-a", d: 25, h: "h25" }, { id: "f15-b", d: 0, h: "h0" }]),
+      "F15: his figure typed over the offer is what the preview drafts and the sheet's one Accept sends on its first order, RM 0 on the rest, each with its preview's digest: " + (acc && acc.textContent) + " " + JSON.stringify(sent));
+    /* F15 review: once the trip's first order is agreed, its charge is the trip's; a later order read again takes none */
+    w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, A, { status: "acknowledged", delivery: 25 }), B]) + ";ORD_FEE={};ORD_SEL='f15-b';ORD_OPENED=true;ordDraw();");
+    await until(() => rd("!!(ORD_FEE['s:f15Sheet0001']&&ORD_FEE['s:f15Sheet0001'].st==='ok')"));
+    const twice = rd("{chip:ORD_CHIP['f15-b']||null,v:document.querySelector('input[data-fee=\"f15-b\"]').value}");
+    ok(twice.chip === null && twice.v === "", "F15: with the trip's first order agreed, a later order of the sheet is put nothing and chosen nothing: " + JSON.stringify(twice));
+    w.eval("lockVault();");
+    ok(rd("Object.keys(ORD_FEE).length") === 0 && rd("WB_FEE") === null, "F15: the lock drops every offer with the places");
+  } finally { await new Promise((r) => setTimeout(r, 150)); try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F15: the Workbench's Delivery box, opened on a sale to a chosen party, takes the fee while it stands at nought, and keeps a figure he typed");
+await (async () => {
+  /* F15 on the Workbench: the box open on a new sale reads the fee once each time it opens for a party, puts it in only
+     while the box stands at nought, and says which point it ran from. Proved red by mutation, each on its own. */
+  const { openMaster: om15w } = await import("../tools/payload.mjs");
+  const { w } = await om15w();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const KM = 1 / 111.19508;
+  try {
+    w.__geo = 0;
+    Object.defineProperty(w.navigator, "geolocation", { configurable: true, value: { getCurrentPosition(yes, no) { w.__geo++; setTimeout(() => no({ code: 1 }), 5); } } });
+    w.eval("SALT_CLOUD=true;vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces={'CZ9-ADR':{addr:null,lat:" + (3 + 10 * KM) + ",lng:101.5,src:'waze',at:null},_base:{addr:null,lat:3,lng:101.5,src:'google',at:null}};"
+      + "switchTab('add');wbMode='new';wbDir='SELL';wbApply();"
+      + "var s=document.getElementById('wbParty');['CZ9-ADR','CZ9-NONE'].forEach(function(c){var op=document.createElement('option');op.value=c;s.appendChild(op);});");
+    const pick = (c, deliv) => w.eval("(function(){document.getElementById('wbHand').value='';document.getElementById('wbParty').value=" + JSON.stringify(c) + ";" + (deliv == null ? "" : "document.getElementById('wbDelivery').value=" + JSON.stringify(deliv) + ";") + "wbApply();})()");
+    const box = () => rd("{v:document.getElementById('wbDelivery').value,say:document.getElementById('wbFeeBy').textContent,shown:document.getElementById('wbFeeBy').style.display}");
+    pick("CZ9-ADR", "0");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok')"));
+    const put = box();
+    ok(put.v === "19.5" && /RM 19.50 by distance/.test(put.say) && /from your base point/.test(put.say) && /It is in Delivery/.test(put.say) && put.shown === "",
+      "F15: the Delivery box on a sale to a party with a point takes the fee, said beside it with the point it ran from: " + JSON.stringify(put));
+    pick("CZ9-NONE");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok'&&WB_FEE.code==='CZ9-NONE')"));
+    const none = box();
+    ok(none.v === "0" && /has no point filed/.test(none.say), "F15: another party with no point takes the last party's fee out of the box and puts none: " + JSON.stringify(none));
+    pick("CZ9-ADR", "0");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok'&&WB_FEE.code==='CZ9-ADR')"));
+    w.eval("document.getElementById('wbDelivery').value='7';"); pick("CZ9-NONE");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok'&&WB_FEE.code==='CZ9-NONE')"));
+    ok(box().v === "7", "F15: a figure he typed stays when the party changes: " + JSON.stringify(box()));
+    pick("CZ9-ADR", "12");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok'&&WB_FEE.code==='CZ9-ADR')"));
+    const kept = box();
+    ok(kept.v === "12" && /Delivery keeps your figure/.test(kept.say), "F15: a figure he typed is kept, and the line says so: " + JSON.stringify(kept));
+    const g0 = w.__geo;
+    w.eval("wbApply();wbApply();");
+    ok(w.__geo === g0 && g0 === 3, "F15: one read each time the box opens for a party, and a redraw with it still open reads nothing again: " + g0);
+    w.eval("document.getElementById('wbHand').value='collected';wbApply();");
+    ok(rd("WB_FEE") === null && box().shown === "none", "F15: the box shut, the offer goes with it, so opening it again reads afresh");
+    /* F15 review: an R2 sale goes to the associate, so the fee runs to the associate, not the top party */
+    w.eval("(function(){var a=document.getElementById('wbAssocSel'),op=document.createElement('option');op.value='CZ9-ADR';a.appendChild(op);a.value='CZ9-ADR';"
+      + "document.getElementById('wbAssoc').checked=true;wbStream='R2';document.getElementById('wbHand').value='';document.getElementById('wbParty').value='CZ9-NONE';document.getElementById('wbDelivery').value='0';wbApply();})()");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok')"));
+    const r2 = box();
+    ok(rd("WB_FEE.code") === "CZ9-ADR" && r2.v === "19.5", "F15: an R2 sale takes the fee to the associate: " + JSON.stringify(r2));
+    /* F15 re-check: another associate chosen, the fee follows, over the figure the desk put */
+    w.eval("(function(){var a=document.getElementById('wbAssocSel'),op=document.createElement('option');op.value='CZ9-AS2';a.appendChild(op);"
+      + "vaultPlaces['CZ9-AS2']={addr:null,lat:" + (3 + 20 * KM) + ",lng:101.5,src:'waze',at:null};a.value='CZ9-AS2';a.onchange();})()");
+    await until(() => rd("!!(WB_FEE&&WB_FEE.st==='ok'&&WB_FEE.code==='CZ9-AS2')"));
+    const r2b = box();
+    ok(rd("WB_FEE.code") === "CZ9-AS2" && r2b.v === "39", "F15: another associate chosen, the fee follows over the desk's own figure: " + JSON.stringify(r2b));
+  } finally { await new Promise((r) => setTimeout(r, 150)); try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F15: the desk's Permissions-Policy lets the page itself ask where he is, and nothing wider");
+await (async () => {
+  /* F15: _headers is outside the build id, so the header ships inside a version; geolocation=(self) lets the desk ask on his
+     tap and no frame or other origin. Proved red by mutation (geolocation=*). */
+  const H = readFileSync(join(REPO, "public", "_headers"), "utf8");
+  const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
+  ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
+    "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
