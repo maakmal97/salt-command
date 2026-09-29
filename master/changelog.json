@@ -1,5 +1,14 @@
 [
  {
+  "v": "v957",
+  "d": "30 Sep 2026",
+  "t": "CH4-KS PAYS RM320 IN CASH; S215 SETTLES IN FULL",
+  "n": [
+   "<p><b>ONE FULFILMENT FOLDED.</b> CH4-KS paid RM320 in cash at the counter on 30 Sep against s215, order 20260928120800-zq6mca, agreed 28 Sep for 3 units at RM310 plus RM10 delivery. The 3 units had already gone out on the 30 Sep correction, so this row carries cash only. RM320 was outstanding before it and nothing is outstanding after it. The fold was preapproved by phone.</p>",
+   "<p><b>NOTHING UNUSUAL, SHELF UNCHANGED.</b> The drafter's flag, that the payment settles the order in full, is borne out: RM320 paid against RM320 owed leaves RM0 and no units on credit for CH4-KS. No unit moves, so stock stays at 21 and cost stays RM56 a unit, the inventory's own. The dossier gives no floor or ask for this size, and no loans are open.</p>"
+  ]
+ },
+ {
   "v": "v956",
   "d": "30 Sep 2026",
   "t": "A LATE PAYER IS OFFERED A LEVEL DOWN, READ FROM THE HANDOVER",
