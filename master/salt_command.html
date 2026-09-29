@@ -7255,7 +7255,7 @@ const TIER_OF={
     "oil": "Platinum"
   },
   "CK4-SEN": {
-    "salt": "Platinum"
+    "salt": "Ambassador"
   },
   "CZ5-TM": {
     "salt": "Titanium",
@@ -7499,7 +7499,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-28T16:30:27.937Z";
+const QUEUE_COMMITTED="2026-09-29T02:13:17.994Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -8504,7 +8504,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v936","d":"29 Sep 2026","t":"ONE ORDER SHEET TAKES SEVERAL PRODUCTS","n":["<p><b>ONE ORDER SHEET TAKES SEVERAL PRODUCTS.</b> His point 5 of 28 Sep 2026, and his Q3: one order a product, sent together. The Counter's sheet shows every product on their list, each with its sizes under its mark; they pick a size of each they want, tap a size again to take it off, and see one total. It opens on their usual. The check has a row a product and a Total. Place sends one order a product, each under its own request id and all under one sheet id: a line placed is said as Sent and never sent again, so Place after a refusal sends only what is left, a retry the site already holds is taken as placed, and a moved list is read again line by line. Change or Close after a line is placed takes that product off the sheet. The site counts a sheet once against the five open orders and refuses a product twice on one sheet.</p>","<p><b>ON THE DESK.</b> Each order keeps its own card, its own Accept and its own row. The card names the other orders open on its sheet, each a tap to its card, and a delivery still to agree says the trip is one: charge it on one order and RM 0 on the rest. One Accept, Ready and Handed for a whole sheet is split off, not built.</p>","<p><b>PROOFS.</b> Three new suite sections: the site's count and refusals on the KV road, the order book and both at once; the sheet in jsdom through a moved list, a partial placement, a retry, Change and Close; the desk card. 35 mutations each turned a check red. Three older checks that read the retired product segment now read each product's marks, and the check on the segment's ink went with it. The whole suite passed on the re-landed tree. Fable's review found three faults and a risk, all fixed and checked again by Fable: no fault.</p>"]}];
+const evolution=[{"v":"v937","d":"29 Sep 2026","t":"CK4-SEN'S SALT TIER IS SET TO AMBASSADOR","n":["<p><b>ONE TIER SET FOLDED.</b> This fold carries a single row: CK4-SEN's salt tier is set to Ambassador, moving from Platinum, as the drafter flagged. The desk decided it on 29 Sep 2026. The row moves no cash and no stock, and no price moves until the quotes switch. No sell, buy or count sits in this batch, and nothing is owed on it.</p>","<p><b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 2 units against a ledger of 86.2, costed at RM56 a unit, the same as the replacement cost, with the reorder point at 26.78. The counts for salt, oil, candy and rice were last taken on 27 Sep 2026. The dossier shows no moves and no open loans, so the cost basis holds and there is no stock note to add.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8619,7 +8619,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 09:45 KL';
+const LAST_UPDATED='29 Sep 2026, 10:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

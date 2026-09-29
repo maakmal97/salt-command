@@ -1,6 +1,6 @@
 {
- "v": "v935",
- "stamped": "29 Sep 2026, 09:28 KL",
+ "v": "v937",
+ "stamped": "29 Sep 2026, 10:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6292,7 +6292,7 @@
     "oil": "Platinum"
    },
    "CK4-SEN": {
-    "salt": "Platinum"
+    "salt": "Ambassador"
    },
    "CZ5-TM": {
     "salt": "Titanium",
@@ -6547,9 +6547,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-28T16:30:27.937Z",
+  "QUEUE_COMMITTED": "2026-09-29T02:13:17.994Z",
   "PRICING": {
-   "takenAt": "2026-09-29T01:28:31.173Z",
+   "takenAt": "2026-09-29T02:14:45.239Z",
    "sizes": [
     0.5,
     1,
@@ -6606,7 +6606,7 @@
      "salt": "Titanium"
     },
     "CK4-SEN": {
-     "salt": "Platinum"
+     "salt": "Ambassador"
     },
     "CE4-AD": {
      "salt": "Titanium"
@@ -8442,51 +8442,51 @@
       "CK4-SEN": [
        [
         0.5,
-        70
+        50
        ],
        [
         1,
-        120
+        90
        ],
        [
         1.5,
-        170
+        130
        ],
        [
         2,
-        220
+        170
        ],
        [
         2.5,
-        270
+        210
        ],
        [
         3,
-        320
+        260
        ],
        [
         3.5,
-        360
+        300
        ],
        [
         4,
-        400
+        340
        ],
        [
         4.5,
-        440
+        380
        ],
        [
         5,
-        480
+        420
        ],
        [
         6.25,
-        560
+        530
        ],
        [
         12.5,
-        1070
+        1050
        ]
       ],
       "CE4-AD": [
@@ -13171,10 +13171,10 @@
      "cards": {}
     }
    },
-   "v": "v935"
+   "v": "v937"
   },
   "OPEN": {
-   "at": "2026-09-29T01:28:31.448Z",
+   "at": "2026-09-29T02:14:45.533Z",
    "count": 11,
    "byKey": {
     "CE5-SA-R|2026-09-28|110": {
@@ -13426,7 +13426,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v935"
+   "v": "v937"
   }
  }
 }
