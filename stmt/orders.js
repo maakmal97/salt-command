@@ -265,7 +265,7 @@ export async function checkStores(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -807,8 +807,13 @@ export function decideDesk(order, body, at) {
   if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+  /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER is sent at the acknowledgement alone, and at no
+     other move: the desk checked it against the floor, and the site prices nothing, so it takes a positive figure to 2 dp */
+  if (body && body.total !== undefined && status !== "acknowledged") return { error: "a price is set only when the order is acknowledged", status: 400 };
+  if (body && body.total !== undefined && (!isNum(body.total) || !(body.total > 0) || body.total > 1000000)) return { error: "the price set has to be a figure above nothing", status: 400 };
   const ev = { kind: "status", at, status, by: "desk" };
   if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
+  if (status === "acknowledged" && body && isNum(body.total) && Math.abs(body.total - (+order.total || 0)) > 0.004) ev.total = +body.total.toFixed(2);
   /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because
      that is where the order becomes a row and the row carries the charge inside its total. */
   if (status === "acknowledged") {
@@ -834,6 +839,8 @@ export function applyEvent(order, ev) {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
+    /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
+    if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
     order.status = ev.status;
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;

@@ -890,7 +890,13 @@ once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview
 /orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
 refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
 runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
-snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+snapshot's `v` and a digest of the rest). **Step 2 (his Q10 of 28 Sep 2026): the price at Accept.** Both take an
+optional `total`, the goods for this one order, up or down: the row, its key and so the digest are drafted at it, and
+under the floor at that size (`floorFor`) or at nothing it is refused. The card has a Price field a line (a sheet's too),
+filled with what they placed it at, the floor said under it. `ackOnApproval` sends it with the acknowledgement, the only
+move the Counter takes a `total` on (`decideDesk`); the order keeps what they placed it at as `asked`, their Goods line
+saying so, and the row's note says it. Offered again, the order keeps its own total. No pricing state moves: the board,
+`TIER_OF` and `PRICE_SET` stand, and what they paid never lowers a card. **Only an approved row moves the order** (`ackOnApproval`:
 the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
 customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
 queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,

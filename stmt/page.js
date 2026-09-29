@@ -3330,7 +3330,9 @@ const CLIENT_JS = `
   function oMoney(o){
     var L=el('div','salt-ledger salt-ledger--plain'), paid=+o.paid||0, claimed=oClaimed(o), d=o.mode==='deliver', where=o.place?tw('om.to',{p:o.place}):'';
     /* S11 11.9: a short order closed at what was handed over is billed for that, and its Goods line says so */
-    L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty}):''));
+    /* Step 2: a price we set on this order when we acknowledged it, with what they placed it at beside it */
+    L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty})
+      :typeof o.asked==='number'&&Math.abs(o.asked-(+o.total||0))>0.004?tw('om.placedAt',{rm:rm(o.asked)}):''));
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow(tw('om.paid'),rm(paid)));
     if(claimed>0) L.appendChild(lrow(tw('om.sentByYou'),rm(claimed),tw(oSlipWord(o))));
