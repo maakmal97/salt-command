@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="11fe6c47a8f3496a";
+var SALT_BUILD_ID="44c395e0a02a3763";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20025,6 +20025,15 @@ function clmCard(c){
       <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
+/* 29 SEP 2026, FUTURE-DATED ORDERS: the day the customer asked for, while the goods are still to go. It is a day they
+   asked for and nothing more: the row is dated at the acknowledgement, and the term and the chase count from the handover. */
+function ordWantLine(o){
+  const w=String(o&&o.wantBy||''),m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(w);
+  if(!m||!['placed','acknowledged','ready'].includes(o.status)||(+o.moved||0)>=(+o.qty||0)-0.004)return '';
+  const today=new Date(Date.now()+8*36e5).toISOString().slice(0,10),n=Math.round((Date.parse(w)-Date.parse(today))/864e5);
+  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+n+' days':n===-1?'yesterday':(-n)+' days ago';
+  return `<p class="ordline ordwant">Wanted by <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
+}
 function ordCard(o){
   if(o&&o.kind==='account')return clmCard(o);
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
@@ -20178,7 +20187,7 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${ordSheetLine(o)}
+    ${ordSheetLine(o)}${ordWantLine(o)}
     ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')

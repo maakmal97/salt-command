@@ -678,6 +678,14 @@ dropped on a collection. It is shown on his card and **never rides into the ledg
 note reaches the committed book, and free text a customer typed is the one thing here that could
 carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
 
+**AN ORDER MAY BE WANTED BY A DAY** (29 Sep 2026, the plan's future-dated orders): the sheet asks When you want it, As
+soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` (60) days on in Kuala Lumpur. The Worker's
+`wantByFault` (`stmt/orders.js`) is the check, a real YYYY-MM-DD in range or nothing; `wantBy` rides on the order, in
+`CUSTOMER_FIELDS`, and a sheet's lines share it. **It is a day they asked for and nothing more**: the Pending row stays
+dated at the acknowledgement under the same key, its note carrying ", wanted by YYYY-MM-DD" in fixed words
+(`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
+reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
+
 **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
 2026). `associateCard(w, code)` in `tools/book.mjs` builds one associate's own document off the same
 jsdom window the prices come from, so a card and a price can never be struck from different states of

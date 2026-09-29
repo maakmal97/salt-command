@@ -98,9 +98,11 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   const O = [];
   /* A SHEET OF TWO, placed, salt and rice beside it (v936) */
   const sheet = "exampleSheet0001";
-  O.push(order(oid(0, "01"), list, T(0, 5), { product: "salt", qty: 12.5, mode: "deliver", place: "Jalan Contoh", sheet,
+  /* and wanted by a day five days on (29 Sep 2026), which a sheet's lines share */
+  const wantBy = klDay(new Date(now.getTime() + 5 * 864e5));
+  O.push(order(oid(0, "01"), list, T(0, 5), { product: "salt", qty: 12.5, mode: "deliver", place: "Jalan Contoh", sheet, wantBy,
     note: "Please ring when you are outside." }, []));
-  O.push(order(oid(0, "02"), list, T(0, 5), { product: "rice", qty: 2, mode: "deliver", place: "Jalan Contoh", sheet }, []));
+  O.push(order(oid(0, "02"), list, T(0, 5), { product: "rice", qty: 2, mode: "deliver", place: "Jalan Contoh", sheet, wantBy }, []));
   /* AGREED, delivered, a delivery charge, a transfer they say they sent and he has not answered, and a thread */
   O.push(order(oid(2, "03"), list, T(2), { product: "oil", qty: 3, mode: "deliver", place: "Taman Rekaan" }, [
     [T(2, 30), "desk", { status: "acknowledged", delivery: 5 }],
@@ -232,6 +234,8 @@ const hist = (o, p) => (o.history || []).some(p);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
   ["order agreed", (f) => has(f, (o) => o.status === "acknowledged")],
+  ["a day they want it by, placed ahead (29 Sep 2026)", (f) => has(f, (o) => o.status === "placed" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
+    && o.wantBy > klDay(new Date(f.at)))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],
