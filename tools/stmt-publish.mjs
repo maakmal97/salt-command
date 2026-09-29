@@ -51,7 +51,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      account would carry whichever code sorts last and the other would drop off every list in silence */
   const usersFile = join(root, "_users.json");
   oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
-  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, (opts && opts.caps) || null);
+  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
@@ -271,7 +271,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
      pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
-  let pricing = null, assoc = null, caps = null; const cards = {};
+  let pricing = null, assoc = null; const cards = {};
   if (!dry && !argv.includes("--no-prices") && key) {
     const { readBook, associateSnapshot } = await import("./book.mjs");
     /* v691: one window, two readings. The associates' report card comes off the same desk the
@@ -279,11 +279,6 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     const rb = await readBook();
     pricing = rb.ledger.PRICING;
     try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
-    /* V3: each account's credit cap per book, off the same window, so a cap and a price are one state of the book */
-    try {
-      const { creditCaps } = await import("./book.mjs");
-      caps = creditCaps(rb.w, Object.values(usersMap(root)));
-    } catch (e) { console.log("::warning::no credit caps, so no order is paid in advance: " + e.message); }
     /* v706: and one card per associate, off the SAME window, so a card and a price can never be
        struck from different states of the book. One per associate, not one per account: only an
        account the report card names gets one. */
@@ -298,7 +293,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       }
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards, caps, issueUnread });
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards, issueUnread });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 

@@ -301,26 +301,6 @@ export function pricingSnapshot(w) {
   };
 }
 
-/* ---- PAID IN ADVANCE (V3, his point 4 of 28 Sep 2026) -----------------------------------------
- * "Over 1 unit, the customer is reminded that payment must be made in advance", on each book's own
- * credit cap (his Q2). WHOSE CAP IS WHICH IS THE DESK'S ANSWER, capForParty: the person's standing,
- * associate or retail, on the book's figure in RULES.creditUnits, for a book that states one
- * (capStated; v780: a borrowed cap is not the book's). An associate's order for a friend books to
- * their -R bucket, which the desk holds to a bucket's own cap, so `friend` travels beside `own` for
- * an associate alone. ITS OWN READING, NEVER IN pricingSnapshot: the drafter digests that whole to
- * tell a preapproval's terms apart (src/drafter.js pricingOf), and a field added there would mark
- * every waiting one as moved. `codes` are the accounts; a code the desk does not know reads retail. */
-export function creditCaps(w, codes) {
-  const r = reader(w)("JSON.stringify((function(codes){if(typeof capForParty!=='function'||typeof capStated!=='function')"
-    + "throw new Error('the desk has no capForParty or capStated');"
-    + "var books=PROD_IDS.filter(capStated),assoc=associateIds(),o={};if(!books.length)return o;"
-    + "codes.forEach(function(id){var c={};books.forEach(function(p){c[p]={own:capForParty(id,p)};"
-    + "if(assoc.indexOf(id)>=0)c[p].friend=capForParty(id+POSITION_ENGINE.BUCKET_SFX,p);});o[id]=c;});return o;})("
-    + JSON.stringify(codes || []) + "))");
-  /* a reading that throws is said, never read as "nobody pays in advance" */
-  if (!r.ok) throw new Error("the caps did not read: " + r.why);
-  return JSON.parse(r.value);
-}
 
 /* ---- THE ASSOCIATES' REPORT CARD (v691, his decisions of 18 Sep 2026) -------------------------
  * What each associate did for him and what they have earned, per product, taken from the desk's

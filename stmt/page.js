@@ -2589,12 +2589,26 @@ const CLIENT_JS = `
     return out;
   }
   function picked(){ return !!draft.pick&&Object.keys(draft.pick).length>0; }
-  /* V3 (his point 4 of 28 Sep 2026): AN ORDER OVER THE CAP IS PAID IN ADVANCE. The cap is the list's, per product: the
-     desk's credit cap for this account, a friend's order taking their bucket's. Place stamps the order by the same rule
-     (stmt/orders.js capOf) and the list's stamp carries the cap, so the page and Place never disagree */
-  function capOf(p,friend){ var c=p&&p.cap; if(!c||typeof c!=='object') return null;
-    if(friend&&typeof c.friend==='number') return c.friend; return typeof c.own==='number'?c.own:null; }
-  function prepayOf(p,q,friend){ var c=capOf(p,friend); return c!=null&&+q>c; }
+  /* V5b2 (his answers of 29 Sep 2026): LIKELY PAID IN ADVANCE, the page's forecast of what the desk decides at Accept
+     (src/orders.js advanceOf): what they owe at once, the sealed To pay now and Coming up with their agreed orders not
+     yet on it, and the sheet's lines at their goods, over the ceiling sealed with the list. One verdict a sheet. It is a
+     forecast: nothing is sent at Place, and the desk's verdict is the order's. */
+  function ceilingRM(){ return prices&&typeof prices.ceiling==='number'?prices.ceiling:null; }
+  /* an agreed order is on the statement once a sealed part is its row: to pay now by its day, side and whole (as nowOf
+     matches), coming up by its day, side and product. Accepted and not yet published, it is counted from the order */
+  function onStatement(o){
+    var P=payDue||{}, w=+((+o.total||0)+(+o.delivery||0)).toFixed(2), f=!!o.forFriend;
+    if(!o.rowOn) return false;
+    return ((P.now&&P.now.parts)||[]).some(function(p){ return p.date===o.rowOn&&!!p.resale===f&&Math.abs((+p.whole||0)-w)<0.005; })
+      ||((P.coming&&P.coming.parts)||[]).some(function(p){ return p.date===o.rowOn&&!!p.resale===f&&p.product===o.product; });
+  }
+  function owedAll(){
+    var P=payDue||{}, t=(P.now?+P.now.rm||0:0)+(P.coming?+P.coming.rm||0:0);
+    orders.forEach(function(o){ if((o.status==='acknowledged'||o.status==='ready')&&!onStatement(o)) t+=Math.max(0,(+o.total||0)+(+o.delivery||0)-(+o.paid||0)); });
+    return +t.toFixed(2);
+  }
+  function advanceLikely(goods){ var c=ceilingRM(); if(c==null||!goods.length) return false;
+    return owedAll()+goods.reduce(function(a,x){ return a+(+x||0); },0)>c+0.004; }
   /* ==== THE ORDER IS A SHEET (S4 4.3, 24 SEP 2026; the Counter's redesign, his "all recommended" of that day) ====
      The order form was a pane at the head of the Order tab, filled field by field and reviewed in a second pane under
      it. It is a task laid over the page now, the system's Sheet: the product as its mark, the sizes as Option tiles
@@ -2776,9 +2790,9 @@ const CLIENT_JS = `
         face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
       });
       fs.appendChild(grid); B.appendChild(fs);
-      /* V3: a size over their cap on this book is paid in advance, said under its sizes */
-      if(cur!=null&&prepayOf(P,cur,ff)) B.appendChild(el('p','salt-insight',tw('sh.prepay',{u:unitsOf(capOf(P,ff),P.unit)})));
     });
+    /* V5b2: the sheet picked so far, one verdict, said once under the sizes */
+    var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
@@ -2823,8 +2837,6 @@ const CLIENT_JS = `
     var ff=!!(assoc&&draft.forFriend);
     /* V4b: a line a product, each its own request id; two or more share the sheet's id, which Place sends with each */
     draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(),
-        /* V3: paid in advance, read off the list with the price, so the check shows the terms Place will stamp */
-        prepay:prepayOf(qt.p,qt.q,ff),
         /* S4 4.4: the price as shown, for a moved list to be told against; placed, the order Place made of it */
         shown:qt.total, was:null, gone:false, placed:''}; }),
       sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
@@ -2857,8 +2869,6 @@ const CLIENT_JS = `
       var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(l.q); })[0];
       if(!z){ l.gone=true; l.was=null; gone=true; return; }
       l.gone=false;
-      /* V3: the terms are the list's as well: a cap moved since Review is said on the check, and is a different order */
-      var pp=prepayOf(P,l.q,c.forFriend); if(pp!==!!l.prepay){ l.prepay=pp; l.rid=mintRid(); }
       if(Math.abs(z.price-l.total)>0.004){ l.total=z.price; l.rate=+(z.price/z.q).toFixed(2); l.rid=mintRid(); moved=true; }
       l.was=Math.abs(l.total-l.shown)>0.004?l.shown:null;
     });
@@ -2907,6 +2917,8 @@ const CLIENT_JS = `
   function toForm(){ dropPlaced(true); draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
     var c=draft.check, B=osh.body, one=c.lines.length===1, a=c.lines[0];
+    /* V5b2: one forecast for the sheet, every line still on the list counted at its goods */
+    var lk=advanceLikely(c.lines.filter(function(l){ return !l.gone; }).map(function(l){ return l.total; }));
     sheetHead(tw('sh.check'),toForm);
     /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
        place of a What line that set the mark beside its size; V4b: a card a line */
@@ -2920,12 +2932,12 @@ const CLIENT_JS = `
     if(one) row(tw('sh.price'),rm(a.total));
     else {
       /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
-      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):l.prepay?tw('sh.inAdvance'):''); });
+      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):''); });
       row(tw('sh.total'),rm(sheetSum(c)));
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    if(one&&a.prepay) row(tw('sh.pay'),tw('sh.inAdvance'));
+    if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
     /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure;
@@ -2936,8 +2948,8 @@ const CLIENT_JS = `
       if(l.gone){ var gn=el('p','salt-insight salt-insight--copper',tw(one?'sh.gone':'sh.goneLine'));
         gn.setAttribute('role','status'); if(!one) gn.insertBefore(psym(l.product,20),gn.firstChild); B.appendChild(gn); }
     });
-    /* V3: an order over the cap is checked beside what paying in advance means */
-    if(c.lines.some(function(l){ return l.prepay&&!l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
+    /* V5b2: a sheet likely paid in advance is checked beside what that means, and that the desk confirms it */
+    if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
