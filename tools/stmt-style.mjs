@@ -138,7 +138,7 @@ body{
 .w{max-width:620px;margin:0 auto}
 .eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
   font-weight:700;margin:0 0 10px;text-transform:uppercase}
-h1{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
+h1,h2.stmth{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
   font-family:var(--salt-font-display)}
 .meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}
 .whol{font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;

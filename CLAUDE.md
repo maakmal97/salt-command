@@ -371,6 +371,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **An account's card on Salt Account hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
+- **A passkey opens the account** (Step 6, his decisions of 29 Sep 2026): saved on This device, any store; the Worker
+  checks its signature and hands back only its share of the key (`stmt/passkey.js`), the other half the device's own bytes
+  or the passkey's PRF secret, so the password is typed once on a new device and the Worker still opens nothing. A year
+  from its last use; Log out keeps it; Remove, Sign out everywhere and his own Sign out end it. Detail: `docs/STATEMENTS.md`.
 - **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
   three days to use, the message naming the username): the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is

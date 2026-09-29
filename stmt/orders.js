@@ -265,7 +265,7 @@ export async function checkStores(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -479,7 +479,18 @@ export async function ordersOwing(env) {
 }
 
 /** What the customer sent, checked field by field. Returns { order } or { error }. */
-export function checkPlacement(body, open) {
+/* FUTURE-DATED ORDERS (29 Sep 2026): a customer may say the day they want it by, tomorrow to WANT_DAYS days on in Kuala
+   Lumpur, or leave it for as soon as it can come. It is a day they asked for and nothing more: the row is dated at the
+   acknowledgement as ever, and the term and the chase count from the handover, so nothing that prices or chases reads it. */
+export const WANT_DAYS = 60;
+export function wantByFault(v, at) {
+  if (v === undefined || v === null || v === "") return "";
+  if (typeof v !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) || klDay(v + "T04:00:00Z") !== v) return "wantBy";
+  const today = klDay(at || new Date().toISOString());
+  const last = klDay(new Date(Date.parse(today + "T04:00:00Z") + WANT_DAYS * 864e5).toISOString());
+  return v > today && v <= last ? "" : "wantBy";
+}
+export function checkPlacement(body, open, at) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -504,6 +515,8 @@ export function checkPlacement(body, open) {
   const forFriend = body.forFriend === true;
   /* v751: and anything they want to say with it, optional on every order, collect or deliver */
   const note = cleanMsg(body.note, NOTE_MAX);
+  if (wantByFault(body.wantBy, at)) return refusal("wantBy", { n: WANT_DAYS });
+  const wantBy = body.wantBy ? body.wantBy : "";
   const sheet = typeof body.sheet === "string" && SHEET_RE.test(body.sheet) ? body.sheet : "";
   if (body.sheet !== undefined && body.sheet !== "" && !sheet) return { error: "the sheet is not one this page made" };
   const lines = sheet ? open.filter((o) => o.sheet === sheet) : [];
@@ -511,7 +524,7 @@ export function checkPlacement(body, open) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}), note };
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}), note };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
@@ -576,7 +589,7 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
  *  V5b2 (his answers of 29 Sep 2026): Place stamps nothing about paying in advance. V3's unit cap is retired on the
  *  Counter, and whether an order is paid in advance is the desk Worker's to decide at Accept, from the book (V5b2a). */
 export function decidePlace(u, body, open, at, digest) {
-  const c = checkPlacement(body, open);
+  const c = checkPlacement(body, open, at);
   if (c.error) return c;
   if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,

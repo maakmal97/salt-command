@@ -1126,6 +1126,8 @@ export function pendingEntry(order, code, now) {
     + (delivery > 0 ? ", delivery RM " + delivery : "")
     /* Step 2: a price he set on this order at its acknowledgement, and what they placed at */
     + (typeof order.asked === "number" && Math.abs(order.asked - goods) > 0.004 ? ", priced at RM " + goods + " on this order, placed at RM " + order.asked : "")
+    /* 29 Sep 2026: the day they asked for rides as fixed words, never their text; the row stays dated at the acknowledgement */
+    + (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "") ? ", wanted by " + order.wantBy : "")
     + ". Nothing paid and nothing handed over yet.";
   const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + owed
     + ", nothing paid, nothing moved (order " + order.id + ")";

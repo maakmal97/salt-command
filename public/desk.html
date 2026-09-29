@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="689f683180d6b6e5";
+var SALT_BUILD_ID="f4401205d3d6a4f1";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8722,7 +8722,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v957","d":"30 Sep 2026","t":"CH4-KS PAYS RM320 IN CASH; S215 SETTLES IN FULL","n":["<p><b>ONE FULFILMENT FOLDED.</b> CH4-KS paid RM320 in cash at the counter on 30 Sep against s215, order 20260928120800-zq6mca, agreed 28 Sep for 3 units at RM310 plus RM10 delivery. The 3 units had already gone out on the 30 Sep correction, so this row carries cash only. RM320 was outstanding before it and nothing is outstanding after it. The fold was preapproved by phone.</p>","<p><b>NOTHING UNUSUAL, SHELF UNCHANGED.</b> The drafter's flag, that the payment settles the order in full, is borne out: RM320 paid against RM320 owed leaves RM0 and no units on credit for CH4-KS. No unit moves, so stock stays at 21 and cost stays RM56 a unit, the inventory's own. The dossier gives no floor or ask for this size, and no loans are open.</p>"]}];
+const evolution=[{"v":"v958","d":"30 Sep 2026","t":"A CUSTOMER'S PASSKEY OPENS THE COUNTER","n":["<p><b>A PASSKEY OPENS THE ACCOUNT.</b> His decisions of 29 Sep 2026. Signed in, a customer taps Save a passkey on This device, and whatever keeps their passkeys, NordPass, Apple or Google, keeps it under Salt Counter. The door's Open with a passkey then signs them in with the face or finger that store asks for. The Worker checks the passkey's signature, this address and that the face was checked, and only then hands back its half of the key; the other half never leaves the device, so the site still holds nothing that opens an account.</p>","<p><b>THE PASSWORD ONCE ON A NEW DEVICE.</b> A passkey that gives no secret, as NordPass does, opens each device once that device has signed in by password: the door says so, fills the username, and files the device's half after the password. A passkey that gives one, as Apple and Google do, opens every device it reaches. A device signed in by password first offers Use your passkey on this device.</p>","<p><b>A YEAR FROM ITS LAST USE; LOG OUT KEEPS IT.</b> The passkey is listed with the account's phones and computers. Remove this passkey ends it, and so do Sign out everywhere, Sign out other devices and his own Sign out on Salt Account, with every device's half. His account view names a passkey way in. Nothing here is his: no master passkey and no Face ID on the desk's vault, his word.</p>","<p><b>THE TEST PAGE WENT FIRST.</b> On his PC and Mac, NordPass made the test passkey and checked the face but gave no secret, which is why the Worker checks the signature itself. The Face ID test page is gone from both addresses.</p>","<p><b>PROOFS.</b> Two new suite sections, one driving the Worker with a real P-256 key and one the door; 15 mutations each turned a check red. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -20043,6 +20043,15 @@ function clmCard(c){
       <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
+/* 29 SEP 2026, FUTURE-DATED ORDERS: the day the customer asked for, while the goods are still to go. It is a day they
+   asked for and nothing more: the row is dated at the acknowledgement, and the term and the chase count from the handover. */
+function ordWantLine(o){
+  const w=String(o&&o.wantBy||''),m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(w);
+  if(!m||!['placed','acknowledged','ready'].includes(o.status)||(+o.moved||0)>=(+o.qty||0)-0.004)return '';
+  const today=new Date(Date.now()+8*36e5).toISOString().slice(0,10),n=Math.round((Date.parse(w)-Date.parse(today))/864e5);
+  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+n+' days':n===-1?'yesterday':(-n)+' days ago';
+  return `<p class="ordline ordwant">Wanted by <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
+}
 function ordCard(o){
   if(o&&o.kind==='account')return clmCard(o);
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
@@ -20198,7 +20207,7 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${ordSheetLine(o)}
+    ${ordSheetLine(o)}${ordWantLine(o)}
     ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')

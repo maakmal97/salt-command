@@ -44,6 +44,12 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
    which is a property of the data and can change under you.
    The floor keeps a margin for these, and the margin is not room for a section to fall out. */
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
+/* C15 AND C13 (29 Sep 2026): THE COUNTER DRAWS THE LIVE DOCUMENT OR SAYS IT COULD NOT BE READ, never a sealed issue in its
+   place. A page fixture whose bundle carries the one document it shows seals that document as the live one beside it. */
+const asLive = async (C, ck, env) => {
+  const s = (JSON.parse(await C.decryptWith(ck, env)).statements || [])[0];
+  return s ? Object.assign({ at: "2026-09-24T04:00:00Z" }, await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: s.body }))) : null;
+};
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
    checks. A book's stock: its stated count (PROD_OPENING.stated, and salt's STATED_STOCK), else opening plus what landed
@@ -9407,8 +9413,8 @@ await (async () => {
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sep 2026 14:20/.test(lv.body)
       && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
-    ok(lv.body.includes('<div class="who">' + u + "</div>") && !lv.body.includes(both.who),
-      "and it is that customer's, named by the username they sign in with and never the desk's code (S1 1.33)");
+    ok(!lv.body.includes('class="who"') && !lv.body.includes(u) && !lv.body.includes(both.who),
+      "and it names the account no second time, the Counter's header carrying the username, and never the desk's code (S1 1.33, C2)");
     const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
@@ -14893,7 +14899,7 @@ await (async () => {
       const nw = d.getElementById("oNew"); if (nw) nw.click();
       const sh = d.getElementById("osheet");
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
-        marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
+        marks: [...d.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label")),
         priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
         /* V4b: each product's sizes sit under its mark, the fieldset's legend, and the shape is said in the legend's words */
         products: [...d.querySelectorAll("#osheet fieldset.salt-options legend .pwith")].filter((x) => x.querySelector("svg.psym")).map((x) => x.querySelector(".sr").textContent),
@@ -15154,7 +15160,7 @@ await (async () => {
       "New order lays the system's Sheet over the page, at the root of the body, as a named modal dialog");
     const tiles = [...d.querySelectorAll('#osheet .salt-option input[type=radio][name="osize"]')].map((r) => ({ q: r.value, on: r.checked,
       label: r.closest(".salt-option").querySelector(".salt-option__label").textContent, fig: r.closest(".salt-option").querySelector(".salt-option__figure").textContent }));
-    ok(tiles.length === 3 && tiles.map((t) => t.fig).join() === "RM 60,RM 110,RM 250" && tiles.map((t) => t.label.replace("your usual", "")).join() === "0.5 unit,1 unit,2.5 units",
+    ok(tiles.length === 3 && tiles.map((t) => t.fig).join() === "RM 60.00,RM 110.00,RM 250.00" && tiles.map((t) => t.label.replace("your usual", "")).join() === "0.5 unit,1 unit,2.5 units",
       "the sizes are Option tiles, each carrying its own price, units above one and unit at one: " + JSON.stringify(tiles));
     ok(tiles.filter((t) => /your usual/.test(t.label)).map((t) => t.q).join() === "2.5" && tiles.filter((t) => t.on).map((t) => t.q).join() === "2.5",
       "the size they order most is tagged your usual and chosen to begin with: " + JSON.stringify(tiles.map((t) => [t.q, t.on, /usual/.test(t.label)])));
@@ -15232,7 +15238,7 @@ await (async () => {
     const say = (d.querySelector("#osheet .salt-insight") || {}).textContent || "";
     ok(posted.length === 1 && posted[0].digest === "d1" && posted[0].total === 100,
       "Place carries the stamp of the list the page opened, with the price it showed: " + JSON.stringify(posted.map((x) => [x.digest, x.total])));
-    ok(say === "This size is now RM 120 (was RM 100). Place at RM 120?" && d.getElementById("oPlace").textContent === "Place at RM 120",
+    ok(say === "This size is now RM 120.00 (was RM 100.00). Place at RM 120.00?" && d.getElementById("oPlace").textContent === "Place at RM 120.00",
       "a 409 prices moved opens the list that came back and says the new price beside the one shown, and Place names it: " + JSON.stringify([say, d.getElementById("oPlace").textContent]));
     ok(posted.length === 1 && /RM 120/.test(d.getElementById("pPrices").textContent) && !/RM 100/.test(d.getElementById("pPrices").textContent),
       "nothing is placed until they tap, and Prices behind the sheet reads the new list: " + posted.length);
@@ -15514,11 +15520,11 @@ await (async () => {
   const A = await drive(list("2026-09-24T03:59:00Z"));
   try {
     const { w, d, lead } = A;
-    ok(lead.includes("Prices as at Thu 24 Sep, 11:59. Tap a size to order it.") && !lead.some((t) => /week of/.test(t)),
+    ok(lead.includes("Prices as at 24 Sep 2026, 11:59. Tap a size to order it.") && !lead.some((t) => /week of/.test(t)),
       "the list says when it was written, in Kuala Lumpur, and that a size is a tap: " + JSON.stringify(lead.slice(1, 2)));
     const rows = [...d.querySelectorAll("#pPrices .szrow")];
     ok(rows.length === 4 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-ledger__row"))
-      && rows.map((r) => r.textContent).join("|") === "1 unitRM 100|2 unitsRM 190|1 unitRM 45|3 unitsRM 120",
+      && rows.map((r) => r.textContent).join("|") === "1 unitRM 100.00|2 unitsRM 190.00|1 unitRM 45.00|3 unitsRM 120.00",
       "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
     rows[3].click();
     const sh = d.getElementById("osheet");
@@ -15531,7 +15537,7 @@ await (async () => {
     void w;
   } finally { A.w.close(); }
   const B = await drive(list("2026-09-24T16:05:00Z"));
-  try { ok(B.lead.includes("Prices as at Fri 25 Sep, 00:05. Tap a size to order it."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
+  try { ok(B.lead.includes("Prices as at 25 Sep 2026, 00:05. Tap a size to order it."), "the day is Kuala Lumpur's, past its midnight: " + JSON.stringify(B.lead[1])); }
   finally { B.w.close(); }
   const E = await drive(list(null));
   try { ok(E.lead.includes("For the week of 21 to 27 Sep 2026. Tap a size to order it."), "a list sealed with no moment keeps its week: " + JSON.stringify(E.lead[1])); }
@@ -17161,7 +17167,7 @@ await (async () => {
     ok(hits.includes("GET /all/orders/" + u) && !hits.some((x) => /^POST \/(orders|push|my\/refs)|^GET \/(orders|my\/refs)$/.test(x)),
       "it read through his route and never through the customer's session routes: " + JSON.stringify(hits));
     const said = [...D.querySelectorAll("#payHead .msg")].map((x) => x.textContent);
-    ok(said.includes("RM 40 sent, waiting for us to confirm.") && !D.getElementById("payNow"),
+    ok(said.includes("RM 40.00 sent, waiting for us to confirm.") && !D.getElementById("payNow"),
       "and the account's claims come with his route, so his view says what was sent and is waiting, as theirs does, with no Pay: " + JSON.stringify(said));
     D.getElementById("tCard").click();
     const pCard = D.getElementById("pCard");
@@ -17911,7 +17917,7 @@ await (async () => {
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
     ok(/refused at one address/.test(kc.querySelector(".salt-approve__entry").textContent) && !/locked/i.test(kc.textContent)
-      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 2 Sep[.]/.test(kc.textContent),
+      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 02 Sep 2026[.]/.test(kc.textContent),
       "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
     sl.click();
@@ -18010,7 +18016,7 @@ await (async () => {
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
     const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
-    ok(chips(uO).includes("Owes RM 272") && chips(uO).includes("Opened 14 Sep by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 3 Sep"),
+    ok(chips(uO).includes("Owes RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 03 Sep 2026"),
       "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
     ok(chips(uL).some((t) => /^Refused at 1 address till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
       "an account refused at an address, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
@@ -18813,13 +18819,13 @@ await (async () => {
     } }).window;
     const D = win.document;
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
-    ok(await until(() => kc() && /Last got in by a typed code, 3 Sep[.]/.test(kc().textContent)),
+    ok(await until(() => kc() && /Last got in by a typed code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="accounts"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
-    ok(await until(() => chips(us[0]).includes("Opened 3 Sep by a scanned code")) && chips(us[1]).includes("Opened 3 Sep by a typed code"),
+    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by a scanned code")) && chips(us[1]).includes("Opened 03 Sep 2026 by a typed code"),
       "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
-    ok(chips(us[2]).includes("Opened 3 Sep by password") && chips(us[3]).includes("Opened 3 Sep"),
+    ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
       "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -20061,7 +20067,7 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
-    ok(await until(() => /Last opened26 Sep, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
       && !/25 Sep/.test(story()),
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -20364,12 +20370,12 @@ await (async () => {
     const sj = await (await site("/all/sheet", { headers: A })).json();
     ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
     const t1 = await line();
-    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
+    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
       "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
     /* the desk looks again */
     await tell(1, 0);
     const t2 = await line();
-    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
@@ -21024,7 +21030,7 @@ await (async () => {
     globalThis.fetch = realFetch27;
   }
 })();
-section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, the earlier statements at its foot, and This device");
+section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, no earlier statements since C13, and This device");
 await (async () => {
   /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: the live statement's rows are the system's Statement
      lines, the one month filter opens on All and sits on the list it filters, the issues move to the foot (never "latest
@@ -21117,20 +21123,15 @@ await (async () => {
     const one = pills[pills.length - 1].getAttribute("data-mf");
     ok(shown().length > 0 && shown().every((m) => m === one) && pills[pills.length - 1].getAttribute("aria-pressed") === "true",
       "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
+    /* C9 (29 Sep 2026): the line under the filter names what it filters and what it leaves standing */
+    const mfn = D.getElementById("mfnote").textContent;
+    ok(/^Showing the orders and refunds of /.test(mfn) && /totals, what is still to collect and how it was worked out are the whole account/.test(mfn),
+      "and the line under it names what the month filters and what stays the whole account's (C9): " + JSON.stringify(mfn));
     pills[0].click();
     ok(new Set(shown()).size === months.length, "and All brings every line back");
-    /* the issues are at the foot, never called the latest */
-    const foot = D.getElementById("stmtFoot"), back = D.getElementById("stmtBack");
-    const issueBtns = [...foot.querySelectorAll("button")];
-    ok(!foot.hidden && issueBtns.map((b) => b.textContent).join("|") === "1 September 2026|1 August 2026" && back.hidden
-      && !/latest issue/i.test(D.getElementById("pStmt").textContent) && foot.compareDocumentPosition(D.getElementById("out")) === W.Node.DOCUMENT_POSITION_PRECEDING,
-      "the earlier statements sit under the statement, each by its date, and none is the latest issue: " + JSON.stringify(issueBtns.map((b) => b.textContent)));
-    issueBtns[1].click();
-    ok(/ISSUE TWO/.test(D.getElementById("out").textContent) && !back.hidden && /1 August 2026/.test(back.textContent),
-      "an issue opens in its place, with the way back above it: " + JSON.stringify(back.textContent));
-    D.getElementById("stmtBackGo").click();
-    ok(!/ISSUE/.test(D.getElementById("out").textContent) && !!D.querySelector("#out .salt-lines") && back.hidden,
-      "and Back to your statement brings the live lines back");
+    /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Account */
+    ok(D.getElementById("stmtFoot").hidden && D.getElementById("stmtBack").hidden && !/ISSUE/.test(D.getElementById("pStmt").textContent),
+      "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
     const row = (label) => [...dev.querySelectorAll(".salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === label);
@@ -21154,6 +21155,242 @@ await (async () => {
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
       "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("C15, C13, C14, C16 and C1: the account is the live document or says it could not be read, the issues are off the Counter, a failed read of orders is never None yet, a fault's own words never reach the page, and the footer adds the delivery");
+await (async () => {
+  /* THE FAULT LIST OF 29 SEP 2026, his yes to every fix. C15: a live document that would not open was swallowed and the sealed
+     issue drawn as the account, the hold quiet. C13 (a): the issues are off the Counter. C14: a failed read of orders read as
+     None yet. C16: an HTML 5xx said No connection and a codeless one printed the Worker's own words. C1: the footer left the
+     delivery out while Paid counted it. Driven on the customer's page as S7 7.3 drives it. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const { EN } = await import("../stmt/words.js");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T04:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  /* C1: every live footer adds up, goods and delivery less paid, as txOwed does */
+  const num = (s) => +String(s).replace(/RM |,/g, "");
+  let docs = 0, withDel = 0; const off = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d) continue; docs++;
+    const trs = [...d.body.slice(d.body.indexOf('<div class="tot">')).matchAll(/<div class="tr( [a-z ]+)?"><span>([\s\S]*?)<\/span><span>([^<]*)<\/span><\/div>/g)]
+      .map((m) => [m[2].replace(/<[^>]+>/g, "").trim(), m[3]]);
+    const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
+    const del = sum(/^Delivery$/); if (del > 0) withDel++;
+    const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
+    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
+    if (Math.abs(lhs - (bal === "nil" ? 0 : num(bal))) > 0.009) off.push(p + " " + lhs + " against " + bal);
+  }
+  ok(docs > 10 && withDel > 0 && !off.length, "every live footer adds up, the delivery its own line between the orders and Paid: " + docs + " statements, " + withDel + " with delivery; off: " + off.slice(0, 3).join(", "));
+
+  const who = parties.find((p) => M.liveStatement(p, at, "abcd-efgh"));
+  const live = M.liveStatement(who, at, "abcd-efgh");
+  /* a live document holding an overdue part, so the hold is on while it opens */
+  const part = { date: "2026-09-10", since: "2026-09-12", due: "2026-09-13", late: true, rm: 123.45, whole: 123.45, product: "salt", qty: 1, got: 1,
+    gotOn: "2026-09-12", resale: false, goods: 123.45, deliv: 0, less: 0, rate: 123.45 };
+  const overdueLive = Object.assign({}, live, { pay: { term: 1, now: { rm: 123.45, due: "2026-09-13", parts: [part] }, overdue: { rm: 123.45, parts: [part] }, coming: { rm: 0, parts: [] } } });
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-cccd", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), u), other = await C.contentKey("8".repeat(64), u);
+  const env = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "01 Sept 2026", body: "<p>ISSUE ONE</p>" }] }));
+  const sealLive = async (doc, key) => Object.assign({ at: doc.at }, await C.encryptWith(key, JSON.stringify(doc)));
+  const st = { open: [], account: [], orders: [] };
+  const dom = new JSDOM(landingPage(u, "nC15", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (path) => {
+        const p = String(path);
+        const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        const next = (q) => { const f = q.length > 1 ? q.shift() : q[0]; return f(); };
+        if (p === "/open") return next(st.open);
+        if (p === "/account") return next(st.account);
+        if (p === "/orders") return next(st.orders);
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const answer = async (liveEnv) => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv });
+  const signIn = () => {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+  };
+  const msg = () => D.getElementById("msg").textContent;
+  const vis = () => { const b = D.body.cloneNode(true); b.querySelectorAll("script,style").forEach((x) => x.remove()); return b.textContent; };
+  const outT = () => D.getElementById("out").textContent, head = () => D.getElementById("payHead").textContent;
+  try {
+    /* C16: an HTML 502 at the door is the site busy, not No connection; a codeless 500 never prints its own words; a coded
+       refusal is still worded from its code */
+    st.open = [async () => ({ ok: false, status: 502, json: async () => { throw new SyntaxError("<html>"); } })];
+    signIn();
+    ok(await until(() => msg() === EN["x.busy"]), "an HTML 502 at the door says the site is busy, not No connection: " + JSON.stringify(msg()));
+    st.open = [async () => js({ ok: false, error: "no KV binding" }, 500)];
+    signIn();
+    ok(await until(() => msg() === EN["x.busy"]) && !/KV/.test(vis()), "a codeless 500 says the site is busy and never the Worker's own words: " + JSON.stringify(msg()));
+    st.open = [async () => js({ ok: false, error: "raw words of a fault" }, 400)];
+    signIn();
+    ok(await until(() => msg() === EN["e.refused"]) && !/raw words/.test(vis()), "a codeless refusal takes the door's own words: " + JSON.stringify(msg()));
+    st.open = [async () => ({ ok: false, status: 429, json: async () => { throw new SyntaxError("<html>"); } })];
+    signIn();
+    ok(await until(() => msg() === EN["door.tooMany"]), "an HTML 429 is still too many attempts, never busy: " + JSON.stringify(msg()));
+
+    /* C15 and C13: the live document will not open; the account says so over the issue it used to draw, and Home leads with it */
+    st.orders = [async () => js({ ok: true, orders: [] })];
+    st.open = [async () => answer(await sealLive(overdueLive, other))];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')), "a live document that will not open draws could not be read, with Try again");
+    ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
+      "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
+    /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
+    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck) })];
+    D.querySelector('#out [data-unread] button').click();
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
+      "Try again opens the live document, and its overdue part holds ordering: " + JSON.stringify(head().slice(0, 120)));
+    /* a later return whose live document will not open keeps the hold where it last stood */
+    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other) })];
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
+      "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* a record the publish wrote no live document for (no key there) waits for the next update, with nothing to try */
+    st.open = [async () => answer(null)];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.later"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /after the next update/.test(head()),
+      "an account with issues and no live document says it shows after the next update, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* a failed read of orders that Try again answers with a claim waiting lifts the hold at once (D9), not at the next change */
+    st.open = [async () => answer(await sealLive(overdueLive, ck))];
+    st.orders = [async () => js({ ok: false }, 500), async () => js({ ok: true, orders: [], claims: [{ id: "c1", state: "waiting", amount: 123.45, at: "2026-09-24T05:00:00Z" }] })];
+    signIn();
+    ok(await until(() => !!D.querySelector('#hNeeds [data-unread="ord.unread"]')) && /Please pay the overdue amount/.test(head()), "the fixture: orders unread, the hold on");
+    D.querySelector("#hNeeds [data-unread] button").click();
+    ok(await until(() => !D.querySelector('[data-unread="ord.unread"]')) && !/Please pay the overdue amount/.test(head()),
+      "and Try again bringing a claim they sent lifts the hold there and then: " + JSON.stringify(head().slice(0, 160)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* C13: a live document that opens is the whole account; the issue beside it is never drawn */
+    st.open = [async () => answer(await sealLive(live, ck))];
+    st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
+    signIn();
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
+      "the Counter draws the live document alone: no earlier statements, no issue");
+    /* C14: the first read of orders failed; the list and Home say so, never None yet, and Try again reads it */
+    const oArea = () => D.getElementById("oArea");
+    ok(await until(() => !!oArea() && !!oArea().querySelector('[data-unread="ord.unread"]')) && !oArea().textContent.includes(EN["ord.noneYet"])
+      && !!D.querySelector('#hNeeds [data-unread="ord.unread"]') && !/KV/.test(vis()),
+      "a failed read of orders says so on Orders and Home, never None yet: " + JSON.stringify(oArea() && oArea().textContent.slice(0, 120)));
+    oArea().querySelector("[data-unread] button").click();
+    ok(await until(() => oArea().textContent.includes(EN["ord.noneYet"])) && !D.querySelector('[data-unread="ord.unread"]'),
+      "and Try again reads them, the line gone with the failure");
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* C9 (Fable's review of fold 2): a month that leaves the refunds empty takes their heading with them, and All brings both back */
+    const r9 = (x) => Object.assign({ product: "salt", gift: false, resale: false, delivery: 0, cover: false, inKind: 0, inKindUnits: 0, owed: 0,
+      pendingOrder: false, cancelled: false, cancelledOn: null, agreedOn: null, got: x.qty, toGet: 0, deliverable: x.qty, unit: x.total / x.qty }, x);
+    const body9 = M.docBody(M.stmtDoc("ZZ9-TST", [r9({ date: "2026-09-20", qty: 1, total: 100, paidCash: 100, paidOn: "2026-09-20" }),
+      r9({ date: "2026-08-05", qty: 2, total: 200, paidCash: 200, paidOn: "2026-08-05" })],
+      { dates: true, brand: null, issued: "24 Sep 2026 12:00", live: true, user: u, recon: [], refunds: [{ date: "2026-08-10", amount: 30, paidOn: null, cancelled: false }] }));
+    st.open = [async () => answer(await sealLive(Object.assign({}, live, { body: body9 }), ck))];
+    st.orders = [async () => js({ ok: true, orders: [] })];
+    signIn();
+    ok(await until(() => D.querySelectorAll("#mfil button").length === 3), "the fixture: two months and All");
+    const refH = () => [...D.querySelectorAll("#out h3")].find((h) => h.textContent === "Refunds");
+    const seen9 = (x) => !!x && x.style.display !== "none";
+    D.querySelector('#mfil button[data-mf="2026-09"]').click();
+    const sep9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
+    D.querySelector('#mfil button[data-mf="2026-08"]').click();
+    const aug9 = [seen9(refH()), seen9(refH() && refH().nextElementSibling)];
+    D.querySelector('#mfil button[data-mf=""]').click();
+    ok(sep9.join() === "false,false" && aug9.join() === "true,true" && seen9(refH()),
+      "a month with no refund hides Refunds, heading and list, and a month with one or All shows them (C9): " + JSON.stringify([sep9, aug9]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("C2, C4 to C11, C21, C22 and C25: the live document says what it is, dates every paid row, prints money one way, says units, names no product, and the Counter's headings and landmarks read in order");
+await (async () => {
+  /* THE FAULT LIST OF 29 SEP 2026, his yes to every fix. Driven through the renderer with rows of every kind, a refund and both
+     kinds of workings, as the live document and as an issue: the issue keeps the words it was sent with. */
+  const M = await import("../tools/make_statements.mjs");
+  const row = (x) => Object.assign({ product: "salt", gift: false, resale: false, delivery: 0, cover: false, inKind: 0, inKindUnits: 0,
+    owed: 0, pendingOrder: false, cancelled: false, cancelledOn: null, agreedOn: null, gotOn: null }, x, { unit: x.total / x.qty, deliverable: x.qty });
+  const rows = [
+    row({ rid: "c4a", date: "2026-09-20", qty: 1, total: 100, delivery: 15, paidCash: 115, got: 1, toGet: 0, paidOn: "2026-09-20" }),
+    row({ rid: "c4b", date: "2026-08-05", qty: 2, total: 200, paidCash: 200, got: 0, toGet: 2, paidOn: "2026-08-07" }),
+    row({ rid: "c4c", date: "2026-09-22", qty: 0.5, total: 60, paidCash: 0, got: 0.5, toGet: 0, owed: 60, paidOn: null })];
+  const recon = [
+    { order: { date: "2026-08-05", qty: 2, total: 200, paid: 200 }, noLegs: false, legs: [{ date: "2026-07-01", qty: 1, billed: 100, paid: 50, short: 50 }],
+      shortTot: 50, unitsOff: 0.5, rate: 100, deliverable: 1.5, collected: 0, owed: 1.5, payments: [] },
+    { order: { date: "2026-08-05", qty: 2, total: 200, paid: 200 }, noLegs: true, legs: [], shortTot: 0, unitsOff: 2, rate: 0, deliverable: 0,
+      collected: 0, owed: 0, payments: [] }];
+  const refunds = [{ date: "2026-08-10", amount: 30, paidOn: null, cancelled: false }];
+  const opt = (live) => ({ dates: true, brand: null, issued: "24 Sep 2026 12:00", live, user: live ? "abcd-efgh" : null, recon, refunds });
+  const live = M.stmtDoc("ZZ9-TST", rows, opt(true)), issue = M.stmtDoc("ZZ9-TST", rows, opt(false));
+  const text = (h) => h.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ");
+  const cells = (h, c) => [...h.matchAll(new RegExp('<div class="salt-lines__' + c + '[^"]*" role="cell">([\\s\\S]*?)</div>', "g"))].map((m) => text(m[1]).trim());
+  /* C4: every fully paid row says the day it was paid under its state word, the same day as well as a later one; never in the date cell */
+  const st = cells(live, "state"), dt = cells(live, "date");
+  ok(st.some((x) => /^settled paid 20 Sep 2026$/.test(x)) && st.some((x) => /^paid in full paid 07 Aug 2026 /.test(x)) && st.some((x) => /^RM 60\.00 due$/.test(x))
+    && !dt.some((x) => /paid/.test(x)), "every fully paid row says when it was paid under its state word, the same day too, and the date cell carries the order's date alone (C4): " + JSON.stringify([st, dt]));
+  /* C5: the live footer's every figure carries RM, as its lines do; an issue's footer is as it was sent */
+  const figs = (h) => [...h.slice(h.indexOf('<div class="tot">')).matchAll(/<div class="tr[^"]*"><span>[\s\S]*?<\/span><span>([^<]*)<\/span><\/div>/g)].map((m) => m[1]);
+  ok(figs(live).length >= 4 && figs(live).every((f) => /^RM [\d,]+\.\d\d$|^nil$/.test(f)) && figs(issue).some((f) => /^[\d,]+\.\d\d$/.test(f)),
+    "the live footer's figures carry RM, as its lines do, and an issue's are as they were sent (C5): " + JSON.stringify([figs(live), figs(issue)]));
+  /* C6 and C8: the live document describes itself as live, never by an issue date or the desk's approving */
+  ok(/as at the time shown above\./.test(text(live)) && !/issue date/.test(text(live)) && /updated whenever your account changes/.test(text(live)) && !/approved/.test(text(live))
+    && /as at the issue date\./.test(text(issue)), "the live document is as at the time it shows and changes with the account, and an issue keeps its issue date (C6, C8)");
+  /* C7: units on the live document, the workings included, one alone and nought plural; an issue keeps its words */
+  const bad = (h) => [...text(h).matchAll(/(?<![\d.,])(\d+(?:\.\d+)?) unit(?!s)/g)].filter((m) => !(+m[1] > 0 && +m[1] <= 1)).map((m) => m[0]);
+  ok(!bad(live).length && /0 units/.test(text(live)) && /2 units/.test(text(live)) && bad(issue).length > 0,
+    "the live document says units above one and at nought, in its lines and its workings alike, and an issue keeps its words (C7): " + JSON.stringify([bad(live), bad(issue).slice(0, 3)]));
+  /* C11: no product word in the live document's prose; an issue keeps it */
+  ok(!/\bsalt\b/i.test(text(live)) && /\bgoods\b/.test(text(live)) && /\bsalt\b/.test(text(issue)),
+    "the live document's workings say goods, never the product's word, and an issue keeps its words (C11)");
+  ok(/How the 1\.5 units are arrived at/.test(text(live)) && /So the goods due to you are what you bought/.test(text(live)) && !/goods (still )?due to you is/.test(text(live))
+    && /How the 1\.5 unit is arrived at/.test(text(issue)) && /So the salt due to you is what you bought/.test(text(issue)),
+    "and the goods are plural where the salt was not, the units counted as they read; an issue keeps its words (C7, C11)");
+  /* C9: a refund row belongs to its month, so the month filter reaches it */
+  ok(/<div class="salt-lines__row" role="row" data-m="2026-08"><div class="salt-lines__date" role="cell">10 Aug 2026<\/div><div class="salt-lines__what" role="cell">Overpayment/.test(live),
+    "a refund row carries its month, so a month chosen filters it with the orders (C9)");
+  /* C10: a live document with no orders says so without a period it does not have */
+  const none = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(true), { recon: [] })), noneI = M.stmtDoc("ZZ9-TST", [], Object.assign(opt(false), { recon: [] }));
+  ok(/No orders yet\./.test(none) && !/period/.test(text(none)) && /No orders in this period\./.test(noneI), "a live document with no orders says No orders yet, never a period (C10)");
+  /* C2 and C21: an h2 under the Counter's own h1, naming nobody a second time; its sections are h3; an issue is a page of its own */
+  const heads = (h) => [...h.matchAll(/<(h[1-6])[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => m[1] + ":" + text(m[2]).trim());
+  ok(JSON.stringify(heads(live)) === JSON.stringify(["h2:Statement of account", "h3:Refunds", "h3:Still to collect"]) && !/class="who"|>Account</.test(live) && !live.includes("abcd-efgh")
+    && heads(issue)[0] === "h1:Statement of account", "the live document is an h2 with its sections h3 under it and names the account no second time; an issue opens on its own h1 (C2, C21): " + JSON.stringify(heads(live)));
+  /* C25: a book's day is its own digits, wherever the tool runs */
+  const here = M.stmtDoc("ZZ9-TST", rows, opt(true));
+  const west = spawnSync(process.execPath, ["--input-type=module", "-e",
+    "const M = await import(" + JSON.stringify("file://" + join(REPO, "tools", "make_statements.mjs").replace(/\\/g, "/")) + "); process.stdout.write(M.stmtDoc('ZZ9-TST', "
+      + JSON.stringify(rows) + ", " + JSON.stringify(opt(true)) + "));"], { cwd: REPO, encoding: "utf8", env: { ...process.env, TZ: "America/Los_Angeles" } });
+  ok(west.status === 0 && west.stdout === here && /20 Sep 2026/.test(west.stdout) && !/19 Sep 2026/.test(west.stdout),
+    "the live document prints each date the same west of UTC as in Kuala Lumpur (C25): " + (west.stderr || "").slice(0, 200));
+
+  /* C21 and C22 on the Counter's own pages: a guest page opens on its h1, and the two navigation landmarks are told apart */
+  const PG = await import("../stmt/page.js");
+  const g = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "nC21");
+  const hs = (h) => [...h.matchAll(/<(h[1-6])\b/g)].map((m) => m[1]);
+  ok(hs(g).join() === "h1,h2" && hs(PG.shutPage("nC21")).join() === "h1" && /RM 150\.00/.test(g),
+    "a guest board opens on its h1 with each mark an h2 under it, the shut page on its h1, and money is RM with two places (C21, C5): " + JSON.stringify([hs(g), hs(PG.shutPage("nC21"))]));
+  const navs = [...PG.landingPage("aaaa-cccd", "nC22", null).matchAll(/<nav\b[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
+  ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
+  /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
+  const { testStatement } = await import("../stmt/worker.js");
+  const tb = (await testStatement()).statements[0].body;
+  ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
+    "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
 section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
 await (async () => {
@@ -21206,7 +21443,7 @@ await (async () => {
     const words = rows.map((r) => r.querySelector(".gstate").textContent);
     ok(words.join("|") === "Open|Waiting|Not approved|Withdrawn" && rows.every((r) => r.querySelector(".gstate").classList.contains("salt-status")),
       "each link says its state in a word, in the system's chip: " + JSON.stringify(words));
-    ok(/Opened 3 times, last Tue 22 Sep[.]/.test(rows[0].textContent) && /Shut until we approve it/.test(rows[1].textContent)
+    ok(/Opened 3 times, last 22 Sep 2026[.]/.test(rows[0].textContent) && /Shut until we approve it/.test(rows[1].textContent)
       && /did not approve/.test(rows[2].textContent) && /Withdrawn[.] Nothing opens it now/.test(rows[3].textContent),
       "and what it has done, or why it is shut, in words: " + JSON.stringify(rows.map((r) => r.querySelector(".gs").textContent)));
     const shares = [...box.querySelectorAll("button")].filter((b) => b.textContent === "Share");
@@ -21261,8 +21498,9 @@ await (async () => {
   const open90 = {
     ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"],
     wrap: await C90.wrapKey(pass90, ck90), wrapMaster: null, session: "",
-    env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: body90 }] })),
-    live: null, prices: null
+    /* C13 and C15: the Counter draws the live document or nothing, so the document rides as the live one */
+    env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })),
+    live: Object.assign({ at: "2026-09-24T04:00:00Z" }, await C90.encryptWith(ck90, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: body90 }))), prices: null
   };
   const dom90 = new JD90(lp90(u90, "n90", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc90, configurable: true }); } catch (e) { win.crypto = wc90; } } });
@@ -22376,6 +22614,7 @@ await (async () => {
     env: await C92.encryptWith(ck92, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] })),
     live: null, prices: null
   };
+  openBody.live = await asLive(C92, ck92, openBody.env);
 
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
@@ -22444,7 +22683,7 @@ await (async () => {
     const second = make92(stored92, () => async (path) => {
       if (String(path) === "/remember/open") {
         return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
-          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: null, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
       }
       return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
     });
@@ -22828,8 +23067,8 @@ await (async () => {
     for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
     const row = D.querySelector("#pOrder [data-row]"); if (row) row.click();   /* S5: the order's own screen carries its stamps */
     const txt = D.getElementById("pOrder").textContent;
-    ok(txt.includes("Ordered 20 Sep, 09:02") && txt.includes("21 Sep, 01:30") && !FOUR.test(txt),
-      "the customer's page stamps an order and its history with Sep, in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]*, \d\d:\d\d/g) || [])));
+    ok(txt.includes("Ordered 20 Sep 2026, 09:02") && txt.includes("21 Sep 2026, 01:30") && !FOUR.test(txt),
+      "the customer's page stamps an order and its history with Sep and the year (C17), in Kuala Lumpur time: " + JSON.stringify((txt.match(/\d\d Sep[a-z]* \d{4}, \d\d:\d\d/g) || [])));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 
   /* 2. the statement: the live stamp, and every date cell on the real book's live statements */
@@ -22956,9 +23195,9 @@ await (async () => {
     d95.getElementById("un").value = u95; d95.getElementById("pw").value = pass95;
     d95.getElementById("f").dispatchEvent(new dom95.window.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 150 && !d95.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
-    const marks95 = [...d95.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label"));
-    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices svg.psym").length === 3,
-      "the price list heads each block with its mark, the one still waiting for a price included: " + JSON.stringify(marks95));
+    const marks95 = [...d95.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label"));
+    ok(JSON.stringify(marks95) === '["Cube","Droplet","Ring"]' && d95.querySelectorAll("#pPrices svg.psym").length === 3 && !d95.querySelector("#pPrices h3"),
+      "the price list heads each block with its mark, an h2 under the place's h1 (C21), the one still waiting for a price included: " + JSON.stringify(marks95));
     d95.querySelector('button[data-t="order"]').click();
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
     for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
@@ -22974,8 +23213,8 @@ await (async () => {
     ok(onOf95().length === 2, "and a size of the other product joins the sheet beside it: " + JSON.stringify(onOf95()));
     /* a product waiting for its price is a mark too, not a name */
     const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
-    ok(soon95.length === 1 && soon95[0].querySelector("h3.pmark svg.psym")
-      && soon95[0].querySelector("h3.pmark").getAttribute("aria-label") === "Ring"
+    ok(soon95.length === 1 && soon95[0].querySelector("h2.pmark svg.psym")
+      && soon95[0].querySelector("h2.pmark").getAttribute("aria-label") === "Ring"
       && /Price coming soon\./.test(soon95[0].textContent),
       "a product with no price yet is a mark as well, and one with no mark of its own falls back to the ring");
     /* and the card that reports an order, where the product used to be written twice */
@@ -23133,14 +23372,15 @@ await (async () => {
   const census8 = (root) => [...root.querySelectorAll("svg.psym:not(.glyph)")].map((s) => ({ px: +s.getAttribute("width"),
     ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
   /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && /^[A-Z]?[\d,]+(\.\d+)?$/.test(seen8(t).replace(/\s+/g, "")); };
+  /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
+  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && (t.closest(".htile") ? /^[A-Z]?[\d,]+(\.\d+)?units?$/ : /^[A-Z]?[\d,]+(\.\d+)?$/).test(seen8(t).replace(/\s+/g, "")); };
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
     D8.getElementById("f").dispatchEvent(new dom8.window.Event("submit", { bubbles: true, cancelable: true }));
-    const up8 = await until8(() => D8.querySelectorAll("#pPrices h3.pmark").length === 5 && D8.querySelector("#pCard .pane svg.psym")
+    const up8 = await until8(() => D8.querySelectorAll("#pPrices h2.pmark").length === 5 && D8.querySelector("#pCard .pane svg.psym")
       && D8.querySelector("#pOrder [data-row] svg.psym") && D8.querySelector("#pHome .htile svg.psym"));
-    const heads8 = [...D8.querySelectorAll("#pPrices h3.pmark")].map((h) => { const s = h.querySelector("svg.psym");
+    const heads8 = [...D8.querySelectorAll("#pPrices h2.pmark")].map((h) => { const s = h.querySelector("svg.psym");
       return [h.getAttribute("aria-label"), [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join(""), s.getAttribute("width")].join(":"); });
     ok(up8 && JSON.stringify(heads8) === JSON.stringify(["Cube:I:28", "Droplet:G:28", "Lozenge:E:28", "Capsule:V:28", "Ring::28"]),
       "Prices draws each book's letter in its mark, priced and not yet priced alike, named by its shape, the Ring bare: " + JSON.stringify(heads8));
@@ -23148,7 +23388,7 @@ await (async () => {
     const look8 = (s) => { const p = s.querySelector("path"), t = s.querySelector("text");
       return p.getAttribute("d") + "|" + (t ? ["class", "x", "y", "font-size", "text-anchor", "fill"].map((a) => t.getAttribute(a)).join(",") + "," + t.textContent : ""); };
     const srv8 = (k) => { const h = D8.createElement("div"); h.innerHTML = P8.psymSvg(k, 28); return look8(h.querySelector("svg")); };
-    const pair8 = [...D8.querySelectorAll("#pPrices h3.pmark svg.psym")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
+    const pair8 = [...D8.querySelectorAll("#pPrices h2.pmark svg.psym")].map((s, i) => [look8(s), srv8(["salt", "oil", "candy", "rice", "spare"][i])]);
     ok(pair8.length === 5 && pair8.every(([a, b]) => a === b), "and each is psymSvg's own drawing, path, letter and place: " + JSON.stringify(pair8.filter(([a, b]) => a !== b).slice(0, 2)));
     /* Home first, as it opens: Order again and the order under Coming up */
     const home8 = { again: [...D8.querySelectorAll("#pHome .htile svg.psym")], rows: [...D8.querySelectorAll("#pHome .salt-inbox-row svg.psym")] };
@@ -23182,7 +23422,7 @@ await (async () => {
     const cards8 = { again: home8.again, homeRows: home8.rows, row: row8, screen: screen8, check: check8 };
     const loose8 = Object.entries(cards8).filter(([, l]) => !l.length || !l.every(inCard8)).map(([k]) => k);
     ok(!loose8.length && !checkRows8.length && choice8.length >= 3,
-      "in every card the mark is a button with its figure alone under it: Order again, Home's rows, the order's row and its screen, and the check, whose lines carry no mark: "
+      "in every card the mark is a button with its figure alone under it, Home's tiles its unit too (C19): Order again, Home's rows, the order's row and its screen, and the check, whose lines carry no mark: "
       + JSON.stringify({ loose: loose8, checkRows: checkRows8.length }));
   } finally { try { dom8.window.close(); } catch (e) { /* best effort */ } }
 
@@ -23848,7 +24088,7 @@ await (async () => {
     const asked = D.getElementById("paySheet").textContent;
     look("did you send", "#paySheet", true);
     /* V2 (28 Sep 2026): the order at Ready owes its RM 28 at once, a line of To pay now beside the part's RM 40 */
-    ok(!Object.keys(slice).length && asked.includes(M + saved["pay.did"].replace("{rm}", "RM 68")) && homeWords.includes(M + saved["hc.h"]),
+    ok(!Object.keys(slice).length && asked.includes(M + saved["pay.did"].replace("{rm}", "RM 68.00")) && homeWords.includes(M + saved["hc.h"]),
       "drawn on a Malay phone, every word of Home, This device, an order's money, Pay and messages, the pay sheet and Did you send is the Malay table's: " + JSON.stringify(slice));
     ok(!Object.keys(outside).length && !(osAria || "").includes(M) && /units/.test(D.querySelector(".olistcol").textContent),
       "and nothing outside the slice is: Prices, the statement's foot, the Orders list and an order's head, steps, history and cancel stay English, sizes and dates included: " + JSON.stringify(outside));
@@ -25408,10 +25648,10 @@ await (async () => {
      take an associate's tick away from them on the way in, silently, and only on that one road.
      v710 added the third, which is how this assertion earned its keep. */
   /* S3 3.3: EVERY DOOR GOES THROUGH ONE WAY IN, which reads the mark once: a password open, a remembered device, a
-     one-time link, a code and a return's re-read all call openBeside, and nothing else sets the mark */
+     one-time link, a code, a return's re-read and (Step 6) a passkey all call openBeside, and nothing else sets the mark */
   ok(/var x=\{assoc:body\.assoc===true/.test(page2) && (page2.match(/assoc=x\.assoc;/g) || []).length === 1
-    && (page2.match(/await openBeside\(/g) || []).length === 5 && !/assoc=body\.assoc===true;/.test(page2),
-    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code and a return");
+    && (page2.match(/await openBeside\(/g) || []).length === 6 && !/assoc=body\.assoc===true;/.test(page2),
+    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code, a return and a passkey");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
 section("v705: a password filed under a name that has since moved is paired by its own verifier");
@@ -26201,8 +26441,8 @@ await (async () => {
     const bundle7 = JSON.parse(await C7.decryptWith(ckNew, made.env));
     ok(bundle7.v === 1,
       "the bundle it sealed opens under that key and is the shape every other bundle is");
-    if (bundle7.statements.length) ok(bundle7.statements.every((s) => s.body.includes('<div class="who">27a4-gkgw</div>') && !s.body.includes("CF5-WM")),
-      "and its statement names the account by the username, never the desk's code (S1 1.33)");
+    if (bundle7.statements.length) ok(bundle7.statements.every((s) => (s.body.includes('<div class="who">27a4-gkgw</div>') || !/class="who"/.test(s.body)) && !s.body.includes("CF5-WM")),
+      "and its statement never names the desk's code, an issue naming the username and the live document naming none (S1 1.33, C2)");
     else skipData("CF5-WM has no rows, so the minted statement's account line went unchecked");
 
     /* THE ISSUE IT STAMPS IS THE ISSUE'S DATE, NOT THE FOLDER IT LIVES IN, and this is the one
@@ -26855,11 +27095,11 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: null, session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: null, session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: null }); }
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
           if (p === "/orders") return ans(200, { ok: true, orders: [] });
           return ans(200, { ok: true });
@@ -27556,13 +27796,13 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: null, prices: listB, session: st.sB });
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
           if (p === "/remember/open") {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: null, prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
-              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: null, prices: listA, session: st.sA });
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
@@ -27688,11 +27928,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -28024,9 +28264,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: null, prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -31703,7 +31943,7 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
     const s0 = seq();
     ok(s0[0] === "Needs you" && s0[1] === OWES && s0[2] === SAID && s0[3] === "Open" && s0[4] === OPEN
-      && /RM 90 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
+      && /RM 90.00 to pay/.test(row(OWES).textContent) && /A reply for you/.test(row(SAID).textContent),
       "Needs you comes first, with the order that has money to pay and the one with a reply not yet read, then Open: " + JSON.stringify(s0));
     const fold = list().querySelector("button.olater");
     ok(!!fold && fold.textContent === "2 earlier orders" && fold.getAttribute("aria-expanded") === "false"
@@ -31716,7 +31956,7 @@ await (async () => {
     const r = row(OWES);
     ok(r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
       && !!r.querySelector(".salt-status") && /23 Sep/.test((r.querySelector(".salt-inbox-row__age") || {}).textContent)
-      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
       "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
     r.click();
     const scr = d.querySelector("#pOrder .oscreen");
@@ -31783,23 +32023,23 @@ await (async () => {
       && !/pa(y|id)/i.test(part("steps").textContent),
       "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
     const L1 = lines();
-    ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90", ""], ["Delivery", "RM 10", "To Taman Contoh"], ["Still to pay", "RM 100", "The goods are with you"]]),
+    ok(JSON.stringify(L1) === JSON.stringify([["Goods", "RM 90.00", ""], ["Delivery", "RM 10.00", "To Taman Contoh"], ["Still to pay", "RM 100.00", "The goods are with you"]]),
       "the money has its own lines, what is still to pay among them: " + JSON.stringify(L1));
-    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100"]) && !scr().querySelector(".oact input"),
+    ok(JSON.stringify(pills()) === JSON.stringify(["Pay RM 100.00"]) && !scr().querySelector(".oact input"),
       "one next action, the filled Pay for what is still to pay, and no pay controls until it is tapped: " + JSON.stringify(pills()));
     ok(!scr().querySelector('[data-part="foot"] button') && /can no longer be cancelled/.test(part("foot").textContent),
       "with the goods already with them, the foot offers no Cancel and says why");
 
     ok(open(PART), "the part-paid order opens");
-    ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390", ""], ["Paid", "RM 200", ""], ["Still to pay", "RM 190", "Now, or when you collect"]]),
+    ok(JSON.stringify(lines()) === JSON.stringify([["Goods", "RM 390.00", ""], ["Paid", "RM 200.00", ""], ["Still to pay", "RM 190.00", "Now, or when you collect"]]),
       "what is paid is a line of its own and what is left is the rest: " + JSON.stringify(lines()));
     const foot = part("foot"), cancel = foot && [...foot.querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
     ok(!!cancel && scr().lastElementChild === foot, "Cancel this order stands at the foot while nothing has moved");
-    const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190");
+    const pay = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Pay RM 190.00");
     if (pay) pay.click();
     /* S6 6.4: Pay opens the pay sheet for this order, where the one filled control is the sheet's */
     const shP = d.getElementById("paySheet");
-    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190"
+    ok(!!pay && !scr().querySelector(".oact .pay") && !!shP && !shP.hidden && d.getElementById("payT").textContent === "Pay RM 190.00"
       && shP.querySelectorAll(".salt-pill").length === 1,
       "Pay opens the pay sheet for what is still to pay on this order, and the one filled control is the sheet's: " + JSON.stringify(pills()));
     if (shP) d.getElementById("payX").click();
@@ -31807,10 +32047,10 @@ await (async () => {
     ok(!!hist && !hist.open && /What happened, step by step/.test(hist.querySelector("summary").textContent),
       "what happened is folded under its own line");
 
-    ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0", "Paid in full"]),
+    ok(open(UP) && pills().length === 0 && JSON.stringify(lines().pop()) === JSON.stringify(["Still to pay", "RM 0.00", "Paid in full"]),
       "an order paid up has nothing filled on it: " + JSON.stringify(pills()));
-    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50", "Waiting for us to confirm"], ["Still to pay", "RM 40", "Now, or when you collect"]])
-      && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40"]),
+    ok(open(CLAIM) && JSON.stringify(lines().slice(1)) === JSON.stringify([["Sent by you", "RM 50.00", "Waiting for us to confirm"], ["Still to pay", "RM 40.00", "Now, or when you collect"]])
+      && JSON.stringify(pills()) === JSON.stringify(["Pay RM 40.00"]),
       "what they have sent and is waiting is its own line, read from claimed, and not asked for again: " + JSON.stringify(lines()));
     ok(open(DONE) && pills().length === 0 && !part("foot").childNodes.length
       && [...scr().querySelectorAll("ol.salt-steps > li")].every((s) => s.classList.contains("salt-steps__step--done")),
@@ -31876,8 +32116,8 @@ await (async () => {
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
     const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
-    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Acknowledged", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
-      "We recorded a payment of RM 20", "1 unit collected", "Complete"]),
+    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Acknowledged", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
+      "We recorded a payment of RM 20.00", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
     row("20260923000000-a7").click();
@@ -32566,7 +32806,7 @@ await (async () => {
         if (p === "/orders/" + A + "/say") {
           if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
           if (st.mode === "drop") throw new TypeError("Failed to fetch");
-          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order" }) };
+          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order", code: "sayCap", vars: { n: 20 } }) };   /* as refusal() answers it (C16: a codeless body is never worded from its error) */
         }
         return { ok: true, status: 200, json: async () => ({ ok: true }) };
       };
@@ -32657,7 +32897,7 @@ await (async () => {
   });
   await drive(true, async (w, d) => {
     const pay = payOf(d);
-    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90"]),
+    ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90.00"]),
       "at the limit, said in New order's place, nothing else is filled and the open order's Pay is: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
   }, full);
   await drive(false, async (w, d) => {
@@ -36588,7 +36828,7 @@ await (async () => {
       if (back) back.click();
     }
   } finally { dom.window.close(); }
-  ok(!foot.oW.cancel && foot.oW.line === "We are checking the RM 90 you sent. You can cancel once we have answered it." && foot.oP.cancel,
+  ok(!foot.oW.cancel && foot.oW.line === "We are checking the RM 90.00 you sent. You can cancel once we have answered it." && foot.oP.cancel,
     "their order with a claim waiting says why in place of Cancel; one with none keeps Cancel: " + JSON.stringify(foot));
   const held = await page({ term: 10, now: { rm: 300, due: "2026-09-11", parts: [part] }, overdue: { rm: 300, parts: [part] }, coming: none },
     [{ ...base, ...waiting, id: "oC", status: "cancelled", history: [{ at: iso(-30), status: "cancelled", by: "customer" }] }]);
@@ -38815,11 +39055,11 @@ await (async () => {
     pd.querySelector('#pOrder [data-row="' + o.id + '"]').click();
     const scr = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
     const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
-    ok(/ Closed at 2 units of the 5 ordered, RM 200 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
+    ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
     const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
     ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Acknowledged", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
-      && goods[0] === "GoodsRM 2002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200The goods are with you$/.test(g)),
+      && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
     const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
     ok(h[h.length - 1] === "Closed at 2 units of the 5 ordered", "and what happened says it in their words: " + JSON.stringify(h));
@@ -40918,12 +41158,12 @@ await (async () => {
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
     const ph71 = D.getElementById("payHead").cloneNode(true); ph71.querySelectorAll("svg").forEach((x) => x.remove());
     const pay71 = ph71.textContent, go = D.getElementById("payNow");
-    ok(D.getElementById("pHome").contains(go) && /To pay nowRM 70Cube 1 unitRM 70/.test(pay71) && go && go.textContent === "Pay RM 70" && D.querySelectorAll("#pHome .salt-pill").length === 1,
-      "To pay now is the sealed RM 70, never the statement's RM 90, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
+    ok(D.getElementById("pHome").contains(go) && /To pay nowRM 70.00Cube 1 unitRM 70.00/.test(pay71) && go && go.textContent === "Pay RM 70.00" && D.querySelectorAll("#pHome .salt-pill").length === 1,
+      "To pay now is the sealed RM 70.00, never the statement's RM 90.00, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
     const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
-      && rows("hComing") === "oC,oK,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
-      && /RM 90 still to pay, now or when you collect/.test(D.getElementById("hComing").textContent)
+      && rows("hComing") === "oC,oK,oP" && /RM 150.00 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
+      && /RM 90.00 still to pay, now or when you collect/.test(D.getElementById("hComing").textContent)
       && /Waiting to be acknowledged/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
       + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
@@ -40949,7 +41189,7 @@ await (async () => {
   try {
     const { D } = c, home = D.getElementById("pHome").textContent;
     ok(shown(D) === "pHome" && D.getElementById("placeT").textContent === "Welcome"
-      && /To payRM 0Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("payNow"),
+      && /To payRM 0.00Nothing on your account yet\. Your orders will show here\./.test(home) && !D.getElementById("payNow"),
       "a new account opens Home on Welcome and says there is nothing on it yet: " + JSON.stringify(home.slice(0, 120)));
     D.getElementById("hPrices").click();
     ok(shown(D) === "pPrices" && !!D.querySelector("#pPrices .szrow"), "and its one filled control opens Prices, where a size can be ordered");
@@ -41110,7 +41350,7 @@ await (async () => {
   const a = await open({});
   try {
     const { D, posts } = a;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1|RM 110, delivered to Marlow Row", "Cube 2 units|2|RM 200, delivered to Veloria", "Cube 1 unit|1|RM 110, collected"])
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1 unit|RM 110.00, delivered to Marlow Row", "Cube 2 units|2 units|RM 200.00, delivered to Veloria", "Cube 1 unit|1 unit|RM 110.00, collected"])
       && /Order again/.test(D.getElementById("hAgain").textContent),
       "Home offers each size, way and place once, newest first, at today's price, and never a cancelled order or a size off the list: " + JSON.stringify(tiles(D)));
     /* the second: its place is not the last order's, which is where a sheet would otherwise start */
@@ -41130,8 +41370,9 @@ await (async () => {
   const b = await open({ fresh: true });
   try {
     const { D } = b;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1|RM 110", "Cube 2 units|2|RM 200"]) && /Start your first order/.test(D.getElementById("hAgain").textContent),
-      "a new account is offered its list's first sizes: " + JSON.stringify(tiles(D)));
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1 unit|RM 110.00", "Cube 2 units|2 units|RM 200.00"]) && /Start your first order/.test(D.getElementById("hAgain").textContent)
+      && [...D.querySelectorAll("#hAgain button.htile .salt-option__detail")].every((x) => x.classList.contains("mono")),
+      "a new account is offered its list's first sizes, each saying its unit and its price in the mono face (C19): " + JSON.stringify(tiles(D)));
     D.querySelectorAll("#hAgain button.htile")[1].click();
     const on = D.querySelector('#osheet input[name="osize"]:checked');
     ok(on && on.value === "2" && D.getElementById("oGo") && !D.getElementById("oPlace"), "and a tap opens the sheet at that size, to choose the way");
@@ -41284,25 +41525,25 @@ await (async () => {
   const a = await open([agreed]);
   try {
     const said = tap(a.D);
-    ok(said === "Pay RM 70" && sheet(a.D) === "To pay now RM 70" && shown(a.D) === "pHome" && !payOf(a.D),
-      "with only an order not yet handed over owing RM 150, Pay RM 70 opens the pay sheet on To pay now's RM 70, never that order: " + JSON.stringify([said, sheet(a.D), shown(a.D), payOf(a.D)]));
+    ok(said === "Pay RM 70.00" && sheet(a.D) === "To pay now RM 70.00" && shown(a.D) === "pHome" && !payOf(a.D),
+      "with only an order not yet handed over owing RM 150.00, Pay RM 70.00 opens the pay sheet on To pay now's RM 70.00, never that order: " + JSON.stringify([said, sheet(a.D), shown(a.D), payOf(a.D)]));
   } finally { a.W.close(); }
   const b = await open([agreed, withYou("20260916030000-with", 40)]);
   try {
     const said = tap(b.D);
-    ok(said === "Pay RM 70" && sheet(b.D) === "To pay now RM 70" && shown(b.D) === "pHome" && !payOf(b.D),
-      "with the goods of one order all with them and RM 70 of it still to pay, Pay RM 70 still opens the one sheet on To pay now: " + JSON.stringify([said, sheet(b.D), shown(b.D), payOf(b.D)]));
+    ok(said === "Pay RM 70.00" && sheet(b.D) === "To pay now RM 70.00" && shown(b.D) === "pHome" && !payOf(b.D),
+      "with the goods of one order all with them and RM 70.00 of it still to pay, Pay RM 70.00 still opens the one sheet on To pay now: " + JSON.stringify([said, sheet(b.D), shown(b.D), payOf(b.D)]));
   } finally { b.W.close(); }
   const c = await open([withYou("20260916030000-with", 80)]);
   try {
     tap(c.D);
-    ok(sheet(c.D) === "To pay now RM 30" && shown(c.D) === "pHome" && !payOf(c.D),
+    ok(sheet(c.D) === "To pay now RM 30.00" && shown(c.D) === "pHome" && !payOf(c.D),
       "and an order at Ready handed over is its part read off the order itself (V2), paid since the publish, the sheet still To pay now's and never the order's: " + JSON.stringify([sheet(c.D), shown(c.D), payOf(c.D)]));
   } finally { c.W.close(); }
   const d = await open([{ ...agreed, id: "20260920030000-same", qty: 1, total: 110, paid: 40, mode: "collect" }]);
   try {
     tap(d.D);
-    ok(sheet(d.D) === "To pay now RM 70" && shown(d.D) === "pHome" && !payOf(d.D),
+    ok(sheet(d.D) === "To pay now RM 70.00" && shown(d.D) === "pHome" && !payOf(d.D),
       "nor is an order not yet handed over that happens to owe the same figure: " + JSON.stringify([sheet(d.D), shown(d.D), payOf(d.D)]));
   } finally { d.W.close(); }
 })();
@@ -41413,7 +41654,7 @@ await (async () => {
     for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
     const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row"));
     const needs = D.getElementById("hNeeds").textContent;
-    ok(rows("hNeeds").includes(H) && /RM 110 to pay, the goods are with you/.test(needs) && !rows("hComing").includes(H),
+    ok(rows("hNeeds").includes(H) && /RM 110.00 to pay, the goods are with you/.test(needs) && !rows("hComing").includes(H),
       "an order handed over in full and unpaid is on Home's Needs you, with what is to pay and that the goods are with them: " + JSON.stringify([rows("hNeeds"), rows("hComing"), needs]));
     /* the Orders list's own Needs you: its rows between that heading and the next */
     const onOrders = []; let inNeeds = false;
@@ -41885,10 +42126,10 @@ await (async () => {
       "Coming up is one heading over one list, with no Ledger line beside the rows: " + JSON.stringify(kids.map((k) => k.tagName + "." + k.className.split(" ")[0])));
     ok(rows.length === 4 && rows.every((r) => r.tag === "BUTTON" && r.row && r.mark && r.size && r.bits[2] && r.bits[3]) && rows.slice(0, 2).every((r) => r.bits[0]),
       "every entry is the system's Inbox row, a tap, with its mark and size, its day and its figure: " + JSON.stringify(rows));
-    ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8]).length === 1,
+    ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8] + " 2026").length === 1,
       "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
-    ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5", "", "Due when you receive it", "16 " + MON3[8], "RM 250"],
-      ["Cube 1 unit|1", "", "On behalf of a friend. Due when you receive it", "17 " + MON3[8], "RM 120"]]) && !/salt|Gold|Silver/i.test(t(box)),
+    ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5", "", "Due when you receive it", "16 " + MON3[8] + " 2026", "RM 250.00"],
+      ["Cube 1 unit|1", "", "On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/salt|Gold|Silver/i.test(t(box)),
       "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])));
     box.querySelectorAll(".salt-inbox-row")[2].click();
     ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
@@ -41925,7 +42166,7 @@ await (async () => {
     for (let i = 0; i < 80 && !D.querySelector("#pCard .pane tbody td"); i++) await new Promise((r) => setTimeout(r, 50));
     const pad = (sel) => [...D.querySelectorAll(sel)].map((c) => c.textContent + ":" + W.getComputedStyle(c).paddingLeft).join(" | ");
     const head = pad("#pCard .pane thead th"), line = pad("#pCard .pane tbody td");
-    ok(head === "Date:0px | What:10px | Size:0px | RM:0px" && line === "2026-09-12:0px | Through you:10px | 2.5 units:0px | RM 270:0px",
+    ok(head === "Date:0px | What:10px | Size:0px | RM:0px" && line === "2026-09-12:0px | Through you:10px | 2.5 units:0px | RM 270.00:0px",
       "the card's date and what the line was stand 10px apart, heading and row, and no other column is pushed: " + JSON.stringify([head, line]));
   } finally { W.close(); }
 })();
@@ -41994,9 +42235,9 @@ await (async () => {
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/open") return res(200, body);
       if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
-      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.claimed = 150; return res(200, { ok: true }); }
-      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
-      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay", code: "fixture" }); st.claimed = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw", code: "fixture" });
+      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say", code: "fixture" });
       return res(404, { ok: false });
     };
   } });
@@ -42472,6 +42713,7 @@ await (async () => {
   const body = { ok: true, wrap: await CQ.wrapKey(pass, ck), session: "",
     env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
     prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
+  body.live = await asLive(CQ, ck, body.env);
   const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -42543,7 +42785,7 @@ await (async () => {
   const { webcrypto: wc } = await import("node:crypto");
   const { JSDOM: JD } = await import("jsdom");
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
-  const said = (s) => { const t = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][t.getUTCDay()] + " " + t.getUTCDate() + " " + MON3[t.getUTCMonth()]; };
+  const said = (s) => { const t = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][t.getUTCDay()] + " " + String(t.getUTCDate()).padStart(2, "0") + " " + MON3[t.getUTCMonth()] + " " + t.getUTCFullYear(); };   /* C17 */
   /* the words, not the drawing: F8's letter is drawn inside every mark (Step 1a.2), and a mark is aria-hidden */
   const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((s) => s.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   const open = async (pay) => {
@@ -42584,20 +42826,20 @@ await (async () => {
     coming: { rm: 110, parts: [{ date: kl(-1), rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }] } });
   /* V2 (28 Sep 2026, his "less words, but maximum impact"): the figure is the invoice's Total with no line under it; each
      thing due is a line beneath, its figure and when it is due in a word or three */
-  ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70" && one.tile[2] === ""
-    && JSON.stringify(one.rows) === JSON.stringify([["Cube 2.5 units", "RM 70", "Pay by " + said(kl(2))]])
-    && one.pill === "Pay RM 70" && one.pills === 1,
+  ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70.00" && one.tile[2] === ""
+    && JSON.stringify(one.rows) === JSON.stringify([["Cube 2.5 units", "RM 70.00", "Pay by " + said(kl(2))]])
+    && one.pill === "Pay RM 70.00" && one.pills === 1,
     "To pay now heads Home: its figure, a line for what it is for with the day it is due, and the one filled Pay: "
     + JSON.stringify([one.first, one.tile, one.rows, one.pill]));
   /* his word of 28 Sep 2026: on its last day the line names no date */
   const today = await open({ term: 3,
     now: { rm: 70, due: kl(0), parts: [part({ date: kl(-4), since: kl(-3), due: kl(0), rm: 70, gotOn: kl(-3) })] },
     overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
-  ok(JSON.stringify(today.rows) === JSON.stringify([["Cube 2.5 units", "RM 70", "Pay today"]]),
+  ok(JSON.stringify(today.rows) === JSON.stringify([["Cube 2.5 units", "RM 70.00", "Pay today"]]),
     "on its last day the line says to pay today, with no date beside it: " + JSON.stringify(today.rows));
-  const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1];
+  const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1] + " " + s.slice(0, 4);
   ok(one.heads.join() === "Coming up" && one.coming.length === 1
-    && one.coming[0].join("|") === "Cube 1 unit|1||Due when you receive it|" + age(kl(-1)) + "|RM 110"
+    && one.coming[0].join("|") === "Cube 1 unit|1||Due when you receive it|" + age(kl(-1)) + "|RM 110.00"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word, and no Overdue list stands under To pay now: "
     + JSON.stringify([one.heads, one.coming]));
@@ -42606,8 +42848,8 @@ await (async () => {
       part({ date: kl(-7), since: kl(-1), due: kl(2), rm: 120, qty: 1, got: 1, gotOn: kl(-1), resale: true })] },
     overdue: { rm: 180, parts: [part({ date: kl(-20), since: kl(-20), due: kl(-17), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
     coming: { rm: 0, parts: [] } });
-  ok(two.tile[1] === "RM 300" && two.tile[2] === "" && two.pill === "Pay RM 300" && two.heads.join() === ""
-    && JSON.stringify(two.rows) === JSON.stringify([["Cube 2.5 units", "RM 180", "Overdue by 20 days"], ["Cube 1 unit on behalf of a friend", "RM 120", "Pay by " + said(kl(2))]])
+  ok(two.tile[1] === "RM 300.00" && two.tile[2] === "" && two.pill === "Pay RM 300.00" && two.heads.join() === ""
+    && JSON.stringify(two.rows) === JSON.stringify([["Cube 2.5 units", "RM 180.00", "Overdue by 20 days"], ["Cube 1 unit on behalf of a friend", "RM 120.00", "Pay by " + said(kl(2))]])
     && two.late.join() === "true,false",
     "of several parts, each is its own line, the late one overdue counted from the day its goods went and marked so, a friend's said to be one: "
     + JSON.stringify([two.tile, two.heads, two.rows, two.late]));
@@ -42619,13 +42861,13 @@ await (async () => {
     now: { rm: 90, due: kl(-2), parts: [part({ date: kl(-6), since: kl(-5), due: kl(-2), rm: 60, whole: 60, gotOn: kl(-3) }),
       part({ date: kl(-2), since: kl(-1), due: kl(2), rm: 30, whole: 30, qty: 1, got: 1, gotOn: kl(-1) })] },
     overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
-  ok(JSON.stringify(stale.rows) === JSON.stringify([["Cube 2.5 units", "RM 60", "Overdue by 5 days"], ["Cube 1 unit", "RM 30", "Pay by " + said(kl(2))]])
-    && stale.late.join() === "true,false" && /Please pay the overdue amount of RM 60 before placing another order/.test(stale.text),
+  ok(JSON.stringify(stale.rows) === JSON.stringify([["Cube 2.5 units", "RM 60.00", "Overdue by 5 days"], ["Cube 1 unit", "RM 30.00", "Pay by " + said(kl(2))]])
+    && stale.late.join() === "true,false" && /Please pay the overdue amount of RM 60.00 before placing another order/.test(stale.text),
     "a part whose last day has passed on the phone's own Kuala Lumpur day is overdue and holds ordering, though the publish has not yet sealed it late: "
     + JSON.stringify([stale.rows, stale.late, stale.text.slice(0, 200)]));
   const none = await open({ term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
   const unsealed = await open(undefined);
-  ok(!none.hidden && /To pay nowRM 0 ?Nothing to pay now[.]/.test(none.text) && !none.pills && unsealed.hidden && unsealed.shown,
+  ok(!none.hidden && /^Nothing to pay now[.] ?$/.test(none.text) /* C18: said once, never over RM 0 */ && !none.pills && unsealed.hidden && unsealed.shown,
     "with nothing to pay and nothing coming, Home says so with no Pay (S7 7.1), and for a live document sealed before v841 it draws nothing: " + JSON.stringify(none.text));
 })();
 
@@ -42693,7 +42935,7 @@ await (async () => {
   const { JSDOM: JD } = await import("jsdom");
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
   const at = (n) => kl(n) + "T02:00:00Z";
-  const said = (s) => { const d = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
+  const said = (s) => { const d = new Date(s + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + String(d.getUTCDate()).padStart(2, "0") + " " + MON3[d.getUTCMonth()] + " " + d.getUTCFullYear(); };   /* C17 */
   /* the words, not the drawing: F8's letter is drawn inside every mark (Step 1a.2), and a mark is aria-hidden */
   const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
@@ -42751,12 +42993,12 @@ await (async () => {
       pay: t(d.getElementById("payNow")), pills: d.querySelectorAll("#pHome .salt-pill").length, msgs: [...h.querySelectorAll(".msg")].map(t),
       coming: [...d.querySelectorAll("#hComing [data-row]")].map((r) => r.getAttribute("data-row") + ":" + t(r.querySelector(".salt-inbox-row__what"))),
       needs: [...d.querySelectorAll("#hNeeds [data-row]")].map((r) => r.getAttribute("data-row") + ":" + t(r.querySelector(".salt-inbox-row__what"))) };
-    ok(JSON.stringify(home.rows) === JSON.stringify(["Cube 2 units|RM 90|Pay by " + said(kl(1)), "Cube 2 units|RM 190|Due now", "Less sent|RM 120|Waiting for us to confirm"])
-      && home.tile.join("|") === "To pay now|RM 160|" && home.pay === "Pay RM 160" && home.pills === 1 && !home.msgs.length,
+    ok(JSON.stringify(home.rows) === JSON.stringify(["Cube 2 units|RM 90.00|Pay by " + said(kl(1)), "Cube 2 units|RM 190.00|Due now", "Less sent|RM 120.00|Waiting for us to confirm"])
+      && home.tile.join("|") === "To pay now|RM 160.00|" && home.pay === "Pay RM 160.00" && home.pills === 1 && !home.msgs.length,
       "Home's To pay now is the invoice's Total over a line a thing due, the order at Ready from the order itself and due now, then what was sent, and one Pay for the Total: "
       + JSON.stringify(home));
-    ok(home.coming.join() === "20260927010000-v2kk:RM 95 still to pay, now or when you collect,20260926010000-v2pp:Paid"
-      && home.needs.join() === "20260926020000-v2cc:Ready to collect, since " + kl(-1).slice(8) + " " + MON3[+kl(-1).slice(5, 7) - 1],
+    ok(home.coming.join() === "20260927010000-v2kk:RM 95.00 still to pay, now or when you collect,20260926010000-v2pp:Paid"
+      && home.needs.join() === "20260926020000-v2cc:Ready to collect, since " + kl(-1).slice(8) + " " + MON3[+kl(-1).slice(5, 7) - 1] + " " + kl(-1).slice(0, 4),
       "an order at Ready still owing leaves Coming up, one paid in full stays, and Needs you still says what is ready to collect: " + JSON.stringify([home.coming, home.needs]));
     /* the order's own screen: due now, cash on handover or not, less what the account's money reaches on it */
     d.querySelector('nav.salt-appbar button[data-t="order"]').click();
@@ -42768,8 +43010,8 @@ await (async () => {
     const oWays = [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join();
     const oInv = !!d.querySelector("#payBody .inv"), oTitle = t(d.getElementById("payT"));
     d.getElementById("payX").click();
-    ok(money.includes("Still to pay|RM 160|Due now") && money.includes("Sent against your account|RM 30|Waiting for us to confirm")
-      && oTitle === "Pay RM 160" && oWays === "transfer,qr" && !oInv,
+    ok(money.includes("Still to pay|RM 160.00|Due now") && money.includes("Sent against your account|RM 30.00|Waiting for us to confirm")
+      && oTitle === "Pay RM 160.00" && oWays === "transfer,qr" && !oInv,
       "the order at Ready says Due now though cash on handover was chosen, nets the part of the account's money the desk books after the part with goods out, and its sheet offers no cash way: "
       + JSON.stringify({ money, oTitle, oWays }));
     /* an agreed order's sheet keeps its cash way */
@@ -42790,11 +43032,11 @@ await (async () => {
     const sheet = { title: t(d.getElementById("payT")), tile: t(sb.querySelector(".salt-kpi__label")) + " " + t(sb.querySelector(".salt-kpi__value")), lines,
       ways: [...d.querySelectorAll('#payBody input[name="payHow"]')].map((r) => r.value).join() };
     const L = lines;
-    ok(sheet.title === "Pay RM 160" && sheet.tile === "To pay now RM 160" && L.length === 4
-      && L[0].row === "Cube 2 units at RM 95|RM 90" && L[0].flag === "Received " + said(kl(-2)) + ". Pay by " + said(kl(1)) + ", tomorrow, to keep ordering."
-      && L[0].det.join() === "Goods|RM 190,Less paid|RM 100"
-      && L[1].row === "Cube 2 units at RM 90|RM 190" && L[1].flag === "Ready since " + said(kl(-1)) + ". Due now." && L[1].det.join() === "Goods|RM 180,Delivery|RM 10"
-      && L[2].tot.join() === "Goods|RM 370,Delivery|RM 10,Less paid|RM 100,Less sent|RM 120" && L[3].row === "Total|RM 160" && sheet.ways === "transfer,qr",
+    ok(sheet.title === "Pay RM 160.00" && sheet.tile === "To pay now RM 160.00" && L.length === 4
+      && L[0].row === "Cube 2 units at RM 95.00|RM 90.00" && L[0].flag === "Received " + said(kl(-2)).slice(4) + ". Pay by " + said(kl(1)) + ", tomorrow, to keep ordering."
+      && L[0].det.join() === "Goods|RM 190.00,Less paid|RM 100.00"
+      && L[1].row === "Cube 2 units at RM 90.00|RM 190.00" && L[1].flag === "Ready since " + said(kl(-1)).slice(4) + ". Due now." && L[1].det.join() === "Goods|RM 180.00,Delivery|RM 10.00"
+      && L[2].tot.join() === "Goods|RM 370.00,Delivery|RM 10.00,Less paid|RM 100.00,Less sent|RM 120.00" && L[3].row === "Total|RM 160.00" && sheet.ways === "transfer,qr",
       "Pay opens the sheet on the same invoice whole: each line with its rate, when and what it adds up from, then the totals and the Total it asks for: " + JSON.stringify(sheet));
     const sheetMarks = marks(sb);
     ok(homeMarks.join() === "20:I,20:I" && sheetMarks.join() === "20:I,20:I",
@@ -42811,8 +43053,8 @@ await (async () => {
     finally { dm.window.close(); }
   };
   const alone = await heldBy([]), beside = await heldBy([late]);
-  ok(alone.form && alone.head !== "Payment due" && !alone.hold && alone.total === "RM 190"
-    && beside.head === "Payment due" && beside.tile === "RM 60" && /Please pay the overdue amount of RM 60 before/.test(beside.hold) && beside.total === "RM 250",
+  ok(alone.form && alone.head !== "Payment due" && !alone.hold && alone.total === "RM 190.00"
+    && beside.head === "Payment due" && beside.tile === "RM 60.00" && /Please pay the overdue amount of RM 60.00 before/.test(beside.hold) && beside.total === "RM 250.00",
     "an order at Ready is due, never overdue: alone it holds nothing, and beside a part past its term the hold is that part's figure while To pay now asks for both: "
     + JSON.stringify({ alone, beside }));
 })();
@@ -42870,7 +43112,7 @@ await (async () => {
       labels: [...d.querySelectorAll("#payBody .payhow .salt-option__label")].map(t), select: !!d.querySelector('#payBody input[name="payInto"]'),
       go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap(), ref: t(d.querySelector("#payBody .payref .salt-ledger__value")),
       copy: !!d.querySelector('#payBody .payref button[aria-label="Copy the reference"]'), pills: sh().querySelectorAll(".salt-pill").length };
-    ok(first.open && first.title === "Pay RM 70" && first.tile === "To pay now RM 70" && first.seg.join() === "All, RM 70:true,Part of it:false"
+    ok(first.open && first.title === "Pay RM 70.00" && first.tile === "To pay now RM 70.00" && first.seg.join() === "All, RM 70.00:true,Part of it:false"
       && first.ways.join() === "transfer*,qr" && first.labels.join() === "Transfer to an account,Scan a code" && first.select
       && first.go === "BUTTON disabled" && first.cap === "Choose which of our accounts to pay into." && first.ref === u && first.copy && first.pills === 1,
       "To pay now's Pay opens the sheet on the figure and what it is for, All chosen, the two ways with Transfer chosen as the mockup draws it and no account chosen for them, the username as the reference with Copy, and Show waiting: "
@@ -42894,7 +43136,7 @@ await (async () => {
     amt.value = "90"; amt.dispatchEvent(new w.Event("input", { bubbles: true }));
     const over = { go: go().tagName + (go().disabled ? " disabled" : ""), cap: cap() };
     ok(JSON.stringify(qIn) === JSON.stringify(linked("qr", 70)) && !qIn.includes("wise") && qGo.getAttribute("href") === payHref("maybank", "qr", 70, u) && t(qGo) === "Show the code"
-      && part.title === "Pay RM 40" && part.href === payHref("maybank", "qr", 40, u) && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.",
+      && part.title === "Pay RM 40.00" && part.href === payHref("maybank", "qr", 40, u) && over.go === "BUTTON disabled" && over.cap === "Say how much you are paying, up to RM 70.00.",
       "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
       + JSON.stringify({ qIn, part, over }));
     const text = live + " " + t(sh());
@@ -42907,7 +43149,7 @@ await (async () => {
     d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
     const payO = [...d.querySelectorAll("#pOrder .oact button")].find((b) => /^Pay RM/.test(t(b)));
     if (payO) payO.click();
-    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
+    ok(closed && !!payO && !sh().hidden && t(d.getElementById("payT")) === "Pay RM 200.00" && t(d.querySelector("#payBody .salt-kpi__label")) === "Still to pay"
       && (d.querySelector("#payBody input[name=payHow]:checked") || {}).value === "transfer" && !d.querySelector("#payBody input[name=payInto]:checked") && !d.querySelector("#pOrder .oact .pay"),
       "Escape closes it, and an order's Pay opens the same sheet for what is still to pay on that order, Transfer chosen and no account, and nothing drawn in the order itself");
   } finally { w.close(); }
@@ -42989,10 +43231,10 @@ await (async () => {
     const check = { title: t(d.getElementById("payT")), q: t(d.querySelector("#payBody .paycheck h3")), how: t(d.querySelector("#payBody .paycheck .sub2")),
       ins: t(d.querySelector("#payBody .salt-insight")), again: (d.querySelector("#payBody a.payagain") || { getAttribute: () => "" }).getAttribute("href"),
       foot: [...d.querySelectorAll("#payFoot button")].map((b) => t(b) + ":" + b.className.split(" ")[0]) };
-    ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150" && check.q === "Did you send RM 150?"
+    ok(!besideCode && !unasked && stillThere && check.title === "Pay RM 150.00" && check.q === "Did you send RM 150.00?"
       && check.how === "By transfer to Maybank, reference " + u + "." && /^Tell us only once it has gone from your bank\. It shows as sent, waiting until we confirm it arrived/.test(check.ins)
-      && check.again === payHref("maybank", "transfer", 150, u) && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150:salt-pill" && !st.sent.length,
-      "nothing beside the account number says it was sent; only once they have been to the pay page and back does the sheet ask, Did you send RM 150, with Not yet: "
+      && check.again === payHref("maybank", "transfer", 150, u) && check.foot.join() === "Not yet:salt-ghost,Yes, I sent RM 150.00:salt-pill" && !st.sent.length,
+      "nothing beside the account number says it was sent; only once they have been to the pay page and back does the sheet ask, Did you send RM 150.00, with Not yet: "
       + JSON.stringify({ besideCode, unasked, stillThere, check }));
     const notYet = [...d.querySelectorAll("#payFoot button")].find((b) => t(b) === "Not yet"); if (notYet) notYet.click();
     away();
@@ -43003,7 +43245,7 @@ await (async () => {
     const refused = { open: !sh.hidden, said: t(d.querySelector("#payFoot .paysaid")), yes: !!d.getElementById("paySent") };
     tap("paySent");
     await until(() => st.sent.length === 2 && sh.hidden && scr() && /sent, waiting/.test(t(scr())));
-    ok(once && refused.open && refused.said === "Refused by the fixture." && refused.yes
+    ok(once && refused.open && refused.said === "That was not recorded. Try again." /* C16: a codeless refusal takes the page's words, never its own */ && refused.yes
       && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
       && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
       "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
@@ -43011,9 +43253,9 @@ await (async () => {
     const lines = [...scr().querySelectorAll(".salt-ledger__row")].map((x) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(x.querySelector(q))).join("|"));
     const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
     const row = t(d.querySelector('#pOrder [data-row="oA"] .salt-inbox-row__what'));
-    ok(lines.includes("Sent by you|RM 150|Waiting for us to confirm") && lines.includes("Still to pay|RM 0|Sent, waiting for us to confirm")
-      && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
-      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150 sent, waiting for us to confirm",
+    ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
+      && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150.00 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
+      && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150.00 sent, waiting for us to confirm",
       "the claim reads sent, waiting for us to confirm on the order's money, its history and its row, and nothing calls it paid: " + JSON.stringify({ lines, hist, row }));
   } finally { w.close(); }
 
@@ -43031,9 +43273,9 @@ await (async () => {
   try {
     await until(() => dB.querySelectorAll("#payHead .msg").length === 3);
     const said = [...dB.querySelectorAll("#payHead .msg")].map(t), pill = t(dB.getElementById("payNow"));
-    const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()]; };
-    ok(JSON.stringify(said) === JSON.stringify(["RM 110 sent, waiting for us to confirm.", "RM 30 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
-      "We have not found the RM 20 you sent on " + day(iso(-2.5)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20",
+    const day = (x) => { const k = new Date(new Date(x).getTime() + 8 * 3600e3); return String(k.getUTCDate()).padStart(2, "0") + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][k.getUTCMonth()] + " " + k.getUTCFullYear(); };
+    ok(JSON.stringify(said) === JSON.stringify(["RM 110.00 sent, waiting for us to confirm.", "RM 30.00 received on " + day(iso(-1)) + ". Your statement shows it at its next update.",
+      "We have not found the RM 20.00 you sent on " + day(iso(-2.5)) + ". Check it left your bank, then pay it again."]) && pill === "Pay RM 20.00",
       "under To pay now: what waits on him (the account's claim and an order's), what he received since the statement was written, and what he has not found; Pay asks only for the rest: "
       + JSON.stringify({ said, pill }));
     dB.querySelector('button[data-t="order"]').click();
@@ -43043,7 +43285,7 @@ await (async () => {
     const scrB = dB.querySelector("#pOrder .oscreen");
     const lost = [...scrB.querySelectorAll(".salt-ledger__row")].map((x) => t(x.querySelector(".salt-ledger__label")) + "|" + t(x.querySelector(".salt-ledger__value")));
     const histB = [...scrB.querySelectorAll('[data-part="hist"] li')].map(t);
-    ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50") && histB.some((x) => x.endsWith(" We have not found RM 50 yet"))
+    ok(/a payment we have not found/.test(why) && lost.includes("Not found yet|RM 50.00") && histB.some((x) => x.endsWith(" We have not found RM 50.00 yet"))
       && !!scrB.querySelector(".oact .salt-pill"),
       "his Not found on an order shows on its row, on its money and in its history, and Pay is back: " + JSON.stringify({ why, lost, histB }));
     dB.querySelector('#tabs button[data-t="stmt"]').click();
@@ -43071,7 +43313,7 @@ await (async () => {
   const { JSDOM: JD } = await import("jsdom");
   const u = "abcd-efgh", pass = "fixture-pass-s67", ck = await C.contentKey("test-secret", u);
   const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
-  const said = (x) => { const d = new Date(x + "T00:00:00Z"); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + d.getUTCDate() + " " + MON3[d.getUTCMonth()]; };
+  const said = (x) => { const d = new Date(x + "T00:00:00Z"); return String(d.getUTCDate()).padStart(2, "0") + " " + MON3[d.getUTCMonth()] + " " + d.getUTCFullYear(); };   /* C17: the day goods went has no weekday */
   /* the words, not the drawing: F8's letter is drawn inside every mark (Step 1a.2), and a mark is aria-hidden */
   const t = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((s) => s.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
   const part = (o) => Object.assign({ late: true, product: "salt", qty: 2, got: 2, resale: false }, o);
@@ -43116,17 +43358,17 @@ await (async () => {
   };
   const held = await open([], []);
   /* S7 merge: Home opens first over the line too, and Orders keeps its name while it is the payment page (S7 7.1) */
-  ok(held.home && !held.onOrder && held.tab === "Orders" && held.head === "Payment due" && held.tile === "Overdue RM 300" && !held.form
-    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180|Overdue by 30 days.",
-      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120|Overdue by 14 days."]),
-    "RM 300 past its term, Orders is the payment page with the overdue figure and each part with how long it is overdue, counted from the day its goods went, and no order form: " + JSON.stringify(held));
+  ok(held.home && !held.onOrder && held.tab === "Orders" && held.head === "Payment due" && held.tile === "Overdue RM 300.00" && !held.form
+    && JSON.stringify(held.rows) === JSON.stringify(["Cube 2 units you received " + said(kl(-30)) + "|RM 180.00|Overdue by 30 days.",
+      "The rest of Cube 2 units you received " + said(kl(-14)) + "|RM 120.00|Overdue by 14 days."]),
+    "RM 300.00 past its term, Orders is the payment page with the overdue figure and each part with how long it is overdue, counted from the day its goods went, and no order form: " + JSON.stringify(held));
   ok(held.note === "2 orders unpaid more than 3 days after you received them. The first is overdue by 30 days.",
     "and the figure's line names the term the publish sealed, counted from when they received the goods: " + held.note);
   ok(held.pricesTab && held.prices, "and the price list stays one tap away and readable while it is held");
   const acct = await open([], [{ id: "c1", at: new Date().toISOString(), amount: 300, method: "transfer", account: "maybank", state: "waiting" }]);
   const ord = await open([{ id: "oZ", product: "salt", qty: 1, mode: "collect", total: 20, delivery: 0, paid: 0, claimed: 20, moved: 0, at: "2026-09-20T03:00:00Z",
     status: "acknowledged", history: [], msgs: [], payments: [{ at: "2026-09-24T01:00:00Z", amount: 20, method: "transfer", account: "maybank", claim: "waiting" }] }], []);
-  ok(acct.tab === "Orders" && acct.head !== "Payment due" && acct.form && acct.sent === "Less sent|RM 300|Waiting for us to confirm" && !acct.claimLine
+  ok(acct.tab === "Orders" && acct.head !== "Payment due" && acct.form && acct.sent === "Less sent|RM 300.00|Waiting for us to confirm" && !acct.claimLine
     && ord.tab === "Orders" && ord.head !== "Payment due" && ord.form,
     "a claim waiting on him, on the account or on an order, reopens ordering, and To pay now says it was sent and is waiting: "
     + JSON.stringify({ acct: [acct.tab, acct.head, acct.form, acct.sent, acct.claimLine], ord: [ord.tab, ord.head, ord.form] }));
@@ -43193,7 +43435,7 @@ await (async () => {
     await until(() => st.sent.length === 1 && d.getElementById("paySheet").hidden && /In cash when you collect/.test(t(d.querySelector("#pOrder .oscreen"))));
     const scr = d.querySelector("#pOrder .oscreen");
     ok(st.sent.length === 1 && st.sent[0].method === "cod" && !("amount" in st.sent[0]) && !!st.sent[0].rid
-      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
+      && /You pay in cash when you collect\. We record it when we take it\./.test(t(scr)) && /Still to payRM 110.00In cash when you collect/.test(scr.querySelector('[data-part="money"]').textContent),
       "choosing it sends the choice and no figure, and the order then says it is paid in cash at the handover, recorded by us: " + JSON.stringify(st.sent));
   } finally { w.close(); }
 })();
@@ -43346,7 +43588,7 @@ await (async () => {
     d.getElementById("oNew").click();
     size(d, w, 1); const at1 = line(d);
     size(d, w, 2); const at2 = line(d);
-    ok(at1 === "" && at2 === "Over RM 440 owed with this order: likely paid in advance.",
+    ok(at1 === "" && at2 === "Over RM 440.00 owed with this order: likely paid in advance.",
       "the sheet forecasts paid in advance once what they owe and the order are over the sealed ceiling, and says nothing at it: " + JSON.stringify([at1, at2]));
     d.getElementById("oGo").click();
     const chk = rows(d), say = line(d);
@@ -43357,7 +43599,7 @@ await (async () => {
     ok(posted.length === 1 && !("prepay" in posted[0]), "and nothing about paying in advance is sent at Place: " + JSON.stringify(Object.keys(posted[0] || {})));
     /* Home and the orders */
     const home = t(d.getElementById("pHome"));
-    ok(home.includes("RM 190 still to pay, before we hand it over") && home.includes("RM 100 still to pay, now or when you collect"),
+    ok(home.includes("RM 190.00 still to pay, before we hand it over") && home.includes("RM 100.00 still to pay, now or when you collect"),
       "Coming up says an order paid in advance is paid before it is handed over: " + JSON.stringify(home.slice(0, 400)));
     d.querySelector('button[data-t="order"]').click();
     d.querySelector('#pOrder [data-row="oR"]').click();
@@ -43386,13 +43628,13 @@ await (async () => {
     d.getElementById("oNew").click();
     size(d, w, 1); const one = line(d);
     pickOil(d, w); const both = line(d);
-    ok(one === "" && both === "Over RM 440 owed with this order: likely paid in advance.",
+    ok(one === "" && both === "Over RM 440.00 owed with this order: likely paid in advance.",
       "a sheet of salt 1 and oil 1 is over as one verdict though neither line is alone: " + JSON.stringify([one, both]));
     N.d.getElementById("oNew").click(); size(N.d, N.w, 2);
     ok(line(N.d) === "", "and a list sealed with no ceiling forecasts nothing: " + JSON.stringify(line(N.d)));
     /* every part counts: RM 440 is over RM 435 only with the RM 30 now, the RM 20 coming up and oN's RM 100 all in */
     Q.d.getElementById("oNew").click(); size(Q.d, Q.w, 1);
-    ok(line(Q.d) === "Over RM 435 owed with this order: likely paid in advance.",
+    ok(line(Q.d) === "Over RM 435.00 owed with this order: likely paid in advance.",
       "to pay now, coming up and an agreed order not on the book each count toward the ceiling: " + JSON.stringify(line(Q.d)));
   } finally { await new Promise((r) => setTimeout(r, 100)); M.w.close(); N.w.close(); Q.w.close(); }
 })();
@@ -43493,7 +43735,7 @@ await (async () => {
     const total = () => t(d.querySelector("#osheet .ototal .salt-kpi__value"));
     const fields = [...d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym")).length;
     const first = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
-    ok(fields === 2 && first.join() === "size:1" && total() === "RM 100",
+    ok(fields === 2 && first.join() === "size:1" && total() === "RM 100.00",
       "the sheet shows each product's sizes under its mark and opens on their usual, one line: " + JSON.stringify([fields, first, total()]));
     radio("size:2").click(); radio("size1:10").click();
     const both = total();
@@ -43502,7 +43744,7 @@ await (async () => {
     radio("size:2").click();
     const off = [total(), !!radio("size:2").checked];
     radio("size:2").click();
-    ok(both === "RM 285" && off[0] === "RM 95" && off[1] === false && total() === "RM 285",
+    ok(both === "RM 285.00" && off[0] === "RM 95.00" && off[1] === false && total() === "RM 285.00",
       "a size of each adds to one total, and a size tapped again comes off the sheet: " + JSON.stringify([both, off, total()]));
     ok(empty[0] === "" && empty[1] === true, "a sheet with every line taken off has no total and Review waits: " + JSON.stringify(empty));
     d.getElementById("oGo").click();
@@ -43510,17 +43752,17 @@ await (async () => {
     const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr").forEach((x) => x.remove()); return t(c); };
     const rows = () => [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => [...r.querySelectorAll(".salt-ledger__label, .salt-ledger__value, .salt-ledger__flag")].map(clean).filter(Boolean).join(" "));
     const r1 = rows();
-    ok(r1.includes("2 units RM 190") && r1.includes("10 units RM 95") && r1.includes("Total RM 285") && d.querySelectorAll("#osheet .mhero > *").length === 2,
+    ok(r1.includes("2 units RM 190.00") && r1.includes("10 units RM 95.00") && r1.includes("Total RM 285.00") && d.querySelectorAll("#osheet .mhero > *").length === 2,
       "the check has a line a product, a card each, and the total: " + JSON.stringify(r1));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 1 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     const moved = [...d.querySelectorAll("#osheet .salt-insight--copper")].map(t);
-    ok(posted.length === 1 && t(d.getElementById("oPlace")) === "Place at RM 289" && moved.length === 1 && moved[0].includes("Now RM 99 (was RM 95).") && rows().includes("Total RM 289"),
+    ok(posted.length === 1 && t(d.getElementById("oPlace")) === "Place at RM 289.00" && moved.length === 1 && moved[0].includes("Now RM 99.00 (was RM 95.00).") && rows().includes("Total RM 289.00"),
       "a list moved at Place is read again line by line, the moved line said, Place naming the new total, and nothing placed: " + JSON.stringify([posted.length, t(d.getElementById("oPlace")), moved]));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 3 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     const part = rows();
-    ok(posted.length === 3 && part.includes("2 units RM 190 Sent") && !d.getElementById("oBack").disabled,
+    ok(posted.length === 3 && part.includes("2 units RM 190.00 Sent") && !d.getElementById("oBack").disabled,
       "a line refused after one placed leaves the placed line said as sent, and the check still theirs to change: " + JSON.stringify(part));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 4 && !!d.querySelector("#osheet .osent"));
@@ -43748,7 +43990,7 @@ await (async () => {
   const { webcrypto } = await import("node:crypto");
   const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
   const ago = (n) => new Date(Date.parse(today + "T00:00:00Z") - n * 864e5).toISOString().slice(0, 10);
-  const dn = (iso) => { const d = new Date(iso + "T00:00:00Z"); return WD.EN.day3.split(" ")[d.getUTCDay()] + " " + d.getUTCDate() + " " + WD.EN.mon3.split(" ")[d.getUTCMonth()]; };
+  const dn = (iso) => { const d = new Date(iso + "T00:00:00Z"); return WD.EN.day3.split(" ")[d.getUTCDay()] + " " + String(d.getUTCDate()).padStart(2, "0") + " " + WD.EN.mon3.split(" ")[d.getUTCMonth()] + " " + d.getUTCFullYear(); };   /* C17: DD Mon YYYY, a due date with its weekday */
   const P = "CX7-ST";
   const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
@@ -43827,10 +44069,10 @@ await (async () => {
       "on day 2 no order is taken, and they are told the day the prices go and the day the account is only for paying: " + JSON.stringify(s2));
     const s3 = await draw(d3, [], (v) => v.note !== null && /hidden/.test(v.prices) && v.hpart === 1);
     ok(s3.hold && s3.note === "Pay it before " + dn(ago(-1)) + ": from then your account is only for paying what is owed."
-      && s3.prices === "Your prices are hidden until the overdue RM 100 is paid." && s3.hpart === 1,
+      && s3.prices === "Your prices are hidden until the overdue RM 100.00 is paid." && s3.hpart === 1,
       "on day 3 the prices are hidden, saying why, and they are told the day the account is only for paying: " + JSON.stringify(s3));
     const s4 = await draw(d4, [], (v) => v.note !== null && /hidden/.test(v.prices) && v.grey === "true,true,true", null, true);
-    ok(s4.hold && s4.note === "Your account is only for paying until RM 100 is paid." && /hidden/.test(s4.prices) && s4.hpart === 1 && s4.grey === "true,true,true"
+    ok(s4.hold && s4.note === "Your account is only for paying until RM 100.00 is paid." && /hidden/.test(s4.prices) && s4.hpart === 1 && s4.grey === "true,true,true"
       && s4.payNow && s4.card && s4.cardSeen,
       "from day 4 the account is only for paying: To pay now and its Pay live, the rest of Home and an associate's Rewards still seen, greyed out and out of reach: " + JSON.stringify(s4));
     /* a part of it: a claim waiting lifts the stages whatever its figure, as it lifts the hold (D9) */
@@ -43925,13 +44167,13 @@ await (async () => {
   const sent = { claimed: 180, payments: [{ at: iso(-1), amount: 180, method: "transfer", account: "maybank", claim: "waiting" }] };
   const onOrder = await read([order(Object.assign({ rowOn: "2026-09-10" }, sent))], []);
   const elsewhere = await read([order(Object.assign({ rowOn: "2026-09-20", total: 90 }, sent, { claimed: 90, payments: [Object.assign({}, sent.payments[0], { amount: 90 })] }))], []);
-  ok(onOrder.payNow === "Pay RM 120" && elsewhere.payNow === "Pay RM 300",
-    "RM 180 sent on an order whose row is part of To pay now is not asked for again there; sent on an order that is no part of it, To pay now is unchanged: "
+  ok(onOrder.payNow === "Pay RM 120.00" && elsewhere.payNow === "Pay RM 300.00",
+    "RM 180.00 sent on an order whose row is part of To pay now is not asked for again there; sent on an order that is no part of it, To pay now is unchanged: "
     + JSON.stringify({ onOrder: onOrder.payNow, elsewhere: elsewhere.payNow }));
   const acct = await read([order({ rowOn: "2026-09-10" })], [{ id: "a1", u: U, kind: "account", at: iso(-1), amount: 180, method: "transfer", account: "maybank", state: "waiting" }]);
-  ok(acct.orderPay === "" && acct.lines.some((l) => /^Sent against your account ?RM 180 ?Waiting for us to confirm$/.test(l)) && acct.lines.some((l) => /^Still to pay ?RM 0/.test(l))
-    && acct.payNow === "Pay RM 120",
-    "and RM 180 sent against the account, which reaches that order's row first, is not asked for again on the order: " + JSON.stringify(acct));
+  ok(acct.orderPay === "" && acct.lines.some((l) => /^Sent against your account ?RM 180.00 ?Waiting for us to confirm$/.test(l)) && acct.lines.some((l) => /^Still to pay ?RM 0.00/.test(l))
+    && acct.payNow === "Pay RM 120.00",
+    "and RM 180.00 sent against the account, which reaches that order's row first, is not asked for again on the order: " + JSON.stringify(acct));
 })();
 
 section("S6 fix: his Received does not bring the RM 100 hold back, and the held page asks only for what is still overdue");
@@ -43991,9 +44233,9 @@ await (async () => {
     payments: [{ at: iso(-3), amount: 180, method: "transfer", account: "maybank", claim: "received", answered: iso(0) }] };
   const onOrder = await read([order], []);
   /* S7 merge: Orders keeps its name over the line (S7 7.1), so the held page is told by its head, Payment due */
-  ok(control.tab === "Orders" && control.head === "Payment due" && control.pay === "Pay RM 300" && all.tab === "Orders" && all.head !== "Payment due"
-    && some.head === "Payment due" && some.pay === "Pay RM 200" && onOrder.head === "Payment due" && onOrder.pay === "Pay RM 120",
-    "RM 300 overdue holds them; received against the account since the statement it no longer does, received in part the held page asks for the rest, and an order's own claim received on an overdue part comes off it too: "
+  ok(control.tab === "Orders" && control.head === "Payment due" && control.pay === "Pay RM 300.00" && all.tab === "Orders" && all.head !== "Payment due"
+    && some.head === "Payment due" && some.pay === "Pay RM 200.00" && onOrder.head === "Payment due" && onOrder.pay === "Pay RM 120.00",
+    "RM 300.00 overdue holds them; received against the account since the statement it no longer does, received in part the held page asks for the rest, and an order's own claim received on an overdue part comes off it too: "
     + JSON.stringify({ control, all, some, onOrder }));
 })();
 
@@ -44109,7 +44351,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 60));
     return dom;
   };
-  const asked = (d) => !d.getElementById("paySheet").hidden && t(d.querySelector("#payBody .paycheck h3")) === "Did you send RM 150?" && !!d.getElementById("paySent");
+  const asked = (d) => !d.getElementById("paySheet").hidden && t(d.querySelector("#payBody .paycheck h3")) === "Did you send RM 150.00?" && !!d.getElementById("paySent");
   /* they pay: the order's Pay, Maybank, Show the account number; then the page is reloaded */
   const first = await open(null);
   let kept = null, before = false;
@@ -44134,7 +44376,7 @@ await (async () => {
     cleared = !!ny && !w.localStorage.getItem("salt-stmt-payq") && !asked(d);
   } finally { again.window.close(); }
   ok(!before && !!kept && back && name && cleared,
-    "Show keeps the question on the device without the username, the page reloaded asks Did you send RM 150 at once, and Not yet clears it: "
+    "Show keeps the question on the device without the username, the page reloaded asks Did you send RM 150.00 at once, and Not yet clears it: "
     + JSON.stringify({ before, kept, back, cleared }));
   const q = JSON.parse(kept || "{}");
   const other = await open(JSON.stringify(Object.assign({}, q, { who: "zz" })));
@@ -44192,7 +44434,7 @@ await (async () => {
     ring = !!d.querySelector("#payBody .payring");
     mark = !!d.querySelector("#payBody .paycheck svg.glyph");
   } finally { dom.window.close(); }
-  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150?" && !ring && mark
+  ok(head && head.cls === "salt-sheet__title" && head.text === "Did you send RM 150.00?" && !ring && mark
     && !/\.payring/.test(css) && !/\.paycheck h3\{[^}]*(font|color|letter-spacing)/.test(pageRules) && /\.salt-sheet__title\s*\{/.test(css),
     "the question's heading is the Sheet's own title recipe, the page keeping only its spacing, and no ring the system has no recipe for: " + JSON.stringify({ head, ring, mark }));
 })();
@@ -44260,13 +44502,13 @@ await (async () => {
   /* S7 7.1: HOME OPENS FIRST, over the line too, and leads with the overdue amount and its Pay; Orders is the payment
      page (S6 6.7: what is past its term, Pay, no order form), and the price list stays readable */
   ok(held.home && !held.orderShown && !held.stmtShown && held.pricesTab && held.stmtTab
-    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.homeText) && /Pay RM 250\.5/.test(held.homeText)
-    && /Please pay the overdue amount of RM 250\.5 before placing another order/.test(held.order) && held.pay === "Pay RM 250.5" && !held.form,
+    && /Please pay the overdue amount of RM 250\.50 before placing another order/.test(held.homeText) && /Pay RM 250\.50/.test(held.homeText)
+    && /Please pay the overdue amount of RM 250\.50 before placing another order/.test(held.order) && held.pay === "Pay RM 250.50" && !held.form,
     "RM 250.50 past its term, Home says to pay the overdue amount first with its Pay, Orders is the payment page with its Pay and no order form, and the price list stays readable: "
     + JSON.stringify({ ...held, order: held.order.slice(0, 90), homeText: held.homeText.slice(0, 90) }));
-  ok(/Please pay the overdue amount of RM 20 before placing another order/.test(small.homeText) && small.pay === "Pay RM 20" && !small.form
-    && /Please pay the overdue amount of RM 50 before placing another order/.test(owedLate.homeText) && owedLate.pay === "Pay RM 50" && !owedLate.form,
-    "any amount past its term holds, since his instruction of 28 Sep 2026: RM 20 alone, and RM 50 of the RM 300 owed, each with its Pay and no order form: "
+  ok(/Please pay the overdue amount of RM 20.00 before placing another order/.test(small.homeText) && small.pay === "Pay RM 20.00" && !small.form
+    && /Please pay the overdue amount of RM 50.00 before placing another order/.test(owedLate.homeText) && owedLate.pay === "Pay RM 50.00" && !owedLate.form,
+    "any amount past its term holds, since his instruction of 28 Sep 2026: RM 20.00 alone, and RM 50.00 of the RM 300.00 owed, each with its Pay and no order form: "
     + JSON.stringify({ small: [small.pay, small.form, small.homeText.slice(0, 90)], owedLate: [owedLate.pay, owedLate.form] }));
   ok(none.home && !none.orderShown && none.pricesTab && !/overdue/.test(none.order + none.homeText)
     && owedOnly.home && !owedOnly.orderShown && owedOnly.pricesTab && !/overdue/.test(owedOnly.order + owedOnly.homeText),
@@ -44411,13 +44653,15 @@ await (async () => {
     const d = M.liveStatement(p, at, "abcd-efgh");
     if (!d) continue;
     docs++;
-    if (!d.body.includes('<p class="whol gap1">Account</p>\n<div class="who">abcd-efgh</div>')) named.push(p);
+    /* C2 (29 Sep 2026): inside the Counter the place is the h1 and the header names the username, so the live document is an
+       h2 and names the account no second time, by username or by code */
+    if (/class="who"|>Account<|<h1/.test(d.body) || d.body.includes("abcd-efgh") || d.body.includes(p) || !d.body.includes('<h2 class="stmth">Statement of account</h2>')) named.push(p);
     const why = siteWords(text(d.body));
     if (why) said.push(p + " " + why);
     const d0 = M.liveStatement(p, at);
     if (/class="who"|>Account</.test(d0.body) || d0.body.includes(p)) bare.push(p);
   }
-  ok(docs > 10 && !named.length, "every live statement (" + docs + ") names its account by the username" + (named.length ? "; not: " + named.slice(0, 3).join(", ") : ""));
+  ok(docs > 10 && !named.length, "every live statement (" + docs + ") is an h2 under the Counter's own heading and names its account no second time, the header carrying the username (C2)" + (named.length ? "; not: " + named.slice(0, 3).join(", ") : ""));
   ok(docs > 10 && !said.length, "and none says anything a customer's page never shows" + (said.length ? ": " + said.slice(0, 3).join("; ") : ""));
   ok(docs > 10 && !bare.length, "with no username to hand the line is left off, never filled with the code" + (bare.length ? ": " + bare.slice(0, 3).join(", ") : ""));
 })();
@@ -48120,8 +48364,8 @@ await (async () => {
     } finally { try { dom.window.close(); } catch (x) { /* best effort */ } }
   };
   const before = views.before && await home(views.before), after = views.after && await home(views.after);
-  ok(before === "To pay now|RM 220|Pay RM 220" && after === "To pay now|RM 110|Pay RM 110" && views.after.forFriend === true && views.after.rowOn === views.before.rowOn,
-    "the Counter read an order at Ready twice beside its row moved to the bucket, and once the order has followed it asks for RM 110, once: " + J({ before, after }));
+  ok(before === "To pay now|RM 220.00|Pay RM 220.00" && after === "To pay now|RM 110.00|Pay RM 110.00" && views.after.forFriend === true && views.after.rowOn === views.before.rowOn,
+    "the Counter read an order at Ready twice beside its row moved to the bucket, and once the order has followed it asks for RM 110.00, once: " + J({ before, after }));
 })();
 
 
@@ -48590,6 +48834,269 @@ await (async () => {
   const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
   ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
+})();
+
+section("29 Sep 2026: a customer may say the day they want an order by, tomorrow to sixty days on; the row stays dated at the acknowledgement");
+await (async () => {
+  /* FUTURE-DATED ORDERS. The Worker checks the day (wantByFault) and it travels on the order and the customer's view; the
+     Pending row carries it as fixed words and keeps its own date; the page offers it, holds Review for a day out of range,
+     and Place sends it; the desk's card says it while the goods are still to go. Each proved red by mutation. */
+  const O = await import("../stmt/orders.js"), SO = await import("../src/orders.js");
+  const at = "2026-09-29T02:00:00Z", base = { product: "salt", qty: 1, mode: "collect", total: 100, unit: 100 };
+  ok(O.WANT_DAYS === 60 && O.wantByFault(undefined, at) === "" && O.wantByFault("", at) === "" && O.wantByFault("2026-09-30", at) === ""
+    && O.wantByFault("2026-11-28", at) === "" && O.wantByFault("2026-09-29", at) === "wantBy" && O.wantByFault("2026-11-29", at) === "wantBy"
+    && O.wantByFault("2026-10-32", at) === "wantBy" && O.wantByFault("2026-11-31", at) === "wantBy" && O.wantByFault("30/09/2026", at) === "wantBy" && O.wantByFault(20260930, at) === "wantBy",
+    "a day is taken from tomorrow to sixty days on in Kuala Lumpur, a real date in YYYY-MM-DD, and none at all is as soon as it can");
+  ok(O.wantByFault("2026-09-30", "2026-09-29T17:00:00Z") === "wantBy",
+    "and tomorrow is Kuala Lumpur's: at 01:00 on the 30th there, the 30th is today");
+  const c1 = O.checkPlacement({ ...base, wantBy: "2026-10-04" }, [], at), c2 = O.checkPlacement({ ...base, wantBy: "2026-09-29" }, [], at), c3 = O.checkPlacement(base, [], at);
+  ok(c1.order && c1.order.wantBy === "2026-10-04" && c2.code === "wantBy" && /60 days/.test(c2.error) && c3.order && !("wantBy" in c3.order),
+    "Place takes the day onto the order, refuses one out of range in words, and an order with none carries none: " + JSON.stringify([c1.order && c1.order.wantBy, c2, c3.order && c3.order.wantBy]));
+  const pl = O.decidePlace("abcd-efgh", { ...base, wantBy: "2026-10-04" }, [], at, "");
+  ok(pl.ev && pl.ev.order.wantBy === "2026-10-04" && O.customerView(pl.ev.order).wantBy === "2026-10-04",
+    "and the order placed carries it, and so does the view the customer is handed");
+  const now = new Date("2026-09-30T03:00:00Z"), ord = { id: "20260929020000-aaaa", qty: 2, total: 200, mode: "collect", product: "salt" };
+  const e1 = SO.pendingEntry({ ...ord, wantBy: "2026-10-04" }, "CZ9-ADR", now), e0 = SO.pendingEntry(ord, "CZ9-ADR", now);
+  ok(/, wanted by 2026-10-04\. Nothing paid/.test(e1.payload.note) && !/wanted by/.test(e0.payload.note) && e1.payload.date === "2026-09-30"
+    && e1.orderKey === e0.orderKey && SO.pendingEntry({ ...ord, wantBy: "soon<b>" }, "CZ9-ADR", now).payload.note === e0.payload.note,
+    "the Pending row says the day in fixed words, stays dated at the acknowledgement with the same key, and takes nothing that is not a day: " + e1.payload.note);
+
+  /* the page: When, a day, Review held until the day is in range, the check saying it, and Place sending it */
+  const { landingPage } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-want", ck = await CM.contentKey("test-secret", u), posted = [];
+  const l = { at: new Date().toISOString(), digest: "d1", week: { label: "28 Sep 2026", monday: "2026-09-28" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-want", prices: Object.assign({ at: l.at, week: l.week.monday, digest: "d1" }, await CM.encryptWith(ck, JSON.stringify(l))),
+    env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JSDOM(landingPage(u, "nwant", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j);
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260929040000-zzzz", product: "salt", qty: j.qty, status: "placed", at: new Date().toISOString(), total: j.total, wantBy: j.wantBy, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    const kl = (n) => new Date(Date.parse(new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10)) + n * 864e5).toISOString().slice(0, 10);
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const soon = d.querySelector('#osheet [data-k="when:0"]'), day = d.querySelector('#osheet [data-k="when:1"]');
+    ok(!!soon && !!day && soon.getAttribute("aria-pressed") === "true" && !d.getElementById("oWant") && !d.getElementById("oGo").disabled,
+      "the sheet asks when, as soon as it can already chosen, with no day to fill");
+    day.click();
+    const di = d.getElementById("oWant"), go = () => d.getElementById("oGo");
+    ok(!!di && di.type === "date" && di.min === kl(1) && di.max === kl(60) && go().disabled && /Pick a day/.test(d.getElementById("osheet").textContent),
+      "By a day opens a date from tomorrow to sixty days on, and Review waits for one: " + JSON.stringify([di && di.min, di && di.max]));
+    di.value = kl(0); di.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const heldToday = go().disabled;
+    di.value = kl(4); di.dispatchEvent(new w.Event("input", { bubbles: true }));
+    ok(heldToday && !go().disabled, "today is held, and a day in range lets Review go");
+    go().click();
+    const shown = d.getElementById("osheet").textContent, dd = kl(4);
+    ok(/Wanted by/.test(shown) && shown.includes(String(+dd.slice(8)).padStart(2, "0") + " "), "the check says the day before anything is placed: " + dd);
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 1 && posted[0].wantBy === dd, "and Place sends it: " + JSON.stringify(posted.map((x) => x.wantBy)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+
+  /* the desk: its card says the day while the goods are still to go, and nothing once they have gone */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w: mw } = await openMaster();
+  const line = (o) => String(mw.eval("ordWantLine(" + JSON.stringify(o) + ")"));
+  const t = new Date(Date.now() + 8 * 36e5 + 3 * 864e5).toISOString().slice(0, 10);
+  ok(/Wanted by <b>\d{1,2} [A-Z][a-z]{2}<\/b>, in 3 days/.test(line({ status: "placed", qty: 2, moved: 0, wantBy: t }))
+    && /Wanted by/.test(line({ status: "acknowledged", qty: 2, moved: 1, wantBy: t }))
+    && line({ status: "ready", qty: 2, moved: 2, wantBy: t }) === "" && line({ status: "declined", qty: 2, wantBy: t }) === ""
+    && line({ status: "placed", qty: 2 }) === "" && line({ status: "placed", qty: 2, wantBy: "<b>" }) === "",
+    "the desk's card says the day and how far off while goods are still to go, and nothing once they have gone, on a closed order or with none: " + line({ status: "placed", qty: 2, moved: 0, wantBy: t }));
+})();
+
+section("Step 6 (29 Sep 2026): a customer's passkey is saved on a session, opens the account on its signature alone, and ends with the account's devices");
+await (async () => {
+  /* HIS DECISIONS OF 29 SEP 2026: any passkey store (NordPass gave no secret on his PC and Mac), the password once a new
+     device, the secret used where a store gives one, a year from the last use, Log out keeps it. The Worker checks the
+     signature with the key filed at saving and hands back its share of the key; driven here with a real P-256 key, the
+     signature DER-encoded as an authenticator sends it. Proved red by mutation, each on its own. */
+  const SW = (await import("../stmt/worker.js")).default;
+  const { webcrypto: wc } = await import("node:crypto");
+  const S = wc.subtle, H = (x) => createHash("sha256").update(x).digest();
+  const u = "pkpk-aaaa", sess = "sesspk0000000000000000000000", sess2 = "sesspk1111111111111111111111";
+  const kv = new KV();
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "aXY=", ct: "Y3Q=" } }));
+  for (const t of [sess, sess2]) await kv.put("sess:" + H(t).toString("hex"), JSON.stringify({ u, at: new Date().toISOString() }));
+  const env = { STMT: kv }, ORIGIN = "https://k7m3p2.example", RP = "k7m3p2.example";
+  const post = (path, body, headers) => SW.fetch(new Request(ORIGIN + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
+  const J = async (r) => { const x = await r; let j = null; try { j = await x.json(); } catch (e) { j = null; } return Object.assign({ status: x.status }, j || {}); };
+  const S1 = { "X-Stmt-Session": sess }, S2 = { "X-Stmt-Session": sess2 };
+  const b64u = (b) => Buffer.from(b).toString("base64url");
+  const kp = await S.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const spki = Buffer.from(await S.exportKey("spki", kp.publicKey)).toString("base64");
+  const credId = new Uint8Array(wc.getRandomValues(new Uint8Array(16))), id = b64u(credId);
+  const cdj = (type, ch, origin) => Buffer.from(JSON.stringify({ type, challenge: ch, origin: origin || ORIGIN, crossOrigin: false }));
+  const authData = (flags, withCred, rp) => Buffer.concat([H(rp || RP), Buffer.from([flags]), Buffer.from([0, 0, 0, 0])]
+    .concat(withCred ? [Buffer.alloc(16), Buffer.from([0, credId.length]), Buffer.from(credId), Buffer.from([0xa0])] : []));
+  const der = (raw) => { const enc = (b) => { let i = 0; while (i < b.length - 1 && b[i] === 0) i++; b = b.slice(i); if (b[0] & 0x80) b = Buffer.concat([Buffer.from([0]), b]); return Buffer.concat([Buffer.from([2, b.length]), b]); };
+    const r = enc(Buffer.from(raw.slice(0, 32))), s2 = enc(Buffer.from(raw.slice(32))); return Buffer.concat([Buffer.from([0x30, r.length + s2.length]), r, s2]); };
+  const sign = async (ad, cd, key) => der(new Uint8Array(await S.sign({ name: "ECDSA", hash: "SHA-256" }, key || kp.privateKey, Buffer.concat([ad, H(cd)]))));
+  const wrap = { v: 3, iv: Buffer.alloc(12, 1).toString("base64"), ct: Buffer.alloc(48, 2).toString("base64") };
+  const prfWrap = { v: 3, iv: Buffer.alloc(12, 3).toString("base64"), ct: Buffer.alloc(48, 4).toString("base64") };
+  const saveBody = (ch, flags) => ({ challenge: ch, id, clientData: b64u(cdj("webauthn.create", ch)), authData: b64u(authData(flags == null ? 0x45 : flags, true)), spki, alg: -7, wrap });
+
+  const cold = await J(post("/passkey/new", {}));
+  const n1 = await J(post("/passkey/new", {}, S1));
+  ok(cold.status === 401 && n1.ok && /^[A-Za-z0-9_-]{43}$/.test(n1.challenge) && /^[A-Za-z0-9_-]{43}$/.test(n1.share) && /^[A-Za-z0-9_-]{22}$/.test(n1.user)
+    && Array.isArray(n1.has) && n1.has.length === 0,
+    "Step 6: a challenge to save a passkey is a session's alone, with the share it will keep and no passkey on the account yet: " + JSON.stringify([cold.status, n1]));
+  const noUv = await J(post("/passkey/save", saveBody(n1.challenge, 0x41), S1));
+  const n2 = await J(post("/passkey/new", {}, S1));
+  const elsewhere = await J(post("/passkey/save", Object.assign(saveBody(n2.challenge), { authData: b64u(authData(0x45, true, "evil.example")) }), S1));
+  const n3 = await J(post("/passkey/new", {}, S1));
+  const saved = await J(post("/passkey/save", saveBody(n3.challenge), S1));
+  const again = await J(post("/passkey/save", saveBody(n3.challenge), S1));
+  const pkK = "pk:" + H(id).toString("hex"), rec = JSON.parse((await kv.get(pkK)) || "{}");
+  ok(noUv.status === 400 && noUv.code === "pkNot" && elsewhere.code === "pkNot" && saved.ok && /^[A-Za-z0-9_-]{32}$/.test(saved.t)
+    && rec.u === u && rec.cid === id && rec.share === n3.share && rec.alg === -7 && (kv.opts.get(pkK) || {}).expirationTtl === 365 * 86400
+    && again.code === "pkStale",
+    "Step 6: saving needs the face checked and this address; the passkey is filed with its share for a year, and a challenge is spent once: " + JSON.stringify([noUv, elsewhere, saved, again.code]));
+
+  const openWith = async (extra, key, flags, origin) => {
+    const ch = (await J(post("/passkey/challenge", {}))).challenge, cd = cdj("webauthn.get", ch, origin), ad = authData(flags == null ? 0x05 : flags, false);
+    return J(post("/passkey/open", Object.assign({ challenge: ch, id, clientData: b64u(cd), authData: b64u(ad), sig: b64u(await sign(ad, cd, key)) }, extra || {})));
+  };
+  const o1 = await openWith({ t: saved.t });
+  const o2 = await openWith({});
+  ok(o1.ok && o1.u === u && JSON.stringify(o1.wrap) === JSON.stringify(wrap) && o1.share === n3.share && /^[A-Za-z0-9_-]{32}$/.test(o1.session) && o1.env
+    && o2.ok && o2.once === true && o2.u === u && o2.share === n3.share && !o2.session && !o2.wrap && !o2.env,
+    "Step 6: the passkey opens the account with this device's wrap and a session; with nothing on the device it answers once, and no session: " + JSON.stringify([o1.ok, o1.u, !!o1.session, o2]));
+  const other = await S.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const forged = await openWith({ t: saved.t }, other.privateKey), noFace = await openWith({ t: saved.t }, null, 0x01), away = await openWith({ t: saved.t }, null, 0x05, "https://evil.example");
+  const ch9 = (await J(post("/passkey/challenge", {}))).challenge, cd9 = cdj("webauthn.get", ch9), ad9 = authData(0x05, false), sg9 = b64u(await sign(ad9, cd9));
+  const once9 = await J(post("/passkey/open", { challenge: ch9, id, clientData: b64u(cd9), authData: b64u(ad9), sig: sg9, t: saved.t }));
+  const twice9 = await J(post("/passkey/open", { challenge: ch9, id, clientData: b64u(cd9), authData: b64u(ad9), sig: sg9, t: saved.t }));
+  ok([forged, noFace, away].every((x) => x.status === 401 && x.code === "refused") && once9.ok && twice9.status === 401,
+    "Step 6: another key's signature, a face not checked and another address are the door's one refusal, and a signed answer is spent once: "
+    + JSON.stringify([forged.status, noFace.status, away.status, once9.ok, twice9.status]));
+
+  const w1 = await J(post("/passkey/wrap", { id, prfWrap }, S1));
+  const o3 = await openWith({ prf: true }), o4 = await openWith({ prf: false });
+  ok(w1.ok && o3.ok && JSON.stringify(o3.prfWrap) === JSON.stringify(prfWrap) && !!o3.session && !o3.wrap && o4.once === true,
+    "Step 6: a passkey whose store gives a secret opens any device the passkey reaches, and one that gave none on this device answers once");
+  const ch5 = (await J(post("/passkey/new", {}, S2))).challenge, cd5 = cdj("webauthn.get", ch5), ad5 = authData(0x05, false);
+  const lk = await J(post("/passkey/link", { challenge: ch5, id, clientData: b64u(cd5), authData: b64u(ad5), sig: b64u(await sign(ad5, cd5)) }, S2));
+  const w2 = await J(post("/passkey/wrap", { id, wrap }, S2));
+  const o5 = await openWith({ t: w2.t });
+  ok(lk.ok && lk.share === n3.share && lk.roams === true && w2.ok && w2.t && w2.t !== saved.t && JSON.stringify(o5.wrap) === JSON.stringify(wrap),
+    "Step 6: a device signed in by password uses the account's passkey, and its own wrap opens it after");
+
+  const devs = await J(post("/devices", { passkey: id }, S1));
+  const pkRow = (devs.devices || []).find((d) => d.passkey);
+  await post("/logout", {}, { "X-Stmt-Session": o1.session });
+  const kept = !!(await kv.get(pkK));
+  /* signed out from the device that only linked it: the passkey is not that device's own session, so it ends */
+  const out = await J(post("/devices/signout", {}, S2));
+  const pkd = [...kv.m.keys()].filter((k) => k.startsWith("pkd:"));
+  const o6 = await openWith({ t: saved.t });
+  ok(!!pkRow && pkRow.kept && pkRow.here && kept && out.ok && !(await kv.get(pkK)) && pkd.length === 0 && o6.status === 401,
+    "Step 6: the passkey is listed with the account's devices, Log out keeps it, and signing the others out ends it and every device's wrap: "
+    + JSON.stringify({ pkRow, kept, out, pkd, o6: o6.status }));
+})();
+
+section("Step 6: the door opens with a passkey, and a device with nothing on it takes the password once and keeps its wrap");
+await (async () => {
+  /* The page's half: Open with a passkey asks the store, sends the signed answer, and opens the statement with the share
+     and this device's half; answered once, it fills the username and, after the password, files this device's wrap. */
+  const { landingPage: LP } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD } = await import("jsdom");
+  const { webcrypto: wc } = await import("node:crypto");
+  const u = "pkpg-aaaa", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), u);
+  const envSealed = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] }));
+  const share = Buffer.alloc(32, 7).toString("base64url"), half = wc.getRandomValues(new Uint8Array(32));
+  /* the page's own sealing, rebuilt here: HKDF over the device's half and the share, into AES-GCM */
+  const seal = async (h) => {
+    const base = await wc.subtle.importKey("raw", Buffer.concat([Buffer.from(h), Buffer.from(share, "base64url")]), "HKDF", false, ["deriveKey"]);
+    const k = await wc.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: new TextEncoder().encode("salt-counter passkey v1") }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const iv = wc.getRandomValues(new Uint8Array(12)), raw = ck;
+    return { v: 3, iv: Buffer.from(iv).toString("base64"), ct: Buffer.from(await wc.subtle.encrypt({ name: "AES-GCM", iv }, k, raw)).toString("base64") };
+  };
+  const cred = { id: "Y3JlZC1pZC1wYWdl", response: { clientDataJSON: new Uint8Array([1]), authenticatorData: new Uint8Array([2]), signature: new Uint8Array([3]) }, getClientExtensionResults: () => ({}) };
+  const make = (stored, answer) => {
+    const sent = [];
+    const dom = new JD(LP("", "npk", null), { url: "https://k7m3p2.example/app", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+        const store = new Map(stored ? [["salt-stmt-passkey", JSON.stringify(stored)]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: { getItem: (k) => (store.has(k) ? store.get(k) : null),
+          setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.PublicKeyCredential = function () {};
+        Object.defineProperty(win.navigator, "credentials", { configurable: true, value: { create: async () => cred, get: async (o) => { sent.push({ get: o }); return cred; } } });
+        win.fetch = async (path, init) => {
+          const b = init && init.body ? JSON.parse(init.body) : null; sent.push({ path: String(path), body: b });
+          const r = answer(String(path), b);
+          return { ok: r.status === 200, status: r.status, json: async () => r.body };
+        };
+      } });
+    return { W: dom.window, D: dom.window.document, sent };
+  };
+  const tick = (n) => new Promise((r) => setTimeout(r, n || 40));
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await tick(); return f(); };
+  const acct = { issued: "2026-09-01", issues: ["2026-09-01"], env: envSealed, live: null, prices: null, assoc: false, card: null };
+
+  /* the device holds its half: the door opens the account */
+  const wrap = await seal(half);
+  const A = make({ u, c: cred.id, t: "devtok-aaaaaaaaaaaaaaaaaaaaaaaa", k: Buffer.from(half).toString("base64") }, (path) => {
+    if (path === "/passkey/challenge") return { status: 200, body: { ok: true, challenge: "Y2hhbGxlbmdlLWNoYWxsZW5nZS1jaGFsbGVuZ2UtMTIzNDU2" } };
+    if (path === "/passkey/open") return { status: 200, body: Object.assign({ ok: true, u, passkey: true, share, wrap, prfWrap: null, session: "sessA00000000000000000000000" }, acct) };
+    return { status: 200, body: { ok: true, orders: [], devices: [] } };
+  });
+  try {
+    const go = A.D.getElementById("pkGo");
+    await until(() => A.sent.some((x) => x.path === "/passkey/challenge"));
+    const shown = !!go && !go.hidden;
+    go.click();
+    await until(() => A.D.getElementById("gate").hidden);
+    const opened = A.sent.find((x) => x.path === "/passkey/open");
+    ok(shown && !!opened && opened.body.t === "devtok-aaaaaaaaaaaaaaaaaaaaaaaa" && opened.body.id === cred.id && opened.body.challenge && opened.body.sig
+      && A.sent.some((x) => x.get && x.get.publicKey.userVerification === "required") && A.D.getElementById("gate").hidden,
+      "Step 6: the door's Open with a passkey asks for the face, sends the signed answer with this device's token, and opens the statement: "
+      + JSON.stringify({ shown, opened: opened && opened.body, gate: A.D.getElementById("gate").hidden }));
+  } finally { A.W.close(); }
+
+  /* nothing on this device: the password once, then this device's wrap is filed and kept */
+  const B = make(null, (path, b) => {
+    if (path === "/passkey/challenge") return { status: 200, body: { ok: true, challenge: "Y2hhbGxlbmdlLWNoYWxsZW5nZS1jaGFsbGVuZ2UtMTIzNDU2" } };
+    if (path === "/passkey/open") return { status: 200, body: { ok: true, once: true, u, share } };
+    if (path === "/open") return { status: 200, body: Object.assign({ ok: true, byMaster: false, wrap: null, wrapMaster: null, session: "sessB00000000000000000000000" }, acct, { wrap: B.pwWrap }) };
+    if (path === "/passkey/wrap") return { status: 200, body: { ok: true, t: "devtok-bbbbbbbbbbbbbbbbbbbbbbbb" } };
+    return { status: 200, body: { ok: true, orders: [], devices: [] } };
+  });
+  B.pwWrap = await C.wrapKey(pass, ck);
+  try {
+    await until(() => B.sent.some((x) => x.path === "/passkey/challenge"));
+    B.D.getElementById("pkGo").click();
+    await until(() => B.D.getElementById("un").value === u);
+    const said = B.D.getElementById("msg").textContent;
+    B.D.getElementById("pw").value = pass;
+    B.D.getElementById("rem").checked = false;
+    B.D.getElementById("f").dispatchEvent(new B.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !!B.W.localStorage.getItem("salt-stmt-passkey"));
+    const filed = B.sent.find((x) => x.path === "/passkey/wrap"), kept = JSON.parse(B.W.localStorage.getItem("salt-stmt-passkey") || "{}");
+    ok(said.includes("needs your password once") && !!filed && filed.body.id === cred.id && filed.body.wrap && filed.body.wrap.v === 3
+      && kept.u === u && kept.c === cred.id && kept.t === "devtok-bbbbbbbbbbbbbbbbbbbbbbbb" && typeof kept.k === "string" && !JSON.stringify(filed.body).includes(pass),
+      "Step 6: answered once, the door fills the username and asks for the password, and after it this device's wrap is filed and kept: "
+      + JSON.stringify({ said, filed: filed && filed.body, kept }));
+  } finally { B.W.close(); }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
