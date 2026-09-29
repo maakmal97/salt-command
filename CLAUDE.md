@@ -336,7 +336,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
   `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
   showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
-  his words through `siteWords`, every line escaped; a test account's lives in its fixture.
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Enter's Waiting on
+  you until Step 9: a thread whose last line is theirs is an Asked act, the rest listed under Chat, read every 2 seconds
+  only while one is open, through the keyed `/threads`.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
   order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
   writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One

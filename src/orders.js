@@ -156,6 +156,36 @@ export async function listClaims(env, all) {
   return { ok: true, claims: (b.claims || []).map((c) => Object.assign({ code: users[c.u] || null }, c)) };
 }
 
+/** Step 7: every account's thread on the site, newest first, each with the desk code its username maps to. A test
+ *  account's lives in its fixture, so it is never here. */
+export async function listThreads(env) {
+  const r = await site(env, "/desk/threads");
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, threads: (b.threads || []).map((t) => Object.assign({ code: users[t.u] || null }, t)) };
+}
+/** Step 7: HIS LINE ON AN ACCOUNT'S THREAD, or his No reply needed, relayed to the site. His words go through the same lock
+ *  as a line on an order (siteWords), here, where the roster is known; only a message or noReply is sent on. */
+export async function threadRelay(env, u, body) {
+  if (!/^[a-z0-9]{4}-[a-z0-9]{4}$/.test(String(u || ""))) return { ok: false, status: 404, error: "no such account" };
+  const noReply = !!(body && body.noReply === true);
+  const message = typeof (body && body.message) === "string" ? body.message : "";
+  if (!noReply) {
+    const why = siteWords(message);
+    if (why) return { ok: false, status: 400, error: "that message says something " + why };
+  }
+  const r = await site(env, "/desk/threads/" + encodeURIComponent(u), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(noReply ? { noReply: true } : { message })
+  });
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, thread: Object.assign({ code: users[b.thread && b.thread.u] || null }, b.thread), push: b.push || null };
+}
+
 /** F13: a payment slip as the site filed it, ciphertext sealed on the customer's phone to his slip key, for the desk to
  *  open with the key his vault holds. The username and the id as the claim carries them; stored nowhere here. */
 export async function slipRelay(env, u, id) {
@@ -1698,7 +1728,9 @@ export async function ordersWaiting(env, since) {
   if (!r.ok) return { ok: false, waiting: 0, placed: 0, lines: [] };
   const from = typeof since === "string" && Number.isFinite(Date.parse(since)) ? Date.parse(since) : Date.now() - LINE_FRESH_MS;
   const lines = [];
-  for (const o of r.orders) for (const m of (o && o.msgs) || []) {
+  /* Step 7: and their lines on the account threads, read beside the orders; a thread that cannot be read adds none */
+  const th = await listThreads(env);
+  for (const o of r.orders.concat(th.ok ? th.threads : [])) for (const m of (o && o.msgs) || []) {
     if (m && m.by === "customer" && typeof m.text === "string" && m.text.trim() && Date.parse(m.at) > from) lines.push({ at: String(m.at), t: m.text.trim().slice(0, LINE_MAX) });
   }
   lines.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));

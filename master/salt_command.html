@@ -19369,6 +19369,8 @@ async function ordLoad(quiet){
     ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
     /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
+    /* Step 7: and every account's thread, his Chat, each a card of its own, waiting on him while their line is the last */
+    ORD_OPEN=ORD_OPEN.concat(((r.ok&&j&&j.threads)||[]).map(thrItem));
     /* S9 9.8: the rail's foot counts the associate links waiting in Salt Account: a count, no link and no name */
     {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Account':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
@@ -19538,6 +19540,7 @@ function ordActs(){
   const out=[];
   open.forEach(o=>{if(!o)return;
     if(o.kind==='account'){if(o.state==='waiting')out.push({kind:'paid',o,at:o.at||''});return;}   /* S6 11.15 */
+    if(o.kind==='thread'){if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});return;}   /* Step 7 */
     const live=['acknowledged','ready'].includes(o.status);
     if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
     else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
@@ -19808,8 +19811,43 @@ function clmCard(c){
       <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
+/* ---- Step 7 (his Q5 of 28 Sep 2026): HIS CHAT, one thread an account, in Enter until Admin (Step 9). A card of the same
+   Waiting on you, beside the orders: waiting on him while their line is the last and he has not said No reply needed,
+   listed under Chat otherwise. His line goes through siteSafe here and siteWords on the Worker, to threads/<username>,
+   and wakes their phone as Counter says: and his words; every line of theirs is escaped. While a thread is open on his
+   screen and the page is showing, the threads are read every THR_POLL, and the card drawn again only when a line changed. */
+const THR_POLL=2000;let thrTimer=null,thrBusy=false;
+function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
+function thrCard(o){
+  const who=o.code?codeOf(o.code):'unmapped '+esc(o.u),msgs=o.msgs||[],waiting=ordAsked(o),quick=ordQuick();
+  const lines=msgs.map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${ordWhen(m.at)}</span><br>${esc(m.text||'')}</div>`).join('');
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">Chat${waiting?', waiting for an answer':''}</span></div>
+    <div class="ordthr">${lines||'<div class="dsc">No lines yet.</div>'}</div>
+    <div class="salt-composer ordreply"><input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}" class="salt-field__input salt-composer__field">
+      <button class="salt-ghost salt-ghost--lit salt-composer__send" data-ord="say" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send</button></div>
+    <div class="ordquick">${quick.map(t=>`<button type="button" class="salt-ghost salt-ghost--tight" data-quick="${esc(o.id)}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}${waiting?`<button class="salt-ghost salt-ghost--tight" data-ord="noreply" data-u="${esc(o.u)}" data-id="${esc(o.id)}">No reply needed</button>`:''}<button type="button" class="salt-ghost salt-ghost--tight" data-keep="${esc(o.id)}">Keep as a quick reply</button></div>
+    <p class="salt-approve__reason">Their account's own thread, about no one order. Your line reaches their page and their phone as Counter says: and your words.</p>
+    <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p>
+  </div>`;
+}
+function thrOpen(){const o=ORD_OPEN.find(x=>x&&x.id===ORD_SEL);return !!(o&&o.kind==='thread'&&(ORD_OPENED||ordSideBySide())&&document.getElementById('ordBox'));}
+async function thrRead(){
+  if(thrBusy||document.hidden||!thrOpen()||Object.keys(ordBusy).length)return;
+  thrBusy=true;
+  try{const r=await fetch('threads',{cache:'no-store',headers:qHeaders()});if(!r.ok)return;const j=await r.json();if(!j||!j.ok)return;
+    const next=(j.threads||[]).map(thrItem);
+    if(JSON.stringify(next)===JSON.stringify(ORD_OPEN.filter(o=>o&&o.kind==='thread')))return;
+    ORD_OPEN=ORD_OPEN.filter(o=>o&&o.kind!=='thread').concat(next);ordDraw();
+  }catch(e){}finally{thrBusy=false;}
+}
+function thrWatch(){
+  if(!thrOpen()){if(thrTimer){clearInterval(thrTimer);thrTimer=null;}return;}
+  if(!thrTimer)thrTimer=setInterval(()=>{if(!thrOpen()){clearInterval(thrTimer);thrTimer=null;return;}thrRead();},THR_POLL);
+}
 function ordCard(o){
   if(o&&o.kind==='account')return clmCard(o);
+  if(o&&o.kind==='thread')return thrCard(o);
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
   const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
@@ -20015,11 +20053,13 @@ let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
    newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
 /* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
    its card: at the head of the list, once the tap that closed it has taken the card off the open list */
-function ordName(o){if(o&&o.kind==='account')return (o.code||'unmapped')+', '+fmt(+o.amount||0)+' against the account of '+ordWhen(o.at).split(',')[0];
+function ordName(o){if(o&&o.kind==='thread')return (o.code||'unmapped')+', Chat';
+  if(o&&o.kind==='account')return (o.code||'unmapped')+', '+fmt(+o.amount||0)+' against the account of '+ordWhen(o.at).split(',')[0];
   return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
 function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
 function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
 function ordWhat(a){const o=a.o;
+  if(o.kind==='thread'&&a.kind!=='asked'){const l=o.msgs[o.msgs.length-1]||{},t=String(l.text||'');return (l.by==='desk'?'You: ':'')+'&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
   if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
   if(a.kind==='paid'&&o.kind==='account')return 'Says '+fmt(+o.amount||0)+' sent against the account'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Received or Not found.';
@@ -20029,7 +20069,7 @@ function ordWhat(a){const o=a.o;
     return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
   if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
-function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'};
+function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||(o.kind==='thread'?{w:'Chat',tone:'mist',act:'Open'}:{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'});
   return `<button type="button" class="salt-inbox-row" data-row="${esc(o.id)}" data-kind="${esc(a.kind)}" aria-current="${cur?'true':'false'}">
     <span class="salt-inbox-row__main"><span class="salt-inbox-row__title">${o.code?codeOf(o.code):'unmapped'} <span class="salt-status salt-status--${K.tone}">${esc(K.w)}</span></span>
       <span class="salt-inbox-row__what">${ordWhat(a)}</span></span>
@@ -20065,9 +20105,10 @@ function ordDraw(){
     if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
     const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
     const inActs=new Set(acts.map(a=>a.o.id));
-    const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    const rest=ORD_OPEN.filter(o=>o&&o.kind!=='thread'&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    const chats=ORD_OPEN.filter(o=>o&&o.kind==='thread'&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));   /* Step 7 */
     if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL)){ORD_SEL='';if(gone)ORD_OPENED=false;}
-    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||'';
+    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||(chats[0]&&chats[0].o.id)||'';
     const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
     const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
     box.classList.toggle('ord-open',!!ORD_OPENED);
@@ -20075,6 +20116,7 @@ function ordDraw(){
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
       ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':rest.some(a=>!['placed','acknowledged','ready'].includes(a.o.status))?'Other orders':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+      ${chats.length?`<div class="salt-eyebrow ordrest">Chat</div><div class="ordrows">${chats.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
       ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
@@ -20083,11 +20125,12 @@ function ordDraw(){
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
-  if(selO)(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
+  if(selO&&selO.kind!=='thread')(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
   /* V4b.2: and the other orders of a sheet agreed on its card, each at RM 0 */
-  if(selO&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
+  if(selO&&selO.kind!=='thread'&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
   /* F15: and a delivery's card, opened, reads where he is for its fee, once a trip */
-  if(selO&&selO.kind!=='account'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
+  if(selO&&selO.kind!=='account'&&selO.kind!=='thread'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
+  thrWatch();   /* Step 7: an open thread is read every 2 seconds, and nothing else is */
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
@@ -20192,7 +20235,7 @@ async function ordAct(b){
     if(chk.warn&&!confirm(chk.warn+' Send it anyway?'))return refuse('Not sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
-  if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  if(!url)url=String(id).startsWith('t:')?'threads/'+encodeURIComponent(u):'orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);   /* Step 7 */
   /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
      system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
   {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
@@ -23901,7 +23944,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   analysis:'the month read four ways',
   add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
-  orders:'what customers ordered on the statements site, and where each order stands',
+  orders:'what customers ordered on the statements site, where each order stands, and their Chat',
   plans:'what the desk noticed, from the book on this load'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
