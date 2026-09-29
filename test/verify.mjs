@@ -48450,5 +48450,29 @@ await (async () => {
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
 })();
 
+section("Step 6 (29 Sep 2026): the Face ID test page answers on the desk and the Counter, its own script only, naming neither app");
+await (async () => {
+  /* His word of 29 Sep 2026, Face ID for both unlocks: one hidden page, stmt/faceid.js, served by both Workers at /faceid-test
+     and taken out after his test. Each copy says which address it is, runs only the style and script carrying its own nonce,
+     may connect nowhere, and names neither app, so the Counter's copy keeps the site's no-brand rule. Proved red by mutation. */
+  const deskW = (await import("../src/worker.js")).default, siteW = (await import("../stmt/worker.js")).default;
+  const read = async (r) => ({ status: r.status, csp: r.headers.get("content-security-policy") || "", cache: r.headers.get("cache-control"), body: await r.text() });
+  const desk = await read(await deskW.fetch(req("/faceid-test"), mkEnv(new KV())));
+  const site = await read(await siteW.fetch(new Request("https://k7m3p2.example/faceid-test"), { STMT: new KV() }));
+  const posted = await siteW.fetch(new Request("https://k7m3p2.example/faceid-test", { method: "POST" }), { STMT: new KV() });
+  const fine = (x, where) => {
+    const n = (/script-src 'nonce-([0-9a-f]{32})'/.exec(x.csp) || [])[1];
+    return x.status === 200 && x.cache === "no-store" && !!n && x.csp.includes("style-src 'nonce-" + n + "'") && x.csp.startsWith("default-src 'none'")
+      && !/connect-src/.test(x.csp) && x.body.includes('<script nonce="' + n + '">') && x.body.includes('<style nonce="' + n + '">')
+      && (x.body.match(/<script/g) || []).length === 1 && x.body.includes('data-where="' + where + '"') && x.body.includes("<title>Face ID test</title>");
+  };
+  ok(fine(desk, "desk") && fine(site, "counter") && posted.status === 405,
+    "Step 6: /faceid-test is the page on both Workers, each with its own nonce, no connection and its address named: " + JSON.stringify([desk.status, desk.csp, site.status, site.csp, posted.status]));
+  const js = (/<script nonce="[0-9a-f]+">([\s\S]*)<\/script>/.exec(site.body) || [])[1] || "";
+  let parses = true; try { new Function(js); } catch (e) { parses = false; }
+  ok(parses && js.includes("prf") && js.includes('userVerification: "required"') && !/salt command|salt desk|salt counter/i.test(desk.body + site.body),
+    "Step 6: the page's script parses, asks for the face and the secret, and neither copy names an app");
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
