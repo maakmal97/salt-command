@@ -782,6 +782,20 @@ opened its list is the S4 4.4 re-quote. Place stamps `prepay` when the size is o
 unit: paid in advance."), the check carries a Payment row from Review, the order says "Before we hand it over" until
 Ready makes it due now, and cash on handover is refused on it (`cashPrepay`, the tile dashed with its reason). The cap is
 per order here, while the desk's cap counts every unit out unpaid; a book stating no cap has nothing paid in advance.
+**One sheet takes several products** (pay terms V4b, his point 5 of 28 Sep 2026, his Q3: one order a product, sent
+together). The form draws every product on their list, its sizes under its mark (the segment of marks went with the
+one-product sheet), a size of each they want; a size tapped again comes off, one product on the list always keeps its
+size, and a sheet opens on what was picked last, else their usual. Review freezes a line a product, each its own `rid`,
+and two or more share a `sheet` id minted with them; the check has a row a line, a Total, and the paid in advance flag
+per line. Place sends the lines in order, the note with the first; a line placed is marked Sent and never sent again,
+so a Place tapped after a refusal sends only what is still to go, and a retry the Worker answers `sheetTwice` is placed.
+Leaving a check with a line placed (`dropPlaced`) takes that product off the picks: Change sends the rest under the same
+sheet id, the note not again; closed, they start afresh. A moved list is read again line by line. The Worker keeps the `sheet` on each order (`SHEET_RE`, in the customer's view),
+refuses a product twice on one sheet (`sheetTwice`), and **counts a sheet once against `MAX_OPEN`** (`openCount`), so
+a line joining a sheet already open is never the sixth; the page's `openN` counts the same way. On the desk each order
+keeps its own card, Accept and row; `ordSheetLine` names the others open on its sheet, each a tap to its card, and a
+delivery still to agree says the trip is one, its charge on one order and RM 0 on the rest. One Accept, Ready and
+Handed for a whole sheet is V4b.2, not built.
 The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.

@@ -139,9 +139,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .osheet .salt-sheet__close{margin-left:auto}
 .osheet .salt-sheet__body > * + *{margin-top:18px}
 .osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
-/* a mark on a pressed ghost takes the ghost's own ink, so the chosen product reads as chosen (v695's rule for a mark on a
-   control, which the segment it replaced carried) */
-.osheet .salt-ghost .psym{color:inherit}
 /* New order stands where the order form's pane stood, so it keeps the pane's gap to the Notifications card under it */
 #oNew{margin-bottom:14px}
 .ototal{flex:1 1 0;min-width:0}
@@ -2565,14 +2562,19 @@ const CLIENT_JS = `
   var rids={};
   function ridFor(key,what){ var r=rids[key]; if(!r||r.what!==what){ r=rids[key]={id:mintRid(),what:what}; } return r.id; }
   function ridDone(key){ delete rids[key]; }
-  function quoteFor(){
-    var p=prices&&prices.products&&prices.products.filter(function(x){return x.product===draft.product;})[0];
-    if(!p) return null;
-    var r=p.sizes.filter(function(x){return String(x.q)===String(draft.q);})[0];
-    if(!r) return null;
-    var total=r.price;
-    return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
+  /* V4b (his point 5 of 28 Sep 2026): the sheet takes every product on their list, a size of each they want; draft.pick
+     is product to size, and these are its lines in the list's order, each priced off the list */
+  function quotes(){
+    var out=[];
+    ((prices&&prices.products)||[]).forEach(function(p){
+      var q=draft.pick&&Object.prototype.hasOwnProperty.call(draft.pick,p.product)?draft.pick[p.product]:null;
+      if(q==null||!p.sizes) return;
+      var r=p.sizes.filter(function(x){return String(x.q)===String(q);})[0];
+      if(r) out.push({p:p, q:r.q, total:r.price, unit:+(r.price/r.q).toFixed(2)});
+    });
+    return out;
   }
+  function picked(){ return !!draft.pick&&Object.keys(draft.pick).length>0; }
   /* V3 (his point 4 of 28 Sep 2026): AN ORDER OVER THE CAP IS PAID IN ADVANCE. The cap is the list's, per product: the
      desk's credit cap for this account, a friend's order taking their bucket's. Place stamps the order by the same rule
      (stmt/orders.js capOf) and the list's stamp carries the cap, so the page and Place never disagree */
@@ -2592,6 +2594,8 @@ const CLIENT_JS = `
   var osh=null;
   var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__;
   function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
+  /* V4b: a sheet counts once, as the Worker counts it (stmt/orders.js, openCount) */
+  function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }
   var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
   function oGlyph(k,cls,px){
     var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
@@ -2616,12 +2620,19 @@ const CLIENT_JS = `
   function sheetOpen(product,q,opener){
     if(view||hold||!sold().length||!lapse.hidden) return;
     var U=oUsual();
-    if(product&&oSoldHas(product,q)){ draft.product=product; draft.q=String(q); }
-    else if(!draft.product&&U&&oSoldHas(U.product,U.q)){ draft.product=U.product; draft.q=String(U.q); }
+    if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
+    else {
+      /* V4b: what was picked last time stays while the list still sells it; a sheet with nothing on it opens, as before,
+         on the product they order most at their usual size, else its first size, else the list's first */
+      var K=draft.pick||{}; draft.pick={};
+      Object.keys(K).forEach(function(k){ if(oSoldHas(k,K[k])) draft.pick[k]=K[k]; });
+      if(!picked()){ var S0=sold(), P0=(U&&S0.filter(function(x){ return x.product===U.product; })[0])||S0[0];
+        draft.pick[P0.product]=String(U&&U.product===P0.product&&oSoldHas(U.product,U.q)?U.q:P0.sizes[0].q); }
+    }
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
     if(draft.mode==null){ var L=oLatest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
     if(draft.place==null){ var W=oLatest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
-    draft.step=oLive().length>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
+    draft.step=openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
       var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
@@ -2637,8 +2648,21 @@ const CLIENT_JS = `
     }
     sheetDraw();
   }
+  /* V4b: A LINE PLACED IS AN ORDER, so leaving a check that has one takes its product off what is picked: reopened, or
+     changed, the sheet never offers it again. Changed, the rest go on under the same sheet id; closed, they start afresh. */
+  function dropPlaced(keep){
+    /* Change twice keeps the sheet it was already keeping; Close lets it go */
+    var c=draft.check; if(!keep) draft.sheetKeep='';
+    if(!c||!c.lines) return;
+    var any=false;
+    c.lines.forEach(function(l){ if(l.placed){ any=true; if(draft.pick) delete draft.pick[l.product]; } });
+    if(any&&keep) draft.sheetKeep=c.sheet||'';
+    /* the line they typed went with the first order placed */
+    if(any) draft.say='';
+  }
   function sheetClose(){
     if(!osh) return;
+    dropPlaced(false);
     var s=osh; osh=null; draft.step=''; draft.check=null;
     s.wrap.parentNode.removeChild(s.wrap);
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
@@ -2664,7 +2688,7 @@ const CLIENT_JS = `
     if(!osh) return;
     var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
     osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent=''; enLang(osh.box);
-    if(draft.step==='limit'&&oLive().length<OMAX) draft.step='form';
+    if(draft.step==='limit'&&openN()<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     osh.foot.hidden=!osh.foot.firstChild;
     if(fk){ var back=[].filter.call(osh.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
@@ -2696,7 +2720,7 @@ const CLIENT_JS = `
   }
   function formWhy(){
     if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
-    if(!quoteFor()) return tw('sh.whySize');
+    if(!quotes().length) return tw('sh.whySize');
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return tw('sh.whyWhere');
     return '';
   }
@@ -2705,35 +2729,42 @@ const CLIENT_JS = `
   }
   function drawForm(){
     sheetHead(tw('sh.new'));
-    var S=sold(), P=S.filter(function(x){ return x.product===draft.product; })[0]||S[0], B=osh.body;
+    var S=sold(), B=osh.body, ff=!!(assoc&&draft.forFriend);
     /* a list that came back with nothing priced (a 409, then Change) leaves nothing to pick: the Order tab's own line */
-    if(!P){ B.appendChild(el('p','lead',noOrderLine())); return; }
-    draft.product=P.product;
-    if(!P.sizes.some(function(x){ return String(x.q)===String(draft.q); })) draft.q=String(P.sizes[0].q);
+    if(!S.length){ B.appendChild(el('p','lead',noOrderLine())); return; }
+    /* V4b: a size no longer on the list leaves the sheet; with one product on the list a size is always chosen, as before */
+    if(!draft.pick) draft.pick={};
+    Object.keys(draft.pick).forEach(function(k){ if(!oSoldHas(k,draft.pick[k])) delete draft.pick[k]; });
+    if(S.length===1&&!picked()) draft.pick[S[0].product]=String(S[0].sizes[0].q);
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
     if(assoc) B.appendChild(oChoice(tw('sh.whoFor'),[['me',tw('sh.me')],['friend',tw('sh.friend')]],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
       function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
-    /* v695: a product is a mark named by its shape; with one on the list the tiles say which by their legend */
-    if(S.length>1) B.appendChild(oChoice('',S.map(function(x){ return [x.product,psym(x.product,24),pshape(x.product)]; }),draft.product,'prod',
-      function(v){ draft.product=v; draft.q=null; var U=oUsual(); if(U&&U.product===v&&oSoldHas(v,U.q)) draft.q=String(U.q); sheetDraw(); }));
-    var fs=el('fieldset','salt-options');
-    if(S.length>1) fs.setAttribute('aria-label',tw('sh.size'));
-    else { var lg=el('legend','salt-options__legend'); lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg); }
-    var grid=el('div','salt-options__grid salt-options__grid--2'), U=oUsual();
-    P.sizes.forEach(function(x){
-      var lab=el('label','salt-option'), r=el('input','salt-option__input');
-      r.type='radio'; r.name='osize'; r.value=String(x.q); r.checked=String(x.q)===String(draft.q); r.setAttribute('data-k','size:'+x.q);
-      r.addEventListener('change',function(){ draft.q=String(x.q); sheetDraw(); });
-      var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
-      if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass',tw('sh.usual')));
-      tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
-      face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+    /* V4b (his point 5 of 28 Sep 2026): EVERY PRODUCT ON THEIR LIST, EACH WITH ITS SIZES, a size of each they want. A
+       product is its mark in the legend (v695: named by its shape); a chosen size tapped again comes off the sheet */
+    if(S.length>1) B.appendChild(el('p','sub2',tw('sh.multi')));
+    var U=oUsual();
+    S.forEach(function(P,i){
+      var fs=el('fieldset','salt-options'), lg=el('legend','salt-options__legend'), cur=draft.pick[P.product];
+      lg.appendChild(withMark(P.product,'',22)); fs.appendChild(lg);
+      var grid=el('div','salt-options__grid salt-options__grid--2');
+      P.sizes.forEach(function(x){
+        var lab=el('label','salt-option'), r=el('input','salt-option__input'), on=cur!=null&&String(x.q)===String(cur);
+        /* by position: a product's word never reaches the page, an attribute included */
+        r.type='radio'; r.name=i?'osize'+i:'osize'; r.value=String(x.q); r.checked=on;
+        r.setAttribute('data-k',(i?'size'+i:'size')+':'+x.q);
+        r.addEventListener('change',function(){ draft.pick[P.product]=String(x.q); sheetDraw(); });
+        /* a tap on the size already chosen takes the line off; one product on the list always keeps its size */
+        r.addEventListener('click',function(){ if(on&&S.length>1){ delete draft.pick[P.product]; sheetDraw(); } });
+        var face=el('span','salt-option__face'), tx=el('span','salt-option__text'), lb=el('span','salt-option__label',unitsOf(x.q,P.unit));
+        if(U&&U.product===P.product&&String(U.q)===String(x.q)) lb.appendChild(el('span','salt-status salt-status--brass',tw('sh.usual')));
+        tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
+        face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
+      });
+      fs.appendChild(grid); B.appendChild(fs);
+      /* V3: a size over their cap on this book is paid in advance, said under its sizes */
+      if(cur!=null&&prepayOf(P,cur,ff)) B.appendChild(el('p','salt-insight',tw('sh.prepay',{u:unitsOf(capOf(P,ff),P.unit)})));
     });
-    fs.appendChild(grid); B.appendChild(fs);
-    /* V3: a size over their cap on this book is paid in advance, said under the sizes */
-    var capN=capOf(P,!!(assoc&&draft.forFriend));
-    if(prepayOf(P,draft.q,!!(assoc&&draft.forFriend))) B.appendChild(el('p','salt-insight',tw('sh.prepay',{u:unitsOf(capN,P.unit)})));
     B.appendChild(oChoice(tw('sh.reach'),[['collect',tw('sh.collect')],['deliver',tw('sh.deliver')]],draft.mode,'mode',
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
@@ -2762,8 +2793,9 @@ const CLIENT_JS = `
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
     var F=osh.foot; F.textContent='';
-    var qt=quoteFor(), why=formWhy(), t=el('div','ototal');
-    t.appendChild(el('b','salt-kpi__value',qt?rm(qt.total):''));
+    var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
+    qs.forEach(function(x){ sum+=x.total; });
+    t.appendChild(el('b','salt-kpi__value',qs.length?rm(+sum.toFixed(2)):''));
     t.appendChild(el('span','sub2',why||tw(draft.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
     F.appendChild(t);
     var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='oGo'; go.disabled=!!why; go.setAttribute('data-k','review');
@@ -2773,16 +2805,21 @@ const CLIENT_JS = `
   /* REVIEW FREEZES THE ORDER. The check draws from this copy and Place sends this copy, so what is placed is what
      was shown; the request id is minted with it, and a retry of Place is the same order under the same id */
   function reviewSheet(){
-    var qt=quoteFor(); if(!qt||formWhy()) return;
-    draft.check={product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, mode:draft.mode,
-      place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(),
-      forFriend:!!(assoc&&draft.forFriend), total:qt.total, rate:qt.unit, rid:mintRid(),
-      /* V3: paid in advance, read off the list with the price, so the check shows the terms Place will stamp */
-      prepay:prepayOf(qt.p,qt.q,!!(assoc&&draft.forFriend)),
-      /* S4 4.4: the stamp of the list this price was read from, and the price as shown, for a moved list to be told against */
-      digest:(prices&&prices.digest)||'', shown:qt.total, was:null, gone:false};
+    var qs=quotes(); if(!qs.length||formWhy()) return;
+    var ff=!!(assoc&&draft.forFriend);
+    /* V4b: a line a product, each its own request id; two or more share the sheet's id, which Place sends with each */
+    draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(),
+        /* V3: paid in advance, read off the list with the price, so the check shows the terms Place will stamp */
+        prepay:prepayOf(qt.p,qt.q,ff),
+        /* S4 4.4: the price as shown, for a moved list to be told against; placed, the order Place made of it */
+        shown:qt.total, was:null, gone:false, placed:''}; }),
+      sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
+      place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(), forFriend:ff,
+      /* S4 4.4: the stamp of the list these prices were read from */
+      digest:(prices&&prices.digest)||''};
     draft.step='check'; draft.snote=''; sheetDraw();
   }
+  function sheetSum(c){ var t=0; c.lines.forEach(function(l){ t+=l.total; }); return +t.toFixed(2); }
   /* S4 4.4: THE LIST MOVED BETWEEN REVIEW AND PLACE. The Worker compares the stamp Place carried with the account's own
      and, where they differ, answers 409 with the list as it stands, sealed; it is opened here with the key the page
      already holds. The check then shows this size at the new figure beside the one they were shown, and Place becomes
@@ -2798,15 +2835,20 @@ const CLIENT_JS = `
        again" reopened the same list and met the same refusal */
     prices=fresh; drawPrices(); drawOrder();
     if(!sold().length){ c.shut=true; draft.snote=noOrderLine(); return; }
-    var P=(fresh.products||[]).filter(function(x){ return x.product===c.product&&x.sizes&&x.sizes.length; })[0];
-    var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(c.q); })[0];
     c.digest=fresh.digest||'';
-    if(!z){ c.gone=true; c.was=null; return; }
-    /* V3: the terms are the list's as well: a cap moved since Review is said on the check, and is a different order */
-    var pp=prepayOf(P,c.q,c.forFriend); if(pp!==!!c.prepay){ c.prepay=pp; c.rid=mintRid(); }
-    if(Math.abs(z.price-c.total)>0.004){ c.total=z.price; c.rate=+(z.price/z.q).toFixed(2); c.rid=mintRid(); }
-    else draft.snote=twE('sh.stillAt',{rm:rm(c.total)});
-    c.was=Math.abs(c.total-c.shown)>0.004?c.shown:null;
+    /* V4b: each line still to place is read again; a line Place already has is the order it made, and is left alone */
+    var moved=false, gone=false;
+    c.lines.filter(function(l){ return !l.placed; }).forEach(function(l){
+      var P=(fresh.products||[]).filter(function(x){ return x.product===l.product&&x.sizes&&x.sizes.length; })[0];
+      var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(l.q); })[0];
+      if(!z){ l.gone=true; l.was=null; gone=true; return; }
+      l.gone=false;
+      /* V3: the terms are the list's as well: a cap moved since Review is said on the check, and is a different order */
+      var pp=prepayOf(P,l.q,c.forFriend); if(pp!==!!l.prepay){ l.prepay=pp; l.rid=mintRid(); }
+      if(Math.abs(z.price-l.total)>0.004){ l.total=z.price; l.rate=+(z.price/z.q).toFixed(2); l.rid=mintRid(); moved=true; }
+      l.was=Math.abs(l.total-l.shown)>0.004?l.shown:null;
+    });
+    if(!moved&&!gone) draft.snote=c.lines.length===1?twE('sh.stillAt',{rm:rm(c.lines[0].total)}):twE('sh.stillAtAll',{rm:rm(sheetSum(c))});
   }
   /* S4 4.6: FIVE OPEN ORDERS ARE SAID BEFORE THE FORM, not after it. The Worker refuses a sixth (MAX_OPEN in
      stmt/orders.js, carried here), and the refusal used to come after the form was filled and checked. With five open the
@@ -2816,7 +2858,7 @@ const CLIENT_JS = `
   function drawLimit(){
     sheetHead(tw('sh.new'));
     var B=osh.body, open=oLive();
-    var say=el('p','salt-insight salt-insight--copper',limitLine(open.length)); say.setAttribute('role','status'); B.appendChild(say);
+    var say=el('p','salt-insight salt-insight--copper',limitLine(openN())); say.setAttribute('role','status'); B.appendChild(say);
     var L=el('div','salt-ledger salt-ledger--plain');
     open.forEach(function(o){
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
@@ -2848,61 +2890,81 @@ const CLIENT_JS = `
     await loadOrders(); if(mine!==ticket) return;
     drawOrder(); sheetDraw();
   }
-  function toForm(){ draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
+  function toForm(){ dropPlaced(true); draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
-    var c=draft.check, B=osh.body;
+    var c=draft.check, B=osh.body, one=c.lines.length===1, a=c.lines[0];
     sheetHead(tw('sh.check'),toForm);
     /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
-       place of a What line that set the mark beside its size */
-    var H=el('div','mhero'); H.appendChild(mtile(c.product,c.q,c.unit)); B.appendChild(H);
+       place of a What line that set the mark beside its size; V4b: a card a line */
+    var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
     var L=el('div','salt-ledger salt-ledger--plain');
-    function row(k,v){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), val=el('span','salt-ledger__value');
-      l.appendChild(el('span','salt-ledger__label',k)); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
-      l.appendChild(val); r.appendChild(l); L.appendChild(r); }
+    function row(k,v,flag){ var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label'), val=el('span','salt-ledger__value');
+      if(typeof k==='string') lab.textContent=k; else lab.appendChild(k);
+      l.appendChild(lab); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
+      l.appendChild(val); r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag)); L.appendChild(r); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
-    row(tw('sh.price'),rm(c.total));
+    if(one) row(tw('sh.price'),rm(a.total));
+    else {
+      /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
+      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):l.prepay?tw('sh.inAdvance'):''); });
+      row(tw('sh.total'),rm(sheetSum(c)));
+    }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    if(c.prepay) row(tw('sh.pay'),tw('sh.inAdvance'));
+    if(one&&a.prepay) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
-    /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure */
-    if(c.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
-      setW(mv,'sh.moved',{now:esch(rm(c.total)), was:esch(rm(c.was))}); B.appendChild(mv); }
-    if(c.gone){ var gn=el('p','salt-insight salt-insight--copper',tw('sh.gone'));
-      gn.setAttribute('role','status'); B.appendChild(gn); }
+    /* S4 4.4: a list re-struck since it was opened is said here, before anything is placed, and Place names the new figure;
+       V4b: a line at a time, its mark leading when there are several */
+    c.lines.forEach(function(l){
+      if(l.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
+        setW(mv,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.insertBefore(psym(l.product,20),mv.firstChild); B.appendChild(mv); }
+      if(l.gone){ var gn=el('p','salt-insight salt-insight--copper',tw(one?'sh.gone':'sh.goneLine'));
+        gn.setAttribute('role','status'); if(!one) gn.insertBefore(psym(l.product,20),gn.firstChild); B.appendChild(gn); }
+    });
     /* V3: an order over the cap is checked beside what paying in advance means */
-    if(c.prepay) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
+    if(c.lines.some(function(l){ return l.prepay&&!l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
-    var F=osh.foot;
+    var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
     var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md',c.was!=null?tw('sh.placeAt',{rm:rm(c.total)}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
-    pl.disabled=!!draft.busy||!!c.gone||!!c.shut; pl.setAttribute('data-k','place');
+    var pl=el('button','salt-pill salt-pill--md',was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
+    pl.disabled=!!draft.busy||gone||!!c.shut; pl.setAttribute('data-k','place');
     pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
+  /* V4b: PLACE SENDS ONE ORDER A LINE, in order, each under its own request id and the sheet's; a line placed stays placed,
+     so a Place tapped again after a refusal sends only the lines still to go, and a retry of a line that landed is answered
+     with its order. The line they typed rides with the first. */
   async function oPlaceIt(){
     var c=draft.check; if(!c||draft.busy) return;
     draft.busy=true; draft.snote=''; sheetDraw();
-    var mine=ticket;
-    var r=await api('/orders',{product:c.product,qty:c.q,mode:c.mode,unit:c.rate,total:c.total,place:c.place,
-      forFriend:!!(assoc&&c.forFriend),note:c.say,rid:c.rid,week:(prices&&prices.week&&prices.week.monday)||'',digest:c.digest});
-    if(mine!==ticket) return;
-    draft.busy=false;
-    if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
-    if(!r.body.ok){
-      draft.snote=wErrE(r.body,'sh.notPlaced');
-      /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
-      if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
-        if(oLive().length>=OMAX){ draft.step='limit'; draft.check=null; draft.snote=''; } }
-      sheetDraw(); return;
+    var mine=ticket, week=(prices&&prices.week&&prices.week.monday)||'';
+    var todo=c.lines.filter(function(l){ return !l.placed; });
+    for(var i=0;i<todo.length;i++){
+      var l=todo[i], body={product:l.product,qty:l.q,mode:c.mode,unit:l.rate,total:l.total,place:c.place,
+        forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
+      if(c.sheet) body.sheet=c.sheet;
+      var r=await api('/orders',body);
+      if(mine!==ticket) return;
+      if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ draft.busy=false; await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
+      /* a retry the Worker already has on this sheet (its request id not yet read back on the kv road) is placed */
+      if(!r.body.ok&&r.body.code==='sheetTwice'){ l.placed='placed'; continue; }
+      if(!r.body.ok){
+        draft.busy=false;
+        draft.snote=wErrE(r.body,'sh.notPlaced');
+        /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
+        if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
+          if(openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
+        sheetDraw(); return;
+      }
+      l.placed=(r.body.order&&r.body.order.id)||'placed';
     }
+    draft.busy=false;
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
-    var o=r.body.order;
-    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null;
+    draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null;
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
@@ -2928,7 +2990,7 @@ const CLIENT_JS = `
      limit, draws the tab again; otherwise the orders are patched (S5 5.5). The order sheet is never drawn by either:
      it lives at the root of the body, and only the limit step, which holds nothing typed, follows the orders */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,oLive().length>=OMAX]); }
+  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,openN()>=OMAX]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -2973,8 +3035,8 @@ const CLIENT_JS = `
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
       top.appendChild(el('p','lead',twE('ord.lead')));
-      var full=oLive().length>=OMAX;
-      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(oLive().length)); lim.id='oLimit'; top.appendChild(lim); }
+      var full=openN()>=OMAX;
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openN())); lim.id='oLimit'; top.appendChild(lim); }
       else {
         var nb=el('button','btn salt-pill salt-pill--md',twE('sh.new')); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });

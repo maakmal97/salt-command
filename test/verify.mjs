@@ -14863,7 +14863,8 @@ await (async () => {
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h3.pmark")].map((h) => h.getAttribute("aria-label")),
         priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
-        products: [...d.querySelectorAll("#osheet button[aria-pressed][aria-label]")].map((b) => b.getAttribute("aria-label")),
+        /* V4b: each product's sizes sit under its mark, the fieldset's legend, and the shape is said in the legend's words */
+        products: [...d.querySelectorAll("#osheet fieldset.salt-options legend .pwith")].filter((x) => x.querySelector("svg.psym")).map((x) => x.querySelector(".sr").textContent),
         orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
     } finally { dom.window.close(); }
   };
@@ -14873,13 +14874,13 @@ await (async () => {
   const onlySalt47 = page47 ? { ...page47, products: page47.products.filter((x) => x.product === "salt"), soon: [{ product: "oil", name: "Oil" }] } : null;
   const one47 = onlySalt47 ? await openPage47(onlySalt47) : null;
   ok(one47 && JSON.stringify(one47.marks) === '["Cube","Droplet"]' && one47.priced === 1 && /Price coming soon\./.test(one47.prices)
-    && one47.orderable && one47.products.length === 0 && !/\b(salt|oil)\b/i.test(one47.prices + one47.order),
-    "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order with no segment to pick from: "
+    && one47.orderable && JSON.stringify(one47.products) === '["Cube"]' && !/\b(salt|oil)\b/i.test(one47.prices + one47.order),
+    "the customer's own page draws each product as its mark, prices one of them, says the other is coming soon, and offers the priced one alone to order, its sizes under its mark: "
       + JSON.stringify(one47 && { marks: one47.marks, priced: one47.priced, products: one47.products }));
   /* AND WITH BOTH PRICED, which is the live shape since oil's board, both are offered */
   const live47 = page47 ? await openPage47(page47) : null;
-  ok(live47 && live47.priced === 2 && live47.products.length === 2 && !/\b(salt|oil)\b/i.test(live47.prices + live47.order),
-    "and with both priced it draws two marks, two prices and a segment to pick between them, naming neither product: "
+  ok(live47 && live47.priced === 2 && JSON.stringify(live47.products) === '["Cube","Droplet"]' && !/\b(salt|oil)\b/i.test(live47.prices + live47.order),
+    "and with both priced it draws two marks, two prices and each product's sizes under its mark on the one sheet (V4b), naming neither product: "
       + JSON.stringify(live47 && { priced: live47.priced, products: live47.products }));
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
   ok(both47 && JSON.stringify(both47.marks) === '["Cube","Droplet"]' && both47.priced === 0
@@ -15491,8 +15492,10 @@ await (async () => {
       "every size is a row of the plain ledger, and each row is a button: " + JSON.stringify(rows.map((r) => r.textContent)));
     rows[3].click();
     const sh = d.getElementById("osheet");
-    const on = sh ? [...sh.querySelectorAll('input[name="osize"]')].filter((r) => r.checked).map((r) => r.value) : [];
-    const prod = sh ? [...sh.querySelectorAll("button[aria-pressed][aria-label]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.getAttribute("aria-label")) : [];
+    /* V4b: the size is chosen under its product's mark, and it is the one line on the sheet */
+    const picked = sh ? [...sh.querySelectorAll("input.salt-option__input")].filter((r) => r.checked) : [];
+    const on = picked.map((r) => r.value);
+    const prod = picked.map((r) => { const f = r.closest("fieldset"), x = f && f.querySelector("legend .sr"); return x ? x.textContent : ""; });
     ok(!!sh && on.join() === "3" && prod.join() === "Droplet" && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
       "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
     void w;
@@ -15850,44 +15853,6 @@ await (async () => {
     ok(posted.length === 1 && !d.getElementById("oNew") && /No price list has been written/.test(d.getElementById("pPrices").textContent) && !d.querySelector("#pPrices .szrow"),
       "and behind it the page holds no list, as a sign-in would show it, so the same stamp cannot be placed again: " + JSON.stringify({ posted: posted.length }));
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
-})();
-section("S4 fix: in the sheet a product's mark takes its ghost's ink, so the chosen product reads as chosen");
-await (async () => {
-  /* S4R-2 (ux): every mark was brass whatever it sat in, so the pressed cube and the unpressed droplet differed by a fill
-     and a border alone; the rule letting a mark on a control take the control's ink went with the segment it was for.
-     jsdom does not resolve var(), so the colours are read as the cascade leaves them: the mark's own against its ghost's. */
-  const { landingPage: lpF6 } = await import("../stmt/page.js");
-  const CF6 = await import("../tools/stmt-crypto.mjs");
-  const { webcrypto: wcF6 } = await import("node:crypto");
-  const { JSDOM: JDF6 } = await import("jsdom");
-  const u = "abcd-efgh", pass = "fixture-pass-sf6", ck = await CF6.contentKey("test-secret", u);
-  const prices = { week: { label: "21 to 27 Sep 2026", monday: "2026-09-21" }, soon: [],
-    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] },
-      { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 45 }] }] };
-  const body = { ok: true, wrap: await CF6.wrapKey(pass, ck), session: "sess-sf6", prices: await CF6.encryptWith(ck, JSON.stringify(prices)),
-    env: await CF6.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
-  const dom = new JDF6(lpF6(u, "nsf6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
-    try { Object.defineProperty(win, "crypto", { value: wcF6, configurable: true }); } catch (e) { win.crypto = wcF6; }
-    win.scrollTo = () => {};
-    win.fetch = async (path, init) => {
-      const p = String(path), m = (init && init.method) || "GET";
-      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
-      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } };
-    };
-  } });
-  const w = dom.window, d = w.document;
-  try {
-    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
-    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
-    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
-    d.getElementById("oNew").click();
-    const ink = (x) => w.getComputedStyle(x).color;
-    const ghosts = [...d.querySelectorAll('#osheet button.salt-ghost[data-k^="prod:"]')].map((b) => ({
-      pressed: b.getAttribute("aria-pressed"), ghost: ink(b), mark: b.querySelector(".psym") ? ink(b.querySelector(".psym")) : null }));
-    const on = ghosts.find((g) => g.pressed === "true"), off = ghosts.find((g) => g.pressed === "false");
-    ok(ghosts.length === 2 && on && off && on.mark === on.ghost && off.mark === off.ghost && on.mark !== off.mark,
-      "the chosen product's mark takes the pressed ghost's ink and the other's its own, so the two differ: " + JSON.stringify(ghosts));
-  } finally { w.close(); }
 })();
 section("S4 fix: in the open-order limit, goods handed over read as Delivered or Collected, in part where only some moved");
 await (async () => {
@@ -22598,15 +22563,15 @@ await (async () => {
     /* S4 4.3: in the order sheet, which opens on the product they order most, so the tap below goes to the other one */
     for (let i = 0; i < 60 && !d95.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     d95.getElementById("oNew").click();
-    const segOf95 = () => [...d95.querySelectorAll("#osheet button[aria-pressed][aria-label]")];
-    const seg95 = segOf95(), on95 = seg95.findIndex((b) => b.getAttribute("aria-pressed") === "true");
-    ok(seg95.length === 2 && seg95.map((b) => b.getAttribute("aria-label")).join(",") === "Cube,Droplet"
-      && seg95.filter((b) => b.getAttribute("aria-pressed") === "true").length === 1 && seg95.every((b) => b.querySelector("svg.psym")),
-      "the product is picked from a segment of marks, one tap, and the chosen one says so: it was a dropdown, and an option carries no drawing");
-    seg95[1 - on95].click();
-    ok(segOf95().filter((b) => b.getAttribute("aria-pressed") === "true").length === 1
-      && segOf95().find((b) => b.getAttribute("aria-pressed") === "true").getAttribute("aria-label") === ["Cube", "Droplet"][1 - on95],
-      "and a tap moves it");
+    /* V4b (his point 5 of 28 Sep 2026): the segment went with the one-product sheet; each product's sizes sit under its mark */
+    const legOf95 = () => [...d95.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym"));
+    const onOf95 = () => legOf95().map((f) => (f.querySelector("input:checked") ? f.querySelector("legend .sr").textContent : "")).filter(Boolean);
+    const leg95 = legOf95(), on95 = onOf95();
+    ok(leg95.length === 2 && leg95.map((f) => f.querySelector("legend .sr").textContent).join(",") === "Cube,Droplet" && on95.length === 1,
+      "each product's sizes are drawn under its mark, the one they order most chosen: it was a dropdown, then a segment: " + JSON.stringify(on95));
+    const other95 = leg95.find((f) => !f.querySelector("input:checked"));
+    if (other95) other95.querySelector("input").click();
+    ok(onOf95().length === 2, "and a size of the other product joins the sheet beside it: " + JSON.stringify(onOf95()));
     /* a product waiting for its price is a mark too, not a name */
     const soon95 = [...d95.querySelectorAll("#pPrices .pane")].filter((x) => !x.querySelector(".szrow"));
     ok(soon95.length === 1 && soon95[0].querySelector("h3.pmark svg.psym")
@@ -42308,6 +42273,193 @@ await (async () => {
     ok(me === "" && friend === "Over 1 unit: paid in advance.",
       "an associate's own 2 units are on their cap, and a friend's 2 units are over the bucket's: " + JSON.stringify([me, friend]));
   } finally { await new Promise((r) => setTimeout(r, 100)); F.w.close(); }
+})();
+
+section("V4b (29 Sep 2026): a sheet's orders count once against the five open, a product once a sheet, on every road, and the customer's view carries the sheet");
+await (async () => {
+  /* His point 5 of 28 Sep 2026 and his Q3: one sheet, one order a product, sent together under the sheet's id. The
+     limit counts a sheet once, so a line joining a sheet already open is never the sixth. Each assertion was proved red
+     by its own mutation. */
+  const O = await import("../stmt/orders.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const S = "v4bSheetAAAA0001", T = "v4bSheetBBBB0002";
+  const run = async (store) => {
+    const kv = new KV(), bk = H.orderBook({});
+    const env = Object.assign({ STMT: kv }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store } : {});
+    const u = "v4ba-k2m7";
+    await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", prices: { at: "2026-09-29T02:00:00.000Z", week: "2026-09-28", digest: "d1", v: 2, iv: "aXZpdml2aXZpdml2", ct: "Y2lwaGVydGV4dA" } }));
+    const place = async (product, sheet) => {
+      const r = await O.placeOrder(env, u, Object.assign({ product, qty: 1, mode: "collect", unit: 10, total: 10, week: "2026-09-28", digest: "d1" }, sheet === undefined ? {} : { sheet }));
+      return r.order ? O.customerView(r.order) : (r.code || r.error);
+    };
+    const out = {};
+    out.alone = [await place("salt"), await place("oil"), await place("candy")];
+    out.sheet = [await place("salt", S), await place("oil", S)];
+    out.twice = await place("salt", S);
+    out.fifth = await place("rice");
+    out.join = await place("candy", S);
+    out.sixth = await place("spare");
+    out.newSheet = await place("spare", T);
+    out.bad = await place("salt", "short");
+    return out;
+  };
+  for (const store of [null, "object", "object+kv"]) {
+    const nm = store || "kv", R = await run(store);
+    const ids = (a) => a.map((o) => (typeof o === "string" ? o : o.sheet || "-"));
+    ok(ids(R.sheet).every((x) => x === S) && R.alone.every((o) => typeof o === "object" && !("sheet" in o)),
+      nm + ": an order placed on a sheet carries the sheet in the customer's view, and one placed alone carries none: " + JSON.stringify([ids(R.alone), ids(R.sheet)]));
+    ok(R.twice === "sheetTwice", nm + ": a product placed twice on one sheet is refused in its own words: " + JSON.stringify(R.twice));
+    ok(typeof R.fifth === "object" && typeof R.join === "object" && R.join.sheet === S,
+      nm + ": three alone and a sheet of two are four open, a fifth is taken, and a line joining the open sheet is not a sixth: " + JSON.stringify([typeof R.fifth, R.join && R.join.sheet]));
+    ok(R.sixth === "openMax" && R.newSheet === "openMax",
+      nm + ": a sixth, alone or a new sheet, is refused: " + JSON.stringify([R.sixth, R.newSheet]));
+    ok(R.bad === "the sheet is not one this page made", nm + ": a sheet id the page does not make is refused: " + JSON.stringify(R.bad));
+  }
+  ok(O.openCount([{ id: "a" }, { id: "b", sheet: S }, { id: "c", sheet: S }, { id: "d", sheet: T }]) === 3 && O.openCount([]) === 0,
+    "openCount counts a sheet once and an order alone once");
+})();
+
+section("V4b (29 Sep 2026): the sheet takes a size of each product, a size tapped again comes off, the check has a line each and the total, and Place sends each under the sheet, again only what is still to go");
+await (async () => {
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-v4b", ck = await C.contentKey("test-secret", u);
+  const list = (digest, oil10) => ({ at: "2026-09-29T02:00:00Z", digest, week: { label: "28 Sep to 4 Oct 2026", monday: "2026-09-28" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
+      { product: "oil", unit: "unit", basis: "fixed", sizes: [{ q: 5, price: 50 }, { q: 10, price: oil10 }] }] });
+  const sealed = async (l) => Object.assign({ at: l.at, week: l.week.monday, digest: l.digest }, await C.encryptWith(ck, JSON.stringify(l)));
+  const now = new Date().toISOString();
+  const SH = "v4bSheetOpen0001";
+  /* five open orders, three of them one sheet: three against the limit, so the sheet opens on the form */
+  const orders = ["o1", "o2", "o3"].map((id, i) => ({ id, product: ["salt", "oil", "candy"][i], qty: 1, mode: "collect", total: 10, delivery: 0, paid: 0, moved: 0, at: now, status: "placed", sheet: SH, history: [], msgs: [] }))
+    .concat(["o4", "o5"].map((id) => ({ id, product: "salt", qty: 1, mode: "collect", total: 10, delivery: 0, paid: 0, moved: 0, at: now, status: "placed", history: [], msgs: [] })));
+  const t = (e) => (e ? e.textContent : "").replace(/\s+/g, " ").trim();
+  const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const posted = [];
+  const answers = [{ status: 409, body: { ok: false, error: "prices moved", code: "pricesMoved", prices: await sealed(list("d2", 99)) } }, null, { status: 503, body: { ok: false, error: "busy" } },
+    /* the retry the Worker already holds on the sheet (its request id not read back yet on the kv road) */
+    { status: 400, body: { ok: false, error: "that product is on this order already", code: "sheetTwice" } }, null, null,
+    null, { status: 503, body: { ok: false, error: "busy" } }, null, null, { status: 503, body: { ok: false, error: "busy" } }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v4b", assoc: false, prices: await sealed(list("d1", 95)),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })) };
+  const dom = new JD(lp(u, "nv4b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {}; win.open = () => null;
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      const res = (status, x) => ({ ok: status === 200, status, json: async () => x });
+      if (p === "/open") return res(200, body);
+      if (p === "/orders" && m === "GET") return res(200, { ok: true, orders, claims: [] });
+      if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j); const a = answers[posted.length - 1];
+        return a ? res(a.status, a.body) : res(200, { ok: true, order: { id: "20260929040000-v4b" + posted.length, product: j.product, qty: j.qty, status: "placed", at: now, total: j.total, sheet: j.sheet, history: [], msgs: [] } }); }
+      return res(404, { ok: false });
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.getElementById("oNew") && d.querySelector('#pOrder [data-row="o5"]'));
+    ok(!d.getElementById("oLimit"), "five open orders, three of them one sheet, are three against the limit: the Order tab says no limit");
+    d.getElementById("oNew").click();
+    const radio = (k) => d.querySelector('#osheet input[data-k="' + k + '"]');
+    const total = () => t(d.querySelector("#osheet .ototal .salt-kpi__value"));
+    const fields = [...d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym")).length;
+    const first = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
+    ok(fields === 2 && first.join() === "size:1" && total() === "RM 100",
+      "the sheet shows each product's sizes under its mark and opens on their usual, one line: " + JSON.stringify([fields, first, total()]));
+    radio("size:2").click(); radio("size1:10").click();
+    const both = total();
+    const only = () => { radio("size1:10").click(); radio("size:2").click(); const x = [total(), d.getElementById("oGo").disabled]; radio("size:2").click(); radio("size1:10").click(); return x; };
+    const empty = only();
+    radio("size:2").click();
+    const off = [total(), !!radio("size:2").checked];
+    radio("size:2").click();
+    ok(both === "RM 285" && off[0] === "RM 95" && off[1] === false && total() === "RM 285",
+      "a size of each adds to one total, and a size tapped again comes off the sheet: " + JSON.stringify([both, off, total()]));
+    ok(empty[0] === "" && empty[1] === true, "a sheet with every line taken off has no total and Review waits: " + JSON.stringify(empty));
+    d.getElementById("oGo").click();
+    /* a row read as its label, value and flag, the mark's drawing left out and its shape said once */
+    const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr").forEach((x) => x.remove()); return t(c); };
+    const rows = () => [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => [...r.querySelectorAll(".salt-ledger__label, .salt-ledger__value, .salt-ledger__flag")].map(clean).filter(Boolean).join(" "));
+    const r1 = rows();
+    ok(r1.includes("2 units RM 190") && r1.includes("10 units RM 95") && r1.includes("Total RM 285") && d.querySelectorAll("#osheet .mhero > *").length === 2,
+      "the check has a line a product, a card each, and the total: " + JSON.stringify(r1));
+    d.getElementById("oPlace").click();
+    await until(() => posted.length === 1 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
+    const moved = [...d.querySelectorAll("#osheet .salt-insight--copper")].map(t);
+    ok(posted.length === 1 && t(d.getElementById("oPlace")) === "Place at RM 289" && moved.length === 1 && moved[0].includes("Now RM 99 (was RM 95).") && rows().includes("Total RM 289"),
+      "a list moved at Place is read again line by line, the moved line said, Place naming the new total, and nothing placed: " + JSON.stringify([posted.length, t(d.getElementById("oPlace")), moved]));
+    d.getElementById("oPlace").click();
+    await until(() => posted.length === 3 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
+    const part = rows();
+    ok(posted.length === 3 && part.includes("2 units RM 190 Sent") && !d.getElementById("oBack").disabled,
+      "a line refused after one placed leaves the placed line said as sent, and the check still theirs to change: " + JSON.stringify(part));
+    d.getElementById("oPlace").click();
+    await until(() => posted.length === 4 && !!d.querySelector("#osheet .osent"));
+    const sheetIds = new Set(posted.map((x) => x.sheet));
+    ok(posted.length === 4 && posted[3].product === "oil" && posted[3].rid === posted[2].rid && posted[1].rid === posted[0].rid,
+      "Place again sends only the line still to go, under the request id it was refused under: " + JSON.stringify(posted.map((x) => [x.product, x.rid.slice(0, 6)])));
+    ok(sheetIds.size === 1 && /^[A-Za-z0-9_-]{16,64}$/.test(posted[0].sheet) && posted[1].rid !== posted[2].rid && posted[2].total === 99 && posted.slice(1).every((x) => x.digest === "d2"),
+      "every line goes under the one sheet id, each its own request id, at the list Place answered with: " + JSON.stringify(posted.map((x) => [x.product, x.sheet, x.total, x.digest])));
+    ok(!!d.querySelector("#osheet .osent"), "and a retry the Worker says is on the sheet already is placed, and the sheet answers Sent");
+    /* the next sheet keeps what they picked, and is a sheet of its own, each line under its own request id */
+    d.querySelector('#osheet [data-k="close"]').click();
+    d.getElementById("oNew").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await until(() => posted.length === 6 && !!d.querySelector("#osheet .osent"));
+    ok(posted.length === 6 && posted[4].rid !== posted[5].rid && posted[4].sheet === posted[5].sheet && posted[4].sheet !== posted[0].sheet
+      && posted.slice(4).map((x) => x.product).join() === "salt,oil",
+      "the next sheet keeps their picks, goes under a sheet id of its own, and each line its own request id: " + JSON.stringify(posted.slice(4).map((x) => [x.product, x.sheet, x.rid])));
+    /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet */
+    d.querySelector('#osheet [data-k="close"]').click();
+    d.getElementById("oNew").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await until(() => posted.length === 8 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
+    d.getElementById("oBack").click();
+    const onForm = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
+    /* and Change again before placing keeps that sheet */
+    d.getElementById("oGo").click(); d.getElementById("oBack").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await until(() => posted.length === 9 && !!d.querySelector("#osheet .osent"));
+    ok(onForm.join() === "size1:10" && posted[8].product === "oil" && posted[8].sheet === posted[6].sheet && posted[6].product === "salt",
+      "Change after a line is placed takes that product off the form, and the rest are placed under the same sheet: " + JSON.stringify([onForm, posted.slice(6).map((x) => [x.product, x.sheet])]));
+    /* closed after one line placed: reopened, the placed product is not offered again */
+    d.querySelector('#osheet [data-k="close"]').click();
+    d.getElementById("oNew").click();
+    radio("size:2").click();
+    d.getElementById("oGo").click(); d.getElementById("oPlace").click();
+    await until(() => posted.length === 11 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
+    d.querySelector('#osheet [data-k="close"]').click();
+    d.getElementById("oNew").click();
+    const reopened = [...d.querySelectorAll("#osheet input.salt-option__input:checked")].map((r) => r.getAttribute("data-k"));
+    ok(posted[9].product === "salt" && posted[10].product === "oil" && reopened.join() === "size1:10",
+      "a sheet closed after one line is placed reopens without that product: " + JSON.stringify([reopened, posted.slice(9).map((x) => x.product)]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
+})();
+
+section("V4b (29 Sep 2026): his card names the other orders open on its sheet, each a tap to its card, and a delivery to agree says the trip is one");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const SH = "v4bSheetDesk0001";
+  const o = (id, product, extra) => Object.assign({ id, u: "aaaa-bbbb", code: "CX0-AA", product, qty: 2, total: 190, delivery: 0, mode: "deliver", place: "Old market",
+    status: "placed", paid: 0, moved: 0, at: "2026-09-29T01:00:00.000Z", history: [], msgs: [], sheet: SH }, extra || {});
+  const A = o("20260929010000-aaa1", "salt"), B = o("20260929010000-aaa2", "oil", { qty: 10, total: 95 }), C = o("20260929010000-aaa3", "candy", { sheet: undefined });
+  w.eval("ORD_OPEN=" + JSON.stringify([A, B, C]));
+  const card = (x) => String(w.eval("ordCard(" + JSON.stringify(x) + ")"));
+  const a = card(A), c = card(C), later = card(Object.assign({}, A, { status: "acknowledged" }));
+  ok(/Placed together with one other order/.test(a) && a.includes('data-row="' + B.id + '"') && /10 units? oil, RM 95, Placed/.test(a) && !a.includes('data-row="' + C.id + '"'),
+    "a card on a sheet names the other order open on it, a tap to its card, and no order off the sheet: " + JSON.stringify((/Placed together[\s\S]{0,400}/.exec(a) || [""])[0].replace(/\s+/g, " ").slice(0, 300)));
+  ok(/One trip: charge the delivery on one of these orders and RM 0 on the rest\./.test(a) && !/One trip/.test(later),
+    "a delivery still to agree says the trip is one, and an agreed one does not: " + JSON.stringify([/One trip/.test(a), /One trip/.test(later)]));
+  ok(!/Placed together/.test(c), "an order alone says nothing of a sheet");
+  w.eval("ORD_OPEN=[]");
 })();
 
 section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
