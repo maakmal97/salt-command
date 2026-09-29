@@ -23224,13 +23224,22 @@ await (async () => {
     await Promise.all(waits);
     return shown[0];
   };
-  const kinds = Object.keys(WD.EN).filter((k) => /^news[.]/.test(k) && !/^news[.](tap|open|order|update)$/.test(k)).map((k) => k.slice(5));
+  /* Step 1b: a kind is a title key with no dot after news.; its body is news.<kind>.b, or news.<kind>.<case> for the case
+     the wake carries, else Tap to open it (Open Salt Counter to see it for a decline or cancel with no reason) */
+  const kinds = Object.keys(WD.EN).filter((k) => /^news[.][a-z-]+$/.test(k) && !/^news[.](tap|open|order|update)$/.test(k)).map((k) => k.slice(5));
   const seen = [];
-  for (const k of kinds) seen.push([k, await show({ k, o: "20260925101500-ab12" })]);
+  for (const k of kinds) {
+    const subs = Object.keys(WD.EN).filter((x) => x.startsWith("news." + k + ".")).map((x) => x.slice(6 + k.length));
+    for (const v of subs.length ? subs : [""]) {
+      const want = [WD.EN["news." + k], WD.EN["news." + k + "." + (v || "b")] || WD.EN[/^(declined|cancelled)$/.test(k) ? "news.update" : "news.tap"]];
+      seen.push([k + (v ? "." + v : ""), await show(v && v !== "b" ? { k, o: "20260925101500-ab12", v } : { k, o: "20260925101500-ab12" }), want]);
+    }
+  }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 13 && seen.every(([k, s]) => s && s[0] === WD.EN["news." + k] && s[1] === WD.EN["news.tap"])
+  ok(!own.length && kinds.length === 15 && seen.length === 23 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
-    "the banner writes no words of its own and shows each kind's, and the fixed words, from the table: " + JSON.stringify({ own, seen: seen.filter(([k, s]) => !s || s[0] !== WD.EN["news." + k]) }));
+    "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
+    + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
 })();
 
 section("S13 13.3: with every word of the table marked, everything the page draws carries the mark, the account's own data apart");
