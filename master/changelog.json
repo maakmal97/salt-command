@@ -1,5 +1,15 @@
 [
  {
+  "v": "v938",
+  "d": "29 Sep 2026",
+  "t": "A SHEET IS AGREED, MADE READY AND HANDED OVER TOGETHER",
+  "n": [
+   "<p><b>A SHEET IS AGREED, MADE READY AND HANDED OVER TOGETHER.</b> His word of 29 Sep 2026. While every order on a customer's sheet waits for Accept, the sheet's first order's card carries one Accept for all of them: the delivery charge is chosen there and the rest go at RM 0, each order's row is drafted and drawn on that card, and Accept stays shut until every row is. The other cards keep Decline and say where Accept is. While nothing on the sheet has moved, the first card also makes the sheet ready and hands it over whole; a part stays on each order's own card.</p>",
+   "<p><b>HOW THE ONE TAP WORKS.</b> It is each order's own move in turn, on its own road and its own row, so the Worker, the drafter and his yes behave as for one order. Each row he was shown is fixed before the first move, so a reload between moves cannot swap it; a second tap waits while the first is on its way; the first refusal stops the rest, and the answer says how many went.</p>",
+   "<p><b>PROOFS.</b> A new suite section of 19 checks, and the V4b desk section updated; 24 mutations each turned a check red. The whole suite passed on this tree. Fable's review found three risks (a second tap mid-way, a row redrafted between moves, a sibling with a yes given), all fixed and checked again by Fable: no fault.</p>"
+  ]
+ },
+ {
   "v": "v937",
   "d": "29 Sep 2026",
   "t": "CK4-SEN'S SALT TIER IS SET TO AMBASSADOR",
