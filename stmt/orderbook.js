@@ -246,14 +246,14 @@ export class OrderBook {
     const kv = this.env && this.env.STMT;
     if (!kv) return { orders: 0, took: 0 };
     let cursor, orders = 0, took = 0;
-    for (const prefix of ["order:", "aclaim:"]) {   /* S6 6.6: and the account claims the KV road took */
+    for (const prefix of ["order:", "aclaim:", "thr:"]) {   /* S6 6.6: and the account claims the KV road took; Step 7: and the threads written behind */
       cursor = undefined;
       do {
         const page = await kv.list({ prefix, cursor });
         for (const k of page.keys) {
           let o = null;
           try { o = JSON.parse(await kv.get(k.name)); } catch (e) { o = null; }
-          if (!o || !o.id || !o.u || isClaimId(o.id) !== (prefix === "aclaim:")) continue;
+          if (!o || !o.id || !o.u || isClaimId(o.id) !== (prefix === "aclaim:") || isThreadId(o.id) !== (prefix === "thr:")) continue;
           orders++;
           if (this.takeIn(o, "copy:" + gen + ":" + pass + ":" + o.u + ":" + o.id)) took++;
         }

@@ -1918,7 +1918,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    thClose(); thPut(null); thOut=[]; thSig='';
+    thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
     bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
@@ -4323,7 +4323,7 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; if('thread' in r.body) thPut(r.body.thread); }
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -4355,13 +4355,15 @@ const CLIENT_JS = `
      order goes: Sending, Sent, or Not sent with Tap to try again under the line's own id, and a refusal puts the words
      back in the box; his stand left, New until this device has shown them. Every line is text, never markup. His
      read-only view has no thread: he answers from his Chat. ---- */
-  var TH_MS=__THPOLL__, thread={at:null,msgs:[]}, thOut=[], thTimer=null, thFrom=null, thN=0, thWhy='', thSig='';
+  var TH_MS=__THPOLL__, thread={at:null,msgs:[]}, thOut=[], thTimer=null, thFrom=null, thFromId='hThread', thN=0, thWhy='', thSig='';
   var thSheetEl=document.getElementById('thSheet'), thScrim=document.getElementById('thScrim'), thLog=document.getElementById('thLog'),
       thBody=document.getElementById('thBody'), thForm=document.getElementById('thForm'), thIn=document.getElementById('thIn'), thSaid=document.getElementById('thSaid');
   function thPut(t){ thread=t&&Array.isArray(t.msgs)?{at:t.at||null,msgs:t.msgs}:{at:null,msgs:[]}; }
   function thHis(){ var m=thread.msgs.filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
-  function thWaiting(){ var l=thHis(); return !view&&!!session&&!!l&&l>(seenGet().o.thread||''); }
-  function thSeen(){ var l=thHis(); if(!l||view) return; var s=seenGet(); if((s.o.thread||'')>=l) return; s.o.thread=l; seenPut(s); }
+  /* the seen mark is this account's on this phone: an order's id is its own, but every account has a thread */
+  function thKey(){ return 'thread:'+user; }
+  function thWaiting(){ var l=thHis(); return !view&&!!session&&!!l&&l>(seenGet().o[thKey()]||''); }
+  function thSeen(){ var l=thHis(); if(!l||view) return; var s=seenGet(); if((s.o[thKey()]||'')>=l) return; s.o[thKey()]=l; seenPut(s); }
   function thSame(w){ return thread.msgs.filter(function(m){ return m.by==='customer'&&oWords(m.text)===w; }).length; }
   function thLanded(){ for(var i=thOut.length-1;i>=0;i--) if(thSame(thOut[i].w)>thOut[i].n) thOut.splice(i,1); return thOut; }
   /* the row that opens it, on Home under its heading and on Account: the last line, theirs or ours, and New on a reply */
@@ -4378,6 +4380,8 @@ const CLIENT_JS = `
     return b;
   }
   function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
+  /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
+  function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); }
   /* Account's row, drawn with Home: replaced only when it reads differently, so a tap is never lost to a redraw */
   function thDraw(){
     var a=document.getElementById('aThread'); if(!a) return;
@@ -4414,11 +4418,11 @@ const CLIENT_JS = `
   function thSay(t){ if(thSaid){ thSaid.textContent=t||''; thSaid.hidden=!t; } }
   function thOpen(from){
     if(!thSheetEl||!session||view) return;
-    thFrom=from||null; draft.thSince=seenGet().o.thread||'';
+    thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
     thScrim.hidden=false; thSheetEl.hidden=false;
     try{ thSheetEl.focus(); }catch(e){}
     if(draft.thDraft&&!thIn.value) thIn.value=draft.thDraft;
-    thLines(true); thSeen(); drawHome();
+    thLines(true); thSeen(); thHome();
     if(thTimer) clearInterval(thTimer);
     thTimer=setInterval(thRead,TH_MS);
     thRead();
@@ -4427,17 +4431,18 @@ const CLIENT_JS = `
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
     thSheetEl.hidden=true; thScrim.hidden=true; thSay('');
-    try{ if(thFrom&&thFrom.isConnected) thFrom.focus(); }catch(e){}
+    try{ var f=thFrom&&thFrom.isConnected?thFrom:document.querySelector('#'+thFromId+' .throw'); if(f) f.focus(); }catch(e){}
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
   async function thRead(){
     if(document.hidden||!session||!thSheetEl||thSheetEl.hidden) return;
     var mine=ticket, n=++thN, r=await api('/thread');
     if(mine!==ticket||n!==thN) return;
+    var was=JSON.stringify([thread,thWhy]);
     if(r.body&&r.body.ok){ thPut(r.body.thread); thWhy=''; } else if(r.status!==401) thWhy=tw('th.unread');
-    thAfter();
+    if(JSON.stringify([thread,thWhy])!==was) thAfter();
   }
-  function thAfter(){ thLines(); if(thSheetEl&&!thSheetEl.hidden) thSeen(); drawHome(); }
+  function thAfter(){ thLines(); if(thSheetEl&&!thSheetEl.hidden) thSeen(); thHome(); }
   async function thSend(x){
     var mine=ticket; x.state='sending'; x.why=''; thLines(); thEnd();
     thN++;   /* a read already on its way holds the thread from before this line */
@@ -4702,7 +4707,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; claims=[]; draft={}; closePay(); thClose(); thPut(null); thOut=[]; thSig=''; }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

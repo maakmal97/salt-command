@@ -48381,6 +48381,21 @@ await (async () => {
   const behind = await kv3.get("thr:" + U, "json");
   ok(behind && behind.msgs.length === 1 && behind.msgs[0].text === "Behind" && ![...kv3.m.keys()].some((k) => k.startsWith("order:")),
     "in the week of reading both the book writes the thread behind to its own KV key, thr:<username>: " + JSON.stringify(behind));
+  await O.deskThread(env3, U, { noReply: true });
+  await bk3.fire();
+  const quiet = await kv3.get("thr:" + U, "json");
+  ok(quiet && quiet.quiet === behind.msgs[0].at, "and his No reply needed is written behind too, a state the book held: " + JSON.stringify(quiet && quiet.quiet));
+  /* the way back: a book moving in takes the threads KV holds */
+  const kv4 = new KV();
+  await kv4.put("thr:" + U, JSON.stringify(quiet));
+  const bk4 = H.orderBook({ STMT: kv4, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" }, { movedIn: false });
+  const env4 = { STMT: kv4, ORDERBOOK: bk4.ns, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" };
+  await O.threadOf(env4, U);
+  const inBook = bk4.db.prepare("SELECT doc FROM thr WHERE u = ?").get(U);
+  ok(!!inBook && JSON.parse(inBook.doc).msgs[0].text === "Behind" && bk4.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 0,
+    "a book moving in takes the thread KV holds, into its own table and never among the orders: " + JSON.stringify(!!inBook));
+  bk3.book.run("drop", { u: U });
+  ok(bk3.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0, "an account unmade takes its thread with it");
 })();
 
 section("Step 7: their lines on the thread are capped at twenty a Kuala Lumpur day, his are not, and the thread keeps its last two hundred");
@@ -48504,7 +48519,7 @@ await (async () => {
   const T = { at: "2026-09-28T03:00:00.000Z", msgs: [{ at: "2026-09-28T02:00:00.000Z", by: "customer", text: "<b>Sunday</b>?" },
     { at: "2026-09-28T03:00:00.000Z", by: "desk", text: "Not on Sundays." }] };
   const reads = [], said = [], timers = [];
-  let mode = "ok";
+  let mode = "ok", stale = null;
   const dom = new JSDOM(landingPage(u, "nth7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -48514,7 +48529,7 @@ await (async () => {
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
       if (p === "/open") return { ok: true, status: 200, json: async () => body };
-      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [], thread: JSON.parse(JSON.stringify(T)) }) };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [], thread: JSON.parse(JSON.stringify(stale || T)) }) };
       if (p === "/thread" && m === "GET") { reads.push(Date.now()); return { ok: true, status: 200, json: async () => ({ ok: true, thread: JSON.parse(JSON.stringify(T)) }) }; }
       if (p === "/thread" && m === "POST") {
         said.push(j);
@@ -48548,6 +48563,9 @@ await (async () => {
       { side: "theirs", text: "Not on Sundays.", markup: 0, state: "", isNew: true }]) && thPoll().length === 1 && THREAD_POLL_MS === 2000,
       "a tap opens the Sheet and reads the thread at once, then every two seconds; every line is text, never markup, and his is New: " + JSON.stringify(b0));
     ok(!/New/.test(d.querySelector("#hThread").textContent), "once shown, Home no longer marks his line New");
+    const seen = JSON.parse(w.localStorage.getItem("salt-stmt-seen") || "{}");
+    ok(seen.o && seen.o["thread:" + u] === "2026-09-28T03:00:00.000Z" && !("thread" in seen.o),
+      "the mark is this account's own on this phone, so another account signed in here still sees its reply New: " + JSON.stringify(seen.o));
     const tick = () => thPoll()[0].f();
     tick(); await until(() => reads.length === 2);
     Object.defineProperty(d, "hidden", { value: true, configurable: true });
@@ -48561,6 +48579,12 @@ await (async () => {
     await until(() => said.length === 1 && bubbles().length === 3 && bubbles()[2].state === "Sent");
     ok(said[0].text === "Saturday then" && /^[0-9a-f]{32}$/.test(said[0].rid) && box.value === "" && bubbles()[2].text === "Saturday then",
       "Return sends the line with its own id, the box empties, and the line says Sent once stored: " + JSON.stringify(said[0]));
+    /* an orders read that set out before the line and lands after it does not take the line off the open Sheet */
+    stale = { at: "2026-09-28T03:00:00.000Z", msgs: T.msgs.slice(0, 2) };
+    timers.filter((t) => t.on && t.ms === 10000).forEach((t) => t.f());
+    await new Promise((r) => setTimeout(r, 80));
+    stale = null;
+    ok(bubbles().length === 3 && bubbles()[2].text === "Saturday then", "the page's own poll leaves the open Sheet's thread alone: " + JSON.stringify(bubbles().map((b) => b.text)));
     mode = "cap";
     box.value = "and one more"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.form.requestSubmit();
     await until(() => said.length === 2 && !d.getElementById("thSaid").hidden);
@@ -48568,7 +48592,56 @@ await (async () => {
       "a line refused (their twenty today) goes back in the box, the reason under it: " + d.getElementById("thSaid").textContent);
     d.getElementById("thX").click();
     ok(sheet().hidden && thPoll().length === 0, "shut, the Sheet stops its reading: " + thPoll().length);
+    ok(!!d.activeElement && !!d.activeElement.closest && !!d.activeElement.closest("#hThread") && d.activeElement.classList.contains("throw"),
+      "and the focus goes back to Home's row that opened it, though the row was drawn again: " + (d.activeElement && d.activeElement.outerHTML.slice(0, 60)));
   } finally { w.close(); }
+})();
+
+section("Step 7: a banner of his line on the thread opens the thread: the address #thread once signed in, and a page already open told so by its service worker");
+await (async () => {
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-th8", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-th8",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const T = { at: "2026-09-28T03:00:00.000Z", msgs: [{ at: "2026-09-28T03:00:00.000Z", by: "desk", text: "Your answer is here." }] };
+  const open = async (url) => {
+    const L = {};
+    const dom = new JSDOM(landingPage(u, "nth8", null), { url, runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      win.setInterval = () => 0; win.clearInterval = () => {};
+      Object.defineProperty(win.navigator, "serviceWorker", { configurable: true, value: { addEventListener: (t, f) => { L[t] = f; },
+        register: async () => ({}), getRegistration: async () => null, ready: new Promise(() => {}) } });
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET";
+        if (p === "/open") return { ok: true, status: 200, json: async () => body };
+        if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [], thread: T }) };
+        if (p === "/thread" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, thread: T }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true }) };
+      };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.querySelector("#hThread .salt-inbox-row"); i++) await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 40));
+    return { w, d, L };
+  };
+  const a = await open("https://site.test/#thread");
+  try {
+    ok(!a.d.getElementById("thSheet").hidden && /Your answer is here\./.test(a.d.getElementById("thLog").textContent) && a.w.location.hash === "",
+      "opened at #thread, the page signs in and opens the thread, and lets the address go: " + JSON.stringify(a.w.location.hash));
+  } finally { a.w.close(); }
+  const b = await open("https://site.test/");
+  try {
+    const shut = b.d.getElementById("thSheet").hidden;
+    await b.L.message({ data: { salt: "news", order: "", thread: true } });
+    for (let i = 0; i < 50 && b.d.getElementById("thSheet").hidden; i++) await new Promise((r) => setTimeout(r, 20));
+    ok(shut && !b.d.getElementById("thSheet").hidden, "a page already open is told by its service worker, and opens the thread");
+  } finally { b.w.close(); }
 })();
 
 section("Step 7: a test account's thread is its fixture's: a line lands there by the book's rules, once, and never in the order book");
