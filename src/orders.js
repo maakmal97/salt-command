@@ -244,8 +244,12 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const product = o.product || "salt", qty = +o.qty, goods = +(+agreed.total).toFixed(2);
   const fl = floorFor(book, product, qty);
-  /* never under the floor at this size: the one line no price he sets goes under (rule 5) */
-  if (price != null && fl && price < fl.floor - 0.005)
+  /* never under the floor at this size: the one line no price he sets goes under (rule 5). A price is set only against the
+     floor AT this size: none known, or only a carded size below it (an older snapshot), and no price can be set on it */
+  if (price != null && (!fl || !fl.exact))
+    return { ok: false, status: 409, underFloor: true, floor: fl ? { rm: fl.floor, at: fl.at, exact: false } : null,
+      error: "no floor is known at " + qty + " unit, so no price can be set on it: accept it at theirs" };
+  if (price != null && price < fl.floor - 0.005)
     return { ok: false, status: 409, underFloor: true, floor: { rm: fl.floor, at: fl.at, exact: fl.exact },
       error: rm(price) + " is under the floor of " + rm(fl.floor) + " at " + qty + " unit, so it cannot be set" };
   const d = draftRow(entry, book);

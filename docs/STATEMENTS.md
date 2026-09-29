@@ -893,7 +893,8 @@ refuses with the fresh preview if the digest moved, records the yes, queues the 
 runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
 snapshot's `v` and a digest of the rest). **Step 2 (his Q10 of 28 Sep 2026): the price at Accept.** Both take an
 optional `total`, the goods for this one order, up or down: the row, its key and so the digest are drafted at it, and
-under the floor at that size (`floorFor`) or at nothing it is refused. The card has a Price field a line (a sheet's too),
+under the floor at that size (`floorFor`) or at nothing it is refused, and so is any price on a size with no floor of its own
+(none known, or only a carded size below it): it is accepted at theirs. The card has a Price field a line (a sheet's too),
 filled with what they placed it at, the floor said under it. `ackOnApproval` sends it with the acknowledgement, the only
 move the Counter takes a `total` on (`decideDesk`); the order keeps what they placed it at as `asked`, their Goods line
 saying so, and the row's note says it. Offered again, the order keeps its own total. No pricing state moves: the board,

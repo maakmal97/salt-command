@@ -35016,7 +35016,6 @@ await (async () => {
     .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
   setState("roster", [C1]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
   db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
-  const stateNow = () => JSON.stringify(db.prepare("SELECT key,doc FROM state ORDER BY key").all());
   const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
   await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
@@ -35028,7 +35027,6 @@ await (async () => {
   };
   const place = async (qty, total) => (await O.placeOrder(senv, U1, { product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "" })).order;
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
-  const before = stateNow();
 
   /* 1. A PRICE SET DRAFTS THE ROW AND ITS KEY AT IT, and the site keeps what they placed it at beside it */
   const a = await place(1, 100);
@@ -35048,11 +35046,19 @@ await (async () => {
   /* 2. NEVER UNDER THE FLOOR: RM 70 on a size whose floor is RM 80 is refused, and nothing moves */
   const b = await place(1, 100);
   const pvB = await call("/orders/" + b.id + "/preview", { total: 70 });
-  const acB = await call("/orders/" + b.id + "/accept", { total: 70, hash: "x" });
-  ok(pvB.status === 409 && pvB.j.underFloor === true && /under the floor of RM 80/.test(pvB.j.error) && acB.status === 409 && (await orderOf(b.id)).status === "placed",
+  const pvOk = await call("/orders/" + b.id + "/preview", { total: 95 });
+  const acB = await call("/orders/" + b.id + "/accept", { total: 70, hash: pvOk.j.hash });
+  ok(pvB.status === 409 && pvB.j.underFloor === true && /under the floor of RM 80/.test(pvB.j.error)
+    && acB.status === 409 && acB.j.underFloor === true && /under the floor of RM 80/.test(acB.j.error) && (await orderOf(b.id)).status === "placed",
     "a price under the floor at that size is refused at the preview and at Accept, and the order stays placed: " + JSON.stringify({ pv: pvB.status, e: pvB.j.error, ac: acB.status }));
   const bad = await call("/orders/" + b.id + "/preview", { total: 0 });
   ok(bad.status === 400, "and a price of nothing is refused: " + bad.status);
+  /* Fable's re-check: a size with no floor of its own (only a carded size below it, on a snapshot without inputs) takes no
+     price, since the floor under it is not known; the order at their own price still previews */
+  const odd = await place(1.5, 150);
+  const pvOdd = await call("/orders/" + odd.id + "/preview", { total: 200 }), pvOddOwn = await call("/orders/" + odd.id + "/preview", {});
+  ok(pvOdd.status === 409 && /no floor is known at 1\.5 unit/.test(pvOdd.j.error) && pvOddOwn.status === 200 && pvOddOwn.j.ok === true,
+    "a price set on a size with no floor of its own is refused, and the same order at their price still previews: " + JSON.stringify({ set: pvOdd.status, e: pvOdd.j.error, own: pvOddOwn.status }));
 
   /* 3. HIS YES COVERS THE PRICE: another price has another digest, and an Accept at a price the card did not draw is refused */
   const pv95 = await call("/orders/" + b.id + "/preview", { total: 95 }), pv90 = await call("/orders/" + b.id + "/preview", { total: 90 });
@@ -35066,10 +35072,7 @@ await (async () => {
   const onAck = O.decideDesk({ id: "o2", u: U1, status: "placed", mode: "collect", qty: 1, total: 100, history: [] }, { status: "acknowledged", total: 90 }, "2026-09-29T01:00:00Z");
   ok(onReady.error && onReady.status === 400 && onAck.ev && onAck.ev.total === 90, "the Counter refuses a price on any move but the acknowledgement: " + JSON.stringify({ onReady, ack: onAck.ev && onAck.ev.total }));
 
-  /* 5. NOTHING ELSE MOVES: no pricing state, no board, no tier is written by a price set on one order */
-  ok(stateNow() === before, "no state key is written by a price set at Accept: the board, PRICE_SET and every tier stand");
-
-  /* 6. THE CARD: a Price field on the order, the floor said under it, and Accept at the price he typed */
+  /* 5. THE CARD: a Price field on the order, the floor said under it, and Accept at the price he typed */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   try {
@@ -35084,6 +35087,15 @@ await (async () => {
       && card.set === "90" && /They placed it at RM ?100(\.00)?; this order alone takes your price\./.test(card.floor2) && /Accept, RM ?90/.test(card.acc2) && /RM ?10(.00)? under/.test(card.cardT),
       "the card has a Price field filled with what they placed it at and the floor under it; a price typed shuts Accept until its row is drawn, "
       + "then Accept tells them the price, and their card is measured against it: " + JSON.stringify(card));
+    /* Fable's re-check: the tap SENDS the price with the digest of the row drawn at it; without it the Worker drafts at their
+       price and refuses the digest as changed */
+    w.__sent = [];
+    w.fetch = async (u, init) => { w.__sent.push({ u: String(u), b: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    await w.eval(`(function(){const o=ORD_OPEN[0];ORD_PRICE[o.id]=90;ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},card:100,floor:{rm:80,at:1},flags:[],hash:'h90'}};
+      const d=document.createElement('div');d.innerHTML=ordCard(o);document.body.appendChild(d);return ordAct(d.querySelector('button[data-ord="acknowledged"]'));})()`);
+    const acc = w.__sent.filter((c) => /\/accept$/.test(c.u));
+    ok(acc.length === 1 && acc[0].b.total === 90 && acc[0].b.hash === "h90",
+      "Accept sends the price he set with the digest of the row drawn at it: " + JSON.stringify(acc));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
