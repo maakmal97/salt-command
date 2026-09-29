@@ -1,6 +1,6 @@
 {
- "v": "v953",
- "stamped": "29 Sep 2026, 19:12 KL",
+ "v": "v954",
+ "stamped": "29 Sep 2026, 21:26 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,9 +91,9 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 26,
+  "STATED_STOCK": 24,
   "COUNT_ON": {
-   "salt": "2026-09-27",
+   "salt": "2026-09-29",
    "oil": "2026-09-27",
    "candy": "2026-09-27",
    "rice": "2026-09-27",
@@ -246,6 +246,13 @@
     "qty": 74,
     "was": 85,
     "drift": -11
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-29",
+    "qty": 24,
+    "was": 26,
+    "drift": -2
    }
   ],
   "purchases": [
@@ -6611,9 +6618,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-29T11:10:03.620Z",
+  "QUEUE_COMMITTED": "2026-09-29T12:57:06.032Z",
   "PRICING": {
-   "takenAt": "2026-09-29T11:12:21.649Z",
+   "takenAt": "2026-09-29T13:26:08.962Z",
    "sizes": [
     0.5,
     1,
@@ -7684,40 +7691,40 @@
      "replCost": 56,
      "floors": {
       "1": {
-       "floor": 69.78
+       "floor": 68.62
       },
       "2": {
-       "floor": 139.57
+       "floor": 137.25
       },
       "3": {
-       "floor": 209.35
+       "floor": 205.87
       },
       "4": {
-       "floor": 279.13
+       "floor": 274.5
       },
       "5": {
-       "floor": 348.92
+       "floor": 343.12
       },
       "0.5": {
-       "floor": 34.89
+       "floor": 34.31
       },
       "1.5": {
-       "floor": 104.68
+       "floor": 102.94
       },
       "2.5": {
-       "floor": 174.46
+       "floor": 171.56
       },
       "3.5": {
-       "floor": 244.24
+       "floor": 240.19
       },
       "4.5": {
-       "floor": 314.03
+       "floor": 308.81
       },
       "6.25": {
-       "floor": 436.15
+       "floor": 428.9
       },
       "12.5": {
-       "floor": 872.29
+       "floor": 857.81
       }
      },
      "inputs": {
@@ -7792,12 +7799,12 @@
        "repl": 56,
        "freightRate": 2.5333,
        "leak": {
-        "ratio": 0.1922,
-        "leak": 8.65,
-        "sold": 45,
+        "ratio": 0.1724,
+        "leak": 7.5,
+        "sold": 43.5,
         "cycles": 3,
-        "from": "2026-09-19",
-        "to": "2026-09-27"
+        "from": "2026-09-21",
+        "to": "2026-09-29"
        },
        "costRule": {
         "kind": "stack",
@@ -7815,7 +7822,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07942124989104855,
+       "shrinkRate": 0.08290769633051513,
        "avgDel": {
         "n": 181,
         "kg": 463.45,
@@ -13235,10 +13242,10 @@
      "cards": {}
     }
    },
-   "v": "v953"
+   "v": "v954"
   },
   "OPEN": {
-   "at": "2026-09-29T11:12:21.959Z",
+   "at": "2026-09-29T13:26:09.263Z",
    "count": 12,
    "byKey": {
     "CK4-SEN|2026-09-29|530": {
@@ -13443,10 +13450,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 26,
-     "free": 16.5,
+     "onHand": 24,
+     "free": 14.5,
      "owedOut": 9.5,
-     "coverDays": 2.5,
+     "coverDays": 2.2,
      "rate": 6.36,
      "owedToYou": 610,
      "promised": 18.75,
@@ -13498,19 +13505,19 @@
     }
    },
    "countedOn": {
-    "salt": "2026-09-27",
+    "salt": "2026-09-29",
     "oil": "2026-09-27",
     "candy": "2026-09-27",
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v953"
+   "v": "v954"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v953"
+   "v": "v954"
   }
  }
 }

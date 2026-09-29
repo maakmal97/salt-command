@@ -32,6 +32,7 @@
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { FACEID_PATH, faceIdResponse } from "../stmt/faceid.js";   // Step 6: the Face ID test page, served here as on the Counter
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -1262,6 +1263,10 @@ export default {
         }
       });
     }
+
+    /* STEP 6 (29 Sep 2026, his word): the Face ID test for the names vault, on the desk's own address, linked from
+       nowhere and taken out after it. The one module is the Counter's, which the desk may import (stmt/faceid.js). */
+    if (p === FACEID_PATH && (m === "GET" || m === "HEAD")) return faceIdResponse("desk");
 
     // --- static assets, with SPA fallback the Worker owns ------------------------
     if (m === "GET" || m === "HEAD") {
