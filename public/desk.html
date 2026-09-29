@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="560e35f7b0f65f4a";
+var SALT_BUILD_ID="b2d2bd8a18d7f83b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20871,11 +20871,13 @@ function pxMarket(){
      margin on price each segment was judged against is retired. */
   const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
   const seg=f=>{const r=rows.filter(f);
-    const k=+r.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s)),0).toFixed(2);
+    /* 29 Sep 2026: the floor is divided by the units as sold, never the count rounded for print; rounded first, a
+       fractional pending count put the bulk floor a cent over the engine's (68.63 for 68.62) */
+    const kr=r.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s)),0),k=+kr.toFixed(2);
     const rm=+r.reduce((a,s)=>a+(s.total-txPendUnitsRaw(s)*txPrice(s)),0).toFixed(2);
     const none=!(k>0.009), p=none?null:rm/k;
     return {k,rm,none,thin:!none&&r.length<3,n:r.length,p:none?null:+p.toFixed(2),
-      m:(!none&&p>0)?+((p-c.eff)/p*100).toFixed(1):null,fl:none?null:+flOf(r,k,c).toFixed(2)};};
+      m:(!none&&p>0)?+((p-c.eff)/p*100).toFixed(1):null,fl:none?null:+flOf(r,kr,c).toFixed(2)};};
   const all=seg(()=>true),small=seg(s=>s.qty<PX.bulkFrom),bulk=seg(s=>s.qty>=PX.bulkFrom);
   /* wholesale stripped of anything marked a one-off, because a single outlier at
      RM104/unit is what makes the wholesale average look survivable */
