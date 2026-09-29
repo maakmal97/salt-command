@@ -15374,7 +15374,7 @@ await (async () => {
       return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
     ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
       && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1")
-      && rows.map((r) => r.t).join("|") === "Sent|Sent|Confirmed|Confirmed|Collected",
+      && rows.map((r) => r.t).join("|") === "Sent|Sent|Acknowledged|Acknowledged|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
     const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
     for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
@@ -15563,7 +15563,7 @@ await (async () => {
   const C9 = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc9 } = await import("node:crypto");
   const { JSDOM: JD9 } = await import("jsdom");
-  const ONE = "Delivery is charged by area. We tell you the charge when we confirm, before you pay, and you can cancel then at no cost.";
+  const ONE = "Delivery is charged by area. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.";
   ok(PG.DELIVERY === ONE, "the sentence is the plan's, word for word");
   const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "n49");
   ok(board.includes(ONE) && !/quoted when you order|charged separately/.test(board), "a guest's board says it, and no longer says the charge is quoted when they order");
@@ -15594,7 +15594,7 @@ await (async () => {
     d.getElementById("oGo").click();
     const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
     const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
-    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we confirm",
+    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we acknowledge it",
       "the check of a delivery says it beside the order, and its Delivery line says when: " + JSON.stringify(says));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
@@ -17032,7 +17032,7 @@ await (async () => {
     pOrder.querySelector("[data-row]").click();
     const scr = pOrder.querySelector(".oscreen") || pOrder;
     const words = [...pOrder.querySelectorAll("button, a")].filter((b) => !b.hasAttribute("data-row") && !b.classList.contains("oback") && !b.classList.contains("olater")).map((b) => b.textContent);
-    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Confirmed/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
+    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Acknowledged/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
       "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(scr.textContent.replace(/\s+/g, " ").slice(0, 200)));
     ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
@@ -22535,7 +22535,7 @@ await (async () => {
   ok(mf95.name === "Salt Counter" && mf95.short_name === "Salt Counter" && !/salt command/i.test(mf95.name),
     "the app saved to a home screen is called Salt Counter (v704), his own name, and never the desk's");
   const door95 = await (await stmtW95.fetch(new Request("https://k7m3p2.example/"), env95)).text();
-  ok(/<title>Salt Counter<\/title>/.test(door95) && /content="Salt Counter"/.test(door95) && /saved as <b>Salt Counter<\/b>/.test(door95),
+  ok(/<title>Salt Counter<\/title>/.test(door95) && /content="Salt Counter"/.test(door95) && /Open the new Salt Counter icon/.test(door95),
     "the door's title, its iPhone app title and its tutorial all say the same one name");
   ok(!/Salt Command/i.test(door95) && !/Salt Command/i.test(board95) && !/Salt Command/i.test(JSON.stringify(mf95)),
     "and the desk's own name is on none of them");
@@ -31319,6 +31319,7 @@ await (async () => {
   const dom = new JSDOM(landingPage(u, "n52", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* the account opens only in the saved app */
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
@@ -31345,7 +31346,7 @@ await (async () => {
 
     ok(open(ADV), "the delivered, unpaid order opens");
     const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
-    ok(steps.map((s) => s.textContent).join("|") === "Sent|Confirmed|Ready|Delivered"
+    ok(steps.map((s) => s.textContent).join("|") === "Sent|Acknowledged|Ready|Delivered"
       && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
       && !/pa(y|id)/i.test(part("steps").textContent),
       "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
@@ -31418,6 +31419,7 @@ await (async () => {
   const dom = new JSDOM(landingPage(u, "n53", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* the account opens only in the saved app */
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
@@ -31434,15 +31436,15 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
     const fold = d.querySelector("#pOrder .olater"); if (fold) fold.click();
     const words = orders.map((x) => chip(x.id));
-    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Confirmed", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
+    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Acknowledged", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
       "each state reads in their words, the goods all with them reading Delivered and a cancellation saying whose it was: " + JSON.stringify(words));
-    ok(!/Acknowledged|Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
+    ok(!/Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
       "and none of the desk's words is left on the list");
     ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
     const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
-    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
+    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Acknowledged", "You chose to pay by cash on handover", "You paid RM 70 by cash on handover",
       "We recorded a payment of RM 20", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
@@ -31460,7 +31462,7 @@ await (async () => {
     O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "method", { method: "cod" }, [], at).error,
     O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "pay", { amount: 10 }, [], at).error];
   ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is not taken, so it cannot be cancelled here",
-    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
+    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is acknowledged", "payment is recorded once the order is acknowledged"]),
     "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
 })();
 section("S5 5.4: a line on an order shows where it is, Return sends it, and his lines are New until seen");
@@ -37547,9 +37549,9 @@ await (async () => {
       const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
       return [s.querySelector(".state").textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
     };
-    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken: Out of stock this week. Nothing is owed.", "Not taken: Out of stock this week"]),
+    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken. Out of stock this week. Nothing is owed.", "Not taken: Out of stock this week"]),
       "a decline reads Not taken, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
-    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us: Prices have changed. Nothing is owed.", "Cancelled by us: Prices have changed"]),
+    ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us. Prices have changed. Nothing is owed.", "Cancelled by us: Prices have changed"]),
       "a cancellation of his reads Cancelled by us, with his reason, on the order and in what happened: " + JSON.stringify(said(can.id)));
     ok(said(wd.id) && said(wd.id)[0] === "Cancelled by you" && /^Cancelled before anything moved/.test(said(wd.id)[1]) && said(wd.id)[2] === "Cancelled by you",
       "and one they withdrew reads Cancelled by you, in their words (S5 5.3), with no reason of his: " + JSON.stringify(said(wd.id)));
@@ -37756,7 +37758,7 @@ await (async () => {
     ok(/ Closed at 2 units of the 5 ordered, RM 200 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
     const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
-    ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+    ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Acknowledged", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
       && goods[0] === "GoodsRM 2002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
     const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
@@ -39862,7 +39864,7 @@ await (async () => {
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
       && rows("hComing") === "oC,oK,oP" && /RM 150 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
       && /RM 90 still to pay, now or when you collect/.test(D.getElementById("hComing").textContent)
-      && /Waiting to be confirmed/.test(D.getElementById("hComing").textContent),
+      && /Waiting to be acknowledged/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
       + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
     ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
@@ -41281,9 +41283,9 @@ await (async () => {
     const po = d.getElementById("pOrder");
     if (d.getElementById("oNew")) d.getElementById("oNew").click();
     const sizes = [...d.querySelectorAll('#osheet input[name="osize"]')].map((o) => o.value);
-    ok(!thrown.length && /Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
+    ok(!thrown.length && !/Notifications/.test(po.textContent) && /Your orders/.test(po.textContent) && po.querySelectorAll("[data-row] .salt-status").length === 1
       && sizes.join() === "1" && !d.querySelector("#osheet button[aria-pressed][aria-label]"),
-      "the Order tab draws: the order sheet offers the one product with a price, and Notifications and their order are there: " + JSON.stringify({ sizes, thrown }));
+      "the Order tab draws: the order sheet offers the one product with a price, and their order is there, with no Notifications pane (the bell is the saved app header): " + JSON.stringify({ sizes, thrown }));
     const pp = d.getElementById("pPrices");
     ok(/Price coming soon\./.test(pp.textContent) && pp.querySelectorAll(".salt-ledger").length === 1,
       "and Prices says coming soon for the one with no size rather than drawing an empty list");
@@ -41379,10 +41381,10 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !d.querySelector("#pPrices p.lead + p.lead"); i++) await new Promise((r) => setTimeout(r, 50));
     const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
-    /* S4 4.9 and D11 (his "all recommended" of 24 Sep 2026): the one delivery sentence, in the customer's word for that step,
-       confirm, which D11 gives them for acknowledged; still never "marked ready" */
-    ok(/We tell you the charge when we confirm, before you pay/.test(lead) && !/marked ready|acknowledged/.test(lead),
-      "the Prices lead puts the delivery charge at the confirmation, where v694 moved it, in the customer's word: " + lead.slice(0, 160));
+    /* S4 4.9 (his "all recommended" of 24 Sep 2026) and Step 1b: the one delivery sentence, in the customer's word for that
+       step, acknowledge; still never "marked ready" */
+    ok(/We tell you the charge when we acknowledge your order, before you pay/.test(lead) && !/marked ready/.test(lead),
+      "the Prices lead puts the delivery charge at the acknowledgement, where v694 moved it, in the customer's word: " + lead.slice(0, 160));
   } finally { w.close(); }
 })();
 
