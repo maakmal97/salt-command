@@ -129,69 +129,80 @@ function idb(mode, fn) {
   });
 }
 const getKey = () => idb("readonly", (st) => st.get("writeKey"));
+/* THE MARK: the moment of the newest customer line already shown, kept here beside the key. `idb` answers true
+   for a key never written, so only a string is a mark. */
+const getSince = () => idb("readonly", (st) => st.get("since")).then((v) => (typeof v === "string" ? v : null));
+const putSince = (at) => idb("readwrite", (st) => st.put(String(at), "since"));
 
-/* ONE BANNER, NOT A PILE. Every notification shares a tag so a second wake REPLACES the first
-   rather than stacking behind it. Four a day that each replace the last is a glance; four that
-   queue up is a chore, and a chore gets swiped away unread. */
-async function banner() {
-  const key = await getKey();
+/* THE STATUS IS ONE BANNER, NOT A PILE. It keeps a single tag, so a second wake REPLACES the first rather than
+   stacking behind it: four a day that each replace the last is a glance; four that queue up is a chore, and a
+   chore gets swiped away unread.
+   A CUSTOMER'S LINE IS THE EXCEPTION (29 Sep 2026): EACH LINE IS A BANNER OF ITS OWN, tagged by its moment so none
+   replaces another. The summary hands over the lines newer than the mark sent as `?since=` (at most three); once
+   they are shown the mark moves to the newest, so a line is shown once. */
+const n1 = (n, one, many) => (n === 1 ? "1 " + one : n + " " + many);
+const join = (a) => (a.length > 1 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a[0]);
+/* WHAT WAITS, BY DEADLINE, soonest first, a group a line: Now, then Today, then the orders acknowledged and still waiting on
+   him, on a last line with no group word (a by-when comes later). Nothing here is a code, a name or an amount. */
+function tail(s) {
+  const now = [], today = [], out = [];
+  if (s.refunds) now.push("pay back " + n1(s.refunds, "refund", "refunds"));   /* v759: money he is holding that is somebody else's */
+  const cd = (s.countDue || []).filter((x) => typeof x === "string" && /^[A-Za-z0-9 _-]{1,20}$/.test(x));
+  if (cd.length) today.push("count " + join(cd));
+  if (s.pending) today.push("approve " + n1(s.pending, "row", "rows"));
+  if (s.refused) today.push("check " + n1(s.refused, "refused entry", "refused entries"));
+  if (now.length) out.push("Now: " + now.join(", ") + ".");
+  if (today.length) out.push("Today: " + today.join(", ") + ".");
+  const rest = (s.orders || 0) - (s.placed || 0);   /* only a placed order is his to acknowledge; the rest are rows (v766) */
+  if (rest > 0) out.push(n1(rest, "order", "orders") + " waiting on you.");
+  return out.join("\n");
+}
+const withTail = (line, t) => (t ? line + "\n" + t : line);
+
+async function banners() {
+  const key = await getKey(), since = await getSince();
   let s = null;
   try {
-    const r = await fetch("push/summary", { cache: "no-store", headers: key ? { "X-Salt-Key": key } : {} });
+    const r = await fetch("push/summary" + (since ? "?since=" + encodeURIComponent(since) : ""), { cache: "no-store", headers: key ? { "X-Salt-Key": key } : {} });
     if (r.ok) s = await r.json();
   } catch { /* offline, or the desk is down: fall through to the generic banner */ }
 
   if (!s) {
-    return { title: "Salt Command", body: "Something needs a look. Open the desk.", tag: "salt" };
+    return { list: [{ title: "Something needs a look", body: "The desk could not say what just now. Open it to see.", tag: "salt" }], newest: null };
   }
-  const bits = [];
-  /* v759: THE REFUND FIRST. It is money he is holding that is somebody else's, which is the one
-     thing on this list the desk calls Now from the day it is raised (v708). */
-  if (s.refunds) bits.push(s.refunds === 1 ? "1 refund to pay back" : s.refunds + " refunds to pay back");
-  if (s.pending) bits.push(s.pending === 1 ? "1 row waiting for approval" : s.pending + " rows waiting for approval");
-  if (s.countDue && s.countDue.length) {
-    bits.push(s.countDue.length === 1 ? s.countDue[0] + " not counted today" : "neither shelf counted today");
-  }
-  if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
+  const list = [];
+  const lines = (s.lines || []).filter((x) => x && typeof x.at === "string" && typeof x.t === "string").slice(0, 3);
+  for (const x of lines) list.push({ title: "A customer wrote", body: "“" + x.t + "”", tag: "m-" + x.at, url: "./desk#orders/newest" });
+  const newest = lines.length ? lines[lines.length - 1].at : null;
+  const t = tail(s);
 
   /* v760: WHAT A CUSTOMER JUST DID LEADS OVER WHAT IS MERELY WAITING. A payment or a withdrawal is
      minutes old and is why this wake was sent; the count of orders waiting was as true an hour ago.
      It still opens Orders, because that is where the answer to it is.
      S11 11.16: THE NEWS NAMES THE KIND OF ACT AND NOTHING ELSE (src/orders.js NEWS_WORD), so it is taken
-     only in letters and spaces: a roster code or an amount carries a digit and never reaches the title. */
-  if (s.news && /^[A-Za-z ]{1,60}$/.test(String(s.news))) {
-    return {
-      title: s.news,
-      body: (s.orders ? (s.orders === 1 ? "1 order waiting on you" : s.orders + " orders waiting on you") : "Open the desk to look")
-        + (bits.length ? " \u00b7 " + bits.join(" \u00b7 ") : "") + ".",
-      tag: "salt",
-      url: "./desk#orders/newest",   /* the card of the newest act, which is what woke him (S11) */
-    };
+     only in letters and spaces: a roster code or an amount carries a digit and never reaches the title.
+     "A customer wrote" is that news for a line, and a line shown above says it already: it is not repeated. */
+  if (s.news && /^[A-Za-z ]{1,60}$/.test(String(s.news)) && !(lines.length && s.news === "A customer wrote")) {
+    const what = s.news === "A customer says they paid" ? "Check it arrived, then tap Received or Not found."
+      : s.news === "A customer cancelled" ? "Tap to see which order." : "Open the desk to look.";
+    list.push({ title: s.news, body: withTail(what, t), tag: "salt", url: "./desk#orders/newest" /* the card of the newest act, which is what woke him (S11) */ });
+    return { list, newest };
   }
   /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
-     is the title, and a tap opens the Orders card where it is acknowledged. IT NO LONGER HIDES THE
-     REST (v759): this returned before the list was built, so while any order was waiting the wake
-     said nothing about a row owed a decision, a refund, or a shelf not counted. */
-  /* 24 Sep 2026: ONLY A PLACED ORDER IS HIS TO ACKNOWLEDGE. `orders` counts the acknowledged ones as
-     well, which are rows (v766), so "New customer order ... acknowledge it" was said of orders he had
-     acknowledged already. Those still wait on him, and are named as the news banner names them. */
-  const placed = s.placed || 0, rest = (s.orders || 0) - placed;
-  if (rest > 0) bits.unshift(rest === 1 ? "1 order waiting on you" : rest + " orders waiting on you");
+     is the title, and a tap opens the Orders card where it is acknowledged. IT DOES NOT HIDE
+     THE REST (v759): the list below it says what else waits.
+     24 Sep 2026: ONLY A PLACED ORDER IS HIS TO ACKNOWLEDGE. `orders` counts the acknowledged ones as
+     well, which are rows (v766), so those are named in the tail and never asked to be acknowledged. */
+  const placed = s.placed || 0;
   if (placed) {
-    return {
-      title: placed === 1 ? "New customer order" : placed + " customer orders waiting",
-      body: "Open the desk to acknowledge " + (placed === 1 ? "it" : "them") + "." + (bits.length ? " Also " + bits.join(" \u00b7 ") + "." : ""),
-      tag: "salt",
-      url: "./desk#orders/newest",
-    };
+    list.push({ title: placed === 1 ? "New order" : placed + " new orders",
+      body: withTail(placed === 1 ? "Acknowledge it on the desk." : "Acknowledge them on the desk.", t), tag: "salt", url: "./desk#orders/newest" });
+    return { list, newest };
   }
-
-  return {
-    title: bits.length ? "Salt Command" : "Salt Command is square",
-    body: bits.length ? bits.join(" \u00b7 ") : "Nothing waiting. Nothing owed a decision.",
-    tag: "salt",
-    url: rest > 0 ? "./desk#orders" : undefined,
-  };
+  if (t) list.push({ title: "Waiting on you", body: t, tag: "salt", url: (s.orders || 0) > 0 ? "./desk#orders" : undefined });
+  /* a push must show something: a line counts, and only when there is none does "All square" stand */
+  else if (!lines.length) list.push({ title: "All square", body: "Nothing waiting, and nothing owed a decision.", tag: "salt" });
+  return { list, newest };
 }
 
 /* A PUSH WAKES AN OPEN DESK (26 Sep 2026). The banner reached only this worker, so a desk already on
@@ -209,14 +220,19 @@ function wakeDesks() {
 }
 
 self.addEventListener("push", (e) => {
-  e.waitUntil(Promise.all([wakeDesks(), banner().then((b) => self.registration.showNotification(b.title, {
-    body: b.body,
-    tag: b.tag,
-    renotify: true,
-    icon: "./icon-192.png",
-    badge: "./icon-192.png",
-    data: { url: b.url || "./" },
-  }))]));
+  e.waitUntil(Promise.all([wakeDesks(), banners().then(async (r) => {
+    for (const b of r.list) {
+      await self.registration.showNotification(b.title, {
+        body: b.body,
+        tag: b.tag,
+        renotify: true,
+        icon: "./icon-192.png",
+        badge: "./icon-192.png",
+        data: { url: b.url || "./" },
+      });
+    }
+    if (r.newest) await putSince(r.newest);   /* the mark moves only once its lines are shown */
+  })]));
 });
 
 /* Focus the desk if it is already open rather than opening a second copy of it, and take it to

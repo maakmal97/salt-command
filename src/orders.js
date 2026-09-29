@@ -172,8 +172,8 @@ export async function findOrder(env, id) {
  * customer's own words. Each is [chip, sentence], and where the chip reads by the mode or by whose the
  * cancellation was, [collect or theirs, sentence, deliver or his, sentence]. No figure: the card draws the figures. */
 export const CUSTOMER_SEES = {
-  placed: ["Sent", "Waiting to be confirmed"],
-  acknowledged: ["Confirmed", "Confirmed on"],
+  placed: ["Sent", "Waiting to be acknowledged"],
+  acknowledged: ["Acknowledged", "Acknowledged on"],
   ready: ["Ready to collect", "Ready to collect, since", "Ready to deliver", "Ready to deliver, since"],
   done: ["Complete", "Your order is now complete"],
   declined: ["Not taken", "Not taken"],   /* S11 11.7: his reason and "Nothing is owed" follow on the page */
@@ -966,8 +966,8 @@ export async function moveOrder(env, u, id, body) {
      there. Checked HERE and not on the site, because the site holds no roster and would not know a
      code if it saw one; a product's name is his to spend, as it is in the bulletin. */
   /* 24 Sep 2026: AND SO DOES A STATUS NOTE. The site files `note` on the order's history, which the
-     customer's page reads; nothing sends one today, and the first decline to carry a reason would have
-     reached the page unchecked. Every free-text field his moves can carry goes through this one lock,
+     customer's page reads; a decline's or a cancellation's reason is sent so, and is the customer's banner,
+     so it would reach the page unchecked. Every free-text field his moves can carry goes through this one lock,
      on the one road they take to the site. */
   for (const k of ["message", "note"]) {
     const why = body && typeof body[k] === "string" ? siteWords(body[k]) : "";
@@ -1639,12 +1639,22 @@ export async function rekeyOrders(env) {
 }
 
 /** How many customer orders are waiting on him: placed, and acknowledged but not yet ready; and of
- *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge. */
-export async function ordersWaiting(env) {
+ *  those, how many are still to be acknowledged, which is all his banner may ask him to acknowledge.
+ *  `lines` are the customer's own lines newer than `since` (an ISO moment; none given, the last ten minutes),
+ *  at most three, the newest three shown oldest first, each cut to 200 characters. Read off the orders this
+ *  already reads (`msgs[]` rides on every order the site lists) and stored nowhere. */
+export const LINE_MAX = 200, LINES_MAX = 3, LINE_FRESH_MS = 10 * 60 * 1000;
+export async function ordersWaiting(env, since) {
   const r = await listOrders(env, false);
-  if (!r.ok) return { ok: false, waiting: 0, placed: 0 };
+  if (!r.ok) return { ok: false, waiting: 0, placed: 0, lines: [] };
+  const from = typeof since === "string" && Number.isFinite(Date.parse(since)) ? Date.parse(since) : Date.now() - LINE_FRESH_MS;
+  const lines = [];
+  for (const o of r.orders) for (const m of (o && o.msgs) || []) {
+    if (m && m.by === "customer" && typeof m.text === "string" && m.text.trim() && Date.parse(m.at) > from) lines.push({ at: String(m.at), t: m.text.trim().slice(0, LINE_MAX) });
+  }
+  lines.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   return { ok: true, waiting: r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length,
-    placed: r.orders.filter((o) => o.status === "placed").length };
+    placed: r.orders.filter((o) => o.status === "placed").length, lines: lines.slice(-LINES_MAX) };
 }
 
 /* S9 9.8 FIX (25 Sep 2026): SALT ACCOUNT'S LINE IS THE DESK'S OWN COUNT. The desk's page counts Waiting on you (the
