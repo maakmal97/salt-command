@@ -15230,11 +15230,13 @@ await (async () => {
     ok(posted.length === 2 && posted[1].total === 100 && posted[1].digest === "d4", "and Place carries the new stamp: " + JSON.stringify(posted.map((x) => x.digest)));
   } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
 })();
-section("S4 4.5: Sent answers in the sheet, and notifications are asked from a tap there");
+section("S4 4.5: Sent answers in the sheet, and the bell, not Sent, asks for notifications, from a tap");
 await (async () => {
   /* HIS "ALL RECOMMENDED" OF 24 SEP 2026: Sent answers where Place was tapped, not in a line at the head of the Order tab,
      and asks "A buzz when it is confirmed?", the moment the answer means something. The question is put only by the tap
-     on Turn on notifications: a browser grants nothing asked outside a gesture, and nothing is asked as the sheet draws. */
+     on Turn on notifications: a browser grants nothing asked outside a gesture, and nothing is asked as the sheet draws.
+     Step 1b (his Q3 of 28 Sep 2026): the ask is the bell's, at the head of every view of the saved app until notifications
+     are on, so Sent asks nothing and the bell's call is the tap. */
   const { landingPage: lpB } = await import("../stmt/page.js");
   const CB = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wcB } = await import("node:crypto");
@@ -15251,6 +15253,7 @@ await (async () => {
     const dom = new JDB(lpB(u, "ns45", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wcB, configurable: true }); } catch (e) { win.crypto = wcB; }
       win.scrollTo = () => {};
+      win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
       if (push) {
         win.PushManager = function () {};
         /* a phone not yet asked: nothing is asked on the way in (S4), so every ask counted is a tap's */
@@ -15285,33 +15288,28 @@ await (async () => {
   try {
     const { w, d, st } = A;
     const sh = () => d.getElementById("osheet");
-    const box = () => sh() && sh().querySelector(".obuzz");
+    const bellBox = d.getElementById("bellBox"), call = d.getElementById("bellCall"), bell = d.getElementById("bell");
     ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
       "Place answers in the sheet, Order sent, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
-    ok(!!box() && /A buzz when it is confirmed[?]/.test(box().textContent) && !!d.getElementById("oBuzz") && st.asked === 0,
-      "it asks A buzz when it is confirmed?, and drawing the question asks the browser nothing: " + st.asked);
-    d.getElementById("oBuzz").click();
-    for (let i = 0; i < 100 && !(st.subscribed.length && !box()); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && !box() && /On[.] This computer is told/.test(sh().textContent),   /* S7 7.2: jsdom's browser is a computer */
-      "the tap asks once, the phone is subscribed, and the sheet says it is on where the question was: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
+    ok(!/notification|buzz/i.test(sh().textContent) && !bellBox.hidden && bellBox.classList.contains("cbell--off") && !call.hidden
+      && call.textContent === "Turn on notifications" && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
+      "Sent asks nothing about notifications; the bell is marked with its call beside it, and drawing them asks the browser nothing: " + st.asked);
+    call.click();
+    for (let i = 0; i < 100 && !(st.subscribed.length && call.hidden); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(st.asked === 1 && JSON.stringify(st.subscribed) === '["https://push.example/ep-s45"]' && call.hidden && !bellBox.hidden
+      && !bellBox.classList.contains("cbell--off") && bell.getAttribute("aria-label") === "Notifications",
+      "the call's tap asks once and the phone is subscribed; the call goes and the bell stays, plain: " + JSON.stringify({ asked: st.asked, subscribed: st.subscribed }));
     d.getElementById("oSee").click();
     const scr = d.querySelector("#pOrder .oscreen");
     ok(!sh() && !d.getElementById("pOrder").hidden && !!scr && scr.getAttribute("data-order") === placed.id,
       "See the order closes the sheet and opens that order's own screen on the Order tab (S5 5.2): " + JSON.stringify(scr && scr.getAttribute("data-order")));
     void w;
   } finally { await new Promise((r) => setTimeout(r, 100)); A.w.close(); }
-  /* Not now puts the question away, and a browser that cannot be woken is told how rather than asked */
-  const B = await drive(true);
-  try {
-    [...B.d.querySelectorAll("#osheet .obuzz button")].find((b) => b.textContent === "Not now").click();
-    ok(!B.d.querySelector("#osheet .obuzz") && /Order sent/.test(B.d.getElementById("osheet").textContent) && B.st.asked === 0,
-      "Not now puts the question away and asks nothing");
-  } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
+  /* a browser that cannot be woken shows no bell and no call: This device says why */
   const E = await drive(false);
   try {
-    const bx = E.d.querySelector("#osheet .obuzz");
-    ok(!!bx && /add this page to the Home Screen/.test(bx.textContent) && !bx.querySelector("button"),
-      "a browser with no push is told how to become one that can, with nothing to tap: " + JSON.stringify(bx && bx.textContent.slice(0, 80)));
+    ok(E.d.getElementById("bellBox").hidden && !/notification|buzz/i.test(E.d.getElementById("osheet").textContent),
+      "a browser with no push shows no bell and Sent asks nothing: " + JSON.stringify(E.d.getElementById("osheet").textContent.slice(0, 80)));
   } finally { await new Promise((r) => setTimeout(r, 100)); E.w.close(); }
 })();
 section("S4 4.6: the open-order limit is said before the form, naming the open orders, with Cancel on each that can be");
@@ -21125,11 +21123,12 @@ await (async () => {
   const SB = await import("../stmt/send.js");
   const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
   const door = lpB("", "nB", null), sign = SB.signInMessage(row), link = SB.linkMessage(row);
-  /* S3 3.10: the steps left the door for a Sheet that carries the sign-in across with a code; it says the saved app
-     asks once for it, and never that a link signs the app in (the judges' must-not-ship list) */
-  const keepText = door.slice(door.indexOf('id="keepSheet"'), door.indexOf('id="keepCopy"')).replace(/<[^>]*>/g, " ");
-  ok(!/It signs you in/.test(door) && /asks once for this code/.test(keepText) && !/link/i.test(keepText) && door.indexOf('id="keepSheet"') > 0,
-    "the saved app's steps promise no sign-in they do not make: the app asks once for a code, and no link is said to sign it in");
+  /* S3 3.10: the steps left the door for the signed-in page, which carries the sign-in across with a code (Step 1b: the
+     keep page, the whole page in a tab); it says to paste the code into the saved app, and never that a link signs the
+     app in (the judges' must-not-ship list) */
+  const keepText = door.slice(door.indexOf('id="keepIos"'), door.indexOf('id="keepCopy"')).replace(/<[^>]*>/g, " ");
+  ok(!/It signs you in/.test(door) && /Paste the code/.test(keepText) && !/link/i.test(keepText) && door.indexOf('id="keepIos"') > 0,
+    "the saved app's steps promise no sign-in they do not make: the app takes a code, and no link is said to sign it in");
   ok(!/It signs you in/.test(sign) && !/It signs you in/.test(link), "and neither message says it either");
   /* S3 3.4 (his D1): the link keeps the phone signed in, and says so; it still promises no saved app */
   ok(!/Remember me|Keep me signed in/.test(sign) && !/Add to Home Screen|Install app/.test(sign)
@@ -21349,7 +21348,7 @@ await (async () => {
       "and so does Send, under the box its words are back in: " + JSON.stringify(sent));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.9: Notify me waits for the service worker to be ready, and a failure is said in plain words");
+section("S1 1.9: turning notifications on waits for the service worker to be ready, and a failure is said in plain words");
 await (async () => {
   /* H09, 24 SEP 2026. subscribe() ran straight after register(), before the worker was active, and Chromium
      refused it ("Subscription failed - no active Service Worker"), which the page then showed raw. The stub
@@ -21387,19 +21386,21 @@ await (async () => {
         };
       } });
     const W = dom.window, D = W.document;
-    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    /* Step 1b: the Order tab's pane retired; This device's notifications row says what the site holds */
+    const pane = () => D.getElementById("devRows");
+    const FAILED = "Notifications could not be switched on here. Try again later.";
     try {
       D.getElementById("pw").value = passE;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
       /* with the answer already yes, the sign-in subscribes by itself (F4, R2), through the same subscribePush
-         that Notify me runs, so no tap is needed to prove the wait */
-      for (let i = 0; i < 200 && !(pane() && (/^Notifications\s*On\./.test(pane().textContent) || pane().querySelector(".msg"))); i++) await new Promise((r) => setTimeout(r, 25));
-      const p = pane();
-      return { posted: st.posted, text: p ? p.textContent : "", note: p && p.querySelector(".msg") ? p.querySelector(".msg").textContent : null };
+         that the bell runs, so no tap is needed to prove the wait */
+      for (let i = 0; i < 200 && !(/On\. This computer is told/.test(pane().textContent) || pane().textContent.includes(FAILED)); i++) await new Promise((r) => setTimeout(r, 25));
+      const t = pane().textContent;
+      return { posted: st.posted, text: t, note: t.includes(FAILED) ? FAILED : null };
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const good = await drive(false);
-  ok(good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. You will be told/.test(good.text),
+  ok(good.posted.length === 1 && good.posted[0].endpoint === "https://push.example/ep-e" && good.note === null && /On\. This computer is told when your order changes/.test(good.text),
     "the subscription is made once the worker is ready, posts the endpoint and says On, with no note: " + JSON.stringify({ posted: good.posted.length, note: good.note }));
   const bad = await drive(true);
   ok(bad.posted.length === 0 && bad.note === "Notifications could not be switched on here. Try again later." && !/Subscription failed|Service Worker/.test(bad.text),
@@ -21582,7 +21583,7 @@ await (async () => {
       "Log out unsubscribes this phone and names its endpoint and token to the site: " + JSON.stringify({ unsubscribed: st.unsubscribed, posted: st.posted }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.43: the Notifications pane shows this phone's real state on a reopen");
+section("S1 1.43: This device and the bell show this phone's real state on a reopen");
 await (async () => {
   /* L47, 24 SEP 2026. The pane said On only from this page's own memory, which every sign-in empties, so a
      phone that was subscribed was offered Notify me again on every reopen. It is read off the phone now.
@@ -21590,7 +21591,7 @@ await (async () => {
      no subscription while the answer is still yes, so nothing asked again and it never woke; and a phone
      whose subscription the site never recorded said On with no Notify me left to put it right. A sign-in
      with the answer already yes subscribes again, which asks nothing, and says On only once the site
-     has taken it. */
+     has taken it. Step 1b: in the saved app the bell's call is the offer, and This device says On. */
   const { landingPage: lpJ } = await import("../stmt/page.js");
   const CJ = await import("../tools/stmt-crypto.mjs");
   const { JSDOM: JDJ } = await import("jsdom");
@@ -21608,6 +21609,7 @@ await (async () => {
           getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)),
           removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
         win.scrollTo = () => {};
+        win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
         win.PushManager = function () {};
         win.Notification = { permission: "granted", requestPermission: async () => { st.asked++; return "granted"; } };
         /* a real phone: pushManager.subscribe hands back the subscription it already holds, or makes one */
@@ -21626,13 +21628,13 @@ await (async () => {
         };
       } });
     const D = dom.window.document;
-    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    const pane = () => (D.getElementById("barw").hidden ? null : D.getElementById("devRows"));
     try {
       for (let i = 0; i < 200 && !pane(); i++) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 200 && !st.posted.length; i++) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 8; i++) await new Promise((r) => setTimeout(r, 25));
       const p = pane();
-      return { on: !!p && /On\. You will be told/.test(p.textContent), offer: !!p && [...p.querySelectorAll("button")].some((b) => /Notify me/.test(b.textContent)),
+      return { on: !!p && /On\. This computer is told/.test(p.textContent), offer: !D.getElementById("bellBox").hidden && !D.getElementById("bellCall").hidden,
         posted: st.posted, subscribed: st.subscribed };
     } finally { try { dom.window.close(); } catch (e) { /* best effort */ } }
   };
@@ -21641,7 +21643,7 @@ await (async () => {
     "a reopen on a subscribed phone names its subscription to the site again, then says On and offers nothing: " + JSON.stringify(yes));
   ok(gone.on && gone.subscribed === 1 && JSON.stringify(gone.posted) === JSON.stringify(["https://push.example/ep-j-new"]),
     "a phone that logged out, signing in with the answer still yes, is subscribed and recorded again, not left silent: " + JSON.stringify(gone));
-  ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: Notify me stays offered: " + JSON.stringify(lost));
+  ok(!lost.on && lost.offer, "and a subscription the site will not take is not called On: the bell's call stays: " + JSON.stringify(lost));
 })();
 section("S3 3.1: a remembered device is filed under the hash of its token, and an old raw key is re-filed on its next open");
 await (async () => {
@@ -22112,9 +22114,9 @@ await (async () => {
   ok(html93.includes('rel="manifest"') && html93.includes('rel="apple-touch-icon"') && html93.includes('name="theme-color"')
     && /manifest-src 'self'/.test(page93.headers.get("content-security-policy")),
     "the page links both and the policy admits its own manifest");
-  /* S3 3.10: how to keep it moved off the door to the signed-in page, a card and its Sheet */
-  ok(/id="keepCard"/.test(html93) && /id="keepSheet"/.test(html93) && !/id="inst"/.test(html93),
-    "and the page says how once they are in, on a card and a Sheet of its own, no longer on the door");
+  /* S3 3.10: how to keep it moved off the door to the signed-in page; Step 1b: a page of its own, the whole page in a tab */
+  ok(/id="keepCard"/.test(html93) && !/id="keepSheet"/.test(html93) && !/id="inst"/.test(html93),
+    "and the page says how once they are in, on a page of its own, no longer on the door");
 
   /* the tutorial is for a browser, and the ask is for a login */
   const { landingPage: lp93 } = await import("../stmt/page.js");
@@ -22155,18 +22157,28 @@ await (async () => {
     browser93.D.getElementById("un").value = u93;
     browser93.D.getElementById("pw").value = pass93;
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
-    /* S4 (S4R-4): v693 asked here; the plan asks at the first order, from a tap. The Order tab's Notify me is the
-       control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
     for (let i = 0; i < 80 && !/Your orders/.test(browser93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     await browser93.work.quiet();
-    const signedIn93 = browser93.asked.times;
-    const notify93 = [...browser93.D.querySelectorAll("#pOrder button")].find((b) => b.textContent === "Notify me on this phone");
-    if (notify93) notify93.click();
-    for (let i = 0; i < 80 && browser93.asked.times === signedIn93; i++) await new Promise((r) => setTimeout(r, 50));
-    ok(signedIn93 === 0 && !!notify93 && browser93.asked.times === 1,
-      "signing in asks nothing about notifications, and the tap on Notify me asks once: " + JSON.stringify([signedIn93, !!notify93, browser93.asked.times]));
-    ok(browser93.D.getElementById("keepCard").hidden === false, "a page opened in a browser shows how to keep it, once they are in");
+    ok(browser93.asked.times === 0 && browser93.D.getElementById("keepCard").hidden === false && browser93.D.getElementById("tabs").hidden
+      && browser93.D.getElementById("bellBox").hidden,
+      "a page opened in a browser asks nothing and shows only how to keep it, once they are in: no bell there");
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
+  /* S4 (S4R-4): v693 asked on the way in; the plan asks from a tap. Step 1b: in the saved app the bell's call is the
+     control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
+  const ask93 = drive93(true, "default");
+  try {
+    ask93.D.getElementById("un").value = u93;
+    ask93.D.getElementById("pw").value = pass93;
+    ask93.D.getElementById("f").dispatchEvent(new ask93.W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && !/Your orders/.test(ask93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+    await ask93.work.quiet();
+    const signedIn93 = ask93.asked.times, call93 = ask93.D.getElementById("bellCall");
+    const shown93 = !ask93.D.getElementById("bellBox").hidden && !call93.hidden;
+    call93.click();
+    for (let i = 0; i < 80 && ask93.asked.times === signedIn93; i++) await new Promise((r) => setTimeout(r, 50));
+    ok(signedIn93 === 0 && shown93 && ask93.asked.times === 1 && ask93.D.getElementById("keepCard").hidden,
+      "signing in to the saved app asks nothing about notifications, and the tap on the bell's call asks once: " + JSON.stringify([signedIn93, shown93, ask93.asked.times]));
+  } finally { try { ask93.W.close(); } catch (e) { /* best effort */ } }
   const app93 = drive93(true, "denied");
   try {
     app93.D.getElementById("un").value = u93;
@@ -22178,6 +22190,14 @@ await (async () => {
     const in93 = /Your orders/.test(app93.D.getElementById("pOrder").textContent) && (await app93.work.quiet());
     ok(in93 && app93.asked.times === 0, "and a browser that has already refused is not asked again, once signed in: " + JSON.stringify({ in: in93, asked: app93.asked.times }));
     ok(in93 && app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it, once signed in");
+    /* Step 1b (his 3.3): refused on this phone, the bell's tap opens that phone's own Settings steps, and asks nothing */
+    app93.D.getElementById("bell").click();
+    const sheet93 = app93.D.getElementById("bellSheet");
+    ok(!sheet93.hidden && !app93.D.getElementById("bellIos").hidden && app93.D.getElementById("bellDroid").hidden && app93.D.getElementById("bellDesk").hidden
+      && /Notifications are blocked/.test(sheet93.textContent) && /Allow Notifications/.test(sheet93.textContent) && app93.asked.times === 0,
+      "refused, the bell opens the iPhone's own Settings steps and asks the browser nothing: " + JSON.stringify(sheet93.textContent.replace(/\s+/g, " ").slice(0, 160)));
+    app93.D.getElementById("bellDone").click();
+    ok(sheet93.hidden, "and Done closes them");
   } finally { try { app93.W.close(); } catch (e) { /* best effort */ } }
 })();
 section("v694: an order reaches the ledger in stages, and money and goods move apart");
@@ -26682,7 +26702,7 @@ await (async () => {
   const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
   ok(same.done && !same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
 })();
-section("S3 3.10: Keep it on your Home Screen mints the hand-over as its Sheet opens, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
+section("S3 3.10: in a Safari tab the keep page is the whole page, mints the hand-over as it draws, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
 await (async () => {
   /* HIS D2 OF 24 SEP 2026. A saved iPhone app keeps its own storage, so a customer who saved it opened a door
      with nothing to get past it. The judges' must-not-ship list: no copy after a derivation and a fetch in the same
@@ -26723,25 +26743,26 @@ await (async () => {
   const g = await drive(IPHONE, minted);
   try {
     const { D, st, until } = g;
-    ok(!D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(D.getElementById("keepCard").textContent),
-      "an iPhone in Safari, signed in, is offered Keep it on your Home Screen");
+    /* Step 1b (his Q3 of 28 Sep 2026): THE ACCOUNT OPENS ONLY IN THE SAVED APP, so signed in in a tab the keep page is the
+       whole page and the places are hidden, drawn or not */
+    ok(!D.getElementById("keepCard").hidden && /Open Salt Counter as an app/.test(D.getElementById("keepHead").textContent)
+      && D.getElementById("tabs").hidden && !D.getElementById("keepIos").hidden,
+      "an iPhone in Safari, signed in, is shown only how to open Salt Counter as an app, never Home, Orders or Prices");
     const copy = D.getElementById("keepCopy");
-    const before = st.posts.length;
-    D.getElementById("keepGo").click();
-    ok(!D.getElementById("keepSheet").hidden && copy.disabled, "the Sheet opens with Copy held until there is something to copy");
     await until(() => D.getElementById("keepCode").value);
-    const ho = st.posts.slice(before).find((x) => x.path === "/handover");
-    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000",
-      "opening the Sheet mints the hand-over on the session: a key of the link's shape and a wrap");
+    const ho = st.posts.find((x) => x.path === "/handover");
+    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000"
+      && st.posts.filter((x) => x.path === "/handover").length === 1,
+      "the page mints the hand-over once as it draws, on the session: a key of the link's shape and a wrap");
     let opened = null;
     try { opened = JSON.parse(await C310.decryptWith(await C310.unwrapKey(ho.body.token, ho.body.wrap), env310)); } catch (e) { opened = null; }
     ok(!!opened && opened.statements[0].body === "<p>Mine</p>", "and the key it mints unwraps this account's own content key, which opens the statement");
     ok(D.getElementById("keepCode").value === "H4TN 8XWC" && !copy.disabled && D.getElementById("keepCode").closest(".salt-code")
       && D.getElementById("keepCode").classList.contains("salt-field__input--code"),
       "the code is shown in the system's Code field, four and four, and Copy is ready");
-    const sheetText = D.getElementById("keepSheet").textContent;
-    ok(D.getElementById("keepSheet").querySelectorAll(".keepsteps svg.glyph").length === 4 && /At the foot of Safari/.test(sheetText)
-      && /asks once for this code/.test(sheetText) && !/link/i.test(sheetText),
+    const sheetText = D.getElementById("keepCard").textContent;
+    ok(D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3 && /Add to Home Screen/.test(sheetText)
+      && /paste this code into it/.test(sheetText) && /works once, within 15 minutes/.test(sheetText) && !/link/i.test(sheetText),
       "its three steps draw the phone's own marks, and nothing in it says a link signs the saved app in");
     const n = st.posts.length;
     st.inTap = true; copy.click(); st.inTap = false;
@@ -26755,15 +26776,16 @@ await (async () => {
 
   const off = await drive(IPHONE, (body, ans) => ans(503, { ok: false, error: "Signing in with a code is not switched on here." }));
   try {
-    off.D.getElementById("keepGo").click();
     await off.until(() => off.D.getElementById("keepMsg").textContent && !/Making/.test(off.D.getElementById("keepMsg").textContent));
     ok(/not switched on/.test(off.D.getElementById("keepMsg").textContent) && off.D.getElementById("keepCopy").disabled && !off.D.getElementById("keepCode").value,
-      "with the site's hand-over switched off, the Sheet says so and there is nothing to copy");
+      "with the site's hand-over switched off, the page says so and there is nothing to copy");
   } finally { off.W.close(); }
 
   const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1", minted);
   try {
-    ok(wa.D.getElementById("keepCard").hidden, "an app's own browser, which keeps nothing, is not offered it");
+    ok(!wa.D.getElementById("keepCard").hidden && wa.D.getElementById("keepIos").hidden && wa.D.getElementById("tabs").hidden
+      && /cannot keep Salt Counter/.test(wa.D.getElementById("keepHead").textContent) && /Safari on an iPhone/.test(wa.D.getElementById("keepLead").textContent),
+      "an app's own browser, which keeps nothing, mints nothing and names the browsers that can");
   } finally { wa.W.close(); }
 })();
 section("S3 merge: the QR Salt Account shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
@@ -26810,13 +26832,12 @@ await (async () => {
     return { st, W, D, until, store };
   };
 
-  /* the Keep Sheet's Copy marks its own tab, in the same tap that writes the address */
+  /* the keep page's Copy marks its own tab, in the same tap that writes the address */
   const k = await drive("https://site.test/", { u: uM });
   try {
     k.D.getElementById("pw").value = passM;
     k.D.getElementById("f").dispatchEvent(new k.W.Event("submit", { bubbles: true, cancelable: true }));
     await k.until(() => !k.D.getElementById("barw").hidden);
-    k.D.getElementById("keepGo").click();
     await k.until(() => k.D.getElementById("keepCode").value);
     k.D.getElementById("keepCopy").click();
     const ho = k.st.posts.find((x) => x.path === "/handover");
@@ -27025,18 +27046,19 @@ await (async () => {
 
   const a = await drive(UA.android, { bip: true });
   try {
-    ok(a.st.prevented && !a.card.hidden && a.shown("keepInstall") && !a.shown("keepGo") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
-      && a.D.getElementById("keepHead").textContent === "Keep it on your Home Screen",
-      "where the browser offers an install, the card is one Install button: " + JSON.stringify(a.text()));
+    ok(a.st.prevented && !a.card.hidden && a.shown("keepInstall") && !a.shown("keepIos") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
+      && a.D.getElementById("keepHead").textContent === "Install Salt Counter" && /nothing to copy/.test(a.D.getElementById("keepLead").textContent),
+      "where the browser offers an install, the page is one Install button: " + JSON.stringify(a.text()));
     a.st.inTap = true; a.D.getElementById("keepInstall").click(); a.st.inTap = false;
-    await new Promise((r) => setTimeout(r, 30));
-    ok(a.st.prompted === 1 && a.st.promptedInTap && a.card.hidden, "and it asks the browser's own question inside the tap");
+    for (let i = 0; i < 40 && a.shown("keepInstall"); i++) await new Promise((r) => setTimeout(r, 5));
+    ok(a.st.prompted === 1 && a.st.promptedInTap && !a.card.hidden && !a.shown("keepInstall") && !a.shown("keepDroid"),
+      "and it asks the browser's own question inside the tap, then offers nothing more, the account still only in the app");
   } finally { a.W.close(); }
   const ca = await drive(UA.chrome, { bip: true, choice: "accepted" });
   try {
     ca.D.getElementById("keepInstall").click();
-    await new Promise((r) => setTimeout(r, 30));
-    ok(ca.card.hidden, "and the card goes once it is installed, even where it would otherwise point at the address bar");
+    for (let i = 0; i < 40 && ca.shown("keepInstall"); i++) await new Promise((r) => setTimeout(r, 5));
+    ok(!ca.shown("keepInstall") && !ca.shown("keepDesk"), "and once it is installed, the address bar's mark is not offered either");
   } finally { ca.W.close(); }
 
   const s = await drive(UA.samsung, {});
@@ -27049,7 +27071,7 @@ await (async () => {
   const c = await drive(UA.chrome, {});
   try {
     ok(!c.card.hidden && c.shown("keepDesk") && /install mark/.test(c.text()) && /address bar/.test(c.text())
-      && c.D.getElementById("keepHead").textContent === "Keep it as an app" && !/phone/i.test(c.text()),
+      && c.D.getElementById("keepHead").textContent === "Install Salt Counter" && !/phone/i.test(c.text()),
       "a computer's Chrome is pointed at the install mark at the end of its address bar, and nothing says phone: " + JSON.stringify(c.text()));
   } finally { c.W.close(); }
 
@@ -27057,14 +27079,18 @@ await (async () => {
   try {
     ok(cb.shown("keepInstall") && !/phone/i.test(cb.text()), "a computer offered an install gets the button, and still no phone");
     cb.D.getElementById("keepInstall").click();
-    await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 40 && cb.shown("keepInstall"); i++) await new Promise((r) => setTimeout(r, 5));
     ok(!cb.card.hidden && cb.shown("keepDesk") && !cb.shown("keepInstall"), "and turned down, it falls back to the address bar's mark");
   } finally { cb.W.close(); }
 
   const f = await drive(UA.firefox, {});
-  try { ok(f.card.hidden, "a browser that cannot install is offered nothing"); } finally { f.W.close(); }
+  try {
+    ok(!f.card.hidden && f.D.getElementById("tabs").hidden && f.D.getElementById("keepHead").textContent === "This browser cannot keep Salt Counter"
+      && /Chrome or Edge on a computer/.test(f.text()) && !f.shown("keepInstall") && !f.shown("keepDesk") && !f.shown("keepIos"),
+      "a browser that cannot install names those that can, and the account stays shut there: " + JSON.stringify(f.text()));
+  } finally { f.W.close(); }
   const inApp = await drive(UA.android, { bip: true, standalone: true });
-  try { ok(inApp.card.hidden, "and an installed app is not told to install itself"); } finally { inApp.W.close(); }
+  try { ok(inApp.card.hidden && !inApp.D.getElementById("tabs").hidden, "and an installed app is not told to install itself, and opens the account"); } finally { inApp.W.close(); }
 })();
 section("S3 fix: a lapse reopens only the account on screen, so Keep <old> or another tab's Replace never swaps the page or resends an order on another account");
 await (async () => {
@@ -27415,11 +27441,12 @@ await (async () => {
   ok(r.status === 200 && !(await kv.get(pA)) && !!(await kv.get(pB)),
     "and on the site that drops the replaced account's alerts for this phone and leaves the new account's");
 })();
-section("S3 fix: every opening of Keep it on your Home Screen mints a fresh key and code, so a code the saved app spent is never shown or copied again");
+section("S3 fix: every opening of the keep page mints a fresh key and code, so a code the saved app spent is never shown or copied again");
 await (async () => {
   /* F4, S3R-5 (24 Sep 2026). The Sheet minted once and showed the same key and code on every opening until a minute
      before expiry, so a customer whose saved app had spent it (or burnt it and lost the answer) was handed the dead
-     code again, while the app told them to make a new one. */
+     code again, while the app told them to make a new one. Step 1b: the Sheet became the keep page, the whole page in a
+     tab, which says to open it again for a new code; signing out from it forgets the code, and the next sign-in mints. */
   const { landingPage: lpF } = await import("../stmt/page.js");
   const CF = await import("../tools/stmt-crypto.mjs");
   const { JSDOM: JDF } = await import("jsdom");
@@ -27448,20 +27475,22 @@ await (async () => {
     D.getElementById("pw").value = passF;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !D.getElementById("barw").hidden);
-    D.getElementById("keepGo").click();
     await until(() => D.getElementById("keepCode").value);
     D.getElementById("keepCopy").click();
-    await new Promise((r) => setTimeout(r, 30));
+    await until(() => st.clip.length);
     ok(st.minted.length === 1 && D.getElementById("keepCode").value === "H4TN 8XWC" && st.clip[0] === st.minted[0], "the fixture: the first opening mints and Copy copies that key");
-    D.getElementById("keepX").click();
-    ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent),
-      "closing the Sheet forgets its code, and Copy has nothing to copy");
-    D.getElementById("keepGo").click();
+    D.getElementById("keepOut").click();
+    await until(() => !D.getElementById("gate").hidden);
+    ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent)
+      && D.getElementById("keepCard").hidden,
+      "signing out from the keep page forgets its code, and Copy has nothing to copy");
+    D.getElementById("pw").value = passF;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => D.getElementById("keepCode").value);
     ok(st.minted.length === 2 && st.minted[1] !== st.minted[0] && D.getElementById("keepCode").value === "K2MP 9RSV",
       "opening it again mints a fresh key and shows its own code, never the one the saved app may have spent: " + JSON.stringify({ minted: st.minted.length, code: D.getElementById("keepCode").value }));
     D.getElementById("keepCopy").click();
-    await new Promise((r) => setTimeout(r, 30));
+    await until(() => st.clip.length === 2);
     ok(st.clip.length === 2 && st.clip[1] === st.minted[1] && W.location.hash === "#" + st.minted[1],
       "and Copy then copies the fresh key, and the address carries it");
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
@@ -27652,14 +27681,10 @@ await (async () => {
     D.getElementById("pw").value = passH;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => !D.getElementById("barw").hidden);
-    D.getElementById("keepGo").click();
     await until(() => D.getElementById("keepCode").value);
     D.getElementById("keepCopy").click();
-    D.getElementById("keepX").click();
-    D.getElementById("keepGo").click();
-    await until(() => st.minted.length === 2 && D.getElementById("keepCode").value);
-    ok(W.location.hash === "#" + st.minted[0], "the fixture: two keys minted, the first copied into the address");
-    D.getElementById("lock").click();
+    ok(st.minted.length === 1 && W.location.hash === "#" + st.minted[0], "the fixture: the keep page's key minted, and copied into the address");
+    D.getElementById("keepOut").click();
     await until(() => st.logout);
     ok(!!st.logout && JSON.stringify(st.logout.handover) === JSON.stringify(st.minted),
       "Log out names every key this page minted, for the site to burn: " + JSON.stringify(st.logout && st.logout.handover && st.logout.handover.length));
@@ -27909,9 +27934,9 @@ await (async () => {
     pad.D.getElementById("pw").value = passD;
     pad.D.getElementById("f").dispatchEvent(new pad.W.Event("submit", { bubbles: true, cancelable: true }));
     await pad.until(() => !pad.D.getElementById("barw").hidden);
-    ok(!pad.D.getElementById("keepCard").hidden && /Keep it on your Home Screen/.test(pad.D.getElementById("keepHead").textContent)
-      && pad.D.getElementById("keepWhere").hidden && !pad.D.getElementById("keepSheet").querySelector(".keepsteps").hidden,
-      "and its Keep it on your Home Screen keeps the marks but leaves off where Share sits on an iPhone");
+    ok(!pad.D.getElementById("keepCard").hidden && /Open Salt Counter as an app/.test(pad.D.getElementById("keepHead").textContent)
+      && !pad.D.getElementById("keepIos").hidden && pad.D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3,
+      "and an iPad in a tab is shown the iPhone's steps and marks to open Salt Counter as an app");
   } finally { pad.W.close(); }
 
   const droid = await drive(DROID, {});
@@ -27964,7 +27989,7 @@ await (async () => {
   };
   const plain = await drive(UA.chrome, false);
   try {
-    ok(plain.seen() && plain.D.getElementById("keepInstall").hidden && plain.D.getElementById("keepGo").hidden,
+    ok(plain.seen() && plain.D.getElementById("keepInstall").hidden && plain.D.getElementById("keepIos").hidden,
       "Android Chrome with no install offered is shown its menu's mark and Install app or Add to Home screen: " + JSON.stringify(plain.card.textContent.replace(/\s+/g, " ")));
   } finally { plain.W.close(); }
   const fx = await drive(UA.firefox, false);
@@ -27973,7 +27998,7 @@ await (async () => {
   try {
     ok(!turned.D.getElementById("keepInstall").hidden && turned.droid.hidden, "the fixture: an install offered is the one Install button");
     turned.D.getElementById("keepInstall").click();
-    await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 40 && !turned.seen(); i++) await new Promise((r) => setTimeout(r, 5));
     ok(turned.seen() && turned.D.getElementById("keepInstall").hidden, "and turned down, it falls back to the menu's mark rather than vanishing");
   } finally { turned.W.close(); }
 })();
@@ -33405,22 +33430,23 @@ await (async () => {
         };
       } });
     const W = dom.window, D = W.document;
-    const pane = () => [...D.querySelectorAll("#pOrder .pane")].find((x) => /Notifications/.test(x.textContent));
+    /* Step 1b: the Order tab's pane retired; This device's row carries his sentence (3.2) */
+    const pane = () => D.getElementById("devRows");
     try {
       D.getElementById("pw").value = pass;
       D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
-      const want = permission === "granted" ? /Notifications\s*On\./ : /Notify me/;
-      for (let i = 0; i < 200 && !(pane() && want.test(pane().textContent)); i++) await new Promise((r) => setTimeout(r, 25));
-      return pane() ? pane().textContent : "";
+      const want = permission === "granted" ? /Notifications\s*On\./ : /Notifications\s*Off\./;
+      for (let i = 0; i < 200 && !want.test(pane().textContent); i++) await new Promise((r) => setTimeout(r, 25));
+      return pane().textContent;
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const on = await drive("granted"), off = await drive("denied");
-  const says = (t) => /a reply/.test(t) && /at 10:00 and 18:00 when a payment is due/.test(t) && /your order changes/.test(t)
+  const says = (t) => /when we write to you/.test(t) && /at 10:00 and 18:00 while goods you have received are unpaid/.test(t) && /your order changes/.test(t)
     && !/acknowledged, ready/.test(t);
-  ok(/On\. You will be told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
+  ok(/On\. This computer is told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
   /* S7 7.2: nothing says phone on a computer, which is what jsdom's browser says it is */
-  ok(/Notify me on this computer/.test(off) && /Be told on this computer/.test(off) && !/phone/.test(off) && says(off) && /only what kind of news it is/.test(off),
-    "and the offer says the same before the tap, and that the banner names only the kind, naming the device it is on: " + off);
+  ok(/Off\. Nothing is sent to this computer/.test(off) && !/phone/.test(off),
+    "and off, it says nothing is sent, naming the device it is on: " + off);
 })();
 
 section("S10 with S12: on both roads every wake carries its kind and its order, and the chase runs at its slots, one wake a slot");

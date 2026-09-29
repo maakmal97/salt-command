@@ -254,9 +254,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
-  /* S7-R3 of the review: the Notifications pane is Account's This device on a desk, where it stands beside the statement;
-     in the list's column it pushed the orders down */
-  #oPush{display:none}
 }
 .panel{max-width:620px;margin:0 auto}
 .panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
@@ -1590,13 +1587,13 @@ const CLIENT_JS = `
      and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. A
      browser that can keep no app (Firefox on a computer, an app's own browser, any that offers no install) is told
      which browsers can. */
-  var bip=null;
+  var bip=null, keepDone=false;   /* Step 1b: installed from this tab, which stays the keep page, offering nothing more */
   var SAMSUNG=/SamsungBrowser/.test(UA), ANDROID=/Android/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
   function appGated(){ return !!session&&!OWNER&&!view&&!STANDALONE; }
   function keepMode(){
     if(!appGated()) return '';
     if(INAPP) return 'none';
-    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'none';
+    return IOS?'ios':keepDone?'done':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'none';
   }
   function drawKeep(){
     if(!keepCardEl) return;
@@ -1615,7 +1612,7 @@ const CLIENT_JS = `
     if(mode==='ios'&&!keepTok&&!keepMinting) mintKeep();
   }
   window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); drawDevice(); });
-  window.addEventListener('appinstalled', function(){ bip=null; drawKeep(); drawDevice(); });
+  window.addEventListener('appinstalled', function(){ bip=null; keepDone=true; drawKeep(); drawDevice(); });
   function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
   async function mintKeep(){
     if(!curCk) return;
@@ -1646,7 +1643,7 @@ const CLIENT_JS = `
     if(!bip) return;
     var e=bip; bip=null;
     try{ e.prompt(); }catch(x){ drawKeep(); drawDevice(); return; }
-    Promise.resolve(e.userChoice).then(function(){ drawKeep(); drawDevice(); }, function(){ drawKeep(); drawDevice(); });
+    Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepDone=true; drawKeep(); drawDevice(); }, function(){ drawKeep(); drawDevice(); });
   }
   if(keepCardEl){
     document.getElementById('keepInstall').addEventListener('click', keepInstallGo);
@@ -2216,7 +2213,7 @@ const CLIENT_JS = `
     if(!pushCan()) devRows.appendChild(devRow(tw('push.h'),tw(IOS&&!STANDALONE?'push.devIos':'push.devNo')));
     else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devBtn(tw('push.off'),devPushOff)));
     else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devBtn(tw('push.on'),devPushOn)));
-    /* saving it as an app is the keep card, This device's first row (homeKeep); once saved, this says so in its place */
+    /* Step 1b: the account opens only in the saved app, so this is where they are */
     if(STANDALONE) devRows.appendChild(devRow(tw('dev.saved'),tw('dev.inIt')));
   }
   async function devPushOn(){
