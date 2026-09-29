@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="10f8449b57d1e22c";
+var SALT_BUILD_ID="3da7d5c7eda148ad";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8633,7 +8633,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v944","d":"29 Sep 2026","t":"A SALE IS PROVISIONED FROM ITS HANDOVER, A QUARTER A DAY","n":["<p><b>A SALE IS PROVISIONED FROM ITS HANDOVER, A QUARTER A DAY.</b> His answers of 29 Sep 2026. Goods handed over and not paid for are provisioned 25% on the first day after the handover, 50% on the second, 75% on the third and in full from the fourth, the day the Counter locks the account. The day counts from the handover of the goods still unpaid, the order date only for a row that names none, and the months already reported restate. A supplier's recoverable keeps its own ladder.</p>","<p><b>WHERE IT READS.</b> The allowance, each month's charge, the cash expected in, the forecast, Chase first, the chase line on Today, Receivables and what the phone is sent all age a sale from its handover; Receivables names the date under it as the order's. The sale's Aged receivable lines are gone, since its Credit age line now says the provision it has reached.</p>","<p><b>PROOFS.</b> A new suite section and the engine checks updated; 20 mutations each turned a check red. The whole suite passed on this tree.</p>"]}];
+const evolution=[{"v":"v945","d":"29 Sep 2026","t":"AN ACCOUNT CLOSES IN STAGES FROM THE HANDOVER","n":["<p><b>AN ACCOUNT CLOSES IN STAGES FROM THE HANDOVER.</b> His answers of 29 Sep 2026, the handover being day 0. The term is one day: from day 2 no new order, from day 3 the prices are hidden, and from day 4 the account is only for paying, To pay now and its Pay live and the rest of Home and Rewards seen but greyed out. Each stage is said under To pay now before it comes, and a payment they say they sent, waiting on his answer, lifts every stage at once. The stages count only what is still unpaid, and a page left open moves on at midnight.</p>","<p><b>THE CHASE TAPERS.</b> Every hour from 08:00 to 22:00 for three days from the oldest unpaid handover, then at 10:00, 14:00 and 18:00, in place of D5's two hours; the notification words say so, and the ask after an order comes at the day's first slot. The desk's Credit age line says the provision reached. The repo's rules for the chase (D5) and for what is overdue (D9) are rewritten to match.</p>","<p><b>PROOFS.</b> A new suite section and the older checks moved to the one-day term; every new check was proved red by its own mutation. Fable reviewed it twice and checked the fixes. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8748,7 +8748,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 14:01 KL';
+const LAST_UPDATED='29 Sep 2026, 14:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
