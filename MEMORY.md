@@ -26,4 +26,5 @@
 - `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never the dry run)
 - `/accept|handed|cash|received|notfound|again` (the card's taps)
 - `/claims/<id>/preview|received|notfound`
+- `GET /slips/<username>/<id>` (F13: a slip's ciphertext, relayed from the Counter's `slip:` KV, never cached by `sw.js`)
 - All keyed via `X-Salt-Key`.

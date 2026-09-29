@@ -16000,7 +16000,7 @@ async function vaultReveal(pass){
   }
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
-function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}
+function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}try{slipShut();}catch(e){}
   try{ORD_FEE={};WB_FEE=null;}catch(e){}}   /* F15: a fee worked from the places goes with them */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
@@ -19730,6 +19730,36 @@ function ordToldLine(o){const t=ordTold(o);
    Worker against the mirror and stored nowhere (POST claims/<id>/preview) and drawn here row by row before his yes. ONE TAP,
    Received, approves exactly those rows: it sends the digest of what is drawn, and the Worker queues and approves them only
    if the rows are still those. The desk computes no figure here. More than the rows owe is never approved on a tap. ---- */
+/* ---- F13 (29 Sep 2026): VIEW SLIP. A claim may carry one slip, sealed on the customer's phone to the slip key's public
+   half, so the site holds ciphertext alone (rule 2). View slip fetches it through the keyed GET slips/<username>/<id>
+   (the desk Worker's relay over STMT_SITE), opens it with the slip key the one unlock already holds (slipOpen), with no
+   second prompt, and draws it as a blob: URL, which the desk's img-src allows. Nothing is kept: the picture lives in this
+   tab until Hide slip or the lock, which revokes every one (slipShut, from lockVault). A slip is kept 30 days. ---- */
+let SLIP_VIEW={};
+const SLIP_DAYS=30;
+function slipShut(){Object.keys(SLIP_VIEW).forEach(k=>{const v=SLIP_VIEW[k];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}});SLIP_VIEW={};}
+function slipPart(u,id,at){
+  if(!id)return '';
+  const k=u+'|'+id,v=SLIP_VIEW[k];
+  if(v&&v.st==='ok')return `<div class="ordslip"><img src="${v.url}" alt="The payment slip they sent" style="display:block;max-width:100%;height:auto;margin:8px 0;border-radius:8px"><button class="salt-ghost" data-slipoff="${esc(k)}">Hide slip</button></div>`;
+  return `<div class="ordslip"><button class="salt-ghost" data-slip="${esc(id)}" data-u="${esc(u)}" data-at="${esc(at||'')}"${v&&v.st==='wait'?' disabled':''}>${v&&v.st==='wait'?'Opening the slip':'View slip'}</button>${v&&v.st==='err'?`<p class="dsc" role="status">${esc(v.msg)}</p>`:''}</div>`;
+}
+async function slipView(u,id,at){
+  const k=u+'|'+id;
+  if(!vaultSlipKey){SLIP_VIEW[k]={st:'err',msg:Object.keys(vaultNames||{}).length?'The slip key did not open on this device, so the slip stays sealed.':'Show names first: the slip opens with the same passphrase.'};ordDraw();return;}
+  SLIP_VIEW[k]={st:'wait'};ordDraw();
+  let st='err',msg='',url='';
+  try{const r=await fetch('slips/'+encodeURIComponent(u)+'/'+encodeURIComponent(id),{cache:'no-store',headers:qHeaders()});
+    let j=null;try{j=await r.json();}catch(e){}
+    const age=Date.now()-Date.parse(at||'');
+    if(r.status===404)msg=age>SLIP_DAYS*864e5?'The slip is no longer kept: a slip is kept '+SLIP_DAYS+' days.':age<5*60e3?'The slip is on its way. Try again in a minute.':'The slip could not be found.';
+    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The Worker answered http '+r.status+'.');
+    else{const b=await slipOpen(j.slip);if(!b)msg='The slip would not open with this key.';else{url=URL.createObjectURL(new Blob([b],{type:'image/jpeg'}));st='ok';}}
+  }catch(e){msg='No connection.';}
+  /* locked while it opened: nothing is drawn, and the picture is let go */
+  if(!vaultSlipKey||SLIP_VIEW[k]&&SLIP_VIEW[k].st!=='wait'){if(url)URL.revokeObjectURL(url);if(!vaultSlipKey)delete SLIP_VIEW[k];ordDraw();return;}
+  SLIP_VIEW[k]={st,url,msg};ordDraw();
+}
 let CLM_PV={};
 async function clmPreview(c){
   if(!c||c.kind!=='account'||!cloudMode())return;
@@ -19757,6 +19787,7 @@ function clmCard(c){
   return `<div class="salt-approve ordcard" data-id="${esc(c.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">Sent against the account, ${ordWhen(c.at)}</span></div>
     <p class="ordline">They say they sent ${fmt(sum)}${c.method?' by '+esc(c.method)+(c.account?' to '+esc(c.account):''):''}, reference ${esc(c.u)}. Oldest first, it settles:</p>
+    ${slipPart(c.u,c.slip,c.at)}
     ${body}
     <div class="ordfoot"><div class="salt-approve__actions"><button class="vbtn salt-pill salt-pill--sm" data-ord="creceived" data-id="${esc(c.id)}" data-u="${esc(c.u)}"${cov?' data-covered="1"':''}${can?'':' disabled'}>${cov?'Received, on the book already':'Received, '+fmt(sum)}</button><button class="salt-ghost salt-ghost--danger" data-ord="cnotfound" data-amt="${sum}" data-id="${esc(c.id)}" data-u="${esc(c.u)}"${booked?' disabled':''}>Not found</button></div>
       <p class="salt-approve__reason">${!j?'Received approves the rows drawn here, and only those.':booked?'These rows are booked already, but they were not told. Received tells them, and books nothing more.':left>0.004?'It is more than their rows owe by '+fmt(left)+', so no row is booked on a tap. If you recorded it by hand, Received, on the book already, closes it and books nothing; Not found tells them it has not arrived.':'Received approves exactly these rows and they see it received; Not found tells them it has not arrived. They see it as sent, waiting for us to confirm, until then.'}</p>
@@ -19928,6 +19959,7 @@ function ordCard(o){
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
       ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}
+      ${c0&&c0.slip&&!whyOpen?slipPart(o.u,c0.slip,c0.at):''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
         :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
       :o.status==='placed'&&!whyOpen&&sSib?'<p class="salt-approve__reason">Accept them together on the first order of this sheet'+(o.mode==='deliver'?', whose card carries the delivery charge.':'.')+'</p>'
@@ -20053,6 +20085,9 @@ function ordDraw(){
   box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
   box.querySelectorAll('button[data-cashopen]').forEach(b=>{b.onclick=()=>{ORD_CASH[b.dataset.cashopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-cashoff]').forEach(b=>{b.onclick=()=>{delete ORD_CASH[b.dataset.cashoff];ordDraw();};});
+  /* F13: a slip opened on the card, and let go */
+  box.querySelectorAll('button[data-slip]').forEach(b=>{b.onclick=()=>slipView(b.dataset.u,b.dataset.slip,b.dataset.at);});
+  box.querySelectorAll('button[data-slipoff]').forEach(b=>{b.onclick=()=>{const v=SLIP_VIEW[b.dataset.slipoff];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}delete SLIP_VIEW[b.dataset.slipoff];ordDraw();};});
   box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
     const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordPartSay(b.dataset.for);};});
   box.querySelectorAll('input[data-hand]').forEach(i=>{i.oninput=()=>ordPartSay(i.dataset.hand);});

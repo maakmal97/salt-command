@@ -333,6 +333,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .paycheck .glyph{color:var(--salt-steel)}
 .payagain{width:100%;margin-top:16px}
 .paysaid{flex-basis:100%;margin:0}
+.payslip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:16px}
+.payslip p{flex-basis:100%;margin:0}
+.slipthumb{border-radius:6px;border:1px solid var(--salt-line)}
 .payhead .msg{margin:10px 0 0}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
@@ -3303,13 +3306,19 @@ const CLIENT_JS = `
   function payWhen(o){ return tw('pw.'+payWhenKey(o)); }
   /* THE MONEY ON ITS OWN LINES: the goods, the delivery, what is paid, what they have sent and is waiting, and what
      is still to pay, with when it may be paid */
+  /* F13: a claim waiting with a slip says so, and once its SLIP_DAYS are over, that it is no longer kept */
+  function oSlipWord(o){
+    var s=(o.payments||[]).filter(function(x){ return x&&x.claim==='waiting'&&x.slip; });
+    if(!s.length) return 'om.waiting';
+    return s.some(function(x){ return Date.now()-Date.parse(x.at)<SLIP_DAYS*864e5; })?'om.waitingSlip':'om.waitingSlipGone';
+  }
   function oMoney(o){
     var L=el('div','salt-ledger salt-ledger--plain'), paid=+o.paid||0, claimed=oClaimed(o), d=o.mode==='deliver', where=o.place?tw('om.to',{p:o.place}):'';
     /* S11 11.9: a short order closed at what was handed over is billed for that, and its Goods line says so */
     L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty}):''));
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
     if(paid>0) L.appendChild(lrow(tw('om.paid'),rm(paid)));
-    if(claimed>0) L.appendChild(lrow(tw('om.sentByYou'),rm(claimed),tw('om.waiting')));
+    if(claimed>0) L.appendChild(lrow(tw('om.sentByYou'),rm(claimed),tw(oSlipWord(o))));
     var ac=oPayable(o)?oAcct(o):0;
     if(ac>0.004) L.appendChild(lrow(tw('om.sentAcct'),rm(ac),tw(acctWaiting()>0.004?'om.waiting':'om.received')));
     /* S6 6.5: a payment he could not find, while the order is still to pay */
@@ -3897,6 +3906,72 @@ const CLIENT_JS = `
     try{ paySh.focus(); }catch(e){}
   }
   function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; payqDrop(); }
+  /* ---- F13 (29 Sep 2026): A SLIP, SEALED ON THIS PHONE. On Did you send, a picture of the payment may go with the claim,
+     one a claim: re-encoded here to 1,600 px JPEG under SLIP_BYTES, then sealed to the public half of his slip key
+     (GET /slip/key) before it leaves, so only ciphertext reaches the site (rule 2) and only his vault opens it. The
+     protocol is the laptop's slipSeal (tools/seed-vault.mjs) and the desk's slipOpen. This page cannot open it again:
+     the claim says Slip sent, and no longer kept after its SLIP_DAYS. No key filed, no slip is offered. ---- */
+  var SLIPKEY, SLIP_PX=1600, SLIP_BYTES=1500000, SLIP_DAYS=30;
+  function slipKeyLoad(){
+    if(SLIPKEY!==undefined||view) return;
+    SLIPKEY=null;   /* asked once a visit */
+    api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); });
+  }
+  async function slipSeal(pub,bytes){
+    var S=crypto.subtle, E={name:'ECDH',namedCurve:'P-256'}, iv=crypto.getRandomValues(new Uint8Array(12));
+    var eph=await S.generateKey(E,false,['deriveBits']);
+    var pk=await S.importKey('jwk',{kty:pub.kty,crv:pub.crv,x:pub.x,y:pub.y},E,false,[]);
+    var hk=await S.importKey('raw',await S.deriveBits({name:'ECDH',public:pk},eph.privateKey,256),'HKDF',false,['deriveKey']);
+    var key=await S.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['encrypt']);
+    return {v:1, epk:b64e(await S.exportKey('raw',eph.publicKey)), iv:b64e(iv), ct:b64e(await S.encrypt({name:'AES-GCM',iv:iv},key,bytes))};
+  }
+  function slipRead(f,how){ return new Promise(function(ok,no){ var rd=new FileReader(); rd.onload=function(){ ok(rd.result); }; rd.onerror=no; rd[how](f); }); }
+  function slipImage(url){ return new Promise(function(ok,no){ var im=new Image(); im.onload=function(){ ok(im); }; im.onerror=no; im.src=url; }); }
+  function slipJpeg(c,q){ return new Promise(function(ok){ c.toBlob(ok,'image/jpeg',q); }); }
+  async function slipPick(file){
+    var ps=PS; if(!ps||!SLIPKEY||ps.slipBusy) return;
+    if(!file||file.type&&String(file.type).indexOf('image/')!==0){ ps.slipSaid=tw('pay.slipNotPic'); drawPay(); return; }
+    ps.slip=null; ps.slipBusy=true; ps.slipSaid=''; drawPay();
+    var got=null, said='';
+    try{
+      var im=await slipImage(await slipRead(file,'readAsDataURL')), w=im.naturalWidth||im.width, h=im.naturalHeight||im.height,
+          k=Math.min(1,SLIP_PX/Math.max(w,h,1)), c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      var b=null, qs=[0.8,0.6,0.45];
+      for(var i=0;i<qs.length&&!(b&&b.size<=SLIP_BYTES);i++) b=await slipJpeg(c,qs[i]);
+      if(!b) said=tw('pay.slipNotPic');
+      else if(b.size>SLIP_BYTES) said=tw('pay.slipBig');
+      else {
+        var t=document.createElement('canvas'), tk=Math.min(1,88/Math.max(c.width,c.height));
+        t.width=Math.max(1,Math.round(c.width*tk)); t.height=Math.max(1,Math.round(c.height*tk)); t.className='slipthumb'; t.setAttribute('aria-hidden','true');
+        t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+        got={sealed:await slipSeal(SLIPKEY,new Uint8Array(await slipRead(b,'readAsArrayBuffer'))), thumb:t};
+      }
+    }catch(e){ got=null; said=tw('pay.slipNotPic'); }
+    if(PS!==ps) return;
+    ps.slipBusy=false; ps.slip=got; ps.slipSaid=said; drawPay();
+  }
+  /* the slip's place on Did you send: Attach a slip, or the picture attached and Remove */
+  function slipBlock(){
+    var box=el('div','payslip');
+    if(PS.slip){
+      box.appendChild(PS.slip.thumb);
+      box.appendChild(el('span','sub2',tw('pay.slipReady')));
+      var drop=el('button','salt-ghost',tw('pay.slipDrop')); drop.type='button';
+      drop.addEventListener('click',function(){ PS.slip=null; PS.slipSaid=''; drawPay(); });
+      box.appendChild(drop);
+    } else {
+      var inp=el('input'); inp.type='file'; inp.accept='image/*'; inp.hidden=true; inp.id='paySlipFile';
+      inp.addEventListener('change',function(){ slipPick(inp.files&&inp.files[0]); });
+      var add=el('button','salt-ghost',tw(PS.slipBusy?'pay.slipWork':'pay.slipAdd')); add.type='button'; add.id='paySlip'; add.disabled=!!PS.slipBusy;
+      add.addEventListener('click',function(){ inp.click(); });
+      box.appendChild(inp); box.appendChild(add);
+      box.appendChild(el('p','sub2',tw('pay.slipWhy')));
+    }
+    if(PS.slipSaid) box.appendChild(statusLine(PS.slipSaid));
+    return box;
+  }
   if(paySh){
     document.getElementById('payX').addEventListener('click',closePay);
     payScr.addEventListener('click',closePay);
@@ -4047,13 +4122,16 @@ const CLIENT_JS = `
     box.appendChild(el('p','sub2',tw(qr?'pay.byScan':'pay.byTransfer',{a:a.name, u:user})));
     body.appendChild(box);
     body.appendChild(setW(el('p','salt-insight'),'pay.tell'));
+    /* F13: a slip, where his key is filed */
+    slipKeyLoad();
+    if(SLIPKEY) body.appendChild(slipBlock());
     var again=el('a','salt-ghost payagain',tw(qr?'pay.againCode':'pay.againAcct'));
     again.href=payHref(w.acct,w.rail,w.amt,user); again.target='_blank'; again.rel='noopener';
     again.addEventListener('click',function(){ if(PS&&PS.away) PS.away.gone=false; });
     body.appendChild(again);
     var no=el('button','salt-ghost',tw('pay.notYet')); no.type='button';
     no.addEventListener('click',function(){ PS.step='pay'; PS.away=null; PS.said=''; payqDrop(); drawPay(); });
-    var yes=el('button','salt-pill salt-pill--md',tw('pay.yes',{rm:rm(w.amt)})); yes.type='button'; yes.id='paySent'; yes.disabled=!!PS.busy;
+    var yes=el('button','salt-pill salt-pill--md',tw('pay.yes',{rm:rm(w.amt)})); yes.type='button'; yes.id='paySent'; yes.disabled=!!(PS.busy||PS.slipBusy);
     yes.addEventListener('click',claimSend);
     foot.appendChild(no); foot.appendChild(yes);
     if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
@@ -4063,14 +4141,15 @@ const CLIENT_JS = `
   async function claimSend(){
     if(!PS||PS.busy) return;
     var ps=PS, c=ps.ctx, w=ps.away, fig=w.amt.toFixed(2), key=(c.kind==='order'?c.id:'account')+':claim', mine=ticket;
-    var body={amount:+fig, method:w.rail, account:w.acct, rid:ridFor(key,fig+' '+w.rail+' '+w.acct)};
+    var sl=ps.slip&&ps.slip.sealed, body={amount:+fig, method:w.rail, account:w.acct, rid:ridFor(key,fig+' '+w.rail+' '+w.acct)};
+    if(sl) body.slip=sl;   /* F13: sealed on this phone; the site files the ciphertext and the claim names it */
     ps.busy=true; ps.said=''; drawPay();
     var r=await api(c.kind==='order'?'/orders/'+encodeURIComponent(c.id)+'/pay':'/account/claim', body);
     if(mine!==ticket||PS!==ps) return;
     ps.busy=false;
     if(!(r.body&&r.body.ok)){ ps.said=wErr(r.body,'pay.notRecorded'); drawPay(); return; }
     ridDone(key); closePay();
-    if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay',tw('pay.claimed')); }
+    if(c.kind==='order'){ var o=oFind(c.id); if(o) tapSaid(o,'pay',tw(sl?'pay.claimedSlip':'pay.claimed')); }
     await loadOrders(); if(mine!==ticket) return;
     setHold(); drawOrder(); drawPayHead();
   }

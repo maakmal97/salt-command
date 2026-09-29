@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -862,7 +862,7 @@ export default {
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
     if (!accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
-        || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand"
+        || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
@@ -890,6 +890,7 @@ export default {
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/vault/addr" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
       || p === "/vault/key"   /* F13: the slip key's envelope is his alone */
+      || p.startsWith("/slips/")   /* F13: a slip is ciphertext, and still his alone to fetch */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -1197,6 +1198,13 @@ export default {
     }
     if (p === "/vault/addr") return handleVaultAddr(request, env, m);   // F14: the places, ciphertext only, keyed both ways
     if (p === "/vault/key") return handleVaultKey(env, m);              // F13: the slip key, sealed, keyed, never written here
+    /* F13: A PAYMENT SLIP, relayed as the site filed it: ciphertext the desk opens with the slip key its unlock holds */
+    const sl = /^\/slips\/([^/]+)\/([^/]+)$/.exec(p);
+    if (sl) {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await slipRelay(env, decodeURIComponent(sl[1]), decodeURIComponent(sl[2]));
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
     if (p === "/geo/expand") {                                          // F14: a short Maps link, one redirect, nothing kept
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleGeoExpand(request);

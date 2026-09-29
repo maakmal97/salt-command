@@ -333,6 +333,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One
   rating an order, one to five stars, never changed; his nudge and his card read it. **It prices nothing**: no entry,
   row or note reads it.
+- **A slip rides on a claim, sealed on their phone** (F13): Did you send offers Attach a slip once the Counter's KV
+  `slipkey` holds his public half (`GET /slip/key`); the page draws the picture at 1,600 px JPEG and seals it to that key
+  before it leaves, and the Worker files the ciphertext at `slip:<username>:<id>` for 30 days (`stmt/slip.js`, the id the
+  first 16 bytes of its SHA-256), once the claim is recorded and names it, and any other `slip` refused. **Only the desk opens one**: View slip on
+  the claim card, through the keyed `GET /slips/<username>/<id>` and the slip key the one unlock holds, drawn as a
+  `blob:` URL and let go on the lock. Pictures only; their page says Slip sent and can never open it again.
 - **With any amount past its term (`pay.overdue`, or a part late on the phone's own day; his D9, amended 28 Sep 2026),
   Home leads with the overdue amount and Orders is the payment page**: the page's gate, not the Worker's. It shows each part's due date, and a
   claim waiting on him reopens ordering, his acknowledgement still the check. **Then it closes in stages (V5, his answers of 29 Sep

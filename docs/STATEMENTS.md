@@ -753,6 +753,16 @@ on: `POST /account/claim` (or `/claims`) `{amount, method, account, rid}` on the
 order (`acl` in the order book, `aclaim:<username>:<id>` on KV, written behind and moved in as an order is, id `a` and the
 moment), riding beside the orders on their `GET /orders` as `claims` (`claimView`: `state`, and `claim` holding the same
 word) and on the desk's as its own list (`GET /desk/claims`). A waiting one pauses the chase on every order of theirs.
+**A slip on a claim** (F13, 29 Sep 2026): either claim may carry `slip`, a sealed picture `{v: 1, epk, iv, ct}` made on
+their phone (the page's `slipSeal`, to the public half the site serves on their session at `GET /slip/key` from KV
+`slipkey`); `takeSlip` (`stmt/slip.js`) measures its shape, refuses one over `SLIP_MAX` or a body over `SLIP_BODY_MAX` by its
+content-length (`e.slipBig`, 413) or of any other shape, a bare id included (`e.slipBad`), and hands the decide functions
+the id alone (`slipOf`), the first 16 bytes of its SHA-256 in hex, so the payment entry or the `acl` record carries
+`slip: <id>`; ONLY ONCE THE CLAIM IS RECORDED AND NAMES IT does `keepSlip` file the ciphertext at `slip:<username>:<id>` for
+30 days, so a refused claim stores nothing. Only a claim carries one: on any other move no claim names it, so it is never filed. The desk reads
+it keyed at `GET /desk/slips/<username>/<id>`, 404 once lapsed. Nothing on the site can open a slip, and nothing
+deletes one: it lapses with its 30 days. The page says Slip sent on the order while its claim waits, and
+Slip no longer kept after the 30 days.
 **His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
 claim's row rejected as `notfound` FIRST, under the id it has or will have, and drops it from every queue, then the site
 takes it as ONE event of the order book: the claim leaves `claimed` and its entry's name leaves the claim together, paid

@@ -46646,6 +46646,282 @@ await (async () => {
     "F13: the laptop's copy is kept out of the repo, the update-names-id skill tells of both tools, and the Counter holds no road to vault-key");
 })();
 
+section("F13 (29 Sep 2026): a slip rides on the claim, sealed on their phone; the Counter files the ciphertext alone for 30 days and the claim names it");
+await (async () => {
+  /* F13, the Counter half of Step 5. The page seals the picture to the public half of his slip key before it leaves
+     (stmt/slip.js); the Worker files what it is given at slip:<username>:<id> for 30 days, the id the SHA-256 of the
+     ciphertext, and the claim, on an order or against the account, carries the id alone. A slip the Worker did not file,
+     a shape that is not a sealed slip and one too large are never stored. Sealed here with the laptop's slipSeal, the
+     same protocol. Proved red by mutation. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const SV = await import("../tools/seed-vault.mjs");
+  const SL = await import("../stmt/slip.js");
+  const un = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("test-secret", un);
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) };
+  const kv = new KV(); await kv.put("u:" + un, JSON.stringify(rec));
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const rq = (path, body, headers = {}) => new Request("https://k7m3p2.example" + path, body === undefined ? { headers }
+    : { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const call = async (path, body, headers) => { const r = await stmtW.fetch(rq(path, body, headers), senv); let b = null; try { b = await r.json(); } catch (e) { b = null; } return { status: r.status, b: b || {} }; };
+  const S = { "X-Stmt-Session": (await call("/open", { u: un, password: pw })).b.session };
+  const D = { "X-Stmt-Desk": "desk-key" };
+  const key = await SV.slipKeyMint("pw"), priv = await SV.slipKeyOpen("pw", key.vault);
+  const JPEG = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 2, 3, 4, 5, 6, 7, 255, 217]);
+  const slips = () => [...kv.m.keys()].filter((k) => k.startsWith("slip:"));
+
+  /* the public half their page seals to, on their session; none filed, none offered */
+  const none = await call("/slip/key", undefined, S);
+  await kv.put("slipkey", JSON.stringify(SV.pubRecord(key)));
+  const some = await call("/slip/key", undefined, S), unsessioned = await call("/slip/key", undefined, {});
+  ok(none.b.ok === true && none.b.key === null && some.b.ok === true
+    && JSON.stringify(some.b.key) === JSON.stringify({ kty: key.pub.kty, crv: key.pub.crv, x: key.pub.x, y: key.pub.y })
+    && unsessioned.status === 401 && !unsessioned.b.key,
+    "F13: their session reads the slip key's public half, and nothing while none is filed or with no session: " + JSON.stringify({ none: none.b, u: unsessioned.status }));
+
+  /* a claim on an order, with a slip */
+  const placed = await call("/orders", { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "2026-09-14" }, S);
+  const id = placed.b.order && placed.b.order.id;
+  await call("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D);
+  const sealed = await SV.slipSeal(key.pub, JPEG), sid = await SL.slipId(sealed.ct);
+  const y = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: "e5".repeat(16), slip: sealed }, S);
+  const o = await kv.get("order:" + un + ":" + id, "json");
+  const w = o && (o.payments || []).find((p) => p.claim === "waiting");
+  const kept = await kv.get("slip:" + un + ":" + sid, "json"), opt = kv.opts.get("slip:" + un + ":" + sid);
+  ok(y.b.ok === true && !!w && w.slip === sid && /^[0-9a-f]{32}$/.test(sid) && (y.b.order.payments || []).some((p) => p.slip === sid)
+    && !!kept && kept.ct === sealed.ct && kept.epk === sealed.epk && !!opt && opt.expirationTtl === 30 * 86400,
+    "F13: a claim on an order files its slip for 30 days and carries its id alone: " + JSON.stringify({ ok: y.b.ok, error: y.b.error, w, opt }));
+  const back = kept ? await SV.slipOpen(priv, kept) : null;
+  ok(!!kept && !kept.ct.startsWith("/9j/") && !JSON.stringify(kept).includes(Buffer.from(JPEG).toString("base64").slice(0, 12))
+    && !!back && Array.from(back).join() === Array.from(JPEG).join(),
+    "F13: what the site keeps is ciphertext, no picture, and his slip key opens it to the picture sent");
+
+  /* a claim against the account, with a slip; and an id sent bare, which the Worker never filed, names no slip */
+  const sealed2 = await SV.slipSeal(key.pub, JPEG), sid2 = await SL.slipId(sealed2.ct);
+  const a = await call("/account/claim", { amount: 45, method: "tngbiz", rid: "f6".repeat(16), slip: sealed2 }, S);
+  const acl = [...kv.m.keys()].filter((k) => k.startsWith("aclaim:" + un + ":")).map((k) => JSON.parse(kv.m.get(k)));
+  ok(a.b.ok === true && !!a.b.claim && a.b.claim.slip === sid2 && acl.length === 1 && acl[0].slip === sid2 && kv.m.has("slip:" + un + ":" + sid2),
+    "F13: a claim against the account files its slip and carries its id: " + JSON.stringify({ ok: a.b.ok, error: a.b.error, claim: a.b.claim }));
+  const nClaims = () => [...kv.m.keys()].filter((k) => k.startsWith("aclaim:" + un + ":")).length, was = nClaims();
+  const bare = await call("/account/claim", { amount: 5, method: "tngbiz", rid: "a7".repeat(16), slip: sid }, S);
+  ok(bare.status === 400 && bare.b.code === "slipBad" && nClaims() === was,
+    "F13: an id sent bare is refused, so a claim names only a slip the Worker filed for it: " + JSON.stringify(bare.b));
+
+  /* filed only once the claim is recorded and names it: a claim refused on its figure stores nothing, and a retry answered
+     with the claim first recorded under its id, which names another slip, files none */
+  const overS = await SV.slipSeal(key.pub, JPEG), overId = await SL.slipId(overS.ct);
+  const over = await call("/orders/" + id + "/pay", { amount: 500, method: "tngbiz", rid: "e6".repeat(16), slip: overS }, S);
+  const againS = await SV.slipSeal(key.pub, JPEG), againId = await SL.slipId(againS.ct);
+  const again = await call("/orders/" + id + "/pay", { amount: 30, method: "tngbiz", rid: "e5".repeat(16), slip: againS }, S);
+  ok(over.status === 400 && !kv.m.has("slip:" + un + ":" + overId) && again.b.ok === true && !kv.m.has("slip:" + un + ":" + againId) && kv.m.has("slip:" + un + ":" + sid),
+    "F13: a slip is filed only with the claim that names it: none for a refused claim, none for a retry answered with an earlier one: " + JSON.stringify({ over: over.status, again: again.b.ok }));
+  const huge = await stmtW.fetch(new Request("https://k7m3p2.example/account/claim", { method: "POST",
+    headers: { "content-type": "application/json", "content-length": String(SL.SLIP_BODY_MAX + 1), ...S }, body: JSON.stringify({ amount: 6, method: "tngbiz", rid: "c2".repeat(16) }) }), senv);
+  const hugeB = await huge.json().catch(() => ({}));
+  ok(huge.status === 413 && hugeB.code === "slipBig", "F13: a claim whose body is larger than any slip allows is refused before it is read: " + huge.status);
+
+  /* refused, and nothing stored: a shape that is not a sealed slip, and one too large */
+  const before = slips().length, claimsBefore = [...kv.m.keys()].filter((k) => k.startsWith("aclaim:")).length;
+  const bad = await call("/account/claim", { amount: 6, method: "tngbiz", rid: "b8".repeat(16), slip: Object.assign({}, sealed, { iv: "AAAA" }) }, S);
+  const plain = await call("/account/claim", { amount: 6, method: "tngbiz", rid: "b9".repeat(16), slip: { v: 1, epk: sealed.epk, iv: sealed.iv, ct: "not base64!" } }, S);
+  const big = await call("/account/claim", { amount: 6, method: "tngbiz", rid: "c1".repeat(16), slip: Object.assign({}, sealed, { ct: "A".repeat(SL.SLIP_MAX + 4) }) }, S);
+  ok(bad.status === 400 && bad.b.code === "slipBad" && plain.status === 400 && plain.b.code === "slipBad" && big.status === 413 && big.b.code === "slipBig"
+    && slips().length === before && [...kv.m.keys()].filter((k) => k.startsWith("aclaim:")).length === claimsBefore,
+    "F13: a slip of any other shape, or too large, is refused in words and neither it nor its claim is stored: " + JSON.stringify([bad.status, bad.b.code, plain.b.code, big.status, big.b.code]));
+
+  /* any other move carries none */
+  const sealed3 = await SV.slipSeal(key.pub, JPEG);
+  const said = await call("/orders/" + id + "/say", { text: "It went just now.", rid: "d2".repeat(16), slip: sealed3 }, S);
+  ok(said.b.ok === true && !kv.m.has("slip:" + un + ":" + await SL.slipId(sealed3.ct)),
+    "F13: a slip rides only on a claim; on a line of theirs it is never filed: " + JSON.stringify({ ok: said.b.ok, error: said.b.error }));
+
+  /* the desk's relay reads it as filed, with the desk key alone */
+  const dk = await call("/desk/slips/" + un + "/" + sid, undefined, D), nk = await call("/desk/slips/" + un + "/" + sid, undefined, {});
+  const gone = await call("/desk/slips/" + un + "/" + "0".repeat(32), undefined, D), odd = await call("/desk/slips/" + un + "/not-an-id", undefined, D);
+  const other = await call("/desk/slips/" + un + "/" + sid, { x: 1 }, D);
+  ok(dk.status === 200 && dk.b.ok === true && dk.b.slip && dk.b.slip.ct === sealed.ct && nk.status === 401 && gone.status === 404 && odd.status === 404 && other.status === 405,
+    "F13: the desk reads a slip as it was filed, with its key alone; one not kept is 404, and nothing writes one there: " + JSON.stringify([dk.status, nk.status, gone.status, odd.status, other.status]));
+})();
+
+section("F13: the desk fetches a slip through its keyed relay, and its service worker never keeps one");
+await (async () => {
+  /* GET slips/<username>/<id> on the desk Worker, keyed like every read that carries trade, relays to the site's
+     /desk/slips over STMT_SITE and answers what it filed; public/sw.js passes it by to the network, so no slip,
+     ciphertext or not, is kept on his phone. Proved red by mutation. */
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "k-slip-fixture", U = "abcd-efgh", SID = "ab".repeat(16), SLIP = { v: 1, epk: "e", iv: "i", ct: "c" };
+  const seen = [];
+  const STMT_SITE = { fetch: async (u, init) => { seen.push({ u: String(u), h: (init && init.headers) || {} });
+    return String(u).endsWith("/" + SID) ? new Response(JSON.stringify({ ok: true, slip: SLIP }), { status: 200 })
+      : new Response(JSON.stringify({ ok: false, error: "that slip is not kept" }), { status: 404 }); } };
+  const env = { ...mkEnv(new KV()), SALT_WRITE_KEY: KEY, STMT_SITE, STMT_DESK_KEY: "dk" };
+  const call = async (path, opts = {}) => { const r = await deskW.fetch(req(path, opts), env); let j = null; try { j = await r.json(); } catch (e) { j = null; } return { status: r.status, j }; };
+  const K = { headers: { "X-Salt-Key": KEY } };
+  const unkeyed = await call("/slips/" + U + "/" + SID);
+  const got = await call("/slips/" + U + "/" + SID, K);
+  const miss = await call("/slips/" + U + "/" + "cd".repeat(16), K);
+  const n = seen.length;
+  const odd = await call("/slips/" + U + "/nope", K), posted = await call("/slips/" + U + "/" + SID, { method: "POST", headers: { "X-Salt-Key": KEY } });
+  ok(unkeyed.status === 401 && got.status === 200 && !!got.j && got.j.ok === true && JSON.stringify(got.j.slip) === JSON.stringify(SLIP)
+    && seen[0] && seen[0].u === "https://stmt/desk/slips/" + U + "/" + SID && seen[0].h["X-Stmt-Desk"] === "dk"
+    && miss.status === 404 && odd.status === 404 && posted.status === 405 && seen.length === n,
+    "F13: a slip is fetched with the key alone, relayed to the site's desk road, 404 when not kept, and nothing else goes: " + JSON.stringify([unkeyed.status, got.status, miss.status, odd.status, posted.status, seen.map((s) => s.u)]));
+  const vm = await import("node:vm");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const answered = (path) => {
+    const L = {}, told = [];
+    const ctx = { URL, console, caches: { match: async () => undefined, open: async () => ({ put() {} }) },
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" } },
+      fetch: async () => ({ status: 200, type: "basic", redirected: false, clone() { return this; } }) };
+    vm.createContext(ctx); vm.runInContext(sw, ctx);
+    L.fetch({ request: { method: "GET", url: "https://salt-command.example" + path, mode: "cors" }, respondWith: (p) => told.push(p) });
+    return told.length;
+  };
+  const slip = answered("/slips/" + U + "/" + SID), icon = answered("/icon-192.png");
+  ok(slip === 0 && icon === 1, "F13: a GET of a slip passes the service worker by to the network and is never cached: " + JSON.stringify({ slip, icon }));
+})();
+
+section("F13: View slip on a claim card opens the slip with the key the one unlock holds, draws it, and the lock lets it go");
+await (async () => {
+  /* The desk's half of reading: a claim carrying a slip draws View slip on its card; the tap fetches the ciphertext through
+     the keyed slips/<username>/<id>, opens it with the slip key the one unlock already holds (no second prompt), and draws
+     it as a blob: URL; locked, it says to show names first and fetches nothing; the lock revokes every picture drawn.
+     Proved red by mutation. */
+  const { openMaster: omS } = await import("../tools/payload.mjs");
+  const { webcrypto: wcS } = await import("node:crypto");
+  const S = await import("../tools/seed-vault.mjs");
+  const { w: wS } = await omS();
+  if (!wS.crypto || !wS.crypto.subtle) { try { Object.defineProperty(wS, "crypto", { value: wcS, configurable: true }); } catch (e) { wS.crypto = wcS; } }
+  const rd = (e) => JSON.parse(String(wS.eval("JSON.stringify(" + e + ")")));
+  try {
+    const U = "abcd-efgh", SID = "ab".repeat(16), OLD = "cd".repeat(16), now = new Date().toISOString(), old = new Date(Date.now() - 40 * 864e5).toISOString();
+    const names = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": "Zed Slp (Qelvor)" }));
+    const places = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": { addr: "Kedai Zqor", lat: 3.1, lng: 101.6, src: "waze", at: null } }));
+    const key = await S.slipKeyMint("pw");
+    const JPEG = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 9, 8, 7, 255, 217]);
+    const sealed = JSON.stringify(await S.slipSeal(key.pub, JPEG));
+    wS.eval("try{cloudMode=function(){return true;};}catch(e){};(function(){NAME_VAULT=" + names + ";qSyncState='server';window.__prompts=0;window.prompt=function(){window.__prompts++;return 'pw';};"
+      + "window.__gets=[];window.__blobs=[];window.__revoked=[];window.__draws=0;ordDraw=function(){window.__draws++;};"
+      + "URL.createObjectURL=function(b){window.__blobs.push(b);return 'blob:desk/'+window.__blobs.length;};URL.revokeObjectURL=function(u){window.__revoked.push(u);};"
+      + "var A=function(st,j){return Promise.resolve({ok:st===200,status:st,json:function(){return Promise.resolve(j);}});};"
+      + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);"
+      + "if(s==='vault/addr')return A(200,{ok:true,vault:" + places + "});if(s==='vault/key')return A(200,{ok:true,vault:" + JSON.stringify(key.vault) + "});"
+      + "if(s==='slips/" + U + "/" + SID + "')return A(200,{ok:true,slip:" + sealed + "});if(s.indexOf('slips/')===0)return A(404,{ok:false,error:'that slip is not kept'});return A(200,{ok:true});};})();");
+    await wS.eval("slipView('" + U + "','" + SID + "','" + now + "')");
+    const shut = rd("{v:SLIP_VIEW['" + U + "|" + SID + "'],gets:window.__gets}");
+    ok(!!shut.v && shut.v.st === "err" && /Show names first/.test(shut.v.msg) && !shut.gets.some((g) => g.indexOf("slips/") === 0),
+      "F13: with the names locked, View slip fetches nothing and says to show names first: " + JSON.stringify(shut));
+    await wS.eval("vaultReveal('pw')");
+    await wS.eval("slipView('" + U + "','" + SID + "','" + now + "')");
+    const v = rd("{v:SLIP_VIEW['" + U + "|" + SID + "'],prompts:window.__prompts,gets:window.__gets,type:window.__blobs[0]&&window.__blobs[0].type}");
+    const bytes = await wS.eval("new Promise(function(r){var f=new FileReader();f.onload=function(){r(Array.from(new Uint8Array(f.result)).join(','));};f.readAsArrayBuffer(window.__blobs[0]);})");
+    ok(!!v.v && v.v.st === "ok" && v.v.url === "blob:desk/1" && v.type === "image/jpeg" && bytes === Array.from(JPEG).join() && v.prompts === 0 && v.gets.includes("slips/" + U + "/" + SID),
+      "F13: unlocked, View slip opens the slip with the slip key, with no second prompt, and draws the picture sent: " + JSON.stringify({ v, bytes }));
+    const cardC = String(wS.eval("clmCard({id:'a20260929010000-zz1',kind:'account',u:'" + U + "',code:null,amount:45,at:'" + now + "',slip:'" + SID + "'})"));
+    const cardO = String(wS.eval("ordCard({id:'20260929010000-zz2',u:'" + U + "',code:null,status:'acknowledged',product:'salt',qty:1,unit:110,total:110,delivery:0,paid:0,moved:0,claimed:30,mode:'collect',at:'" + now + "',"
+      + "ledgerKey:'CZ9-SLP|2026-09-29|110',queued:{ack:'x'},history:[],msgs:[],payments:[{at:'" + now + "',amount:30,method:'tngbiz',account:'tngbiz',claim:'waiting',slip:'" + OLD + "'}]})"));
+    ok(/<img src="blob:desk\/1"/.test(cardC) && /data-slipoff=/.test(cardC) && /data-slip="cdcd/.test(cardO) && />View slip</.test(cardO),
+      "F13: the account claim's card draws the slip opened, and an order's card offers View slip on its waiting claim: " + JSON.stringify({ c: /img/.test(cardC), o: /View slip/.test(cardO) }));
+    await wS.eval("slipView('" + U + "','" + OLD + "','" + old + "')");
+    const gone = rd("SLIP_VIEW['" + U + "|" + OLD + "']");
+    ok(!!gone && gone.st === "err" && /no longer kept/.test(gone.msg), "F13: a slip past its 30 days reads no longer kept: " + JSON.stringify(gone));
+    wS.eval("lockVault();");
+    const after = rd("{n:Object.keys(SLIP_VIEW).length,revoked:window.__revoked}");
+    const cardL = String(wS.eval("clmCard({id:'a20260929010000-zz1',kind:'account',u:'" + U + "',code:null,amount:45,at:'" + now + "',slip:'" + SID + "'})"));
+    ok(after.n === 0 && after.revoked.includes("blob:desk/1") && !/<img/.test(cardL) && />View slip</.test(cardL),
+      "F13: the lock lets every slip drawn go, and the card offers View slip again: " + JSON.stringify(after));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wS.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F13: their page re-encodes the picture, seals it to the slip key on the phone and sends only that with the claim");
+await (async () => {
+  /* The customer's half, driven on the page as served: on Did you send, Attach a slip takes a picture, draws it at 1,600
+     px at most, seals the JPEG to the key's public half (GET /slip/key) and sends the sealed slip with Yes; the order
+     then says Slip sent. With no key filed there is nothing to attach. The canvas and the image are stubbed, jsdom having
+     neither; the sealing is the page's own. Proved red by mutation. */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const C = await import("../tools/stmt-crypto.mjs");
+  const SV = await import("../tools/seed-vault.mjs");
+  const { JSDOM: JD } = await import("jsdom");
+  const key = await SV.slipKeyMint("pw"), priv = await SV.slipKeyOpen("pw", key.vault);
+  const JPEG = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 5, 5, 5, 255, 217]);
+  const un = "abcd-efgh", pw = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un);
+  const list = { at: "2026-09-15T00:00:00Z", week: { monday: "2026-09-14", label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] };
+  const ord = { id: "20260918000000-sl11", product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, at: "2026-09-18T01:00:00Z",
+    status: "acknowledged", paid: 0, moved: 0, delivery: 0, method: "transfer", account: "maybank", history: [], msgs: [] };
+  const body = { ok: true, wrap: await C.wrapKey(pw, ck), session: "fixture-session-token-slip-abcdefg",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    prices: await C.encryptWith(ck, JSON.stringify(list)) };
+  const html = await (await stmtW.fetch(new Request("https://k7m3p2.example/?u=" + un), { STMT: new KV() })).text();
+  const answer = (status, j) => ({ ok: status === 200, status, json: async () => j });
+  const run = async (withKey) => {
+    const sent = { pay: [], keyAsks: 0, drawn: [] };
+    let cur = ord;
+    const dom = new JD(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      win.scrollTo = () => {};
+      win.HTMLCanvasElement.prototype.getContext = function () { return { drawImage() {} }; };
+      win.HTMLCanvasElement.prototype.toBlob = function (cb) { sent.drawn.push([this.width, this.height]); cb(new win.Blob([JPEG], { type: "image/jpeg" })); };
+      win.Image = class { set src(v) { this._s = v; setTimeout(() => this.onload && this.onload(), 0); } get src() { return this._s; } get naturalWidth() { return 3200; } get naturalHeight() { return 1800; } };
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+        if (p === "/open") return answer(200, body);
+        if (p === "/orders" && m === "GET") return answer(200, { ok: true, orders: [cur], claims: [] });
+        if (p === "/slip/key") { sent.keyAsks++; return answer(200, { ok: true, key: withKey ? key.pub : null }); }
+        if (/[/]pay$/.test(p)) { sent.pay.push(j);
+          cur = Object.assign({}, ord, { claimed: j.amount, payments: [{ at: new Date().toISOString(), amount: j.amount, method: j.method, account: j.account, claim: "waiting", slip: j.slip ? "ab".repeat(16) : undefined }] });
+          return answer(200, { ok: true, order: cur }); }
+        return answer(404, { ok: false });
+      };
+    } });
+    const d = dom.window.document, win = dom.window;
+    const until = async (f) => { for (let i = 0; i < 150 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+    const fire = (e, k) => { if (e) e.dispatchEvent(new win.Event(k, { bubbles: true })); };
+    const out = {};
+    try {
+      d.getElementById("un").value = un; d.getElementById("pw").value = pw;
+      d.getElementById("f").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => d.querySelector('button[data-t="order"]'));
+      d.querySelector('button[data-t="order"]').click();
+      await until(() => d.querySelector('#pOrder [data-row="' + ord.id + '"]'));
+      d.querySelector('#pOrder [data-row="' + ord.id + '"]').click();
+      const payNow = () => [...d.querySelectorAll("#pOrder button")].find((b) => /^Pay RM/.test(b.textContent));
+      await until(payNow); if (payNow()) payNow().click();
+      const way = d.querySelector('#payBody input[name="payHow"][value="transfer"]'); if (way) { way.checked = true; fire(way, "change"); }
+      const into = d.querySelector('#payBody input[name="payInto"][value="maybank"]'); if (into) { into.checked = true; fire(into, "change"); }
+      const g = d.getElementById("payGo"); if (g) g.click(); fire(win, "blur"); fire(win, "focus");
+      await until(() => d.getElementById("paySent") && sent.keyAsks > 0);
+      await until(() => !withKey || d.getElementById("paySlip"));
+      out.offered = !!d.getElementById("paySlip");
+      if (withKey && out.offered) {
+        const inp = d.getElementById("paySlipFile");
+        /* a picker that names no type, as some Android ones do, is read and decided by the picture itself */
+        Object.defineProperty(inp, "files", { value: [new win.File([JPEG], "slip", { type: "" })] });
+        fire(inp, "change");
+        await until(() => /Slip attached/.test((d.getElementById("payBody") || {}).textContent || ""));
+      }
+      await until(() => d.getElementById("paySent") && !d.getElementById("paySent").disabled);
+      d.getElementById("paySent").click();
+      await until(() => sent.pay.length === 1 && /Waiting for us to confirm/.test((d.getElementById("pOrder") || {}).textContent || ""));
+      out.flag = /Slip sent/.test((d.getElementById("pOrder") || {}).textContent || "");
+    } finally { await new Promise((r) => setTimeout(r, 100)); try { win.close(); } catch (e) { /* closed */ } }
+    return Object.assign(out, sent);
+  };
+  const w = await run(true);
+  const s = w.pay[0] && w.pay[0].slip;
+  const opened = s && typeof s === "object" ? await SV.slipOpen(priv, s).catch(() => null) : null;
+  ok(w.offered && !!s && s.v === 1 && typeof s.ct === "string" && !s.ct.startsWith("/9j/") && !!opened && Array.from(opened).join() === Array.from(JPEG).join()
+    && JSON.stringify(w.drawn[0]) === "[1600,900]",
+    "F13: the page draws the picture at 1,600 px, seals the JPEG to the slip key on the phone and sends only the sealed slip with the claim: " + JSON.stringify({ offered: w.offered, drawn: w.drawn, slip: s && Object.keys(s) }));
+  ok(w.flag === true, "F13: the order then says the slip was sent with the claim waiting");
+  const n = await run(false);
+  ok(n.keyAsks === 1 && n.offered === false && n.pay.length === 1 && !("slip" in n.pay[0]) && n.flag === false,
+    "F13: with no slip key filed, nothing is offered to attach and the claim goes as before: " + JSON.stringify({ asks: n.keyAsks, offered: n.offered, pay: n.pay }));
+})();
+
 section("28 Sep 2026: a lot's Payment on the Workbench previews, renders and queues its AMEND, the lot read through the engine's poStat and not a bare name that threw");
 await (async () => {
   /* wbState's lot branch called poStat bare, a name that lives only inside the engine block, so from v492 (05 Sep 2026) a

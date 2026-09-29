@@ -149,7 +149,11 @@
   copies the envelope to `10_Data\salt_slipkey.json`); the Worker reads it with the key at `GET
   /vault/key` and has no write. The unlock imports it non-extractable for `deriveBits` alone, and the
   desk's `slipOpen` reads a slip `{v, epk, iv, ct}`: ECDH with the ephemeral point, HKDF-SHA-256 (no
-  salt, info `salt-slip v1`), AES-GCM-256, the protocol of `slipSeal` in `tools/seed-vault.mjs`. His base point, `_base`, is Amend ID's
+  salt, info `salt-slip v1`), AES-GCM-256, the protocol of `slipSeal` in `tools/seed-vault.mjs`. **View slip**
+  (F13, the Counter half): a claim card whose claim carries `slip` draws View slip (`slipPart`); `slipView` fetches
+  the ciphertext keyed at `GET /slips/<username>/<id>` (the Worker's `slipRelay` over `STMT_SITE`, and `/slips` is on
+  `sw.js`'s API list, so never cached), opens it with `slipOpen` and draws a `blob:` URL; locked, it asks for Show
+  names and fetches nothing, and `lockVault` revokes every picture drawn (`slipShut`). His base point, `_base`, is Amend ID's
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.

@@ -49,6 +49,7 @@ import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
+import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -359,8 +360,20 @@ async function handleCustomer(request, env, p, m) {
      /claims is the same road under the name the page first asked for. */
   if (p === "/account/claim" || p === "/claims") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    const r = await claimAccount(env, u, await readJson(request));
-    return r.error ? refuse(r) : json({ ok: true, claim: claimView(r.claim) });
+    /* F13: a slip rides on the claim, sealed on their phone; filed only once the claim is recorded and names it */
+    const big = slipTooBig(request);
+    if (big) return refuse(big);
+    const f = await takeSlip(await readJson(request));
+    if (f.error) return refuse(f);
+    const r = await claimAccount(env, u, f.body);
+    if (r.error) return refuse(r);
+    await keepSlip(env, u, f.slip, r.claim && r.claim.slip);
+    return json({ ok: true, claim: claimView(r.claim) });
+  }
+  /* F13: the public half of his slip key, which their page seals a slip to; none filed, no slip is offered */
+  if (p === "/slip/key") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, key: await slipPub(env) });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
      others out. The list carries no id and no address: the kind of device, when it came and was last used, whether it
@@ -430,8 +443,17 @@ async function handleCustomer(request, env, p, m) {
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
-  return r.error ? refuse(r) : json({ ok: true, order: customerView(r.order) });
+  /* F13: a claim on an order carries its slip the same way; on any other move no claim names it, so none is filed */
+  const big = mm[2] === "pay" ? slipTooBig(request) : null;
+  if (big) return refuse(big);
+  const raw = await readJson(request);
+  const f = await takeSlip(raw);
+  if (f.error) return refuse(f);
+  const r = await customerMove(env, u, mm[1], mm[2], f.body);
+  if (r.error) return refuse(r);
+  /* the claim this move recorded is the newest waiting one; a repeat answered with an earlier claim names another slip */
+  if (f.slip) await keepSlip(env, u, f.slip, ((r.order && r.order.payments) || []).some((p) => p && p.slip === f.slip.id) ? f.slip.id : null);
+  return json({ ok: true, order: customerView(r.order) });
 }
 
 /* v692: LOGGING OUT IS A DEPARTURE. The session goes, the remembered wrap goes, and since S1 1.42 so does this
@@ -727,6 +749,15 @@ async function handleDesk(request, env, p, m) {
   if (p === "/desk/claims") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, claims: await allClaims(env, new URL(request.url).searchParams.get("all") === "1") });
+  }
+  /* F13: A SLIP, AS IT WAS FILED: ciphertext, for the desk to open with the key only his vault holds */
+  const sm = /^\/desk\/slips\/([^/]+)\/([^/]+)$/.exec(p);
+  if (sm) {
+    const u = normUser(sm[1]);
+    if (!u || !SLIP_ID_RE.test(sm[2])) return notFound();
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const slip = await readSlip(env, u, sm[2]);
+    return slip ? json({ ok: true, slip }) : json({ ok: false, error: "that slip is not kept" }, 404);
   }
   /* S6 11.14 and 11.15: his Received or Not found on one of them */
   const cm = /^\/desk\/claims\/([^/]+)\/([^/]+)$/.exec(p);
@@ -1541,10 +1572,10 @@ export default {
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
-      || p === "/account/claim" || p === "/claims" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe") return handleCustomer(request, env, p, m);
+      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/")) return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

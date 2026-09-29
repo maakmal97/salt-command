@@ -156,6 +156,17 @@ export async function listClaims(env, all) {
   return { ok: true, claims: (b.claims || []).map((c) => Object.assign({ code: users[c.u] || null }, c)) };
 }
 
+/** F13: a payment slip as the site filed it, ciphertext sealed on the customer's phone to his slip key, for the desk to
+ *  open with the key his vault holds. The username and the id as the claim carries them; stored nowhere here. */
+export async function slipRelay(env, u, id) {
+  if (!/^[0-9a-f]{32}$/.test(String(id || "")) || !/^[a-z0-9-]{1,40}$/.test(String(u || ""))) return { ok: false, status: 404, error: "no such slip" };
+  const r = await site(env, "/desk/slips/" + encodeURIComponent(u) + "/" + id);
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status === 404 ? 404 : 502, error: b.error || ("the statements site answered http " + r.status) };
+  return { ok: true, slip: b.slip };
+}
+
 /** One order, closed or open, with its code: the routes below act on an order by its id alone. */
 export async function findOrder(env, id) {
   const r = await listOrders(env, true);

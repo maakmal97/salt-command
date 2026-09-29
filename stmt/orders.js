@@ -59,6 +59,7 @@ import { PAY_ACCOUNTS } from "./pay.js";
 import { wakeCustomer } from "./push.js";
 import { sessKey } from "./signin.js";
 import { refusal } from "./words.js";
+import { SLIP_ID_RE } from "./slip.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -304,6 +305,8 @@ export async function allOrders(env, all) {
  * a claim for his check, and `queued` on the entry names that entry: so the ledger hears of the money once,
  * by that entry, whether he answers before it is queued or after. */
 export const VERDICTS = ["received", "notfound"];
+/* F13: a claim may carry one slip, named by the id the Worker filed its ciphertext under; anything else is no slip */
+export const slipOf = (x) => (x && typeof x.slip === "string" && SLIP_ID_RE.test(x.slip) ? { slip: x.slip } : {});
 export const claimedOf = (o) => +(((o && o.payments) || []).filter((p) => p && p.claim === "waiting")
   .reduce((n, p) => n + (+p.amount || 0), 0)).toFixed(2);
 /** Each claim the ledger has not been told of: waiting for his check, or received; never one not found. */
@@ -632,7 +635,8 @@ export function decideCustomer(order, action, body, mine, at) {
     if (!method) return Object.assign(refusal("payHow"), { status: 400 });
     /* cash is his to record when he takes it (S11 11.8), so it can never count twice */
     if (method === "cod") return Object.assign(refusal("payCash"), { status: 409 });
-    return { ev: { kind: "claim", at, amount: +amount.toFixed(2), method, account } };
+    /* F13: and the slip the Worker filed for it, by its id alone (stmt/slip.js takeSlip); one a claim */
+    return { ev: Object.assign({ kind: "claim", at, amount: +amount.toFixed(2), method, account }, slipOf(body)) };
   }
   if (action === "say") {
     /* v751: ON ANY ORDER, at any stage. A question about an order that has been withdrawn or
@@ -851,7 +855,7 @@ export function applyEvent(order, ev) {
     done = settle(order, at);
   } else if (ev.kind === "claim") {   /* S6 6.5: their word, waiting for his; paid does not move */
     order.method = ev.method; order.account = ev.account;
-    order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: ev.method, account: ev.account, claim: "waiting" }]);
+    order.payments = (order.payments || []).concat([Object.assign({ at, amount: ev.amount, method: ev.method, account: ev.account, claim: "waiting" }, slipOf(ev))]);
     order.claimed = claimedOf(order);
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account, note: "sent " + ev.amount.toFixed(2) });
   } else if (ev.kind === "verdict" && order.kind === "account") {   /* S6 6.6: his answer to a claim against the account */
@@ -1189,11 +1193,12 @@ export function decideAccountClaim(u, body, waiting, at) {
   if (waiting.length >= MAX_CLAIMS) return Object.assign(refusal("claimsMax", { n: waiting.length }), { status: 409 });
   const claim = { id: "a" + mintOrderId(at), u, kind: "account", at, amount: +amount.toFixed(2), method: r.method, account: r.account,
     state: "waiting", history: [{ at, by: "customer", note: "sent " + amount.toFixed(2) }] };
+  Object.assign(claim, slipOf(body));
   return { ev: { kind: "aclaim", at, claim } };
 }
 /* what their page is handed: `claim` carries the state again, the word an order's claim uses (agreed with the page) */
 export const claimView = (c) => ({ id: c.id, at: c.at, amount: c.amount, method: c.method, account: c.account, state: c.state, claim: c.state,
-  answered: c.answered || undefined });
+  answered: c.answered || undefined, slip: c.slip || undefined });
 /** Their claims against the account, newest first. */
 export const claimsOf = async (env, u) => (onBook(env)
   ? (await bookRead(env, "claims", { u }, async () => ({ claims: await listOrders(env, "aclaim:" + u + ":") }))).claims || []

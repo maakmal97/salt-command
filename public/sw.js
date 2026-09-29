@@ -34,7 +34,8 @@ const SHELL = [
    and the page's own cache:'no-store' never reaches a service worker, whose "everything else"
    branch stored any 200 for ever. The phone's order list froze at first load. */
 /* /bulletin joins 26 Sep 2026 for the same reason: his editor read back the notice it first cached. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin)(\/|$)/;
+/* /slips joins 29 Sep 2026 (F13): a slip is fetched live when he opens it, and never kept on the phone, ciphertext or not. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
