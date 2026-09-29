@@ -184,9 +184,8 @@ own position under the list does not move with the filter.
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
 own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
 sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
-Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: saving it as an app
-first (the keep card itself, which leads a new account's Home instead, moved and never copied), notifications on or
-off, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
+Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: notifications on or
+off (where the bell's plain tap lands; Step 1b), Saved as an app, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
 subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
 wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.
 `drawAccount(el)` moves Account into a place and draws it.
@@ -467,8 +466,9 @@ the phone is kept; **Sign out other devices** on a second tap (`POST /devices/si
 one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
 the code a tap of its own, and a QR of `<site>/app#code` for the other device's camera, which opens on the code screen in a browser's own words on any device; closing the Sheet reads the list again. **The QR never carries the key**: a
 key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
-another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. This device's
-first row is how to keep it as an app (S3 3.10), a Plain ledger row where it was a card at the head of the tab.
+another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. **The account opens only in the saved app** (Step 1b, his Q3 of 28 Sep 2026): signed in in a browser tab, the keep page is the
+whole page (`keepMode`), by the browser's own road: an iPhone's code minted as it draws, an Install button, a browser's own
+marks, or, where no app can be kept, the browsers that can.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -572,8 +572,7 @@ request id: the check draws that copy and Place sends it, and while the check is
 field, so nothing typed can reach the order unseen. Units above one, unit at one, a guest's board included (one `unitsOf`). A 409 `prices moved` (above;
 S4 4.4) brings the account's list as it stands, sealed, which the page opens with the key it already holds
 (`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
-the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5) and asks "A buzz when it is
-confirmed?", put only by the tap on Turn on notifications (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
+the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5); since Step 1b the bell asks for notifications, on every view of the saved app until they are on, only from a tap (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
 closes the sheet and opens the order's own screen (S5 5.2). New order stands above Your orders, stage 5's rows, at the head
 of their column, so on a desk the open order beside it starts at the top of the place and the Notifications pane is left to
 Account's This device (S7-R3); on a desk,
@@ -945,16 +944,20 @@ never titled by a payment's, and `public/sw.js` takes news as a title only in le
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is on screen;
 a hidden page's tick reads nothing, and its return re-reads the account and the orders.
-For a closed page the site has its own Web Push pair. **The banner names the KIND of news** (S12
-12.2, his decision D4 of 24 Sep 2026): each move sends `{k, o}`, a kind and the order's id, derived
+For a closed page the site has its own Web Push pair. **The banner is a plain sentence of its kind, in his words** (S12
+12.2, his decision D4 of 24 Sep 2026; his sentences of 28 Sep 2026, Step 1b): each move sends `{k, o}`, a kind and the order's id, with the case its body is chosen by (`v`, `payCase`: owed, waiting on his Received, or paid) and, on his line or his reason at Decline or Cancel, his text (`t`, cut to 200, checked by `siteWords` on the desk), derived
 by `wakes` in `stmt/orders.js` off the event and the order it folded into, so the KV road and the order
 book send the same kind for the same move, sealed
 for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto, one record), and
-the service worker at `/sw.js` shows the kind's words from its own `NEWS` table: confirmed, ready, a
-reply, payment received, a payment is due, delivered or collected (in part or in full), complete,
-not taken, cancelled. **Never an amount, a product, an order or a name**; the suite reads every word.
+the service worker at `/sw.js` shows the kind's title and body from `news.*` in `stmt/words.js`: acknowledged (pay now over
+the credit cap, V3's `prepay`; on credit otherwise, due at Ready), ready to collect or on its way, his line (`Counter says:`,
+his words in quotation marks), payment received or not found yet, payment due, delivered or collected (in part or in full),
+complete, not taken or cancelled with his reason. **Never an amount, a product or a name**; the suite reads every word.
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
-digest of the id), so news of one order never replaces another's on the lock screen or at the push service.
+digest of the id), so news of one order never replaces another's on the lock screen or at the push service; a line
+of his takes a tag and a `Topic` of its own (over the order and the line's moment), so none of his words is replaced
+unseen. **Ready is his to tap again** while units are still owed on an order at ready (his 1.13 and 1.14), telling them
+the rest is ready.
 A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Account in
 another tab) is sent a message instead, re-reads its orders, patching only what changed, and opens that one,
 or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in
@@ -962,7 +965,7 @@ on the Sheet). A return to the page (S3 3.5) and a lapse reopened patch the orde
 order and a half-typed line survive; only a head of the tab the account now draws differently (the prices, the
 payment page, the open orders reaching or leaving the limit) draws the tab again. Neither ever draws the order sheet or
 its check; only the sheet's limit step, which holds nothing typed, follows the orders. A subscription filed before its keys gets a payload-free wake and the
-old fixed words, so nothing already subscribed went dark; the page re-files the keys at the next
+fixed words (Order update), so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). On an
 iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at

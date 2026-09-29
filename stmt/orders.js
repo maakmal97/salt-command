@@ -724,7 +724,11 @@ export function decideDesk(order, body, at) {
   /* its own states only (26 Sep 2026): a bare NEXT[status] read "constructor" or "__proto__" off Object.prototype, and
      .includes threw on it where any other unknown state is refused */
   if (!Object.hasOwn(NEXT, status)) return { error: "not a state the desk sets", status: 400 };
-  if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
+  /* Step 1b (his 1.13 and 1.14, 28 Sep 2026): READY AGAIN FOR THE REST. A part handed over tells them "We will notify you
+     when the rest of your order is ready", so while units are still owed on an order at ready, Ready is his to tap again,
+     and it tells them so; with nothing handed over, or nothing left, it stays a state reached once */
+  const again = status === "ready" && order.status === "ready" && (+order.moved || 0) > 0 && owedUnits(order) > 0.004;
+  if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
   const ev = { kind: "status", at, status, by: "desk" };
@@ -894,8 +898,21 @@ export function marksOf(ev, order) {
 }
 /* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.
    A handover says delivered or collected by the order's own mode, and "part" while units are still to come. */
-const STATUS_NEWS = { acknowledged: "confirmed", ready: "ready", done: "complete", declined: "declined", cancelled: "cancelled" };
+const STATUS_NEWS = { done: "complete", declined: "declined", cancelled: "cancelled" };
 const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") + (o.mode === "deliver" ? "delivered" : "collected") : null);
+/* Step 1b (his sentences, 28 Sep 2026): WHICH OF A KIND'S SENTENCES IS TRUE NOW. Something still owed that no claim of
+   theirs covers; else a claim of theirs waiting on his Received; else paid. Read off the order the move folded into,
+   so a Ready or a handover says what the customer's page says at that moment. */
+export const payCase = (o) => (dueOf(o) - claimedOf(o) > 0.004 ? "owed" : claimWaits(o) ? "waiting" : "paid");
+/* the acknowledgement splits by case: over the credit cap at Place (V3's `prepay`) pays now; within it, on credit, due
+   at Ready (V2) */
+const ackNews = (o) => (o && o.prepay ? "confirmed" : "confirmed-credit");
+const readyNews = (o) => "ready-" + (o.mode === "deliver" ? "deliver" : "collect");
+/* a handover of all of it takes a case, since delivered or collected is complete only when nothing is owed */
+function handedWake(order, o) {
+  const k = handedNews(order);
+  return k && !k.startsWith("part-") ? { k, o, v: payCase(order) } : { k, o };
+}
 
 /* THE WAKE A MOVE SENDS, { k, o }: its kind (S12 12.2) and the order a tap opens, or null for none. Read off the event
    and the order it folded into, so both roads send the same kind: a payment the book carried back is "paid", else
@@ -903,10 +920,18 @@ const handedNews = (o) => (+o.moved > 0 ? (owedUnits(o) > 0.004 ? "part-" : "") 
    payment of theirs that completes the order, complete. A handover of nothing still wakes, with no kind, as it did. */
 export function wakes(ev, order, done) {
   const o = (order && order.id) || "";
-  if (ev.kind === "ledger") return { k: ev.paid !== undefined ? "paid" : handedNews(order), o };
-  if (ev.kind === "handover") return { k: handedNews(order), o };
-  if (ev.kind === "status" && ev.by === "desk") return { k: STATUS_NEWS[ev.status], o };
-  if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o };
+  if (ev.kind === "ledger") return ev.paid !== undefined ? { k: "paid", o } : handedWake(order, o);
+  if (ev.kind === "handover") return handedWake(order, o);
+  /* Step 1b: his reason at Decline or Cancel is the banner's body; his line on the order is, in quotation marks, under
+     a banner of its own (its moment names it) */
+  if (ev.kind === "status" && ev.by === "desk") {
+    if (ev.status === "acknowledged") return { k: ackNews(order), o };
+    if (ev.status === "ready") return { k: readyNews(order), o, v: payCase(order) };
+    const w = { k: STATUS_NEWS[ev.status], o };
+    if (ev.note && (ev.status === "declined" || ev.status === "cancelled")) w.t = ev.note;
+    return w;
+  }
+  if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o, t: ev.text, m: ev.at };
   if (ev.kind === "pay" && done) return { k: "complete", o };
   if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
   /* S6: his Received, and his Not found (11.14), whose own words the service worker has; an account's claim opens no order */

@@ -5,9 +5,11 @@
  * held in a cache on the phone. It holds no session. The one thing it reads from the Cache is /lang,
  * the language the page last recorded on this phone (S13 13.4), which no fetch is ever answered from.
  *
- * THE BANNER NAMES THE KIND OF NEWS (S12 12.2, his decision D4 of 24 Sep 2026). A wake for a phone
- * whose keys are on file carries { k, o }, encrypted for that phone (stmt/push.js), and the words
- * are NEWS below, this file's own: never an amount, a product, an order or a name. A tap opens
+ * THE BANNER IS A PLAIN SENTENCE OF ITS KIND (S12 12.2, his decision D4 of 24 Sep 2026; his sentences of
+ * 28 Sep 2026, Step 1b). A wake for a phone whose keys are on file carries { k, o } and, where the kind
+ * has them, its case and his text (sealedNews in stmt/push.js), encrypted for that phone; the words are
+ * the table's news.* keys: never an amount, a product or a name. His line on an order is its body in
+ * quotation marks, under a tag of its own; his reason at Decline or Cancel is the body. A tap opens
  * the Counter at that order (#o=<id>, which the page reads), and a page already open is told to
  * re-read and open it, where focusing it alone showed whatever it drew last. The tag is the order's,
  * so a banner about one order never replaces another's (S12-C3). A wake with no
@@ -27,8 +29,13 @@ import { WORDS, LIVE } from "./words.js";
 
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
-const KINDS = ["confirmed", "ready", "reply", "paid", "notfound", "due", "delivered", "collected", "part-delivered",
-  "part-collected", "complete", "declined", "cancelled"];
+const KINDS = ["confirmed", "confirmed-credit", "ready-collect", "ready-deliver", "reply", "paid", "notfound", "due",
+  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled"];
+/* Step 1b: the cases a kind's body is chosen by (stmt/orders.js payCase), and the kinds whose body is his own text:
+   his line on the order (reply) and his reason at Decline or Cancel */
+export const CASES = ["owed", "waiting", "paid"];
+export const TEXT_KINDS = ["reply", "declined", "cancelled"];
+export const TEXT_MAX = 200;
 export const NEWS = Object.fromEntries(KINDS.map((k) => [k, WORDS.en["news." + k]]));
 const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
   Object.fromEntries(Object.keys(WORDS[L]).filter((k) => k.startsWith("news.")).map((k) => [k.slice(5), WORDS[L][k]]))]));
@@ -38,8 +45,17 @@ const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
 export function swScript(langs) {
   return `
 var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LIVE = ${JSON.stringify(langs)}, LANG = 'en';
+var CASES = ${JSON.stringify(CASES)}, TEXT_KINDS = ${JSON.stringify(TEXT_KINDS)}, TEXT_MAX = ${TEXT_MAX};
 /* a word in the language this phone last chose, else English's */
 function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
+/* Step 1b: THE BODY OF A KIND. His own text where the kind carries it (his line in quotation marks, his reason as it
+   stands), else the case's sentence, else the kind's own, else Tap to open it */
+function bodyOf(n){
+  var t = typeof n.t === 'string' ? n.t.trim().slice(0, TEXT_MAX) : '';
+  if (t && TEXT_KINDS.indexOf(n.k) >= 0) return n.k === 'reply' ? '“' + t + '”' : t;
+  var v = typeof n.v === 'string' && CASES.indexOf(n.v) >= 0 ? nw(n.k + '.' + n.v) : '';
+  return v || nw(n.k + '.b') || (n.k === 'declined' || n.k === 'cancelled' ? nw('update') : nw('tap'));
+}
 /* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
    service worker cannot read the page); English where there is none, or one this script has no words for. F7: or one
    that is not live, so a phone that kept Malay while Malay is off reads its banner in English */
@@ -59,8 +75,10 @@ self.addEventListener('push', function(e){
   var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : ''), order: o };
   e.waitUntil(langOf().then(function(L){
     LANG = L;
+    /* one banner a message of his (plan F1): his line takes its own tag, so a second line never replaces the first unseen */
+    var m = n && n.k === 'reply' && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
     if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
-      return self.registration.showNotification(nw(n.k), { body: nw('tap'), tag: o ? 'order-' + o : 'order-update', renotify: true, data: to });
+      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + o + '-' + m : o ? 'order-' + o : 'order-update', renotify: true, data: to });
     return fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(function(b){

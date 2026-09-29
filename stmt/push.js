@@ -1,4 +1,5 @@
-/* stmt/push.js: WEB PUSH TO A CUSTOMER'S PHONE, VAPID-signed, carrying at most the KIND of news.
+/* stmt/push.js: WEB PUSH TO A CUSTOMER'S PHONE, VAPID-signed, carrying the KIND of news, its case, and
+ * his own line or reason where the kind has one (Step 1b, sealedNews below).
  *
  * A COPY OF THE DESK'S SENDER (src/push.js), NOT AN IMPORT OF IT. The statements site may import
  * only a sibling file: nothing under stmt/ reaches into src/ or tools/, and the suite proves it.
@@ -23,7 +24,7 @@
  * (404, 410) are deleted on the spot.
  */
 
-import { NEWS } from "./sw.js";
+import { NEWS, CASES, TEXT_KINDS, TEXT_MAX } from "./sw.js";
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -122,8 +123,20 @@ export async function listSubs(env, u) {
   return out;
 }
 
+/* Step 1b (his sentences of 28 Sep 2026): WHAT A SEALED WAKE CARRIES, { k, o } and, where the kind has them, the case
+   its body is chosen by (`v`), his own text (`t`: his line on the order, or his reason at Decline or Cancel, cut to
+   200 characters, which siteWords checked on the desk before it reached here) and his line's moment (`m`), which
+   names its own banner. Nothing else rides: the service worker's words are its own. */
+export function sealedNews(news, o) {
+  const out = { k: news.k, o };
+  if (CASES.includes(news.v)) out.v = news.v;
+  if (TEXT_KINDS.includes(news.k) && typeof news.t === "string" && news.t.trim()) out.t = news.t.trim().slice(0, TEXT_MAX);
+  if (news.k === "reply" && typeof news.m === "string" && /^[0-9TZ:.-]{10,30}$/.test(news.m)) out.m = news.m;
+  return out;
+}
 /** Wake every phone one customer has subscribed. Never throws: a banner is not worth an error path.
-    `news` is { k, o }: a kind the service worker has words for (NEWS in stmt/sw.js), and the order a tap opens. */
+    `news` is { k, o, v?, t?, m? } (sealedNews): a kind the service worker has words for (NEWS in stmt/sw.js), and the
+    order a tap opens. */
 export async function wakeCustomer(env, u, news) { return wake(env, u, "salt-order", news); }
 /* v761: AND EVERY PHONE ON THE SITE, for a notice that is for everybody. Same send, same clearing
    of a subscription the service has given up on, a different collapsing topic so a notice does not
@@ -138,11 +151,12 @@ async function wake(env, u, topic, news) {
     if (!subs.length) return { ok: true, sent: 0 };
     const tokens = new Map();
     const o = news && typeof news.o === "string" ? news.o : "";
-    const text = news && Object.prototype.hasOwnProperty.call(NEWS, news.k) ? JSON.stringify({ k: news.k, o }) : null;
+    const text = news && Object.prototype.hasOwnProperty.call(NEWS, news.k) ? JSON.stringify(sealedNews(news, o)) : null;
     /* a sealed wake collapses per ORDER, under the digest that names a subscription so the push service never
        reads the id: news of another order no longer replaces it while the phone is off. A bare wake's words
-       are all the same, so it keeps the one topic. */
-    const orderTopic = text && o ? "o-" + (await endpointId(o)) : topic;
+       are all the same, so it keeps the one topic. Step 1b: A LINE OF HIS COLLAPSES WITH NOTHING, its own topic
+       over the order and the line's moment, so no line of his is replaced unseen at the push service either. */
+    const orderTopic = text && o ? (news.k === "reply" && news.m ? "m-" + (await endpointId(o + "|" + news.m)) : "o-" + (await endpointId(o))) : topic;
     let sent = 0, gone = 0, failed = 0, sealed = 0;
     for (const s of subs) {
       let origin;

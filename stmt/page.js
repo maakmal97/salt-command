@@ -155,8 +155,6 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ochev{flex:0 0 auto;color:var(--salt-prose)}
 .osent{text-align:center}
 .otick{display:block;margin:4px auto 10px;color:var(--salt-verdigris)}
-.obuzz > * + *{margin-top:10px}
-.obuzz .salt-pill,.obuzz .salt-ghost{width:100%}
 .olim{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:6px}
 .olim .salt-ghost{flex:0 0 auto}
 /* the one filled control is the system's .salt-pill and the quiet ones its .salt-ghost (22 Sep 2026);
@@ -164,15 +162,22 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* KEEP IT ON YOUR HOME SCREEN (v693; S3 3.10): This device's first row (S9 fix), once signed in, in a browser that is
-   not already the app, and a card of its own leading a new account's Home (S7); its steps sit in a Sheet and draw the
-   phone's own marks */
-.keepcard .kline{margin:0}
-.keepcard b{color:var(--salt-text);font-weight:600}
-.home .keepcard .salt-ledger__row{border-bottom:0}
+/* THE ACCOUNT ONLY IN THE SAVED APP (Step 1b): signed in in a browser tab, how to keep it is the whole page; its steps
+   draw the phone's own marks */
+.keeppage{max-width:520px;margin:0 auto;padding:44px 20px 60px}
+.keeppage h1{margin:0 0 10px;font-size:var(--salt-text-2xl);line-height:1.15}
+.keeppage .kline{margin:14px 0 0}
+.keeppage b{color:var(--salt-text);font-weight:600}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
-.keepsteps .glyph,.keepcard .glyph{vertical-align:-0.3em;margin:0 3px}
-.keepsteps .sub2{display:block;line-height:1.5;margin:0 0 6px}
+.keepsteps .glyph,.keeppage .glyph{vertical-align:-0.3em;margin:0 3px}
+/* THE BELL (Step 1b), at the head of every view of the saved app: marked, with its call beside it, until notifications
+   are on; both 44px taps */
+.chead{display:flow-root}
+.cbell{float:right;display:flex;align-items:center;gap:8px;margin:0 0 6px 10px}
+.cbell__orb{position:relative}
+.cbell__dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--salt-brass);display:none}
+.cbell--off .cbell__dot{display:block}
+.cbell--off .cbell__orb{border-color:var(--salt-brass)}
 /* S9 9.9: in This device (S7 7.3, below), its phones and computers with this one marked, and the two quiet ways, each
    answered on the line under them */
 .devcard .dacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -657,6 +662,8 @@ const GLYPH = {
   cash: "M3.6 7 H20.4 V17 H3.6 Z M12 9.6 A2.4 2.4 0 1 1 12 14.4 A2.4 2.4 0 1 1 12 9.6 Z M6.4 12 H7.4 M16.6 12 H17.6",
   copy: "M10.6 8.6 H17.4 A2 2 0 0 1 19.4 10.6 V17.4 A2 2 0 0 1 17.4 19.4 H10.6 A2 2 0 0 1 8.6 17.4 V10.6 A2 2 0 0 1 10.6 8.6 Z M15.4 8.6 V6.6 A2 2 0 0 0 13.4 4.6 H6.6 A2 2 0 0 0 4.6 6.6 V13.4 A2 2 0 0 0 6.6 15.4 H8.6",
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
+  /* Step 1b: the bell in the saved app's header */
+  bell: "M12 4.2 A5.4 5.4 0 0 1 17.4 9.6 V13.8 L19.2 17 H4.8 L6.6 13.8 V9.6 A5.4 5.4 0 0 1 12 4.2 Z M10 19.2 A2 2 0 0 0 14 19.2",
 };
 const FILLED = { dots: true, vdots: true };
 /* S13 13.3: the mark as markup from the marks it is given, so the page's script draws a mark in a sentence it re-words
@@ -722,21 +729,36 @@ function replaceAsk() {
    the steps draw the phone's own marks. Nothing here says a link signs the saved app in.
    S9 fix: SAVING AS AN APP IS THIS DEVICE'S FIRST ROW (the plan's 9.9), where it was a card of its own at the head of
    the statement: the Plain ledger's row, its way in the value and its words under it. */
-function keepCard() {
-  return '<div id="keepCard" class="keepcard salt-ledger salt-ledger--plain" hidden><div class="salt-ledger__row">'
-    + '<div class="salt-ledger__line">' + wt("span", 'class="salt-ledger__label" id="keepHead"', "keep.h")
-    + '<span class="salt-ledger__value">'
-    + wt("button", 'class="btn salt-ghost salt-ghost--lit" id="keepGo" type="button"', "keep.go")
-    + wt("button", 'class="btn salt-ghost salt-ghost--lit" id="keepInstall" type="button" hidden', "keep.install") + "</span></div>"
-    + '<div class="salt-ledger__flag">' + wt("p", 'class="kline" id="keepLine"', "keep.line")
+/* Step 1b (his Q3 of 28 Sep 2026, his sentences 3.5 to 3.7): THE ACCOUNT OPENS ONLY IN THE SAVED APP. Signed in in a
+   browser tab, this is the whole page, never Home, Orders or Prices: on an iPhone or iPad the steps and the code the
+   saved app takes, minted as the page draws so Copy is a tap of its own; where the browser offers an install, its one
+   button, the app sharing this browser's sign-in; else that browser's own marks; and where nothing can keep an app,
+   the browsers that can. Signing out stays within reach. The sign-in link and the door still sign in, in any
+   browser: that is what mints the iPhone's code and what an installed app inherits. */
+function keepPage() {
+  return '<section id="keepCard" class="keeppage" aria-labelledby="keepHead" hidden>'
+    + wt("h1", 'id="keepHead"', "keep.h")
+    + wt("p", 'class="lead" id="keepLead"', "keep.lead")
+    + '<div id="keepIos" hidden><ol class="keepsteps">'
+    + "<li>" + wt("span", "", "keep.s1", 22) + "</li>"
+    + "<li>" + wt("span", "", "keep.s2", 22) + "</li>"
+    + "<li>" + wt("span", "", "keep.s3", 22) + "</li></ol>"
+    + '<div class="salt-code">' + wt("label", 'class="salt-code__label" for="keepCode"', "keep.code")
+    + '<input class="fld salt-field__input salt-field__input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
+    + wt("span", 'class="salt-code__hint" id="keepHint"', "keep.small") + "</div>"
+    + wt("button", 'class="btn salt-pill salt-pill--md" id="keepCopy" type="button" disabled', "code.copy")
+    + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
     /* S3 3.12: the browser's own Install where it offers one; else that browser's own marks, drawn */
+    + wt("button", 'class="btn salt-pill salt-pill--md" id="keepInstall" type="button" hidden', "keep.install")
     + wt("p", 'class="kline" id="keepSam" hidden', "keep.sam", 22)
     + wt("p", 'class="kline" id="keepDesk" hidden', "keep.desk", 22)
     /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
-    + wt("p", 'class="kline" id="keepDroid" hidden', "keep.droid", 22) + "</div></div></div>";
+    + wt("p", 'class="kline" id="keepDroid" hidden', "keep.droid", 22)
+    + wt("button", 'type="button" class="btn salt-ghost" id="keepOut"', "dev.out")
+    + "</section>";
 }
-/* S7 7.3: THIS DEVICE, in Account, ONE CARD: saving it as an app first (the keep card, S9 fix, which homeKeep moves to
-   lead a new account's Home instead), its notifications (drawDevice), the account's phones and computers with Sign in
+/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands) and Saved as
+   an app (Step 1b: the account opens only there), the account's phones and computers with Sign in
    another device and Sign out other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the
    customer's one Log out (#lock, S7 7.1: it left the bar) */
 function thisDevice(langs) {
@@ -750,24 +772,25 @@ function thisDevice(langs) {
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
 }
-function keepSheet() {
-  return '<div id="keepScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="keepSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="keepT" tabindex="-1" hidden>'
+/* Step 1b (his Q3, his sentences 3.1 and 3.3): THE BELL, in the saved app's header on every view. Until notifications
+   are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
+   Once on, the call goes and the bell stays, plain, opening This device's notifications row */
+function bellBox() {
+  return '<div id="bellBox" class="cbell" hidden>'
+    + wt("button", 'type="button" class="salt-pill salt-pill--sm" id="bellCall"', "bell.call")
+    + '<button type="button" class="salt-orb cbell__orb" id="bell"' + wl("bell.off") + ">" + glyphSvg("bell", 22)
+    + '<span class="cbell__dot" aria-hidden="true"></span></button></div>';
+}
+/* refused on this phone: its own Settings steps, and the bell to tap again once they are on */
+function bellSheet() {
+  return '<div id="bellScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="bellSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="bellT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
-    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="keepT"', "keep.h")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="keepX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
-    + '<div class="salt-sheet__body">'
-    + wt("p", "", "keep.why")
-    + '<ol class="keepsteps">'
-    + "<li>" + wt("span", "", "keep.s1", 22)
-    + wt("span", 'class="sub2" id="keepWhere"', "keep.where") + "</li>"
-    + "<li>" + wt("span", "", "keep.s2", 22) + "</li>"
-    + "<li>" + wt("span", "", "keep.s3", 22) + "</li></ol>"
-    + '<div class="salt-code">' + wt("label", 'class="salt-code__label" for="keepCode"', "keep.code")
-    + '<input class="fld salt-field__input salt-field__input--code" id="keepCode" type="text" readonly value="" aria-describedby="keepHint">'
-    + wt("span", 'class="salt-code__hint" id="keepHint"', "code.once") + "</div>"
-    + '<p class="msg" id="keepMsg" role="status" aria-live="polite"></p></div>'
-    + '<div class="salt-sheet__foot">' + wt("button", 'class="btn salt-pill salt-pill--md" id="keepCopy" type="button"', "code.copy") + "</div>"
+    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="bellT"', "bell.h")
+    + '<button type="button" class="salt-orb salt-sheet__close" id="bellX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body">' + wt("p", "", "bell.lead")
+    + wt("p", 'id="bellIos" hidden', "bell.ios") + wt("p", 'id="bellDroid" hidden', "bell.droid") + wt("p", 'id="bellDesk" hidden', "bell.desk") + "</div>"
+    + '<div class="salt-sheet__foot">' + wt("button", 'class="btn salt-pill salt-pill--md" id="bellDone" type="button"', "bell.done") + "</div>"
     + "</div>";
 }
 
@@ -1089,7 +1112,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + keepSheet() + paySheet() + devSheet())
+    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + keepPage())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -1103,13 +1126,13 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span>' + wt("button", 'type="button" id="lapseGo"', "link.go") + "</div>"
     + "</div></div>"
-    /* the header names the place and whose account it is, so every customer knows their username */
-    + '<header class="chead">' + wt("h1", 'id="placeT"', "place.home")
+    /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
+       sits in it, on every view of the saved app */
+    + '<header class="chead">' + (owner ? "" : bellBox()) + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
-    /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5), then the keep card,
-       which leads only a new account's Home and is otherwise This device's first row (homeKeep). What they owe is
+    /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
-    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin) + (owner ? "" : keepCard())
+    + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
     + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
@@ -1554,86 +1577,82 @@ const CLIENT_JS = `
       }
     }catch(e){ /* not remembered; the password still opens it */ }
   }
-  /* ---- KEEP IT ON YOUR HOME SCREEN (S3 3.10, his D2) ------------------------------------------------------
-     A signed-in iPhone mints a one-use key and its eight-symbol code as the Sheet opens (POST /handover, the
-     content key wrapped under the key), so the Copy tap copies and does nothing else: no derivation and no fetch
-     sits between the tap and the clipboard. The same tap rewrites the address to /app#<key>, so a saved app that
-     keeps the address signs itself in; one that does not takes the key by Paste, or the code typed. */
-  var keepCardEl=document.getElementById('keepCard'), keepSheetEl=document.getElementById('keepSheet'),
-      keepScrim=document.getElementById('keepScrim'), keepCode=document.getElementById('keepCode'),
+  /* ---- THE ACCOUNT ONLY IN THE SAVED APP (Step 1b, his Q3 of 28 Sep 2026; S3 3.10 and his D2 before it) ---------
+     Signed in in a browser tab (never his page, never View as them), the keep page is the whole page and the places are
+     hidden: it is a page gate, as the overdue gate is, and the Worker answers a session as it always has. An iPhone or
+     iPad mints a one-use key and its eight-symbol code as the page draws (POST /handover, the content key wrapped under
+     the key), so the Copy tap copies and does nothing else: no derivation and no fetch sits between the tap and the
+     clipboard. The same tap rewrites the address to /app#<key>, so a saved app that keeps the address signs itself in;
+     one that does not takes the key by Paste, or the code typed. The code works once, for fifteen minutes; opening the
+     page again mints a new one. */
+  var keepCardEl=document.getElementById('keepCard'), keepCode=document.getElementById('keepCode'),
       keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
-  var keepTok='', keepN=0, keepMinted=[];   /* S3 fix: every key this page minted, for Log out to burn */
+  var keepTok='', keepN=0, keepMinted=[], keepMinting=false;   /* S3 fix: every key this page minted, for Log out to burn */
   /* S3 3.12: WHERE THE BROWSER OFFERS AN INSTALL, ONE BUTTON TAKES IT (beforeinstallprompt; the app it installs
      shares this browser's storage, so it opens signed in). Where it does not, Samsung Internet's own steps are drawn,
-     and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. */
+     and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. A
+     browser that can keep no app (Firefox on a computer, an app's own browser, any that offers no install) is told
+     which browsers can. */
   var bip=null;
   var SAMSUNG=/SamsungBrowser/.test(UA), ANDROID=/Android/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
+  function appGated(){ return !!session&&!OWNER&&!view&&!STANDALONE; }
   function keepMode(){
-    if(INAPP||STANDALONE||OWNER||view||!session) return '';
-    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'';
+    if(!appGated()) return '';
+    if(INAPP) return 'none';
+    return IOS?'ios':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'none';
   }
   function drawKeep(){
     if(!keepCardEl) return;
     var mode=keepMode();
     keepCardEl.hidden=!mode;
-    homeKeep();
+    if(mode) tabs.hidden=true; else if(bundle) tabs.hidden=false;
     if(!mode) return;
-    setW(document.getElementById('keepHead'),IOS||DEV==='phone'?'keep.h':'keep.hApp');
-    document.getElementById('keepWhere').hidden=IPAD;
-    document.getElementById('keepGo').hidden=mode!=='ios';
+    var k=mode==='ios'?'':mode==='none'?'None':'App';
+    setW(document.getElementById('keepHead'),'keep.h'+k);
+    setW(document.getElementById('keepLead'),'keep.lead'+k);
+    document.getElementById('keepIos').hidden=mode!=='ios';
     document.getElementById('keepInstall').hidden=mode!=='install';
     document.getElementById('keepSam').hidden=mode!=='samsung';
     document.getElementById('keepDesk').hidden=mode!=='desk';
     document.getElementById('keepDroid').hidden=mode!=='droid';
+    if(mode==='ios'&&!keepTok&&!keepMinting) mintKeep();
   }
   window.addEventListener('beforeinstallprompt', function(ev){ ev.preventDefault(); bip=ev; drawKeep(); drawDevice(); });
-  window.addEventListener('appinstalled', function(){ bip=null; if(keepCardEl) keepCardEl.hidden=true; drawDevice(); });
+  window.addEventListener('appinstalled', function(){ bip=null; drawKeep(); drawDevice(); });
   function ksay(t,cls){ keepMsg.textContent=t||''; keepMsg.className='msg'+(cls?' '+cls:''); }
   async function mintKeep(){
+    if(!curCk) return;
     var n=++keepN;
+    keepMinting=true;
     keepCopy.disabled=true; keepCode.value=''; ksay(tw('keep.making'),'wait');
     try{
       var tok=b64e(crypto.getRandomValues(new Uint8Array(24))).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,'');
       var wrap=await wrapUnder(new TextEncoder().encode(tok), curCk);
       var r=await api('/handover',{token:tok, wrap:wrap});
-      if(n!==keepN||keepSheetEl.hidden) return;
+      if(n!==keepN||keepCardEl.hidden) return;
       if(r.status===503){ ksay(tw('keep.off'),'bad'); return; }
       if(!r.body.ok||!r.body.code){ ksay(r.status===401?wErr(r.body):tw('code.notMade'),'bad'); return; }
       keepTok=r.body.token||tok; keepMinted=keepMinted.concat(keepTok).slice(-10);
       keepCode.value=String(r.body.code).toUpperCase().replace('-',' ');
       keepCopy.disabled=false; ksay('');
     }catch(e){ if(n===keepN) ksay(tw('code.notMade'),'bad'); }
+    finally{ if(n===keepN) keepMinting=false; }
   }
-  /* S3 fix, 24 Sep 2026: EVERY OPENING MINTS AFRESH. A code the saved app had already spent was shown and copied again
-     for up to fourteen minutes, while the app said to make a new one; closing forgets it here (a copy already made
-     still works in the app for its fifteen minutes) */
-  var keepFrom=null;   /* S7: the control that opened it, the card's or This device's, takes the focus back */
-  function openKeep(from){
-    if(!keepSheetEl||!curCk) return;
-    keepFrom=from&&from.nodeType===1?from:null;
-    keepScrim.hidden=false; keepSheetEl.hidden=false;
-    try{ keepSheetEl.focus(); }catch(e){}
-    mintKeep();
-  }
-  function closeKeep(){
-    if(!keepSheetEl||keepSheetEl.hidden) return;
-    keepSheetEl.hidden=true; keepScrim.hidden=true; keepN++;
-    keepTok=''; keepCode.value=''; keepCopy.disabled=true; ksay('');
-    try{ (keepFrom||document.getElementById('keepGo')).focus(); }catch(e){}
+  /* signing out forgets the code drawn (a copy already made still works in the app for its fifteen minutes) */
+  function keepReset(){
+    if(!keepCardEl) return;
+    keepN++; keepMinting=false; keepTok=''; keepCode.value=''; keepCopy.disabled=true; ksay('');
+    keepCardEl.hidden=true;
   }
   /* the browser's own question, asked inside the tap; it can be asked once, so the event is spent here */
   function keepInstallGo(){
     if(!bip) return;
     var e=bip; bip=null;
     try{ e.prompt(); }catch(x){ drawKeep(); drawDevice(); return; }
-    Promise.resolve(e.userChoice).then(function(c){ if(c&&c.outcome==='accepted') keepCardEl.hidden=true; else drawKeep(); drawDevice(); }, function(){ drawKeep(); drawDevice(); });
+    Promise.resolve(e.userChoice).then(function(){ drawKeep(); drawDevice(); }, function(){ drawKeep(); drawDevice(); });
   }
-  if(keepSheetEl){
-    document.getElementById('keepGo').addEventListener('click', function(){ openKeep(); });
+  if(keepCardEl){
     document.getElementById('keepInstall').addEventListener('click', keepInstallGo);
-    document.getElementById('keepX').addEventListener('click', closeKeep);
-    keepScrim.addEventListener('click', closeKeep);
-    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeKeep(); });
     keepCopy.addEventListener('click', function(){
       if(!keepTok) return;
       /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
@@ -1876,7 +1895,7 @@ const CLIENT_JS = `
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    closeKeep(); closePay(); keepTok=''; if(keepCardEl) keepCardEl.hidden=true; if(codeBox) codeBox.hidden=true;
+    keepReset(); closePay(); if(codeBox) codeBox.hidden=true;
     closeDevSheet(); devN++; if(devSlot) devSlot.textContent='';
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
@@ -1915,6 +1934,8 @@ const CLIENT_JS = `
     return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
   }
   document.getElementById('lock').addEventListener('click', logOut);
+  /* Step 1b: and from the keep page, the whole page in a browser tab */
+  if(keepCardEl) document.getElementById('keepOut').addEventListener('click', logOut);
 
   /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
      silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
@@ -2139,8 +2160,57 @@ const CLIENT_JS = `
     f.setAttribute('role','status'); r.appendChild(f);
     return r;
   }
+  /* ---- THE BELL (Step 1b, his Q3 of 28 Sep 2026; his sentences 3.1 and 3.3) ------------------------------------------
+     On every view of the saved app, in the header. While notifications are not on (not granted, no subscription filed, or
+     turned off on This device) it is marked and its call sits beside it, until they are on, as he asked; a tap on either
+     asks, from the tap, so the ask is still a tap (iOS requires one; the v693 revert stands). Refused on this phone, the
+     tap opens that phone's Settings steps. Once on, the call goes and the bell stays, plain, opening This device. A phone
+     that cannot receive them shows no bell: This device says why. It replaces Sent's "A buzz when it is confirmed?" and
+     the Order tab's Notify me, the bell covering both. */
+  var bellBoxEl=document.getElementById('bellBox'), bellEl=document.getElementById('bell'), bellCall=document.getElementById('bellCall'),
+      bellSheetEl=document.getElementById('bellSheet'), bellScrim=document.getElementById('bellScrim'), bellBusy=false;
+  function pushOn(){ return !!draft.pushed||(pushCan()&&Notification.permission==='granted'&&!!draft.pushDone&&!pushOff()); }
+  function drawBell(){
+    if(!bellBoxEl) return;
+    bellBoxEl.hidden=!(STANDALONE&&!!session&&!view&&!OWNER&&pushCan());
+    if(bellBoxEl.hidden) return;
+    var on=pushOn(), k=on?'bell.on':'bell.off';
+    bellBoxEl.classList.toggle('cbell--off',!on);
+    bellCall.hidden=on; bellCall.disabled=bellBusy;
+    bellEl.setAttribute('data-wl',k); bellEl.setAttribute('aria-label',tw(k));
+  }
+  async function bellTap(){
+    if(pushOn()){ placeShow('stmt',true); try{ document.getElementById('devRows').scrollIntoView(); }catch(e){} return; }
+    if(Notification.permission==='denied'){ openBell(); return; }
+    if(bellBusy) return;
+    bellBusy=true; drawBell();
+    await subscribePush();
+    bellBusy=false; drawDevice();
+  }
+  function openBell(){
+    if(!bellSheetEl) return;
+    document.getElementById('bellIos').hidden=!IOS;
+    document.getElementById('bellDroid').hidden=IOS||!ANDROID;
+    document.getElementById('bellDesk').hidden=IOS||ANDROID;
+    bellScrim.hidden=false; bellSheetEl.hidden=false;
+    try{ bellSheetEl.focus(); }catch(e){}
+  }
+  function closeBell(){
+    if(!bellSheetEl||bellSheetEl.hidden) return;
+    bellSheetEl.hidden=true; bellScrim.hidden=true;
+    try{ bellEl.focus(); }catch(e){}
+  }
+  if(bellBoxEl){
+    bellEl.addEventListener('click', bellTap);
+    bellCall.addEventListener('click', bellTap);
+    document.getElementById('bellX').addEventListener('click', closeBell);
+    document.getElementById('bellDone').addEventListener('click', closeBell);
+    bellScrim.addEventListener('click', closeBell);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeBell(); });
+  }
   function devBtn(t,go){ var b=el('button','salt-ghost',t); b.type='button'; b.disabled=devBusy===ticket; b.addEventListener('click',go); return b; }
   function drawDevice(){
+    drawBell();
     if(!devEl) return;
     devEl.hidden=!session||view||OWNER;
     if(devEl.hidden) return;
@@ -2177,7 +2247,7 @@ const CLIENT_JS = `
   function show(b){
     bundle=b;
     gate.hidden=true; if(roster) roster.hidden=true;
-    barw.hidden=false; tabs.hidden=false;
+    barw.hidden=false; tabs.hidden=false; drawKeep(); drawBell();
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
     [].forEach.call(tabs.querySelectorAll('[data-whoas]'),function(x){ setW(x,'who.as',{u:'<span class="mono" data-who>'+esch(user)+'</span>'}); });
     [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
@@ -2832,15 +2902,13 @@ const CLIENT_JS = `
     }
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
     var o=r.body.order;
-    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.buzzNo=false; draft.forFriend=null;
+    draft.sent=(o&&o.id)||''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null;
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
   }
-  /* S4 4.5: SENT, AND THE ONE QUESTION WORTH ASKING THEN. An order placed is the moment a buzz means something (it says
-     when the order is confirmed), so the question is asked here and put only by a tap: nothing is asked as the sheet
-     draws. A phone that is already on is not asked; a browser that cannot be woken is told how to become one that can.
-     See the order closes the sheet on the order itself. */
+  /* S4 4.5: SENT. See the order closes the sheet on the order itself. Step 1b: its notifications question retired, the
+     bell asking instead */
   function drawSent(){
     sheetHead(null);
     var B=osh.body, top=el('div','osent');
@@ -2848,29 +2916,7 @@ const CLIENT_JS = `
     var h=el('h2','salt-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
     top.appendChild(el('p',null,tw('sh.sentP')));
     B.appendChild(top);
-    var can=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
-    var on=!!draft.pushed||(can&&Notification.permission==='granted'&&!!draft.pushDone);
-    if(on){ if(draft.buzzAsked) B.appendChild(statusLine(tw('sh.buzzOn'))); }
-    else if(!draft.buzzNo&&!(can&&Notification.permission==='denied')){
-      var bx=el('div','salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm obuzz');
-      bx.appendChild(el('p','salt-eyebrow salt-eyebrow--brass',tw('sh.buzzQ')));
-      if(!can) bx.appendChild(el('p',null,tw('sh.buzzNo')));
-      else {
-        bx.appendChild(el('p',null,tw('sh.buzzOnly')));
-        var yes=el('button','salt-pill salt-pill--md',tw('sh.buzzYes')); yes.type='button'; yes.id='oBuzz'; yes.setAttribute('data-k','buzz');
-        yes.disabled=!!draft.buzzBusy;
-        yes.addEventListener('click',async function(){
-          if(draft.buzzBusy) return;
-          draft.buzzBusy=true; draft.buzzAsked=true; draft.pushNote=''; sheetDraw();
-          await subscribePush(); draft.buzzBusy=false; sheetDraw();
-        });
-        var no=el('button','salt-ghost',tw('sh.buzzNot')); no.type='button'; no.setAttribute('data-k','nobuzz');
-        no.addEventListener('click',function(){ draft.buzzNo=true; sheetDraw(); });
-        bx.appendChild(yes); bx.appendChild(no);
-        if(draft.pushNote) bx.appendChild(statusLine(noteSaid(draft.pushNote)));
-      }
-      B.appendChild(bx);
-    }
+    /* Step 1b: Sent's ask retired; the bell in the saved app's header asks, on every view, until notifications are on */
     var see=el('button','salt-ghost ofull',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
     /* stage 5's own screen for it; an order the list has not brought back yet opens on the next draw that has it */
     see.addEventListener('click',function(){ var id=draft.sent; sheetClose(); placeShow('order');
@@ -2936,23 +2982,7 @@ const CLIENT_JS = `
       }
       if(osh&&draft.step==='limit') sheetDraw();
     }
-    /* notifications: a wake on the phone when the order moves, so the page need not stay open.
-       Not on his read-only view: those are not his phones. */
-    var np=el('div','pane'); np.id='oPush';
-    np.appendChild(el('h3',null,twE('push.h')));
-    var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
-    if(!canPush){
-      np.appendChild(el('p','sub2',twE('push.no')));
-    } else if(draft.pushed||Notification.permission==='granted'&&draft.pushDone){
-      np.appendChild(el('p','sub2',twE('push.onAll')));
-    } else {
-      np.appendChild(el('p','sub2',twE('push.ask')));
-      /* S7 7.2: nothing says phone on a computer */
-      var nb=el('button','btn quiet salt-ghost',twE('push.notify')); nb.type='button';
-      nb.addEventListener('click', subscribePush); np.appendChild(nb);
-      if(draft.pushNote) np.appendChild(el('p','msg',inEn(noteSaid)(draft.pushNote)));
-    }
-    if(!view) top.appendChild(np);
+    /* Step 1b: notifications are the bell's, in the header of every view of the saved app; this pane retired */
     pOrder.appendChild(oPlace());
     if(keep){ var kbox=[].filter.call(pOrder.querySelectorAll('input[data-say]'),function(x){ return x.getAttribute('data-say')===keep; })[0];
       if(kbox){ try{ kbox.focus({preventScroll:true}); kbox.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
@@ -3162,7 +3192,8 @@ const CLIENT_JS = `
   function oWhen(o){
     /* S13: each a whole sentence from the table, its day in bold, his reason a slot */
     var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
-        why=e&&e.note?esch(e.note):'', back=tw(paid>0?'ow.refunded':'ow.nothingOwed',{rm:rm(paid)}),
+        /* Step 1b: his reason is a sentence, the banner's body too; one filed before, with no stop, is given one */
+        why=e&&e.note?esch(/[.!?]$/.test(e.note.trim())?e.note.trim():e.note.trim()+'.'):'', back=tw(paid>0?'ow.refunded':'ow.nothingOwed',{rm:rm(paid)}),
         went=function(x){ return function(L){ return esch(x(L)||wordIn(L,'ow.dayWent')); }; }, sz=function(q){ return function(L){ return esch(unitsOf(q,oUnit(o),L)); }; };
     function put(k,sl){ p.appendChild(setW(el('span'),k,sl)); }
     if(s==='placed') put('ow.placed');
@@ -3920,21 +3951,8 @@ const CLIENT_JS = `
     var parts={hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     drawPayHead();
-    homeKeep();
     placeCounts();
     placeTitle();
-  }
-  /* THE KEEP CARD IS ONE ELEMENT, moved and never copied: it leads a new account's Home, a card of its own as the plan's
-     first Home draws it (S7-R5 of the stage 7 review), and is otherwise This device's first row in Account (S9 fix), so a
-     small phone's Home answers the three questions first. Moved only when that changes, so a poll never takes a tap's
-     focus from it */
-  var KEEP_CARD=['salt-glass-card','salt-glass-card--radius-md','salt-glass-card--pad-sm'];
-  function homeKeep(){
-    var k=keepCardEl, pay=document.getElementById('payHead'), rows=document.getElementById('devRows'); if(!k||!pay||!rows) return;
-    var home=fresh();
-    if(home){ if(k.nextElementSibling!==pay) pay.parentNode.insertBefore(k,pay); }
-    else if(k.nextElementSibling!==rows) rows.parentNode.insertBefore(k,rows);
-    KEEP_CARD.forEach(function(c){ k.classList.toggle(c,home); });
   }
   function hHead(t,n){ var h=el('h2','salt-eyebrow salt-eyebrow--copper hlab',t); if(n) h.appendChild(el('span','hn',String(n))); return h; }
   /* the Orders row, with Home's own sentence for why it is here */
@@ -4188,10 +4206,10 @@ const CLIENT_JS = `
   });
 
   /* ---- ON THE WAY IN, NOTHING IS ASKED (S4, 24 SEP 2026; v693 asked here) ----------------------
-     The plan he answered "all recommended" asks at the first order, from a tap: Sent's "A buzz when it is
-     confirmed?", and the Order tab's Notify me. Asked on the way in, a phone that answered never saw that
-     question, and a remembered phone was asked on load with nothing tapped. What stays is the phone already
-     on, filed again below. The owner's route never asks: those are not his phones. */
+     Asked on the way in, a phone that answered never saw the question again, and a remembered phone was asked on load
+     with nothing tapped. Step 1b: the ask is the bell's, from a tap, on every view of the saved app until notifications
+     are on. What stays here is the phone already on, filed again below. The owner's route never asks: those are not
+     his phones. */
   function askPush(){
     if(OWNER||!session) return;
     try{
