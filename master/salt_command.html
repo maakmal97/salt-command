@@ -4930,20 +4930,95 @@ function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
    and where no day is known. */
 function txUnpaidSince(s){
   if(!s||s.cancelled||!(txAdvance(s)>0.009))return null;
-  const p=txPrice(s),phys=txPhys(s),paidU=p>0?txPaid(s)/p:0;
-  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
-    .map(a=>({d:String(a.date),u:+a.kg}));
-  const rest=phys-steps.reduce((t,x)=>t+x.u,0);
-  if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest});
-  steps.sort((a,b)=>a.d.localeCompare(b.d));
-  /* the units they hold, oldest first: units handed back leave the latest handover first, and a trail stating more
-     than deliveredQty is cut from the latest too, so what is walked is what they hold */
-  const held=[],drop=n=>{while(n>0.0001&&held.length){const x=held[held.length-1],t=Math.min(n,x.u);x.u-=t;n-=t;if(x.u<=0.0001)held.pop();}};
-  for(const x of steps){if(x.u>0)held.push({d:x.d,u:x.u});else drop(-x.u);}
-  drop(held.reduce((t,x)=>t+x.u,0)-phys);
+  const p=txPrice(s),paidU=p>0?txPaid(s)/p:0;
   let cum=0;
-  for(const x of held){cum+=x.u;if(cum>paidU+0.0001)return x.d||null;}
+  for(const x of txHandSteps(s)){cum+=x.u;if(cum>paidU+0.0001)return x.d||null;}
   return null;
+}
+/* THE UNITS A ROW HAS HANDED OVER, oldest first, each with its day (V5c, 29 Sep 2026, out of txUnpaidSince, which walks
+   them): the units they hold, units handed back leaving the latest handover first, and a trail stating more than
+   deliveredQty cut from the latest too, so what is walked is what they hold. `dated` is false where the day is only the
+   row's own date, no step or deliveredOn naming one. */
+function txHandSteps(s){
+  const phys=txPhys(s);
+  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
+    .map(a=>({d:String(a.date),u:+a.kg,dated:true}));
+  const rest=phys-steps.reduce((t,x)=>t+x.u,0);
+  if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest,dated:!!s.deliveredOn});
+  steps.sort((a,b)=>a.d.localeCompare(b.d));
+  const held=[],drop=n=>{while(n>0.0001&&held.length){const x=held[held.length-1],t=Math.min(n,x.u);x.u-=t;n-=t;if(x.u<=0.0001)held.pop();}};
+  for(const x of steps){if(x.u>0)held.push({d:x.d,u:x.u,dated:x.dated});else drop(-x.u);}
+  drop(held.reduce((t,x)=>t+x.u,0)-phys);
+  return held;
+}
+/* V5c (his answers of 29 Sep 2026): HOW LATE EACH ROW WAS PAID, in days from its handover. Every row the party owns
+   (their bucket included), not cancelled and not a gift, whose every handover is dated. Paid in full: each stage of the
+   handover is covered by the money in the order it came (the trail, what came with the row on its own date), and the
+   row's delay is its latest-covered stage's; paid on a stated day with no trail, that day less the first handover.
+   A row paid on a day only assumed counts neither way. Unpaid with goods out, the days since txUnpaidSince, listed
+   only once past the term (`open`). A write-off is a delay of the lock, dated its first handover plus the lock. Paid
+   ahead reads 0. Days are calendar dates. */
+const dayNo=d=>Math.round(Date.parse(String(d).slice(0,10)+'T00:00:00Z')/864e5);
+const dayIso=n=>new Date(n*864e5).toISOString().slice(0,10);
+function payDelays(sales,party,today,rules){
+  const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,out=[];
+  (sales||[]).forEach(s=>{
+    if(!s||s.cancelled||s.goodwill||!ownsCode(party,s.customer)||!(txOwed(s)>0))return;
+    const held=txHandSteps(s);
+    if(!held.length||held.some(x=>!x.dated||!x.d))return;
+    const first=held[0].d,base={date:s.date||null,d:first};
+    if(s.defaulted){out.push(Object.assign(base,{on:dayIso(dayNo(first)+lock),days:lock,open:false}));return;}
+    const t=txDates(s);
+    if(t.fullPaid&&t.pSrc==='stated'){out.push(Object.assign(base,{on:t.pOn,days:Math.max(0,dayNo(t.pOn)-dayNo(first)),open:false}));return;}
+    if(t.fullPaid&&t.pSrc==='trail'){
+      const p=txPrice(s),steps=(s.amend||[]).filter(a=>a&&+a.cash>0.0001).map(a=>({d:String(a.date||s.date),rm:+a.cash}));
+      const first$=txPaid(s)-steps.reduce((a,x)=>a+x.rm,0),pays=(first$>0.009?[{d:String(s.date),rm:first$}]:[]).concat(steps)
+        .sort((a,b)=>a.d.localeCompare(b.d));
+      let days=0,cum=0,paid=0,i=0;
+      for(const x of held){
+        cum+=x.u*p;
+        while(i<pays.length&&paid<cum-0.009){paid+=pays[i].rm;i++;}
+        const by=paid>=cum-0.009&&i>0?pays[i-1].d:t.pOn;
+        days=Math.max(days,dayNo(by)-dayNo(x.d));
+      }
+      out.push(Object.assign(base,{on:t.pOn,days:Math.max(0,days),open:false}));return;
+    }
+    if(txAdvance(s)>0.009){
+      const since=txUnpaidSince(s);if(!since)return;
+      const days=dayNo(today)-dayNo(since);
+      if(days>term)out.push(Object.assign(base,{on:String(today).slice(0,10),days,open:true}));
+    }
+  });
+  return out;
+}
+/* THE LATE PAYER'S OFFER, walked over those delays by the day each was settled (a delay before a prompt payment on the
+   same day). On time is paid within the term (RULES.holdDays, his answer); a short delay is past it and under the lock
+   (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
+   RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
+   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
+   nothing (his answer of 29 Sep 2026). */
+function lateOffer(delays,rules){
+  const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
+    win=R.lateWindowDays!=null?+R.lateWindowDays:90,rep=R.lateResetRepeat!=null?+R.lateResetRepeat:3;
+  const kind=x=>x.days<=term?'prompt':x.days>=lock?'long':'short';
+  const ev=(delays||[]).map(x=>Object.assign({k:kind(x)},x))
+    .sort((a,b)=>String(a.on).localeCompare(String(b.on))||(a.k==='prompt')-(b.k==='prompt')||String(a.d).localeCompare(String(b.d)));
+  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null;
+  for(const e of ev){
+    const n=dayNo(e.on);
+    if(on){
+      if(e.k==='prompt'){if(++streak>=need){on=false;resetOn=n;lastShort=null;streak=0;}}
+      else{streak=0;last=e;}
+      continue;
+    }
+    if(e.k==='prompt')continue;
+    if(resetOn!=null&&n-resetOn<=win){on=true;need=rep;why='repeat';}
+    else if(e.k==='long'){on=true;need=1;why='long';}
+    else if(lastShort!=null&&n-lastShort<=win){on=true;need=1;why='shorts';}
+    else{lastShort=n;continue;}
+    last=e;streak=0;lastShort=null;
+  }
+  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on}:{on:false};
 }
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
@@ -5830,7 +5905,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,
+return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
@@ -8525,7 +8600,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v955","d":"30 Sep 2026","t":"S215 GOES OUT ON CREDIT; RM320 LEFT OWING","n":["<p><b>ONE CORRECTION FOLDED.</b> S215 for CH4-KS, order 20260928120800-zq6mca, now records 3 units delivered on 30 Sep, handover delivered. Nothing was paid: the 3 units went out on credit against RM310 plus RM10 delivery, leaving RM320 outstanding. The drafter's rate flag reads RM103.33 against a RM93.33 typical; the dossier median across 3 orders is RM100, and RM103.33 is the top of the recorded range. Preapproved by phone.</p>","<p><b>INVENTORY: 3 UNITS OUT, COST UNCHANGED.</b> The shelf rolls 3 units out to CH4-KS, the only move in this fold. No lot landed, so the cost basis stays RM56 a unit, matching replacement cost. The last salt count was 29 Sep. The dossier gives no credit cap for CH4-KS, so the RM320 advance stands unchecked against a cap and is left for the desk to confirm.</p>"]}];
+const evolution=[{"v":"v956","d":"30 Sep 2026","t":"A LATE PAYER IS OFFERED A LEVEL DOWN, READ FROM THE HANDOVER","n":["<p><b>A LATE PAYER IS OFFERED A LEVEL DOWN, NEVER PRICED ONE.</b> His answers of 29 Sep 2026, in place of rare and late twice. Each row's delay is counted in days from its handover, across every book and the friend bucket: within the term (1 day) is on time, past it and under the lock (4 days) a short delay, the lock or more a long one. One long delay, or a second short one within 90 days of the one before, turns the offer on; one payment on time turns it off; a delay within 90 days of that turns it on again, and then it takes 3 payments on time in a row.</p>","<p><b>THE TIERS CARD OFFERS IT; HE SETS IT OR NOT.</b> Beside what the customer is quoted, the card says Late payer: offered the level down, and why. A late payer takes no promotion, from buying bigger or from a slowdown; the small buyer's drop still stands. The profile reads no lateness any more.</p>","<p><b>THE COUNTER SAYS IT.</b> Under To pay now, while something is to pay: pay within a day of receiving it to keep your price. The pay sheet gives the whole rule, off the term, lock and window the publish now seals; a statement published before this version shows neither line. The test accounts carry the case.</p>","<p><b>PROOFS.</b> Two new suite sections and the old late-twice checks rewritten; 17 mutations each turned a check red. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8640,7 +8715,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='30 Sep 2026, 00:13 KL';
+const LAST_UPDATED='30 Sep 2026, 02:01 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9174,6 +9249,11 @@ const RULES={
      this is paid in advance, for everyone, in place of the Counter's unit cap. The desk Worker reads it from TERMS.
      No semicolon in this object: the publish reads RULES up to the first one. */
   creditCeilingRM:250,
+  /* V5c (his answers of 29 Sep 2026): a late payer is offered a level down, never priced one. Two delays past the term
+     within this many days, or one of lockDays or more, turn the offer on, one payment on time turns it off, and a delay
+     within this many days of that takes lateResetRepeat payments on time in a row. The engine's lateOffer reads them. */
+  lateWindowDays:90,
+  lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
   /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
@@ -17035,12 +17115,11 @@ const PROFILE_RULE={
   loyalWithinDays:30,   //   and the last within thirty days
   rarePerMonth:1,       // "rare": under one order a month
   rareAfterDays:60,     //   or nothing for sixty days
-  lateTimes:2,          // "frequent late payments": twice past the credit term, his word
   spanFloorDays:30      // orders a month is read over at least thirty days, so one order last week is not four a month
 };
 /* the profile of one customer on one product; null for a product they have never bought at a price */
 function buyerProfile(code,prod){
-  const R=PROFILE_RULE, DAY=86400000, now=TODAY.getTime(), term=(RULES&&RULES.creditDays)||10;
+  const R=PROFILE_RULE, DAY=86400000, now=TODAY.getTime();
   const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
   if(!rows.length)return null;
   const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
@@ -17048,22 +17127,17 @@ function buyerProfile(code,prod){
   const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
   const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
   const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
-  /* LATE: an order still owed past the term, or one that was paid, but only after it. A write-off is not counted here;
-     it has its own rule and leaves every reading of what is owed (txAdvance reads nothing on it). */
-  const late=rows.filter(s=>{
-    if(txAdvance(s)>0.009)return (now-new Date(s.date).getTime())/DAY>term;
-    return !!(s.paidOn&&(new Date(s.paidOn).getTime()-new Date(s.date).getTime())/DAY>term);
-  }).length;
   const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
   const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
-  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays, lateTwice=late>=R.lateTimes;
+  /* V5c: how late they pay is read across every book by lateOf, no longer here */
+  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
   const name=rows.length===1?'one-off'
     :small?(frequent?'small and often':'small and rare')
     :bigger?(frequent?'large and regular':'rare and large')
     :frequent?'consistent mid':'occasional mid';
   return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
-    perMonth:+perMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),late,
-    frequent,small,bigger,loyal,rare,lateTwice};
+    perMonth:+perMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
+    frequent,small,bigger,loyal,rare};
 }
 /* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
    cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
@@ -17081,7 +17155,8 @@ function tierProposal(code,prod,boards){
    tierProposal reads the level nearest what a customer pays. These rules move it on their profile and the stock, and what
    they return is still a PROPOSAL: a tier HELD on the book is his word and is never moved by a rule, only offered one.
    His four, in the order they are applied:
-   1. RARE AND LATE TWICE: down one level at every size. The last level stays there. A late payer is offered no promotion either.
+   1. A LATE PAYER (V5c, his answers of 29 Sep 2026, in place of rare and late twice): OFFERED a level down on the Tiers
+      card, never priced one, so it is not here; here a late payer takes no promotion, rules 3 and 4.
    2. FREQUENT AND SMALL: one level worse from three units, the last level staying there; their normal level below that. A band
       set. NO BETTER LEVEL ON HALF A UNIT OR A UNIT, his decision of 16 Sep 2026: their own rate already covers it, because a
       card is never above what they pay and these customers pay a keen rate on exactly those sizes. Measured that day, the
@@ -17112,16 +17187,26 @@ function slowdown(prod){
   for(let d=today;d>lastLot&&run<90&&under(d);d-=DAY)run++;
   return {on:run>=3,since:run>=3?iso(today-(run-3)*DAY):null,lastLot:isFinite(lastLot)?iso(lastLot):null};
 }
+/* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
+function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(sales,ownerOf(code)||code,TODAY.toISOString().slice(0,10),RULES),RULES);}
+/* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
+function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
+function lateWhy(l){
+  const w=RULES.lateWindowDays;
+  const why=l.why==='long'?(l.open?'unpaid ':'paid ')+l.days+' days after the handover'
+    :l.why==='shorts'?'paid late twice within '+w+' days'
+    :'late again within '+w+' days of paying on time';
+  return why+(l.need>1?', '+l.streak+' of '+l.need+' on time since':'');
+}
 function ruleProposal(code,prod,boards){
   const base=tierProposal(code,prod,boards);if(!base)return null;
   const N=TIER_NAMES,last=N.length-1,i=N.indexOf(base),pf=buyerProfile(code,prod);
   if(!pf)return base;
-  if(pf.rare&&pf.lateTwice)return N[Math.min(last,i+1)];
-  const better=(k,cap)=>Math.min(k,Math.max(cap,k-1)), worse=k=>Math.min(last,k+1);
+  const better=(k,cap)=>Math.min(k,Math.max(cap,k-1)), worse=k=>Math.min(last,k+1), late=lateOf(code).on;
   let set={small:i,mid:i,big:i};
   if(pf.frequent&&pf.small)set={small:i,mid:i,big:worse(i)};
-  else if(pf.loyal&&pf.bigger)set={small:i,mid:i,big:better(i,PLATINUM_CAP)};
-  if(slowdown(prod).on)Object.keys(set).forEach(k=>{set[k]=better(set[k],PLATINUM_CAP);});
+  else if(!late&&pf.loyal&&pf.bigger)set={small:i,mid:i,big:better(i,PLATINUM_CAP)};
+  if(!late&&slowdown(prod).on)Object.keys(set).forEach(k=>{set[k]=better(set[k],PLATINUM_CAP);});
   if(set.small===set.mid&&set.mid===set.big)return N[set.mid];
   return {small:N[set.small],mid:N[set.mid],big:N[set.big]};
 }
@@ -17173,13 +17258,16 @@ function tierCard(){
     const shown=w?waiting[id][p]:(h||prop),pf=buyerProfile(id,p);
     /* v666: how they buy sits beside the tier they hold, so the reading a rule will move a level on is in view first */
     const state=(w?'waiting':h?'held':prop?'proposed':'not set')+(pf?' &middot; '+pf.name:'');
+    /* V5c: a late payer is OFFERED a level down beside what they are quoted, held or proposed; he chooses it and Sets it */
+    const lt=shown?lateOf(id):{on:false},off=lt.on?lateDown(shown):null;
+    const lateLine=off?`<br><span class="iref latepay">Late payer: offered ${off}, ${lateWhy(lt)}</span>`:'';
     if(h)held++;if(prop)open++;
     /* v670: A BAND SET IS SHOWN FOR WHAT IT IS, and the dropdown offers to keep it. It cannot select one level name, so it would
        otherwise sit on "Not set", and Set would have read that as a clear. Choosing a level replaces the bands with it. */
     const bands=shown&&typeof shown==='object';
     const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
-    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
   const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
   return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>

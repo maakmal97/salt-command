@@ -5764,6 +5764,13 @@ await (async () => {
       + JSON.stringify({ term: pay1.term, due: q5.due, late: q5.late, overdue: pay1.overdue.rm }));
     ok(pay1.hide === 3 && pay1.lock === 4, "and the stages after it are sealed beside it, prices hidden from day 3 and the account only for paying from day 4: "
       + JSON.stringify({ hide: pay1.hide, lock: pay1.lock }));
+    /* V5c: and the late payer's window (RULES.lateWindowDays), for the page's words on paying late; a master stating none
+       seals none, so the page says nothing it cannot back */
+    writeFileSync(join(tmp, "m5c.html"), src.replace(/(const RULES=\{[^;]*?\b)lateWindowDays:90\b/, (all, head) => head + "lateWindowWeeks:13"));
+    const M5c = await load("s6pay5c", join(tmp, "m5c.html"));
+    const pay5c = M5c.liveStatement(P, at).pay;
+    ok(pay1.window === 90 && pay5c && !("window" in pay5c) && pay5c.lock === 4,
+      "V5c: the late payer's window is sealed beside the stages, and a master stating none seals none: " + JSON.stringify({ window: pay1.window, none: pay5c && pay5c.window }));
     const M0 = await load("s6pay0", join(tmp, "m0.html"));
     let threw = "";
     try { M0.liveStatement(P, at); } catch (e) { threw = String(e && e.message); }
@@ -16141,11 +16148,13 @@ await (async () => {
     ok(pf["CZ9-LOY"].loyal && pf["CZ9-LOY"].bigger && !pf["CZ9-GON"].loyal && pf["CZ9-GON"].orders === 6,
       "six orders with the last inside thirty days is loyal, and the same six with the last at 31 days is not: "
       + JSON.stringify({ loy: [pf["CZ9-LOY"].orders, pf["CZ9-LOY"].sinceLastDays, pf["CZ9-LOY"].bigShare], gon: pf["CZ9-GON"].sinceLastDays }));
-    /* 3. LATE IS PAST THE TERM, NOT AT IT, AND TWICE IS THE LINE. Paid on day ten is on time; paid on day eleven is late; an
-       order still owed at twelve days is late. Three late here, so the twice flag is set. */
-    ok(pf["CZ9-LAT"].late === 3 && pf["CZ9-LAT"].lateTwice,
-      "an order paid on the tenth day is on time, on the eleventh it is late, still owed at twelve it is late, and two lates set the flag: "
-      + JSON.stringify({ late: pf["CZ9-LAT"].late, twice: pf["CZ9-LAT"].lateTwice }));
+    /* 3. V5c (his answers of 29 Sep 2026): HOW LATE THEY PAY IS NO LONGER THE PROFILE'S. It is read from the handover across
+       every book by the engine's payDelays and lateOffer (lateOf); the profile carries no late reading, and the same
+       customer, paid ten and eleven days after each handover and owing one twelve days on, is a late payer there. */
+    const lat = rd61("lateOf('CZ9-LAT')");
+    ok(!("late" in pf["CZ9-LAT"]) && !("lateTwice" in pf["CZ9-LAT"]) && lat.on === true && lat.why === "long" && lat.open === true && lat.days === 12,
+      "the profile reads no lateness, and the late payer is read from the handover by lateOf: "
+      + JSON.stringify({ keys: Object.keys(pf["CZ9-LAT"]).filter((k) => /late/i.test(k)), lat }));
     /* 4. RARE ON EITHER COUNT: the thin customer buys under once a month, and the customer gone 31 days is not yet rare. */
     ok(pf["CZ9-THN"].rare && !pf["CZ9-GON"].rare && !pf["CZ9-OFT"].rare,
       "rare is under one order a month or nothing for sixty days, so the thin buyer is rare and the one gone a month is not yet: "
@@ -16161,7 +16170,7 @@ await (async () => {
          proposal) and the profile is turned inside out: every card staying put proves it has no other road to a price */
       + "var keepR=ruleProposal;ruleProposal=function(c,p,b){return tierProposal(c,p,b);};"
       + "var a,b,keep=buyerProfile;try{a=read();"
-      + "buyerProfile=function(){return {name:'large and regular',orders:99,perMonth:99,frequent:true,small:false,bigger:true,loyal:true,rare:true,lateTwice:true,late:9};};"
+      + "buyerProfile=function(){return {name:'large and regular',orders:99,perMonth:99,frequent:true,small:false,bigger:true,loyal:true,rare:true};};"
       + "try{b=read();}finally{buyerProfile=keep;}}finally{ruleProposal=keepR;}"
       + "return {same:a===b,n:who.length};})()");
     ok(same.same && same.n > 10, "and it prices only through the rules: with them set aside, every card on the book is unchanged when the profile reads the opposite of everything (" + same.n + " customers)");
@@ -16173,7 +16182,7 @@ await (async () => {
     const { pricingSnapshot: ps61 } = await import("../tools/book.mjs");
     const snap61 = ps61(w61);
     ok(snap61.profileOf && snap61.profileOf["CZ9-OFT"] && snap61.profileOf["CZ9-OFT"].salt
-      && snap61.profileOf["CZ9-OFT"].salt.name === pf["CZ9-OFT"].name && snap61.profileRule && snap61.profileRule.lateTimes === 2,
+      && snap61.profileOf["CZ9-OFT"].salt.name === pf["CZ9-OFT"].name && snap61.profileRule && snap61.profileRule.smallUpTo === 1 && !("lateTimes" in snap61.profileRule),
       "and the pricing snapshot carries the desk's own profile and rule: " + JSON.stringify(snap61.profileOf && snap61.profileOf["CZ9-OFT"]));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w61.close(); } catch (e) { /* best effort */ } }
 })();
@@ -16254,17 +16263,22 @@ await (async () => {
   const rd71 = (e) => JSON.parse(String(w71.eval("JSON.stringify(" + e + ")")));
   try {
     /* a harness in the page: force the base proposal, the profile and the slowdown, ask the rule, then put all three back */
-    w71.eval("window.__ask71=function(base,flags,slow){var kT=tierProposal,kB=buyerProfile,kS=slowdown;"
+    /* V5c: a flag 'late' forces the late payer's reading (lateOf) on, which the rules read in place of rare and late twice */
+    w71.eval("window.__ask71=function(base,flags,slow){var kT=tierProposal,kB=buyerProfile,kS=slowdown,kL=lateOf;"
       + "tierProposal=function(){return base;};"
-      + "buyerProfile=function(){if(flags===null)return null;var f={name:'fixture',orders:9};['frequent','small','loyal','bigger','rare','lateTwice'].forEach(function(k){f[k]=flags.indexOf(k)>=0;});return f;};"
+      + "buyerProfile=function(){if(flags===null)return null;var f={name:'fixture',orders:9};['frequent','small','loyal','bigger','rare'].forEach(function(k){f[k]=flags.indexOf(k)>=0;});return f;};"
       + "slowdown=function(){return {on:!!slow,since:null,endedBy:null};};"
-      + "try{return ruleProposal('CZ9-RUL','salt',{});}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;}};");
+      + "lateOf=function(){return flags&&flags.indexOf('late')>=0?{on:true,need:1,streak:0,why:'long',days:5,open:false,since:null}:{on:false};};"
+      + "try{return ruleProposal('CZ9-RUL','salt',{});}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;lateOf=kL;}};");
     const ask = (base, flags, slow) => rd71("__ask71(" + JSON.stringify(base) + "," + JSON.stringify(flags) + "," + !!slow + ")");
 
-    /* 1. RARE AND LATE TWICE: one level down at every size, a plain level; Bronze stays Bronze; and no promotion reaches them */
-    ok(ask("Gold", ["rare", "lateTwice"]) === "Silver" && ask("Silver", ["rare", "lateTwice"]) === "Silver"
-      && ask("Gold", ["rare", "lateTwice"], true) === "Silver" && ask("Gold", ["rare"]) === "Gold",
-      "rare and late twice drops a level everywhere, the last level (Silver since 23 Sep 2026) stays there, a slowdown promotes nobody who is late, and rare alone moves nothing");
+    /* 1. V5c (his answers of 29 Sep 2026, in place of rare and late twice): A LATE PAYER IS PRICED NO LEVEL DOWN BY A RULE, it
+       is only offered one on the Tiers card; and no promotion reaches them, neither loyal and bigger nor a slowdown. The small
+       buyer's drop still applies, being about the sizes they buy. */
+    ok(ask("Gold", ["rare", "late"]) === "Gold" && ask("Gold", ["late"], true) === "Gold" && ask("Gold", [], true) === "Platinum"
+      && ask("Gold", ["loyal", "bigger", "late"]) === "Gold"
+      && JSON.stringify(ask("Gold", ["frequent", "small", "late"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }),
+      "a late payer is moved no level down by a rule, takes no promotion from a slowdown or from buying bigger, and the small buyer's drop still stands");
     /* 2. FREQUENT AND SMALL: the drop from three units and nothing better below it, his decision; Bronze has nowhere to drop */
     const small = ask("Gold", ["frequent", "small"]);
     ok(JSON.stringify(small) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }) && ask("Silver", ["frequent", "small"]) === "Silver"
@@ -16282,7 +16296,7 @@ await (async () => {
       && JSON.stringify(ask("Gold", ["frequent", "small"], true)) === JSON.stringify({ small: "Platinum", mid: "Platinum", big: "Gold" }),
       "a slowdown lifts every band a level, stops at Platinum, lowers nobody, and stacks on the small buyer's drop");
     /* 6. NO PROFILE LEAVES THE PROPOSAL AS IT WAS, AND NO PROPOSAL IS STILL NOTHING */
-    ok(ask("Gold", null) === "Gold" && ask(null, ["rare", "lateTwice"]) === null,
+    ok(ask("Gold", null) === "Gold" && ask(null, ["rare", "late"]) === null,
       "with no profile the proposal is unchanged, and with no proposal there is nothing for a rule to move");
 
     /* 7. THE SLOWDOWN ITSELF, on forced sales and lots: two units a day for a month and then nothing is a slowdown held for
@@ -16312,13 +16326,92 @@ await (async () => {
        rate of their own lowers either price and the level binds. */
     const live = rd71("(function(){['CZ9-RUL','CZ9-HLD'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-HLD']={salt:'Gold'};setProd('salt');recompute();"
       + "var kT=tierProposal,kB=buyerProfile;tierProposal=function(){return 'Gold';};"
-      + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false,lateTwice:false};};"
+      + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false};};"
       + "try{var row=function(q){return PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());};"
       + "return {rul1:cardQuote('CZ9-RUL',1),rul12:cardQuote('CZ9-RUL',12.5),hld12:cardQuote('CZ9-HLD',12.5),gold1:row(1).prices[3],gold12:row(12.5).prices[3],silver12:row(12.5).prices[4]};"
       + "}finally{tierProposal=kT;buyerProfile=kB;delete TIER_OF['CZ9-HLD'];}})()");
     ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
+})();
+section("V5c (29 Sep 2026): a late payer is read from the handover across every book, and offered a level down, never priced one");
+await (async () => {
+  /* HIS ANSWERS OF 29 SEP 2026, in place of rare and late twice. Each row's delay is counted in days from its handover:
+     paid within the term (RULES.holdDays) is on time, past it and under the lock (RULES.lockDays) a short delay, the lock
+     or more a long one. One long delay, or a second short one within RULES.lateWindowDays of the one before, turns the
+     offer on; one payment on time turns it off; a delay within the window after that turns it on again, and then it takes
+     RULES.lateResetRepeat payments on time in a row. It offers a level down on the Tiers card and prices nothing. Forced
+     fixtures; each assertion was proved red by mutation. */
+  const E5c = (await import("../engine/position.mjs")).default;
+  const R5c = { holdDays: 1, lockDays: 4, lateWindowDays: 90, lateResetRepeat: 3 };
+  const row = (o) => Object.assign({ customer: "CZ9-PAY", product: "salt", qty: 1, total: 100, cost: 1, deliveredQty: 1 }, o);
+  const S = [
+    row({ rid: "a", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02" }),
+    row({ rid: "b", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-06" }),
+    /* two handovers, each paid two and three days after it: the delay is the latest-covered stage's, 3, never 7 */
+    row({ rid: "c", date: "2026-09-01", qty: 2, total: 200, deliveredQty: 2, cash: 200, amend: [{ kind: "Fulfilment", date: "2026-09-01", kg: 1 },
+      { kind: "Fulfilment", date: "2026-09-05", kg: 1 }, { kind: "Payment", date: "2026-09-02", cash: 100 }, { kind: "Payment", date: "2026-09-08", cash: 100 }] }),
+    row({ rid: "d", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100 }),            /* paid on a day only assumed: neither way */
+    row({ rid: "e", date: "2026-09-01", cash: 0 }),                                           /* no handover day: neither way */
+    row({ rid: "f", date: "2026-09-20", deliveredOn: "2026-09-20", cash: 0 }),               /* unpaid nine days on: open */
+    row({ rid: "f2", date: "2026-09-28", deliveredOn: "2026-09-28", cash: 0 }),              /* unpaid inside the term: not listed */
+    row({ rid: "g", date: "2026-08-01", deliveredOn: "2026-08-01", cash: 0, defaulted: true }),  /* a write-off: the lock */
+    row({ rid: "h", customer: "CZ9-OTH", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0 }),
+    row({ rid: "i", customer: "CZ9-PAY-R", product: "oil", date: "2026-09-10", deliveredOn: "2026-09-10", cash: 100, paidOn: "2026-09-12" }),
+    row({ rid: "j", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02", cancelled: true }),
+    row({ rid: "k", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0, goodwill: true })];
+  const del = E5c.payDelays(S, "CZ9-PAY", "2026-09-29", R5c);
+  /* 1. THE DELAYS, row by row */
+  ok(JSON.stringify(del.map((x) => [x.on, x.days, x.open])) === JSON.stringify([["2026-09-02", 1, false], ["2026-09-06", 5, false], ["2026-09-08", 3, false],
+    ["2026-09-29", 9, true], ["2026-08-05", 4, false], ["2026-09-12", 2, false]]),
+    "each row's delay counts from its handover: a stated day less the handover, a trail stage by stage, unpaid past the term open, "
+    + "a write-off the lock; an assumed day, an undated handover, another party, a cancelled row and a gift count neither way, a bucket and every book do: "
+    + JSON.stringify(del));
+  /* 2. THE OFFER'S WALK */
+  const d = (on, days) => ({ on, d: on, days, open: false });
+  const L = (xs) => E5c.lateOffer(xs, R5c);
+  const reset = [d("2026-06-01", 4), d("2026-06-02", 1), d("2026-07-01", 2)];
+  ok(!L([d("2026-09-01", 2)]).on && !L([d("2026-09-01", 1), d("2026-09-02", 1)]).on
+    && L([d("2026-06-01", 2), d("2026-08-01", 3)]).why === "shorts" && !L([d("2026-05-01", 2), d("2026-08-01", 3)]).on
+    && L([d("2026-09-01", 4)]).why === "long" && !L([d("2026-09-01", 3)]).on && !L([d("2026-09-01", 4), d("2026-09-02", 1)]).on,
+    "one short delay is nothing, two within ninety days turn it on and two further apart do not; one of the lock or more turns it on, one under it does not, and one payment on time turns it off");
+  const r3 = L(reset), r5 = L(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1)])), r6 = L(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1), d("2026-07-04", 1)]));
+  const far = L([d("2026-01-01", 4), d("2026-01-02", 1), d("2026-06-01", 2)]);
+  ok(r3.on && r3.why === "repeat" && r3.need === 3 && r5.on && r5.streak === 2 && !r6.on && !far.on,
+    "a delay within ninety days of turning off turns it on again, and then it takes three payments on time in a row; past the window a lone short delay is nothing: "
+    + JSON.stringify([r3, r5, r6, far]));
+  ok(!L([d("2026-09-01", 1), d("2026-09-01", 5)]).on,
+    "a delay settled on the day of a payment on time is walked before it, so the payment turns it off");
+
+  const { openMaster: om5c } = await import("../tools/payload.mjs");
+  const { w: w5c } = await om5c();
+  const rd5c = (e) => JSON.parse(String(w5c.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* CZ9-LTP holds Gold on salt and paid an oil row six days after its handover: late on salt's card too. CZ9-LTS holds Silver,
+       with the same delay: nowhere lower to offer. CZ9-OKP paid on time. */
+    w5c.eval("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
+      + "var s=function(rid,c,p,n,paid){var d=ago(n);return {rid:rid,customer:c,product:p,date:d,qty:1,total:100,cost:1,deliveredQty:1,deliveredOn:d,cash:100,paidOn:ago(n-paid)};};"
+      + "['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});"
+      + "TIER_OF['CZ9-LTP']={salt:'Gold'};TIER_OF['CZ9-LTS']={salt:'Silver'};TIER_OF['CZ9-OKP']={salt:'Gold'};"
+      + "BASE_SALES.push(s('z5c1','CZ9-LTP','oil',20,6),s('z5c2','CZ9-LTS','salt',20,6),s('z5c3','CZ9-OKP','salt',20,1));"
+      + "queue=[];applyOverlay();setProd('salt');recompute();})()");
+    const lt = rd5c("{ltp:lateOf('CZ9-LTP'),lts:lateOf('CZ9-LTS'),okp:lateOf('CZ9-OKP')}");
+    ok(lt.ltp.on && lt.ltp.why === "long" && lt.ltp.days === 6 && lt.lts.on && !lt.okp.on,
+      "the desk reads a late payer across every book, an oil row counting on salt: " + JSON.stringify(lt));
+    /* 3. THE TIERS CARD OFFERS THE LEVEL DOWN BESIDE WHAT THEY HOLD, and none at the last level or to a prompt payer */
+    const cards = rd5c("(function(){setProdView('salt');switchTab('people');var o={};['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){"
+      + "var s=document.getElementById('tierSel_'+c+'_salt');o[c]=s?s.parentNode.textContent.replace(/\\s+/g,' '):null;});return o;})()");
+    ok(cards["CZ9-LTP"] && /Late payer: offered Silver, paid 6 days after the handover/.test(cards["CZ9-LTP"])
+      && cards["CZ9-LTS"] && !/Late payer/.test(cards["CZ9-LTS"]) && cards["CZ9-OKP"] && !/Late payer/.test(cards["CZ9-OKP"]),
+      "the Tiers card offers a late payer holding Gold the level down, with why, and says nothing at the last level or to a prompt payer: " + JSON.stringify(cards));
+    /* 4. THE OFFER PRICES NOTHING: every customer holding a tier is quoted the same with every customer read late and with
+       none (a proposed tier loses its promotion when late, rule 1, which is the rules' and not the offer's) */
+    const same = rd5c("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0&&TIER_OF[c]&&TIER_OF[c].salt;});"
+      + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
+      + "var k=lateOf,a,b,c;try{lateOf=function(){return {on:false};};a=read();lateOf=function(){return {on:true,need:1,streak:0,why:'long',days:9,open:true,since:null};};b=read();}finally{lateOf=k;}"
+      + "return {same:a===b,n:who.length,held:cardQuote('CZ9-LTP',1)};})()");
+    ok(same.same && same.n > 3 && same.held != null, "and the offer prices nothing: every held customer's quote is unchanged whether everyone is late or no one (" + same.n + " customers)");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w5c.close(); } catch (e) { /* best effort */ } }
 })();
 section("v672: the word he banned lives on only in the dated records");
 await (async () => {
@@ -42625,6 +42718,55 @@ await (async () => {
     "with nothing to pay and nothing coming, Home says so with no Pay (S7 7.1), and for a live document sealed before v841 it draws nothing: " + JSON.stringify(none.text));
 })();
 
+section("V5c (29 Sep 2026): Home says in a line what paying late costs while something is to pay, and the pay sheet says it in full");
+await (async () => {
+  /* HIS ANSWER OF 29 SEP 2026: few words where the Pay is, the whole rule on the sheet, off the sealed term, lock and window
+     and nothing where the statement predates them. Forced state, as S6 6.2's. */
+  const { landingPage: lp } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc } = await import("node:crypto");
+  const { JSDOM: JD } = await import("jsdom");
+  const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const open = async (pay) => {
+    const u = "abcd-efgh", pass = "fixture-pass-5c", ck = await C.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+    const dom = new JD(lp(u, "n5c", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      win.fetch = async (path) => { const o = String(path) === "/open"; return { ok: o, status: o ? 200 : 404, json: async () => (o ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && d.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+      const tx = (id) => { const e = d.getElementById(id); return e ? e.textContent.replace(/\s+/g, " ").trim() : null; };
+      const keep = tx("lateKeep"), btn = d.getElementById("payNow");
+      if (btn) btn.click();
+      for (let i = 0; i < 20 && !d.getElementById("lateFull"); i++) await new Promise((r) => setTimeout(r, 20));
+      return { keep, full: tx("lateFull"), pay: !!btn };
+    } finally { dom.window.close(); }
+  };
+  const part = { date: kl(-1), since: kl(-1), due: kl(0), rm: 70, whole: 70, gotOn: kl(-1), late: false, product: "salt", qty: 2.5, got: 2.5, resale: false };
+  const due = (o) => Object.assign({ now: { rm: 70, due: kl(0), parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } }, o);
+  const one = await open(due({ term: 1, hide: 3, lock: 4, window: 90 }));
+  ok(one.pay && one.keep === "Pay within a day of receiving it to keep your price."
+    && one.full === "Paying 2 or more days after you receive an order, twice in 90 days, or 4 or more days after once, can raise the price of your next order.",
+    "at a one-day term Home says pay within a day to keep your price, and the pay sheet says the whole rule off the sealed term, lock and window: " + JSON.stringify(one));
+  const three = await open(due({ term: 3, hide: 3, lock: 5, window: 60 }));
+  ok(three.keep === "Pay within 3 days of receiving it to keep your price." && /Paying 4 or more days .* twice in 60 days, or 5 or more days after once/.test(three.full || ""),
+    "the words follow the sealed figures, never the page's own: " + JSON.stringify(three));
+  const old = await open(due({ term: 1, hide: 3, lock: 4 }));
+  /* a line whose money is all paid, so the invoice stands at nothing to pay */
+  const none = await open(due({ term: 1, hide: 3, lock: 4, window: 90, now: { rm: 0, due: kl(0), parts: [Object.assign({}, part, { rm: 0 })] } }));
+  ok(old.keep && old.full === null && none.keep === null && !none.pay,
+    "a statement sealed before the window says the short line and no rule it cannot back, and with nothing to pay neither line is drawn: " + JSON.stringify([old, none]));
+})();
+
 section("V2 (28 Sep 2026): an order at Ready is a line of To pay now, due now, taking money in the desk's order; Home adds the lines up to one Pay and the pay sheet draws the same invoice whole");
 await (async () => {
   /* HIS POINTS 1 AND 6 OF 28 SEP 2026, and his C1 and C2. An order at Ready owes all that is left on it at once: it leaves
@@ -48539,30 +48681,6 @@ await (async () => {
   const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
   ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
-})();
-
-section("Step 6 (29 Sep 2026): the Face ID test page answers on the desk and the Counter, its own script only, naming neither app");
-await (async () => {
-  /* His word of 29 Sep 2026, Face ID for both unlocks: one hidden page, stmt/faceid.js, served by both Workers at /faceid-test
-     and taken out after his test. Each copy says which address it is, runs only the style and script carrying its own nonce,
-     may connect nowhere, and names neither app, so the Counter's copy keeps the site's no-brand rule. Proved red by mutation. */
-  const deskW = (await import("../src/worker.js")).default, siteW = (await import("../stmt/worker.js")).default;
-  const read = async (r) => ({ status: r.status, csp: r.headers.get("content-security-policy") || "", cache: r.headers.get("cache-control"), body: await r.text() });
-  const desk = await read(await deskW.fetch(req("/faceid-test"), mkEnv(new KV())));
-  const site = await read(await siteW.fetch(new Request("https://k7m3p2.example/faceid-test"), { STMT: new KV() }));
-  const posted = await siteW.fetch(new Request("https://k7m3p2.example/faceid-test", { method: "POST" }), { STMT: new KV() });
-  const fine = (x, where) => {
-    const n = (/script-src 'nonce-([0-9a-f]{32})'/.exec(x.csp) || [])[1];
-    return x.status === 200 && x.cache === "no-store" && !!n && x.csp.includes("style-src 'nonce-" + n + "'") && x.csp.startsWith("default-src 'none'")
-      && !/connect-src/.test(x.csp) && x.body.includes('<script nonce="' + n + '">') && x.body.includes('<style nonce="' + n + '">')
-      && (x.body.match(/<script/g) || []).length === 1 && x.body.includes('data-where="' + where + '"') && x.body.includes("<title>Face ID test</title>");
-  };
-  ok(fine(desk, "desk") && fine(site, "counter") && posted.status === 405,
-    "Step 6: /faceid-test is the page on both Workers, each with its own nonce, no connection and its address named: " + JSON.stringify([desk.status, desk.csp, site.status, site.csp, posted.status]));
-  const js = (/<script nonce="[0-9a-f]+">([\s\S]*)<\/script>/.exec(site.body) || [])[1] || "";
-  let parses = true; try { new Function(js); } catch (e) { parses = false; }
-  ok(parses && js.includes("prf") && js.includes('userVerification: "required"') && !/salt command|salt desk|salt counter/i.test(desk.body + site.body),
-    "Step 6: the page's script parses, asks for the face and the secret, and neither copy names an app");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

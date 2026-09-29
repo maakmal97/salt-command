@@ -3908,6 +3908,8 @@ const CLIENT_JS = `
       box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
       if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
+      /* V5c (his answer of 29 Sep 2026): what paying late costs, in few words, while something is to pay */
+      var lk=lateKeep(); if(lk&&tot>0.004){ var kp=el('p','sub2',lk); kp.id='lateKeep'; box.appendChild(kp); }
       var sn=stageNote(); if(sn){ var sp=el('p','salt-insight salt-insight--copper'); sp.id='stageNote'; sp.textContent=sn; box.appendChild(sp); }
       if(!view&&tot>0.004){
         /* S6 6.4: it opens the pay sheet on what is to pay now, the one road for Home's Pay */
@@ -3922,6 +3924,10 @@ const CLIENT_JS = `
     said.forEach(function(t){ box.appendChild(statusLine(t)); });
     return box;
   }
+  /* V5c: the terms of paying late, off the sealed term, lock and window; nothing where the statement predates them */
+  function lateKeep(){ var P=payDue; if(!P||typeof P.term!=='number') return ''; return tw(P.term===1?'late.keepDay':'late.keep',{t:P.term}); }
+  function lateFull(){ var P=payDue; if(!P||typeof P.term!=='number'||typeof P.lock!=='number'||typeof P.window!=='number') return '';
+    return tw('late.full',{s:P.term+1, l:P.lock, w:P.window}); }
   function drawPayHead(){ var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
@@ -4076,6 +4082,8 @@ const CLIENT_JS = `
     body.textContent=''; payTitle();
     body.appendChild(kpiTile('ember',tw(c.label),rm(c.fig),c.note()));
     if(c.lines) body.appendChild(invNode(c.lines,true));
+    /* V5c: the pay sheet says in full what paying late can cost */
+    var lf=lateFull(); if(lf){ var lp=el('p','sub2',lf); lp.id='lateFull'; body.appendChild(lp); }
     if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     var cash=PS.rail==='cod';
     var seg=el('div','payseg');

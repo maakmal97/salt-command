@@ -255,6 +255,8 @@ export const FEATURES = [
   ["asked how an order was (F10)", (f) => has(f, (o) => rateDue(o, new Date(f.at)))],
   ["on credit: goods with them inside the term", (f) => f.live && f.live.pay.now.parts.some((p) => !p.late)],
   ["overdue past its term", (f) => f.live && f.live.pay.overdue.parts.length > 0],
+  ["what paying late costs, off the sealed term, lock and window (V5c)", (f) => { const P = f.live && f.live.pay;
+    return !!P && typeof P.term === "number" && typeof P.lock === "number" && typeof P.window === "number" && P.now.rm > 0.004; }],
   ["coming up: agreed and not handed over", (f) => f.live && f.live.pay.coming.parts.length > 0],
   ["due at Ready", (f) => has(f, (o) => o.status === "ready" && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
