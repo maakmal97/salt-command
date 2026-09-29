@@ -48319,7 +48319,7 @@ await (async () => {
     /* 2. the census: every part of the salt book, as drawn, carries no stored date and no em dash */
     const ISO = /(?<![\w-])\d{4}-\d{2}-\d{2}(?![\w-])/;
     const parts = rd("(function(){var o=[];VIEWS.forEach(function(v){[v.lead].concat(v.parts).forEach(function(p){o.push(p);});});return o;})()");
-    const isoAt = [], dashAt = [];
+    const isoAt = [], dashAt = [], houseAt = {};
     w.eval("setProdView('salt')");
     for (const p of parts) {
       w.eval("switchTab(" + JSON.stringify(p) + ")");
@@ -48329,12 +48329,18 @@ await (async () => {
       const iso = got.filter((t) => ISO.test(t)), dash = got.filter((t) => /—/.test(t));
       if (iso.length) isoAt.push(p + ": " + iso.length + " (" + iso[0].slice(0, 60) + ")");
       if (dash.length) dashAt.push(p + ": " + dash.length + " (" + dash[0].slice(0, 60) + ")");
+      houseAt[p] = got.filter((t) => /(^|[^\w-])\d{2} [A-Z][a-z]{2} \d{4}(?!\w)/.test(t)).length;
     }
+    /* a positive sign: the parts that print dates print them the house way, so an empty part cannot pass the census */
+    ok(houseAt.ledger > 10 && houseAt.inventory > 10 && houseAt.concentration > 10, "D1: the Ledger, On hand and Clients print their dates DD Mon YYYY: " + JSON.stringify([houseAt.ledger, houseAt.inventory, houseAt.concentration]));
     ok(parts.length >= 15 && !isoAt.length, "D1: no part of the salt book prints a stored date, " + parts.length + " parts read: " + (isoAt.join("; ") || "none"));
     ok(parts.length >= 15 && !dashAt.length, "D2: no part of the salt book prints an em dash: " + (dashAt.join("; ") || "none"));
     /* 3. what is written after the draw: a card's text is swept by the observer; a textarea keeps the stored form */
     w.eval("(function(){var b=document.createElement('div');b.id='d12probe';b.innerHTML='<p>ordered 2026-09-19</p><p title=\"lot of 2026-09-27\">x</p><textarea>2026-09-20</textarea>';document.body.appendChild(b);})()");
     await new Promise((r) => setTimeout(r, 0));
+    w.eval("document.querySelector('#d12probe p').setAttribute('title','seen 2026-09-01')");
+    await new Promise((r) => setTimeout(r, 0));
+    ok(rd("document.querySelector('#d12probe p').getAttribute('title')") === "seen 01 Sep 2026", "D1: a tooltip set later on a drawn node is written the house way too");
     const pr = rd("(function(){var b=document.getElementById('d12probe');return [b.querySelector('p').textContent,b.querySelectorAll('p')[1].getAttribute('title'),b.querySelector('textarea').value];})()");
     ok(pr[0] === "ordered 19 Sep 2026" && pr[1] === "lot of 27 Sep 2026", "D1: text a card writes after the draw, and its tooltip, are written the house way: " + JSON.stringify(pr));
     ok(pr[2] === "2026-09-20", "D1: a textarea keeps the stored form he typed: " + JSON.stringify(pr[2]));
