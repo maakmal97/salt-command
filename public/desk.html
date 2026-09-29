@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7c082b872c388664";
+var SALT_BUILD_ID="bdfb3131406dc19b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8633,7 +8633,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v943","d":"29 Sep 2026","t":"DELIVERY IS OFFERED BY DISTANCE","n":["<p><b>DELIVERY IS OFFERED BY DISTANCE.</b> His Q16 and F15: when a delivery's card opens under Site orders, or Delivery on a new sale in the Workbench, the desk reads where he is once, fresh and kept nowhere; refused or unread, it uses his base point in the places vault. It measures to the party's filed point, else its locality, about a kilometre out (his answer at design, given through the moderator), and a resale account to its associate. The straight distance times 1.3 for the road, at RM 1.50 a km one way, rounded to RM 0.50, no minimum: 10 km is RM 19.50. RULES.delivery holds the rate.</p>","<p><b>HIS FIGURE WINS.</b> The fee fills Other on a trip's first order and nothing on the rest of its sheet, and once that order is agreed no other takes one; the line under the chips names the two points it ran between, never a point. What the box holds is what the row is drafted at and what Accept sends. It needs the names vault open on the phone: locked, nothing is offered, and a figure already put stays. On the Workbench the fee fills Delivery only while it stands at nought, and another party takes the desk's figure out, never his. The goods, the floor and the board never read it. The desk's Permissions-Policy now lets the page ask where he is, and nothing wider. The Counter says delivery is charged by distance.</p>","<p><b>PROOFS.</b> Four new suite sections, 29 checks, each turned red by its own mutation. The whole suite passed. Fable's review found six faults over four passes, among them a sheet charged twice once its first order was agreed; all fixed and checked again by Fable: no fault.</p>"]}];
+const evolution=[{"v":"v944","d":"29 Sep 2026","t":"A SALE IS PROVISIONED FROM ITS HANDOVER, A QUARTER A DAY","n":["<p><b>A SALE IS PROVISIONED FROM ITS HANDOVER, A QUARTER A DAY.</b> His answers of 29 Sep 2026. Goods handed over and not paid for are provisioned 25% on the first day after the handover, 50% on the second, 75% on the third and in full from the fourth, the day the Counter locks the account. The day counts from the handover of the goods still unpaid, the order date only for a row that names none, and the months already reported restate. A supplier's recoverable keeps its own ladder.</p>","<p><b>WHERE IT READS.</b> The allowance, each month's charge, the cash expected in, the forecast, Chase first, the chase line on Today, Receivables and what the phone is sent all age a sale from its handover; Receivables names the date under it as the order's. The sale's Aged receivable lines are gone, since its Credit age line now says the provision it has reached.</p>","<p><b>PROOFS.</b> A new suite section and the engine checks updated; 20 mutations each turned a check red. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8748,7 +8748,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 13:51 KL';
+const LAST_UPDATED='29 Sep 2026, 14:01 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
