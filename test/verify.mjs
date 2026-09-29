@@ -21293,6 +21293,11 @@ await (async () => {
     "a guest board opens on its h1 with each mark an h2 under it, the shut page on its h1, and money is RM with two places (C21, C5): " + JSON.stringify([hs(g), hs(PG.shutPage("nC21"))]));
   const navs = [...PG.landingPage("aaaa-cccd", "nC22", null).matchAll(/<nav\b[^>]*aria-label="([^"]*)"/g)].map((m) => m[1]);
   ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
+  /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
+  const { testStatement } = await import("../stmt/worker.js");
+  const tb = (await testStatement()).statements[0].body;
+  ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
+    "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
 section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
 await (async () => {
