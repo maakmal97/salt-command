@@ -1,5 +1,14 @@
 [
  {
+  "v": "v935",
+  "d": "29 Sep 2026",
+  "t": "A COLLECTED UNIT FOLLOWS ITS ASSOCIATE TO THE RESALE ACCOUNT",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s211, CE5-SA's order of 28 Sep for 1 unit of salt at RM110, collected and unpaid, now carries assoc CE5-SA and stream R2. It moves to CE5-SA-R, the associate's resale account, where an R2 books since v611, as s210 and s212 did at v918. It was held until its site order could follow the row, which it now does. The desk decided it; it was entered from the laptop.</p>",
+   "<p><b>NOTHING MOVED IN STOCK OR CASH.</b> The correction changes only what the row says about itself. The drafter flagged s211 as an advance to check against CE5-SA's credit cap. The dossier gives no cap for CE5-SA, so that check stays open. RM110 and 1 unit on credit were already outstanding before this batch. Stock stands at 2 units, costed at RM56 a unit, and the cost basis does not move.</p>"
+  ]
+ },
+ {
   "v": "v934",
   "d": "29 Sep 2026",
   "t": "A LINE THE DESK WROTE BY MISTAKE IS PUT RIGHT ON THE SITE",
