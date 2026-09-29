@@ -1164,11 +1164,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   reconcile, his lists, the chase and the report card cannot read it; a move on an example order (`-exNN`) answers
   `e.example`, and it makes and withdraws no link (`e.exampleLink`): a real one would wait on him in Salt Account and
   outlive the account. Making or unmaking the account deletes `testfix`, and the next publish seals a new one.
-  **The fixture carries a waiting claim**, which reopens ordering (his D9, amended), so the test account can place an
-  order; the held page is not shown there and stays the suite's. **A feature a customer sees lands with its case**:
+  **The fixture carries a waiting claim**, which reopens ordering (his D9, amended) and lifts every stage of V5, so the
+  test account can place an order; the held page, hidden prices and the locked account are not shown there, their part
+  overdue past the lock day notwithstanding, and stay the suite's. **A feature a customer sees lands with its case**:
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
   offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
-  Features that land later (Step 1b's notices, F10 feedback, F15's delivery fee) are added by the lane that builds them.
+  Step 1b, F10, F15, V4b.2, V5 and F13 (a slip sent, and one no longer kept) have their cases; a feature that lands
+  later is added by the lane that builds it.
 - **The test account is wrapped on his page** (fold 2.7): Make a test account makes the key and wraps it under the
   zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`), and
   `POST /all/test` takes `{make: true, key, wrap, wrapMaster}`, checks their shape and seals under the key. The

@@ -20574,7 +20574,7 @@ await (async () => {
 
   /* ---- 1. A CASE OF EVERY FEATURE, and the check is red on a fixture missing one ---- */
   const missing = (f) => F.FEATURES.filter(([, t]) => !t(f)).map(([n]) => n).concat(F.derivedCases(f).filter((c) => !c[1]).map((c) => c[0]));
-  ok(missing(fix).length === 0 && F.FEATURES.length >= 31 && F.derivedCases(fix).length >= 14,
+  ok(missing(fix).length === 0 && F.FEATURES.length >= 34 && F.derivedCases(fix).length >= 14,
     "the test account holds a case of every feature a customer sees, each line and each state, way, rail and claim answer the code names: "
       + JSON.stringify(missing(fix)));
   /* a rail the site stops taking is no fixture lost: with no account taking a transfer, the rest is still built */

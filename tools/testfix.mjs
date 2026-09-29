@@ -95,10 +95,13 @@ export function build(now = new Date()) {
     [T(2, 40), "customer", { action: "say", text: "Could it come after three?" }],
     [T(2, 55), "desk", { message: "After three is fine." }],
     [T(1), "customer", pay("transfer")],
-    [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120 }, rail("transfer"))]]));
-  /* READY to collect, due at Ready, for a friend of an associate's */
-  O.push(order(oid(3, "04"), list, T(3), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
-    [T(3, 20), "desk", { status: "acknowledged" }], [T(1, 10), "desk", { status: "ready" }]]));
+    [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120, slip: "e0a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]]));   /* F13: with a slip */
+  /* READY to collect, due at Ready, for a friend of an associate's; part of it said sent with a slip long past its thirty
+     days, so the page says the slip is no longer kept (F13) */
+  O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
+    [T(35, 20), "desk", { status: "acknowledged" }],
+    [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))],
+    [T(1, 10), "desk", { status: "ready" }]]));
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", { status: "ready" }],
@@ -223,6 +226,12 @@ export const FEATURES = [
   ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty
     && (o.history || []).filter((h) => h.status === "ready" && h.by === "desk" && !h.note && !h.method).length > 1)],
+  ["a slip sent with a claim (F13)", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting" && p.slip && Date.parse(f.at) - Date.parse(p.at) < 30 * 864e5))],
+  ["a slip no longer kept, past its thirty days (F13)", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting" && p.slip && Date.parse(f.at) - Date.parse(p.at) >= 30 * 864e5))],
+  ["the stages (V5): a part overdue past the lock day, every stage lifted by the claim waiting", (f) => {
+    const P = f.live && f.live.pay, day = f.at.slice(0, 10);
+    return !!P && P.lock != null && P.hide != null && f.claims.some((c) => c.state === "waiting")
+      && P.overdue.parts.some((p) => p.since && Date.parse(day) - Date.parse(p.since) >= P.lock * 864e5); }],
   ["a rating given (F10)", (f) => has(f, (o) => o.rating && o.rating.stars >= 1)],
   ["asked how an order was (F10)", (f) => has(f, (o) => rateDue(o, new Date(f.at)))],
   ["on credit: goods with them inside the term", (f) => f.live && f.live.pay.now.parts.some((p) => !p.late)],
