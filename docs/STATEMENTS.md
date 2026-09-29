@@ -794,8 +794,13 @@ sheet id, the note not again; closed, they start afresh. A moved list is read ag
 refuses a product twice on one sheet (`sheetTwice`), and **counts a sheet once against `MAX_OPEN`** (`openCount`), so
 a line joining a sheet already open is never the sixth; the page's `openN` counts the same way. On the desk each order
 keeps its own card, Accept and row; `ordSheetLine` names the others open on its sheet, each a tap to its card, and a
-delivery still to agree says the trip is one, its charge on one order and RM 0 on the rest. One Accept, Ready and
-Handed for a whole sheet is V4b.2, not built.
+delivery still to agree says the trip is one, its charge on one order and RM 0 on the rest. **A sheet is agreed
+together** (V4b.2, his word of 29 Sep 2026): while every order on it waits for his Accept (`ordSheetLead`, none with a
+yes given or a refusal begun), its first order's card (by id, `ordSheetGroup`) carries one Accept for all, the charge
+chosen there and every other order drafted and accepted at RM 0 (`ordPvDelivery`), each row drawn on that card and
+Accept shut until every row is; the other cards keep Decline. While none has moved, the first card also makes the sheet
+Ready and hands it over whole. The one tap is each order's own move in turn (`ordSheetAct` over `ordAct`), the plan of
+charges fixed before the first move, stopping at the first refusal and saying how many went.
 The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
