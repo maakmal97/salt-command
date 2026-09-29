@@ -67,20 +67,95 @@ function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
    and where no day is known. */
 function txUnpaidSince(s){
   if(!s||s.cancelled||!(txAdvance(s)>0.009))return null;
-  const p=txPrice(s),phys=txPhys(s),paidU=p>0?txPaid(s)/p:0;
-  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
-    .map(a=>({d:String(a.date),u:+a.kg}));
-  const rest=phys-steps.reduce((t,x)=>t+x.u,0);
-  if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest});
-  steps.sort((a,b)=>a.d.localeCompare(b.d));
-  /* the units they hold, oldest first: units handed back leave the latest handover first, and a trail stating more
-     than deliveredQty is cut from the latest too, so what is walked is what they hold */
-  const held=[],drop=n=>{while(n>0.0001&&held.length){const x=held[held.length-1],t=Math.min(n,x.u);x.u-=t;n-=t;if(x.u<=0.0001)held.pop();}};
-  for(const x of steps){if(x.u>0)held.push({d:x.d,u:x.u});else drop(-x.u);}
-  drop(held.reduce((t,x)=>t+x.u,0)-phys);
+  const p=txPrice(s),paidU=p>0?txPaid(s)/p:0;
   let cum=0;
-  for(const x of held){cum+=x.u;if(cum>paidU+0.0001)return x.d||null;}
+  for(const x of txHandSteps(s)){cum+=x.u;if(cum>paidU+0.0001)return x.d||null;}
   return null;
+}
+/* THE UNITS A ROW HAS HANDED OVER, oldest first, each with its day (V5c, 29 Sep 2026, out of txUnpaidSince, which walks
+   them): the units they hold, units handed back leaving the latest handover first, and a trail stating more than
+   deliveredQty cut from the latest too, so what is walked is what they hold. `dated` is false where the day is only the
+   row's own date, no step or deliveredOn naming one. */
+function txHandSteps(s){
+  const phys=txPhys(s);
+  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
+    .map(a=>({d:String(a.date),u:+a.kg,dated:true}));
+  const rest=phys-steps.reduce((t,x)=>t+x.u,0);
+  if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest,dated:!!s.deliveredOn});
+  steps.sort((a,b)=>a.d.localeCompare(b.d));
+  const held=[],drop=n=>{while(n>0.0001&&held.length){const x=held[held.length-1],t=Math.min(n,x.u);x.u-=t;n-=t;if(x.u<=0.0001)held.pop();}};
+  for(const x of steps){if(x.u>0)held.push({d:x.d,u:x.u,dated:x.dated});else drop(-x.u);}
+  drop(held.reduce((t,x)=>t+x.u,0)-phys);
+  return held;
+}
+/* V5c (his answers of 29 Sep 2026): HOW LATE EACH ROW WAS PAID, in days from its handover. Every row the party owns
+   (their bucket included), not cancelled and not a gift, whose every handover is dated. Paid in full: each stage of the
+   handover is covered by the money in the order it came (the trail, what came with the row on its own date), and the
+   row's delay is its latest-covered stage's; paid on a stated day with no trail, that day less the first handover.
+   A row paid on a day only assumed counts neither way. Unpaid with goods out, the days since txUnpaidSince, listed
+   only once past the term (`open`). A write-off is a delay of the lock, dated its first handover plus the lock. Paid
+   ahead reads 0. Days are calendar dates. */
+const dayNo=d=>Math.round(Date.parse(String(d).slice(0,10)+'T00:00:00Z')/864e5);
+const dayIso=n=>new Date(n*864e5).toISOString().slice(0,10);
+function payDelays(sales,party,today,rules){
+  const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,out=[];
+  (sales||[]).forEach(s=>{
+    if(!s||s.cancelled||s.goodwill||!ownsCode(party,s.customer)||!(txOwed(s)>0))return;
+    const held=txHandSteps(s);
+    if(!held.length||held.some(x=>!x.dated||!x.d))return;
+    const first=held[0].d,base={date:s.date||null,d:first};
+    if(s.defaulted){out.push(Object.assign(base,{on:dayIso(dayNo(first)+lock),days:lock,open:false}));return;}
+    const t=txDates(s);
+    if(t.fullPaid&&t.pSrc==='stated'){out.push(Object.assign(base,{on:t.pOn,days:Math.max(0,dayNo(t.pOn)-dayNo(first)),open:false}));return;}
+    if(t.fullPaid&&t.pSrc==='trail'){
+      const p=txPrice(s),steps=(s.amend||[]).filter(a=>a&&+a.cash>0.0001).map(a=>({d:String(a.date||s.date),rm:+a.cash}));
+      const first$=txPaid(s)-steps.reduce((a,x)=>a+x.rm,0),pays=(first$>0.009?[{d:String(s.date),rm:first$}]:[]).concat(steps)
+        .sort((a,b)=>a.d.localeCompare(b.d));
+      let days=0,cum=0,paid=0,i=0;
+      for(const x of held){
+        cum+=x.u*p;
+        while(i<pays.length&&paid<cum-0.009){paid+=pays[i].rm;i++;}
+        const by=paid>=cum-0.009&&i>0?pays[i-1].d:t.pOn;
+        days=Math.max(days,dayNo(by)-dayNo(x.d));
+      }
+      out.push(Object.assign(base,{on:t.pOn,days:Math.max(0,days),open:false}));return;
+    }
+    if(txAdvance(s)>0.009){
+      const since=txUnpaidSince(s);if(!since)return;
+      const days=dayNo(today)-dayNo(since);
+      if(days>term)out.push(Object.assign(base,{on:String(today).slice(0,10),days,open:true}));
+    }
+  });
+  return out;
+}
+/* THE LATE PAYER'S OFFER, walked over those delays by the day each was settled (a delay before a prompt payment on the
+   same day). On time is paid within the term (RULES.holdDays, his answer); a short delay is past it and under the lock
+   (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
+   RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
+   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
+   nothing (his answer of 29 Sep 2026). */
+function lateOffer(delays,rules){
+  const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
+    win=R.lateWindowDays!=null?+R.lateWindowDays:90,rep=R.lateResetRepeat!=null?+R.lateResetRepeat:3;
+  const kind=x=>x.days<=term?'prompt':x.days>=lock?'long':'short';
+  const ev=(delays||[]).map(x=>Object.assign({k:kind(x)},x))
+    .sort((a,b)=>String(a.on).localeCompare(String(b.on))||(a.k==='prompt')-(b.k==='prompt')||String(a.d).localeCompare(String(b.d)));
+  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null;
+  for(const e of ev){
+    const n=dayNo(e.on);
+    if(on){
+      if(e.k==='prompt'){if(++streak>=need){on=false;resetOn=n;lastShort=null;streak=0;}}
+      else{streak=0;last=e;}
+      continue;
+    }
+    if(e.k==='prompt')continue;
+    if(resetOn!=null&&n-resetOn<=win){on=true;need=rep;why='repeat';}
+    else if(e.k==='long'){on=true;need=1;why='long';}
+    else if(lastShort!=null&&n-lastShort<=win){on=true;need=1;why='shorts';}
+    else{lastShort=n;continue;}
+    last=e;streak=0;lastShort=null;
+  }
+  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on}:{on:false};
 }
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
@@ -967,7 +1042,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,
+return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,

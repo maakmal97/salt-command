@@ -64,8 +64,9 @@ by his decision, no sign-in.
      one place a size becomes a level**; `levelShapeOk` is the one shape check; a band left out
      takes mid.
    - **The profile prices only through the proposal's four rules** (`buyerProfile` against
-     `PROFILE_RULE`, then `ruleProposal` over `tierProposal`): rare and late twice, down a level;
-     frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
+     `PROFILE_RULE`, then `ruleProposal` over `tierProposal`): a late payer (`lateOf`, the engine's
+     `payDelays` and `lateOffer`, from the handover across every book) takes no promotion and is only
+     OFFERED a level down on the Tiers card, never priced one; frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
      from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
      next lot. **A HELD tier is never moved by a rule**, only offered one.
    - **A customer's price is their tier, or the price he sets on one order when he acknowledges it, never
