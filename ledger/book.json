@@ -87,7 +87,7 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 1,
+  "STATED_STOCK": 26,
   "COUNT_ON": {
     "salt": "2026-09-27",
     "oil": "2026-09-27",
@@ -150,7 +150,8 @@
     {"qty":50,"total":400,"cash":400,"supplier":"SP7-PUD","status":"paid","product":"oil","date":"2026-09-24","receivedOn":"2026-09-24","receivedQty":50,"paidOn":"2026-09-24","note":"<b>OIL PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SP7-PUD, 50 unit for RM400, RM8 a unit on the drafter's working, RM400 cash out and 50 unit received on 24 Sep, with no delivery and no freight, so nothing on this row stays open. His word of 23 Sep 2026 quotes 50 unit at RM380, RM7.60 a unit, and names that tier and the 10 unit tier at RM100 alone, so this total is RM20 above the quote. Across 5 orders his median rate is RM7.53 with a range of RM7 to RM7.67, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised, and the dossier gives no reason for the gap to the quote.","rid":"p030"},
     {"qty":15,"total":630,"cash":630,"supplier":"SM4-KEP","status":"paid","product":"candy","date":"2026-09-24","receivedOn":"2026-09-24","receivedQty":15,"paidOn":"2026-09-24","note":"<b>CANDY PURCHASE DATED 24 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SM4-KEP, 15 unit for RM630, RM42 a unit on the drafter's working, RM630 cash out and 15 unit received on 24 Sep, with no delivery and no freight, so nothing stays open. His word of 23 Sep 2026 quotes 10 unit at RM55 and 20 unit at RM47, then 30 unit at RM38 and 50 unit at RM30; 15 unit falls between tiers, so no quoted rate answers this size. Across 3 orders his median rate is RM7.67 with a range of RM3.20 to RM38, nothing outstanding, none defaulted, no unit on credit. On the roster, not an associate. No flag was raised.","rid":"p031"},
     {"qty":12.5,"total":700,"cash":700,"handover":"collected","supplier":"SA5-BTR","freight":20,"status":"paid","date":"2026-09-25","receivedOn":"2026-09-25","receivedQty":12.5,"paidOn":"2026-09-25","cost":700,"note":"<b>SALT BUY DATED 25 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700 at RM56 a unit, collected, RM700 cash out and 12.5 unit received on 25 Sep, with RM20 freight beside it, so nothing stays open. The total is the 23 Sep tier to the ringgit: on his word, multiples of 12.5 unit at RM700 each. Across 18 orders their median rate is RM56, range RM44 to RM64, RM0 outstanding, none defaulted, no credit taken, on the roster and not an associate. The drafter flagged RM48 a unit as an inventory average across more than one lot rate rather than this lot; these figures do not settle it.","rid":"p032"},
-    {"qty":12.5,"total":700,"cash":700,"supplier":"SA5-BTR","status":"paid","date":"2026-09-27","receivedOn":"2026-09-27","receivedQty":12.5,"paidOn":"2026-09-27","note":"<b>SALT BUY DATED 27 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700, RM56 a unit, RM700 cash out and 12.5 unit received on 27 Sep, with no freight or delivery on the row. The terms match the 23 Sep quote exactly: one 12.5 unit tier at RM700, bought in whole lots on his word. SA5-BTR: 19 orders on the book, median RM56 a unit, range RM44 to RM64, RM0 outstanding before this row. The RM700 is the lot's own cost and matches the RM56 stock cost. The drafter raised no flag. Nothing stays open.","rid":"p033"}
+    {"qty":12.5,"total":700,"cash":700,"supplier":"SA5-BTR","status":"paid","date":"2026-09-27","receivedOn":"2026-09-27","receivedQty":12.5,"paidOn":"2026-09-27","note":"<b>SALT BUY DATED 27 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 12.5 unit for RM700, RM56 a unit, RM700 cash out and 12.5 unit received on 27 Sep, with no freight or delivery on the row. The terms match the 23 Sep quote exactly: one 12.5 unit tier at RM700, bought in whole lots on his word. SA5-BTR: 19 orders on the book, median RM56 a unit, range RM44 to RM64, RM0 outstanding before this row. The RM700 is the lot's own cost and matches the RM56 stock cost. The drafter raised no flag. Nothing stays open.","rid":"p033"},
+    {"qty":25,"total":1400,"cash":1400,"handover":"collected","supplier":"SA5-BTR","freight":75,"status":"paid","date":"2026-09-29","receivedOn":"2026-09-29","receivedQty":25,"paidOn":"2026-09-29","note":"<b>SALT BUY DATED 29 SEP, PAID IN FULL AND RECEIVED IN FULL ON THE DAY.</b> Booked to SA5-BTR, 25 unit for RM1,400, RM56 a unit, collected, RM1,400 cash out and 25 unit received on 29 Sep, with RM75 freight beside it. The 23 Sep quote from SA5-BTR prices salt in lots of 12.5 unit at RM700, RM56 a unit, and this row is at that rate. SA5-BTR: 20 orders, median RM56 a unit, range RM44 to RM64, nothing outstanding and RM0 defaulted before this batch. Cost is RM56 a unit, the inventory's own. The drafter raised no flags. Outstanding: nothing.","rid":"p034"}
   ],
   "sales": [
     {"date":"2026-06-26","customer":"CG5-SB","qty":1,"total":100,"cost":64,"cash":100,"deliveredQty":1,"ref":"CJ4-OKR","refKg":1,"rid":"s001"},
@@ -944,7 +945,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-29T11:02:59.480Z",
+  "QUEUE_COMMITTED": "2026-09-29T11:10:03.620Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -998,6 +999,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v953: 25 unit from SA5-BTR on 2026-09-29, so 1 plus 25 is 26. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 25 unit lot from SA5-BTR landed on 29 Sep at RM56 a unit, level with the shelf's own cost, so the basis holds at RM56 a unit.",
       "ROLLED AT v952: 1 unit to CZ5-TM on 2026-09-29, so 2 less 1 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit out is CZ5-TM's collection on s217. Nothing landed.",
       "ROLLED AT v932: 1 unit to CR3-DAM on 2026-09-28, so 3 less 1 is 2. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit out is CR3-DAM's collection on s214, dated 28 Sep, with nothing paid.",
       "ROLLED AT v917: 2.5 unit to CE4-CHE on 2026-09-28, so 5.5 less 2.5 is 3. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 2.5 unit of salt went out to CE4-CHE on 28 Sep, paid and collected. Stock was already below the reorder point of 28.77 before this sale.",
