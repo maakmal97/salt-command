@@ -50,7 +50,8 @@ by his decision, no sign-in.
      feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
      ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is
      the level's); choose a row by code, never by index. Tier 1's stated ends and typed prices are
-     retired; `PRICE_SET` is cleared and the drafter refuses a new one.
+     retired; `PRICE_SET` is cleared and the drafter refuses a new one; the one figure he sets at Accept,
+     on one order, is that row's total, which `PRICE_SET` never records.
    - **Salt is Ambassador and four tiers** (Titanium, Platinum, Gold, Silver) from his
      `salt-command pricing_v2.xlsx` (OneDrive, read-only; copy first): `TIER_RULE` and `TIER_NAMES`
      in the master, `fiveTiers` in the engine. COGS is the supplier's QUOTE, not the landed cost.
@@ -67,7 +68,9 @@ by his decision, no sign-in.
      frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
      from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
      next lot. **A HELD tier is never moved by a rule**, only offered one.
-   - **A customer's price is their tier.** What they paid before never lowers it (the cap retired
+   - **A customer's price is their tier, or the price he sets on one order when he acknowledges it, never
+     under the floor; the board is never repriced by it** (`total` on the preview and Accept, the site keeping
+     `asked`). What they paid before never lowers it (the cap retired
      on his decision of 27 Sep 2026); only the floor lifts a card, to the first ten above. **A
      product with no tier, held or proposed, is not priced.** One rule, the engine's `cardPrice`:
      the price list, and the desk's `cardQuote`, which every quote to a named customer reads.
