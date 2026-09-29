@@ -5748,6 +5748,12 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+/* V5b2 (his answers of 29 Sep 2026): WHAT A PARTY OWES AT ONCE, across every book, their bucket included: each row's goods
+   and delivery less what is paid. A gift, a write-off or a cancelled row owes nothing; everything else counts until it is
+   paid, an order paid in advance included, and so does an agreed row dated ahead (a pending order). A row with no
+   figure counts nought. Against RULES.creditCeilingRM it decides an order paid in advance. */
+function partyOwedRM(sales,party){return +(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.cancelled&&!s.goodwill&&!s.defaulted)
+  .reduce((a,s)=>a+Math.max(0,txOwed(s)-txPaid(s)),0).toFixed(2);}
 /* S6 11.15 (his decision D7 of 24 Sep 2026): A PAYMENT AGAINST THE ACCOUNT, OLDEST FIRST. What a customer says they sent
    against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
    bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
@@ -5832,7 +5838,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
         renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 /* ==== END ENGINE position ==== */
@@ -8512,7 +8518,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v947","d":"29 Sep 2026","t":"CK4-SEN ORDERS AGAIN, ABOVE HIS RANGE","n":["<p><b>ONE SALT SELL FOLDED, PENDING.</b> CK4-SEN ordered 6.25 unit for RM530 on the statements site, order 20260929071114-awrljg, to collect, preapproved by phone. At RM84.8 a unit by the drafter's figure, the rate sits above his median of RM80 and above the top of his range, RM73.33 to RM80.8. RM530 clears the desk's floor of RM429.19 for that size but sits below its ask of RM700. The drafter raised no flag.</p>","<p><b>INVENTORY UNMOVED.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stands at 2 units against a ledger of 86.2, with 3 units promised and 9.5 owed out, at a cost of RM56 a unit and a reorder point of 26.78. The count of 27 Sep holds. The 6.25 units to collect exceed the 2 units in stock, so the order cannot be filled from stock as it stands.</p>"]}];
+const evolution=[{"v":"v948","d":"29 Sep 2026","t":"AN ORDER IS PAID IN ADVANCE OVER RM 250 OWED AT ONCE","n":["<p><b>AN ORDER IS PAID IN ADVANCE OVER RM 250 OWED AT ONCE.</b> His answers of 29 Sep 2026: for everyone, in place of the Counter's unit cap. At Accept the desk Worker adds what the customer owes on every row of theirs and their bucket, their orders agreed and not yet on the book, and this order with its delivery; over RM 250 the order is paid in advance, cash on handover is not offered on it, and the acknowledgement asks them to pay now. A gift, a write-off or a cancelled row counts nothing; everything else counts until it is paid.</p>","<p><b>ONE VERDICT A SHEET, AND HIS YES COVERS IT.</b> A sheet's lines count together at their goods, the charge left out, so every line is paid the same way. The card says In advance or On credit, with the figure, before Accept, and the verdict is part of the row his one tap approves: a figure that moves before the tap is refused as changed. An agreed order paid in advance says what is still to pay before it is handed over. The ceiling reaches the Worker in a state key of its own, so until the mirror is next seeded the card shows no verdict.</p>","<p><b>PROOFS.</b> A new suite section of 14 checks on the real schema; 21 mutations each turned a check red. Fable reviewed the plan and the build twice; every finding was taken. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8627,7 +8633,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 15:14 KL';
+const LAST_UPDATED='29 Sep 2026, 15:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9157,6 +9163,10 @@ const RULES={
   holdDays:1,
   hideDays:3,
   lockDays:4,
+  /* V5b2 (his answers of 29 Sep 2026): an order that would take what a customer owes at once, across every book, over
+     this is paid in advance, for everyone, in place of the Counter's unit cap. The desk Worker reads it from TERMS.
+     No semicolon in this object: the publish reads RULES up to the first one. */
+  creditCeilingRM:250,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
   /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
@@ -19647,7 +19657,10 @@ function ordPvBlock(o){
   /* S11 fix: the unit rides in the note, so a narrow tile breaks a figure at its space and never inside the word */
   const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
   const flags=Array.isArray(j.flags)?j.flags:[];
-  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>
+  /* V5b2: the Worker's verdict on paying in advance, which his yes covers (it is in the digest) */
+  const owedW=num(j.owedWith),ceil=num(j.ceiling);
+  const preT=ceil==null||owedW==null?'':`<p class="salt-approve__reason ordprepay">${j.prepay?'In advance':'On credit'}: ${fmt(owedW)} owed with this order, ${j.prepay?'over':'within'} ${fmt(ceil)}.${j.prepay?' They are asked to pay before it is handed over, and cash on handover is not offered.':''}</p>`;
+  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>${preT}
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
     ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
 }
@@ -19956,7 +19969,7 @@ function ordCard(o){
     ${ordToldLine(o)}
     ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
     ${fee}${rated}${thread}${reply}
-    ${cash}${hand}${ordWhyBlock(o)}
+    ${cash}${hand}${o.prepay&&handable&&ordDue(o)>0.004?`<p class="salt-approve__reason ordprepay">Paid in advance: ${fmt(ordDue(o))} is still to pay before it is handed over.</p>`:''}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
       ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}

@@ -802,6 +802,22 @@ opened its list is the S4 4.4 re-quote. Place stamps `prepay` when the size is o
 unit: paid in advance."), the check carries a Payment row from Review, the order says "Before we hand it over" until
 Ready makes it due now, and cash on handover is refused on it (`cashPrepay`, the tile dashed with its reason). The cap is
 per order here, while the desk's cap counts every unit out unpaid; a book stating no cap has nothing paid in advance.
+**V5b2a (his answers of 29 Sep 2026): RM 250 OWED AT ONCE, EVERYONE, DECIDED AT ACCEPT.** The desk Worker decides
+(`advanceOf` in `src/orders.js`, inside `previewAck`): what the customer owes on every row of theirs and their bucket
+(the engine's `partyOwedRM`: goods and delivery less what is paid; a gift, a write-off or a cancelled row owes nothing),
+plus their site orders agreed and not yet on the mirror, plus this order with its delivery, against `TERMS.ceiling`.
+**A sheet is one verdict** (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the mirror, count
+together at their goods with the sheet's charge left out, so every line reads the same figure and digest whichever is
+accepted first (once the lead's row lands on the mirror it counts with its charge, so a sheet at the edge can read the
+charge more between a fold and the next line's Accept, which is then refused as changed, as any row a fold moves is).
+The orders read are the list `findOrder` found the order in; unread, nothing is decided (503). Offered
+again, an order keeps the verdict it was agreed on. `TERMS.ceiling` is the master's `RULES.creditCeilingRM` in a state key of its own beside
+`PRICING` (never inside it, whose digest marks preapprovals). Everything counts until it is paid. Over it, the entry
+carries `prepay: true` and the ack digest includes it, so his yes covers it and `applyPre` matches only what he saw; the
+order is moved with `prepay` and `decideDesk` sets or clears it, the desk's verdict being the order's from then on. The
+card says "In advance" or "On credit" with the figure before Accept, and "Paid in advance: RM x is still to pay before
+it is handed over" on an agreed order while it is unpaid. The phone decides nothing; V3's stamp at Place stands until
+V5b2b retires it on the Counter.
 **One sheet takes several products** (pay terms V4b, his point 5 of 28 Sep 2026, his Q3: one order a product, sent
 together). The form draws every product on their list, its sizes under its mark (the segment of marks went with the
 one-product sheet), a size of each they want; a size tapped again comes off, one product on the list always keeps its
@@ -1007,8 +1023,8 @@ For a closed page the site has its own Web Push pair. **The banner is a plain se
 by `wakes` in `stmt/orders.js` off the event and the order it folded into, so the KV road and the order
 book send the same kind for the same move, sealed
 for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto, one record), and
-the service worker at `/sw.js` shows the kind's title and body from `news.*` in `stmt/words.js`: acknowledged (pay now over
-the credit cap, V3's `prepay`; on credit otherwise, due at Ready), ready to collect or on its way, his line (`Counter says:`,
+the service worker at `/sw.js` shows the kind's title and body from `news.*` in `stmt/words.js`: acknowledged (pay now on
+an order paid in advance, `prepay`; on credit otherwise, due at Ready), ready to collect or on its way, his line (`Counter says:`,
 his words in quotation marks), payment received or not found yet, payment due, delivered or collected (in part or in full),
 complete, not taken or cancelled with his reason. **Never an amount, a product or a name**; the suite reads every word.
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a

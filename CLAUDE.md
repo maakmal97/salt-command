@@ -313,7 +313,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   waits until `OPEN.byKey` carries that key. Each entry is stamped with its stage's own moment (`stageAt`). A move of his
   runs the reconcile at once; the return leg carries what he records on the desk back to the order
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance, and on an
-  order paid in advance (`prepay`, over its book's credit cap, stamped at Place). A
+  order paid in advance (`prepay`: decided at Accept by the desk Worker, `advanceOf` in `src/orders.js`, when what the
+  customer owes at once across every book with this order, the engine's `partyOwedRM` plus their agreed site orders not
+  on the book, is over `RULES.creditCeilingRM` read from `TERMS`; the verdict rides on the entry and in the ack digest;
+  V3's unit-cap stamp at Place retires in V5b2b). A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
   never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
   (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;
@@ -403,7 +406,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   filed, with the case its body is chosen by (`v`, `payCase` in `stmt/orders.js`: owed, waiting on his Received, or paid) and, where the kind carries it, his own text
   (`t`): his line on an order in quotation marks, under a tag and push `Topic` of its own so none is replaced unseen, and his
   reason at Decline or Cancel as the body, both checked by `siteWords` before they leave the desk. The acknowledgement is
-  pay-now on an order over the credit cap (`prepay`, V3), else on credit. A record with no keys gets the payload-free wake
+  pay-now on an order paid in advance (`prepay`), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from

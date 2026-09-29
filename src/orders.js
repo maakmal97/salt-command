@@ -172,7 +172,8 @@ export async function findOrder(env, id) {
   const r = await listOrders(env, true);
   if (!r.ok) return { ok: false, status: 503, error: r.error };
   const o = r.orders.find((x) => x.id === id);
-  return o ? { ok: true, order: o } : { ok: false, status: 404, error: "no such order" };
+  /* V5b2a: the list rides along, so Accept decides paid in advance on the orders it was found among (Fable's review) */
+  return o ? { ok: true, order: o, orders: r.orders } : { ok: false, status: 404, error: "no such order" };
 }
 
 /* ---- WHAT THE CUSTOMER'S PAGE SAYS OF EACH STATE (S11 11.1) ------------------------------------
@@ -223,7 +224,7 @@ function cardAt(pricing, code, product, qty) {
   if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
   return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
 }
-async function previewAck(env, o, code, delivery, now) {
+async function previewAck(env, o, code, delivery, now, ctx) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection */
   const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 });
@@ -234,6 +235,12 @@ async function previewAck(env, o, code, delivery, now) {
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
+  /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
+     The Worker decides, from the book and the site's own orders, never the phone; the verdict rides on the entry and in
+     the digest, so his yes covers it and the order is moved with it (ackOnApproval). */
+  const adv = advanceOf(book, o, code, agreed.delivery, ctx || {});
+  if (adv.error) return { ok: false, status: 503, error: adv.error };
+  if (adv.prepay) entry.prepay = true;
   const pricing = await pricingOf(book);
   const product = o.product || "salt", qty = +o.qty, goods = +(+o.total).toFixed(2);
   const priced = costFor(book, product), fl = floorFor(book, product, qty);
@@ -242,8 +249,36 @@ async function previewAck(env, o, code, delivery, now) {
     quote: goods, delivery: agreed.delivery, cost,
     margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
-    usual: usualFor(book, d.row), told: toldOf(o), pricing, hash: await stageDigest("ack", entry, d, pricing) },
+    usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling,
+    hash: await stageDigest("ack", entry, d, pricing) },
     cardAt(book.pricing, code, product, qty));
+}
+/* WHAT THEY OWE AT ONCE WITH THIS ORDER: the book's rows (the engine's partyOwedRM), the owner's agreed site orders whose
+   row is not on the book yet, then this order with its delivery. Everything counts until paid. A SHEET IS ONE VERDICT
+   (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the book, count together at their goods, the
+   sheet's charge left out, so every line reads the same figure whichever is accepted first. The orders are the list the
+   order was found in (findOrder), never a second read. Offered again, an order keeps the verdict it was agreed on, as it
+   keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing, and an order stamped at
+   Place (V3) keeps its stamp until V5b2b. */
+const AGREED_ON_SITE = ["acknowledged", "ready"];
+export function advanceOf(book, o, code, delivery, ctx) {
+  if (ctx.again) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
+  const terms = (book.state && book.state.TERMS) || {};
+  const ceiling = typeof terms.ceiling === "number" && Number.isFinite(terms.ceiling) ? terms.ceiling : null;
+  if (ceiling == null) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
+  if (!Array.isArray(ctx.orders)) return { error: "the site's orders were not read, so paid in advance cannot be decided: try again in a minute" };
+  const E = POSITION_ENGINE, owner = E.ownerCode(code);
+  const keys = new Set((book.sales || []).map((s) => E.ovKey(s)));
+  const onBook = (k, p) => !!k && (keys.has(k) || keys.has(E.ovRekey(k, p)));
+  const onSheet = (x) => !!o.sheet && x.sheet === o.sheet && x.u === o.u;
+  const mineToo = ctx.orders.filter((x) => x.id !== o.id && x.code && E.ownsCode(owner, x.code));
+  const agreed = mineToo.filter((x) => !onSheet(x) && AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))
+    .reduce((a, x) => a + Math.max(0, (+x.total || 0) + (+x.delivery || 0) - (+x.paid || 0)), 0);
+  const sheet = mineToo.filter((x) => onSheet(x) && (x.status === "placed" || (AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))));
+  const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0)), 0);
+  const mine = (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0));
+  const owedWith = +(E.partyOwedRM(book.sales, owner) + agreed + lines + mine).toFixed(2);
+  return { prepay: owedWith > ceiling + 0.004 || !!o.prepay, owedWith, ceiling };
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
 export async function previewOrder(env, id, body, now) {
@@ -254,7 +289,7 @@ export async function previewOrder(env, id, body, now) {
   const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(env.SALT_LEDGER, id, "ack"));
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
   /* offered again (11.13), the charge is the one already on the order: the customer was told it */
-  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date());
+  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again });
   if (!p.ok) return p;
   delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
   return Object.assign(p, { again, chargeChosen: again || o.mode !== "deliver" || chargeOf(body) != null });
@@ -302,7 +337,7 @@ export async function ackOnApproval(env, pre) {
   /* an order already agreed (a row offered again) has nothing to move; one that ended meanwhile refuses the move,
      and its Cancellation then follows the approved row, as any withdrawal of an agreed order does */
   const r = shown.from !== "placed" ? { ok: true }
-    : await moveOrder(env, pre.u, pre.order_id, { status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0 });
+    : await moveOrder(env, pre.u, pre.order_id, { status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true });
   /* told once the move is made, or refused for good: the order ended, or was moved already */
   if ((r.ok || r.status === 409) && env.SALT_LEDGER)
     await env.SALT_LEDGER.prepare("UPDATE preapproval SET acked_at=?1 WHERE id=?2").bind(new Date().toISOString(), pre.id).run();
@@ -328,7 +363,7 @@ export async function acceptOrder(env, id, body, by, now) {
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
   const delivery = again ? (+o.delivery || 0) : chargeOf(body);
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
-  const pv = await previewAck(env, o, o.code, delivery, at);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again });
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;

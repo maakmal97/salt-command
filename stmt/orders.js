@@ -824,6 +824,8 @@ export function decideDesk(order, body, at) {
   if (status === "acknowledged") {
     const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
+    /* V5b2: the desk decides paid in advance at Accept, from the book; its verdict is the order's from then on */
+    if (body && typeof body.prepay === "boolean") ev.prepay = body.prepay;
   }
   /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
      Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
@@ -841,6 +843,7 @@ export function applyEvent(order, ev) {
   if (ev.kind === "status") {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
+    if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
     order.status = ev.status;
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;

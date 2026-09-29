@@ -885,6 +885,12 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+/* V5b2 (his answers of 29 Sep 2026): WHAT A PARTY OWES AT ONCE, across every book, their bucket included: each row's goods
+   and delivery less what is paid. A gift, a write-off or a cancelled row owes nothing; everything else counts until it is
+   paid, an order paid in advance included, and so does an agreed row dated ahead (a pending order). A row with no
+   figure counts nought. Against RULES.creditCeilingRM it decides an order paid in advance. */
+function partyOwedRM(sales,party){return +(sales||[]).filter(s=>s&&ownsCode(party,s.customer)&&!s.cancelled&&!s.goodwill&&!s.defaulted)
+  .reduce((a,s)=>a+Math.max(0,txOwed(s)-txPaid(s)),0).toFixed(2);}
 /* S6 11.15 (his decision D7 of 24 Sep 2026): A PAYMENT AGAINST THE ACCOUNT, OLDEST FIRST. What a customer says they sent
    against the account settles the rows they owe on as the statement's To pay now lists them: every row of theirs or their
    bucket with goods out and money owed (txAdvance; a gift or a write-off owes nothing), by the order date, undated last.
@@ -969,7 +975,7 @@ return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txU
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
         renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

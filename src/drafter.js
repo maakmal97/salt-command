@@ -1667,7 +1667,8 @@ export async function pricingOf(book) {
 export async function stageDigest(stage, entry, d, pricing) {
   const pay = (entry && entry.payload) || {};
   const shown = stage === "ack"
-    ? { stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null }
+    ? Object.assign({ stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null },
+      entry && entry.prepay === true ? { prepay: true } : {})   /* V5b2: paid in advance is his to see; absent, the digest is as it was */
     : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
         date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
         amendKind: d.amendKind || null, flags: d.flags || [] };

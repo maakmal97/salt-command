@@ -226,6 +226,15 @@ export function openSnapshot(w) {
   return { at: new Date().toISOString(), count: open.length, byKey, position, countedOn };
 }
 
+/* V5b2 (his answers of 29 Sep 2026): THE TERMS the desk Worker decides by, read out of the master's RULES: the ceiling on
+   what a customer owes at once, and the term and the lock. A state key of its own, NEVER inside PRICING, whose digest
+   tells a waiting preapproval's terms apart (src/drafter.js pricingOf). A master stating no ceiling carries none. */
+export function termsSnapshot(w) {
+  const r = reader(w)("JSON.stringify({ceiling:typeof RULES.creditCeilingRM==='number'?RULES.creditCeilingRM:null,holdDays:RULES.holdDays,lockDays:typeof RULES.lockDays==='number'?RULES.lockDays:null})");
+  if (!r.ok) throw new Error("the terms did not read: " + r.why);
+  return JSON.parse(r.value);
+}
+
 export function pricingSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
@@ -487,6 +496,7 @@ export async function readBook(masterPath = MASTER) {
      active product and nothing else should be reading while it does. */
   ledger.PRICING = { ...pricingSnapshot(w), v: version };
   ledger.OPEN = { ...openSnapshot(w), v: version };
+  ledger.TERMS = { ...termsSnapshot(w), v: version };
   return { dom, w, read, ledger, meta, missing, version, stamped: meta.LAST_UPDATED || null,
     src: readFileSync(masterPath, "utf8") };
 }

@@ -34590,6 +34590,144 @@ await (async () => {
     "a row Accept queued that still waits is dropped when the customer withdraws, and his yes is spent with it: " + JSON.stringify({ dp, draft: draftOf(cFlags.a.j.draft) }));
 })();
 
+section("V5b2a (29 Sep 2026): the desk Worker decides at Accept that an order is paid in advance when what they owe at once with it is over RM 250, and his yes covers it");
+await (async () => {
+  /* HIS ANSWERS OF 29 SEP 2026: RM 250 owed at once, across every book, for everyone. Fable's review of the plan: the Worker
+     decides from the book and the site's own orders, never the phone; the verdict rides on the entry and in the digest, so
+     applyPre matches only what he was shown, and the order is moved with it. Driven on the real schema as S11 11.11 is;
+     every code, username and order id is invented. Each assertion was proved red by its own mutation. */
+  const E = (await import("../engine/position.mjs")).default;
+  /* the engine's sum, on its own */
+  const rows0 = [{ customer: "CQ1-A", total: 100, delivery: 10, cash: 30 }, { customer: "CQ1-A-R", total: 50 }, { customer: "CQ1-A", total: 80, cancelled: true },
+    { customer: "CQ1-A", total: 90, defaulted: true }, { customer: "CQ1-A", total: 60, goodwill: true }, { customer: "CQ9-B", total: 70 }, { customer: "CQ1-A", total: 40, cash: 60 }];
+  ok(E.partyOwedRM(rows0, "CQ1-A") === 130, "what a party owes at once is every row of theirs and their bucket less what is paid, never below nothing, "
+    + "and no cancelled row, write-off, gift or other party's: " + E.partyOwedRM(rows0, "CQ1-A"));
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so Accept was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CQ2-AB", C2 = "CQ3-CD", U1 = "abcd-efgh", U2 = "wxyz-mnpq";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3] } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const row = (doc) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(Object.assign({ rid: "s8" + seq, qty: 1 }, doc)));
+  for (const c of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) row({ customer: c, date: d, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  /* C1 owes RM 140 on the book: RM 100 of its own and RM 40 on its bucket; a cancelled row and a write-off count nothing */
+  row({ customer: C1, date: "2026-09-01", total: 100, deliveredQty: 1, deliveredOn: "2026-09-01" });
+  row({ customer: C1 + "-R", date: "2026-09-02", total: 40, deliveredQty: 1, deliveredOn: "2026-09-02", rev: "R2" });
+  row({ customer: C1, date: "2026-09-03", total: 500, cancelled: true, cancelledOn: "2026-09-03" });
+  row({ customer: C1, date: "2026-09-04", total: 300, deliveredQty: 1, defaulted: true });
+  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  setState("TERMS", { ceiling: 250, holdDays: 1, lockDays: 4, v: "v900" });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const place = async (u, qty, total) => (await O.placeOrder(senv, u, { product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "" })).order;
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const view = (pv) => ({ prepay: pv.j.prepay, owedWith: pv.j.owedWith, ceiling: pv.j.ceiling });
+
+  /* A. RM 140 owed, RM 100 more is within RM 250: on credit, and the order carries no prepay */
+  const a = await place(U1, 1, 100);
+  const pvA = await call("/orders/" + a.id + "/preview", {});
+  const acA = await call("/orders/" + a.id + "/accept", { hash: pvA.j.hash });
+  const sA = await orderOf(a.id);
+  ok(JSON.stringify(view(pvA)) === '{"prepay":false,"owedWith":240,"ceiling":250}' && acA.j.approved === true && sA.status === "acknowledged" && !sA.prepay,
+    "RM 140 owed on the book, their bucket's RM 40 among it, and RM 100 with this order is within RM 250: on credit: " + JSON.stringify({ pv: view(pvA), approved: acA.j.approved, prepay: sA.prepay }));
+
+  /* B. the order just agreed is not on the book yet and still counts: RM 20 more is over, paid in advance, and his yes covers it */
+  const b = await place(U1, 1, 20);
+  const pvB = await call("/orders/" + b.id + "/preview", {});
+  const acB = await call("/orders/" + b.id + "/accept", { hash: pvB.j.hash });
+  const sB = await orderOf(b.id);
+  ok(JSON.stringify(view(pvB)) === '{"prepay":true,"owedWith":260,"ceiling":250}' && acB.j.approved === true && sB.status === "acknowledged" && sB.prepay === true,
+    "an order agreed and not yet on the book counts until it is paid, so RM 20 more is over RM 250: paid in advance, approved by his yes and moved with it: "
+    + JSON.stringify({ pv: view(pvB), approved: acB.j.approved, prepay: sB.prepay }));
+  const cod = await O.customerMove(senv, U1, b.id, "method", { method: "cod" });
+  ok(cod && cod.code === "cashPrepay", "and cash on handover is refused on it: " + JSON.stringify(cod));
+
+  /* C. the verdict is in the digest: a ceiling moved between the card and Accept is a changed row, refused */
+  const c = await place(U1, 1, 20);
+  const pvC = await call("/orders/" + c.id + "/preview", {});
+  setState("TERMS", { ceiling: 400, holdDays: 1, lockDays: 4, v: "v900" });
+  const acC = await call("/orders/" + c.id + "/accept", { hash: pvC.j.hash });
+  setState("TERMS", { ceiling: 250, holdDays: 1, lockDays: 4, v: "v900" });
+  ok(pvC.j.prepay === true && acC.status === 409 && acC.j.differs === true && acC.j.preview && acC.j.preview.prepay === false && (await orderOf(c.id)).status === "placed",
+    "his yes covers paid in advance: a verdict that moved since the card drew it is refused with the fresh one, and nothing moves: " + JSON.stringify({ status: acC.status, now: acC.j.preview && acC.j.preview.prepay }));
+
+  /* D. a sheet's earlier line counts before its own Accept moves it */
+  const x = await place(U2, 1, 150), y = await place(U2, 1, 150);
+  for (const o of [x, y]) { const k = "order:" + U2 + ":" + o.id, v = JSON.parse(await skv.get(k)); v.sheet = "SHQ1"; v.mode = "deliver"; v.place = "by the old market"; await skv.put(k, JSON.stringify(v)); }
+  const [first, second] = [x, y].sort((p, q) => (p.id < q.id ? -1 : 1));
+  /* a delivery: the charge rides on the first line's card and the rest go at RM 0 (V4b.2) */
+  const pv1 = await call("/orders/" + first.id + "/preview", { delivery: 20 }), pv2 = await call("/orders/" + second.id + "/preview", { delivery: 0 });
+  ok(JSON.stringify([view(pv1), view(pv2)]) === '[{"prepay":true,"owedWith":300,"ceiling":250},{"prepay":true,"owedWith":300,"ceiling":250}]',
+    "a sheet is one verdict (his answer of 29 Sep 2026): two RM 150 lines read RM 300 together, the charge on the first left out, both paid in advance: " + JSON.stringify([view(pv1), view(pv2)]));
+  /* and the sheet reads the same once its first line is agreed: the charge on the lead is left out of the sheet's figure */
+  const accFirst = await call("/orders/" + first.id + "/accept", { delivery: 20, hash: pv1.j.hash });
+  const pv2b = await call("/orders/" + second.id + "/preview", { delivery: 0 });
+  ok(accFirst.j.approved === true && pv2b.j.hash === pv2.j.hash && JSON.stringify(view(pv2b)) === JSON.stringify(view(pv2)),
+    "once the first line is agreed the second reads the same figure and the same digest, so one tap on the sheet never trips on its second line: " + JSON.stringify(view(pv2b)));
+  /* at the ceiling exactly is within it; and orders placed and not agreed, off this order's sheet, count nothing yet */
+  const z = await place(U2, 1, 80), pvZ = await call("/orders/" + z.id + "/preview", {});
+  ok(JSON.stringify(view(pvZ)) === '{"prepay":false,"owedWith":250,"ceiling":250}', "the agreed line, RM 150 and its RM 20 charge, and RM 80 more is RM 250 owed, at the ceiling, not over it, and on credit: " + JSON.stringify(view(pvZ)));
+  /* an order on its own counts its delivery */
+  const dv = (await O.placeOrder(senv, U2, { product: "salt", qty: 1, mode: "deliver", place: "by the old market", unit: 70, total: 70, week: "" })).order;
+  const pvD = await call("/orders/" + dv.id + "/preview", { delivery: 15 });
+  ok(JSON.stringify(view(pvD)) === '{"prepay":true,"owedWith":255,"ceiling":250}', "an order on its own counts its delivery charge: RM 170 agreed, RM 70 and RM 15 is over: " + JSON.stringify(view(pvD)));
+  /* Fable's review: offered again, the verdict it was agreed on stands; and the site's orders unread decide nothing */
+  const { advanceOf } = await import("../src/orders.js");
+  const bk = { sales: [{ customer: C1, total: 900 }], state: { TERMS: { ceiling: 250 } } };
+  const ag = advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, { again: true, orders: [] });
+  const un = advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, {});
+  ok(ag.prepay === false && ag.owedWith === null && /not read/.test(un.error || ""),
+    "an order offered again keeps the verdict it was agreed on, and with the site's orders unread nothing is decided: " + JSON.stringify({ ag, un }));
+
+  /* E. the site takes the desk's verdict and clears one it no longer holds */
+  const ev = O.decideDesk({ id: "o1", u: U1, status: "placed", mode: "collect", prepay: true, history: [] }, { status: "acknowledged", prepay: false }, "2026-09-29T01:00:00Z");
+  const cleared = O.applyEvent({ id: "o1", u: U1, status: "placed", mode: "collect", prepay: true, history: [] }, ev.ev).order;
+  const ev2 = O.decideDesk({ id: "o2", u: U1, status: "placed", mode: "collect", history: [] }, { status: "acknowledged", prepay: true }, "2026-09-29T01:00:00Z");
+  const set = O.applyEvent({ id: "o2", u: U1, status: "placed", mode: "collect", history: [] }, ev2.ev).order;
+  ok(!("prepay" in cleared) && set.prepay === true, "the site takes the desk's verdict at Accept, setting it or clearing one it no longer holds: " + JSON.stringify({ cleared: cleared.prepay, set: set.prepay }));
+
+  /* F. the terms come out of the master's RULES, and the card says the verdict before Accept */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { termsSnapshot } = await import("../tools/book.mjs");
+  const { w } = await openMaster();
+  const terms = termsSnapshot(w);
+  ok(terms.ceiling === 250 && terms.holdDays === 1 && terms.lockDays === 4, "the desk Worker's terms are the master's RULES: " + JSON.stringify(terms));
+  const card = JSON.parse(w.eval(`(function(){const o={id:'oq1',u:'x',status:'placed',qty:1,total:20,product:'salt',mode:'collect'};
+    ORD_PV[o.id]={st:'ok',j:{row:{qty:1,total:20},prepay:true,owedWith:260,ceiling:250,flags:[]}};const a=ordPvBlock(o);
+    ORD_PV[o.id]={st:'ok',j:{row:{qty:1,total:20},prepay:false,owedWith:240,ceiling:250,flags:[]}};const b=ordPvBlock(o);
+    const t=(h)=>{const d=document.createElement('div');d.innerHTML=h;const p=d.querySelector('.ordprepay');return p?p.textContent:'';};
+    return JSON.stringify([t(a),t(b)]);})()`));
+  ok(/^In advance: RM ?260(\.00)? owed with this order, over RM ?250(\.00)?\. They are asked to pay before it is handed over, and cash on handover is not offered\.$/.test(card[0])
+    && /^On credit: RM ?240(\.00)? owed with this order, within RM ?250(\.00)?\.$/.test(card[1]),
+    "the card says before Accept whether it is paid in advance and on what figure: " + JSON.stringify(card));
+  /* Fable's review: and on an agreed order's card, where Handed is the very thing the rule holds back, while it is unpaid */
+  const held = JSON.parse(w.eval(`(function(){const mk=(x)=>Object.assign({id:'oq2',u:'abcd-efgh',code:'CQ2-AB',status:'acknowledged',qty:1,total:100,delivery:0,paid:0,moved:0,
+    product:'salt',mode:'collect',history:[{at:'2026-09-29T01:00:00Z',status:'acknowledged'}],msgs:[],payments:[],ledgerKey:'CQ2-AB|2026-09-29|100'},x);
+    const t=(o)=>{const d=document.createElement('div');d.innerHTML=ordCard(o);const p=d.querySelector('.ordprepay');return p?p.textContent:'';};
+    return JSON.stringify([t(mk({prepay:true})),t(mk({})),t(mk({prepay:true,paid:100}))]);})()`));
+  ok(/^Paid in advance: RM ?100(\.00)? is still to pay before it is handed over\.$/.test(held[0]) && held[1] === "" && held[2] === "",
+    "an agreed order paid in advance says, over Handed, what is still to pay first; one on credit, or paid, says nothing: " + JSON.stringify(held));
+  try { w.close(); } catch (e) { /* best effort */ }
+})();
+
 section("Fold 2.1: the orders queue is one KV key an entry, read beside the old blob, pruned once committed, and the blob retired only empty");
 await (async () => {
   /* q:orders was one blob that three roads read, appended to and wrote back whole, and nothing took a folded stage
