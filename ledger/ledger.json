@@ -1,6 +1,6 @@
 {
- "v": "v947",
- "stamped": "29 Sep 2026, 15:14 KL",
+ "v": "v950",
+ "stamped": "29 Sep 2026, 18:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5817,6 +5817,16 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.",
     "rid": "s216"
+   },
+   {
+    "customer": "CZ5-TM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-29",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 29 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CZ5-TM from the statements site, order 20260929100217-rligdw, acknowledged and to collect. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CZ5-TM: 1 order, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM54 at 49.1% by the drafter's figures. At RM110 a unit, the rate matches his only earlier order. The drafter raised no flag. Preapproved by phone. Outstanding: RM110 and 1 unit to collect, against a credit cap of 1.",
+    "rid": "s217"
    }
   ],
   "contacts": [
@@ -6557,9 +6567,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-29T07:14:03.165Z",
+  "QUEUE_COMMITTED": "2026-09-29T10:03:48.017Z",
   "PRICING": {
-   "takenAt": "2026-09-29T07:14:49.828Z",
+   "takenAt": "2026-09-29T10:04:34.996Z",
    "sizes": [
     0.5,
     1,
@@ -6687,6 +6697,10 @@
     "CA6-CYB": {
      "salt": "Titanium"
     },
+    "CZ5-TM": {
+     "salt": "Titanium",
+     "oil": "Titanium"
+    },
     "CN5-TAI": {
      "salt": "Titanium"
     },
@@ -6698,10 +6712,6 @@
     },
     "CR3-PUD": {
      "salt": "Platinum"
-    },
-    "CZ5-TM": {
-     "salt": "Titanium",
-     "oil": "Titanium"
     },
     "CD7-SEG": {
      "salt": "Titanium"
@@ -7466,6 +7476,24 @@
       "lateTwice": false
      }
     },
+    "CZ5-TM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 10,
+      "sinceLastDays": 10,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CN5-TAI": {
      "salt": {
       "name": "one-off",
@@ -7535,24 +7563,6 @@
       "bigger": false,
       "loyal": false,
       "rare": true,
-      "lateTwice": false
-     }
-    },
-    "CZ5-TM": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 10,
-      "sinceLastDays": 10,
-      "perMonth": 1.01,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
       "lateTwice": false
      }
     },
@@ -9649,6 +9659,56 @@
         1060
        ]
       ],
+      "CZ5-TM": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CN5-TAI": [
        [
         0.5,
@@ -9847,56 +9907,6 @@
        [
         12.5,
         1070
-       ]
-      ],
-      "CZ5-TM": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
        ]
       ],
       "CD7-SEG": [
@@ -11013,6 +11023,28 @@
         450
        ]
       ],
+      "CZ5-TM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CN5-TAI": [
        [
         10,
@@ -11080,28 +11112,6 @@
        ]
       ],
       "CR3-PUD": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CZ5-TM": [
        [
         10,
         130
@@ -12119,6 +12129,28 @@
         1500
        ]
       ],
+      "CZ5-TM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CN5-TAI": [
        [
         1,
@@ -12186,28 +12218,6 @@
        ]
       ],
       "CR3-PUD": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CZ5-TM": [
        [
         1,
         60
@@ -12920,6 +12930,20 @@
         64
        ]
       ],
+      "CZ5-TM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CN5-TAI": [
        [
         1,
@@ -12963,20 +12987,6 @@
        ]
       ],
       "CR3-PUD": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CZ5-TM": [
        [
         1,
         8
@@ -13181,11 +13191,11 @@
      "cards": {}
     }
    },
-   "v": "v947"
+   "v": "v950"
   },
   "OPEN": {
-   "at": "2026-09-29T07:14:50.128Z",
-   "count": 12,
+   "at": "2026-09-29T10:04:35.257Z",
+   "count": 13,
    "byKey": {
     "CK4-SEN|2026-09-29|530": {
      "d": "2026-09-29",
@@ -13200,6 +13210,20 @@
      "oweUnits": 6.25,
      "rid": "s216",
      "key": "CK4-SEN|2026-09-29|530"
+    },
+    "CZ5-TM|2026-09-29|110": {
+     "d": "2026-09-29",
+     "p": "CZ5-TM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s217",
+     "key": "CZ5-TM|2026-09-29|110"
     },
     "CE5-SA-R|2026-09-28|110": {
      "d": "2026-09-28",
@@ -13393,10 +13417,10 @@
      "free": -7.5,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 6.31,
+     "rate": 6.36,
      "owedToYou": 610,
-     "promised": 18.75,
-     "short": 16.75
+     "promised": 19.75,
+     "short": 17.75
     },
     "oil": {
      "name": "Oil",
@@ -13450,7 +13474,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v947"
+   "v": "v950"
+  },
+  "TERMS": {
+   "ceiling": 250,
+   "holdDays": 1,
+   "lockDays": 4,
+   "v": "v950"
   }
  }
 }
