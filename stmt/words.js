@@ -246,6 +246,7 @@ export const EN = {
   /* ---- ACCOUNT, and the month filter ---- */
   "acct.nothing": "Nothing on your account yet. Your orders will show here.",
   "acct.unread": "Your account could not be read just now. Try again in a minute.",
+  "acct.later": "Your account will show here after the next update.",
   "acct.issued": "The statement issued {d}, kept as it was sent.",
   "acct.earlier": "Earlier statements",
   "acct.keptLive": "Kept as they were sent. Your statement above keeps up with every order.",
@@ -930,6 +931,8 @@ export const MS = {
   "home.stay": "Anda kekal log masuk di {dev} ini.",
   "acct.nothing": "Belum ada apa-apa dalam akaun anda. Pesanan anda akan ditunjukkan di sini.",
   "acct.unread": "Akaun anda tidak dapat dibaca sekarang. Cuba lagi dalam seminit.",
+  "acct.later": "Akaun anda akan ditunjukkan di sini selepas kemas kini seterusnya.",
+  "ord.unread": "Pesanan anda tidak dapat dibaca sekarang. Semak sambungan dan cuba lagi.",
   "hn.reply": "Balasan: {t}",
   "hn.owing": "{rm} perlu dibayar, barang sudah ada pada anda",
   "hn.ready": "Sedia untuk diambil, sejak {d}",

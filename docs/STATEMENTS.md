@@ -182,9 +182,13 @@ own position under the list does not move with the filter.
 
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
-own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
-sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
-Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: notifications on or
+own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
+document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter, kept on disk and on
+his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
+publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
+A re-read that meets either keeps the hold where it last stood; a first open has no last state, so the gate is open
+until the document reads. A failed read of orders says so on Orders and Home with Try again (C14), and a fault's own
+words never reach a customer: a 5xx is the site busy, a codeless body takes the page's words (C16). **This device** follows (beside it from 1080px), ONE card: notifications on or
 off (where the bell's plain tap lands; Step 1b), Saved as an app, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
 subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
 wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.

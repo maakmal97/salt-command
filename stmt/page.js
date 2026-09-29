@@ -2051,7 +2051,7 @@ const CLIENT_JS = `
   /* C15 and C14 (29 Sep 2026): WHAT COULD NOT BE READ SAYS SO, with Try again, and is never drawn as an empty or an older
      account. The live document held for (bad), and orders whose read failed (ordersFailed, kept as they last stood). */
   var ordersFailed=false;
-  function liveBad(){ return !!bundle&&bundle.statements.some(function(s){ return s.live&&s.bad; }); }
+  function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
   function unreadNode(key,go){
     var box=el('div','panel unread'); box.setAttribute('data-unread',key);
     var p=el('p','lead',tw(key)); p.setAttribute('role','status'); box.appendChild(p);
@@ -2092,7 +2092,7 @@ const CLIENT_JS = `
     }
     /* C15: never an older document in its place */
     if(s.bad){
-      out.textContent=''; out.appendChild(unreadNode('acct.unread',retryAccount));
+      out.textContent=''; out.appendChild(unreadNode(s.bad,s.bad==='acct.unread'?retryAccount:null));
       mfil.hidden=true; mfnote.textContent=''; drawFoot();
       return;
     }
@@ -3873,7 +3873,7 @@ const CLIENT_JS = `
     box.hidden=!bundle||!(bad||fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
     /* C15: an account that could not be read leads with that, never with nothing to pay */
-    if(bad) box.appendChild(unreadNode('acct.unread',retryAccount));
+    if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
       box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
@@ -4345,7 +4345,8 @@ const CLIENT_JS = `
     var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), failedWas=ordersFailed; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
-    if(ordersFailed!==failedWas){ drawOrder(); return; }   /* C14: the line and its Try again come and go with the list */
+    /* C14: the line and its Try again come and go with the list, and what the read brought may lift or set the hold */
+    if(ordersFailed!==failedWas){ setHold(); drawOrder(); if(osh&&draft.step==='limit') sheetDraw(); return; }
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
     if(JSON.stringify([claims,orders.map(oClaimed)])!==was||formSig()!==drawnSig){ setHold(); drawPayHead(); }
     if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
@@ -4441,7 +4442,8 @@ const CLIENT_JS = `
     }catch(e){ if(stale())return; done(); say(tw('door.offline'),'bad'); return; }
     /* C16: an answer that came back is not No connection, whatever its body */
     try{ body=await r.json(); }catch(e){ body=null; }
-    body=busyOr(r.status,body)||{ok:false, said:'x.busy'};
+    /* a body that will not read is the site busy on a 5xx or a 2xx; any other status keeps the door's own words */
+    body=busyOr(r.status,body)||(r.status>=500||r.ok?{ok:false, said:'x.busy'}:{ok:false});
     if(stale()) return;
     if(!r.ok||!body.ok){
       done();
@@ -4582,7 +4584,8 @@ const CLIENT_JS = `
     var l=null;
     if(body.live){ try{ l=JSON.parse(await open(ck, body.live)); }catch(e){ l=null; } }
     if(l) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null});
-    else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:true});
+    /* one that would not open is worth a Try again; one the publish wrote none of (no key there) waits for the next update */
+    else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
     /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
     if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }

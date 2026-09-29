@@ -21139,6 +21139,9 @@ await (async () => {
     st.open = [async () => js({ ok: false, error: "raw words of a fault" }, 400)];
     signIn();
     ok(await until(() => msg() === EN["e.refused"]) && !/raw words/.test(vis()), "a codeless refusal takes the door's own words: " + JSON.stringify(msg()));
+    st.open = [async () => ({ ok: false, status: 429, json: async () => { throw new SyntaxError("<html>"); } })];
+    signIn();
+    ok(await until(() => msg() === EN["door.tooMany"]), "an HTML 429 is still too many attempts, never busy: " + JSON.stringify(msg()));
 
     /* C15 and C13: the live document will not open; the account says so over the issue it used to draw, and Home leads with it */
     st.orders = [async () => js({ ok: true, orders: [] })];
@@ -21157,6 +21160,26 @@ await (async () => {
     D.dispatchEvent(new W.Event("visibilitychange"));
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
       "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* a record the publish wrote no live document for (no key there) waits for the next update, with nothing to try */
+    st.open = [async () => answer(null)];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.later"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /after the next update/.test(head()),
+      "an account with issues and no live document says it shows after the next update, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* a failed read of orders that Try again answers with a claim waiting lifts the hold at once (D9), not at the next change */
+    st.open = [async () => answer(await sealLive(overdueLive, ck))];
+    st.orders = [async () => js({ ok: false }, 500), async () => js({ ok: true, orders: [], claims: [{ id: "c1", state: "waiting", amount: 123.45, at: "2026-09-24T05:00:00Z" }] })];
+    signIn();
+    ok(await until(() => !!D.querySelector('#hNeeds [data-unread="ord.unread"]')) && /Please pay the overdue amount/.test(head()), "the fixture: orders unread, the hold on");
+    D.querySelector("#hNeeds [data-unread] button").click();
+    ok(await until(() => !D.querySelector('[data-unread="ord.unread"]')) && !/Please pay the overdue amount/.test(head()),
+      "and Try again bringing a claim they sent lifts the hold there and then: " + JSON.stringify(head().slice(0, 160)));
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
 

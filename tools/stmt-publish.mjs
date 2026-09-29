@@ -13,8 +13,9 @@
  *
  * It goes through wrangler with the deploy's own token, so it holds no Cloudflare secret of its
  * own. STMT_KEY is the one secret it needs beyond that, and without it the records still go up
- * exactly as issued: the site works, and the live document is simply absent until the secret
- * exists. `--dry <dir>` writes the bulk files and touches nothing remote, which is how the suite
+ * exactly as issued: the site works, and the live document is absent until the secret exists. The
+ * Counter draws no sealed issue in its place (C13 and C15, 29 Sep 2026): the account says it will
+ * show after the next update. `--dry <dir>` writes the bulk files and touches nothing remote, which is how the suite
  * proves it. It stands down while wrangler.stmt.jsonc still carries the placeholder store id.
  */
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
@@ -488,8 +489,8 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
      nothing to re-issue. */
   if (plan.wrongKey.length) {
     console.error("::error::STMT_KEY here is not the key this issue was sealed with on the laptop, so no live "
-      + "statement could be written for " + plan.wrongKey.length + " account(s). The monthly statements ARE "
-      + "published and open normally. Set the STMT_KEY secret to exactly the \"key\" in "
+      + "statement could be written for " + plan.wrongKey.length + " account(s). Their records ARE published and "
+      + "sign in, but the Counter shows no account until the live statement is written. Set the STMT_KEY secret to exactly the \"key\" in "
       + "statements/_secrets.json; the next deploy writes the live statements.");
     process.exit(1);
   }
