@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-29T16:12:54.595Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s215",
+    "qty": 3,
+    "total": 310,
+    "cash": 0,
+    "date": "2026-09-28",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 3
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-09-30"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CH4-KS"
+   },
+   "reasoning": "Correction against CH4-KS's order of 3 unit for RM 310 dated 2026-09-28 (s215). Sets deliveredQty from 0 to 3, deliveredOn from unset to 2026-09-30, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CH4-KS typically pays about RM 93.33/unit for salt across 2 orders; this one is RM 103.33, 10.7% above that.",
+    "This is an ADVANCE: 3 unit goes out with RM 320 unpaid. Check it against CH4-KS's credit cap."
+   ],
+   "amends": "s215",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-29T16:12:54.595Z",
+    "type": "SELL",
+    "party": "CH4-KS",
+    "qty": 3,
+    "total": 0,
+    "status": "Handover",
+    "raw": "3 unit delivered to CH4-KS, order 20260928120800-zq6mca, on 2026-09-30",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CH4-KS",
+     "rid": null,
+     "orderKey": "CH4-KS|2026-09-28|320",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-30",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 3,
+      "deliveredOn": "2026-09-30",
+      "handover": "delivered"
+     },
+     "note": "3 unit delivered for order 20260928120800-zq6mca."
+    },
+    "orderId": "20260928120800-zq6mca"
+   },
+   "decidedAt": "2026-09-29T16:13:00.085Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
