@@ -6832,7 +6832,7 @@ await (async () => {
        screenshot of s107. The head now carries the entry's state, the engine's, and the close
        carries the receipt date and no state: the paid-ahead history is on the steps, where the
        cash of the 10th and the units of the 20th are each their own row. */
-    ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[2].pill === "" && f6.rows[2].date === "2026-08-20",
+    ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[2].pill === "" && f6.rows[2].date === "20 Aug 2026",
       `Completed once on the order row, the closing line dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
     ok(p16 && p16.rows.length >= 2 && /\blopen\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed" && /\blclose\b/.test(p16.rows[p16.rows.length - 1].cls),
       `p016, restated the day it was booked, reads Completed on its order row and its trail closes on its last line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
@@ -6914,7 +6914,7 @@ await (async () => {
     w.eval("setProd('salt');recompute();switchTab('inventory');");
     const walk = JSON.parse(w.eval("JSON.stringify((function(){var out=[];[].forEach.call(document.querySelectorAll('.sec.on tr'),function(tr){var td=tr.querySelectorAll('td');if(td.length>=2)out.push([td[0].textContent.trim(),td[1].textContent.trim()]);});return out;})())"));
     const num = (t) => +String(t).replace(/[^0-9.+-]/g, "");
-    const recv = walk.find(([a]) => a === "Received 2026-08-15"), lot = walk.find(([a]) => a === "Purchase 2026-08-15"), open = walk.find(([a]) => a === "Still to arrive 2026-08-15");
+    const recv = walk.find(([a]) => a === "Received 15 Aug 2026"), lot = walk.find(([a]) => a === "Purchase 15 Aug 2026"), open = walk.find(([a]) => a === "Still to arrive 15 Aug 2026");
     ok(recv && num(recv[1]) === 6, `the walk's Received row prints what landed, 6 of 10 unit (${recv && recv[1]})`);
     ok(lot && num(lot[1]) === 6 && open && num(open[1]) === 4, `the lot list prints the 6 in the basis and the 4 still to arrive (${lot && lot[1]}, ${open && open[1]})`);
     const tot = walk.find(([a]) => /^On hand/.test(a));
@@ -12686,7 +12686,7 @@ await (async () => {
     const ft = rdR("floorTotal(12.5)"), day = rdR("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
     const cost = +(((ft - 50) + 0.8 * (ft + 1)) / 2).toFixed(2);
     const scan = () => rdR("(function(){var b=boundaryScan().filter(function(x){return x.rule==='Margin floor';});"
-      + "var c=b.find(function(x){return x.who==='&mdash;';});return {n:c?parseInt(c.what,10):0,rm:c?+c.why.replace(/^worth about \\D*([\\d,]+).*$/,'$1').replace(/,/g,''):0,"
+      + "var c=b.find(function(x){return x.who===NIL;});return {n:c?parseInt(c.what,10):0,rm:c?+c.why.replace(/^worth about \\D*([\\d,]+).*$/,'$1').replace(/,/g,''):0,"
       + "open:b.filter(function(x){return x.who==='CZ9-OPN';}).map(function(x){return x.why;})};})()");
     const b0 = scan();
     wR.eval("(function(){sales.push({customer:'CZ7-OVR',qty:12.5,total:" + (ft + 1) + ",cash:" + (ft + 1) + ",deliveredQty:12.5,deliveredOn:'" + day + "',date:'" + day + "',cost:" + cost + "});"
@@ -14178,7 +14178,7 @@ await (async () => {
     ok(aug.to === "2026-08-31" && aug.deep.includes("Tampin") && aug.tips.Jelebu.t === "Jelebu: no trade" && /in Aug 2026/.test(aug.lead),
       "and the next month moves the shading with it: " + JSON.stringify([aug.deep, aug.tips.Jelebu.t]));
     const rng = view36("mapPeriod('2026-07-15','2026-08-15');");
-    ok(rng.deep.includes("Tampin") && rng.tips.Jelebu.t === "Jelebu: no trade" && /by district from 15 Jul 2026 to 15 Aug 2026,/.test(rng.lead) && rng.month.length === 1 && rng.month.charCodeAt(0) === 8212 && /^Rembau: no trade/.test(rng.tips.Rembau.t),
+    ok(rng.deep.includes("Tampin") && rng.tips.Jelebu.t === "Jelebu: no trade" && /by district from 15 Jul 2026 to 15 Aug 2026,/.test(rng.lead) && rng.month === "-" && /^Rembau: no trade/.test(rng.tips.Rembau.t),
       "a range off the two dates reads the orders inside it, to the day: " + JSON.stringify([rng.deep, rng.lead.slice(0, 60), rng.tips.Rembau.t]));
     const day = view36("mapPeriod('2026-07-10','2026-07-10');"), day2 = view36("mapPeriod('2026-08-01','2026-08-10');");
     ok(day.deep.includes("Jelebu") && /from 10 Jul 2026 to 10 Jul 2026/.test(day.lead) && day2.deep.includes("Tampin") && day2.tips.Jelebu.t === "Jelebu: no trade",
@@ -48321,6 +48321,52 @@ await (async () => {
   const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
   ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
+})();
+
+section("D1 and D2 (29 Sep 2026): no part prints a stored date or an em dash; one dShow and one NIL");
+await (async () => {
+  /* THE FAULT LIST'S D1 AND D2. The desk printed 2026-09-28 across Stock, Record, the Order book and Pricing, and an em
+     dash in some 130 places. dShow turns a stored date into 28 Sep 2026 and hands anything else back; dSweep runs it over
+     what a part draws, at once, and an observer runs it over what a card or a fetch writes later; NIL is the one nil. The
+     census reads every part of the salt book as drawn, a text node at a time, so a builder added tomorrow is caught too.
+     Each check was proved red by its own mutation. */
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const { w } = await omD();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* 1. dShow: the house form, a fallback untouched, a timestamp left whole, every date in a line */
+    ok(rd("dShow('2026-09-28')") === "28 Sep 2026" && rd("dShow('2026-01-05')") === "05 Jan 2026",
+      "D1: dShow writes a stored date DD Mon YYYY: " + rd("[dShow('2026-09-28'),dShow('2026-01-05')]"));
+    ok(rd("dShow('not dated')") === "not dated" && rd("dShow(null)") === "" && rd("dShow('2026-09-28T10:00:00Z')") === "2026-09-28T10:00:00Z"
+      && rd("dShow('E246-2026-09-28')") === "E246-2026-09-28",
+      "D1: a fallback, a nothing, a timestamp and a date run into a code are handed back as they are");
+    ok(rd("dShow('from 2026-07-01 to 2026-07-31: done')") === "from 01 Jul 2026 to 31 Jul 2026: done",
+      "D1: every date in a line of prose is written the house way: " + rd("dShow('from 2026-07-01 to 2026-07-31: done')"));
+    /* 2. the census: every part of the salt book, as drawn, carries no stored date and no em dash */
+    const ISO = /(?<![\w-])\d{4}-\d{2}-\d{2}(?![\w-])/;
+    const parts = rd("(function(){var o=[];VIEWS.forEach(function(v){[v.lead].concat(v.parts).forEach(function(p){o.push(p);});});return o;})()");
+    const isoAt = [], dashAt = [];
+    w.eval("setProdView('salt')");
+    for (const p of parts) {
+      w.eval("switchTab(" + JSON.stringify(p) + ")");
+      const got = rd("(function(){var root=document.getElementById('sec-'+VIEW_OF[" + JSON.stringify(p) + "]),t=[],n,wk=document.createTreeWalker(root,4);"
+        + "while((n=wk.nextNode()))if(!(n.parentElement&&n.parentElement.closest('textarea,script,style,code,pre')))t.push(n.nodeValue);"
+        + "[].forEach.call(root.querySelectorAll('[title]'),function(e){t.push(e.getAttribute('title'));});return t;})()");
+      const iso = got.filter((t) => ISO.test(t)), dash = got.filter((t) => /—/.test(t));
+      if (iso.length) isoAt.push(p + ": " + iso.length + " (" + iso[0].slice(0, 60) + ")");
+      if (dash.length) dashAt.push(p + ": " + dash.length + " (" + dash[0].slice(0, 60) + ")");
+    }
+    ok(parts.length >= 15 && !isoAt.length, "D1: no part of the salt book prints a stored date, " + parts.length + " parts read: " + (isoAt.join("; ") || "none"));
+    ok(parts.length >= 15 && !dashAt.length, "D2: no part of the salt book prints an em dash: " + (dashAt.join("; ") || "none"));
+    /* 3. what is written after the draw: a card's text is swept by the observer; a textarea keeps the stored form */
+    w.eval("(function(){var b=document.createElement('div');b.id='d12probe';b.innerHTML='<p>ordered 2026-09-19</p><p title=\"lot of 2026-09-27\">x</p><textarea>2026-09-20</textarea>';document.body.appendChild(b);})()");
+    await new Promise((r) => setTimeout(r, 0));
+    const pr = rd("(function(){var b=document.getElementById('d12probe');return [b.querySelector('p').textContent,b.querySelectorAll('p')[1].getAttribute('title'),b.querySelector('textarea').value];})()");
+    ok(pr[0] === "ordered 19 Sep 2026" && pr[1] === "lot of 27 Sep 2026", "D1: text a card writes after the draw, and its tooltip, are written the house way: " + JSON.stringify(pr));
+    ok(pr[2] === "2026-09-20", "D1: a textarea keeps the stored form he typed: " + JSON.stringify(pr[2]));
+    /* 4. NIL is the one nil, and it is what an empty cell prints */
+    ok(rd("NIL") === "-" && rd("typeof NIL") === "string", "D2: NIL is a hyphen");
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
