@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="cd22b522cf2c2c67";
+var SALT_BUILD_ID="2d662905cf6c9e37";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8626,7 +8626,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v941","d":"29 Sep 2026","t":"THE COUNTER SPEAKS IN HIS WORDS, AND OPENS ONLY AS THE APP","n":["<p><b>THE COUNTER SPEAKS IN HIS WORDS.</b> Step 1b, his sentences of 28 Sep 2026. A customer's banner names its kind in his words and its body by the case the order is in: owed, a payment of theirs waiting on his Received, or paid. The acknowledgement says pay now on an order over the credit cap and says when on credit; Ready says ready to collect or on its way; a whole handover says what is left to pay; his reason at Decline or Cancel is the body. His line on an order is the banner's body in quotation marks, under a tag and push topic of its own, so no line of his replaces another unseen. Nothing sealed carries an amount, a product or a name. The Counter's own words say acknowledged where they said confirmed.</p>","<p><b>HIS OWN BANNERS TOO.</b> The desk's banner is in his words, a customer's line is a notification of its own, and a decline's reason reads as a sentence. Ready can be tapped again while part of an order is handed over and units are still owed, so the rest is told when it is ready.</p>","<p><b>THE ACCOUNT OPENS ONLY AS THE APP.</b> Signed in in a browser tab, the whole page is how to keep Salt Counter: an iPhone's code minted as it draws, an Install button, a browser's own steps, or the browsers that can; installed from the tab, it says so. In the saved app a bell asks for notifications on every view until they are on, and a refusal opens that phone's Settings steps.</p>","<p><b>PROOFS.</b> New and rewritten suite sections; every new check turned red under a mutation of its own. The whole suite passed on this tree. Fable's review found two small gaps and one missing check, all fixed and checked again by Fable: no fault.</p>"]}];
+const evolution=[{"v":"v942","d":"29 Sep 2026","t":"HOW WAS YOUR ORDER","n":["<p><b>HOW WAS YOUR ORDER.</b> F10, his answer of 28 Sep 2026 (Q9b). Two days after the last handover of an order all handed over, at the 10:00 or 18:00 slot, the customer is asked once, How was your order?, and answers with one to five stars, once; a word about the order still goes on its thread. The ask is written on the order as its own event in the order book before the banner goes, so a tick firing twice asks once, and a book moving in asks nobody that minute. One banner a customer a slot, opening the newest order it asks about; never his test account; never over a payment chase in the same slot, which asks at a later slot instead; and only while the handover is under two weeks old, so no order from before this is asked about.</p>","<p><b>WHERE IT SHOWS.</b> A phone with no notifications meets the ask as a card on Home; the order itself asks from the second day on; a rating given reads as five marks. His minute alert says a customer rated an order, and Site orders shows the stars and the figure, or that they were asked and have not answered; an order rated in the last fortnight stays on his list, under Other orders. It prices nothing: no entry, row or note reads it.</p>","<p><b>PROOFS.</b> Five new suite sections; every new check turned red under a mutation of its own. The stars measured 44 by 44 by a hit test at phone width. The whole suite passed on this tree. Fable's review found three points, all fixed and checked again by Fable: no fault.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8741,7 +8741,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 12:34 KL';
+const LAST_UPDATED='29 Sep 2026, 13:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19825,6 +19825,11 @@ function ordCard(o){
     :', and the entry for that is queued within the minute'+(theirs?'; approve it under Approve':', booked as it is drafted if it is the row you saw');
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
+  /* F10: THEIR STARS ON THIS ORDER, one to five, as five marks and the figure, or that they were asked and have not
+     answered. Asked two days after the last handover; it prices nothing, and no row or note reads it. */
+  const rn=o.rating?Math.round(+o.rating.stars):0;
+  const rated=rn>=1&&rn<=5?`<div class="dsc ordrated">Rated <span aria-hidden="true">${'&#9733;'.repeat(rn)+'&#9734;'.repeat(5-rn)}</span> ${rn} of 5, ${when(o.rating.at)}</div>`
+    :o.rateAsk?`<div class="dsc ordrated">Asked how it was, ${when(o.rateAsk)}; not rated yet</div>`:'';
   const msgs=(o.msgs||[]);
   const waiting=ordAsked(o);   /* S11 11.6: a line he let stand needs no answer */
   const thread=msgs.length?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
@@ -19940,7 +19945,7 @@ function ordCard(o){
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
     ${ordToldLine(o)}
     ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
-    ${fee}${thread}${reply}
+    ${fee}${rated}${thread}${reply}
     ${cash}${hand}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
@@ -20045,7 +20050,7 @@ function ordDraw(){
     box.innerHTML=`<div class="ordlist">${gone}
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
-      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':rest.some(a=>!['placed','acknowledged','ready'].includes(a.o.status))?'Other orders':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
       ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v942",
+  "d": "29 Sep 2026",
+  "t": "HOW WAS YOUR ORDER",
+  "n": [
+   "<p><b>HOW WAS YOUR ORDER.</b> F10, his answer of 28 Sep 2026 (Q9b). Two days after the last handover of an order all handed over, at the 10:00 or 18:00 slot, the customer is asked once, How was your order?, and answers with one to five stars, once; a word about the order still goes on its thread. The ask is written on the order as its own event in the order book before the banner goes, so a tick firing twice asks once, and a book moving in asks nobody that minute. One banner a customer a slot, opening the newest order it asks about; never his test account; never over a payment chase in the same slot, which asks at a later slot instead; and only while the handover is under two weeks old, so no order from before this is asked about.</p>",
+   "<p><b>WHERE IT SHOWS.</b> A phone with no notifications meets the ask as a card on Home; the order itself asks from the second day on; a rating given reads as five marks. His minute alert says a customer rated an order, and Site orders shows the stars and the figure, or that they were asked and have not answered; an order rated in the last fortnight stays on his list, under Other orders. It prices nothing: no entry, row or note reads it.</p>",
+   "<p><b>PROOFS.</b> Five new suite sections; every new check turned red under a mutation of its own. The stars measured 44 by 44 by a hit test at phone width. The whole suite passed on this tree. Fable's review found three points, all fixed and checked again by Fable: no fault.</p>"
+  ]
+ },
+ {
   "v": "v941",
   "d": "29 Sep 2026",
   "t": "THE COUNTER SPEAKS IN HIS WORDS, AND OPENS ONLY AS THE APP",
