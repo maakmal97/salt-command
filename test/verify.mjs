@@ -33570,6 +33570,7 @@ await (async () => {
   let work;
   const dom = new JSDOM(landingPage(u, "nf10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* the saved app: the account opens only there (Step 1b) */
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
     win.fetch = async (path, init) => { const p = String(path);
       let j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
