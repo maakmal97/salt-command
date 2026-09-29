@@ -19812,6 +19812,8 @@ await (async () => {
     ok(said1 === "Signed out: 1 link or code not yet used.", "Sign out everywhere counts the link it shared, and not the fresh one it holds: " + said1);
     wins.pop().close();
     const p2 = await load();
+    /* the second page's link is written as it opens: wait on that, never read it once (it raced under a loaded suite) */
+    await p2.until(async () => (await live()) >= 2);
     const before = await live();
     ok(before === 2, "a second load has made its own link, the first page's still live: " + before);
     const said2 = await p2.signOutAll();
