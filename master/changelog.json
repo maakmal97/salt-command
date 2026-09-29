@@ -1,5 +1,14 @@
 [
  {
+  "v": "v955",
+  "d": "30 Sep 2026",
+  "t": "S215 GOES OUT ON CREDIT; RM320 LEFT OWING",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> S215 for CH4-KS, order 20260928120800-zq6mca, now records 3 units delivered on 30 Sep, handover delivered. Nothing was paid: the 3 units went out on credit against RM310 plus RM10 delivery, leaving RM320 outstanding. The drafter's rate flag reads RM103.33 against a RM93.33 typical; the dossier median across 3 orders is RM100, and RM103.33 is the top of the recorded range. Preapproved by phone.</p>",
+   "<p><b>INVENTORY: 3 UNITS OUT, COST UNCHANGED.</b> The shelf rolls 3 units out to CH4-KS, the only move in this fold. No lot landed, so the cost basis stays RM56 a unit, matching replacement cost. The last salt count was 29 Sep. The dossier gives no credit cap for CH4-KS, so the RM320 advance stands unchecked against a cap and is left for the desk to confirm.</p>"
+  ]
+ },
+ {
   "v": "v954",
   "d": "29 Sep 2026",
   "t": "THE SALT COUNT COMES IN 2 SHORT; 9.5 UNITS STILL OWED OUT",
