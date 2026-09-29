@@ -23543,12 +23543,16 @@ await (async () => {
     return shown[0];
   };
   const o = "20260925101500-ab12";
-  const got = { ms: await show({ k: "ready", o }, "ms"), en: await show({ k: "ready", o }, "en"), unknown: await show({ k: "ready", o }, "zz"),
-    none: await show({ k: "ready", o }, null), noCache: await show({ k: "ready", o }), bare: await show(null, "ms") };
-  const want = (L, k, b) => JSON.stringify([WD.WORDS[L]["news." + k], WD.WORDS[L]["news." + b]]);
-  ok(WD.MS["news.ready"] && JSON.stringify(got.ms) === want("ms", "ready", "tap") && JSON.stringify(got.en) === want("en", "ready", "tap")
-    && JSON.stringify(got.unknown) === want("en", "ready", "tap") && JSON.stringify(got.none) === want("en", "ready", "tap")
-    && JSON.stringify(got.noCache) === want("en", "ready", "tap") && JSON.stringify(got.bare) === want("ms", "order", "update"),
+  /* Step 1b: his English sentences are new and their Malay is written by hand before Malay is live again, so the Malay
+     table keeps only Tap to open it; a word it lacks is drawn in English, and the tap line still proves the language */
+  const R = "ready-collect";
+  const got = { ms: await show({ k: R, o }, "ms"), en: await show({ k: R, o }, "en"), unknown: await show({ k: R, o }, "zz"),
+    none: await show({ k: R, o }, null), noCache: await show({ k: R, o }), bare: await show(null, "ms") };
+  const w = (L, k) => WD.WORDS[L]["news." + k] || WD.EN["news." + k];
+  const want = (L, k, b) => JSON.stringify([w(L, k), w(L, b)]);
+  ok(WD.MS["news.tap"] && WD.MS["news.tap"] !== WD.EN["news.tap"] && JSON.stringify(got.ms) === want("ms", R, "tap") && JSON.stringify(got.en) === want("en", R, "tap")
+    && JSON.stringify(got.unknown) === want("en", R, "tap") && JSON.stringify(got.none) === want("en", R, "tap")
+    && JSON.stringify(got.noCache) === want("en", R, "tap") && JSON.stringify(got.bare) === want("ms", "order", "update"),
     "a banner is in Malay where the page last recorded Malay, the payload-free wake too, and in English where it recorded English, nothing, or a language the worker has no words for: " + JSON.stringify(got));
 })();
 
@@ -23623,12 +23627,12 @@ await (async () => {
       caches: { open: async (n) => ({ match: async (k) => (n === "lang" && k === "/lang" ? new Response("ms") : undefined) }) } };
     const ctx = { URL, Date, console, Response, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }), self };
     vm.createContext(ctx); vm.runInContext(script, ctx);
-    L.push({ data: { json: () => ({ k: "ready", o: "20260925101500-ab12" }) }, waitUntil: (p) => waits.push(p) });
+    L.push({ data: { json: () => ({ k: "ready-collect", o: "20260925101500-ab12" }) }, waitUntil: (p) => waits.push(p) });
     await Promise.all(waits);
     return shown[0];
   };
   const bServed = await banner(await get("/sw.js")), bLive = await banner(SWM.swScript(["en", "ms"]));
-  ok(JSON.stringify(bServed) === JSON.stringify([WD.EN["news.ready"], WD.EN["news.tap"]]) && JSON.stringify(bLive) === JSON.stringify([WD.MS["news.ready"], WD.MS["news.tap"]]),
+  ok(JSON.stringify(bServed) === JSON.stringify([WD.EN["news.ready-collect"], WD.EN["news.tap"]]) && JSON.stringify(bLive) === JSON.stringify([WD.EN["news.ready-collect"], WD.MS["news.tap"]]),
     "a banner on a phone that recorded Malay is English from the worker as served, and Malay from the same worker with Malay live: " + JSON.stringify({ bServed, bLive }));
   /* ---- the message he sends ---- */
   const row = { url: "https://site.test/s/" + "t".repeat(32), user: "27a4-gkgw" };
@@ -32984,8 +32988,9 @@ await (async () => {
     "a kind the service worker has no words for, and a wake with no kind, carry nothing at all");
 
   /* ---- every move names its own kind ---- */
-  const kinds = [], about = [];
-  const say = async (fn) => { const c = await caught(fn); kinds.push(c.news ? c.news.k : null); about.push(c.news ? c.news.o : null); return c; };
+  const kinds = [], about = [], rides = [];
+  const say = async (fn) => { const c = await caught(fn); kinds.push(c.news ? c.news.k : null); about.push(c.news ? c.news.o : null);
+    rides.push(c.news ? [c.news.v || "", c.news.t || "", c.news.m ? "m" : ""].join("|") : null); return c; };
   const place = async (mode, qty) => (await O.placeOrder(env, u, { product: "salt", qty, mode, unit: 100, total: 100 * qty, week: "", place: mode === "deliver" ? "Taman Contoh" : "" })).order;
   const a = await place("collect", 2);
   const ack = await say(() => O.deskMove(env, u, a.id, { status: "acknowledged", mode: "collect" }));
@@ -33006,10 +33011,14 @@ await (async () => {
   const d = await place("collect", 1);
   await say(() => O.deskMove(env, u, d.id, { status: "acknowledged", mode: "collect" }));
   await say(() => O.deskMove(env, u, d.id, { status: "cancelled" }));
-  ok(JSON.stringify(kinds) === JSON.stringify(["confirmed", "ready", "reply", "part-collected", "collected", "paid",
-    "confirmed", "delivered", "complete", "declined", "confirmed", "cancelled"]),
-    "confirmed, ready, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
+  /* Step 1b (his sentences of 28 Sep 2026): acknowledged on credit (none of these is over a cap), ready to collect, and a
+     handover of all of it, each with the case its body is chosen by; his line with its words and its own moment */
+  ok(JSON.stringify(kinds) === JSON.stringify(["confirmed-credit", "ready-collect", "reply", "part-collected", "collected", "paid",
+    "confirmed-credit", "delivered", "complete", "declined", "confirmed-credit", "cancelled"]),
+    "acknowledged, ready to collect, a reply, part and then all of it collected, a payment he recorded, a delivery the book carried back, "
     + "his Received of a claim of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
+  ok(JSON.stringify(rides) === JSON.stringify(["||", "owed||", "|Come after five|m", "||", "owed||", "||", "||", "owed||", "||", "||", "||", "||"]),
+    "and each carries what its body needs: the case at Ready and at a whole handover, his words and their moment on his line: " + JSON.stringify(rides));
   ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
     "each names the order it is about, for the tap: " + JSON.stringify(about));
   ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
@@ -33019,13 +33028,21 @@ await (async () => {
   const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
   /* S13 13.2: and every word the site's lock knows, in both languages, off its own lists */
   const WL = await import("../src/orders.js");
-  const plain = (t) => /^[A-Z][a-z ]+$/.test(t) && !/[0-9]|RM/.test(t) && !banned.test(t)
+  /* Step 1b: a title is letters and spaces, the one exception his line's "Counter says:", whose colon introduces his words */
+  const plain = (t) => (/^[A-Z][a-z ]+$/.test(t) || t === "Counter says:") && !/[0-9]|RM/.test(t) && !banned.test(t)
     && !WL.wordsIn(t, WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS)).length;
   ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
     "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
-  ok(NEWS.due === "A payment is due" && NEWS.ready === "Your order is ready" && NEWS.reply === "A reply on your order"
-    && NEWS.paid === "Payment received" && NEWS.confirmed === "Your order is confirmed",
-    "and the five he was asked about read as he was shown them");
+  /* and every body the table gives a banner is a plain sentence: no figure, no product, no level, the app's own name apart */
+  const WDn = await import("../stmt/words.js");
+  const bodies = Object.entries(WDn.EN).filter(([k]) => /^news[.]/.test(k) && !Object.prototype.hasOwnProperty.call(NEWS, k.slice(5)) && k !== "news.order").map(([, v]) => v);
+  const sentence = (t) => { const x = t.replace(/Salt Counter/g, "Counter"); return /^[A-Z][A-Za-z ,.]+[.]$/.test(x) && !banned.test(x.replace(/Counter/g, ""))
+    && !WL.wordsIn(x, WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS)).length; };
+  ok(bodies.length >= 20 && bodies.every(sentence) && !sentence("RM 45 is due.") && !sentence("Your salt is ready."),
+    "and every body is a plain sentence of his: " + JSON.stringify(bodies.filter((t) => !sentence(t))));
+  ok(NEWS.due === "Payment due" && NEWS["ready-collect"] === "Order ready to collect" && NEWS.reply === "Counter says:"
+    && NEWS.paid === "Payment received" && NEWS.confirmed === "Order acknowledged" && NEWS["confirmed-credit"] === "Order acknowledged",
+    "and the titles he was asked about read as he settled them on 28 Sep 2026");
 })();
 section("S12 12.2: the banner shows its kind's words, and a tap opens that order, telling a page already open to re-read");
 await (async () => {
@@ -33053,19 +33070,39 @@ await (async () => {
     return { shown: sw.shown[0], asked: sw.asked };
   };
   const json = (v) => ({ json: () => v });
-  const ready = await push(json({ k: "ready", o: id }));
-  ok(ready.shown && ready.shown.t === NEWS.ready && ready.shown.t === "Your order is ready" && ready.shown.opt.body === "Tap to open it."
+  const ready = await push(json({ k: "ready-collect", o: id, v: "owed" }));
+  ok(ready.shown && ready.shown.t === NEWS["ready-collect"] && ready.shown.t === "Order ready to collect" && ready.shown.opt.body === "Please make your payment now."
     && ready.shown.opt.data.url === "./?u=abcd-efgh#o=" + id && ready.shown.opt.data.order === id && ready.asked.length === 0,
     "a wake that carries a kind shows that kind's words and reads nothing, and its tap is addressed to the order: " + JSON.stringify(ready));
   const due = await push(json({ k: "due", o: "../x" }));
-  ok(due.shown && due.shown.t === "A payment is due" && due.shown.opt.data.url === "./?u=abcd-efgh" && due.shown.opt.data.order === "",
+  ok(due.shown && due.shown.t === "Payment due" && due.shown.opt.data.url === "./?u=abcd-efgh" && due.shown.opt.data.order === "",
     "an order that is not an order's shape is dropped from the address, and the words still say what it is: " + JSON.stringify(due.shown && due.shown.opt.data));
   const odd = await push(json({ k: "constructor", o: id }));
   const junk = await push({ json: () => { throw new SyntaxError("not json"); } });
   const bare = await push(undefined);
-  ok([odd, junk, bare].every((x) => x.shown && x.shown.t === "Your order" && /has an update/.test(x.shown.opt.body) && x.asked.length === 1),
+  ok([odd, junk, bare].every((x) => x.shown && x.shown.t === "Order update" && x.shown.opt.body === "Open Salt Counter to see it." && x.asked.length === 1),
     "a kind it has no words for, a payload it cannot read and a wake with none all keep the old fixed words, after the notice check: "
     + JSON.stringify([odd, junk, bare].map((x) => x.shown && x.shown.t)));
+  /* Step 1b (his sentences of 28 Sep 2026): THE BODY IS CHOSEN BY THE CASE, and his own words are the body where the
+     kind carries them: his line in quotation marks under a tag of its own, his reason as it stands, cut to 200 */
+  const body = async (n) => { const x = await push(json(n)); return x.shown ? x.shown.t + " / " + x.shown.opt.body + " / " + x.shown.opt.tag : null; };
+  const bodies = [await body({ k: "ready-deliver", o: id, v: "waiting" }), await body({ k: "collected", o: id, v: "paid" }),
+    await body({ k: "confirmed-credit", o: id }), await body({ k: "confirmed", o: id, v: "nonsense" }),
+    await body({ k: "reply", o: id, t: " Come after five ", m: "2026-09-28T10:00:00.000Z" }),
+    await body({ k: "declined", o: id, t: "Out of stock this week." }), await body({ k: "cancelled", o: id }),
+    await body({ k: "paid", o: id, t: "RM 45 for salt" }), await body({ k: "reply", o: id, t: "x".repeat(250), m: "bad moment" })];
+  ok(JSON.stringify(bodies) === JSON.stringify([
+    "Order on its way / Your payment is waiting for us to confirm it. / order-" + id,
+    "Order collected / Thank you. Your order is now complete. / order-" + id,
+    "Order acknowledged / Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
+    "Order acknowledged / Please make your payment now. / order-" + id,
+    "Counter says: / “Come after five” / m-" + id + "-2026-09-28T10:00:00.000Z",
+    "Order not taken / Out of stock this week. / order-" + id,
+    "Order cancelled / Open Salt Counter to see it. / order-" + id,
+    "Payment received / Thank you. / order-" + id,
+    "Counter says: / “" + "x".repeat(200) + "” / order-" + id]),
+    "each body is his sentence for its case, his line quoted under its own tag, his reason as it stands, and text on "
+    + "any other kind, or past 200 characters, or a moment of the wrong shape, goes nowhere: " + JSON.stringify(bodies));
 
   /* ---- the tap ---- */
   const tap = async (clients, data) => {
@@ -33211,8 +33248,8 @@ await (async () => {
       "09:00 wakes nobody; 10:00 wakes the one customer holding goods unpaid since before today, and nobody handed goods today, "
       + "nobody with a claim waiting, nobody paid for what they hold, and not his test account: " + JSON.stringify([who(nine), who(ten)]));
     const news = ten[0] && ten[0].body ? await phones["aaaa-1111"].read(ten[0].body) : null;
-    ok(news && news.k === "due" && NEWS[news.k] === "A payment is due" && news.o === A1.id,
-      "in its own words, A payment is due, never 'Your order has an update', and a tap opens the oldest order it is about: " + JSON.stringify(news));
+    ok(news && news.k === "due" && NEWS[news.k] === "Payment due" && news.o === A1.id,
+      "in its own words, Payment due, never 'Your order has an update', and a tap opens the oldest order it is about: " + JSON.stringify(news));
     const again = await tick("2026-09-18T02:40:00Z"), noon = await tick("2026-09-18T05:00:00Z"), eve = await tick("2026-09-18T10:00:00Z");
     const night = [];
     for (const h of ["2026-09-18T13:00:00Z", "2026-09-18T16:00:00Z", "2026-09-18T19:00:00Z", "2026-09-18T22:00:00Z"]) night.push(...(await tick(h)));
@@ -33250,7 +33287,7 @@ await (async () => {
   const realF = globalThis.fetch, hit = [];
   globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), h: init.headers, body: init.body }); return new Response("", { status: 201 }); };
   let r;
-  try { r = await P.wakeCustomer(env, u, { k: "ready", o: "20260924101500-ab12cd34" }); } finally { globalThis.fetch = realF; }
+  try { r = await P.wakeCustomer(env, u, { k: "ready-collect", o: "20260924101500-ab12cd34" }); } finally { globalThis.fetch = realF; }
   const offHit = hit.find((x) => x.u === "off"), keyedHit = hit.find((x) => x.u === "keyed");
   ok(r.sent === 2 && r.failed === 0 && r.sealed === 1 && offHit && offHit.body === undefined && offHit.h["Content-Length"] === "0"
     && !offHit.h["Content-Encoding"] && keyedHit && keyedHit.body && keyedHit.h["Content-Encoding"] === "aes128gcm",
@@ -33368,7 +33405,7 @@ await (async () => {
     return shown[0];
   };
   const json = (v) => ({ json: () => v });
-  const ready = await shownBy(json({ k: "ready", o: A })), due = await shownBy(json({ k: "due", o: B })), readyAgain = await shownBy(json({ k: "paid", o: A }));
+  const ready = await shownBy(json({ k: "ready-collect", o: A })), due = await shownBy(json({ k: "due", o: B })), readyAgain = await shownBy(json({ k: "paid", o: A }));
   const loose = await shownBy(json({ k: "due", o: "" })), bare = await shownBy(undefined);
   ok(ready.tag !== due.tag && ready.tag === readyAgain.tag && loose.tag === "order-update" && bare.tag === "order-update",
     "a banner for one order and one for another sit side by side, a newer one for the same order replaces the older, "
@@ -33391,13 +33428,18 @@ await (async () => {
     try { await P.wakeCustomer(env, u, news); } finally { globalThis.fetch = realF; }
     return t;
   };
-  const tA = await topics({ k: "ready", o: A }), tB = await topics({ k: "due", o: B }), tA2 = await topics({ k: "paid", o: A }), tNone = await topics({ k: "due", o: "" });
+  const tA = await topics({ k: "ready-collect", o: A }), tB = await topics({ k: "due", o: B }), tA2 = await topics({ k: "paid", o: A }), tNone = await topics({ k: "due", o: "" });
   const fits = (x) => /^[A-Za-z0-9_-]{1,32}$/.test(x) && !x.includes("aaaa1111") && !x.includes("20260924");
   ok(tA.keyed !== tB.keyed && tA.keyed === tA2.keyed && fits(tA.keyed) && fits(tB.keyed) && tNone.keyed === "salt-order",
     "at the push service a sealed wake collapses per order, under a topic of the RFC's shape that does not carry the order's id: "
     + JSON.stringify([tA.keyed, tB.keyed, tA2.keyed, tNone.keyed]));
   ok([tA, tB, tA2, tNone].every((t) => t.bare === "salt-order"),
     "and a phone with no keys, whose banners all say the same, keeps the one topic: " + JSON.stringify([tA.bare, tB.bare]));
+  /* Step 1b (plan F1): one banner a message of his, so a line of his collapses with nothing at the push service either */
+  const r1 = await topics({ k: "reply", o: A, t: "Come after five", m: "2026-09-28T10:00:00.000Z" }),
+    r2 = await topics({ k: "reply", o: A, t: "Or tomorrow", m: "2026-09-28T10:05:00.000Z" }), r3 = await topics({ k: "reply", o: A, t: "x" });
+  ok(r1.keyed !== r2.keyed && r1.keyed !== tA.keyed && /^m-/.test(r1.keyed) && fits(r1.keyed) && fits(r2.keyed) && r3.keyed === tA.keyed,
+    "each line of his has its own topic, never his order's, and a line with no moment falls back to the order's: " + JSON.stringify([r1.keyed, r2.keyed, r3.keyed]));
 })();
 
 section("S12 fix: the Notifications pane says what the phone will hear, the reply and the payment due at 10:00 and 18:00 included");
@@ -33538,8 +33580,8 @@ await (async () => {
     return { kinds, chase, mark, kvMark: kv.m.get(O.CHASE_KEY(u)), slot: String(O.chaseSlot(next + "T10:00:00Z")) };
   };
   const kvRoad = await play(null), bookRoad = await play("object");
-  const want = ["confirmed@0", "ready@0", "reply@0", "part-collected@0", "collected@0", "paid@0",
-    "confirmed@1", "delivered@1", "paid@1", "complete@1", "declined@2", "confirmed@3", "bare", "cancelled@3"];
+  const want = ["confirmed-credit@0", "ready-collect@0", "reply@0", "part-collected@0", "collected@0", "paid@0",
+    "confirmed-credit@1", "delivered@1", "paid@1", "complete@1", "declined@2", "confirmed-credit@3", "bare", "cancelled@3"];
   ok(JSON.stringify(kvRoad.kinds) === JSON.stringify(want),
     "on the KV road each move of his names its kind and its order; his mark, their rail, their claims and their line wake nobody; "
     + "his Received of each claim says paid, and of the one that completes it complete; a handover of nothing still wakes, with no kind: " + JSON.stringify(kvRoad.kinds));
@@ -33745,12 +33787,12 @@ await (async () => {
     && fresh1.shown.opt.data.url === "./?u=abcd-efgh",
     "a notice set a moment ago is what the wake says, in its own words, and a tap still opens their page: " + JSON.stringify(fresh1.shown));
   const oneLine = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: new Date().toISOString() });
-  ok(oneLine.shown && oneLine.shown.t === "Closed Friday" && /Open the page/.test(oneLine.shown.opt.body),
+  ok(oneLine.shown && oneLine.shown.t === "Closed Friday" && oneLine.shown.opt.body === "Open Salt Counter to read it.",
     "a notice of one line says so and stops: " + JSON.stringify(oneLine.shown));
   const stale1 = await wake1({ ok: true, lines: ["Closed Friday"], mode: "run", at: "2026-09-01T00:00:00.000Z" });
   const none1 = await wake1({ ok: true, lines: [], mode: "run", at: null });
   const down1 = await wake1(null, 404);
-  ok(stale1.shown.t === "Your order" && none1.shown.t === "Your order" && down1.shown.t === "Your order",
+  ok(stale1.shown.t === "Order update" && none1.shown.t === "Order update" && down1.shown.t === "Order update",
     "an old notice, no notice and a site that will not answer all leave the order's own banner as it was: "
     + JSON.stringify([stale1.shown.t, none1.shown.t, down1.shown.t]));
   ok(fresh1.asked.length === 1 && /bulletin/.test(fresh1.asked[0]),
