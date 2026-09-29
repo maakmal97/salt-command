@@ -43448,6 +43448,41 @@ await (async () => {
     ok(move(name) === "400 not a state the desk sets", name + " is refused as an unknown state is: " + move(name));
 })();
 
+section("Step 1b: a move's wake names the sentence that is true of the order, and Ready is his again while units are owed");
+await (async () => {
+  /* his sentences of 28 Sep 2026 (review page answers 1 to 3): the acknowledgement says pay now over the credit cap and
+     pay at Ready within it; Ready, and a handover of all of it, say owed, waiting on his Received, or paid; his reason at
+     Decline is the banner's body and his line rides with its moment. 1.13 and 1.14: after a part is handed over the
+     customer is told they will hear when the rest is ready, so Ready must be his to tap again while units are owed. */
+  const { wakes, decideDesk } = await import("../stmt/orders.js");
+  const at = "2026-09-28T10:00:00.000Z";
+  const ord = (x) => ({ id: "20260928090000-ab", status: "ready", mode: "collect", qty: 3, moved: 0, total: 300, delivery: 0, paid: 0, payments: [], ...x });
+  const wk = (ev, o) => { const w = wakes({ at, by: "desk", ...ev }, ord(o), false); return w ? [w.k, w.v || "", w.t || "", w.m ? "m" : ""].join("|") : null; };
+  const got = [
+    wk({ kind: "status", status: "acknowledged" }, { status: "acknowledged", prepay: true }),
+    wk({ kind: "status", status: "acknowledged" }, { status: "acknowledged" }),
+    wk({ kind: "status", status: "ready" }, {}),
+    wk({ kind: "status", status: "ready" }, { mode: "deliver", payments: [{ amount: 300, claim: "waiting" }] }),
+    wk({ kind: "status", status: "ready" }, { paid: 300 }),
+    wk({ kind: "status", status: "ready" }, { paid: 100, payments: [{ amount: 150, claim: "waiting" }] }),
+    wk({ kind: "handover" }, { moved: 3, paid: 300 }),
+    wk({ kind: "handover" }, { moved: 1 }),
+    wk({ kind: "status", status: "declined", note: "Out of stock this week." }, { status: "declined" }),
+    wk({ kind: "status", status: "cancelled" }, { status: "cancelled" }),
+    wk({ kind: "say", text: "Come after five" }, {})];
+  ok(JSON.stringify(got) === JSON.stringify(["confirmed|||", "confirmed-credit|||", "ready-collect|owed||", "ready-deliver|waiting||",
+    "ready-collect|paid||", "ready-collect|owed||", "collected|paid||", "part-collected|||", "declined||Out of stock this week.|",
+    "cancelled|||", "reply||Come after five|m"]),
+    "paid in advance says pay now and on credit says when, Ready and a whole handover carry owed, waiting or paid, a part "
+    + "none, his reason and his line ride as his words: " + JSON.stringify(got));
+
+  const ready = (o) => { const d = decideDesk(ord(o), { status: "ready" }, at); return d.ev ? "ev" : d.status; };
+  const moves = [ready({ moved: 1 }), ready({ moved: 0 }), ready({ moved: 3 }), ready({ status: "acknowledged" }), ready({ status: "done", moved: 1 })];
+  ok(JSON.stringify(moves) === JSON.stringify(["ev", 409, 409, "ev", 409]),
+    "Ready again is his while part is handed over and units are still owed, and refused with nothing handed over, "
+    + "nothing left, or the order done: " + JSON.stringify(moves));
+})();
+
 section("v789: a second book on the Enter form is a second transaction for the same party");
 await (async () => {
   /* v409 called two products in one form a FAULT, and it was right: the margin, the free inventory
