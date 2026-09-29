@@ -4443,7 +4443,7 @@ const CLIENT_JS = `
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
     thSheetEl.hidden=true; thScrim.hidden=true; thSay('');
-    try{ var f=thFrom&&thFrom.isConnected?thFrom:document.querySelector('#'+thFromId+' .throw'); if(f) f.focus(); }catch(e){}
+    try{ var f=thFrom&&thFrom.isConnected?thFrom:(document.getElementById(thFromId)||document).querySelector('.throw'); if(f) f.focus(); }catch(e){}
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
   async function thRead(){
