@@ -60,6 +60,17 @@
   who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency does not hand
   a premium buyer the preferential rate. **It prices nothing at v666**; the rules that move a level on it
   come after the level can vary by size.
+- **The late payer** (V5c, his answers of 29 Sep 2026, in place of `lateTwice` and rare and late twice). The profile
+  reads no lateness; `lateOf(code)` does, across every book and the `-R` bucket, through the engine: `payDelays` gives each
+  row's delay in days from its handover (a stated paid day less the first handover; a trail stage by stage, the latest
+  covered stage's; unpaid, the days since `txUnpaidSince`, listed once past the term; a write-off, the lock; a day only
+  assumed or an undated handover counts neither way), and `lateOffer` walks them by the day each was settled. Within
+  `RULES.holdDays` is on time, past it and under `lockDays` short, `lockDays` or more long. One long delay, or a second
+  short one within `RULES.lateWindowDays` (90) of the one before, turns it on; one payment on time turns it off; a delay
+  within the window after that turns it on again, and then it takes `RULES.lateResetRepeat` (3) on time in a row. It
+  OFFERS a level down on the Tiers card ("Late payer: offered ...", with why), which he Sets or not; it prices nothing,
+  and a late payer takes no promotion (loyal and bigger, the slowdown). The Counter says it in words off the sealed
+  `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet.
 - **A level per band** (v670, his decisions of 16 Sep 2026). A held tier is one level name, or a band set
   `{small, mid, big}`: small is an order up to and including `PROFILE_RULE.smallUpTo` (1 unit), big from
   `bigFrom` (3), mid between, the cuts being the book's own quartiles of size. `PRICING_ENGINE.levelAt(held, q,
@@ -73,7 +84,8 @@
   lists were identical before and after; the rules that propose one come next.
 - **The four rules** (v671, his rules of 16 Sep 2026). `ruleProposal(code, prod, boards)` takes the level
   `tierProposal` reads off what they pay and moves it on their profile and the stock, in this order. (1) Rare and
-  late twice: one level worse at every size, Bronze staying Bronze, and no promotion reaches them. (2) Frequent and
+  late twice: one level worse at every size, Bronze staying Bronze, and no promotion reaches them (retired by V5c:
+  a late payer is offered the level down and takes no promotion, above). (2) Frequent and
   small: one level worse from 3 units, their normal level below that, and NO better level on half a unit or a unit,
   his decision that day, because a card is never above their own rate and these customers pay a keen rate on exactly
   those sizes; on the book the three of them were proposed Titanium, where the only better level is Ambassador, his
