@@ -1,6 +1,6 @@
 {
- "v": "v950",
- "stamped": "29 Sep 2026, 18:04 KL",
+ "v": "v951",
+ "stamped": "29 Sep 2026, 18:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5822,11 +5822,28 @@
     "customer": "CZ5-TM",
     "qty": 1,
     "total": 110,
-    "cash": 0,
+    "cash": 110,
     "date": "2026-09-29",
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 29 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CZ5-TM from the statements site, order 20260929100217-rligdw, acknowledged and to collect. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CZ5-TM: 1 order, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM54 at 49.1% by the drafter's figures. At RM110 a unit, the rate matches his only earlier order. The drafter raised no flag. Preapproved by phone. Outstanding: RM110 and 1 unit to collect, against a credit cap of 1.",
-    "rid": "s217"
+    "rid": "s217",
+    "amend": [
+     {
+      "date": "2026-09-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-29",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S217, 29 SEP: RM110 PAID, NO UNITS HANDED OVER.</b> CZ5-TM paid RM110 on 29 Sep on the statements site, order 20260929100217-rligdw, by qr via maybank, against s217, 1 unit for RM110 booked the same day. Before this, RM110 and 1 unit stood outstanding; the payment clears the cash in full. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, RM110 outstanding and no units on credit before this batch, nothing defaulted. No cost moves, as no unit left the inventory. The drafter raised no flag and the figures agree with his reasoning. Preapproved by phone. Outstanding: RM0 and 1 unit to hand over, paid in advance."
+     }
+    ],
+    "paidOn": "2026-09-29"
    }
   ],
   "contacts": [
@@ -6567,9 +6584,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-29T10:03:48.017Z",
+  "QUEUE_COMMITTED": "2026-09-29T10:11:30.211Z",
   "PRICING": {
-   "takenAt": "2026-09-29T10:04:34.996Z",
+   "takenAt": "2026-09-29T10:33:02.023Z",
    "sizes": [
     0.5,
     1,
@@ -7478,15 +7495,15 @@
     },
     "CZ5-TM": {
      "salt": {
-      "name": "one-off",
-      "orders": 1,
+      "name": "small and often",
+      "orders": 2,
       "tenureDays": 10,
-      "sinceLastDays": 10,
-      "perMonth": 1.01,
+      "sinceLastDays": 0,
+      "perMonth": 2.03,
       "smallShare": 1,
       "bigShare": 0,
       "late": 0,
-      "frequent": false,
+      "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
@@ -13191,10 +13208,10 @@
      "cards": {}
     }
    },
-   "v": "v950"
+   "v": "v951"
   },
   "OPEN": {
-   "at": "2026-09-29T10:04:35.257Z",
+   "at": "2026-09-29T10:33:02.336Z",
    "count": 13,
    "byKey": {
     "CK4-SEN|2026-09-29|530": {
@@ -13217,12 +13234,12 @@
      "dir": "S",
      "q": 1,
      "t": 110,
-     "cash": 0,
+     "cash": 110,
      "mv": 0,
-     "st": "part",
-     "oweRM": 110,
+     "st": "oweStock",
      "oweUnits": 1,
      "rid": "s217",
+     "paidOn": "2026-09-29",
      "key": "CZ5-TM|2026-09-29|110"
     },
     "CE5-SA-R|2026-09-28|110": {
@@ -13414,8 +13431,8 @@
     "salt": {
      "name": "Salt",
      "onHand": 2,
-     "free": -7.5,
-     "owedOut": 9.5,
+     "free": -8.5,
+     "owedOut": 10.5,
      "coverDays": 0,
      "rate": 6.36,
      "owedToYou": 610,
@@ -13474,13 +13491,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v950"
+   "v": "v951"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v950"
+   "v": "v951"
   }
  }
 }
