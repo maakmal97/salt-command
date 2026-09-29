@@ -15,7 +15,7 @@
  */
 import { createHash } from "node:crypto";
 import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
-  ROWED, customerView } from "../stmt/orders.js";
+  ROWED, customerView, rateDue } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
@@ -108,7 +108,8 @@ export function build(now = new Date()) {
     [T(12, 20), "desk", { status: "acknowledged", delivery: 3 }], [T(11), "customer", pay("transfer")],
     [T(11, 5), "customer", Object.assign({ action: "pay", amount: 48 }, rail("transfer"))],
     [T(11, 30), "desk", { verdict: { kind: "received", claim: T(11, 5), amount: 48 } }],
-    [T(10), "desk", { status: "ready" }], [T(10, 30), "desk", { handover: { units: 4, mode: "deliver" } }]]));
+    [T(10), "desk", { status: "ready" }], [T(10, 30), "desk", { handover: { units: 4, mode: "deliver" } }],
+    [T(7), "customer", { action: "rate", stars: 4 }]]));   /* F10: and rated, four stars */
   /* A SHEET AGREED, MADE READY AND HANDED OVER TOGETHER (V4b.2, v938): the charge on the first order, none on the rest */
   const sheet2 = "exampleSheet0002";
   for (const [k, product, qty, deliv, paid] of [["12", "oil", 1, 4, 44], ["13", "candy", 1, 0, 12]]) {
@@ -116,6 +117,12 @@ export function build(now = new Date()) {
       [T(6, 20), "desk", { status: "acknowledged", delivery: deliv }], [T(5), "desk", { status: "ready" }],
       [T(5, 30), "desk", { handover: { units: qty, mode: "deliver" } }], [T(5, 31), "desk", { cash: { amount: paid } }]]));
   }
+  /* READY AGAIN FOR THE REST (Step 1b): paid ahead by a transfer, half handed over, and the rest ready */
+  O.push(order(oid(4, "14"), list, T(4), { product: "salt", qty: 5, mode: "collect" }, [
+    [T(4, 20), "desk", { status: "acknowledged" }], [T(4, 30), "customer", pay("transfer")],
+    [T(4, 35), "customer", Object.assign({ action: "pay", amount: 530 }, rail("transfer"))],
+    [T(4, 50), "desk", { verdict: { kind: "received", claim: T(4, 35), amount: 530 } }],
+    [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }]]));
   /* WITHDRAWN by them */
   O.push(order(oid(14, "07"), list, T(14), { product: "rice", qty: 1, mode: "collect" }, [
     [T(14, 40), "customer", { action: "cancel" }]]));
@@ -213,7 +220,11 @@ export const FEATURES = [
   ["cancelled by us, with his reason", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "desk" && h.note))],
   ["not taken, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
-  ["a delivery charge", (f) => has(f, (o) => +o.delivery > 0)],
+  ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
+  ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty
+    && (o.history || []).filter((h) => h.status === "ready" && h.by === "desk" && !h.note && !h.method).length > 1)],
+  ["a rating given (F10)", (f) => has(f, (o) => o.rating && o.rating.stars >= 1)],
+  ["asked how an order was (F10)", (f) => has(f, (o) => rateDue(o, new Date(f.at)))],
   ["on credit: goods with them inside the term", (f) => f.live && f.live.pay.now.parts.some((p) => !p.late)],
   ["overdue past its term", (f) => f.live && f.live.pay.overdue.parts.length > 0],
   ["coming up: agreed and not handed over", (f) => f.live && f.live.pay.coming.parts.length > 0],
