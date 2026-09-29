@@ -1,5 +1,41 @@
 [
  {
+  "v": "v953",
+  "d": "29 Sep 2026",
+  "t": "SA5-BTR LANDS 25 UNIT OF SALT AT RM56, PAID AND COLLECTED",
+  "n": [
+   "<p><b>ONE PURCHASE FOLDED.</b> The batch holds a single salt buy from SA5-BTR dated 29 Sep: 25 unit for RM1,400, RM56 a unit, collected, RM1,400 cash paid and all 25 unit received on the day, with RM75 freight beside it. The drafter raised no flags and the desk approved it. The rate sits at SA5-BTR's median of RM56 a unit, inside the range of RM44 to RM64.</p>",
+   "<p><b>INVENTORY: THE LOT LANDED, THE BASIS HOLDS.</b> The 25 unit moved onto the shelf on 29 Sep. It came in at RM56 a unit, the same as the stock cost and replacement cost of RM56 a unit, so the cost basis does not move. The last count of salt stands at 27 Sep. Nothing is owed to SA5-BTR from this row and no loans are open.</p>"
+  ]
+ },
+ {
+  "v": "v952",
+  "d": "29 Sep 2026",
+  "t": "CZ5-TM COLLECTS THE UNIT ON S217; THE ORDER CLOSES",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s217, CZ5-TM's order 20260929100217-rligdw for 1 unit of salt at RM110, is corrected on 29 Sep: delivered quantity from 0 to 1, delivered on set to 29 Sep, handover set to collected. The RM110 was already paid on 29 Sep, so with the unit collected the order stands closed. Preapproved by phone.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter flagged that s217 carries a trail of 2 steps, neither moving a unit, so the trail will not add up to the delivered figure set directly; the correction is recorded beside it. The shelf rolls 1 unit of salt out to CZ5-TM. Nothing landed and the cost basis stays at RM56 a unit.</p>"
+  ]
+ },
+ {
+  "v": "v951",
+  "d": "29 Sep 2026",
+  "t": "CZ5-TM PAYS RM110 IN ADVANCE; THE UNIT STAYS TO COLLECT",
+  "n": [
+   "<p><b>ONE AMENDMENT FOLDED.</b> A fulfilment on s217: CZ5-TM paid RM110 on 29 Sep for the 1 unit booked that day, order 20260929100217-rligdw, by qr via maybank. That clears the RM110 outstanding on the order. No units moved, so 1 unit remains to hand over, now paid in advance. The drafter raised no flag, his reasoning matches the figures, and the row was preapproved by phone.</p>",
+   "<p><b>THE INVENTORY DID NOT MOVE.</b> With nothing handed over, stock stays at 2 units against a ledger of 86.2, costed at RM56 a unit, the same as the replacement cost. The last salt count was on 27 Sep. Owed out stands at 9.5 and promised at 10.25, as the dossier gives them. No lot landed in this fold, so the cost basis is unchanged.</p>"
+  ]
+ },
+ {
+  "v": "v950",
+  "d": "29 Sep 2026",
+  "t": "ONE UNIT OF SALT TO CZ5-TM AT RM110, PENDING; THE STOCK DOES NOT MOVE",
+  "n": [
+   "<p><b>ONE PENDING SALT SELL FOLDED.</b> The batch holds a single row. CZ5-TM ordered 1 unit for RM110 on 29 Sep through the statements site, order 20260929100217-rligdw, preapproved by phone. Nothing is paid and nothing is handed over, so the row books no revenue yet. The rate clears the floor of RM68.67 and sits below the ask of RM140. It matches his one earlier order at RM110, which was paid and collected on 19 Sep.</p>",
+   "<p><b>NOTHING UNUSUAL; THE INVENTORY HOLDS.</b> The drafter raised no flag. He costed the unit at RM56, the inventory's own rate, so no cost correction is made. With nothing handed over, stock stays at 2 units and the cost basis stays at RM56 a unit. The row leaves RM110 and 1 unit to collect from CZ5-TM, against his credit cap of 1.</p>"
+  ]
+ },
+ {
   "v": "v949",
   "d": "29 Sep 2026",
   "t": "THE UNIT CAP LEAVES THE COUNTER; THE SHEET SAYS LIKELY PAID IN ADVANCE",
