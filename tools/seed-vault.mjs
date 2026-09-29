@@ -23,10 +23,19 @@
  *                                         passphrase into KV "vault-addr". Refused unless the passphrase opens the
  *                                         live names vault, and while the live places hold a code the file lacks
  *                                         (--force skips the second check, never the first). Prints codes, never a place.
+ *   node tools/seed-vault.mjs --slip-key  F13: mint the slip key, an ECDH P-256 pair. The private half is sealed under the SAME
+ *                                         passphrase into KV "vault-key", beside the public half in the clear; the public half
+ *                                         alone goes to the Counter's KV "slipkey", and a copy of the envelope (ciphertext) to
+ *                                         10_Data\salt_slipkey.json. Refused unless the passphrase opens the live names vault, and
+ *                                         while a slip key is filed in KV or in 10_Data: a new one leaves every slip sealed to the
+ *                                         old one unreadable (--force goes past that, keeping the old copy beside the new).
+ *                                         Lost from KV: npx wrangler kv key put vault-key --path <the copy> --binding SALT_QUEUE --remote
+ *   node tools/seed-vault.mjs --slip-pub  F13: the live key's public half to the Counter's KV again, no passphrase; for a
+ *                                         --slip-key run whose last push failed
  */
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
 import { webcrypto as wc } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, renameSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -36,6 +45,9 @@ const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const VKEY = "vault";
 const AKEY = "vault-addr";   // F14: the places envelope, beside the names, on the same passphrase
+const KKEY = "vault-key";    // F13: the slip key's private half, sealed, the vault's third envelope
+const PKEY = "slipkey";      // F13: its public half, on the Counter's KV, which the customer's page seals a slip to
+const SLIP_COPY = "salt_slipkey.json";
 import { DATA_DIR } from "./book.mjs";
 const DEFAULT_DATA = DATA_DIR;
 const DATA = process.env.SALT_DATA || DEFAULT_DATA;
@@ -224,6 +236,141 @@ async function seedAddr(pass, dry) {
   }
 }
 
+/* F13 (29 Sep 2026): THE SLIP KEY, the vault's third envelope. An ECDH P-256 pair: the private half, as a JWK of five fields,
+   sealed by vaultEncrypt under the vault's passphrase, so the desk's one unlock opens it with the names and the places and
+   imports it non-extractable; the public half travels in the clear. A slip is sealed on the customer's device to the public
+   half: an ephemeral P-256 pair, ECDH, HKDF-SHA-256 (no salt, info SLIP_INFO) to an AES-GCM-256 key, a fresh 12-byte iv,
+   {v: 1, epk: the ephemeral public point raw in base64, iv, ct}. slipSeal and slipOpen here are that protocol, which the desk's
+   slipOpen mirrors; the seed uses them to prove a fresh pair before anything is pushed. */
+const SLIP_INFO = "salt-slip v1";
+const ECDH = { name: "ECDH", namedCurve: "P-256" };
+const jwkPub = (k) => ({ kty: k.kty, crv: k.crv, x: k.x, y: k.y });
+async function slipAes(priv, pubKey) {
+  const bits = await wc.subtle.deriveBits({ name: "ECDH", public: pubKey }, priv, 256);
+  const hk = await wc.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
+  return wc.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: new TextEncoder().encode(SLIP_INFO) },
+    hk, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+export async function slipSeal(pubJwk, bytes) {
+  const eph = await wc.subtle.generateKey(ECDH, true, ["deriveBits"]);
+  const key = await slipAes(eph.privateKey, await wc.subtle.importKey("jwk", jwkPub(pubJwk), ECDH, false, []));
+  const iv = wc.getRandomValues(new Uint8Array(12));
+  const ct = await wc.subtle.encrypt({ name: "AES-GCM", iv }, key, bytes);
+  return { v: 1, epk: b64e(await wc.subtle.exportKey("raw", eph.publicKey)), iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
+}
+export async function slipOpen(privKey, sealed) {
+  const key = await slipAes(privKey, await wc.subtle.importKey("raw", b64d(sealed.epk), ECDH, false, []));
+  return new Uint8Array(await wc.subtle.decrypt({ name: "AES-GCM", iv: b64d(sealed.iv) }, key, b64d(sealed.ct)));
+}
+/* the sealed private half opened and imported as the desk imports it: non-extractable, to derive bits and nothing else */
+export async function slipKeyOpen(pass, vault) {
+  const k = await vaultDecrypt(pass, vault);
+  return wc.subtle.importKey("jwk", { ...jwkPub(k), d: k.d }, ECDH, false, ["deriveBits"]);
+}
+/* A fresh pair, sealed, and proved before it goes anywhere: the envelope opens on the passphrase, and a probe sealed to the
+   public half opens with the private half it holds. Answers {updated, vault, pub}, the KV value. */
+export async function slipKeyMint(pass) {
+  const pair = await wc.subtle.generateKey(ECDH, true, ["deriveBits"]);
+  const k = await wc.subtle.exportKey("jwk", pair.privateKey);
+  const envelope = { updated: new Date().toISOString(), vault: await vaultEncrypt(pass, { ...jwkPub(k), d: k.d }), pub: jwkPub(k) };
+  const probe = wc.getRandomValues(new Uint8Array(32));
+  const back = await slipOpen(await slipKeyOpen(pass, envelope.vault), await slipSeal(envelope.pub, probe));
+  if (b64e(back) !== b64e(probe)) throw new Error("the slip key did not round-trip");
+  return envelope;
+}
+export function wrGetKey(exec = execFileSync) {
+  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "get", KKEY, "--binding", BINDING, "--remote"],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
+}
+/* the public half to the Counter's KV, through its own config: the Counter never sees the sealed half */
+export function wrPutPub(jsonPath, exec = execFileSync) {
+  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "put", PKEY, "--path", jsonPath, "--binding", "STMT", "--remote", "-c", "wrangler.stmt.jsonc"],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
+}
+/* THE SLIP KEY IS REFUSED ON THE PLACES' FIRST GROUND, AND ONE MORE: the passphrase must open the live names vault, so every
+   envelope shares it and the one unlock opens them all; and a key already filed, in KV or in 10_Data (`copied`), is never
+   replaced unasked, since every slip sealed to it would be lost. --force goes past the second, never the first. Answers the
+   lines to refuse with, or null to go on; the reads are the suite's way in. */
+export async function slipSeedRefusal(pass, readKey = wrGetKey, readNames = wrGet, copied = false, force = false) {
+  const got = (read, what) => {
+    try { return { j: JSON.parse(read()) }; } catch (e) {
+      if (/ - 404:/.test(wranglerSaid(e))) return { j: null };
+      return { stop: ["STOPPED: wrangler could not read the live " + what + ". Nothing was pushed.",
+        "  wrangler said: " + wranglerSaid(e), "  Timed out: run it again."] };
+    }
+  };
+  const names = got(readNames, "names vault");
+  if (names.stop) return names.stop;
+  if (names.j && names.j.vault) {
+    try { await vaultDecrypt(pass, names.j.vault); } catch (e) {
+      return ["REFUSED: this passphrase does not open the names vault, and the slip key is sealed under the same one. Nothing was pushed."];
+    }
+  }
+  if (force) return null;
+  const live = got(readKey, "slip key");
+  if (live.stop) return live.stop;
+  const inKv = !!(live.j && live.j.vault);
+  if (!inKv && !copied) return null;
+  return ["REFUSED: a slip key is already filed" + (inKv ? ' in KV "' + KKEY + '"' : "") + (inKv && copied ? " and" : "") + (copied ? " in 10_Data\\" + SLIP_COPY : "") + ".",
+    "  A new one leaves every slip sealed to it unreadable. Nothing was pushed.",
+    "  To finish a run that stopped part way:  node tools/pull-vault.mjs --slip-key   then   node tools/seed-vault.mjs --slip-pub",
+    "  To replace it all the same:  node tools/seed-vault.mjs --slip-key --force"];
+}
+/* the copy in 10_Data is never overwritten: a replaced one is kept beside it under its own moment */
+export function keepAside(p) {
+  if (!existsSync(p)) return null;
+  const to = p.replace(/\.json$/, "_was_" + new Date().toISOString().replace(/[:.]/g, "-") + ".json");
+  renameSync(p, to);
+  return to;
+}
+/* what the Counter is given: the public half and its day, never the sealed half */
+export const pubRecord = (envelope) => ({ v: 1, updated: envelope.updated || null, pub: jwkPub(envelope.pub) });
+async function pushPub(envelope) {
+  const tmp = join(REPO, "test", "tmp", "slipkey-push.json");
+  mkdirSync(dirname(tmp), { recursive: true });
+  writeFileSync(tmp, JSON.stringify(pubRecord(envelope)));
+  try { wrPutPub(tmp); return true; } catch (e) {
+    console.error("The public half did not reach the Counter's KV: " + wranglerSaid(e));
+    console.error("  Run it again, no passphrase needed:  node tools/seed-vault.mjs --slip-pub");
+    process.exitCode = 1; return false;
+  } finally { try { rmSync(tmp, { force: true }); } catch (e) {} }
+}
+async function seedSlipKey(pass, dry) {
+  const copy = join(DATA, SLIP_COPY);
+  const refused = await slipSeedRefusal(pass, wrGetKey, wrGet, existsSync(copy), process.argv.includes("--force"));
+  if (refused) { for (const l of refused) console.error(l); process.exit(2); }
+  const envelope = await slipKeyMint(pass);
+  mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
+  if (dry) {
+    const out = join(REPO, "test", "tmp", "vault-key-seed.json");
+    writeFileSync(out, JSON.stringify(envelope, null, 1));   // the sealed half and the public half only, safe to write
+    console.log(`DRY RUN: minted a slip key, sealed and proved. Envelope (ciphertext) at ${out}. Pushed nothing.`);
+    return;
+  }
+  const tmp = join(REPO, "test", "tmp", "vault-key-push.json");
+  writeFileSync(tmp, JSON.stringify(envelope));
+  try { wrPut(tmp, KKEY); } catch (e) {
+    console.error("PUSH FAILED: wrangler could not write the KV key. Nothing was filed.");
+    console.error("  wrangler said: " + wranglerSaid(e));
+    process.exitCode = 1; return;
+  } finally { try { rmSync(tmp, { force: true }); } catch (e) {} }
+  let aside = null;
+  try { aside = keepAside(copy); mkdirSync(DATA, { recursive: true }); writeFileSync(copy, JSON.stringify(envelope, null, 1) + "\n"); } catch (e) {
+    console.error(`The key is in KV "${KKEY}", but its copy could not be written to ${copy}: ${e.message}`);
+    console.error("  Finish with:  node tools/pull-vault.mjs --slip-key   then   node tools/seed-vault.mjs --slip-pub");
+    process.exitCode = 1; return;
+  }
+  if (!(await pushPub(envelope))) return;
+  console.log(`SEEDED: the slip key, sealed under the vault's passphrase, in KV "${KKEY}"; its copy at ${copy}${aside ? " (the old one kept at " + aside + ")" : ""};`
+    + ` the public half on the Counter's KV "${PKEY}". The desk opens the slip key with the names, on the one passphrase.`);
+}
+async function slipPub() {
+  let j = null;
+  try { j = JSON.parse(wrGetKey()); } catch (e) { console.error("No slip key could be read: " + wranglerSaid(e)); process.exit(1); }
+  if (!j || !j.pub) { console.error("KV holds no slip key; mint one:  node tools/seed-vault.mjs --slip-key"); process.exit(1); }
+  if (await pushPub(j)) console.log(`SEEDED: the public half is on the Counter's KV "${PKEY}".`);
+}
+
 /* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
    shell history, the screen or a transcript; the string lives only in this process. Returns
    null when there is no terminal to ask, and the env-var road below still stands for that. */
@@ -254,6 +401,7 @@ function promptHidden(question) {
 
 async function main() {
   const dry = process.argv.includes("--dry-run");
+  if (process.argv.includes("--slip-pub")) return slipPub();   // F13: the public half alone, no passphrase
   let pass = process.env.SALT_VAULT_PASS;
   if (!pass) {
     /* Asked twice, because a typo here is silent until the phone cannot decrypt a single
@@ -271,6 +419,7 @@ async function main() {
     process.exit(2);
   }
   if (process.argv.includes("--addr")) return seedAddr(pass, dry);   // F14: the places, not the names
+  if (process.argv.includes("--slip-key")) return seedSlipKey(pass, dry);   // F13: the slip key, not the names
   const { map, ids } = loadBio();
   const named = Object.keys(map).length;
   if (!named) { console.error("No names found in salt_bio.json; nothing to seed."); process.exit(1); }

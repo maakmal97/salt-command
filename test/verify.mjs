@@ -45857,6 +45857,142 @@ await (async () => {
 })();
 
 
+section("F13 (29 Sep 2026): the slip key at /vault/key is read with the key alone, and no route writes it");
+await (async () => {
+  /* F13: the vault's third envelope. Only seed-vault --slip-key writes it, through wrangler, so the Worker reads it with the
+     key and answers every other method 405: nothing on the desk could replace the key every slip is sealed to. Proved red
+     by mutation. */
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "k-vault-key-fixture";
+  const kv = new KV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY };
+  const call = async (r) => { try { const x = await deskW.fetch(r, env); let j = null; try { j = await x.json(); } catch (e) { j = null; } return { status: x.status, j }; } catch (e) { return { status: -1, j: null }; } };
+  const get = (h = { "X-Salt-Key": KEY }) => call(req("/vault/key", { headers: h }));
+  const unkeyed = await get({});
+  const empty = await get();
+  const ENV = { updated: "2026-09-29T01:00:00.000Z", vault: { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVy" }, pub: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } };
+  kv.m.set("vault-key", JSON.stringify(ENV));
+  const back = await get();
+  const posted = await call(req("/vault/key", { method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": KEY }, body: JSON.stringify({ vault: { v: 1, salt: "AA==", iv: "AA==", ct: "AA==" } }) }));
+  const after = kv.m.get("vault-key");
+  kv.m.set("vault-key", "{not json");
+  const bad = await get();
+  ok(unkeyed.status === 401, "F13: the slip key is read only with the key: " + unkeyed.status);
+  ok(empty.status === 200 && !!empty.j && empty.j.ok === true && empty.j.vault === null, "F13: with none filed, the read answers no envelope: " + JSON.stringify(empty));
+  ok(!!back.j && back.j.ok === true && JSON.stringify(back.j.vault) === JSON.stringify(ENV.vault) && JSON.stringify(back.j.pub) === JSON.stringify(ENV.pub) && back.j.updated === ENV.updated,
+    "F13: a filed key is answered as it was sealed, with its public half: " + JSON.stringify(back.j));
+  ok(posted.status === 405 && after === JSON.stringify(ENV), "F13: a keyed POST is refused and the filed key is untouched: " + posted.status);
+  ok(bad.status === 500 && !!bad.j && bad.j.ok === false, "F13: a key that cannot be read answers not ok, never none: " + JSON.stringify(bad));
+})();
+
+section("F13: one unlock opens the names, the places and the slip key, the key non-extractable, and every lock clears all three");
+await (async () => {
+  /* F13: vaultReveal keeps no passphrase, so the slip key is opened on the one it is given, with the names and the places,
+     and imported to derive bits alone; the desk's slipOpen reads a slip sealed to its public half by the laptop's slipSeal,
+     the customer's protocol. Proved red by mutation. */
+  const { openMaster: omK } = await import("../tools/payload.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const S = await import("../tools/seed-vault.mjs");
+  const { w: wK } = await omK();
+  if (!wK.crypto || !wK.crypto.subtle) { try { Object.defineProperty(wK, "crypto", { value: wcK, configurable: true }); } catch (e) { wK.crypto = wcK; } }
+  const rdK = (e) => JSON.parse(String(wK.eval("JSON.stringify(" + e + ")")));
+  try {
+    const names = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": "Zed Slp (Qelvor)" }));
+    const places = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": { addr: "Kedai Zqor", lat: 3.1, lng: 101.6, src: "waze", at: null } }));
+    const key = await S.slipKeyMint("pw"), other = await S.slipKeyMint("not pw");
+    const stub = (k) => "(function(){NAME_VAULT=" + names + ";qSyncState='server';window.__prompts=0;window.prompt=function(){window.__prompts++;return 'pw';};window.__gets=[];"
+      + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(s==='vault/addr'?{ok:true,vault:" + places + "}:s==='vault/key'?{ok:true,vault:" + (k ? JSON.stringify(k.vault) : "null") + "}:{ok:true});}});};})();";
+    const slipIn = (sealed) => wK.eval("slipOpen(" + JSON.stringify(sealed) + ").then(function(b){return b?Array.from(b).join(','):null;})");
+    const BYTES = new Uint8Array([255, 216, 255, 224, 1, 2, 3, 4, 5, 255, 217]);
+    wK.eval("try{cloudMode=function(){return true;};}catch(e){};" + stub(key));
+    const opened = await wK.eval("vaultReveal('pw')");
+    const o = rdK("{names:Object.keys(vaultNames),places:Object.keys(vaultPlaces),msg:vaultRevealMsg,prompts:window.__prompts,gets:window.__gets,"
+      + "k:vaultSlipKey?{type:vaultSlipKey.type,ex:vaultSlipKey.extractable,us:vaultSlipKey.usages,alg:vaultSlipKey.algorithm.name}:null}");
+    ok(opened === true && o.names.includes("CZ9-SLP") && o.places.includes("CZ9-SLP") && !!o.k && o.k.type === "private" && o.k.ex === false
+      && JSON.stringify(o.k.us) === '["deriveBits"]' && o.k.alg === "ECDH" && o.prompts === 0 && o.msg === "" && o.gets.includes("vault/key"),
+      "F13: one passphrase opens the names, the places and the slip key, imported non-extractable to derive bits alone, with no second prompt: " + JSON.stringify(o));
+    const mine = await slipIn(await S.slipSeal(key.pub, BYTES)), theirs = await slipIn(await S.slipSeal(other.pub, BYTES));
+    ok(mine === Array.from(BYTES).join(",") && theirs === null, "F13: a slip sealed to the key's public half opens to its bytes, and one sealed to another key opens to nothing: " + JSON.stringify({ mine, theirs }));
+    const sealedMine = await S.slipSeal(key.pub, BYTES);
+    wK.eval("lockVault();");
+    const l = rdK("{names:Object.keys(vaultNames).length,places:Object.keys(vaultPlaces).length,key:vaultSlipKey===null}");
+    const afterLock = await slipIn(sealedMine);
+    ok(l.names === 0 && l.places === 0 && l.key === true && afterLock === null, "F13: the lock clears the names, the places and the slip key together, and a slip no longer opens: " + JSON.stringify({ l, afterLock }));
+    wK.eval(stub(other));
+    await wK.eval("vaultReveal('pw')");
+    const half = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(half.names === 1 && half.key === true && /the slip key did not open/.test(half.msg), "F13: a slip key sealed under another passphrase stays shut, and the reveal says so: " + JSON.stringify(half));
+    wK.eval("lockVault();" + stub(null));
+    await wK.eval("vaultReveal('pw')");
+    const none = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(none.names === 1 && none.key === true && none.msg === "", "F13: with no slip key filed, the names open and nothing is said to be shut: " + JSON.stringify(none));
+    wK.eval("lockVault();" + stub(key) + "(function(){var f=window.fetch;window.fetch=function(u,o){return String(u)==='vault/key'?Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({ok:false});}}):f(u,o);};})();");
+    await wK.eval("vaultReveal('pw')");
+    const unread = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(unread.names === 1 && unread.key === true && unread.msg === "The slip key could not be read here.", "F13: a slip key that could not be read is told apart from one that would not open: " + JSON.stringify(unread));
+    wK.eval("lockVault();");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wK.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F13: seed-vault --slip-key mints a pair proved to round-trip, sealed under the names' passphrase, never over a filed key");
+await (async () => {
+  /* F13: the laptop's road for the slip key, driven on its pure parts, the reads handed in as the places' guard is. The key
+     is minted by him with his passphrase; nothing here touches KV or 10_Data. Proved red by mutation. */
+  const S = await import("../tools/seed-vault.mjs"), P = await import("../tools/pull-vault.mjs");
+  const { mkdtempSync } = await import("node:fs"), { tmpdir } = await import("node:os");
+  const pass = "correct horse";
+  const env = await S.slipKeyMint(pass);
+  const opened = await S.vaultDecrypt(pass, env.vault);
+  const k = await S.slipKeyOpen(pass, env.vault);
+  const probe = new Uint8Array([7, 8, 9]);
+  const round = Array.from(await S.slipOpen(k, await S.slipSeal(env.pub, probe))).join();
+  let otherPass = null; try { await S.slipKeyOpen("another pass", env.vault); otherPass = "opened"; } catch (e) { otherPass = "shut"; }
+  ok(JSON.stringify(Object.keys(env.vault).sort()) === JSON.stringify(["ct", "iv", "salt", "v"]) && JSON.stringify(Object.keys(env.pub).sort()) === JSON.stringify(["crv", "kty", "x", "y"])
+    && opened.x === env.pub.x && opened.y === env.pub.y && typeof opened.d === "string" && !JSON.stringify(env).includes(opened.d)
+    && k.extractable === false && round === "7,8,9" && otherPass === "shut",
+    "F13: the mint seals the private half under the passphrase, the public half beside it in the clear, and a probe sealed to one opens with the other: " + JSON.stringify({ pub: Object.keys(env.pub), round, otherPass }));
+  const rec = S.pubRecord(env);
+  ok(JSON.stringify(Object.keys(rec).sort()) === JSON.stringify(["pub", "updated", "v"]) && JSON.stringify(Object.keys(rec.pub).sort()) === JSON.stringify(["crv", "kty", "x", "y"]) && !JSON.stringify(rec).includes(env.vault.ct),
+    "F13: the Counter is given the public half and its day, never the sealed half: " + JSON.stringify(Object.keys(rec)));
+  const names = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": "Zed (Qelvor)" }) });
+  const other = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt("another pass", { "CZ9-A": "Zed (Qelvor)" }) });
+  const live = JSON.stringify(env);
+  const said = (words) => Object.assign(new Error("Command failed"), { status: 1, stdout: "\n", stderr: "X [ERROR] " + words + "\n" });
+  const NOT_THERE = said("Failed to fetch https://api.cloudflare.com/client/v4/accounts/0/storage/kv/namespaces/0/values/vault-key - 404: Not Found");
+  const v = async (readKey, readNames, copied = false, force = false) => { try { return await S.slipSeedRefusal(pass, readKey, readNames, copied, force); } catch (e) { return e; } };
+  const wrongNames = await v(() => { throw NOT_THERE; }, () => other), wrongForced = await v(() => { throw NOT_THERE; }, () => other, false, true);
+  ok(Array.isArray(wrongNames) && /does not open the names vault/.test(wrongNames[0]) && Array.isArray(wrongForced) && /does not open the names vault/.test(wrongForced[0]),
+    "F13: a passphrase that does not open the live names vault is refused, --force or not, so every envelope shares one: " + JSON.stringify([wrongNames, wrongForced]));
+  const inKv = await v(() => live, () => names), inCopy = await v(() => { throw NOT_THERE; }, () => names, true);
+  ok(Array.isArray(inKv) && /already filed in KV "vault-key"/.test(inKv[0]) && Array.isArray(inCopy) && /already filed in 10_Data/.test(inCopy[0]) && !/KV/.test(inCopy[0]),
+    "F13: a key filed in KV or copied in 10_Data is never replaced unasked: " + JSON.stringify([inKv, inCopy]));
+  ok(await v(() => { throw NOT_THERE; }, () => names) === null && await v(() => live, () => names, true, true) === null && await v(() => { throw NOT_THERE; }, () => { throw said("x - 404: Not Found"); }) === null,
+    "F13: a first key goes on, with or without a names vault, and --force goes past a filed one");
+  const dead = await v(() => { throw said("fetch failed"); }, () => names);
+  ok(Array.isArray(dead) && /^STOPPED/.test(dead[0]), "F13: a read that failed stops the seed, and never passes for no key: " + JSON.stringify(dead));
+  let seenGet = null, seenPut = null;
+  try { S.wrGetKey((cmd, args, opts) => { seenGet = { cmd, args, opts }; return "{}"; }); S.wrPutPub("x.json", (cmd, args, opts) => { seenPut = { cmd, args, opts }; return ""; }); } catch (e) { /* read below */ }
+  ok(!!seenGet && seenGet.args.join(" ") === "wrangler kv key get vault-key --binding SALT_QUEUE --remote" && seenGet.opts.cwd === REPO
+    && !!seenPut && seenPut.args.join(" ") === "wrangler kv key put slipkey --path x.json --binding STMT --remote -c wrangler.stmt.jsonc" && seenPut.opts.shell === (process.platform === "win32"),
+    "F13: the key is read from the desk's KV and the public half written to the Counter's, each through wrangler from the repo: " + JSON.stringify([seenGet && seenGet.args, seenPut && seenPut.args]));
+  const dir = mkdtempSync(join(tmpdir(), "slipkey-"));
+  try {
+    const f = join(dir, "salt_slipkey.json");
+    const none = S.keepAside(f);
+    writeFileSync(f, "OLD");
+    const to = S.keepAside(f);
+    ok(none === null && !!to && !existsSync(f) && existsSync(to) && readFileSync(to, "utf8") === "OLD" && /salt_slipkey_was_.+\.json$/.test(to),
+      "F13: a copy in 10_Data is never overwritten: the old one is kept beside it under its own moment: " + String(to));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  const pulled = await P.slipKeyPull(pass, () => live), pulledWrong = await P.slipKeyPull("another pass", () => live), pulledNone = await P.slipKeyPull(pass, () => { throw NOT_THERE; });
+  ok(!!pulled.envelope && pulled.envelope.vault.ct === env.vault.ct && /did not open/.test(pulledWrong.error || "") && /holds no slip key/.test(pulledNone.error || ""),
+    "F13: the pull copies the key only once the passphrase is proved to open it: " + JSON.stringify([pulledWrong, pulledNone]));
+  const ign = readFileSync(join(REPO, ".gitignore"), "utf8").split(/\r?\n/);
+  const skill = readFileSync(join(REPO, ".claude", "skills", "update-names-id", "SKILL.md"), "utf8");
+  const stmtSrc = readdirSync(join(REPO, "stmt")).filter((n) => n.endsWith(".js")).map((n) => readFileSync(join(REPO, "stmt", n), "utf8")).join("\n");
+  ok(ign.includes("salt_slipkey*.json") && /seed-vault\.mjs\s+--slip-key/.test(skill) && /pull-vault\.mjs --slip-key/.test(skill) && !/vault-key/.test(stmtSrc),
+    "F13: the laptop's copy is kept out of the repo, the update-names-id skill tells of both tools, and the Counter holds no road to vault-key");
+})();
+
 section("28 Sep 2026: a lot's Payment on the Workbench previews, renders and queues its AMEND, the lot read through the engine's poStat and not a bare name that threw");
 await (async () => {
   /* wbState's lot branch called poStat bare, a name that lives only inside the engine block, so from v492 (05 Sep 2026) a

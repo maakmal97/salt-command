@@ -13,6 +13,7 @@ node_modules/
 # encrypted vault live on the laptop, never here. These are a safety net.
 salt_bio.json
 salt_addr.json
+salt_slipkey*.json
 salt_vault.json
 *.vault
 

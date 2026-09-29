@@ -15873,6 +15873,33 @@ async function vaultPlacesSave(envl){
   try{const r=await fetch('vault/addr',{method:'POST',headers:qHeaders(),body:JSON.stringify({updated:new Date().toISOString(),vault:envl})});
     return r.ok&&(await r.json()).ok;}catch(e){return false;}
 }
+/* F13 (29 Sep 2026): THE SLIP KEY, the vault's third envelope, KV vault-key: the private half of an ECDH P-256 pair sealed by
+   vaultEncrypt under the one passphrase, minted only by `node tools/seed-vault.mjs --slip-key`. Opened on the unlock and
+   imported NON-EXTRACTABLE, to derive bits and nothing else, held beside the names and cleared with them. vaultSlipKeyOpen
+   answers the CryptoKey, false when none is filed, 'unread' when it could not be read (no write key here, or offline), or
+   null when it would not open on this passphrase. */
+let vaultSlipKey=null;
+async function vaultSlipKeyOpen(pass){
+  let j=null;
+  try{const r=await fetch('vault/key',{cache:'no-store',headers:qHeaders()});if(r.ok)j=await r.json();}catch(e){j=null;}
+  if(!j||!j.ok)return 'unread';
+  if(!j.vault)return false;
+  try{const k=await vaultDecrypt(pass,j.vault);
+    return await crypto.subtle.importKey('jwk',{kty:k.kty,crv:k.crv,x:k.x,y:k.y,d:k.d},{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
+  }catch(e){return null;}
+}
+/* A slip, sealed on the customer's device to the key's public half: {v, epk, iv, ct}, the ephemeral point raw in base64,
+   ECDH, HKDF-SHA-256 with no salt and info 'salt-slip v1', AES-GCM-256. The laptop's slipSeal in tools/seed-vault.mjs is the
+   same protocol. Answers the bytes, or null with the vault locked or a slip that will not open. */
+async function slipOpen(sealed){
+  if(!vaultSlipKey||!sealed)return null;
+  try{const epk=await crypto.subtle.importKey('raw',_b64d(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
+    const bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},vaultSlipKey,256);
+    const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
+    return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:_b64d(sealed.iv)},key,_b64d(sealed.ct)));
+  }catch(e){return null;}
+}
 function qServed(){try{return qSyncState==='server';}catch(e){return false;}}
 /* v277: THE PHONE'S REVEAL. Decrypts the synced envelope with a passphrase typed here and
    held only in this tab, exactly as the legacy import did, but WITHOUT writing anything back
@@ -15890,13 +15917,16 @@ async function vaultReveal(pass){
     const n=map&&typeof map==='object'?Object.keys(map).length:0;
     if(!n){vaultRevealMsg='It opened, but the vault holds no names.';vaultRevealBusy=false;try{renderReveal();}catch(e){}return false;}
     /* F14 (28 Sep 2026): ONE UNLOCK OPENS EVERY ENVELOPE. The passphrase is not kept, so each envelope is opened here on
-       the one given or not at all: the names, then the places; the slip key joins them in Step 5. */
-    const places=await vaultPlacesOpen(pass);
+       the one given or not at all: the names, then the places and the slip key (F13, 29 Sep 2026). */
+    const [places,slip]=await Promise.all([vaultPlacesOpen(pass),vaultSlipKeyOpen(pass)]);
     vaultNames={};Object.keys(map).forEach(k=>{if(map[k])vaultNames[k]=map[k];});
     vaultPlaces=places||{};
+    vaultSlipKey=slip&&typeof slip==='object'?slip:null;
     try{fillNameLookup(vaultNames);}catch(e){}
     revealed=true;                        /* the passphrase is not kept: it is not needed again */
-    vaultRevealMsg=places?'':'The names are open; the places did not open on this device.';vaultRevealBusy=false;
+    const shut=[places?'':'the places',slip===null?'the slip key':''].filter(Boolean);
+    vaultRevealMsg=(shut.length?'The names are open; '+shut.join(' and ')+' did not open on this device.':'')
+      +(slip==='unread'?(shut.length?' ':'')+'The slip key could not be read here.':'');vaultRevealBusy=false;
     render();try{renderReveal();}catch(e){}
     return true;
   }catch(e){
@@ -15906,8 +15936,8 @@ async function vaultReveal(pass){
     return false;
   }
 }
-/* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other */
-function lockVault(){vaultNames={};vaultPlaces={};revealed=false;try{fillNameLookup({});}catch(e){}}
+/* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
+function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}}
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second

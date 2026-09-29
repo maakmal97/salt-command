@@ -17,6 +17,8 @@
  *   node tools/pull-vault.mjs --addr      F14: the places instead, KV "vault-addr" into 10_Data\salt_addr.json, the
  *                                         phone's entry winning where it differs and the old one kept as `was`;
  *                                         read through wrangler, since the Worker keys the places' read
+ *   node tools/pull-vault.mjs --slip-key  F13: the slip key's envelope, KV "vault-key", proved to open on the passphrase and
+ *                                         copied (ciphertext) to 10_Data\salt_slipkey.json, a different copy there kept beside it
  *   SALT_VAULT_PASS                       the passphrase, when there is no terminal to ask
  *   SALT_DATA                             override the 10_Data folder
  *
@@ -26,7 +28,7 @@ import { wranglerSaid } from "./cloudflare.mjs";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { vaultDecrypt, wrGetAddr, addrEntry } from "./seed-vault.mjs";
+import { vaultDecrypt, wrGetAddr, addrEntry, wrGetKey, slipKeyOpen, keepAside } from "./seed-vault.mjs";
 import { DATA_DIR } from "./book.mjs";
 
 const BASE = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
@@ -90,6 +92,28 @@ async function pullAddr(pass, dry) {
   console.log(`wrote ${file}: ${m.added.length} added, ${m.amended.length} changed, each old entry kept as was. The places are on the laptop; nothing in the repo moved.`);
 }
 
+/* F13: the slip key comes down as the ciphertext it is, once the passphrase is proved to open it; nothing is decrypted to disk */
+export async function slipKeyPull(pass, read = wrGetKey) {
+  let j = null;
+  try { j = JSON.parse(read()); } catch (e) {
+    return { error: / - 404:/.test(wranglerSaid(e)) ? "The cloud holds no slip key." : "wrangler could not read the slip key: " + wranglerSaid(e) };
+  }
+  if (!j || !j.vault) return { error: "The cloud holds no slip key." };
+  try { await slipKeyOpen(pass, j.vault); } catch (e) { return { error: "That passphrase did not open the slip key. Nothing written." }; }
+  return { envelope: j };
+}
+async function pullSlipKey(pass, dry) {
+  const r = await slipKeyPull(pass);
+  if (r.error) { console.error(r.error); process.exit(1); }
+  const file = join(DATA_DIR, "salt_slipkey.json"), text = JSON.stringify(r.envelope, null, 1) + "\n";
+  const same = existsSync(file) && readFileSync(file, "utf8") === text;
+  console.log(`slip key updated ${r.envelope.updated || "?"}: it opens on this passphrase; the copy in 10_Data is ${same ? "the same" : existsSync(file) ? "different" : "missing"}.`);
+  if (dry || same) { console.log(dry ? "DRY RUN: nothing written." : "Nothing to write."); return; }
+  const aside = keepAside(file);
+  writeFileSync(file, text);
+  console.log(`wrote ${file}${aside ? ", the old copy kept at " + aside : ""}. Ciphertext only.`);
+}
+
 function promptHidden(question) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return Promise.resolve(null);
   return new Promise((res) => {
@@ -115,6 +139,7 @@ async function main() {
   let pass = process.env.SALT_VAULT_PASS || await promptHidden("vault passphrase (hidden): ");
   if (!pass) { console.error("No passphrase. Set SALT_VAULT_PASS or run in a terminal."); process.exit(2); }
   if (process.argv.includes("--addr")) return pullAddr(pass, dry);   // F14: the places, not the names
+  if (process.argv.includes("--slip-key")) return pullSlipKey(pass, dry);   // F13: the slip key, not the names
   const r = await fetch(BASE + "/vault", { cache: "no-store" });
   const j = r.ok ? await r.json() : null;
   if (!j || !j.vault) { console.error("The cloud holds no vault."); process.exit(1); }

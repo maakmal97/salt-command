@@ -141,8 +141,15 @@
   either and saves the places first; an envelope the Worker cannot parse answers 500 on `/vault`
   and `/vault/addr` alike, never none, so no save seals one entry over the rest. A re-key copies
   `vault-addr[from]` to `[to]` as the name is copied. `vaultReveal` opens every envelope on the one
-  passphrase it is given (names and places, the
-  slip key from Step 5) and `lockVault` clears them together. His base point, `_base`, is Amend ID's
+  passphrase it is given (names, places and the slip key) and `lockVault` clears them together.
+  **The slip key (F13)** is the vault's third envelope, KV `vault-key`: `{updated, vault, pub}`, the
+  private half of an ECDH P-256 pair sealed by `vaultEncrypt`, the public half in the clear. Only
+  `seed-vault.mjs --slip-key` writes it (it mints, proves a probe round-trips, refuses while a key is
+  filed in KV or `10_Data` unless `--force`, pushes the public half to the Counter's KV `slipkey`, and
+  copies the envelope to `10_Data\salt_slipkey.json`); the Worker reads it with the key at `GET
+  /vault/key` and has no write. The unlock imports it non-extractable for `deriveBits` alone, and the
+  desk's `slipOpen` reads a slip `{v, epk, iv, ct}`: ECDH with the ephemeral point, HKDF-SHA-256 (no
+  salt, info `salt-slip v1`), AES-GCM-256, the protocol of `slipSeal` in `tools/seed-vault.mjs`. His base point, `_base`, is Amend ID's
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
@@ -245,7 +252,7 @@
 
 | Path | What it is |
 |---|---|
-| `src/worker.js` | `/queue`, `/vault`, `/vault/addr` and `/geo/expand` (keyed, F14), `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval, and again on the minute cron's ladder (`redispatchStale`) |
+| `src/worker.js` | `/queue`, `/vault`, `/vault/addr` and `/geo/expand` (keyed, F14), `/vault/key` (keyed, read only, F13), `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval, and again on the minute cron's ladder (`redispatchStale`) |
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
 | `tools/drafts.mjs` | `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`, `--from-queue`; via wrangler, no key |
