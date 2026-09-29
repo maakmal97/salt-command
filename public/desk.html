@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="23878e275335702f";
+var SALT_BUILD_ID="f0c9de4624bb13a5";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8633,7 +8633,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v945","d":"29 Sep 2026","t":"AN ACCOUNT CLOSES IN STAGES FROM THE HANDOVER","n":["<p><b>AN ACCOUNT CLOSES IN STAGES FROM THE HANDOVER.</b> His answers of 29 Sep 2026, the handover being day 0. The term is one day: from day 2 no new order, from day 3 the prices are hidden, and from day 4 the account is only for paying, To pay now and its Pay live and the rest of Home and Rewards seen but greyed out. Each stage is said under To pay now before it comes, and a payment they say they sent, waiting on his answer, lifts every stage at once. The stages count only what is still unpaid, and a page left open moves on at midnight.</p>","<p><b>THE CHASE TAPERS.</b> Every hour from 08:00 to 22:00 for three days from the oldest unpaid handover, then at 10:00, 14:00 and 18:00, in place of D5's two hours; the notification words say so, and the ask after an order comes at the day's first slot. The desk's Credit age line says the provision reached. The repo's rules for the chase (D5) and for what is overdue (D9) are rewritten to match.</p>","<p><b>PROOFS.</b> A new suite section and the older checks moved to the one-day term; every new check was proved red by its own mutation. Fable reviewed it twice and checked the fixes. The whole suite passed on this tree.</p>"]}];
+const evolution=[{"v":"v946","d":"29 Sep 2026","t":"A PAYMENT SLIP, SEALED ON THEIR PHONE","n":["<p><b>A PAYMENT SLIP, SEALED ON THEIR PHONE.</b> His word of 29 Sep 2026, Start slips. When a customer says they sent a payment, on an order or against the account, they may attach one picture of it. Their phone draws it at 1,600 px and seals it to his slip key before it leaves, so the site holds only a copy it cannot open. It is kept 30 days, and only once the claim is recorded and names it; a refused claim keeps nothing. Their order then says Slip sent, and no longer kept after the 30 days; their page can never open it again.</p>","<p><b>VIEW SLIP.</b> The claim card on Site orders carries View slip. It opens with the slip key the one unlock already holds, with no second prompt, and is drawn on the card and kept nowhere; with the names hidden it asks for Show names and fetches nothing, and hiding them lets every slip opened go. Pictures only.</p>","<p><b>PROOFS.</b> Four new suite sections, every check proved red by its own mutation. Fable reviewed it and checked the fixes. The whole suite passed on this tree.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8748,7 +8748,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 14:05 KL';
+const LAST_UPDATED='29 Sep 2026, 14:15 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

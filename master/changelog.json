@@ -1,5 +1,15 @@
 [
  {
+  "v": "v946",
+  "d": "29 Sep 2026",
+  "t": "A PAYMENT SLIP, SEALED ON THEIR PHONE",
+  "n": [
+   "<p><b>A PAYMENT SLIP, SEALED ON THEIR PHONE.</b> His word of 29 Sep 2026, Start slips. When a customer says they sent a payment, on an order or against the account, they may attach one picture of it. Their phone draws it at 1,600 px and seals it to his slip key before it leaves, so the site holds only a copy it cannot open. It is kept 30 days, and only once the claim is recorded and names it; a refused claim keeps nothing. Their order then says Slip sent, and no longer kept after the 30 days; their page can never open it again.</p>",
+   "<p><b>VIEW SLIP.</b> The claim card on Site orders carries View slip. It opens with the slip key the one unlock already holds, with no second prompt, and is drawn on the card and kept nowhere; with the names hidden it asks for Show names and fetches nothing, and hiding them lets every slip opened go. Pictures only.</p>",
+   "<p><b>PROOFS.</b> Four new suite sections, every check proved red by its own mutation. Fable reviewed it and checked the fixes. The whole suite passed on this tree.</p>"
+  ]
+ },
+ {
   "v": "v945",
   "d": "29 Sep 2026",
   "t": "AN ACCOUNT CLOSES IN STAGES FROM THE HANDOVER",
