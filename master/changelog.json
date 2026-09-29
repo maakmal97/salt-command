@@ -1,5 +1,14 @@
 [
  {
+  "v": "v939",
+  "d": "29 Sep 2026",
+  "t": "A FIX'S REASON IS CHECKED ON THE DESK BEFORE IT REACHES THE SITE",
+  "n": [
+   "<p><b>A FIX'S REASON IS CHECKED ON THE DESK.</b> Found in the Step 1b review of 29 Sep 2026. A correction that takes back a payment line and cancels the order files his reason as a note on the order's history, which the customer's page prints. The desk's relay checked his message and a status note for the desk's name, a roster code and a level, but not this reason. It now does, read exactly as the site reads it, and a reason that fails is refused before anything leaves the desk. The corrections list already checked its own reasons, and the three sent are unchanged; no other text the desk sends reaches the customer's page unchecked.</p>",
+   "<p><b>PROOFS.</b> A new suite section of 3 checks; 3 mutations each turned a check red. The whole suite passed on this tree.</p>"
+  ]
+ },
+ {
   "v": "v938",
   "d": "29 Sep 2026",
   "t": "A SHEET IS AGREED, MADE READY AND HANDED OVER TOGETHER",

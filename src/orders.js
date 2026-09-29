@@ -969,8 +969,12 @@ export async function moveOrder(env, u, id, body) {
      customer's page reads; nothing sends one today, and the first decline to carry a reason would have
      reached the page unchecked. Every free-text field his moves can carry goes through this one lock,
      on the one road they take to the site. */
-  for (const k of ["message", "note"]) {
-    const why = body && typeof body[k] === "string" ? siteWords(body[k]) : "";
+  /* 29 Sep 2026: AND SO DOES A FIX'S REASON. The site files `fix.cancel` as the note of the cancellation it makes, which
+     the page prints like any other; it is read as the site reads it, String() of whatever came, so no shape slips past. */
+  const text = (v) => typeof v === "string" ? v : "", fix = (body && body.fix) || {};
+  const said = { message: text(body && body.message), note: text(body && body.note), "fix's reason": fix.cancel == null ? "" : String(fix.cancel) };
+  for (const [k, v] of Object.entries(said)) {
+    const why = siteWords(v);
     if (why) return { ok: false, status: 400, error: "that " + k + " says something " + why };
   }
   const r = await site(env, "/desk/orders/" + encodeURIComponent(u) + "/" + encodeURIComponent(id), {

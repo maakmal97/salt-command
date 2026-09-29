@@ -37069,6 +37069,35 @@ await (async () => {
     "and the message it always checked is checked as before: " + JSON.stringify(said.j.error));
 })();
 
+section("Fix reason lock: a fix's cancel reason passes siteWords on the desk's relay before it leaves it");
+await (async () => {
+  /* 29 Sep 2026 (Step 1b review). decideFix files fix.cancel as the note of the cancellation it makes, which the page
+     prints, and the relay checked only message and note. Driven through the desk's own route, the site spied, so a
+     refusal is proved to leave nothing behind it. The site reads the reason as String() of whatever came. */
+  const deskW = (await import("../src/worker.js")).default;
+  const dkv = new KV(), u = "abcd-efgh", id = "20260929000000-fxlk", spy = [];
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => { spy.push(String(url && url.url ? url.url : url)); return new Response(JSON.stringify({ ok: false, error: "spied" }), { status: 409 }); } } };
+  const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
+  const move = async (cancel) => {
+    spy.length = 0;
+    const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + id, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" },
+      body: JSON.stringify({ fix: { id: "fx-lock", line: "2026-09-29T00:00:00.000Z", unpay: true, unmove: true, cancel } }) }), denv, ctx);
+    return { status: r.status, error: (await r.json()).error || "", calls: spy.length };
+  };
+  const lvl = await move("taken back, your Gold price stands");
+  ok(lvl.status === 400 && /fix's reason says something that names a level/.test(lvl.error) && lvl.calls === 0,
+    "a fix whose reason names a level is refused on the desk and never reaches the site: " + JSON.stringify(lvl));
+  const arr = await move(["held for CC9-OKR"]);
+  ok(arr.status === 400 && /roster code/.test(arr.error) && arr.calls === 0,
+    "and a reason sent as another shape is read as the site reads it, String(), so a code in an array is refused too: " + JSON.stringify(arr));
+  const fine = await move("Carried on your order of 27 Sep");
+  ok(fine.calls === 1 && !/says something/.test(fine.error),
+    "a reason that says none of those goes on to the site: " + JSON.stringify(fine));
+})();
+
 section("S11 11.4: Site orders opens on Waiting on you, one row a customer act, oldest first, counted the same on Today and the Enter badge");
 await (async () => {
   /* 24 Sep 2026 (his answer "all recommended", PLAN 5). The card listed whole orders newest first with the notice
