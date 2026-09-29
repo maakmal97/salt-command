@@ -1,5 +1,32 @@
 [
  {
+  "v": "v954",
+  "d": "29 Sep 2026",
+  "t": "THE SALT COUNT COMES IN 2 SHORT; 9.5 UNITS STILL OWED OUT",
+  "n": [
+   "<p><b>ONE COUNT FOLDED.</b> A hand count of salt on 29 Sep found 24 units against 26 on the book, a drift of -2, two days after the last count on 27 Sep. The count wins, so stated salt stock is set to 24 and the count date moves to 29 Sep. The dossier gives no reason for the gap and none is recorded here. The desk decided the fold.</p>",
+   "<p><b>WHAT IT LEAVES.</b> The 2 unit gap books as shrinkage, and the floors rise to carry it: the 1 unit floor moves from RM68.62 on the new figures, against RM69.78 before as quoted, while the ask stays at RM140. Cost stays RM56 a unit. The drafter's second flag stands open: 9.5 units are owed out and already paid for, and the dossier does not show that stock is there to deliver.</p>"
+  ]
+ },
+ {
+  "v": "v953",
+  "d": "29 Sep 2026",
+  "t": "SA5-BTR LANDS 25 UNIT OF SALT AT RM56, PAID AND COLLECTED",
+  "n": [
+   "<p><b>ONE PURCHASE FOLDED.</b> The batch holds a single salt buy from SA5-BTR dated 29 Sep: 25 unit for RM1,400, RM56 a unit, collected, RM1,400 cash paid and all 25 unit received on the day, with RM75 freight beside it. The drafter raised no flags and the desk approved it. The rate sits at SA5-BTR's median of RM56 a unit, inside the range of RM44 to RM64.</p>",
+   "<p><b>INVENTORY: THE LOT LANDED, THE BASIS HOLDS.</b> The 25 unit moved onto the shelf on 29 Sep. It came in at RM56 a unit, the same as the stock cost and replacement cost of RM56 a unit, so the cost basis does not move. The last count of salt stands at 27 Sep. Nothing is owed to SA5-BTR from this row and no loans are open.</p>"
+  ]
+ },
+ {
+  "v": "v952",
+  "d": "29 Sep 2026",
+  "t": "CZ5-TM COLLECTS THE UNIT ON S217; THE ORDER CLOSES",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> s217, CZ5-TM's order 20260929100217-rligdw for 1 unit of salt at RM110, is corrected on 29 Sep: delivered quantity from 0 to 1, delivered on set to 29 Sep, handover set to collected. The RM110 was already paid on 29 Sep, so with the unit collected the order stands closed. Preapproved by phone.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter flagged that s217 carries a trail of 2 steps, neither moving a unit, so the trail will not add up to the delivered figure set directly; the correction is recorded beside it. The shelf rolls 1 unit of salt out to CZ5-TM. Nothing landed and the cost basis stays at RM56 a unit.</p>"
+  ]
+ },
+ {
   "v": "v951",
   "d": "29 Sep 2026",
   "t": "CZ5-TM PAYS RM110 IN ADVANCE; THE UNIT STAYS TO COLLECT",
