@@ -66,6 +66,11 @@ export const MODES = ["collect", "deliver"];
 export const METHODS = ["cod", "transfer", "qr", "jompay", "tngbiz"];
 /* exported for the page, which says the limit before the form (S4 4.6); this is still the one that refuses */
 export const MAX_OPEN = 5;
+/* V4b (his point 5 of 28 Sep 2026): ONE SHEET, SEVERAL PRODUCTS, ONE ORDER A PRODUCT (his Q3), placed together under
+   the sheet's id. A sheet counts once against MAX_OPEN, so a line joining a sheet already open is never the sixth; it
+   carries one line a product, and no more lines than the limit. */
+export const SHEET_RE = /^[A-Za-z0-9_-]{16,64}$/;
+export const openCount = (open) => new Set((open || []).map((o) => (o && o.sheet) || (o && o.id))).size;
 /* v694: the states from which the ledger already holds a row, so a later step has something to
    amend, and the states in which money may be paid. Acknowledged is the line between them. */
 export const ROWED = ["acknowledged", "ready", "done"];
@@ -256,7 +261,7 @@ export async function checkStores(env) {
    account a username is, `queued` and `sync`. Their order list and every answer to a move of theirs
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
    named here; and a desk mark, which changes none of these, no longer redraws their page. */
-export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "week",
+export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn"];
 export const customerView = (o) => {
   const v = {};
@@ -431,9 +436,14 @@ export function checkPlacement(body, open) {
   const forFriend = body.forFriend === true;
   /* v751: and anything they want to say with it, optional on every order, collect or deliver */
   const note = cleanMsg(body.note, NOTE_MAX);
-  if (open.length >= MAX_OPEN) return refusal("openMax", { n: open.length });
-  return { order: { product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, note };
+  const sheet = typeof body.sheet === "string" && SHEET_RE.test(body.sheet) ? body.sheet : "";
+  if (body.sheet !== undefined && body.sheet !== "" && !sheet) return { error: "the sheet is not one this page made" };
+  const lines = sheet ? open.filter((o) => o.sheet === sheet) : [];
+  if (lines.some((o) => o.product === product)) return refusal("sheetTwice");
+  if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
+  if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
+  return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}), note };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
