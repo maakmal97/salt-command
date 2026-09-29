@@ -43288,7 +43288,7 @@ await (async () => {
     d.getElementById("oNew").click();
     size(d, w, 1); const at1 = line(d);
     size(d, w, 2); const at2 = line(d);
-    ok(at1 === "" && at2 === "Over RM 440 owed with this order: likely paid in advance.",
+    ok(at1 === "" && at2 === "Over RM 440.00 owed with this order: likely paid in advance.",
       "the sheet forecasts paid in advance once what they owe and the order are over the sealed ceiling, and says nothing at it: " + JSON.stringify([at1, at2]));
     d.getElementById("oGo").click();
     const chk = rows(d), say = line(d);
@@ -43328,13 +43328,13 @@ await (async () => {
     d.getElementById("oNew").click();
     size(d, w, 1); const one = line(d);
     pickOil(d, w); const both = line(d);
-    ok(one === "" && both === "Over RM 440 owed with this order: likely paid in advance.",
+    ok(one === "" && both === "Over RM 440.00 owed with this order: likely paid in advance.",
       "a sheet of salt 1 and oil 1 is over as one verdict though neither line is alone: " + JSON.stringify([one, both]));
     N.d.getElementById("oNew").click(); size(N.d, N.w, 2);
     ok(line(N.d) === "", "and a list sealed with no ceiling forecasts nothing: " + JSON.stringify(line(N.d)));
     /* every part counts: RM 440 is over RM 435 only with the RM 30 now, the RM 20 coming up and oN's RM 100 all in */
     Q.d.getElementById("oNew").click(); size(Q.d, Q.w, 1);
-    ok(line(Q.d) === "Over RM 435 owed with this order: likely paid in advance.",
+    ok(line(Q.d) === "Over RM 435.00 owed with this order: likely paid in advance.",
       "to pay now, coming up and an agreed order not on the book each count toward the ceiling: " + JSON.stringify(line(Q.d)));
   } finally { await new Promise((r) => setTimeout(r, 100)); M.w.close(); N.w.close(); Q.w.close(); }
 })();
