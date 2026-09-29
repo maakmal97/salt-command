@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="45dec96d06a72cf7";
+var SALT_BUILD_ID="cd22b522cf2c2c67";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8626,7 +8626,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v940","d":"29 Sep 2026","t":"THE VAULT'S SLIP KEY","n":["<p><b>THE VAULT'S SLIP KEY.</b> F13's key, the Desk half of Step 5. The vault is now three envelopes under the one passphrase: names, places, and the slip key, the private half of an ECDH P-256 pair that a customer's payment slip will be sealed to on their own phone. It is minted on the laptop by <code>node tools/seed-vault.mjs --slip-key</code>, which proves a fresh pair before anything goes anywhere, seals the private half into KV <code>vault-key</code>, puts the public half on the Counter's KV <code>slipkey</code> and keeps a copy of the envelope in 10_Data. It refuses unless the passphrase opens the names vault, and while a key is already filed, since a new one leaves every slip sealed to the old one unreadable. <code>pull-vault.mjs --slip-key</code> copies it down once the passphrase is proved.</p>","<p><b>ONE UNLOCK OPENS ALL THREE.</b> The desk's unlock opens the names, the places and the slip key on the one passphrase, with no second prompt; the key is imported so the phone can use it and never export it, and leaving the app clears all three. The Worker reads the key only with the write key, at <code>GET /vault/key</code>, and has no way to write it. A slip is read by <code>slipOpen</code>, ready for View slip when the Counter side lands. Nothing moves for him until he mints the key.</p>","<p><b>PROOFS.</b> Three new suite sections of 22 checks; 22 mutations each turned a check red. The whole suite passed on this tree. Fable's review found four minor points (the SEEDED line before the last push, an unguarded copy, a key not read told apart from one not opened, the Names rule's wording), all fixed and checked again by Fable: fit to land.</p>"]}];
+const evolution=[{"v":"v941","d":"29 Sep 2026","t":"THE COUNTER SPEAKS IN HIS WORDS, AND OPENS ONLY AS THE APP","n":["<p><b>THE COUNTER SPEAKS IN HIS WORDS.</b> Step 1b, his sentences of 28 Sep 2026. A customer's banner names its kind in his words and its body by the case the order is in: owed, a payment of theirs waiting on his Received, or paid. The acknowledgement says pay now on an order over the credit cap and says when on credit; Ready says ready to collect or on its way; a whole handover says what is left to pay; his reason at Decline or Cancel is the body. His line on an order is the banner's body in quotation marks, under a tag and push topic of its own, so no line of his replaces another unseen. Nothing sealed carries an amount, a product or a name. The Counter's own words say acknowledged where they said confirmed.</p>","<p><b>HIS OWN BANNERS TOO.</b> The desk's banner is in his words, a customer's line is a notification of its own, and a decline's reason reads as a sentence. Ready can be tapped again while part of an order is handed over and units are still owed, so the rest is told when it is ready.</p>","<p><b>THE ACCOUNT OPENS ONLY AS THE APP.</b> Signed in in a browser tab, the whole page is how to keep Salt Counter: an iPhone's code minted as it draws, an Install button, a browser's own steps, or the browsers that can; installed from the tab, it says so. In the saved app a bell asks for notifications on every view until they are on, and a refusal opens that phone's Settings steps.</p>","<p><b>PROOFS.</b> New and rewritten suite sections; every new check turned red under a mutation of its own. The whole suite passed on this tree. Fable's review found two small gaps and one missing check, all fixed and checked again by Fable: no fault.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8741,7 +8741,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 11:50 KL';
+const LAST_UPDATED='29 Sep 2026, 12:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19720,9 +19720,11 @@ function ordCashSay(id){const o=ORD_OPEN.find(x=>x&&x.id===id),c=document.queryS
    Not taken, or Cancelled by us. The first tap opens the reasons; the second, once one is chosen, moves the
    order. Every reason is checked by siteSafe here and by siteWords on the Worker, as his answers are. */
 let ORD_WHY={};
-const ORD_WHY_PICK=[['stock','Out of stock this week'],['place','Cannot deliver there'],['price','Prices have changed'],['own','Other']];
+const ORD_WHY_PICK=[['stock','We do not have enough in hand this week.'],['place','We cannot deliver there.'],['price','Our prices have changed.'],['own','Other']];
 function ordWhyText(o){const w=ORD_WHY[o.id]||{};if(!w.pick)return '';if(w.pick!=='own'){const r=ORD_WHY_PICK.find(x=>x[0]===w.pick);return r?r[1]:'';}
-  const i=document.querySelector('input[data-why="'+o.id+'"]');return i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,140):'';}
+  const i=document.querySelector('input[data-why="'+o.id+'"]'),t=i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,140):'';
+  /* the customer's banner reads the reason as it stands, so it is a sentence: a full stop when his words end without one */
+  return t&&!/[.!?]$/.test(t)?t+'.':t;}
 function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
   const opt=(k,t)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="why-${esc(o.id)}" value="${k}" data-whypick="${esc(o.id)}"${w.pick===k?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${t}</span></span></label>`;
   const picks=ORD_WHY_PICK.filter(x=>x[0]!=='place'||o.mode==='deliver');
@@ -19734,11 +19736,11 @@ function ordWhyBlock(o){const w=ORD_WHY[o.id];if(!w)return '';
    in its own words, so he answers what they are reading. The words are the page's (stmt/page.js, the state
    chip and the first line under it) and the suite holds the two copies together: a word changed on one side
    and not the other goes red. Since the Counter's stage 5 (S5 5.3) they are the customer's own words: Sent,
-   Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all with them, Complete,
+   Acknowledged, Ready to collect or to deliver, Collected or Delivered once the goods are all with them, Complete,
    Not taken, and Cancelled by you or by us. */
 function ordTold(o){
   const d=o.mode==='deliver',mv=+o.moved||0;
-  const T={placed:['Sent','waiting to be confirmed'],acknowledged:['Confirmed','being prepared'],
+  const T={placed:['Sent','waiting to be acknowledged'],acknowledged:['Acknowledged','being prepared'],
     ready:[d?'Ready to deliver':'Ready to collect',''],done:['Complete',''],
     declined:['Not taken',''],cancelled:['Cancelled by you','']}[o.status]||[o.status,''];
   if((o.status==='acknowledged'||o.status==='ready')&&mv>0&&mv>=(+o.qty||0)-0.0004){T[0]=d?'Delivered':'Collected';T[1]='';}
@@ -19893,7 +19895,7 @@ function ordCard(o){
       :`<button class="${cashNow||c0?'salt-ghost':'vbtn salt-pill salt-pill--sm'}" data-ord="handover" data-full="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}">${how}${moved>0?' the rest, '+units(owedU):', '+units(o.qty)}</button>`
         +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
         +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
-    +(!part&&o.status==='acknowledged'?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
+    +(!part&&(o.status==='acknowledged'||(o.status==='ready'&&moved>0&&owedU>0.004))?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
     +(moved>0||part||c0?'':btn('cancelled','Cancel',true));   /* S6 fix: not while a claim of theirs waits: answer it first */
   /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
      booked only if the fresh row equals it; GET /orders says which (`again`) */
@@ -20173,9 +20175,9 @@ async function ordAct(b){
       :j.warn?j.warn
       :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
         :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
-      :st==='acknowledged'?(j.approved?'Accepted. They see Confirmed, and the row you saw is approved. '+told
+      :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
         :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Sent until you approve it there.'
-        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Confirmed then.')
+        :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
       :st==='received'&&b.dataset.covered?'Received, on the book already: '+fmt(+b.dataset.amt||0)+' is carried by what you recorded, and nothing more is booked. They see it received. '+told
@@ -20190,8 +20192,8 @@ async function ordAct(b){
       :st==='cash'?(a=>{const left=+(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{})-a).toFixed(2);
         return 'Recorded: '+fmt(a)+' in cash. '+(left>0.004?'They see '+fmt(left)+' still owed. ':'They see it paid and the chase stops. ');})(JSON.parse(body).amount)+says+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
-      :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. '+told
-      :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+'. Any payment taken is refunded on the row. '+told
+      :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+' '+told
+      :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+' Any payment taken is refunded on the row. '+told
       :ORD_WORD[st]+'. '+told;
     {const o=ORD_OPEN.find(x=>x&&x.id===id);ORD_SAID={id,t:said,name:o?ordName(o):''};}
     if(r.ok&&(st==='declined'||st==='cancelled'))delete ORD_WHY[id];
