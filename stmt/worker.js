@@ -49,7 +49,6 @@ import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
-import { FACEID_PATH, faceIdResponse } from "./faceid.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
   exampleMove, exampleClaim, exampleMint, exampleRevoke } from "./testfix.js";
@@ -1625,11 +1624,6 @@ export default {
     if (p === "/app") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       return pageResponse("", null);
-    }
-    /* STEP 6 (29 Sep 2026, his word): the Face ID test, linked from nowhere and taken out after it; see stmt/faceid.js */
-    if (p === FACEID_PATH) {
-      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-      return faceIdResponse("counter");
     }
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
