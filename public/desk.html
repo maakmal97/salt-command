@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="4708e53beac63873";
+var SALT_BUILD_ID="2b4b48a98e2d7d9c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8626,7 +8626,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v942","d":"29 Sep 2026","t":"HOW WAS YOUR ORDER","n":["<p><b>HOW WAS YOUR ORDER.</b> F10, his answer of 28 Sep 2026 (Q9b). Two days after the last handover of an order all handed over, at the 10:00 or 18:00 slot, the customer is asked once, How was your order?, and answers with one to five stars, once; a word about the order still goes on its thread. The ask is written on the order as its own event in the order book before the banner goes, so a tick firing twice asks once, and a book moving in asks nobody that minute. One banner a customer a slot, opening the newest order it asks about; never his test account; never over a payment chase in the same slot, which asks at a later slot instead; and only while the handover is under two weeks old, so no order from before this is asked about.</p>","<p><b>WHERE IT SHOWS.</b> A phone with no notifications meets the ask as a card on Home; the order itself asks from the second day on; a rating given reads as five marks. His minute alert says a customer rated an order, and Site orders shows the stars and the figure, or that they were asked and have not answered; an order rated in the last fortnight stays on his list, under Other orders. It prices nothing: no entry, row or note reads it.</p>","<p><b>PROOFS.</b> Five new suite sections; every new check turned red under a mutation of its own. The stars measured 44 by 44 by a hit test at phone width. The whole suite passed on this tree. Fable's review found three points, all fixed and checked again by Fable: no fault.</p>"]}];
+const evolution=[{"v":"v943","d":"29 Sep 2026","t":"DELIVERY IS OFFERED BY DISTANCE","n":["<p><b>DELIVERY IS OFFERED BY DISTANCE.</b> His Q16 and F15: when a delivery's card opens under Site orders, or Delivery on a new sale in the Workbench, the desk reads where he is once, fresh and kept nowhere; refused or unread, it uses his base point in the places vault. It measures to the party's filed point, else its locality, about a kilometre out (his answer at design, given through the moderator), and a resale account to its associate. The straight distance times 1.3 for the road, at RM 1.50 a km one way, rounded to RM 0.50, no minimum: 10 km is RM 19.50. RULES.delivery holds the rate.</p>","<p><b>HIS FIGURE WINS.</b> The fee fills Other on a trip's first order and nothing on the rest of its sheet, and once that order is agreed no other takes one; the line under the chips names the two points it ran between, never a point. What the box holds is what the row is drafted at and what Accept sends. It needs the names vault open on the phone: locked, nothing is offered, and a figure already put stays. On the Workbench the fee fills Delivery only while it stands at nought, and another party takes the desk's figure out, never his. The goods, the floor and the board never read it. The desk's Permissions-Policy now lets the page ask where he is, and nothing wider. The Counter says delivery is charged by distance.</p>","<p><b>PROOFS.</b> Four new suite sections, 29 checks, each turned red by its own mutation. The whole suite passed. Fable's review found six faults over four passes, among them a sheet charged twice once its first order was agreed; all fixed and checked again by Fable: no fault.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8741,7 +8741,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 13:21 KL';
+const LAST_UPDATED='29 Sep 2026, 13:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
