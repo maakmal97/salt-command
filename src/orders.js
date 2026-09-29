@@ -258,14 +258,13 @@ async function previewAck(env, o, code, delivery, now, ctx) {
    (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the book, count together at their goods, the
    sheet's charge left out, so every line reads the same figure whichever is accepted first. The orders are the list the
    order was found in (findOrder), never a second read. Offered again, an order keeps the verdict it was agreed on, as it
-   keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing, and an order stamped at
-   Place (V3) keeps its stamp until V5b2b. */
+   keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing. */
 const AGREED_ON_SITE = ["acknowledged", "ready"];
 export function advanceOf(book, o, code, delivery, ctx) {
   if (ctx.again) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
   const terms = (book.state && book.state.TERMS) || {};
   const ceiling = typeof terms.ceiling === "number" && Number.isFinite(terms.ceiling) ? terms.ceiling : null;
-  if (ceiling == null) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
+  if (ceiling == null) return { prepay: false, owedWith: null, ceiling: null };
   if (!Array.isArray(ctx.orders)) return { error: "the site's orders were not read, so paid in advance cannot be decided: try again in a minute" };
   const E = POSITION_ENGINE, owner = E.ownerCode(code);
   const keys = new Set((book.sales || []).map((s) => E.ovKey(s)));
@@ -278,7 +277,7 @@ export function advanceOf(book, o, code, delivery, ctx) {
   const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0)), 0);
   const mine = (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0));
   const owedWith = +(E.partyOwedRM(book.sales, owner) + agreed + lines + mine).toFixed(2);
-  return { prepay: owedWith > ceiling + 0.004 || !!o.prepay, owedWith, ceiling };
+  return { prepay: owedWith > ceiling + 0.004, owedWith, ceiling };
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
 export async function previewOrder(env, id, body, now) {

@@ -316,7 +316,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   order paid in advance (`prepay`: decided at Accept by the desk Worker, `advanceOf` in `src/orders.js`, when what the
   customer owes at once across every book with this order, the engine's `partyOwedRM` plus their agreed site orders not
   on the book, is over `RULES.creditCeilingRM` read from `TERMS`; the verdict rides on the entry and in the ack digest;
-  V3's unit-cap stamp at Place retires in V5b2b). A
+  Place stamps nothing, V3's unit cap retired in V5b2b, and the page only forecasts it off the ceiling sealed with
+  its list, outside the stamp). A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,
   never `ledgerKey`, `queued` or `sync`. **Every move is an event in the site's one Durable Object**
   (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;

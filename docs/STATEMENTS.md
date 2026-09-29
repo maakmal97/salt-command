@@ -803,16 +803,10 @@ is told its answer: Received, on the book already, or Not found, once the money 
 order, the one being paid included: settling that at the door is how one advance becomes two. It is an
 order sheet's third way (S6 6.8), never To pay now's and never at Ready (pay terms V2, his C1: an order at Ready is due
 now, cash on handover chosen or not, and says "Due now"), shown dashed with that reason where withheld;
-choosing it sends no figure, because he records the cash when he takes it. **An order over the customer's credit cap on
-its book is paid in advance** (pay terms V3, his point 4 of 28 Sep 2026, on each book's own cap, his Q2): the publish
-reads each account's cap per book off the desk (`creditCaps` in `tools/book.mjs`: `capForParty` on a book that states a
-cap, and for an associate the retail cap their `-R` bucket holds, which a friend's order takes), seals it into the price
-list and writes it in the clear beside the stamp (`prices.caps`), and the stamp carries it, so a cap moved since the page
-opened its list is the S4 4.4 re-quote. Place stamps `prepay` when the size is over the cap (`capOf` in
-`stmt/orders.js`), and the terms at Place govern the order as its price does. The sheet says so under the sizes ("Over 1
-unit: paid in advance."), the check carries a Payment row from Review, the order says "Before we hand it over" until
-Ready makes it due now, and cash on handover is refused on it (`cashPrepay`, the tile dashed with its reason). The cap is
-per order here, while the desk's cap counts every unit out unpaid; a book stating no cap has nothing paid in advance.
+choosing it sends no figure, because he records the cash when he takes it. **An order paid in advance** says "Before we hand it over" until
+Ready makes it due now, and cash on handover is refused on it (`cashPrepay`, the tile dashed with its reason). V3's unit
+cap per book (his point 4 of 28 Sep 2026), stamped at Place off caps written beside the list's stamp, retired in V5b2b
+(his answer of 29 Sep 2026, "RM 250 replaces"): Place stamps nothing and the stamp is the figures alone again.
 **V5b2a (his answers of 29 Sep 2026): RM 250 OWED AT ONCE, EVERYONE, DECIDED AT ACCEPT.** The desk Worker decides
 (`advanceOf` in `src/orders.js`, inside `previewAck`): what the customer owes on every row of theirs and their bucket
 (the engine's `partyOwedRM`: goods and delivery less what is paid; a gift, a write-off or a cancelled row owes nothing),
@@ -827,14 +821,18 @@ again, an order keeps the verdict it was agreed on. `TERMS.ceiling` is the maste
 carries `prepay: true` and the ack digest includes it, so his yes covers it and `applyPre` matches only what he saw; the
 order is moved with `prepay` and `decideDesk` sets or clears it, the desk's verdict being the order's from then on. The
 card says "In advance" or "On credit" with the figure before Accept, and "Paid in advance: RM x is still to pay before
-it is handed over" on an agreed order while it is unpaid. The phone decides nothing; V3's stamp at Place stands until
-V5b2b retires it on the Counter.
+it is handed over" on an agreed order while it is unpaid. The phone decides nothing. **V5b2b: the page forecasts it.** The publish seals `RULES.creditCeilingRM` into each list
+as `ceiling` (`ceilingRM` in `tools/make_statements.mjs`), outside the stamp, so a moved ceiling is no re-quote. The
+sheet adds the sealed To pay now and Coming up, their agreed orders whose row no sealed part is yet (`onStatement`: a now part by day, side and whole, a coming part by
+day, side and product, so an order accepted since the last publish still counts), and the sheet's lines at their
+goods, and over the ceiling says once under the sizes "Over RM 250 owed with this order: likely paid in advance."; the
+check carries "Likely in advance" and that the desk confirms it when it accepts. Nothing is sent at Place.
 **One sheet takes several products** (pay terms V4b, his point 5 of 28 Sep 2026, his Q3: one order a product, sent
 together). The form draws every product on their list, its sizes under its mark (the segment of marks went with the
 one-product sheet), a size of each they want; a size tapped again comes off, one product on the list always keeps its
 size, and a sheet opens on what was picked last, else their usual. Review freezes a line a product, each its own `rid`,
-and two or more share a `sheet` id minted with them; the check has a row a line, a Total, and the paid in advance flag
-per line. Place sends the lines in order, the note with the first; a line placed is marked Sent and never sent again,
+and two or more share a `sheet` id minted with them; the check has a row a line, a Total, and the likely in advance
+forecast, one for the sheet, on each line. Place sends the lines in order, the note with the first; a line placed is marked Sent and never sent again,
 so a Place tapped after a refusal sends only what is still to go, and a retry the Worker answers `sheetTwice` is placed.
 Leaving a check with a line placed (`dropPlaced`) takes that product off the picks: Change sends the rest under the same
 sheet id, the note not again; closed, they start afresh. A moved list is read again line by line. The Worker keeps the `sheet` on each order (`SHEET_RE`, in the customer's view),

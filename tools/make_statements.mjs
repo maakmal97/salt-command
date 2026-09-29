@@ -852,6 +852,14 @@ export function stageDays() {
   const g = (k) => { const m = rules && new RegExp("\\b" + k + ":\\s*(\\d+)").exec(rules[1]); return m ? +m[1] : null; };
   return (STAGES = { hide: g("hideDays"), lock: g("lockDays") });
 }
+/* V5b2: and the ceiling on what a customer owes at once, RULES.creditCeilingRM, the same way */
+let CEILING;
+export function ceilingRM() {
+  if (CEILING !== undefined) return CEILING;
+  const rules = /const RULES=\{([^;]*)\};/.exec(readFileSync(MASTER, "utf8"));
+  const m = rules && /\bcreditCeilingRM:\s*(\d+(?:\.\d+)?)/.exec(rules[1]);
+  return (CEILING = m ? +m[1] : null);
+}
 const dayPlus = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOString().slice(0, 10);
 export function payDue(party, day) {
   const term = holdTerm(), E = POSITION_ENGINE, now = [], coming = [];
@@ -936,9 +944,8 @@ export function liveFor(invented, party, now, user) {
    document sealed under the same content key. `root` is the statements folder. Without a key
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
-   customer's price list for the week, sealed under the same key (tools/pricelist.mjs). `caps` (V3) is each
-   account's credit cap per book, by code (tools/book.mjs creditCaps), sealed into its list and written beside it. */
-export async function liveRecords(root, key, now, pricing, cards, caps) {
+   customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
+export async function liveRecords(root, key, now, pricing, cards) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -983,16 +990,15 @@ export async function liveRecords(root, key, now, pricing, cards, caps) {
         live++;
       }
       if (pricing) {
-        const list = priceList(code, book, pricing, now, caps && caps[code]);
+        const list = priceList(code, book, pricing, now);
         /* S4 4.1: its stamp, a digest of its figures, sealed inside and in the clear beside it for Place to be checked against */
         list.digest = priceDigest(list, key, rec.u);
-        /* V3: and the caps on its list IN THE CLEAR beside the stamp, for Place to decide an order paid in advance
-           without opening anything; the stamp carries them, so the page's list and this never disagree. A cap says
-           what the book's policy is for this account, which the assoc mark already says, and nothing of the book. */
-        const capsHere = {};
-        for (const p of list.products) if (p.cap) capsHere[p.product] = p.cap;
-        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest },
-          Object.keys(capsHere).length ? { caps: capsHere } : {}, await encryptWith(ck, JSON.stringify(list)));
+        /* V5b2: the ceiling on what is owed at once, sealed with the list and outside its stamp (the desk decides at
+           Accept, so a moved ceiling is no re-quote), for the page to say an order is likely paid in advance, a new
+           account's first order included */
+        const ceiling = ceilingRM();
+        if (ceiling != null) list.ceiling = ceiling;
+        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await encryptWith(ck, JSON.stringify(list)));
         priced++;
       }
       /* v706, his instruction of 18 Sep 2026: an associate sees their own report card, by month,

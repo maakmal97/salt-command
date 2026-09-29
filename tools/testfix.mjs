@@ -20,7 +20,7 @@ import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, applyEvent
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
-import { liveFor, holdTerm, stageDays } from "./make_statements.mjs";
+import { liveFor, holdTerm, stageDays, ceilingRM } from "./make_statements.mjs";
 
 /* the invented account on the invented book: no roster holds either code */
 export const FIX_CODE = "TX0-FIX";
@@ -41,19 +41,21 @@ const railFor = (method) => {
 /** Every way to pay the site offers today: the methods the suite asks a case of. */
 export const offeredMethods = () => METHODS.filter((m) => railFor(m));
 
-/* THE PRICE LIST, invented, with a cap on salt so an order over it is paid in advance (V3) and one book not yet priced */
+/* THE PRICE LIST, invented, one book not yet priced, and the master's ceiling sealed in it outside the stamp (V5b2b) */
 function priceList(now) {
   const monday = klDay(new Date(now.getTime() - ((new Date(now).getUTCDay() + 6) % 7) * 864e5));
   const list = { at: now.toISOString(), week: { monday, sunday: monday, label: "this week" }, since: klDay(new Date(now.getTime() - 60 * 864e5)),
     products: [
-      { product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: null, cap: { own: 10, friend: 5 },
+      { product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: null,
         sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }] },
       { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
       { product: "candy", name: "Candy", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
       { product: "rice", name: "Rice", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
     soon: [{ product: "spare", name: "Spare" }] };
-  list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes, p.cap || null]))).digest("hex");
+  list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes]))).digest("hex");
+  const ceiling = ceilingRM();
+  if (ceiling != null) list.ceiling = ceiling;
   return list;
 }
 const priceOf = (list, product, q) => list.products.find((p) => p.product === product).sizes.find((s) => s.q === q).price;
@@ -62,8 +64,7 @@ const priceOf = (list, product, q) => list.products.find((p) => p.product === pr
 function order(id, list, placedAt, place, steps) {
   const body = Object.assign({ unit: 0, week: list.week.monday, digest: list.digest }, place);
   body.total = priceOf(list, body.product, body.qty); body.unit = +(body.total / body.qty).toFixed(2);
-  const caps = { salt: list.products[0].cap };
-  const p = decidePlace(U, body, [], placedAt, list.digest, caps);
+  const p = decidePlace(U, body, [], placedAt, list.digest);
   if (p.error) throw new Error("the fixture's order " + id + " was refused at Place: " + p.error);
   let o = applyEvent(null, p.ev).order;
   o.id = id;
@@ -95,7 +96,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   const fallback = railFor(offeredMethods().find((m) => m !== "cod")), rail = (m) => railFor(m) || fallback;
   const pay = (m) => Object.assign({ action: "method" }, rail(m));
   const O = [];
-  /* A SHEET OF TWO, placed: salt over the cap, so paid in advance (V3), and rice beside it (v936) */
+  /* A SHEET OF TWO, placed, salt and rice beside it (v936) */
   const sheet = "exampleSheet0001";
   O.push(order(oid(0, "01"), list, T(0, 5), { product: "salt", qty: 12.5, mode: "deliver", place: "Jalan Contoh", sheet,
     note: "Please ring when you are outside." }, []));
@@ -131,9 +132,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
       [T(6, 20), "desk", { status: "acknowledged", delivery: deliv }], [T(5), "desk", { status: "ready" }],
       [T(5, 30), "desk", { handover: { units: qty, mode: "deliver" } }], [T(5, 31), "desk", { cash: { amount: paid } }]]));
   }
-  /* READY AGAIN FOR THE REST (Step 1b): paid ahead by a transfer, half handed over, and the rest ready */
+  /* READY AGAIN FOR THE REST (Step 1b): paid in advance, the desk's verdict at Accept (V5b2a), by a transfer, half handed
+     over, and the rest ready */
   O.push(order(oid(4, "14"), list, T(4), { product: "salt", qty: 5, mode: "collect" }, [
-    [T(4, 20), "desk", { status: "acknowledged" }], [T(4, 30), "customer", pay("transfer")],
+    [T(4, 20), "desk", { status: "acknowledged", prepay: true }], [T(4, 30), "customer", pay("transfer")],
     [T(4, 35), "customer", Object.assign({ action: "pay", amount: 530 }, rail("transfer"))],
     [T(4, 50), "desk", { verdict: { kind: "received", claim: T(4, 35), amount: 530 } }],
     [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }]]));
@@ -216,7 +218,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
 
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    caps: { salt: list.products[0].cap }, orders: O, claims, refs, card, assoc: true,
+    orders: O, claims, refs, card, assoc: true,
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
 }
 
@@ -253,7 +255,8 @@ export const FEATURES = [
   ["overdue past its term", (f) => f.live && f.live.pay.overdue.parts.length > 0],
   ["coming up: agreed and not handed over", (f) => f.live && f.live.pay.coming.parts.length > 0],
   ["due at Ready", (f) => has(f, (o) => o.status === "ready" && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
-  ["paid in advance over the cap (V3)", (f) => has(f, (o) => o.prepay === true) && Object.keys(f.caps || {}).length > 0],
+  ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
+  ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
   ["a claim on an order waiting on him", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting"))],
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],
   ["cash he took", (f) => has(f, (o) => (o.payments || []).some((p) => p.method === "cod" && p.by === "desk"))],
@@ -316,6 +319,6 @@ export async function sealFixture(fix, rec, pass) {
   return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: true,
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
-    prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest, caps: fix.caps }, await seal(fix.prices)),
+    prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest }, await seal(fix.prices)),
     card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin };
 }
