@@ -1,5 +1,15 @@
 [
  {
+  "v": "v940",
+  "d": "29 Sep 2026",
+  "t": "THE VAULT'S SLIP KEY",
+  "n": [
+   "<p><b>THE VAULT'S SLIP KEY.</b> F13's key, the Desk half of Step 5. The vault is now three envelopes under the one passphrase: names, places, and the slip key, the private half of an ECDH P-256 pair that a customer's payment slip will be sealed to on their own phone. It is minted on the laptop by <code>node tools/seed-vault.mjs --slip-key</code>, which proves a fresh pair before anything goes anywhere, seals the private half into KV <code>vault-key</code>, puts the public half on the Counter's KV <code>slipkey</code> and keeps a copy of the envelope in 10_Data. It refuses unless the passphrase opens the names vault, and while a key is already filed, since a new one leaves every slip sealed to the old one unreadable. <code>pull-vault.mjs --slip-key</code> copies it down once the passphrase is proved.</p>",
+   "<p><b>ONE UNLOCK OPENS ALL THREE.</b> The desk's unlock opens the names, the places and the slip key on the one passphrase, with no second prompt; the key is imported so the phone can use it and never export it, and leaving the app clears all three. The Worker reads the key only with the write key, at <code>GET /vault/key</code>, and has no way to write it. A slip is read by <code>slipOpen</code>, ready for View slip when the Counter side lands. Nothing moves for him until he mints the key.</p>",
+   "<p><b>PROOFS.</b> Three new suite sections of 22 checks; 22 mutations each turned a check red. The whole suite passed on this tree. Fable's review found four minor points (the SEEDED line before the last push, an unguarded copy, a key not read told apart from one not opened, the Names rule's wording), all fixed and checked again by Fable: fit to land.</p>"
+  ]
+ },
+ {
   "v": "v939",
   "d": "29 Sep 2026",
   "t": "A FIX'S REASON IS CHECKED ON THE DESK BEFORE IT REACHES THE SITE",
