@@ -5127,7 +5127,14 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    the figure to what was lost (the P&L, the month's charge, the bad-debt rate, the party's quote).
    The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
-function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
+/* V5, HIS ANSWERS OF 29 SEP 2026: A SALE'S LADDER IS ITS OWN AND COUNTS FROM THE HANDOVER. Nothing on the handover day,
+   then 25%, 50% and 75% a day, and all of it from the fourth day, the day the Counter locks the account. The day is the
+   one the goods still unpaid were collected or delivered (txUnpaidSince), the order date only for a row that names none.
+   The supplier side keeps provRate above. */
+const SALE_FULL_DAYS=4;
+function saleLadder(days){return days>=SALE_FULL_DAYS?1:days>=3?0.75:days>=2?0.5:days>=1?0.25:0;}
+function saleProvSince(s){return (s&&(txUnpaidSince(s)||s.date))||null;}
+function saleProvRate(s,days){return (s&&s.defaulted)?1:saleLadder(days);}
 /* ============ WHAT THE INVENTORY IS CARRIED AT (26 Sep 2026, his instruction) ============
    "Derive the oil stock cost from the lots", then "derive salt's stock cost from the lots too and all
    of the products". Every book's inventory rate is DERIVED here and nothing typed remains: salt's
@@ -5244,7 +5251,7 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a written-off default is not on the list
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(saleProvSince(s)))),0).toFixed(2)); // net of provisioning, aged from the handover (V5); a written-off default is not on the list
   W.advTotal=W.arGross;
   W.writtenOffRM=+_S.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634: off the receivables, still a loss
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
@@ -5819,7 +5826,7 @@ function renameInBook(book,pairs){
 
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
@@ -8723,7 +8730,11 @@ function poOwed(p){return POSITION_ENGINE.poOwed(p);}
 /* a lot that is genuinely in the pipeline: agreed-only and defaulted lots are neither */
 function poLive(p){return POSITION_ENGINE.poLive(p);}
 function provRate(days){return POSITION_ENGINE.provRate(days);}
-function saleProvRate(s,days){return POSITION_ENGINE.saleProvRate(s,days);} // a declared default provisions in full; the supplier side keeps provRate // R2 aged provisioning ladder: 0-3d 0%, 4-7 25%, 8-13 50%, 14-20 75%, 21+ 100%
+function saleProvRate(s,days){return POSITION_ENGINE.saleProvRate(s,days);} // a declared default provisions in full; the supplier side keeps provRate (0-3d 0%, 4-7 25%, 8-13 50%, 14-20 75%, 21+ 100%)
+/* V5 (his answers of 29 Sep 2026): a sale is aged from the handover, the engine's saleProvSince, and its ladder is
+   25%, 50%, 75% a day and 100% from day 4 (SALE_FULL). Every reader of a sale's provision asks provAge. */
+function provAge(s){return dAge(POSITION_ENGINE.saleProvSince(s));}
+const SALE_FULL=POSITION_ENGINE.SALE_FULL_DAYS;
 /* ============ PROVISIONAL OVERLAY ============
    An entry recorded in the Workbench folds into the whole desk at once instead of
    waiting to be committed. The baked arrays are kept pristine in BASE_*; every
@@ -9128,7 +9139,7 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    oil associate cap at first, so 20 was proposed at twice retail, mirroring salt's ratio,
    and his answer later the same day confirmed it. The reorder trigger goes per book the
    same way: salt keeps 15; oil's was proposed at 10 (one minimum lot) and his answer set
-   20, his figure over the proposal. creditDays and fullProvDays stay
+   20, his figure over the proposal. creditDays and fullProvDays (the supplier's ladder since V5) stay
    whole-book: time hurts the same whatever the unit. A product with no entry reads the
    default book's, the sizesBy fallback exactly.
    28 SEP 2026, HIS INSTRUCTION: holdDays. Overdue is counted from the day the goods were collected or delivered (the
@@ -10676,7 +10687,8 @@ function boundaryScan(){
      customer can order nothing more on the Counter, so the desk calls it collection from the same day. An undated part
      is never past it, as on the Counter. The pricing profile keeps creditDays, ten days from the order date. */
   arList.forEach(s=>{const since=txUnpaidSince(s),dd=since?dAge(since):0;if(!(dd>RULES.holdDays))return;
-    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade');});
+    /* V5: past the hold a sale is past day 3, so its ladder is full: said once, for a default review */
+    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade; fully provisioned, so review it for default');});
   /* 2. margin floor, BY ORDER SIZE. A closed sale at 39% is history: the money is
      banked and the price cannot be revisited, so listing every one of them buries the
      handful you can still do something about. Only two kinds get their own row, the
@@ -10777,10 +10789,8 @@ function boundaryScan(){
   const _pn=PRODUCTS[PROD].name.toLowerCase();
   if(free<-0.009&&!(buyUnits<=0.009&&!stockCounted))add('breach','Free to sell','stock',units(free)+' free','more '+_pn+' is owed out than is on the inventory: '+units(defUnits)+' deferred against '+units(currentStock)+' on hand');
   else if(defUnits>0.009&&free<1)add('watch','Free to sell','stock',units(free)+' free','almost everything left is already spoken for');
-  // 4. receivables against the provisioning ladder
-  arList.forEach(s=>{const dd=dAge(s.date),v=txAdvance(s);
-    if(dd>=RULES.fullProvDays)add('breach','Aged receivable',s.customer,fmt0(v)+' at '+dd+' days','fully provisioned, so treat it as lost unless it is actively recovered');
-    else if(dd>=14)add('watch','Aged receivable',s.customer,fmt0(v)+' at '+dd+' days','75% provisioned, fully provisioned at '+RULES.fullProvDays+' days');});
+  // 4. receivables against the provisioning ladder: a sale's is said on its Credit age line above (V5, his answers of
+  //    29 Sep 2026: its ladder is full by day 4, inside the hold), so only the supplier's recoverable is aged here
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const dd=dAge(supplierReceivable.since);
     if(dd>=RULES.fullProvDays)add('breach','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+dd+' days','fully provisioned');
@@ -10916,7 +10926,7 @@ function cashFlow(){
      supplier recoverable is added once, from its own record, because it belongs to the book
      it happened on and there is exactly one of it. */
   const dueIn=+(sales.filter(s=>txAdvance(s)>0.009)
-      .reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dAge(s.date))),0)
+      .reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,provAge(s))),0)
     +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='writtenOff'&&supplierReceivable.status!=='closed')
         ?supplierReceivable.amount*(1-provRate(dAge(supplierReceivable.since))):0)
   ).toFixed(2);                                               // net of provisioning, so it is what you can reasonably expect
@@ -11318,13 +11328,13 @@ function tabForward(){
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
   const evRows=[];
   A.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}${tags(x)}`,kind:'stock in',rm:x.rm}));
-  A.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${dAge(x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}${tags(x)}`,kind:'cash in',rm:x.rm}));
+  A.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${(x.held!=null?x.held:x.age)!=null?`, ${x.held!=null?x.held:x.age}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}${tags(x)}`,kind:'cash in',rm:x.rm}));
   A.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}${tags(x)}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
-  const provNote=A.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
+  const provNote=A.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.held!=null?x.held+' days from the handover':x.age+' days out'}, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
   /* the book that empties first leads, because that is the order to place */
   const dryOf=p=>A.per[p].f.dry, first=ids.filter(p=>dryOf(p)!=null).sort((a,b)=>dryOf(a)-dryOf(b))[0];
   const emptyCell=g=>g.dry==null?`past ${g.days} days`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
@@ -14094,7 +14104,7 @@ function finRows(){
   pricedSales.forEach(t=>{if(!t.date){undated.push(t);return;}const mo=t.date.slice(0,7);
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendUnitsRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
-    bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,dAge(t.date))+txWrittenOff(t)).toFixed(2));});   // v634: a write-off stays charged in its month
+    bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,provAge(t))+txWrittenOff(t)).toFixed(2));});   // V5: aged from the handover   // v634: a write-off stays charged in its month
   /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
      book by construction, but the bump fired regardless and CREATED the month it was keyed to:
      the oil P&L opened a July column with no oil trade in it, every cell a dash and a gross
@@ -14142,7 +14152,7 @@ function drawRecvCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
-    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dAge(x.date),pr:saleProvRate(x,dAge(x.date))}))
+    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:provAge(x),pr:saleProvRate(x,provAge(x))}))
       .filter(x=>x.g>0.009);
     /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
        arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
@@ -14510,12 +14520,12 @@ function phonePayloadBuild(){
         short:+(f.shortUnits||0).toFixed(2),promised:+(f.commitUnits||0).toFixed(2),
         cashKnown:!!f.cashKnown,openCash:f.openCash,cashLow:f.cashLow?{day:f.cashLow.day,rm:+(+f.cashLow.rm).toFixed(2)}:null,cashEnd:+(+f.cashEnd||0).toFixed(2),
         lots:f.lots.map(l=>({day:l.day,q:+(+l.kg).toFixed(2),who:l.who,what:l.label,rm:+(+l.rm||0).toFixed(2)})),
-        cashIn:f.cin.map(c=>({day:c.day,who:c.who,rm:+(+c.rm).toFixed(2),gross:+(+c.gross||0).toFixed(2),age:c.age,what:c.label})),
+        cashIn:f.cin.map(c=>({day:c.day,who:c.who,rm:+(+c.rm).toFixed(2),gross:+(+c.gross||0).toFixed(2),age:c.held!=null?c.held:c.age,what:c.label})),
         cashOut:f.cout.map(c=>({day:c.day,who:c.who,rm:+(+c.rm).toFixed(2),what:c.label})),
         walk:f.rows.map(r=>({d:r.d,iso:r.iso,inventory:r.inventory,cash:r.cash,arr:r.arr}))};
       /* ---- v343: THE AGE OF EACH RECEIVABLE and what the ladder says it is worth, keyed as
          the open rows are, so the phone's who-owes-what can carry both beside the gross */
-      arList.forEach(s=>{const g=outstandingOf(s);if(g>0.009){const a=dAge(s.date);ageing[ovKey(s)]={age:a,exp:+(g*(1-saleProvRate(s,a))).toFixed(2)};}});
+      arList.forEach(s=>{const g=outstandingOf(s);if(g>0.009){const a=provAge(s);ageing[ovKey(s)]={age:a,exp:+(g*(1-saleProvRate(s,a))).toFixed(2)};}});
       pos[pid]={
         name:PRODUCTS[pid].name,
         onHand:+currentStock.toFixed(2),
@@ -14846,9 +14856,9 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  const cCash=arList.map(s=>{const d=provAge(s),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
-  const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date||'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
+  const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date?'ordered '+r.date:'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
   const cSalt=_S.map(s=>{const k=txDeferUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean).sort(oldest);
   const cSaltUnits=+cSalt.reduce((a,r)=>a+r.k,0).toFixed(2),cSaltRm=+cSalt.reduce((a,r)=>a+r.rm,0).toFixed(2);
@@ -14962,8 +14972,8 @@ function tabReceivables(){
     ${hero('r','Refunds you owe',otherBook?'&mdash;':fmt0(cRefTot),otherBook||(cRef.length?`${cRef.length} owed back`:'none owed back'))}
     ${hero('','Pending orders',units(cPenUnits),cPenUnits>0?`worth ${fmt0(cPenRm)}`:'none open')}
   </div>
-  <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth, aged from the order date</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
-  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged from the order date &amp; provisioned`,cCash.length,
+  <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth, aged from the handover</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
+  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged from the handover &amp; provisioned`,cCash.length,
     `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`
     +(writtenOffRM>0.009?`<div class="wooff" style="margin-top:8px;font-size:12px;color:var(--mut)">Written off, and out of this table: ${fmt0(writtenOffRM)}, ${[...new Set(sales.filter(s=>prodOf(s)===PROD&&txWrittenOff(s)>0.009).map(s=>ID(s.customer)))].join(', ')}.</div>`:''))}
   ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
@@ -17363,8 +17373,8 @@ function forecast(o){
   /* --- cash in: each receivable at its own credit date, net of provisioning --- */
   const cin=[];
   arList.forEach(s=>{const g=outstandingOf(s),age=dAge(s.date);
-    const net=+(g*(1-saleProvRate(s,age))).toFixed(2);
-    if(net>0.009)cin.push({day:Math.max(0,RULES.creditDays-age),rm:net,gross:g,who:s.customer,age,label:'receivable'});});
+    const net=+(g*(1-saleProvRate(s,provAge(s)))).toFixed(2);   // V5: the provision from the handover; the day it is expected stays the credit term's
+    if(net>0.009)cin.push({day:Math.max(0,RULES.creditDays-age),rm:net,gross:g,who:s.customer,age,held:provAge(s),label:'receivable'});});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dAge(supplierReceivable.since),net=+(supplierReceivable.amount*(1-provRate(age))).toFixed(2);
     if(net>0.009)cin.push({day:0,rm:net,gross:supplierReceivable.amount,who:supplierReceivable.party,age,label:'recoverable'});}
@@ -17531,10 +17541,10 @@ function actions(){
   /* 28 SEP 2026, HIS ANSWER (Q4): THE CHASE COUNTS FROM THE HANDOVER, as the Counter's hold does. `held` is the days since
      the goods still unpaid were collected or delivered (the engine's txUnpaidSince); past RULES.holdDays the customer can
      order nothing more on the Counter, so it is Now and carries the reminder; inside the term it is This week; an undated
-     part, never past the term on the Counter, is Watch. The provision stays on the order date, the ladder's own reading. */
+     part, never past the term on the Counter, is Watch. V5 (29 Sep 2026): the provision counts from the handover too. */
   const chase={};
   arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date),since=txUnpaidSince(s);
-    (chase[s.customer]=chase[s.customer]||[]).push({g,age,held:since?dAge(since):null,pr:saleProvRate(s,age),s});});
+    (chase[s.customer]=chase[s.customer]||[]).push({g,age,held:since?dAge(since):null,pr:saleProvRate(s,provAge(s)),s});});
   Object.keys(chase).forEach(who=>{
     const ds=chase[who].sort(byHeld), oldest=ds[0].held;
     const gross=+ds.reduce((t,x)=>t+x.g,0).toFixed(2);
@@ -17543,8 +17553,8 @@ function actions(){
     const sev=past?'now':oldest!=null?'soon':'watch';
     add(sev,'collect',`Chase ${ID(who)} for ${fmt0(gross)}`,gross,
       `On a ${RULES.holdDays}d term from the handover: `
-      /* the provision is the ladder's, on the order date, so it says so beside it (Fable's review, 28 Sep 2026) */
-      +ds.map(x=>`${fmt0(x.g)} ${x.held==null?'undated':`at ${x.held}d`}${x.pr>0?` (ordered ${x.age}d ago, ${(x.pr*100).toFixed(0)}% provisioned)`:''}`).join('; ')
+      /* the provision is the ladder's, from the handover (V5, 29 Sep 2026), as the days beside it are */
+      +ds.map(x=>`${fmt0(x.g)} ${x.held==null?'undated':`at ${x.held}d`}${x.pr>0?` (${(x.pr*100).toFixed(0)}% provisioned)`:''}`).join('; ')
       +`. ${fmt0(net)} realistic.`
       +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');
     /* v812: past the term, the card carries a reminder he can copy and send as it stands */
@@ -23711,7 +23721,7 @@ function obClaims(){
    first claim in the same order. The board led with the largest debt until then, so the two named different people. */
 function chaseOrder(a,b){return b.d-a.d||b.g-a.g;}
 function claimRow(who,date,g,pr){const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};}
-function saleClaims(list){return list.filter(s=>txAdvance(s)>0.009).map(s=>claimRow(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))));}
+function saleClaims(list){return list.filter(s=>txAdvance(s)>0.009).map(s=>claimRow(s.customer,POSITION_ENGINE.saleProvSince(s),txAdvance(s),saleProvRate(s,provAge(s))));}   // V5: aged from the handover
 function consoOrderBlock(){
   /* v557: the oldest claim that can still be worked, not the oldest claim. `wo` is what has been
      written off, so the card can say what became of the money rather than printing a dash. */

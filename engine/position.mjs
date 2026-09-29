@@ -264,7 +264,14 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    the figure to what was lost (the P&L, the month's charge, the bad-debt rate, the party's quote).
    The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
-function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
+/* V5, HIS ANSWERS OF 29 SEP 2026: A SALE'S LADDER IS ITS OWN AND COUNTS FROM THE HANDOVER. Nothing on the handover day,
+   then 25%, 50% and 75% a day, and all of it from the fourth day, the day the Counter locks the account. The day is the
+   one the goods still unpaid were collected or delivered (txUnpaidSince), the order date only for a row that names none.
+   The supplier side keeps provRate above. */
+const SALE_FULL_DAYS=4;
+function saleLadder(days){return days>=SALE_FULL_DAYS?1:days>=3?0.75:days>=2?0.5:days>=1?0.25:0;}
+function saleProvSince(s){return (s&&(txUnpaidSince(s)||s.date))||null;}
+function saleProvRate(s,days){return (s&&s.defaulted)?1:saleLadder(days);}
 /* ============ WHAT THE INVENTORY IS CARRIED AT (26 Sep 2026, his instruction) ============
    "Derive the oil stock cost from the lots", then "derive salt's stock cost from the lots too and all
    of the products". Every book's inventory rate is DERIVED here and nothing typed remains: salt's
@@ -381,7 +388,7 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a written-off default is not on the list
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(saleProvSince(s)))),0).toFixed(2)); // net of provisioning, aged from the handover (V5); a written-off default is not on the list
   W.advTotal=W.arGross;
   W.writtenOffRM=+_S.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634: off the receivables, still a loss
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
@@ -956,7 +963,7 @@ function renameInBook(book,pairs){
 
 return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,

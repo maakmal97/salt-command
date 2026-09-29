@@ -295,3 +295,14 @@ The build adds only a PWA head, a service worker, a device id and cloud-mode cop
 `30_Published`: `serve_desk.py` serves this repo's master on port 8766 for Names & IDs and writes
 `10_Data`, nothing else. Its sync passes were retired on 16 Sep 2026 (a fourth deployer, rule 8);
 `salt_sync.ps1` is dormant. `npm run dev` does the preview half better.
+
+## Provisioning a sale (V5a, his answers of 29 Sep 2026)
+
+A sale's provision is its own ladder, counted from the handover of the goods still unpaid (the engine's `saleProvSince`,
+`txUnpaidSince` else the row's date): nothing on the handover day, 25% the day after, then 50%, 75%, and 100% from day 4
+(`saleLadder`, `SALE_FULL_DAYS`); a declared default 100%. The supplier's recoverable keeps `provRate` and
+`RULES.fullProvDays`. Every reader of what a sale is worth goes through `provAge(s)` in the master: the walk's `ar`, each
+month's `provAR`, `cashFlow`'s `dueIn`, Receivables and its chart, the phone's ageing, the forecast's cash in (its timing
+stays the credit term's, from the order date), the chase and Chase first's claims. The Credit age breach says the
+provision; the sale side of Boundaries' aged-receivable rule is gone, since its day 4 falls inside the hold. The desk
+charges today's ladder to each order's month, so a change of ladder restates the months that still hold unpaid rows.

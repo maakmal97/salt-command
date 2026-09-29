@@ -2184,7 +2184,13 @@ await (async () => {
   ok(X.poRecvUnits({ qty: 10, pending: true }) === 0 && X.poRecvUnits({ qty: 10, defaulted: true }) === 0
      && X.poRecvUnits({ qty: 10, inTransit: true }) === 0 && X.poRecvUnits({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvUnits({ qty: 10 }) === 10,
      "a lot receives nothing while pending, defaulted or in transit, a stated receipt capped at the lot, else the whole lot");
-  ok(X.provRate(0) === 0 && X.provRate(4) === 0.25 && X.provRate(8) === 0.5 && X.provRate(14) === 0.75 && X.provRate(21) === 1, "the ageing ladder");
+  ok(X.provRate(0) === 0 && X.provRate(4) === 0.25 && X.provRate(8) === 0.5 && X.provRate(14) === 0.75 && X.provRate(21) === 1, "the supplier's ageing ladder");
+  /* V5, his answers of 29 Sep 2026: a sale's own ladder, a quarter a day from the handover, full from day 4 */
+  ok([0, 1, 2, 3, 4, 30].map(X.saleLadder).join() === "0,0.25,0.5,0.75,1,1" && X.SALE_FULL_DAYS === 4,
+    "a sale's ladder: nothing on the handover day, then a quarter a day, full from the fourth: " + [0, 1, 2, 3, 4, 30].map(X.saleLadder).join());
+  ok(X.saleProvSince({ date: "2026-08-10", qty: 2, total: 200, cash: 0, deliveredQty: 2, deliveredOn: "2026-08-14" }) === "2026-08-14"
+    && X.saleProvSince({ date: "2026-08-10", qty: 2, total: 200, cash: 200, deliveredQty: 2 }) === "2026-08-10",
+    "a sale is aged from the handover of the goods still unpaid, else its date");
 
   /* the walk on a book small enough to check by hand */
   const W = X.walk({ sales: [
@@ -2198,7 +2204,15 @@ await (async () => {
   ok(W.ledgerStock === 57 && W.currentStock === 57 && W.stockCounted === false, "uncounted, the ledger stands: 60 in, 3 out");
   ok(W.pricedSales.length === 2 && W.revTotal === 300, "the pending order counts nowhere; revenue is the two that moved");
   ok(Math.abs(W.cogs - 135) < 1e-9 && Math.abs(W.grossMargin - 165) < 1e-9, "cost of goods at the average for rows with no cost of their own");
-  ok(W.arList.length === 1 && W.arGross === 100 && Math.abs(W.ar - 75) < 1e-9, "one advance of RM100, seven days old, provisioned a quarter");
+  ok(W.arList.length === 1 && W.arGross === 100 && Math.abs(W.ar - 0) < 1e-9, "one advance of RM100, seven days after the handover, provisioned in full (V5): " + W.ar);
+  {
+    /* the walk ages it from the handover: the same row handed over two days ago is provisioned half */
+    const W3 = X.walk({ sales: [{ date: "2026-08-10", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1, deliveredOn: "2026-08-20" }],
+      purchases: [{ date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 }],
+      opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanUnits: 0, counted: null,
+      supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
+    ok(Math.abs(W3.ar - 50) < 1e-9, "ordered twelve days ago and handed over two, it is aged two days and worth half: " + W3.ar);
+  }
   ok(W.defUnits === 0, "nothing paid ahead of delivery");
   const cm = X.commitments([{ customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 }, { customer: "CD", qty: 2, total: 200, cash: 200, deliveredQty: 0 }], 4);
   ok(cm.owedUnits === 2 && cm.promUnits === 3 && cm.commitUnits === 5 && cm.shortUnits === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
@@ -2224,7 +2238,7 @@ await (async () => {
     ok(X.txStat({ ...dflt, cancelled: true }).order === "Cancelled", "cancelled still wins, because it is checked first and a cancelled row cannot default");
     ok(typeof X.saleProvRate === "function"
       && X.saleProvRate(dflt, 0) === 1 && X.saleProvRate(dflt, 30) === 1
-      && X.saleProvRate({ ...dflt, defaulted: false }, 0) === 0 && X.saleProvRate({ ...dflt, defaulted: false }, 8) === 0.5,
+      && X.saleProvRate({ ...dflt, defaulted: false }, 0) === 0 && X.saleProvRate({ ...dflt, defaulted: false }, 2) === 0.5 && X.saleProvRate({ ...dflt, defaulted: false }, 8) === 1,
       "saleProvRate is the ladder for a live row and 1 for a declared default, whatever its age");
     const W2 = X.walk({ sales: [
         { date: "2026-08-15", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1 },
@@ -2234,7 +2248,7 @@ await (async () => {
       supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
     /* v634, HIS INSTRUCTION OF 14 SEP 2026: the default is written off, not carried, so gross no longer keeps it (see the v634 section) */
     ok(W2.arList.length === 1 && W2.arGross === 100 && W2.writtenOffRM === 160, `the default is written off: one advance stays on the list, RM 100 is owed and RM 160 written off (${W2.arGross}, ${W2.writtenOffRM})`);
-    ok(Math.abs(W2.ar - 75) < 1e-9, `net is unmoved: RM 100 at seven days is RM 75, and the RM 160 counts for nothing (${W2.ar})`);
+    ok(Math.abs(W2.ar - 0) < 1e-9, `net is unmoved by the default: RM 100 seven days after the handover is worth nothing (V5), and the RM 160 counts for nothing (${W2.ar})`);
     ok(X.poStat({ qty: 10, total: 500, status: "paid", defaulted: true }).order === "Default", "and a defaulted lot still reads Default, so the two sides of the book agree");
   }
 
@@ -42979,6 +42993,62 @@ await (async () => {
   w.eval("ORD_OPEN=[];ORD_PV={};ORD_CHIP={};ORD_SAID=null");
 })();
 
+section("V5a (29 Sep 2026): a sale is provisioned from its handover, a quarter a day and in full from day 4, in every reading of what it is worth");
+await (async () => {
+  /* His answers of 29 Sep 2026: the sales ladder counts from the handover, 25%, 50%, 75% and 100% at days 1 to 4, and the
+     months already reported restate. Three fixture customers on dates set from the desk's own clock; every figure is read
+     as the change the three make to the desk's own, against literal expectations. Each assertion was proved red by its own
+     mutation. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const today = JSON.parse(w.eval("JSON.stringify(TODAY.toISOString().slice(0,10))"));
+  const ago = (n) => new Date(new Date(today + "T00:00:00Z").getTime() - n * 864e5).toISOString().slice(0, 10);
+  const fx = (rid, customer, date, handed) => ({ rid, customer, product: "salt", date, qty: 1, total: 100, cost: 50, cash: 0, deliveredQty: 1, deliveredOn: handed });
+  const rows = [fx("zv5a", "CZ9-VA", ago(12), ago(2)),   // ordered 12 days ago, handed over 2: half
+    fx("zv5b", "CZ9-VB", ago(5), ago(5)),                // handed over 5 days ago: in full
+    fx("zv5c", "CZ9-VC", ago(1), ago(1))];               // the day after the handover: a quarter
+  function probe(rows) {
+    setProd("salt");
+    const read = () => {
+      const pl = ifrsPL(), f = finRows();
+      const fc = forecast({ days: 30 }).cin || [];
+      const rc = document.createElement("div"); rc.innerHTML = tabReceivables();
+      const tr = [].filter.call(rc.querySelectorAll("tr"), (r) => /CZ9-V/.test(r.textContent)).map((r) => [].map.call(r.cells, (c) => c.textContent.replace(/\s+/g, " ").trim()));
+      let ph = []; try { const P = JSON.stringify(phonePayloadBuild()); ph = (P.match(/"key":"CZ9-V[^"]*"[^}]*}/g) || []); } catch (e) { ph = ["err " + e.message]; }
+      let fw = ""; try { fwdDays = 30; const x = document.createElement("div"); x.innerHTML = tabForward(); fw = x.textContent.replace(/\s+/g, " "); } catch (e) { fw = "err " + e.message; }
+      return { ecl: pl.ecl, prov: +f.reduce((a, [, v]) => a + v.provAR, 0).toFixed(2), dueIn: cashFlow().dueIn, fw,
+        claims: saleClaims(sales).filter((c) => /^CZ9-V/.test(c.who)).map((c) => [c.who, c.pr, c.n, c.d]).sort(),
+        chase: actions().filter((a) => a.kind === "collect" && /CZ9-V/.test(a.title)).map((a) => [a.title.split(" ")[1], a.why]).sort(),
+        breach: boundaryScan().filter((x) => /^CZ9-V/.test(x.who)).map((x) => [x.who, x.rule, x.why]).sort(),
+        cin: fc.filter((x) => /^CZ9-V/.test(x.who)).map((x) => [x.who, x.rm]).sort(), tr, ph,
+        cinPh: (() => { try { return (JSON.stringify(phonePayloadBuild()).match(/"who":"CZ9-V[^"]*","rm":[^,]*,"gross":[^,]*,"age":\d+/g) || []).map((x) => [/CZ9-V./.exec(x)[0], +/"age":(\d+)/.exec(x)[1]]).sort(); } catch (e) { return ["err " + e.message]; } })() };
+    };
+    const before = read();
+    rows.forEach((r) => { if (roster.indexOf(r.customer) < 0) roster.push(r.customer); });
+    Array.prototype.push.apply(BASE_SALES, rows); queue = []; applyOverlay(); recompute();
+    return { before, after: read() };
+  }
+  const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")(" + JSON.stringify(rows) + "))"));
+  const d = (k) => +(v.after[k] - v.before[k]).toFixed(2);
+  ok(d("ecl") === 175 && d("prov") === 175,
+    "the allowance and the months' charge take 50, 100 and 25 on the three: " + JSON.stringify({ ecl: d("ecl"), prov: d("prov") }));
+  ok(d("dueIn") === 125, "the cash expected in takes what they are worth, 50, 0 and 75: " + d("dueIn"));
+  ok(JSON.stringify(v.after.claims) === JSON.stringify([["CZ9-VA", 0.5, 50, 2], ["CZ9-VB", 1, 0, 5], ["CZ9-VC", 0.25, 75, 1]]),
+    "Chase first's claims carry the same rates, aged from the handover as their rates are: " + JSON.stringify(v.after.claims));
+  ok(/CZ9-VA receivable, RM 100 gross, 2d out, 50% provisioned/.test(v.after.fw) && /CZ9-VA is 2 days from the handover, so RM 100 counts as RM 50/.test(v.after.fw),
+    "Forward says the age its haircut reads: " + JSON.stringify((/CZ9-VA[^.]{0,80}/.exec(v.after.fw) || [""])[0]));
+  ok(JSON.stringify(v.after.cinPh) === JSON.stringify([["CZ9-VA", 2], ["CZ9-VC", 1]]), "the phone's cash in says the age its haircut reads: " + JSON.stringify(v.after.cinPh));
+  ok(JSON.stringify(v.after.cin) === JSON.stringify([["CZ9-VA", 50], ["CZ9-VC", 75]]), "the cash-in forecast counts what each is worth: " + JSON.stringify(v.after.cin));
+  const chA = (v.after.chase.find((c) => c[0] === "CZ9-VA") || [])[1] || "";
+  ok(/\(50% provisioned\)/.test(chA) && !/ordered \d+d ago/.test(chA), "the chase says the provision from the handover: " + chA);
+  const brB = v.after.breach.find((b) => b[0] === "CZ9-VB") || [];
+  ok(brB[1] === "Credit age" && /fully provisioned, so review it for default/.test(brB[2] || "") && !v.after.breach.some((b) => b[1] === "Aged receivable"),
+    "past the hold the one breach says it is fully provisioned, for a default review, and no second line repeats it: " + JSON.stringify(v.after.breach));
+  const trA = v.after.tr.find((r) => /CZ9-VA/.test(r[0])) || [];
+  ok(trA[1] === "2d" && trA[3] === "50%" && /ordered \d{4}-\d\d-\d\d/.test(trA[0]), "Receivables ages it from the handover, the date under it named the order's: " + JSON.stringify(trA));
+  ok(v.after.ph.some((x) => /CZ9-VA/.test(x) && /"age":2,"exp":50/.test(x)), "and so does what the phone is sent: " + JSON.stringify(v.after.ph).slice(0, 300));
+})();
+
 section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
 await (async () => {
   /* HIS D7 AND D8: money sent waits for his answer and is not asked for again. To pay now is the book's rows as they
@@ -44201,7 +44271,7 @@ await (async () => {
     const A = fwdAll();
     let book = 0;
     sales.forEach((s) => { if (txAdvance(s) <= 0.009) return; const age = dAge(s.date);
-      if (Math.max(0, RULES.creditDays - age) <= 30) book += outstandingOf(s) * (1 - saleProvRate(s, age)); });
+      if (Math.max(0, RULES.creditDays - age) <= 30) book += outstandingOf(s) * (1 - saleProvRate(s, provAge(s))); });
     customerRefunds.filter((r) => !r.paidOn).forEach((r) => { book -= +r.amount; });
     purchases.forEach((p) => { book -= poOwed(p); });
     const perBook = {}, keep = PROD;
@@ -44429,10 +44499,10 @@ await (async () => {
     "the chase is Now past the term with a reminder to copy, This week inside it with none, and Watch when undated: " + JSON.stringify({ sev, copied }));
   const cE = (v.chase.find((c) => c.who === "CZ9-HE") || {}).copy || "", wA = (v.chase.find((c) => c.who === "CZ9-HA") || {}).why || "";
   const cB = (v.chase.find((c) => c.who === "CZ9-HB") || {}).copy || "";
-  ok(cE.includes("RM 200 for 2 unit of salt ordered on " + day(ago(11)) + ", received 9 days ago") && /^On a 3d term from the handover: RM 100 at 2d \(ordered 12d ago, 50% provisioned\)/.test(wA)
+  ok(cE.includes("RM 200 for 2 unit of salt ordered on " + day(ago(11)) + ", received 9 days ago") && /^On a 3d term from the handover: RM 100 at 2d \(50% provisioned\)/.test(wA)
      && cB.includes("RM 100 for 1 unit of salt ordered on " + day(ago(5)) + ", received 5 days ago; RM 100 for 1 unit of salt. Could you") && !/undated/.test(cB),
     "the reminder names the order by its date and counts from the handover, an undated debt naming no day, and the card states the term it reads, "
-    + "the provision beside the order's own age: " + JSON.stringify({ cE, cB, wA }));
+    + "the provision from the handover too (V5): " + JSON.stringify({ cE, cB, wA }));
   ok(/or 3 days from the handover, nothing under/.test(v.clear) && !/or 10 days/.test(v.clear),
     "the all-clear says the term is three days from the handover: " + (v.clear.match(/Nobody past[^.]*\./) || [""])[0]);
 
