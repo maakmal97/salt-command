@@ -48683,6 +48683,91 @@ await (async () => {
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
 })();
 
+section("29 Sep 2026: a customer may say the day they want an order by, tomorrow to sixty days on; the row stays dated at the acknowledgement");
+await (async () => {
+  /* FUTURE-DATED ORDERS. The Worker checks the day (wantByFault) and it travels on the order and the customer's view; the
+     Pending row carries it as fixed words and keeps its own date; the page offers it, holds Review for a day out of range,
+     and Place sends it; the desk's card says it while the goods are still to go. Each proved red by mutation. */
+  const O = await import("../stmt/orders.js"), SO = await import("../src/orders.js");
+  const at = "2026-09-29T02:00:00Z", base = { product: "salt", qty: 1, mode: "collect", total: 100, unit: 100 };
+  ok(O.WANT_DAYS === 60 && O.wantByFault(undefined, at) === "" && O.wantByFault("", at) === "" && O.wantByFault("2026-09-30", at) === ""
+    && O.wantByFault("2026-11-28", at) === "" && O.wantByFault("2026-09-29", at) === "wantBy" && O.wantByFault("2026-11-29", at) === "wantBy"
+    && O.wantByFault("2026-10-32", at) === "wantBy" && O.wantByFault("2026-11-31", at) === "wantBy" && O.wantByFault("30/09/2026", at) === "wantBy" && O.wantByFault(20260930, at) === "wantBy",
+    "a day is taken from tomorrow to sixty days on in Kuala Lumpur, a real date in YYYY-MM-DD, and none at all is as soon as it can");
+  ok(O.wantByFault("2026-09-30", "2026-09-29T17:00:00Z") === "wantBy",
+    "and tomorrow is Kuala Lumpur's: at 01:00 on the 30th there, the 30th is today");
+  const c1 = O.checkPlacement({ ...base, wantBy: "2026-10-04" }, [], at), c2 = O.checkPlacement({ ...base, wantBy: "2026-09-29" }, [], at), c3 = O.checkPlacement(base, [], at);
+  ok(c1.order && c1.order.wantBy === "2026-10-04" && c2.code === "wantBy" && /60 days/.test(c2.error) && c3.order && !("wantBy" in c3.order),
+    "Place takes the day onto the order, refuses one out of range in words, and an order with none carries none: " + JSON.stringify([c1.order && c1.order.wantBy, c2, c3.order && c3.order.wantBy]));
+  const pl = O.decidePlace("abcd-efgh", { ...base, wantBy: "2026-10-04" }, [], at, "");
+  ok(pl.ev && pl.ev.order.wantBy === "2026-10-04" && O.customerView(pl.ev.order).wantBy === "2026-10-04",
+    "and the order placed carries it, and so does the view the customer is handed");
+  const now = new Date("2026-09-30T03:00:00Z"), ord = { id: "20260929020000-aaaa", qty: 2, total: 200, mode: "collect", product: "salt" };
+  const e1 = SO.pendingEntry({ ...ord, wantBy: "2026-10-04" }, "CZ9-ADR", now), e0 = SO.pendingEntry(ord, "CZ9-ADR", now);
+  ok(/, wanted by 2026-10-04\. Nothing paid/.test(e1.payload.note) && !/wanted by/.test(e0.payload.note) && e1.payload.date === "2026-09-30"
+    && e1.orderKey === e0.orderKey && SO.pendingEntry({ ...ord, wantBy: "soon<b>" }, "CZ9-ADR", now).payload.note === e0.payload.note,
+    "the Pending row says the day in fixed words, stays dated at the acknowledgement with the same key, and takes nothing that is not a day: " + e1.payload.note);
+
+  /* the page: When, a day, Review held until the day is in range, the check saying it, and Place sending it */
+  const { landingPage } = await import("../stmt/page.js");
+  const CM = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-want", ck = await CM.contentKey("test-secret", u), posted = [];
+  const l = { at: new Date().toISOString(), digest: "d1", week: { label: "28 Sep 2026", monday: "2026-09-28" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-want", prices: Object.assign({ at: l.at, week: l.week.monday, digest: "d1" }, await CM.encryptWith(ck, JSON.stringify(l))),
+    env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const dom = new JSDOM(landingPage(u, "nwant", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET";
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+      if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j);
+        return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260929040000-zzzz", product: "salt", qty: j.qty, status: "placed", at: new Date().toISOString(), total: j.total, wantBy: j.wantBy, history: [], msgs: [] } }) }; }
+      return { ok: false, status: 404, json: async () => ({ ok: false }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  try {
+    const kl = (n) => new Date(Date.parse(new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10)) + n * 864e5).toISOString().slice(0, 10);
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
+    d.getElementById("oNew").click();
+    const soon = d.querySelector('#osheet [data-k="when:0"]'), day = d.querySelector('#osheet [data-k="when:1"]');
+    ok(!!soon && !!day && soon.getAttribute("aria-pressed") === "true" && !d.getElementById("oWant") && !d.getElementById("oGo").disabled,
+      "the sheet asks when, as soon as it can already chosen, with no day to fill");
+    day.click();
+    const di = d.getElementById("oWant"), go = () => d.getElementById("oGo");
+    ok(!!di && di.type === "date" && di.min === kl(1) && di.max === kl(60) && go().disabled && /Pick a day/.test(d.getElementById("osheet").textContent),
+      "By a day opens a date from tomorrow to sixty days on, and Review waits for one: " + JSON.stringify([di && di.min, di && di.max]));
+    di.value = kl(0); di.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const heldToday = go().disabled;
+    di.value = kl(4); di.dispatchEvent(new w.Event("input", { bubbles: true }));
+    ok(heldToday && !go().disabled, "today is held, and a day in range lets Review go");
+    go().click();
+    const shown = d.getElementById("osheet").textContent, dd = kl(4);
+    ok(/Wanted by/.test(shown) && shown.includes(String(+dd.slice(8)).padStart(2, "0") + " "), "the check says the day before anything is placed: " + dd);
+    d.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((r) => setTimeout(r, 30));
+    ok(posted.length === 1 && posted[0].wantBy === dd, "and Place sends it: " + JSON.stringify(posted.map((x) => x.wantBy)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+
+  /* the desk: its card says the day while the goods are still to go, and nothing once they have gone */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w: mw } = await openMaster();
+  const line = (o) => String(mw.eval("ordWantLine(" + JSON.stringify(o) + ")"));
+  const t = new Date(Date.now() + 8 * 36e5 + 3 * 864e5).toISOString().slice(0, 10);
+  ok(/Wanted by <b>\d{1,2} [A-Z][a-z]{2}<\/b>, in 3 days/.test(line({ status: "placed", qty: 2, moved: 0, wantBy: t }))
+    && /Wanted by/.test(line({ status: "acknowledged", qty: 2, moved: 1, wantBy: t }))
+    && line({ status: "ready", qty: 2, moved: 2, wantBy: t }) === "" && line({ status: "declined", qty: 2, wantBy: t }) === ""
+    && line({ status: "placed", qty: 2 }) === "" && line({ status: "placed", qty: 2, wantBy: "<b>" }) === "",
+    "the desk's card says the day and how far off while goods are still to go, and nothing once they have gone, on a closed order or with none: " + line({ status: "placed", qty: 2, moved: 0, wantBy: t }));
+})();
+
 section("Step 6 (29 Sep 2026): a customer's passkey is saved on a session, opens the account on its signature alone, and ends with the account's devices");
 await (async () => {
   /* HIS DECISIONS OF 29 SEP 2026: any passkey store (NordPass gave no secret on his PC and Mac), the password once a new

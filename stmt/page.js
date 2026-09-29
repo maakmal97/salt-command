@@ -35,7 +35,7 @@
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
-import { MAX_OPEN, OPEN_STATES } from "./orders.js";
+import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { TEST_USERS } from "./testfix.js";
 import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
 
@@ -1184,7 +1184,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
-      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
+      .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
       .replace("__PLACES__", JSON.stringify(PLACES))
       /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
@@ -2839,7 +2839,7 @@ const CLIENT_JS = `
      and focus goes back to what opened it. */
   /* the open sheet, or null. Not "sheet": the owner's script, spliced into this closure on his route, keeps its account list under that name */
   var osh=null;
-  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__;
+  var OMAX=__MAX_OPEN__, OPEN_ST=__OPEN_STATES__, WANT_DAYS=__WANT_DAYS__;
   function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   /* V4b: a sheet counts once, as the Worker counts it (stmt/orders.js, openCount) */
   function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }
@@ -2969,8 +2969,13 @@ const CLIENT_JS = `
     if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
     if(!quotes().length) return tw('sh.whySize');
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return tw('sh.whyWhere');
+    if(draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
     return '';
   }
+  /* FUTURE-DATED ORDERS (29 Sep 2026): the day they want it by, tomorrow to WANT_DAYS days on in Kuala Lumpur, the
+     Worker's wantByFault the check behind it; left for as soon as it can come, nothing is sent */
+  function klPlus(n){ var d=new Date(todayKL()+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+  function wantOk(v){ return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(v||''))&&v>=klPlus(1)&&v<=klPlus(WANT_DAYS); }
   function whereHint(){
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
   }
@@ -3023,6 +3028,17 @@ const CLIENT_JS = `
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
       wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
     }
+    /* 29 Sep 2026: when they want it, as soon as it can come unless they pick a day */
+    B.appendChild(oChoice(tw('sh.when'),[['soon',tw('sh.soon')],['day',tw('sh.onDay')]],draft.when==='day'?'day':'soon','when',
+      function(v){ draft.when=v; sheetDraw(); }));
+    if(draft.when==='day'){
+      var df=el('div','salt-field'), dl=el('label','salt-field__label',tw('sh.wantBy')); dl.htmlFor='oWant';
+      var di=el('input','salt-field__input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
+      di.setAttribute('data-k','want');
+      di.addEventListener('input',function(){ draft.wantBy=di.value; formFoot(); });
+      di.addEventListener('change',function(){ draft.wantBy=di.value; formFoot(); });
+      df.appendChild(dl); df.appendChild(di); df.appendChild(el('span','salt-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))); B.appendChild(df);
+    }
     /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
     if(draft.noteOpen||String(draft.say||'').trim()){
       var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sh.note')); nl.htmlFor='oSay';
@@ -3060,6 +3076,7 @@ const CLIENT_JS = `
         shown:qt.total, was:null, gone:false, placed:''}; }),
       sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
       place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(), forFriend:ff,
+      wantBy:draft.when==='day'&&wantOk(draft.wantBy)?draft.wantBy:'',
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
     draft.step='check'; draft.snote=''; sheetDraw();
@@ -3156,6 +3173,7 @@ const CLIENT_JS = `
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
+    row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
@@ -3192,6 +3210,7 @@ const CLIENT_JS = `
       var l=todo[i], body={product:l.product,qty:l.q,mode:c.mode,unit:l.rate,total:l.total,place:c.place,
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
+      if(c.wantBy) body.wantBy=c.wantBy;
       var r=await api('/orders',body);
       if(mine!==ticket) return;
       if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ draft.busy=false; await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
@@ -3209,7 +3228,7 @@ const CLIENT_JS = `
     }
     draft.busy=false;
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
-    draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null;
+    draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
@@ -3513,6 +3532,8 @@ const CLIENT_JS = `
     else if(mv>0) put(d?'ow.partDeliveredOn':'ow.partCollectedOn',{a:sz(mv), b:sz(o.qty), d:went(function(L){ return ymdDay(o.movedOn,L); })});
     else if(s==='ready') put(d?'ow.readyDeliver':'ow.readyCollect',{d:Dd(oDay,firstAt(o,'ready'))});
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
+    /* 29 Sep 2026: the day they asked for, while it is still to come to them */
+    if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
     if(o.closed&&o.closed.qty){ p.appendChild(document.createTextNode(' ')); put('ow.closed',{a:sz(o.qty), b:esch(o.closed.qty), rm:rm(o.total)}); }
     w.appendChild(p);
     var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));
