@@ -8582,8 +8582,9 @@ const NIL='-';
    and a field's value keep the stored form, which is what he types and reads back. It runs once a
    part is drawn and, through the observer, on whatever a card or a fetch writes later. */
 function dShow(iso){
-  return (iso==null?'':String(iso)).replace(/(?<![\w-])(\d{4})-(\d{2})-(\d{2})(?![\w-])/g,
-    (m,y,mo,d)=>(+mo>=1&&+mo<=12&&+d>=1&&+d<=31)?d+' '+MAP_MON[+mo-1]+' '+y:m);
+  /* no lookbehind: Safari before 16.4 cannot parse one, and it would blank the whole script */
+  return (iso==null?'':String(iso)).replace(/(^|[^\w-])(\d{4})-(\d{2})-(\d{2})(?![\w-])/g,
+    (m,p,y,mo,d)=>(+mo>=1&&+mo<=12&&+d>=1&&+d<=31)?p+d+' '+MAP_MON[+mo-1]+' '+y:m);
 }
 function dSweep(root){
   if(!root||typeof document==='undefined')return;
@@ -8597,8 +8598,10 @@ function dSweep(root){
     if(has(t)){const v=dShow(t);if(v!==t)e.setAttribute('title',v);}});
 }
 if(typeof MutationObserver==='function'&&typeof document!=='undefined'&&document.body)
-  new MutationObserver(recs=>recs.forEach(r=>{if(r.type==='characterData')dSweep(r.target);else r.addedNodes.forEach(dSweep);}))
-    .observe(document.body,{childList:true,subtree:true,characterData:true});
+  new MutationObserver(recs=>recs.forEach(r=>{if(r.type==='characterData')dSweep(r.target);
+    else if(r.type==='attributes'){const t=r.target.getAttribute('title');if(t&&/\d{4}-\d{2}-\d{2}/.test(t)){const v=dShow(t);if(v!==t)r.target.setAttribute('title',v);}}
+    else r.addedNodes.forEach(dSweep);}))
+    .observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title']});
 let revealed=true,newIds={},newLocs={};   /* v217: no lock, so the directory opens readable. The Hide button is a screen-privacy toggle, not encryption. */const esc=x=>(''+(x==null?'':x)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');const costOf=x=>txUnitCost(x,wavgFor(prodOf(x)));   /* v496: cost is absolute on the row; the unit figure is the engine's derivation */const nameOnly=s=>{s=(s||'')+'';const m=s.replace(/\s*\([^)]*\)\s*$/,'').trim();return m||s;};const _cmask=n=>{let h=0,s=''+n;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return '#'+h.toString(36).slice(-3).toUpperCase();};const codeOf=n=>newIds[n]||n;/* ids are codes post-rekey; identity fallback */const ID=n=>{try{return revealed?((vaultNames&&vaultNames[n])?esc(nameOnly(vaultNames[n])):codeOf(n)):codeOf(n);}catch(e){return _cmask(n);}};
 /* v783, HIS INSTRUCTION OF 22 SEP 2026: A PARTY LIST IS ALWAYS IN ALPHABETICAL ORDER.
    Every picker listed the roster in ROSTER order, which is the order parties were registered
@@ -12712,7 +12715,7 @@ function tabInventory(){
 
   ${sec('Inventory reconciliation',`opening to ${units(currentStock)} on hand, with ${units(selfUse)} booked as non-revenue ${PN}`,recon.length,
     `<table><thead><tr><th class="l">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${units(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
-    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. ${countedFor(PROD)==null?'With no count, the ledger figure stands and nothing is booked as non-revenue.':surplus>0.001?`The count stands <b>${units(surplus)}</b> above the ledger: a surplus, not shrinkage: goods are on the inventory that the book has not recorded, and an unfolded lot is the usual cause. The count still wins.`:`The gap, <b>${units(selfUse)}</b>, is booked as non-revenue ${PN}: the count always wins.`}${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
+    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. ${countedFor(PROD)==null?'With no count, the ledger figure stands and nothing is booked as non-revenue.':surplus>0.001?`The count stands <b>${units(surplus)}</b> above the ledger: a surplus, not shrinkage. Goods are on the inventory that the book has not recorded, and an unfolded lot is the usual cause. The count still wins.`:`The gap, <b>${units(selfUse)}</b>, is booked as non-revenue ${PN}: the count always wins.`}${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
   ${sec('Lots and sourcing',`${fmt(wavgBuy)}/unit weighted over ${lotsIn.length} lot${lotsIn.length===1?'':'s'} in the basis`,lots.length,
     `<table><thead><tr><th class="l">Lot</th><th>Qty</th><th>Cost/unit</th><th>Basis</th></tr></thead><tbody>${lots.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
     <div class="dsc" style="margin-top:9px">Weighted-average cost <b>${fmt(wavgBuy)}/unit</b> over the received lots and opening. Defaulted and in-transit lots are excluded until (and unless) they arrive.</div>`)}
