@@ -48,8 +48,8 @@ const rewardBook = (book, p) => {
 };
 
 /* ---- reading the book out of the mirror ------------------------------------------- */
-/* Read the snapshot first: a seed deletes it before replacing rows and writes it last. Then the
- * independent collections and state can be read together. */
+/* Keep state ahead of the snapshot as before. The snapshot stays ahead of collection reads: a
+ * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 
@@ -58,12 +58,9 @@ export async function readBook(db) {
     const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind(c).all();
     return (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean);
   };
+  const rs = await db.prepare("SELECT key,doc FROM state").all();
   const snap = await db.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first();
-  const [sales, purchases, rs] = await Promise.all([
-    rows("sales"),
-    rows("purchases"),
-    db.prepare("SELECT key,doc FROM state").all()
-  ]);
+  const [sales, purchases] = await Promise.all([rows("sales"), rows("purchases")]);
   const state = {};
   for (const r of (rs.results || [])) { try { state[r.key] = JSON.parse(r.doc); } catch (e) { /* skip */ } }
   return {

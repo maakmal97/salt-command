@@ -1477,7 +1477,7 @@ await (async () => {
   const entry = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
 
   const readEvents = [];
-  let activeReads = 0, maxActiveReads = 0;
+  let activeRows = 0, maxActiveRows = 0;
   const delay = (value) => new Promise((resolve) => setTimeout(() => resolve(value), 5));
   const mirror = {
     prepare(sql) {
@@ -1487,15 +1487,17 @@ await (async () => {
         async all() {
           const kind = sql.includes("FROM state") ? "state" : "rows:" + args[0];
           readEvents.push(kind + ":start");
-          activeReads++;
-          maxActiveReads = Math.max(activeReads, maxActiveReads);
+          if (kind !== "state") {
+            activeRows++;
+            maxActiveRows = Math.max(activeRows, maxActiveRows);
+          }
           try {
             const results = kind === "state" ? [{ key: "PRICING", doc: JSON.stringify({ v: "v302" }) }]
               : [{ doc: JSON.stringify({ rid: args[0] }) }];
             return await delay({ results });
           } finally {
             readEvents.push(kind + ":end");
-            activeReads--;
+            if (kind !== "state") activeRows--;
           }
         },
         async first() {
@@ -1508,11 +1510,13 @@ await (async () => {
     }
   };
   const mirrorBook = await readBook(mirror);
+  const stateEnd = readEvents.indexOf("state:end");
+  const snapshotStart = readEvents.indexOf("snapshot:start");
   const snapshotEnd = readEvents.indexOf("snapshot:end");
-  const dataStarts = ["state:start", "rows:sales:start", "rows:purchases:start"].map((event) => readEvents.indexOf(event));
-  ok(snapshotEnd >= 0 && dataStarts.every((at) => at > snapshotEnd),
-    "the snapshot sentinel completes before any collection or state read starts");
-  ok(maxActiveReads === 3, "sales, purchases, and state reads run concurrently after the snapshot");
+  const rowStarts = ["rows:sales:start", "rows:purchases:start"].map((event) => readEvents.indexOf(event));
+  ok(stateEnd >= 0 && snapshotStart > stateEnd && snapshotEnd > snapshotStart && rowStarts.every((at) => at > snapshotEnd),
+    "state remains ahead of the snapshot, which stays ahead of both collection reads");
+  ok(maxActiveRows === 2, "sales and purchases are fetched concurrently after the snapshot");
   ok(mirrorBook.version === "v302" && mirrorBook.sales[0].rid === "sales"
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
