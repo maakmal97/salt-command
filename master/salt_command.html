@@ -19483,7 +19483,7 @@ function ordFeeNow(o){const c=ORD_CHIP[o.id];if(!c)return null;if(c!=='other')re
    preview, at the charge the order already carries (the customer was told it) */
 function ordAgainAck(o){return ['acknowledged','ready','done'].includes(o.status)&&(o.again||[]).includes('ack');}
 /* the row is drafted at the chosen charge, and at none until one is chosen, its figures being the goods' */
-function ordPvDelivery(o){if(ordAgainAck(o))return +o.delivery||0;if(o.mode!=='deliver')return 0;const d=ordFeeNow(o);return d==null?0:d;}
+function ordPvDelivery(o){{const L=ordSheetLead(o);if(L&&L.id!==o.id)return 0;}if(ordAgainAck(o))return +o.delivery||0;if(o.mode!=='deliver')return 0;const d=ordFeeNow(o);return d==null?0:d;}
 async function ordPreview(o){
   if(!o||o.yes||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
   const d=ordPvDelivery(o);if(d==null)return;
@@ -19695,9 +19695,14 @@ function ordCard(o){
      and waits under Approve. The order still reads as it did, so the card says where the decision is, and offers no
      second Accept, which the Worker would refuse. */
   const yes=(o.status==='placed'||againAck)?(o.yes||''):'';
-  const feeNow=o.status==='placed'?(o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
+  /* V4b.2: A SHEET PLACED TOGETHER IS AGREED TOGETHER, on its first order's card: one Accept for all of them, the charge
+     he chooses on that order and RM 0 on the rest, each row drafted and shown; the other cards keep Decline */
+  const G=ordSheetGroup(o),SL=ordSheetLead(o),sLead=!!SL&&SL.id===o.id,sSib=!!SL&&SL.id!==o.id;
+  const feeNow=o.status==='placed'?(sSib?0:o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
   const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
   const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
+  const sumAll=sLead?+(G.reduce((a,x)=>a+(+x.total||0),0)+(feeNow||0)).toFixed(2):sum;
+  const pvAll=!sLead||G.slice(1).every(x=>{const p=ORD_PV[x.id];return !!p&&p.st==='ok'&&p.d===0;});
   /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
      their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
      (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
@@ -19726,6 +19731,8 @@ function ordCard(o){
   const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
   else if(yes)acts='';
+  else if(o.status==='placed'&&sSib)acts=btn('declined','Decline',true);
+  else if(o.status==='placed'&&sLead)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-sheet="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk&&pvAll&&ORD_SHEET_BUSY!==o.sheet?'':' disabled'}>Accept all ${G.length}, ${fmt(sumAll)}</button>`+btn('declined','Decline',true);
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0||c0?'':btn('cancelled','Cancel',true));
   else if(o.status==='done'&&c0)acts=claimBtns;   /* S6 fix: money he recorded another way may have completed it */
@@ -19739,13 +19746,20 @@ function ordCard(o){
   /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
      booked only if the fresh row equals it; GET /orders says which (`again`) */
   const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  /* V4b.2: and made ready, and handed over, together, from the first order's card while none has moved; a part stays on
+     each order's own card */
+  if(!whyOpen&&!yes&&G.length>1&&G[0].id===o.id&&G.every(x=>!(+x.moved>0)&&!ORD_PART[x.id]&&!ORD_WHY[x.id]&&!ordClaims(x).length&&!x.yes&&!ordAgainAck(x))){
+    const gb=(st,label,extra)=>`<button class="salt-ghost" data-ord="${st}" data-sheet="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${extra}${ORD_SHEET_BUSY===o.sheet?' disabled':''}>${label}</button>`;
+    if(G.every(x=>['acknowledged','ready'].includes(x.status)))acts=gb('handover',how+', all '+G.length,' data-full="1"')+acts;
+    if(G.every(x=>x.status==='acknowledged'))acts=gb('ready','Ready to collect, all '+G.length,' data-mode="collect"')+gb('ready','Ready to deliver, all '+G.length,' data-mode="deliver"')+acts;
+  }
   if(!whyOpen)acts=(o.again||[]).filter(s=>AGAIN[s]).map(s=>`<button class="salt-ghost" data-ord="again" data-stage="${s}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Offer the ${AGAIN[s]} again</button>`).join('')+acts;
   /* S11 11.3: the delivery charge is chosen where the order is agreed, because that is where it becomes a
      row: RM 0, 10, 15 or a figure of his own, and NONE is chosen until he chooses, so a delivery is never
      agreed at a charge nobody set. The choice is kept per order across every poll. */
   const chip=ORD_CHIP[o.id]||'';
   const opt=(v,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="fee-${esc(o.id)}" value="${v}" data-chip="${esc(o.id)}"${chip===v?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${w}</span></span></label>`;
-  const fee=(o.status==='placed'&&o.mode==='deliver')
+  const fee=(o.status==='placed'&&o.mode==='deliver'&&!sSib)
     ? `<fieldset class="salt-options ordfee"><legend class="salt-options__legend">Delivery charge</legend>
         <div class="salt-options__grid salt-options__grid--2">${opt('0','RM 0')+opt('10','RM 10')+opt('15','RM 15')+opt('other','Other')}</div>
         <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
@@ -19766,7 +19780,7 @@ function ordCard(o){
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
     ${ordSheetLine(o)}
-    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
+    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
@@ -19779,9 +19793,11 @@ function ordCard(o){
       ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
         :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
+      :o.status==='placed'&&!whyOpen&&sSib?'<p class="salt-approve__reason">Accept them together on the first order of this sheet'+(o.mode==='deliver'?', whose card carries the delivery charge.':'.')+'</p>'
       :o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
-        :!pvFor?'Drafting the row first.'
+        :!pvFor||!pvAll?(sLead?'Drafting the rows first.':'Drafting the row first.')
         :pv.st==='err'?'The row could not be drafted, so Accept waits until it can.'
+        :sLead?'Accept tells them '+fmt(sumAll)+' for all '+G.length+' and approves each row. If a real row differs, it waits under Approve, marked.'
         :'Accept tells them '+fmt(sum)+' and approves this row. If the real row differs, it waits under Approve, marked.'}</p>`:''}
       <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
@@ -19789,12 +19805,18 @@ function ordCard(o){
 /* V4b (his point 5 of 28 Sep 2026, his Q3): ONE SHEET, ONE ORDER A PRODUCT, placed together under the sheet's id. Each
    order keeps its own card and its own row; the card names the others open on its sheet, each a tap to its card, and a
    delivery still to agree says the trip is one, so its charge goes on one of them. */
+/* the sheet whose one tap is on its way: its group controls stay shut until the last move has answered */
+let ORD_SHEET_BUSY='';
+function ordSheetGroup(o){if(!o)return [];if(!o.sheet||o.kind==='account')return [o];
+  return ORD_OPEN.filter(x=>x&&x.kind!=='account'&&x.u===o.u&&x.sheet===o.sheet).sort((a,b)=>String(a.id).localeCompare(String(b.id)));}
+/* the first order of a sheet whose every order waits for his Accept, none with a yes given or a refusal begun */
+function ordSheetLead(o){const G=ordSheetGroup(o);return G.length>1&&G.every(x=>x.status==='placed'&&!x.yes&&!ORD_WHY[x.id])?G[0]:null;}
 function ordSheetLine(o){
-  const sib=o&&o.sheet?ORD_OPEN.filter(x=>x&&x.id!==o.id&&x.kind!=='account'&&x.sheet===o.sheet):[];
+  const sib=o&&o.sheet?ORD_OPEN.filter(x=>x&&x.id!==o.id&&x.kind!=='account'&&x.u===o.u&&x.sheet===o.sheet):[];
   if(!sib.length)return '';
   return `<p class="dsc ordsheet">Placed together with ${sib.length===1?'one other order':sib.length+' other orders'}:</p>
     <div class="ordquick">${sib.map(x=>`<button type="button" class="salt-ghost" data-row="${esc(x.id)}">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}, ${esc(ORD_WORD[x.status]||x.status)}</button>`).join('')}</div>
-    ${o.mode==='deliver'&&o.status==='placed'?'<p class="salt-approve__reason ordsheetfee">One trip: charge the delivery on one of these orders and RM 0 on the rest.</p>':''}`;
+    ${o.mode==='deliver'&&o.status==='placed'&&!ordSheetLead(o)?'<p class="salt-approve__reason ordsheetfee">One trip: charge the delivery on one of these orders and RM 0 on the rest.</p>':''}`;
 }
 /* 24 Sep 2026: WHAT HE HAS TYPED ON A CARD OUTLIVES THE REDRAW. The poll and every refusal rewrite
    the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
@@ -19879,6 +19901,8 @@ function ordDraw(){
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
   if(selO)(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
+  /* V4b.2: and the other orders of a sheet agreed on its card, each at RM 0 */
+  if(selO&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
@@ -19905,7 +19929,9 @@ function ordDraw(){
     ab.onclick=()=>{ordAll=!ordAll;ab.disabled=true;ordLoad(true);};}
 }
 async function ordAct(b){
+  if(b.dataset.sheet)return ordSheetAct(b);
   const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
+  let done=false;
   /* v694: the two figures he types are on the card, not in a browser prompt: a prompt cannot be
      styled, cannot be measured and is refused outright by an installed app on some phones. */
   const typed=what=>{const i=document.querySelector('input[data-'+what+'="'+id+'"]');return i?parseFloat(i.value):null;};
@@ -19925,10 +19951,11 @@ async function ordAct(b){
     /* S11 11.3: Accept sends the charge and the hash of the row he was shown; the desk Worker agrees the
        order and approves the pending row only if the real draft equals that one (11.11) */
     const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
-    const d=ordAgainAck(o)?(+o.delivery||0):o.mode==='deliver'?ordFeeNow(o):0;
+    const d=b.dataset.sheetfee!=null?+b.dataset.sheetfee:ordAgainAck(o)?(+o.delivery||0):o.mode==='deliver'?ordFeeNow(o):0;
+    const sheetHash=b.dataset.sheethash!=null?b.dataset.sheethash:undefined;
     if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
     const pv=ORD_PV[id];
-    body=JSON.stringify({delivery:d,hash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
+    body=JSON.stringify({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
     url='orders/'+encodeURIComponent(id)+'/accept';
   }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
     ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
@@ -19984,6 +20011,7 @@ async function ordAct(b){
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     let j={};try{j=await r.json();}catch(e){}
+    done=r.ok;
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
     /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
@@ -20022,6 +20050,33 @@ async function ordAct(b){
   }catch(e){ ORD_SAID={id,t:'No connection, so nothing moved.'}; }
   delete ordBusy[id];await ordLoad(true);
   if(st==='done')apLoad(true);
+  return done;
+}
+/* V4b.2: A SHEET'S ONE TAP IS EACH ORDER'S OWN MOVE, in turn, each on its own road and its own row: Accept at the charge
+   chosen on the first order and RM 0 on the rest, planned before the first move changes the sheet. It stops at the first
+   refusal, and the answer says how many went. */
+async function ordSheetAct(b){
+  const o=ORD_OPEN.find(x=>x&&x.id===b.dataset.id);const G=ordSheetGroup(o);if(G.length<2||ORD_SHEET_BUSY)return false;
+  const st=b.dataset.ord,fee=st==='acknowledged'?(o.mode==='deliver'?ordFeeNow(o):0):null;
+  const stop=t=>{ORD_SAID={id:o.id,t};ordDraw();return false;};
+  if(st==='acknowledged'&&fee==null)return stop('Choose the delivery charge first; nothing moved.');
+  /* each order's row as he was shown it, fixed now: a reload between moves drafts the next one afresh */
+  const hs={};
+  if(st==='acknowledged'){for(const x of G){const p=ORD_PV[x.id],d=x.id===o.id?fee:0;hs[x.id]=(p&&p.st==='ok'&&p.d===d&&p.j&&p.j.hash)||'';}
+    if(G.some(x=>!hs[x.id]))return stop('Drafting the rows first; nothing moved.');}
+  ORD_SHEET_BUSY=o.sheet;ordDraw();
+  const said=[];let n=0;
+  try{
+    for(const x of G){
+      const ds=Object.assign({},b.dataset,{id:x.id,u:x.u});delete ds.sheet;
+      if(st==='acknowledged'){ds.sheetfee=String(x.id===o.id?fee:0);ds.sheethash=hs[x.id];}
+      const ok=await ordAct({dataset:ds,closest:()=>null});
+      said.push(ordName(x)+': '+(ORD_SAID&&ORD_SAID.id===x.id?ORD_SAID.t:(ok?'done.':'nothing moved.')));
+      if(!ok)break;n++;
+    }
+  }finally{ORD_SHEET_BUSY='';}
+  ORD_SAID={id:o.id,t:(n===G.length?'All '+G.length+' done. ':n+' of '+G.length+' done, and the rest are unchanged. ')+said.join(' ')};
+  ordDraw();return n===G.length;
 }
 const wbEl=id=>document.getElementById(id);
 const wbVal=id=>{const e=wbEl(id);return e?e.value:'';};

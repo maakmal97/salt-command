@@ -42453,13 +42453,107 @@ await (async () => {
   const A = o("20260929010000-aaa1", "salt"), B = o("20260929010000-aaa2", "oil", { qty: 10, total: 95 }), C = o("20260929010000-aaa3", "candy", { sheet: undefined });
   w.eval("ORD_OPEN=" + JSON.stringify([A, B, C]));
   const card = (x) => String(w.eval("ordCard(" + JSON.stringify(x) + ")"));
+  /* V4b.2: a sheet whose every order waits is agreed together; one of them being declined leaves each on its own card */
+  w.eval("ORD_WHY[" + JSON.stringify(B.id) + "]={st:'declined',pick:''}");
   const a = card(A), c = card(C), later = card(Object.assign({}, A, { status: "acknowledged" }));
+  w.eval("delete ORD_WHY[" + JSON.stringify(B.id) + "]");
   ok(/Placed together with one other order/.test(a) && a.includes('data-row="' + B.id + '"') && /10 units? oil, RM 95, Placed/.test(a) && !a.includes('data-row="' + C.id + '"'),
     "a card on a sheet names the other order open on it, a tap to its card, and no order off the sheet: " + JSON.stringify((/Placed together[\s\S]{0,400}/.exec(a) || [""])[0].replace(/\s+/g, " ").slice(0, 300)));
   ok(/One trip: charge the delivery on one of these orders and RM 0 on the rest\./.test(a) && !/One trip/.test(later),
     "a delivery still to agree says the trip is one, and an agreed one does not: " + JSON.stringify([/One trip/.test(a), /One trip/.test(later)]));
   ok(!/Placed together/.test(c), "an order alone says nothing of a sheet");
   w.eval("ORD_OPEN=[]");
+})();
+
+section("V4b.2 (29 Sep 2026): a sheet is agreed with one Accept on its first order's card, the charge there and RM 0 on the rest, each row drafted; made ready and handed over together; a refusal stops the rest");
+await (async () => {
+  /* His word of 29 Sep 2026 (V4b.2: build). Each order keeps its own road and its own row: the one tap is each order's own
+     move in turn. Each assertion was proved red by its own mutation. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const SH = "v4bSheetDesk0002";
+  const o = (id, product, extra) => Object.assign({ id, u: "aaaa-bbbb", code: "CX0-AA", product, qty: 2, total: 190, delivery: 0, mode: "deliver", place: "Old market",
+    status: "placed", paid: 0, moved: 0, at: "2026-09-29T01:00:00.000Z", history: [], msgs: [], sheet: SH }, extra || {});
+  const A = o("20260929010000-bbb1", "salt"), B = o("20260929010000-bbb2", "oil", { qty: 10, total: 95 });
+  const C = o("20260929010000-bbb0", "candy", { sheet: undefined });
+  const set = (list) => w.eval("ORD_OPEN=" + JSON.stringify(list) + ";ORD_WHY={};ORD_PART={};ORD_SAID=null");
+  const card = (x) => String(w.eval("ordCard(" + JSON.stringify(x) + ")"));
+  /* a charge left chosen on the other order, as a card drawn before the sheet was one would leave it, is not its charge */
+  const pv = (m) => w.eval("ORD_PV=" + JSON.stringify(m) + ";ORD_CHIP={" + JSON.stringify(A.id) + ":'10'," + JSON.stringify(B.id) + ":'15'}");
+  const ok2 = { [A.id]: { d: 10, st: "ok", gen: 0, j: { hash: "hA", row: {} } }, [B.id]: { d: 0, st: "ok", gen: 0, j: { hash: "hB", row: {} } } };
+  set([B, C, A]); pv(ok2);
+  const lead = card(A), sib = card(B);
+  const accept = (h) => (/<button[^>]*data-ord="acknowledged"[^>]*>[^<]*<\/button>/.exec(h) || [""])[0];
+  ok(/Accept all 2, RM 295/.test(accept(lead)) && /data-sheet="1"/.test(accept(lead)) && !/disabled/.test(accept(lead)),
+    "the first order's card carries one Accept for the sheet, both totals and the charge chosen there: " + accept(lead));
+  ok(lead.includes('data-pv="' + A.id + '"') && lead.includes('data-pv="' + B.id + '"') && lead.includes('name="fee-' + A.id + '"'),
+    "and draws each order's row and the charge, on that card");
+  ok(!/One trip/.test(lead) && !/One trip/.test(sib), "the sheet agreed together says nothing of charging once: the card charges once");
+  ok(!accept(sib) && /data-ord="declined"/.test(sib) && !sib.includes('name="fee-' + B.id + '"') && /Accept them together on the first order of this sheet/.test(sib),
+    "the other order's card keeps Decline, no Accept and no charge, and says where Accept is: " + JSON.stringify(accept(sib)));
+  ok(w.eval("ordPvDelivery(" + JSON.stringify(B) + ")") === 0 && w.eval("ordPvDelivery(" + JSON.stringify(A) + ")") === 10,
+    "the other order's row is drafted at RM 0, the first at the charge chosen");
+  pv({ [A.id]: ok2[A.id] });
+  ok(/disabled/.test(accept(card(A))), "Accept waits until every order's row is drafted");
+  pv(ok2);
+
+  /* the tap: each order's own Accept, in turn, at its own charge and against its own row */
+  const calls = [];
+  let answer = () => ({ status: 200, body: { ok: true, approved: true } });
+  /* the first move redrafts the other order's row, as a reload between moves does: the row he was shown is what is sent */
+  let onFirst = () => w.eval("ORD_PV[" + JSON.stringify(B.id) + "]={d:0,st:'wait',gen:1}");
+  w.fetch = async (url, init) => { const m = (init && init.method) || "GET"; const b = init && init.body ? JSON.parse(init.body) : null;
+    if (m === "POST") { calls.push([String(url), b]); if (calls.length === 1 && onFirst) onFirst(); }
+    const a = m === "POST" ? answer(calls.length) : { status: 200, body: { ok: true, orders: [] } };
+    return { ok: a.status === 200, status: a.status, json: async () => a.body }; };
+  await w.eval("ordSheetAct({dataset:{ord:'acknowledged',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  const said = String(w.eval("ORD_SAID&&ORD_SAID.t"));
+  ok(calls.length === 2 && calls[0][0] === "orders/" + A.id + "/accept" && calls[0][1].delivery === 10 && calls[0][1].hash === "hA"
+    && calls[1][0] === "orders/" + B.id + "/accept" && calls[1][1].delivery === 0 && calls[1][1].hash === "hB" && /^All 2 done\./.test(said),
+    "one tap accepts each order in turn, the charge on the first and RM 0 on the other, each against its own row: " + JSON.stringify([calls, said.slice(0, 40)]));
+  /* one tap at a time: while a sheet's tap is on its way its controls are shut and a second tap sends nothing */
+  calls.length = 0; onFirst = null; set([A, B]); pv(ok2);
+  w.eval("ORD_SHEET_BUSY=" + JSON.stringify(SH));
+  const busy = card(A);
+  const again = await w.eval("ordSheetAct({dataset:{ord:'acknowledged',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  w.eval("ORD_SHEET_BUSY=''");
+  ok(/disabled/.test(accept(busy)) && again === false && calls.length === 0, "a sheet's tap on its way shuts its controls and a second tap sends nothing: " + JSON.stringify([accept(busy), again, calls.length]));
+  pv({ [A.id]: ok2[A.id], [B.id]: { d: 0, st: "wait", gen: 0 } });
+  await w.eval("ordSheetAct({dataset:{ord:'acknowledged',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  ok(calls.length === 0 && /^Drafting the rows first; nothing moved\./.test(String(w.eval("ORD_SAID.t"))), "a tap before every row is drafted moves nothing");
+  calls.length = 0; set([A, B]); pv(ok2);
+  answer = (n) => (n === 1 ? { status: 409, body: { ok: false, error: "the row moved" } } : { status: 200, body: { ok: true } });
+  await w.eval("ordSheetAct({dataset:{ord:'acknowledged',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  ok(calls.length === 1 && /^0 of 2 done, and the rest are unchanged\./.test(String(w.eval("ORD_SAID.t"))),
+    "a refusal stops the rest, and the answer says how many went: " + JSON.stringify([calls.length, String(w.eval("ORD_SAID.t")).slice(0, 60)]));
+
+  /* agreed: made ready together, then handed over together, while nothing has moved */
+  const ack = (x, extra) => Object.assign({}, x, { status: "acknowledged" }, extra || {});
+  set([ack(A), ack(B)]);
+  const r1 = card(ack(A)), r2 = card(ack(B));
+  ok(/Ready to collect, all 2/.test(r1) && /Ready to deliver, all 2/.test(r1) && /Delivered, all 2/.test(r1) && (r1.match(/data-sheet="1"/g) || []).length === 3,
+    "the first order's card makes the sheet ready and hands it over together");
+  ok(!/all 2/.test(r2), "and the other card keeps its own moves only");
+  calls.length = 0; answer = () => ({ status: 200, body: { ok: true } });
+  await w.eval("ordSheetAct({dataset:{ord:'ready',mode:'deliver',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  ok(calls.length === 2 && calls.every((c, i) => c[0] === "orders/aaaa-bbbb/" + [A.id, B.id][i] && c[1].status === "ready" && c[1].mode === "deliver"),
+    "Ready all moves each order to ready in its mode: " + JSON.stringify(calls));
+  set([ack(A), ack(B)]); calls.length = 0;
+  await w.eval("ordSheetAct({dataset:{ord:'handover',full:'1',sheet:'1',id:" + JSON.stringify(A.id) + ",u:'aaaa-bbbb'},closest:()=>null})");
+  ok(calls.length === 2 && calls[0][0] === "orders/" + A.id + "/handed" && calls[0][1].qty === 2 && calls[1][0] === "orders/" + B.id + "/handed" && calls[1][1].qty === 10 && calls.every((c) => c[1].close === false),
+    "Handed all records each order handed over whole: " + JSON.stringify(calls));
+  set([ack(A), ack(B, { moved: 4 })]);
+  ok(!/all 2/.test(card(ack(A))), "once any order has moved, each goes on on its own card");
+  set([ack(A), ack(B, { again: ["ack"] })]);
+  ok(!/all 2/.test(card(ack(A))), "nor while one is to be agreed again");
+  set([ack(A), ack(B, { yes: "drafting" })]);
+  ok(!/all 2/.test(card(ack(A))), "nor while one carries a yes given");
+  /* another customer's order that happens to carry the same sheet id is not on this sheet */
+  set([A, B, Object.assign({}, B, { id: "20260929010000-bbb3", u: "eeee-ffff", code: "CX0-EE" })]); pv(ok2);
+  ok(/Accept all 2,/.test(accept(card(A))), "a sheet is one customer's: " + accept(card(A)));
+  set([Object.assign({}, A, { mode: "collect" }), Object.assign({}, B, { mode: "collect" })]);
+  ok(/Accept them together on the first order of this sheet\.</.test(card(Object.assign({}, B, { mode: "collect" }))), "on a collect sheet the other card names no charge");
+  w.eval("ORD_OPEN=[];ORD_PV={};ORD_CHIP={};ORD_SAID=null");
 })();
 
 section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
