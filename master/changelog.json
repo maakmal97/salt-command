@@ -1,5 +1,14 @@
 [
  {
+  "v": "v947",
+  "d": "29 Sep 2026",
+  "t": "CK4-SEN ORDERS AGAIN, ABOVE HIS RANGE",
+  "n": [
+   "<p><b>ONE SALT SELL FOLDED, PENDING.</b> CK4-SEN ordered 6.25 unit for RM530 on the statements site, order 20260929071114-awrljg, to collect, preapproved by phone. At RM84.8 a unit by the drafter's figure, the rate sits above his median of RM80 and above the top of his range, RM73.33 to RM80.8. RM530 clears the desk's floor of RM429.19 for that size but sits below its ask of RM700. The drafter raised no flag.</p>",
+   "<p><b>INVENTORY UNMOVED.</b> The row is pending, so it draws no stock and books no revenue until something moves. Stock stands at 2 units against a ledger of 86.2, with 3 units promised and 9.5 owed out, at a cost of RM56 a unit and a reorder point of 26.78. The count of 27 Sep holds. The 6.25 units to collect exceed the 2 units in stock, so the order cannot be filled from stock as it stands.</p>"
+  ]
+ },
+ {
   "v": "v946",
   "d": "29 Sep 2026",
   "t": "A PAYMENT SLIP, SEALED ON THEIR PHONE",
