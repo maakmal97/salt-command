@@ -101,7 +101,7 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
-h3.pmark{margin:0 0 4px;line-height:1}
+h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS FIGURE UNDER IT AND ALONE. The pressed ghost's edge and
    glass, the mark at 28px, the figure in the mono face; nothing sits beside the mark. The statement's lines take it too. */
@@ -257,7 +257,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
 }
 .panel{max-width:620px;margin:0 auto}
-.panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
+.panel h2,.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
@@ -346,7 +346,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* a pane is white 3% with a brass hairline */
 .pane{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);background:var(--salt-glass);
   padding:16px 18px;margin:0 0 14px}
-.pane h3{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
+.pane h3,.pane .pmark{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
@@ -879,10 +879,10 @@ export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
   const week = (b.week && b.week.label) || "";
-  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
     ? products.map((p) => '<div class="pane">'
-        + '<h3 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
+        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
         /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">' + wd("board.only") + "</p>" : "")
@@ -891,7 +891,8 @@ export function boardPage(guest, nonce) {
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">' + wd("board.none") + "</p>";
-  return guestPage("<h2>" + wd("board.h") + "</h2>"
+  /* C21 (29 Sep 2026): a guest page opens on its h1, and each board's mark is an h2 under it */
+  return guestPage('<h1 class="gh">' + wd("board.h") + "</h1>"
     + '<p class="lead">' + (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") + " " : "")
     + wd("board.goods") + " " + wd("deliv") + " "
     + wd("board.ask") + "</p>"
@@ -904,7 +905,7 @@ export function boardPage(guest, nonce) {
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
    it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
 export function shutPage(nonce) {
-  return guestPage("<h2>" + wd("shut.h") + "</h2>"
+  return guestPage('<h1 class="gh">' + wd("shut.h") + "</h1>"
     + '<p class="lead">' + wd("shut.p") + "</p>", nonce, esc(EN["shut.title"]));
 }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
@@ -978,7 +979,8 @@ function placesRail() {
     + '<p class="salt-rail__foot cfoot" data-wholine>' + whoAs() + "</p></nav>";
 }
 function placesBar() {
-  return '<nav class="salt-appbar" aria-label="Salt Counter">' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
+  /* C22 (29 Sep 2026): the bar is Places, so two landmarks never share one name */
+  return '<nav class="salt-appbar"' + wl("place.bar") + '>' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
     + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
@@ -1288,7 +1290,11 @@ const CLIENT_JS = `
   /* a refusal stands alone beside its control, so it is said as a sentence: the Worker's words are a clause, lower case
      with no stop, in either language (MY12 of the stage 13 review) */
   function sentence(t){ t=String(t||''); if(!t) return t; t=t.charAt(0).toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; }
-  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):b&&b.said?tw(b.said):(b&&b.error)||(fb?tw(fb,s):'')); }
+  /* C16 (29 Sep 2026): the Worker's English stands only for a refusal it coded (S13), never for a body with no code: a
+     fault's own words ("no KV") are not a customer's. His page keeps them. */
+  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):b&&b.said?tw(b.said):(b&&b.error&&(c||OWNER)?b.error:'')||(fb?tw(fb,s):'')); }
+  /* and a 5xx is the site being busy, whatever its body says, unless it carries a refusal this table words */
+  function busyOr(status,j){ return status>=500&&!(j&&j.code&&has('en','e.'+j.code))?{ok:false, said:'x.busy', busy:true}:j; }
   /* a date or a size in a sentence, said in the sentence's language */
   function Dd(f,x){ return function(L){ return f(x,L); }; }
   function Uq(q,u){ return function(L){ return unitsOf(q,u,L); }; }
@@ -1491,7 +1497,8 @@ const CLIENT_JS = `
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   /* 28 Sep 2026: NO DRAW ASKS WHETHER THE PAGE IS STILL THERE. A page that has gone runs no script, and jsdom from 30.1.0 keeps
      a closed window's document, so the guard S9 and the S7 merge put on every late draw could never fire (docs/WORKING.md 3) */
-  function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+  /* C5 (29 Sep 2026): ONE MONEY FORM ON THE COUNTER, RM and two places, as the statement's lines print it */
+  function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under; S13: in the language asked, the reader's by default */
   function unitsOf(q,u,L){ L=L||LANG; return unitsIn(wordIn(L,'unit.one'),wordIn(L,'unit.many'),q,u); }
 
@@ -1535,8 +1542,11 @@ const CLIENT_JS = `
     return p;
   }
   function stamp(iso,L){
-    try{ var p=klBits(iso); return p.day+' '+mon3(L)[+p.month-1]+', '+p.hour+':'+p.minute; }catch(e){ return ''; }
+    try{ var p=klBits(iso); return dmyOf(p,L)+', '+p.hour+':'+p.minute; }catch(e){ return ''; }
   }
+  /* C17 (29 Sep 2026): EVERY DATE ON THE COUNTER IS DD Mon YYYY, the time in 24 hours after it where there is one, and a
+     weekday only in front of a due date (dayName). Five shapes before it, none with a year. */
+  function dmyOf(p,L){ return ('0'+p.day).slice(-2)+' '+mon3(L)[+p.month-1]+' '+p.year; }
 
   /* ---- REMEMBER ME (v692) --------------------------------------------------------------------
      The device key lives in this browser and the wrap of the content key lives on the site: one
@@ -1845,7 +1855,7 @@ const CLIENT_JS = `
     if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
-  function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month?p.hour+':'+p.minute:+p.day+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month&&p.year===q.year?p.hour+':'+p.minute:dmyOf(p,L); }catch(e){ return ''; } }
   /* S13 13.4: a device as the site filed it ("Android phone, Chrome", deviceOf), its kind in the reader's words; a maker's
      and a browser's own names (iPhone, Mac, Chrome) are names, and a name this does not know is shown as filed */
   function devName(l){
@@ -2070,7 +2080,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
@@ -2218,6 +2228,22 @@ const CLIENT_JS = `
   }
   /* an account with nothing on it yet: no statement, and no order */
   function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
+  /* C15 and C14 (29 Sep 2026): WHAT COULD NOT BE READ SAYS SO, with Try again, and is never drawn as an empty or an older
+     account. The live document held for (bad), and orders whose read failed (ordersFailed, kept as they last stood). */
+  var ordersFailed=false;
+  function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
+  function unreadNode(key,go){
+    var box=el('div','panel unread'); box.setAttribute('data-unread',key);
+    var p=el('p','lead',tw(key)); p.setAttribute('role','status'); box.appendChild(p);
+    if(go&&session&&!view&&!OWNER){
+      var b=el('button','btn salt-ghost',tw('door.again')); b.type='button';
+      b.addEventListener('click',async function(){ b.disabled=true; try{ await go(); }finally{ b.disabled=false; } });
+      box.appendChild(b);
+    }
+    return box;
+  }
+  async function retryAccount(){ await reread(); if(liveBad()) pickStmt(0); drawPayHead(); }
+  async function retryOrders(){ await oReread(); }
 
   /* ---- ACCOUNT (S7 7.3, the plan's section 4, his "all recommended" of 24 Sep 2026) -------------------------------
      The statement as stacked lines, ONE month filter with All first, the earlier statements at its foot, and This device.
@@ -2241,6 +2267,12 @@ const CLIENT_JS = `
     var s=bundle.statements[i];
     if(!s){
       out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e);
+      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      return;
+    }
+    /* C15: never an older document in its place */
+    if(s.bad){
+      out.textContent=''; out.appendChild(unreadNode(s.bad,s.bad==='acct.unread'?retryAccount:null));
       mfil.hidden=true; mfnote.textContent=''; drawFoot();
       return;
     }
@@ -2291,6 +2323,15 @@ const CLIENT_JS = `
       var m=rows[i].getAttribute('data-m');
       rows[i].style.display=(!mfPick||m===mfPick)?'':'none';
     }
+    /* C9: a list the month leaves empty goes with its heading, Refunds with nothing of that month under it */
+    var ls=out.querySelectorAll('.salt-lines');
+    for(var j=0;j<ls.length;j++){
+      var rs=ls[j].querySelectorAll('.salt-lines__row'), any=false;
+      for(var q=0;q<rs.length;q++) if(rs[q].style.display!=='none') any=true;
+      var gone=rs.length>0&&!any, hd=ls[j].previousElementSibling;
+      ls[j].style.display=gone?'none':'';
+      if(hd&&hd.tagName==='H3') hd.style.display=gone?'none':'';
+    }
     var bs=mfil.querySelectorAll('button');
     for(var k=0;k<bs.length;k++){ var on=bs[k].getAttribute('data-mf')===(mfPick||''); bs[k].className='salt-tabs__pill'+(on?' salt-tabs__pill--active':''); bs[k].setAttribute('aria-pressed',on?'true':'false'); }
     mfnote.textContent=mfPick?tw('acct.showing',{m:Dd(monthLabel,mfPick)}):tw('acct.all');
@@ -2315,6 +2356,8 @@ const CLIENT_JS = `
     });
     /* beside the list it filters, not above the document's heading */
     var first=out.querySelector('[data-m]'), list=first&&first.closest('.salt-lines, .tblw, table');
+    /* above the heading of a list that has one (C9: an account whose first dated rows are its refunds) */
+    if(list&&list.previousElementSibling&&list.previousElementSibling.tagName==='H3') list=list.previousElementSibling;
     if(list&&list.parentNode){ list.parentNode.insertBefore(mfil,list); list.parentNode.insertBefore(mfnote,list); }
     mfil.hidden=false;
     applyMonths();
@@ -2441,7 +2484,8 @@ const CLIENT_JS = `
     placeHide('card',!assoc);
     drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
-    payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
+    /* C15: a live document that would not open leaves the gate where it last stood */
+    if(!(lv&&lv.bad)){ payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||''; }
     setHold();
     pickStmt(0);
     drawAccount(pStmt);
@@ -2555,7 +2599,7 @@ const CLIENT_JS = `
   var myLinks=null, myMax=0, myNote='';
   var LINK_STATE={open:['lnk.open','verdigris'], waiting:['lnk.waiting','steel salt-status--dashed'], declined:['lnk.declined','mist'], withdrawn:['lnk.withdrawn','mist']};
   var qrShown={};
-  function linkDay(iso,L){ try{ var p=klBits(iso); return day3(L)[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function linkDay(iso,L){ try{ return dmyOf(klBits(iso),L); }catch(e){ return ''; } }
   function linkLine(r){
     if(r.state==='waiting') return tw('lnk.lineWaiting');
     if(r.state==='declined') return tw('lnk.lineDeclined');
@@ -2662,9 +2706,9 @@ const CLIENT_JS = `
     /* Malay says Selamat tengah hari until about two, Selamat petang after (MY8 of the stage 13 review); English says Good afternoon for both */
     return h<12?'home.morning':h<14?'home.noon':h<18?'home.afternoon':'home.evening';
   }
-  /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
+  /* S4 4.8: a moment as the Prices stamp says it, "24 Sep 2026, 11:59", in Kuala Lumpur (C17: no weekday, the year kept) */
   function pricesAt(iso,L){
-    try{ var p=klBits(iso); return day3(L)[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+mon3(L)[+p.month-1]+', '+p.hour+':'+p.minute; }
+    try{ var p=klBits(iso); return dmyOf(p,L)+', '+p.hour+':'+p.minute; }
     catch(e){ return ''; }
   }
   function monthOf(d,L){
@@ -2691,7 +2735,8 @@ const CLIENT_JS = `
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
+      var h3=el('h2','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
@@ -2711,7 +2756,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
+      var sh=el('h2','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
@@ -2740,7 +2785,7 @@ const CLIENT_JS = `
        caller says whatever the answer's error is, which is a pointer to them */
     if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, said:'x.notSent', lost:true}:{ok:false, said:'lapse.notSent'}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
-    return {status:r.status, body:j||{}};
+    return {status:r.status, body:busyOr(r.status,j)||{}};
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
   function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
@@ -3324,7 +3369,7 @@ const CLIENT_JS = `
   /* S6 fix: less what they sent against the account that reaches this order's row (nowOf) */
   function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)-oAcct(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
-  function oDay(iso,L){ try{ var p=klBits(iso); return p.day+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function oDay(iso,L){ try{ return dmyOf(klBits(iso),L); }catch(e){ return ''; } }
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
      nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
      order said before this device ever looked, or the first open after this shipped put every old thank-you
@@ -3379,7 +3424,8 @@ const CLIENT_JS = `
   function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
   function oList(shown){
     var box=el('div','olist'); box.setAttribute('data-olist','');
-    if(!orders.length){ box.appendChild(el('p','lead',tw('ord.noneYet'))); return box; }
+    if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
+    if(!orders.length){ if(!ordersFailed) box.appendChild(el('p','lead',tw('ord.noneYet'))); return box; }
     var B=oBuckets();
     function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oRow(o,shown)); }); }
     if(B.needs.length) sec(tw('x.needs'),B.needs);
@@ -3416,7 +3462,7 @@ const CLIENT_JS = `
      and Cancel at the foot while the goods have not moved. Built in named parts, each rebuilt on its own. ---- */
   function movedAll(o){ var m=+o.moved||0; return m>0&&m>=(+o.qty||0)-0.0004; }
   function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
-  function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
+  function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
   /* what the last tap on this order said, beside the control it came from; where the answer took the control away
      (paid in full, cancelled), under the order's state, which is where the change shows */
   function oTap(o){
@@ -3805,7 +3851,7 @@ const CLIENT_JS = `
      Coming up. The figures are the publish's, sealed with the statement (payDue) and read here, never worked out: the
      site prices nothing. A part is a mark and a size. */
   function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
-  function dayName(s,L){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return day3(L)[d.getUTCDay()]+' '+d.getUTCDate()+' '+mon3(L)[d.getUTCMonth()]; }
+  function dayName(s,L){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return day3(L)[d.getUTCDay()]+' '+dmyOf({day:d.getUTCDate(),month:d.getUTCMonth()+1,year:d.getUTCFullYear()},L); }
   function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
   function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
   /* 28 Sep 2026 (his instruction): a part is overdue from the day its goods went (since) and due is the last day it
@@ -3827,7 +3873,7 @@ const CLIENT_JS = `
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
-      d:function(L){ return dayName(p.since||p.gotOn||p.date,L); }});
+      d:function(L){ return ymdDay(p.since||p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   /* 27 Sep 2026 (his approval, "Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): A NOTE, WITH NO
@@ -3982,7 +4028,7 @@ const CLIENT_JS = `
     var o=x.o, p=x.p, now=readyDue(o)&&!(p&&lateNow(p));
     if(!full) return now?tw('dueS.Now'):dueShort(p);
     var rd=readyDue(o)?(movedAll(o)?o.movedOn:isoDay(firstAt(o,'ready'))):'', got=p&&(p.since||p.gotOn),
-        at=rd?tw(movedAll(o)?'inv.gotOn':'inv.readySince',{d:Dd(dayName,rd)}):got?tw('inv.gotOn',{d:Dd(dayName,got)}):'',
+        at=rd?tw(movedAll(o)?'inv.gotOn':'inv.readySince',{d:Dd(ymdDay,rd)}):got?tw('inv.gotOn',{d:Dd(ymdDay,got)}):'',
         due=now?tw('due.Now'):dueWords(p);
     return at&&due?at+' '+due:at||due;
   }
@@ -4027,8 +4073,11 @@ const CLIENT_JS = `
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
-    box.hidden=!bundle||!(fr||payDue||lines.length||said.length);
+    var bad=liveBad();
+    box.hidden=!bundle||!(bad||fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
+    /* C15: an account that could not be read leads with that, never with nothing to pay */
+    if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
       box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
@@ -4044,7 +4093,8 @@ const CLIENT_JS = `
       }
     }
     else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
-    else if(payDue) box.appendChild(kpiTile('verdigris',tw('pay.now'),rm(0),el('span',null,tw('pay.nothing'))));
+    /* C18: nothing to pay is said once, never over RM 0 */
+    else if(payDue&&!bad) box.appendChild(el('p','lead pnil',tw('pay.nothing')));
     said.forEach(function(t){ box.appendChild(statusLine(t)); });
     return box;
   }
@@ -4379,6 +4429,7 @@ const CLIENT_JS = `
   function withYouOwing(o){ return movedAll(o)&&oOwes(o); }
   function homeNeeds(){
     var box=el('div'), list=orders.filter(function(o){ return replyWaiting(o)||toCollect(o)||withYouOwing(o); });
+    if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!list.length) return box;
     box.appendChild(hHead(tw('x.needs'),list.length));
     list.forEach(function(o){
@@ -4467,10 +4518,11 @@ const CLIENT_JS = `
       b.type='button';
       /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and the figure under it, alone; a reader hears the
          shape and the size in words */
-      var fq=el('span','mq',String(+a.q)); fq.setAttribute('aria-hidden','true');
+      /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
+      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
       l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
       t.appendChild(l);
-      t.appendChild(el('span','salt-option__detail',a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
+      t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
       b.appendChild(t);
       b.addEventListener('click',function(){ if(a.start) sheetOpen(a.product,a.q,b); else againOpen(a,b); });
       g.appendChild(b);
@@ -4493,7 +4545,9 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
+    /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; }
+    else ordersFailed=true;
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -4501,9 +4555,11 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), failedWas=ordersFailed; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    /* C14: the line and its Try again come and go with the list, and what the read brought may lift or set the hold */
+    if(ordersFailed!==failedWas){ setHold(); drawOrder(); if(osh&&draft.step==='limit') sheetDraw(); return; }
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
     if(JSON.stringify([claims,orders.map(oClaimed)])!==was||formSig()!==drawnSig){ setHold(); drawPayHead(); }
     if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
@@ -4596,8 +4652,11 @@ const CLIENT_JS = `
     try{
       r=await fetch('/open', {method:'POST',
         headers:{'content-type':'application/json'}, body:JSON.stringify(OWNER?{u:u, password:pass, master:pass}:{u:u, password:pass})});
-      body=await r.json();
     }catch(e){ if(stale())return; done(); say(tw('door.offline'),'bad'); return; }
+    /* C16: an answer that came back is not No connection, whatever its body */
+    try{ body=await r.json(); }catch(e){ body=null; }
+    /* a body that will not read is the site busy on a 5xx or a 2xx; any other status keeps the door's own words */
+    body=busyOr(r.status,body)||(r.status>=500||r.ok?{ok:false, said:'x.busy'}:{ok:false});
     if(stale()) return;
     if(!r.ok||!body.ok){
       done();
@@ -4731,11 +4790,18 @@ const CLIENT_JS = `
   /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
   async function openBeside(body, ck, b){
     var x={assoc:body.assoc===true, card:null, prices:null};
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null}); }
-      catch(e){ /* the issued statements still open; the live one is simply absent */ }
-    }
+    /* C15 (29 Sep 2026): THE ACCOUNT IS THE LIVE DOCUMENT OR NOTHING. A live document that would not open was swallowed,
+       and Account drew the sealed 01 Sep issue as the account, old balance and all, while the overdue lead and the hold
+       went quiet. Now it is a place held for it (bad), drawn as could-not-be-read with Try again, and show() keeps the
+       pay gate on its last known state. An account with issues and no live document at all is read the same way; one
+       with neither is a new account, which pickStmt says so. */
+    var l=null;
+    if(body.live){ try{ l=JSON.parse(await open(ck, body.live)); }catch(e){ l=null; } }
+    if(l) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null});
+    /* one that would not open is worth a Try again; one the publish wrote none of (no key there) waits for the next update */
+    else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
+    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
+    if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;
@@ -4747,7 +4813,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
