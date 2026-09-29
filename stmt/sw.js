@@ -30,7 +30,7 @@ import { WORDS, LIVE } from "./words.js";
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
 const KINDS = ["confirmed", "confirmed-credit", "ready-collect", "ready-deliver", "reply", "paid", "notfound", "due",
-  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled"];
+  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate"];
 /* Step 1b: the cases a kind's body is chosen by (stmt/orders.js payCase), and the kinds whose body is his own text:
    his line on the order (reply) and his reason at Decline or Cancel */
 export const CASES = ["owed", "waiting", "paid"];

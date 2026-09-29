@@ -327,6 +327,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
+- **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
+  order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
+  writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One
+  rating an order, one to five stars, never changed; his nudge and his card read it. **It prices nothing**: no entry,
+  row or note reads it.
 - **With any amount past its term (`pay.overdue`, or a part late on the phone's own day; his D9, amended 28 Sep 2026),
   Home leads with the overdue amount and Orders is the payment page**: the page's gate, not the Worker's. It shows each part's due date, Prices stays readable, and a
   claim waiting on him reopens ordering, his acknowledgement still the check; what he received since the statement was

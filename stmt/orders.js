@@ -6,7 +6,7 @@
  *
  * WHAT AN ORDER IS. One record, order:<username>:<id>, in this site's own store:
  *   { id, u, product, qty, mode, unit, total, week, at, status, history[], method?, account?,
- *     paid, payments[], claimed, moved, movedOn, movedAt?, queued?, ledgerKey?, msgs[] }
+ *     paid, payments[], claimed, moved, movedOn, movedAt?, queued?, ledgerKey?, msgs[], rating?, rateAsk? }
  * Plaintext, unlike everything else here, and the reason is stated rather than hidden: the
  * record is written at runtime by the customer, and this Worker holds no key to seal it with.
  * It carries a size, a quoted total and a state; no name, no code, no address. The desk code
@@ -260,9 +260,10 @@ export async function checkStores(env) {
    bookkeeping: `ledgerKey`, which names a roster code when this file says nothing here says which
    account a username is, `queued` and `sync`. Their order list and every answer to a move of theirs
    carry this view instead. A WHITELIST, so a field the desk adds later stays on the desk until it is
-   named here; and a desk mark, which changes none of these, no longer redraws their page. */
+   named here; and a desk mark, which changes none of these, no longer redraws their page.
+   F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn"];
+  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -289,7 +290,10 @@ export const awaitingAnswer = (o) => {
 export async function allOrders(env, all) {
   const list = await everyOrder(env);
   /* S6 fix: and one a claim waits on, which money he recorded another way may have completed: it is his to answer */
-  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o) || claimWaits(o));
+  /* F10: and one rated in the last RATE_UNTIL days, which his nudge has just told him of: a rating he is woken for and
+     cannot find is a feature he reads as missing */
+  const since = new Date(Date.now() - RATE_UNTIL * 86400000).toISOString();
+  return all ? list : list.filter((o) => OPEN_STATES.includes(o.status) || awaitingAnswer(o) || claimWaits(o) || ratedSince(o, since));
 }
 
 /* ---- A CLAIM IS NOT A PAYMENT (S6 6.5, his decision D7 of 24 Sep 2026) --------------------------
@@ -399,6 +403,51 @@ export async function markChased(env, u, hour) {
   const mark = await env.STMT.get(CHASE_KEY(u));
   if (mark && Number(mark) === hour) return false;
   await env.STMT.put(CHASE_KEY(u), String(hour), { expirationTtl: 2 * 3600 });
+  return true;
+}
+
+/* ---- HOW WAS YOUR ORDER? (F10, his Q9b of 28 Sep 2026) ----------------------------------------------------------
+ * One rating an order, one to five stars and nothing else (a word goes on the thread). It is ASKED ONCE, at the first
+ * chase slot two days after the last handover (movedOn), of an order whose goods are all handed over; the ask is written
+ * on the order as its own event (`rateAsk`, the desk's, never on their page), so a tick firing twice asks once. It is
+ * asked only while the handover is under RATE_UNTIL days old, so an order from before this existed is never asked about.
+ * A phone with no push meets the same ask as a card on Home. IT PRICES NOTHING: no entry, row or note reads it. */
+export const RATE_AFTER = 2;
+export const RATE_UNTIL = 14;
+const daysBefore = (day, n) => new Date(Date.parse(day + "T00:00:00Z") - n * 86400000).toISOString().slice(0, 10);
+/** rated at or after this moment */
+export const ratedSince = (o, since) => !!(o && o.rating && String(o.rating.at || "") >= since);
+/** every unit handed over, on an order still standing */
+export const handedAll = (o) => !!o && (+o.moved || 0) > 0 && owedUnits(o) <= 0.004 && !["declined", "cancelled"].includes(o.status);
+/** still to be rated and never asked: what the ask's own event checks, with no clock */
+export const rateAskable = (o) => handedAll(o) && !o.rating && !o.rateAsk;
+/** askable at this moment: two days after the handover, and not yet RATE_UNTIL days */
+export const rateDue = (o, at) => {
+  if (!rateAskable(o) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(o.movedOn || ""))) return false;
+  const today = klDay(at);
+  return o.movedOn <= daysBefore(today, RATE_AFTER) && o.movedOn > daysBefore(today, RATE_UNTIL);
+};
+/** Every customer with an order to ask about at this moment, newest order first. */
+export async function toRate(env, at = new Date()) {
+  const by = new Map();
+  for (const o of await everyOrder(env)) {
+    if (!rateDue(o, at)) continue;
+    if (!by.has(o.u)) by.set(o.u, []);
+    by.get(o.u).push(o);
+  }
+  return [...by.entries()].map(([u, orders]) => ({ u, orders }));
+}
+/** The ask written on the order, once: true when this call wrote it. */
+export async function markRateAsk(env, u, id) {
+  if (onBook(env)) {
+    const r = await book(env, "rateask", { u, id });
+    return !!(r && r.ok && r.fresh);
+  }
+  const order = await env.STMT.get(OKEY(u, id), "json");
+  if (!rateAskable(order)) return false;
+  applyEvent(order, { kind: "rateask", at: new Date().toISOString() });
+  await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await markRoad(env);
   return true;
 }
 
@@ -578,6 +627,14 @@ export function decideCustomer(order, action, body, mine, at) {
     if (!text) return Object.assign(refusal("sayEmpty"), { status: 400 });
     if (saidBy(order, "customer") >= MSG_CAP) return Object.assign(refusal("sayCap", { n: MSG_CAP }), { status: 409 });
     return { ev: { kind: "say", at, by: "customer", text } };
+  }
+  if (action === "rate") {
+    /* F10: one rating, one to five stars, once every unit is with them; a second is refused, never a change of mind */
+    if (!handedAll(order)) return Object.assign(refusal("rateEarly"), { status: 409 });
+    if (order.rating) return Object.assign(refusal("rated"), { status: 409 });
+    const n = body && body.stars;
+    if (!Number.isInteger(n) || n < 1 || n > 5) return Object.assign(refusal("rateStars"), { status: 400 });
+    return { ev: { kind: "rate", at, stars: n } };
   }
   return { error: "not found", status: 404 };
 }
@@ -815,6 +872,10 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
     order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });
     done = settle(order, at);
+  } else if (ev.kind === "rate") {   /* F10: their stars; nothing else on the order moves */
+    order.rating = { stars: ev.stars, at };
+  } else if (ev.kind === "rateask") {   /* F10: asked, once, at a slot; the desk's, never on their page */
+    order.rateAsk = at;
   } else if (ev.kind === "say") {
     order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
   } else if (ev.kind === "mark") {
@@ -895,15 +956,17 @@ export function applyEvent(order, ev) {
 /* WHAT A MOVE TELLS THE REST OF THE SITE: the shared marks it moves, each [key, value] in the order they
    are written, and whether it wakes the customer. A placement marks new business; every move but the
    desk's own bookkeeping marks a change; a line of theirs marks `last-said`; money in and an order taken
-   back mark `last-theirs` (v760); his moves wake them, and of theirs only a payment that completes. */
+   back mark `last-theirs` (v760), and so does a rating (F10); the ask is the desk's own, and marks nothing; his moves wake
+   them, and of theirs only a payment that completes. */
 export function marksOf(ev, order) {
-  if (ev.kind === "mark" || ev.kind === "copy") return [];
+  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask") return [];
   const at = ev.at;
   if (ev.kind === "place") return [[LAST_PLACED, at], [LAST_TOUCHED, at]].concat(order && order.msgs && order.msgs.length ? [[LAST_SAID, at]] : []);
   const k = [[LAST_TOUCHED, at]];
   if (ev.kind === "say" && ev.by === "customer") k.push([LAST_SAID, at]);
   if (ev.kind === "pay" || ev.kind === "claim" || ev.kind === "aclaim") k.push([LAST_THEIRS, at + "|pay"]);
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
+  if (ev.kind === "rate") k.push([LAST_THEIRS, at + "|rate"]);   /* F10: his minute nudge says a customer rated an order */
   return k;
 }
 /* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.

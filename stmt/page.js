@@ -383,6 +383,12 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .omsgs .salt-bubble__text{white-space:pre-wrap}
 .osay{margin-top:var(--salt-space-3)}
 .ohist,.ofoot{margin-top:18px}
+/* F10: the stars, each a 44px target; a rating given is five marks, the given ones filled */
+.orate h4{margin:18px 0 6px}
+.rstars{display:flex;gap:4px;flex-wrap:wrap}
+.rstars .rstar{min-width:var(--salt-tap);min-height:var(--salt-tap);padding:0;display:inline-flex;align-items:center;justify-content:center}
+.rgave{display:flex;align-items:center;gap:2px;margin:18px 0 0}
+.rgave .rtx{margin-left:8px}
 .ohist ul{margin:0;padding:0;list-style:none}
 .ofoot .salt-ghost{width:100%}
 @media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
@@ -658,6 +664,7 @@ const GLYPH = {
   vdots: "M10.6 6.5 A1.4 1.4 0 1 0 13.4 6.5 A1.4 1.4 0 1 0 10.6 6.5 Z M10.6 12 A1.4 1.4 0 1 0 13.4 12 A1.4 1.4 0 1 0 10.6 12 Z M10.6 17.5 A1.4 1.4 0 1 0 13.4 17.5 A1.4 1.4 0 1 0 10.6 17.5 Z",
   /* Step 1b: the bell in the saved app's header */
   bell: "M12 4.2 A5.4 5.4 0 0 1 17.4 9.6 V13.8 L19.2 17 H4.8 L6.6 13.8 V9.6 A5.4 5.4 0 0 1 12 4.2 Z M10 19.2 A2 2 0 0 0 14 19.2",
+  star: "M12 3.6 L14.5 9 L20.3 9.6 L15.9 13.5 L17.2 19.3 L12 16.3 L6.8 19.3 L8.1 13.5 L3.7 9.6 L9.5 9 Z",
 };
 const FILLED = { dots: true, vdots: true };
 /* S13 13.3: the mark as markup from the marks it is given, so the page's script draws a mark in a sentence it re-words
@@ -1127,7 +1134,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div></div>'
+    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
@@ -1164,7 +1171,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       .replace("/*__FILL__*/", () => [fill, fillHtml, unitsIn, glyphOf].map(String).join("\n"))
       .replace("__GLS__", () => JSON.stringify(GLYPH))
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
-      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash }))
+      .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES))
@@ -3467,7 +3474,50 @@ const CLIENT_JS = `
     }
     return f;
   }
-  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
+  /* ---- F10: HOW WAS YOUR ORDER. Five stars, once every unit is with them, asked two days after the last handover by a
+     banner and by a card on Home (for a phone with no banners), and answered on the order or on the card alike. The
+     card asks while the handover is under two weeks old, as the banner does; the order asks for good. A rating stands:
+     it is said as five marks, never asked again. His read-only view shows a rating and asks nothing. ---- */
+  function rateOpen(o){ return movedAll(o)&&!o.rating&&o.status!=='declined'&&o.status!=='cancelled'; }
+  function dayMinus(n){ var p=klBits(new Date().toISOString()); return new Date(Date.UTC(+p.year,+p.month-1,+p.day)-n*864e5).toISOString().slice(0,10); }
+  function rateDue(o){ var d=String(o.movedOn||''); return !view&&rateOpen(o)&&/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)&&d<=dayMinus(2); }
+  function rateHome(o){ return rateDue(o)&&String(o.movedOn)>dayMinus(14); }
+  function starMark(on){ var s=glyph('star',24); if(on) s.firstChild.setAttribute('fill','currentColor'); return s; }
+  function rateGave(n){ var p=el('p','rgave'); for(var i=1;i<=5;i++) p.appendChild(starMark(i<=n)); p.appendChild(el('span','rtx',tw('rt.gave',{n:n}))); return p; }
+  function rateStrip(o){
+    var g=el('div','rstars'); g.setAttribute('role','group'); g.setAttribute('aria-label',tw('rt.ask'));
+    for(var i=1;i<=5;i++) (function(n){
+      var b=el('button','salt-ghost rstar'); b.type='button'; b.setAttribute('aria-label',tw('rt.star',{n:n})); b.setAttribute('data-star',String(n));
+      b.disabled=draft.rating===o.id; b.appendChild(starMark(false));
+      b.addEventListener('click',function(){ rateSend(o,n); });
+      g.appendChild(b);
+    })(i);
+    return g;
+  }
+  async function rateSend(o,n){
+    if(view||draft.rating) return;
+    var key=o.id+':rate', mine=ticket;
+    draft.rating=o.id;
+    var r=await api('/orders/'+encodeURIComponent(o.id)+'/rate',{stars:n, rid:ridFor(key,String(n))});
+    draft.rating='';
+    if(mine!==ticket) return;
+    /* a refusal is said under the stars; a rating that stands (rated already, on a retry) draws its marks instead */
+    var b=r.body||{};
+    if(b.ok) ridDone(key);
+    tapSaid(o,'rate',b.ok?'':wErr(b,'rt.notSent'));
+    await oReread(); if(mine!==ticket) return;
+    oSync([o.id]); drawHome();
+  }
+  function oRate(o){
+    var w=el('div','orate');
+    if(o.rating&&+o.rating.stars>=1){ w.appendChild(rateGave(+o.rating.stars)); return w; }
+    if(!rateDue(o)) return w;
+    w.appendChild(el('h4',null,tw('rt.ask')));
+    w.appendChild(rateStrip(o));
+    var tp=oTap(o); if(tp.k==='rate'&&tp.t) w.appendChild(statusLine(tp.t));
+    return w;
+  }
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, rate:oRate, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
   var OSLICE={money:1, act:1, thread:1, say:1};
@@ -4007,7 +4057,7 @@ const CLIENT_JS = `
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
-    var parts={hNeeds:homeNeeds(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     drawPayHead();
     placeCounts();
@@ -4029,6 +4079,18 @@ const CLIENT_JS = `
       var m=(o.msgs||[]).filter(function(x){ return x.by==='desk'; }).pop(), t=m?String(m.text||''):'';
       box.appendChild(homeRow(o,replyWaiting(o)?tw('hn.reply',{t:t.length>120?t.slice(0,117)+'...':t})
         :withYouOwing(o)?tw('hn.owing',{rm:rm(oToPay(o))}):tw('hn.ready',{d:Dd(oDay,firstAt(o,'ready'))})));
+    });
+    return box;
+  }
+  /* F10: an order to rate, from two days after its last handover for two weeks, each with its stars under it */
+  function homeRate(){
+    var box=el('div'), list=orders.filter(rateHome);
+    if(!list.length) return box;
+    box.appendChild(hHead(tw('rt.ask'),list.length>1?list.length:0));
+    list.forEach(function(o){
+      box.appendChild(homeRow(o,tw('rt.row',{d:ymdDay(o.movedOn)})));
+      box.appendChild(rateStrip(o));
+      var tp=oTap(o); if(tp.k==='rate'&&tp.t) box.appendChild(statusLine(tp.t));
     });
     return box;
   }

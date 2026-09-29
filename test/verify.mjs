@@ -23244,7 +23244,7 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 15 && seen.length === 23 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  ok(!own.length && kinds.length === 16 && seen.length === 24 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -24350,8 +24350,9 @@ await (async () => {
   const O7 = await import("../stmt/orders.js");
 
   /* ---- the predicate, on records alone ---- */
+  /* F10: each asked how it was already (rateAsk), so the ticks here wake for the chase alone */
   const ord = (over) => Object.assign({ id: "o", u: "aaaa-bbbb", status: "acknowledged", qty: 2, total: 200,
-    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-17" }, over);
+    delivery: 0, paid: 0, moved: 0, movedOn: "2026-09-17", rateAsk: "2026-09-17T12:00:00Z" }, over);
   /* 24 Sep 2026 (stage 1, fold 1.25): half the goods and half the money is not ahead, so it moved to a quarter paid */
   ok(O7.isAdvance(ord({ moved: 2, paid: 0 })) && O7.isAdvance(ord({ moved: 1, paid: 50 })),
     "goods out ahead of the money is an advance, in part as well as in whole");
@@ -33090,8 +33091,9 @@ await (async () => {
   const banned = /salt|oil|candy|rice|garam|minyak|beras|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
   /* S13 13.2: and every word the site's lock knows, in both languages, off its own lists */
   const WL = await import("../src/orders.js");
-  /* Step 1b: a title is letters and spaces, the one exception his line's "Counter says:", whose colon introduces his words */
-  const plain = (t) => (/^[A-Z][a-z ]+$/.test(t) || t === "Counter says:") && !/[0-9]|RM/.test(t) && !banned.test(t)
+  /* Step 1b: a title is letters and spaces, the one exception his line's "Counter says:", whose colon introduces his words;
+     F10: and a question, one closing question mark */
+  const plain = (t) => (/^[A-Z][a-z ]+\??$/.test(t) || t === "Counter says:") && !/[0-9]|RM/.test(t) && !banned.test(t)
     && !WL.wordsIn(t, WL.LEVEL_WORDS.concat(WL.LEVEL_WORDS_MS, WL.PRODUCT_WORDS)).length;
   ok(words.length >= 10 && words.every(plain) && !plain("Your salt is ready") && !plain("RM 45 is due") && !plain("Your order has an update"),
     "every banner is plain words: no figure, no product, no level, no name, and never the old 'update': " + JSON.stringify(words.filter((t) => !plain(t))));
@@ -33281,8 +33283,9 @@ await (async () => {
   const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
   const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
     STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  /* F10: each asked how it was already (rateAsk), so the ticks here wake for the chase alone */
   const ord = (u, id, at, over) => Object.assign({ id, u, at, status: "ready", product: "salt", qty: 2, unit: 100, total: 200,
-    delivery: 0, mode: "collect", paid: 0, payments: [], moved: 2, movedOn: "2026-09-17", history: [], msgs: [] }, over);
+    delivery: 0, mode: "collect", paid: 0, payments: [], moved: 2, movedOn: "2026-09-17", history: [], msgs: [], rateAsk: "2026-09-17T12:00:00Z" }, over);
   const put = (o) => kv.put("order:" + o.u + ":" + o.id, JSON.stringify(o));
   /* held since the day before, two orders; handed over today; a claim waiting; paid for the share held; his test account */
   const A1 = ord("aaaa-1111", "20260915010000-aaa1", "2026-09-15T01:00:00Z"), A2 = ord("aaaa-1111", "20260916010000-aaa2", "2026-09-16T01:00:00Z");
@@ -33385,6 +33388,253 @@ await (async () => {
   ok(O.isAdvance(after) && after.moved === 5 && after.movedOn === day && eve.length === 0 && JSON.stringify(morning) === JSON.stringify([u]),
     "the order is now an advance, its handover day is today's, 18:00 today asks nothing and 10:00 tomorrow does: "
     + JSON.stringify({ movedOn: after.movedOn, day, eve, morning }));
+})();
+
+section("F10: how was your order is asked once, at a slot two days after the last handover, of goods all handed over, never of his test account");
+await (async () => {
+  /* F10 (his Q9b of 28 Sep 2026): T is the handover day (movedOn), so the ask comes at the first chase slot two days after
+     the goods went. Driven through scheduled() on the KV road against a stubbed push service, the kind read back off each
+     phone's own side, as S12 12.3 drives the chase. Every order is paid, so the chase itself wakes nobody here. */
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const { NEWS } = await import("../stmt/sw.js");
+  const b64u = (a) => Buffer.from(a).toString("base64url");
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+  const hk = async (salt, ikm, info, n) => new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info },
+    await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+  const te = new TextEncoder();
+  const phone = async () => {
+    const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)), auth = crypto.getRandomValues(new Uint8Array(16));
+    const read = async (msg) => {
+      const salt = msg.slice(0, 16), asPub = msg.slice(21, 21 + msg[20]), ct = msg.slice(21 + msg[20]);
+      const secret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH",
+        public: await crypto.subtle.importKey("raw", asPub, { name: "ECDH", namedCurve: "P-256" }, false, []) }, kp.privateKey, 256));
+      const ikm = await hk(auth, secret, cat(te.encode("WebPush: info"), [0], pub, asPub), 32);
+      const pt = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: await hk(salt, ikm, cat(te.encode("Content-Encoding: nonce"), [0]), 12) },
+        await crypto.subtle.importKey("raw", await hk(salt, ikm, cat(te.encode("Content-Encoding: aes128gcm"), [0]), 16), "AES-GCM", false, ["decrypt"]), ct));
+      return JSON.parse(new TextDecoder().decode(pt.slice(0, pt.lastIndexOf(2))));
+    };
+    return { keys: { p256dh: b64u(pub), auth: b64u(auth) }, read };
+  };
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ord = (u, id, at, over) => Object.assign({ id, u, at, status: "done", product: "salt", qty: 2, unit: 100, total: 200,
+    delivery: 0, mode: "collect", paid: 200, payments: [{ amount: 200 }], moved: 2, movedOn: "2026-09-16", history: [], msgs: [] }, over);
+  const put = (o) => kv.put("order:" + o.u + ":" + o.id, JSON.stringify(o));
+  const get = async (o) => JSON.parse(await kv.get("order:" + o.u + ":" + o.id));
+  /* handed over two days before the 18th; one day before; part handed over; his test account; handed over too long ago;
+     rated already; and one customer with two orders handed over that day, asked once */
+  const A = ord("aaaa-1111", "20260914010000-aaa1", "2026-09-14T01:00:00Z");
+  const B = ord("bbbb-2222", "20260915010000-bbb1", "2026-09-15T01:00:00Z", { movedOn: "2026-09-17" });
+  const C = ord("cccc-3333", "20260914010000-ccc1", "2026-09-14T01:00:00Z", { status: "ready", moved: 1, paid: 100, payments: [{ amount: 100 }] });
+  const T = ord("0000-0000", "20260914010000-ttt1", "2026-09-14T01:00:00Z");
+  const D = ord("dddd-4444", "20260830010000-ddd1", "2026-08-30T01:00:00Z", { movedOn: "2026-09-01" });
+  const E = ord("eeee-5555", "20260914010000-eee1", "2026-09-14T01:00:00Z", { rating: { stars: 5, at: "2026-09-16T05:00:00Z" } });
+  const G1 = ord("gggg-7777", "20260913010000-ggg1", "2026-09-13T01:00:00Z"), G2 = ord("gggg-7777", "20260914020000-ggg2", "2026-09-14T02:00:00Z");
+  /* and one all handed over and unpaid, whom the chase wakes at the same slot */
+  const Hh = ord("hhhh-8888", "20260914010000-hhh1", "2026-09-14T01:00:00Z", { status: "ready", paid: 0, payments: [] });
+  for (const o of [A, B, C, T, D, E, G1, G2, Hh]) await put(o);
+  const phones = {};
+  for (const u of ["aaaa-1111", "bbbb-2222", "cccc-3333", "0000-0000", "dddd-4444", "eeee-5555", "gggg-7777", "hhhh-8888"]) {
+    phones[u] = await phone();
+    await kv.put("push:" + u + ":p1", JSON.stringify({ endpoint: "https://push.example/" + u, at: "2026-09-10T00:00:00Z", keys: phones[u].keys }));
+  }
+  const realF = globalThis.fetch;
+  const tick = async (iso) => {
+    const hit = [], w = [], realLog = console.log;
+    globalThis.fetch = async (url, init) => { hit.push({ u: String(url).split("/").pop(), body: init.body }); return new Response("", { status: 201 }); };
+    console.log = () => {};
+    try { await stmtW.scheduled({ cron: "0 * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => w.push(p) }); await Promise.all(w); }
+    finally { globalThis.fetch = realF; console.log = realLog; }
+    return hit;
+  };
+  const who = (hit) => hit.map((h) => h.u).sort().join();
+  try {
+    const nine = await tick("2026-09-18T01:00:00Z"), ten = await tick("2026-09-18T02:00:00Z");
+    const news = [];
+    for (const h of ten) news.push(Object.assign({ u: h.u }, h.body ? await phones[h.u].read(h.body) : {}));
+    const nA = news.find((x) => x.u === "aaaa-1111"), nG = news.find((x) => x.u === "gggg-7777"), asked = news.filter((x) => x.k === "rate");
+    ok(nine.length === 0 && asked.map((x) => x.u).sort().join() === "aaaa-1111,gggg-7777" && NEWS.rate === "How was your order?"
+      && nA && nA.o === A.id && nG && nG.o === G2.id,
+      "09:00 asks nobody; 10:00 on the 18th asks, in its own words, How was your order?, each customer whose goods all went on the 16th, "
+      + "once a customer however many orders, opening the newest; never goods handed over the day before, a part handover, his test account, "
+      + "an order handed over weeks ago or one rated already: " + JSON.stringify([who(nine), news]));
+    const nH = news.filter((x) => x.u === "hhhh-8888");
+    ok(nH.length === 1 && nH[0].k === "due" && !(await get(Hh)).rateAsk,
+      "a customer the chase wakes at that slot hears only that a payment is due, never the ask over it, and is not marked asked: " + JSON.stringify(nH));
+    const marked = [];
+    for (const o of [A, B, C, T, D, E, G1, G2, Hh]) if ((await get(o)).rateAsk) marked.push(o.id.slice(-4));
+    ok(JSON.stringify(marked) === JSON.stringify(["aaa1", "ggg1", "ggg2"]),
+      "the ask is written on each order it asked about, and on no other: " + JSON.stringify(marked));
+    const again = await tick("2026-09-18T02:40:00Z");
+    await put(Object.assign({}, Hh, { status: "done", paid: 200, payments: [{ amount: 200 }] }));
+    const eve = await tick("2026-09-18T10:00:00Z"), next = await tick("2026-09-19T02:00:00Z");
+    ok(again.length === 0 && who(eve) === "hhhh-8888" && who(next) === "bbbb-2222",
+      "an order is asked once: the same slot again asks nobody, 18:00 asks only the customer paid since, and the next morning only the goods "
+      + "handed over on the 17th: " + JSON.stringify([again.length, who(eve), who(next)]));
+  } finally { globalThis.fetch = realF; }
+})();
+
+section("F10: in the order book the ask is one event, so two ticks at once ask once, and a book moving in asks nobody");
+await (async () => {
+  const O = await import("../stmt/orders.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const u = "kx7m-p2qa", id = "20260914010000-abc1";
+  const order = { id, u, at: "2026-09-14T01:00:00Z", status: "done", product: "salt", qty: 2, unit: 100, total: 200, delivery: 0,
+    mode: "collect", paid: 200, payments: [{ amount: 200 }], moved: 2, movedOn: "2026-09-16", history: [], msgs: [] };
+  const BK = H.orderBook({}), env = { STMT: new KV(), ORDERBOOK: BK.ns, ORDER_STORE: "object" };
+  BK.book.takeIn(order, "copy:test:" + id);
+  const both = await Promise.all([O.markRateAsk(env, u, id), O.markRateAsk(env, u, id)]);
+  const held = BK.book.order(u, id), evs = BK.db.prepare("SELECT kind FROM ev WHERE oid = ? AND kind = 'rateask'").all(id).length;
+  ok(both.filter(Boolean).length === 1 && evs === 1 && typeof held.rateAsk === "string",
+    "two asks at once write one event, and only one of them is told to wake the phone: " + JSON.stringify({ both, evs, rateAsk: held.rateAsk }));
+  const FZ = H.orderBook({}, { movedIn: false }), fenv = { STMT: new KV(), ORDERBOOK: FZ.ns, ORDER_STORE: "object" };
+  FZ.book.takeIn(order, "copy:test:" + id);
+  const frozen = await O.markRateAsk(fenv, u, id);
+  ok(frozen === false && !FZ.book.order(u, id).rateAsk,
+    "while the book is moving in, the ask is a write it refuses, so nobody is asked in that minute and the next slot asks: " + JSON.stringify({ frozen }));
+})();
+
+section("F10: a rating is one to five stars, once, once all of it is with them; it reaches their page and his nudge, and no ledger entry");
+await (async () => {
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const DO = await import("../src/orders.js");
+  const kv = new KV(), senv = { STMT: kv };
+  const u = "m3n5-q7s9", tok = await O.mintSession(senv, u), S = { "X-Stmt-Session": tok };
+  const base = { u, status: "done", product: "salt", qty: 2, unit: 100, total: 200, delivery: 0, mode: "collect", paid: 200,
+    payments: [{ amount: 200 }], moved: 2, movedOn: "2026-09-16", history: [], msgs: [], rateAsk: "2026-09-18T02:00:00.000Z" };
+  const R = Object.assign({}, base, { id: "20260914010000-rat1", at: "2026-09-14T01:00:00Z" });
+  const P = Object.assign({}, base, { id: "20260914010000-par1", at: "2026-09-14T01:00:00Z", status: "ready", moved: 1, paid: 100 });
+  const Z = Object.assign({}, base, { id: "20260801010000-old1", at: "2026-08-01T01:00:00Z", rating: { stars: 2, at: "2026-08-05T01:00:00.000Z" } });
+  for (const o of [R, P, Z]) await kv.put("order:" + u + ":" + o.id, JSON.stringify(o));
+  const rate = async (id, stars) => { const r = await stmtW.fetch(new Request("https://k7m3p2.example/orders/" + id + "/rate",
+    { method: "POST", headers: Object.assign({ "content-type": "application/json" }, S), body: JSON.stringify({ stars }) }), senv);
+    return { status: r.status, b: await r.json().catch(() => ({})) }; };
+  const early = await rate(P.id, 4);
+  ok(early.status === 409 && early.b.code === "rateEarly", "an order with units still to come cannot be rated yet: " + JSON.stringify(early));
+  const bad = [];
+  for (const s of [0, 6, 2.5, "4", null]) bad.push(await rate(R.id, s));
+  ok(bad.every((x) => x.status === 400 && x.b.code === "rateStars"), "a rating is a whole number of stars from one to five: " + JSON.stringify(bad.map((x) => [x.status, x.b.code])));
+  const first = await rate(R.id, 4), second = await rate(R.id, 1);
+  const stored = JSON.parse(await kv.get("order:" + u + ":" + R.id));
+  ok(first.status === 200 && first.b.order.rating && first.b.order.rating.stars === 4 && second.status === 409 && second.b.code === "rated"
+    && stored.rating.stars === 4,
+    "the first rating stands, and a second is refused, never a change of mind: " + JSON.stringify({ first: first.b.order && first.b.order.rating, second, stored: stored.rating }));
+  const list = await (await stmtW.fetch(new Request("https://k7m3p2.example/orders", { headers: S }), senv)).json();
+  const mine = list.orders.find((o) => o.id === R.id);
+  ok(mine && mine.rating && mine.rating.stars === 4 && !("rateAsk" in mine) && !("rateAsk" in first.b.order),
+    "their page is handed the rating, and never the moment they were asked, which is the desk's: " + JSON.stringify(mine));
+  const listed = (await O.allOrders(senv, false)).map((o) => o.id);
+  ok(listed.includes(R.id) && !listed.includes(Z.id), "a rating in the last fortnight keeps its closed order on his default list, where his nudge sends him; an old one does not: " + JSON.stringify(listed));
+  const theirs = await kv.get(O.LAST_THEIRS);
+  const denv = { SALT_QUEUE: new KV(), STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "", VAPID_PRIVATE_JWK: "",
+    STMT_SITE: { fetch: () => Promise.resolve(new Response(JSON.stringify({ ok: true, last: null, said: null, theirs }), { headers: { "content-type": "application/json" } })) } };
+  const nudge = await DO.nudgeOrders(denv);
+  ok(/\|rate$/.test(String(theirs)) && nudge.did === "A customer rated an order",
+    "a rating marks what they did, and his minute nudge says a customer rated an order: " + JSON.stringify({ theirs, did: nudge.did }));
+  const at = "2026-09-20T01:00:00.000Z";
+  const entries = [DO.pendingEntry(stored, "CX0-AA", at), DO.payEntry(stored, "CX0-AA", 200, at), DO.handoverEntry(stored, "CX0-AA", 2, at),
+    DO.closeEntry(Object.assign({}, stored, { closed: { at, qty: 3, total: 300 } }), "CX0-AA", at), DO.cancelEntry(stored, "CX0-AA", "customer", at)].filter(Boolean);
+  const told = Object.assign({}, stored, { queued: { ack: "d1", paid: 200, moved: 2 } });
+  ok(entries.length === 5 && entries.every((e) => !/rating|stars|rated/i.test(JSON.stringify(e))) && O.orderWork(told).length === 0,
+    "no entry an order can queue carries the rating, and a rating alone queues nothing: it prices nothing: "
+    + JSON.stringify({ n: entries.length, work: O.orderWork(told), hit: entries.filter((e) => /rating|stars|rated/i.test(JSON.stringify(e))).map((e) => JSON.stringify(e).slice(0, 120)) }));
+})();
+
+section("F10: the Counter asks on Home and on the order two days after the handover, a tap sends the stars, and a rating stands as five marks");
+await (async () => {
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f10", ck = await C.contentKey("test-secret", u);
+  const kl = (ms) => new Date(Date.now() - ms).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const day = (n) => kl(n * 86400000);
+  const pay = { term: 10, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, paid: 110, total: 110, status: "done", history: [], msgs: [] };
+  const R = "20260922030000-rate", T = "20260921030000-tmrw", P = "20260920030000-part", OLD = "20260901030000-oldd", Q = "20260919030000-qqqq";
+  let orders = [
+    { ...base, id: R, at: "2026-09-22T03:00:00Z", movedOn: day(3) },
+    { ...base, id: T, at: "2026-09-21T03:00:00Z", movedOn: day(0) },
+    { ...base, id: P, at: "2026-09-20T03:00:00Z", qty: 2, moved: 1, status: "ready", movedOn: day(3) },
+    { ...base, id: OLD, at: "2026-09-01T03:00:00Z", movedOn: day(20) },
+    { ...base, id: Q, at: "2026-09-19T03:00:00Z", movedOn: day(3), rating: { stars: 3, at: "2026-09-25T03:00:00Z" } }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f10-rate",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+  const sent = [];
+  let work;
+  const dom = new JSDOM(landingPage(u, "nf10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => { const p = String(path);
+      let j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      const m = /^\/orders\/([^/]+)\/rate$/.exec(p);
+      if (m && m[1] === OLD) j = { ok: false, error: "an order is rated once all of it is with you", code: "rateEarly" };
+      else if (m) { const b = JSON.parse(init.body); sent.push({ id: m[1], b });
+        orders = orders.map((o) => (o.id === m[1] ? { ...o, rating: { stars: b.stars, at: "2026-09-28T03:00:00Z" } } : o));
+        j = { ok: true, order: orders.find((o) => o.id === m[1]) }; }
+      return { ok: true, status: 200, json: async () => j }; };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
+    await work.quiet();
+    const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row"));
+    const home = D.getElementById("hRate");
+    ok(JSON.stringify(rows("hRate")) === JSON.stringify([R]) && home.querySelectorAll("[data-star]").length === 5 && /How was your order\?/.test(home.textContent),
+      "Home asks How was your order? of the one order all handed over two or more days ago and under two weeks, with five stars; never "
+      + "one handed over yesterday, a part handover, one from weeks ago, or one rated already: " + JSON.stringify([rows("hRate"), home.textContent]));
+    /* a closed order is under Earlier, drawn once it is opened */
+    const part = (id) => { const later = D.querySelector("#pOrder .olater");
+      if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
+      D.querySelector('#pOrder [data-row="' + id + '"]').click(); return D.querySelector('.oscreen [data-part="rate"]') || D.createElement("div"); };
+    const onOld = part(OLD), oldStars = onOld.querySelectorAll("[data-star]").length, onT = part(T), tStars = onT.querySelectorAll("[data-star]").length;
+    const onQ = part(Q), qText = onQ.textContent, qFilled = [...onQ.querySelectorAll("path")].filter((x) => x.getAttribute("fill") === "currentColor").length;
+    ok(oldStars === 5 && tStars === 0 && /Rated 3 of 5/.test(qText) && qFilled === 3 && onQ.querySelectorAll("[data-star]").length === 0,
+      "the order itself asks for good once the two days are past, not before, and a rating given is five marks, three filled, with no star to tap: "
+      + JSON.stringify({ oldStars, tStars, qText, qFilled }));
+    part(OLD).querySelector('[data-star="2"]').click();
+    for (let i = 0; i < 200 && !/rated once/.test(part(OLD).textContent); i++) await new Promise((r) => setTimeout(r, 25));
+    await work.quiet();
+    const refused = part(OLD);
+    ok(/An order is rated once all of it is with you./.test(refused.textContent) && refused.querySelectorAll("[data-star]").length === 5 && !sent.length,
+      "a refusal is said under the stars in the customer's words, and the stars stay to try again: " + JSON.stringify(refused.textContent));
+    home.querySelector('[data-star="4"]').click();
+    for (let i = 0; i < 200 && !sent.length; i++) await new Promise((r) => setTimeout(r, 25));
+    await work.quiet();
+    const onR = part(R);
+    ok(sent.length === 1 && sent[0].id === R && sent[0].b.stars === 4 && typeof sent[0].b.rid === "string" && sent[0].b.rid.length >= 16
+      && rows("hRate").length === 0 && /Rated 4 of 5/.test(onR.textContent) && onR.querySelectorAll("[data-star]").length === 0,
+      "a tap on the fourth star sends four stars for that order under its own id, Home stops asking, and the order says Rated 4 of 5: "
+      + JSON.stringify({ sent, home: rows("hRate"), r: onR.textContent }));
+  } finally { W.close(); }
+})();
+
+section("F10: his Site orders card says their stars, or that they were asked and have not answered");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const o = { id: "20260920000000-aaaa", u: "aaaa-bbbb", code: "CX0-AA", product: "salt", qty: 1, total: 110, delivery: 0, mode: "collect",
+    status: "done", paid: 110, moved: 1, movedOn: "2026-09-20", at: "2026-09-20T00:00:00.000Z", history: [], msgs: [] };
+  const card = (x) => String(w.eval("ordCard(" + JSON.stringify(x) + ")"));
+  const rated = card(Object.assign({}, o, { rateAsk: "2026-09-22T02:00:00.000Z", rating: { stars: 4, at: "2026-09-22T05:00:00.000Z" } }));
+  const asked = card(Object.assign({}, o, { rateAsk: "2026-09-22T02:00:00.000Z" })), none = card(o);
+  w.SALT_CLOUD = true;   /* Site orders is drawn in cloud mode */
+  const label = String(w.eval("(function(){ORD_OPEN=[" + JSON.stringify(Object.assign({}, o, { rating: { stars: 4, at: "2026-09-22T05:00:00.000Z" } }))
+    + "];ordAll=false;queue=[];document.body.innerHTML=String(tabOrders());ordDraw();var r=document.querySelector('#ordBox .ordrest');return r?r.textContent:'none';})()"));
+  ok(label === "Other orders", "and a closed order shown for its rating sits under Other orders, never Other open orders: " + label);
+  ok(/Rated <span aria-hidden="true">(&#9733;){4}&#9734;<\/span> 4 of 5/.test(rated) && /Asked how it was[^<]*not rated yet/.test(asked)
+    && !/ordrated/.test(none),
+    "the card says Rated with four marks filled and 4 of 5; asked and not answered; and nothing on an order never asked: "
+    + JSON.stringify([/<div class="dsc ordrated">[^]*?<\/div>/.exec(rated), /<div class="dsc ordrated">[^]*?<\/div>/.exec(asked)].map((m) => m && m[0])));
 })();
 
 section("S12 fix: a banner tapped on a page whose session has lapsed opens that order after Continue, never the list drawn last");

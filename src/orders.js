@@ -57,7 +57,7 @@ const NEWS_KEY = "orders:news";
 /* S11 11.16: HIS WAKES NAME THE KIND OF ACT, and nothing else: never a code, a name or an amount. What
    they did is their word until he checks it, so a payment is what they SAY. The banner (public/sw.js)
    takes these as its title, and only in letters and spaces; a new order is its own title there. */
-const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancelled", said: "A customer wrote" };
+const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancelled", said: "A customer wrote", rate: "A customer rated an order" };
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */

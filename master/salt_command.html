@@ -19703,6 +19703,11 @@ function ordCard(o){
     :', and the entry for that is queued within the minute'+(theirs?'; approve it under Approve':', booked as it is drafted if it is the row you saw');
   /* v752: WHAT THE CUSTOMER WROTE ON THIS ORDER, oldest first. Their words are the only free text on
      this desk a stranger typed, so every line goes through esc and none of it is interpolated raw. */
+  /* F10: THEIR STARS ON THIS ORDER, one to five, as five marks and the figure, or that they were asked and have not
+     answered. Asked two days after the last handover; it prices nothing, and no row or note reads it. */
+  const rn=o.rating?Math.round(+o.rating.stars):0;
+  const rated=rn>=1&&rn<=5?`<div class="dsc ordrated">Rated <span aria-hidden="true">${'&#9733;'.repeat(rn)+'&#9734;'.repeat(5-rn)}</span> ${rn} of 5, ${when(o.rating.at)}</div>`
+    :o.rateAsk?`<div class="dsc ordrated">Asked how it was, ${when(o.rateAsk)}; not rated yet</div>`:'';
   const msgs=(o.msgs||[]);
   const waiting=ordAsked(o);   /* S11 11.6: a line he let stand needs no answer */
   const thread=msgs.length?`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
@@ -19818,7 +19823,7 @@ function ordCard(o){
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
     ${ordToldLine(o)}
     ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
-    ${fee}${thread}${reply}
+    ${fee}${rated}${thread}${reply}
     ${cash}${hand}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
@@ -19923,7 +19928,7 @@ function ordDraw(){
     box.innerHTML=`<div class="ordlist">${gone}
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
-      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+      ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':rest.some(a=>!['placed','acknowledged','ready'].includes(a.o.status))?'Other orders':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
       ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;

@@ -630,8 +630,8 @@ takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the star
 with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
 whose deletion of the old keys is not built).
 **The customer is handed a view, not the record**: their order list and every answer to a move of
-theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued` or `sync`; `rowOn`, the day the
-key names, is read off it so the page can tell which part of To pay now is the order's.
+theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued`, `sync` or `rateAsk`; `rowOn`, the day the
+key names, is read off it so the page can tell which part of To pay now is the order's; `rating` (F10) travels.
 
 **A DELIVERY SAYS ROUGHLY WHERE IT IS GOING** (v694, his instruction of 18 Sep 2026): `place`, one
 line of at most sixty characters, a neighbourhood and not an address, refused empty on a delivery and
@@ -935,6 +935,23 @@ its keys still gets the payload-free wake and the old fixed words (Notifications
 logs its counts (`chase: {slot, woke, held, quiet}`)
 because every push path on this site swallows its own failures, and a wake that reached nobody and a
 wake that was not needed look identical from outside.
+
+**AND THE ASK, HOW WAS YOUR ORDER** (F10, his Q9b of 28 Sep 2026), at the same slots. `toRate(env, at)` names each
+order whose units are all handed over (`handedAll`, never a part handover or a cancelled order), not rated and never
+asked, whose last handover (`movedOn`) is at least `RATE_AFTER` (2) days before today and under `RATE_UNTIL` (14), so an
+order from before F10 is never asked about. `markRateAsk` writes the ask on the order first, as its own event
+(`rateask`, one of the book's writes, refused while it moves in; `rateAsk` on the KV road), and only the call that
+wrote it wakes: a tick firing twice asks once. One wake a customer a slot, kind `rate`, **How was your order?**,
+opening the newest order it asks about; the test account is skipped, and so is a customer owed a chase that slot
+(nothing written, so a later slot asks: the two banners share an order's tag and the later would replace "A payment is due"); the handler logs `rate: {slot, asked, quiet}`.
+A phone with no push meets the same ask as Home's card (`homeRate`, the same two days and fortnight), and the order
+itself asks for good once the two days are past (`oRate`). **The rating** is the customer's `rate` move, `POST
+/orders/<id>/rate {stars}`: a whole number from one to five, once every unit is with them (`e.rateEarly`), once
+(`e.rated`; a second is refused, never a change of mind), folded as `rating: {stars, at}`. It marks `last-theirs`
+`|rate`, so his minute nudge says **A customer rated an order**, and his Site orders card shows it as five marks with
+the figure, or that they were asked and have not answered: a rating in the last fortnight keeps its order on his
+default list (`ratedSince`), and `GET /desk/orders?all=1` carries every one. **It prices nothing**:
+no entry, row or note reads it, and a rating queues no stage (`orderWork`). A word about the order goes on its thread.
 
 **A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
 cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:

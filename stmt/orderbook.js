@@ -63,7 +63,7 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -89,7 +89,7 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk"];
+const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk", "rateask"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix */
 const TABLE = (oid) => (isClaimId(oid) ? "acl" : "ord");
 const KVKEY = (u, oid) => (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid;
@@ -351,6 +351,14 @@ export class OrderBook {
         this.state.storage.sql.exec("DELETE FROM meta WHERE k LIKE 'chased:%' AND CAST(v AS INTEGER) < ?", hour - 1);
       });
       return { ok: true, fresh: true };
+    }
+    /* F10: HOW WAS YOUR ORDER, ASKED ONCE. The site's slot has chosen the order by its clock (rateDue); here, in the one
+       step nobody comes between, the ask is written only if it still may be, so a tick firing twice asks once */
+    if (op === "rateask") {
+      const u = String(a.u || ""), id = String(a.id || "");
+      const order = this.order(u, id);
+      if (!rateAskable(order)) return { ok: true, fresh: false };
+      return Object.assign(this.append(null, u, id, { kind: "rateask", at }, order), { fresh: true });
     }
     /* his test account, unmade: its orders and their events go with it */
     if (op === "drop") {

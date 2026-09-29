@@ -52,7 +52,7 @@ import { refusal } from "./words.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -427,7 +427,7 @@ async function handleCustomer(request, env, p, m) {
     await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
-  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say)$/.exec(p);   /* v751: say, a line on the order */
+  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
@@ -1605,7 +1605,9 @@ export default {
         const slot = chaseSlot(now);
         if (slot === null) return;
         let woke = 0, held = 0, quiet = 0;
+        const owing = new Set();
         for (const { u, orders } of await toChase(env, now)) {
+          owing.add(u);
           /* his own test account is counted nowhere, and that includes being chased */
           if (u === TEST_USER) continue;
           /* S10: the mark is read and written in one step, where the orders live (markChased); S12: it is the slot's */
@@ -1614,6 +1616,20 @@ export default {
           if (r.sent) woke++; else quiet++;
         }
         if (woke || held || quiet) console.log("chase: " + JSON.stringify({ slot, woke, held, quiet }));
+        /* F10: HOW WAS YOUR ORDER, at the same slots, two days after the last handover: each order asked once, its ask
+           written on it first (markRateAsk), and one wake a customer, opening the newest order it asks about */
+        let asked = 0, rateQuiet = 0;
+        for (const { u, orders } of await toRate(env, now)) {
+          /* NEVER OVER THE CHASE: a customer owed a chase this slot hears only that a payment is due, since the two
+             banners share an order's tag and the later would replace it; nothing is written, so a later slot asks */
+          if (u === TEST_USER || owing.has(u)) continue;
+          const fresh = [];
+          for (const o of orders) if (await markRateAsk(env, u, o.id)) fresh.push(o);
+          if (!fresh.length) continue;
+          const r = await wakeCustomer(env, u, { k: "rate", o: fresh[0].id });
+          if (r.sent) asked++; else rateQuiet++;
+        }
+        if (asked || rateQuiet) console.log("rate: " + JSON.stringify({ slot, asked, quiet: rateQuiet }));
       } catch (e) {
         console.log("chase FAILED: " + String((e && e.stack) || e));
       }

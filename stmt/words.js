@@ -62,6 +62,9 @@ export const EN = {
   "e.tngOff": "the Touch 'n Go Business code is not available",
   "e.claimHowMuch": "say how much you sent",
   "e.claimsMax": "there are already {n} payments of yours waiting for us to confirm",
+  "e.rateEarly": "an order is rated once all of it is with you",
+  "e.rated": "this order is rated already",
+  "e.rateStars": "choose from one to five stars",
   /* ---- THE WHOLE PAGE ---- */
   "x.close": "Close",
   "dev.phone": "phone",
@@ -510,6 +513,12 @@ export const EN = {
   "oh.hist": "What happened, step by step",
   "of.moved": "The goods are with you, so this can no longer be cancelled here.",
   "of.checking": "We are checking the {rm} you sent. You can cancel once we have answered it.",
+  /* F10: how was your order, one to five stars, on the order and on Home */
+  "rt.ask": "How was your order?",
+  "rt.star": "{n} of 5",
+  "rt.gave": "Rated {n} of 5",
+  "rt.row": "With you since {d}",
+  "rt.notSent": "The rating was not sent. Try again.",
   "oh.aria": "Your order of {a}, {d}",
   "ord.yours": "Your orders",
   /* ---- WHEN A PART IS DUE, and the parts, {mark} their mark ---- */
@@ -691,6 +700,7 @@ export const EN = {
   "news.complete.b": "Thank you. Received and paid in full.",
   "news.declined": "Order not taken",
   "news.cancelled": "Order cancelled",
+  "news.rate": "How was your order?",
   "news.tap": "Tap to open it.",
   "news.open": "Open Salt Counter to read it.",
   "news.order": "Order update",
