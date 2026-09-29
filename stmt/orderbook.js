@@ -15,6 +15,8 @@
  *   meta  the site's shared marks: last-placed, last-touched, last-said, last-theirs, and chased:<username>
  *   acl   each claim against an account (S6 6.6), the fold of its events as `ord` is an order's: never an order, so no
  *         reader of orders sees one; named by an id no order takes (`a` and the moment), written behind to aclaim:
+ *   thr   each account's thread (Step 7), one row an account under the oid `thread`, the fold of its events as `acl` is a
+ *         claim's; never an order; written behind to thr:<username>, and read by nothing on the KV road
  *
  * A MOVE IS ONE STEP NOBODY CAN COME BETWEEN. It is checked against the order as it stands (decide* in
  * stmt/orders.js, the same functions the KV road runs), appended, folded and marked inside one synchronous
@@ -63,7 +65,7 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -89,10 +91,11 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk", "rateask"];
-/* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix */
-const TABLE = (oid) => (isClaimId(oid) ? "acl" : "ord");
-const KVKEY = (u, oid) => (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid;
+const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk"];
+/* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix; Step 7: so does an
+   account's thread, one a username */
+const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : "ord");
+const KVKEY = (u, oid) => (isThreadId(oid) ? "thr:" + u : (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid);
 
 export class OrderBook {
   constructor(state, env) {
@@ -105,6 +108,7 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS behind (u TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS acl (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
+    sql.exec("CREATE TABLE IF NOT EXISTS thr (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
   }
 
   async fetch(request) {
@@ -308,6 +312,22 @@ export class OrderBook {
       if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
       return this.append(null, u, id, d.ev, claim);
     }
+    /* Step 7: THE ACCOUNT'S THREAD. One customer's (null for none yet), or every one newest first for the desk; a line of
+       theirs under its device-minted id, so a retry lands once; his line or his No reply needed */
+    if (op === "thread") {
+      if (a.u) return { ok: true, thread: this.order(String(a.u), THREAD_ID) };
+      return { ok: true, threads: this.state.storage.sql.exec("SELECT doc FROM thr ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)) };
+    }
+    if (op === "tsay" || op === "tdesk") {
+      const u = String(a.u || ""), eid = op === "tsay" && a.rid ? "c:" + u + ":" + THREAD_ID + ":" + a.rid : null;
+      if (!u) return { ok: false, error: "a line names an account", status: 400 };
+      const thread = this.order(u, THREAD_ID);
+      if (eid && thread && this.event(eid)) return { ok: true, order: thread, again: true };
+      const d = decideThread(thread, a.body, op === "tdesk" ? "desk" : "customer", at, u);
+      if (d.error) return no(d, d.status || 400);
+      if (d.none) return { ok: true, order: thread, none: true };
+      return this.append(eid, u, THREAD_ID, d.ev, thread);
+    }
     if (op === "last") {
       const out = { ok: true };
       for (const [k, key] of Object.entries(MARKS)) out[k] = this.meta(key);
@@ -368,6 +388,7 @@ export class OrderBook {
         this.state.storage.sql.exec("DELETE FROM ev WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM ord WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM acl WHERE u = ?", u);
+        this.state.storage.sql.exec("DELETE FROM thr WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM behind WHERE u = ?", u);
       });
       return { ok: true, dropped: n };

@@ -19,7 +19,7 @@
  * a retry answered once. Until the first publish seals one, a claim or a link is refused, never made for real. The next
  * publish seals the examples afresh. One KV value an account: a tap may take a minute to show on another phone.
  */
-import { decideCustomer, decideAccountClaim, applyEvent, customerView, claimView, ordersOf, ridOf } from "./orders.js";
+import { decideCustomer, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf } from "./orders.js";
 import { refusal } from "./words.js";
 
 export const TEST_USER = "0000-0000";
@@ -96,6 +96,25 @@ export async function exampleClaim(env, u, body) {
   if (rid) rids[rid] = claim.id;
   await keep(env, u, fix);
   return { claim };
+}
+
+/** Step 7: the fixture's thread, or null: a test account's thread lives there alone, so the desk's Chat never lists it. */
+export async function exampleThread(env, u) {
+  const fix = await fixNow(env, u);
+  return (fix && fix.thread) || null;
+}
+/** A line of theirs on a test account's thread, into its fixture by the book's own rules; a retry once. */
+export async function exampleSay(env, u, body) {
+  const fix = await fixNow(env, u);
+  if (!fix) return soon();
+  const rid = ridOf(body), rids = fix.rids = fix.rids || {};
+  if (rid && rids[rid] === "thread") return { thread: fix.thread };
+  const d = decideThread(fix.thread || null, body, "customer", new Date().toISOString(), u);
+  if (d.error) return d;
+  fix.thread = applyEvent(fix.thread || null, d.ev).order;
+  if (rid) rids[rid] = "thread";
+  await keep(env, u, fix);
+  return { thread: fix.thread };
 }
 
 /** The fixture's links beside their own, for /my/refs. */

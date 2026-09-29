@@ -332,6 +332,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
+- **And one thread an account** (Step 7, his Q5): Home's card and a row on Account open it in a Sheet; theirs 20 a
+  Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
+  `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
+  showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
   order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
   writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One
@@ -422,7 +427,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   reward on the tiered books only: no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
-  `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows
+  `--new-issue`; sealed issues are untouched. A question goes on an order, or on the account's thread. The account line shows
   the customer's username, never the roster code.
 - **The test accounts** `0000-0000` (open) and `0000-0001` (locked, his answer of 29 Sep 2026), password
   `0000-0000-0000-0000` for both, count nowhere, and are made and unmade together. **Between them they show every

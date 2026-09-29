@@ -15,7 +15,7 @@
  * case is here. A feature that lands later lands with its line here and its case in build(), or the suite is red.
  */
 import { createHash } from "node:crypto";
-import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
+import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, decideThread, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
   ROWED, customerView, rateDue } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
@@ -216,9 +216,14 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     { product: "oil", name: "Oil", unit: "unit", summary: { bought: 115, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null,
       lines: [{ date: T(2).slice(0, 10), kind: "own", qty: 3, rm: 115 }] }] };
 
+  /* Step 7: THE ACCOUNT'S THREAD, a question about no one order, and his answer, by the book's own decide and apply */
+  let thread = null;
+  for (const [at, by, body] of [[T(4), "customer", { text: "Do you deliver on Sundays?" }], [T(4, 20), "desk", { message: "Not on Sundays, any other day." }]])
+    thread = applyEvent(thread, decideThread(thread, body, by, at, u).ev).order;
+
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    orders: O, claims, refs, card, assoc: true,
+    orders: O, claims, refs, card, assoc: true, thread,
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
 }
 
@@ -266,6 +271,7 @@ export const FEATURES = [
   ["one sheet, several products (v936)", (f) => { const s = {}; f.orders.forEach((o) => { if (o.sheet) s[o.sheet] = (s[o.sheet] || 0) + 1; }); return Object.values(s).some((n) => n > 1); }],
   ["a friend's order, for an associate", (f) => f.assoc === true && has(f, (o) => o.forFriend === true)],
   ["a thread, theirs and his", (f) => has(f, (o) => (o.msgs || []).some((m) => m.by === "customer") && (o.msgs || []).some((m) => m.by === "desk"))],
+  ["the account's thread, theirs and his (Step 7)", (f) => !!f.thread && f.thread.msgs.some((m) => m.by === "customer") && f.thread.msgs.some((m) => m.by === "desk")],
   ["the bulletin", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length)],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],

@@ -23495,18 +23495,19 @@ await (async () => {
     return shown[0];
   };
   /* Step 1b: a kind is a title key with no dot after news.; its body is news.<kind>.b, or news.<kind>.<case> for the case
-     the wake carries, else Tap to open it (Open Salt Counter to see it for a decline, cancel or line with no words) */
+     the wake carries, else Tap to open it (Open Salt Counter to see it for a decline, cancel or line with no words, his line on
+     the account's thread, Step 7, among them) */
   const kinds = Object.keys(WD.EN).filter((k) => /^news[.][a-z-]+$/.test(k) && !/^news[.](tap|open|order|update)$/.test(k)).map((k) => k.slice(5));
   const seen = [];
   for (const k of kinds) {
     const subs = Object.keys(WD.EN).filter((x) => x.startsWith("news." + k + ".")).map((x) => x.slice(6 + k.length));
     for (const v of subs.length ? subs : [""]) {
-      const want = [WD.EN["news." + k], WD.EN["news." + k + "." + (v || "b")] || WD.EN[/^(declined|cancelled|reply)$/.test(k) ? "news.update" : "news.tap"]];
+      const want = [WD.EN["news." + k], WD.EN["news." + k + "." + (v || "b")] || WD.EN[/^(declined|cancelled|reply|message)$/.test(k) ? "news.update" : "news.tap"]];
       seen.push([k + (v ? "." + v : ""), await show(v && v !== "b" ? { k, o: "20260925101500-ab12", v } : { k, o: "20260925101500-ab12" }), want]);
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 16 && seen.length === 24 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  ok(!own.length && kinds.length === 17 && seen.length === 25 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -48295,6 +48296,286 @@ await (async () => {
   const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
   ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
+})();
+
+section("Step 7: the account's thread is one record an account in the order book, a line of theirs taken once under its id, and paused on the KV road");
+await (async () => {
+  /* HIS Q5 OF 28 SEP 2026: one thread per account, beside the order threads. In the order book only: its own table and its
+     own events (oid `thread`), read by nothing on the KV road, where a line is refused rather than kept in two places. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the thread was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", rid = (s) => s.repeat(16).slice(0, 32);
+  const kv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const tok = await O.mintSession(senv, U);
+  const call = async (env, path, body, h) => {
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h || { "X-Stmt-Session": tok } }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h || { "X-Stmt-Session": tok }), body: JSON.stringify(body) }), env);
+    return { status: r.status, b: await r.json() };
+  };
+  const none = await call(senv, "/thread");
+  const s1 = await call(senv, "/thread", { text: "  Do you   open on Sunday?  ", rid: rid("t1") });
+  const s2 = await call(senv, "/thread", { text: "Do you open on Sunday?", rid: rid("t1") });
+  const empty = await call(senv, "/thread", { text: "   ", rid: rid("t2") });
+  const read = await call(senv, "/thread"), list = await call(senv, "/orders"), anon = await call(senv, "/thread", undefined, {});
+  ok(none.status === 200 && none.b.thread && none.b.thread.msgs.length === 0 && s1.status === 200 && s2.status === 200 && empty.status === 400 && empty.b.code === "sayEmpty"
+    && read.b.thread.msgs.length === 1 && read.b.thread.msgs[0].text === "Do you open on Sunday?" && read.b.thread.msgs[0].by === "customer" && anon.status === 401,
+    "a line of theirs is taken on their session, collapsed and trimmed, once under its request id, never empty: "
+    + JSON.stringify({ none: none.b, s1: s1.status, s2: s2.b.thread && s2.b.thread.msgs.length, empty: empty.b.code, read: read.b.thread, anon: anon.status }));
+  ok(list.status === 200 && JSON.stringify(list.b.thread) === JSON.stringify(read.b.thread) && (list.b.orders || []).length === 0
+    && !("u" in read.b.thread) && !("quiet" in read.b.thread) && !("id" in read.b.thread),
+    "their orders read carries the thread beside the orders, bare, and no order was made: " + JSON.stringify(list.b));
+  const rows = (t) => bk.db.prepare("SELECT COUNT(*) AS n FROM " + t).get().n;
+  ok(rows("thr") === 1 && rows("ord") === 0 && rows("acl") === 0 && bk.db.prepare("SELECT oid, kind FROM ev").all().map((x) => x.oid + ":" + x.kind).join() === "thread:tsay",
+    "in the order book it is its own record in its own table and one event, never an order: " + JSON.stringify({ thr: rows("thr"), ord: rows("ord"), ev: bk.db.prepare("SELECT oid, kind FROM ev").all() }));
+  ok((await O.allOrders(senv, true)).length === 0 && (await O.ordersOwing(senv)).length === 0,
+    "so nothing that queues an entry sees it: no order listed, none owing a stage, so no line of the thread reaches a ledger note");
+  const said = (bk.db.prepare("SELECT v FROM meta WHERE k = 'last-said'").get() || {}).v || "", touched = (bk.db.prepare("SELECT v FROM meta WHERE k = 'last-touched'").get() || {}).v || null;
+  ok(!!said && said === read.b.thread.msgs[0].at && touched === null,
+    "a line of theirs marks last-said, so his minute nudge wakes him, and touches no order, so the reconcile is not sent to list: " + JSON.stringify({ said, touched }));
+
+  /* THE KV ROAD HAS NO READER: a line is refused, nothing is written, and the read is empty */
+  const kv2 = new KV(), env2 = { STMT: kv2, STMT_DESK_KEY: "desk-key" };
+  const tok2 = await O.mintSession(env2, U);
+  const onKv = await call(env2, "/thread", { text: "Hello", rid: rid("t3") }, { "X-Stmt-Session": tok2 });
+  const kvRead = await call(env2, "/thread", undefined, { "X-Stmt-Session": tok2 });
+  const keys = [...kv2.m.keys()].filter((k) => /^(thr|order|aclaim):/.test(k));
+  ok(onKv.status === 503 && onKv.b.code === "threadOff" && kvRead.status === 200 && kvRead.b.thread.msgs.length === 0 && keys.length === 0,
+    "on the KV road a line is paused, never kept in a second place, and the thread reads empty: " + JSON.stringify({ onKv: onKv.b, keys }));
+
+  /* WRITTEN BEHIND to thr:<username> in the week of reading both, for the way back */
+  const kv3 = new KV(), bk3 = H.orderBook({ STMT: kv3, ORDER_STORE: "object+kv" });
+  const env3 = { STMT: kv3, ORDERBOOK: bk3.ns, ORDER_STORE: "object+kv" };
+  await O.sayThread(env3, U, { text: "Behind", rid: rid("t4") });
+  await bk3.fire();
+  const behind = await kv3.get("thr:" + U, "json");
+  ok(behind && behind.msgs.length === 1 && behind.msgs[0].text === "Behind" && ![...kv3.m.keys()].some((k) => k.startsWith("order:")),
+    "in the week of reading both the book writes the thread behind to its own KV key, thr:<username>: " + JSON.stringify(behind));
+})();
+
+section("Step 7: their lines on the thread are capped at twenty a Kuala Lumpur day, his are not, and the thread keeps its last two hundred");
+await (async () => {
+  const O = await import("../stmt/orders.js");
+  const line = (at, by) => ({ at, by, text: "x" });
+  /* twenty of theirs today, Kuala Lumpur time (08:00 there is 00:00Z), and twenty yesterday */
+  const today = Array.from({ length: 20 }, (_, i) => line("2026-09-29T0" + (i % 10) + ":0" + (i % 6) + ":00.000Z", "customer"));
+  const yday = Array.from({ length: 20 }, () => line("2026-09-28T10:00:00.000Z", "customer"));
+  const full = { id: "thread", u: "abcd-efgh", kind: "thread", at: "2026-09-29T09:00:00.000Z", msgs: yday.concat(today) };
+  const at = "2026-09-29T10:00:00.000Z", tomorrow = "2026-09-29T16:30:00.000Z";   /* 00:30 on the 30th in Kuala Lumpur */
+  const t21 = O.decideThread(full, { text: "one more" }, "customer", at, "abcd-efgh");
+  const his = O.decideThread(full, { message: "answered" }, "desk", at, "abcd-efgh");
+  const next = O.decideThread(full, { text: "a new day" }, "customer", tomorrow, "abcd-efgh");
+  const yFull = { id: "thread", u: "abcd-efgh", kind: "thread", at: "2026-09-28T10:00:00.000Z", msgs: yday };
+  const fresh = O.decideThread(yFull, { text: "today's first" }, "customer", at, "abcd-efgh");
+  ok(t21.status === 409 && t21.code === "threadCap" && his.ev && his.ev.by === "desk" && next.ev && fresh.ev,
+    "a twenty-first line of theirs in one Kuala Lumpur day is refused, his is taken, and yesterday's twenty stop nothing today: "
+    + JSON.stringify({ t21: t21.code, his: !!his.ev, next: !!next.ev, fresh: !!fresh.ev }));
+  let t = null;
+  for (let i = 0; i < 205; i++) t = O.applyEvent(t, { kind: "tsay", at: new Date(Date.UTC(2026, 8, 1, 0, i)).toISOString(), by: i % 2 ? "desk" : "customer", text: "n" + i, u: "abcd-efgh" }).order;
+  ok(t.msgs.length === 200 && t.msgs[0].text === "n5" && t.msgs[199].text === "n204" && t.at === t.msgs[199].at && t.u === "abcd-efgh",
+    "the thread keeps its last two hundred lines, newest last, and its moment is its newest line's: " + JSON.stringify({ n: t.msgs.length, first: t.msgs[0].text, at: t.at }));
+})();
+
+section("Step 7: the desk reads every thread on its key, his line wakes them as a message of his own, No reply needed wakes nobody, and a test account's is never the book's");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so his side of the thread was not driven"); return; }
+  const O = await import("../stmt/orders.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "abcd-efgh", V = "hjkm-npqr";
+  const kv = new KV(), bk = H.orderBook({});
+  const senv = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const desk = async (path, body, key) => {
+    const h = key === null ? {} : { "X-Stmt-Desk": key || "desk-key" };
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), senv);
+    return { status: r.status, b: await r.json().catch(() => ({})) };
+  };
+  await O.sayThread(senv, U, { text: "first" });
+  await O.sayThread(senv, V, { text: "second" });
+  const all = await desk("/desk/threads"), anon = await desk("/desk/threads", undefined, null), bad = await desk("/desk/threads", undefined, "nope");
+  ok(all.status === 200 && all.b.threads.length === 2 && all.b.threads[0].u === V && all.b.threads[1].u === U && anon.status === 401 && bad.status === 401,
+    "the desk reads every account's thread, newest first, each naming its username, on its key and nobody else's: " + JSON.stringify({ all: all.b.threads && all.b.threads.map((t) => t.u), anon: anon.status }));
+  const his = await desk("/desk/threads/" + U, { message: "  Yes, from nine.  " });
+  const empty = await desk("/desk/threads/" + U, { message: " " });
+  ok(his.status === 200 && his.b.thread.msgs.slice(-1)[0].by === "desk" && his.b.thread.msgs.slice(-1)[0].text === "Yes, from nine." && empty.status === 400,
+    "his line lands on their thread, trimmed; an empty one is refused: " + JSON.stringify({ his: his.b.thread && his.b.thread.msgs, empty: empty.status }));
+  /* the wake his line sends, off the book's own answer */
+  const w = bk.book.run("tdesk", { u: U, body: { message: "Anything else?" } });
+  ok(w.ok && w.wake && w.wake.k === "message" && w.wake.o === "" && w.wake.t === "Anything else?" && w.wake.m === w.order.at,
+    "his line wakes them as a message: its own kind, no order, his words and its moment: " + JSON.stringify(w.wake));
+  const theirs = bk.book.run("tsay", { u: U, body: { text: "thanks" }, rid: "c".repeat(32) });
+  ok(theirs.ok && theirs.wake === null, "a line of theirs wakes no phone of theirs: " + JSON.stringify(theirs.wake));
+  const q = await desk("/desk/threads/" + U, { noReply: true }), q2 = await desk("/desk/threads/" + U, { noReply: true });
+  const lastAt = q.b.thread && q.b.thread.msgs.slice(-1)[0].at;
+  ok(q.status === 200 && q.b.thread.quiet === lastAt && q.b.push === null && q2.status === 200 && q2.b.thread.msgs.length === q.b.thread.msgs.length,
+    "No reply needed marks their last line answered, sends nothing and adds no line: " + JSON.stringify({ quiet: q.b.thread && q.b.thread.quiet, push: q.b.push }));
+  const test = await desk("/desk/threads/0000-0000", { message: "hello" });
+  ok(test.status === 404 && !bk.db.prepare("SELECT 1 FROM thr WHERE u = '0000-0000'").get(),
+    "his test account's thread is its fixture's, never the book's: the desk cannot write one: " + test.status);
+})();
+
+section("Step 7: his line on the account's thread is sealed with its words and moment, opens the thread, and is a banner and a push topic of its own");
+await (async () => {
+  const vm = await import("node:vm");
+  const P = await import("../stmt/push.js");
+  const SWM = await import("../stmt/sw.js");
+  const WD = await import("../stmt/words.js");
+  const s = P.sealedNews({ k: "message", o: "", t: "  From nine tomorrow.  ", m: "2026-09-29T02:00:00.000Z" }, "");
+  ok(JSON.stringify(s) === JSON.stringify({ k: "message", o: "", t: "From nine tomorrow.", m: "2026-09-29T02:00:00.000Z" }),
+    "a message carries his words and its moment, sealed, and nothing else: " + JSON.stringify(s));
+  const banner = async (news) => {
+    const L = {}, shown = [], waits = [];
+    const self = { addEventListener: (t, f) => { L[t] = f; }, location: { href: "https://site.test/sw.js?u=abcd-efgh" },
+      registration: { scope: "https://site.test/", showNotification: async (t, o) => { shown.push({ t, body: o.body, tag: o.tag, data: o.data }); } }, clients: {},
+      caches: { open: async () => ({ match: async () => undefined }) } };
+    const ctx = { URL, Date, console, Response, fetch: async () => ({ ok: true, json: async () => ({ ok: true, lines: [], at: null }) }), self };
+    vm.createContext(ctx); vm.runInContext(SWM.SW_JS, ctx);
+    for (const n of news) L.push({ data: { json: () => n }, waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    return shown;
+  };
+  const b = await banner([{ k: "message", o: "", t: "From nine tomorrow.", m: "2026-09-29T02:00:00.000Z" },
+    { k: "message", o: "", t: "Or ten.", m: "2026-09-29T02:01:00.000Z" }, { k: "reply", o: "20260925101500-ab12", t: "On its way.", m: "2026-09-29T02:02:00.000Z" }]);
+  ok(b.length === 3 && b[0].t === WD.EN["news.message"] && b[0].t === "Counter says:" && b[0].body === "“From nine tomorrow.”"
+    && b[0].tag === "m-thread-2026-09-29T02:00:00.000Z" && b[1].tag !== b[0].tag && b[0].data.url === "./?u=abcd-efgh#thread" && b[0].data.thread === true && b[0].data.order === ""
+    && b[2].tag === "m-20260925101500-ab12-2026-09-29T02:02:00.000Z" && b[2].data.thread === false && /#o=20260925101500-ab12$/.test(b[2].data.url),
+    "his line reads Counter says: and his words in quotation marks, each line its own banner, and a tap opens the thread; a reply on an order is as it was: " + JSON.stringify(b));
+  /* the push topic: each line its own, never the one every order wake shares */
+  const kv = new KV();
+  const vp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const env = { STMT: kv, STMT_VAPID_PUBLIC_KEY: "pub", STMT_VAPID_SUBJECT: "mailto:a@b.test",
+    STMT_VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", vp.privateKey)) };
+  const ua = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const keys = { p256dh: Buffer.from(new Uint8Array(await crypto.subtle.exportKey("raw", ua.publicKey))).toString("base64url"),
+    auth: Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64url") };
+  await kv.put("push:abcd-efgh:keyed", JSON.stringify({ endpoint: "https://push.example/keyed", keys }));
+  const topics = [], realF = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { topics.push(init.headers.Topic); return new Response("", { status: 201 }); };
+  try {
+    await P.wakeCustomer(env, "abcd-efgh", { k: "message", o: "", t: "a", m: "2026-09-29T02:00:00.000Z" });
+    await P.wakeCustomer(env, "abcd-efgh", { k: "message", o: "", t: "b", m: "2026-09-29T02:01:00.000Z" });
+  } finally { globalThis.fetch = realF; }
+  ok(topics.length === 2 && topics.every((t) => /^m-[0-9a-f]{24}$/.test(t)) && topics[0] !== topics[1],
+    "at the push service each line of his on the thread has a topic of its own, so none replaces another unseen: " + JSON.stringify(topics));
+})();
+
+section("Step 7: the Counter opens the thread from Home and Account, reads it every two seconds only while it is open and showing, and sends a line as a line on an order goes");
+await (async () => {
+  const { landingPage, THREAD_POLL_MS } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-th7", ck = await C.contentKey("test-secret", u);
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-th7",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+  const T = { at: "2026-09-28T03:00:00.000Z", msgs: [{ at: "2026-09-28T02:00:00.000Z", by: "customer", text: "<b>Sunday</b>?" },
+    { at: "2026-09-28T03:00:00.000Z", by: "desk", text: "Not on Sundays." }] };
+  const reads = [], said = [], timers = [];
+  let mode = "ok";
+  const dom = new JSDOM(landingPage(u, "nth7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    const si = win.setInterval.bind(win), ci = win.clearInterval.bind(win);
+    win.setInterval = (f, ms) => { const id = si(() => {}, 1e9); timers.push({ id, f, ms, on: true }); return id; };
+    win.clearInterval = (id) => { timers.forEach((t) => { if (t.id === id) t.on = false; }); ci(id); };
+    win.fetch = async (path, init) => {
+      const p = String(path), m = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
+      if (p === "/open") return { ok: true, status: 200, json: async () => body };
+      if (p === "/orders" && m === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: [], thread: JSON.parse(JSON.stringify(T)) }) };
+      if (p === "/thread" && m === "GET") { reads.push(Date.now()); return { ok: true, status: 200, json: async () => ({ ok: true, thread: JSON.parse(JSON.stringify(T)) }) }; }
+      if (p === "/thread" && m === "POST") {
+        said.push(j);
+        if (mode === "cap") return { ok: false, status: 409, json: async () => ({ ok: false, error: "x", code: "threadCap", vars: { n: 20 } }) };
+        T.msgs = T.msgs.concat([{ at: new Date().toISOString(), by: "customer", text: j.text }]); T.at = T.msgs.slice(-1)[0].at;
+        return { ok: true, status: 200, json: async () => ({ ok: true, thread: JSON.parse(JSON.stringify(T)) }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    };
+  } });
+  const w = dom.window, d = w.document;
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return f(); };
+  const sheet = () => d.getElementById("thSheet");
+  const bubbles = () => [...d.querySelectorAll("#thLog .salt-bubble")].map((b) => ({ side: b.classList.contains("salt-bubble--mine") ? "mine" : "theirs",
+    text: b.querySelector(".salt-bubble__text").textContent, markup: b.querySelector(".salt-bubble__text").children.length,
+    state: (b.querySelector(".salt-bubble__state") || {}).textContent || "", isNew: !!b.querySelector(".salt-bubble__new") }));
+  const thPoll = () => timers.filter((t) => t.on && t.ms === THREAD_POLL_MS);
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => d.querySelector("#hThread .salt-inbox-row"));
+    const home = d.querySelector("#hThread"), acct = d.querySelector("#aThread .salt-inbox-row");
+    ok(!!home.querySelector("h2") && home.querySelector("h2").textContent === "Ask us anything" && /A reply: Not on Sundays\./.test(home.textContent) && /New/.test(home.textContent)
+      && !!acct && /Messages with us/.test(acct.textContent) && sheet().hidden && reads.length === 0 && thPoll().length === 0,
+      "Home carries the thread's card and Account its row, his unread line marked New, and nothing reads it while it is shut: "
+      + JSON.stringify({ home: home.textContent, acct: acct && acct.textContent, reads: reads.length }));
+    home.querySelector(".salt-inbox-row").click();
+    await until(() => reads.length === 1 && bubbles().length === 2);
+    const b0 = bubbles();
+    ok(!sheet().hidden && JSON.stringify(b0) === JSON.stringify([{ side: "mine", text: "<b>Sunday</b>?", markup: 0, state: "Sent", isNew: false },
+      { side: "theirs", text: "Not on Sundays.", markup: 0, state: "", isNew: true }]) && thPoll().length === 1 && THREAD_POLL_MS === 2000,
+      "a tap opens the Sheet and reads the thread at once, then every two seconds; every line is text, never markup, and his is New: " + JSON.stringify(b0));
+    ok(!/New/.test(d.querySelector("#hThread").textContent), "once shown, Home no longer marks his line New");
+    const tick = () => thPoll()[0].f();
+    tick(); await until(() => reads.length === 2);
+    Object.defineProperty(d, "hidden", { value: true, configurable: true });
+    tick(); await new Promise((r) => setTimeout(r, 60));
+    const hiddenReads = reads.length;
+    Object.defineProperty(d, "hidden", { value: false, configurable: true });
+    ok(reads.length === 2 && hiddenReads === 2, "a page that is not showing reads nothing on the tick: " + reads.length);
+
+    const box = d.getElementById("thIn");
+    box.value = "Saturday then"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.form.requestSubmit();
+    await until(() => said.length === 1 && bubbles().length === 3 && bubbles()[2].state === "Sent");
+    ok(said[0].text === "Saturday then" && /^[0-9a-f]{32}$/.test(said[0].rid) && box.value === "" && bubbles()[2].text === "Saturday then",
+      "Return sends the line with its own id, the box empties, and the line says Sent once stored: " + JSON.stringify(said[0]));
+    mode = "cap";
+    box.value = "and one more"; box.dispatchEvent(new w.Event("input", { bubbles: true })); box.form.requestSubmit();
+    await until(() => said.length === 2 && !d.getElementById("thSaid").hidden);
+    ok(box.value === "and one more" && /20 messages today/.test(d.getElementById("thSaid").textContent) && bubbles().length === 3,
+      "a line refused (their twenty today) goes back in the box, the reason under it: " + d.getElementById("thSaid").textContent);
+    d.getElementById("thX").click();
+    ok(sheet().hidden && thPoll().length === 0, "shut, the Sheet stops its reading: " + thPoll().length);
+  } finally { w.close(); }
+})();
+
+section("Step 7: a test account's thread is its fixture's: a line lands there by the book's rules, once, and never in the order book");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here"); return; }
+  const O = await import("../stmt/orders.js");
+  const TF = await import("../stmt/testfix.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const kv = new KV(), bk = H.orderBook({});
+  const env = { STMT: kv, ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const U = TF.TEST_USER, wrap = { salt: "s-th7", iv: "i", ct: "c" };
+  await kv.put("u:" + U, JSON.stringify({ test: true, wrap }));
+  const soon = await TF.exampleSay(env, U, { text: "hello", rid: "a".repeat(32) });
+  const fix = (await import("../tools/testfix.mjs")).build(new Date(), "open", U);
+  await kv.put(TF.fixKey(U), JSON.stringify(Object.assign(fix, { salt: wrap.salt })));
+  const was = (await TF.exampleThread(env, U)).msgs.length;
+  const s1 = await TF.exampleSay(env, U, { text: "Is Friday fine?", rid: "b".repeat(32) });
+  const s2 = await TF.exampleSay(env, U, { text: "Is Friday fine?", rid: "b".repeat(32) });
+  const now = await TF.exampleThread(env, U);
+  ok(soon.status === 409 && was === 2 && s1.thread && s2.thread && now.msgs.length === 3 && now.msgs[2].text === "Is Friday fine?"
+    && bk.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0 && (await O.allThreads(env)).length === 0,
+    "with no fixture a line waits for the publish; with one it lands in the fixture once, and the book and his Chat never hold it: "
+    + JSON.stringify({ soon: soon.status, was, n: now.msgs.length }));
+  /* and through the route, on the test account's own session: the fixture takes it, the book never does */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const tok = await O.mintSession(env, U);
+  const r = await stmtW.fetch(new Request("https://k7m3p2.example/thread", { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Session": tok },
+    body: JSON.stringify({ text: "Through the route", rid: "d".repeat(32) }) }), env);
+  const j = await r.json(), after = await TF.exampleThread(env, U);
+  ok(r.status === 200 && j.thread.msgs.slice(-1)[0].text === "Through the route" && after.msgs.length === 4 && bk.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0,
+    "POST /thread on a test account's session lands in its fixture, and the order book holds nothing: " + JSON.stringify({ status: r.status, n: after.msgs.length }));
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

@@ -43,6 +43,9 @@ import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
    phone left on a table; he asked for a page that stays signed in and a button that leaves. What
    replaced it is Remember me and Log out, which say what they do. */
 export const POLL_MS = 10000;
+/* Step 7: the account's thread is read this often while its Sheet is open and the page is showing, and never otherwise
+   (his "live enough to the second", met by a fast read rather than a socket) */
+export const THREAD_POLL_MS = 2000;
 
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
@@ -146,6 +149,9 @@ h3.pmark{margin:0 0 4px;line-height:1}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}
 .osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
+.thsheet .salt-sheet__foot{display:block}
+.thsheet .salt-sheet__foot .msg{margin:8px 0 0}
+.thempty{margin:0}
 .szrow{display:block;width:100%;min-height:52px;padding-left:0;padding-right:0;background:none;border-style:none none solid;
   font:inherit;color:inherit;text-align:left;cursor:pointer}
 .szrow:last-child{border-bottom-style:none}
@@ -814,6 +820,21 @@ function paySheet() {
    of its own, and a QR that opens Salt Counter on the other device's camera, where the code is typed. The QR carries the
    address alone: a key in an address signs a browser tab in only when his counter minted it (S3), so an address one
    customer sends another never signs the other in. */
+/* Step 7: THE ACCOUNT'S THREAD, in a Sheet of its own: the lines as a log, the composer at its foot */
+function threadSheet() {
+  return '<div id="thScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="thSheet" class="salt-sheet thsheet" role="dialog" aria-modal="true" aria-labelledby="thT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="thT"', "th.title")
+    + '<button type="button" class="salt-orb salt-sheet__close" id="thX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body" id="thBody"><div class="salt-thread"><div class="salt-thread__lines" id="thLog" role="log"' + wl("th.aria") + "></div></div></div>"
+    + '<div class="salt-sheet__foot"><form class="salt-composer" id="thForm">'
+    + '<input class="salt-field__input salt-composer__field" id="thIn" type="text" maxlength="200" autocomplete="off" enterkeyhint="send"'
+    + ' placeholder="' + esc(EN["th.ph"]) + '" data-wp="th.ph"' + wl("th.ph") + ">"
+    + wt("button", 'class="salt-ghost salt-ghost--lit salt-composer__send" type="submit"', "msg.send") + "</form>"
+    + '<p class="msg" id="thSaid" role="status" hidden></p></div>'
+    + "</div>";
+}
 function devSheet() {
   return '<div id="devScrim" class="salt-sheet-scrim" hidden></div>'
     + '<div id="devSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="devT" tabindex="-1" hidden>'
@@ -1119,7 +1140,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + keepPage())
+    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + keepPage())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -1140,11 +1161,11 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div></div>'
+    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
     + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
-    + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main">'
+    + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
     + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
     + wt("button", 'type="button" class="salt-ghost" id="stmtBackGo"', "acct.back") + "</div>"
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
@@ -1158,7 +1179,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + '<div id="pCard" class="panel" hidden></div>'
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
-    + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS))
+    + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
       /* the notice as the page was served, so the card is drawn with no request; the poll reads it again. A function
          replacement, as every splice carrying typed words: a $' or $` in the notice was read as a pattern and pasted the
          page into the script, which then did not run (S7-R2 of the stage 7 review) */
@@ -1897,6 +1918,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
+    thClose(); thPut(null); thOut=[]; thSig='';
     bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
@@ -3077,6 +3099,7 @@ const CLIENT_JS = `
     window.scrollTo(0,sc);
     drawHome();
     openWanted();
+    thWanted();
   }
 
   /* S5 5.3 (D11, his answer of 24 Sep 2026): WHERE AN ORDER IS, IN THE CUSTOMER'S WORDS. The record's states are the
@@ -4181,8 +4204,9 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    thDraw();
     drawPayHead();
     placeCounts();
     placeTitle();
@@ -4311,7 +4335,7 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; if('thread' in r.body) thPut(r.body.thread); }
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -4319,7 +4343,7 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), thWas=JSON.stringify(thread); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
@@ -4329,11 +4353,135 @@ const CLIENT_JS = `
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
     if(draft.oStale&&changed.indexOf(draft.oStale)<0) changed.push(draft.oStale);
     if(changed.length||gone){ oSync(changed); drawHome(); if(osh&&draft.step==='limit') sheetDraw(); }
+    else if(JSON.stringify(thread)!==thWas) thAfter();   /* Step 7: a line on the thread, with no order moved */
   }
   async function refresh(){
     if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */
     await oReread();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
+  }
+
+  /* ---- Step 7 (his Q5 of 28 Sep 2026): THE ACCOUNT'S THREAD. One an account, beside the order threads: Home's card and a
+     row on Account open it in a Sheet, so the places stay five. It comes with the orders on the page's poll, and is read
+     every THREAD_POLL_MS while the Sheet is open and the page is showing, never while hidden. Their lines go as a line on an
+     order goes: Sending, Sent, or Not sent with Tap to try again under the line's own id, and a refusal puts the words
+     back in the box; his stand left, New until this device has shown them. Every line is text, never markup. His
+     read-only view has no thread: he answers from his Chat. ---- */
+  var TH_MS=__THPOLL__, thread={at:null,msgs:[]}, thOut=[], thTimer=null, thFrom=null, thN=0, thWhy='', thSig='';
+  var thSheetEl=document.getElementById('thSheet'), thScrim=document.getElementById('thScrim'), thLog=document.getElementById('thLog'),
+      thBody=document.getElementById('thBody'), thForm=document.getElementById('thForm'), thIn=document.getElementById('thIn'), thSaid=document.getElementById('thSaid');
+  function thPut(t){ thread=t&&Array.isArray(t.msgs)?{at:t.at||null,msgs:t.msgs}:{at:null,msgs:[]}; }
+  function thHis(){ var m=thread.msgs.filter(function(x){ return x.by==='desk'; }); return m.length?String(m[m.length-1].at||''):''; }
+  function thWaiting(){ var l=thHis(); return !view&&!!session&&!!l&&l>(seenGet().o.thread||''); }
+  function thSeen(){ var l=thHis(); if(!l||view) return; var s=seenGet(); if((s.o.thread||'')>=l) return; s.o.thread=l; seenPut(s); }
+  function thSame(w){ return thread.msgs.filter(function(m){ return m.by==='customer'&&oWords(m.text)===w; }).length; }
+  function thLanded(){ for(var i=thOut.length-1;i>=0;i--) if(thSame(thOut[i].w)>thOut[i].n) thOut.splice(i,1); return thOut; }
+  /* the row that opens it, on Home under its heading and on Account: the last line, theirs or ours, and New on a reply */
+  function thRow(){
+    var b=el('button','salt-inbox-row throw'); b.type='button';
+    var main=el('span','salt-inbox-row__main'), l=thread.msgs[thread.msgs.length-1], t=el('span','salt-inbox-row__title',tw('th.row'));
+    if(thWaiting()){ t.appendChild(document.createTextNode(' ')); t.appendChild(chipEl('verdigris',tw('msg.new'))); }
+    main.appendChild(t);
+    var x=l?String(l.text||''):'', cut=x.length>120?x.slice(0,117)+'...':x;
+    main.appendChild(el('span','salt-inbox-row__what',!l?tw('th.start'):l.by==='desk'?tw('hn.reply',{t:cut}):tw('th.you',{t:cut})));
+    b.appendChild(main);
+    if(l){ var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__age',oDay(l.at))); b.appendChild(side); }
+    b.addEventListener('click',function(){ thOpen(b); });
+    return b;
+  }
+  function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
+  /* Account's row, drawn with Home: replaced only when it reads differently, so a tap is never lost to a redraw */
+  function thDraw(){
+    var a=document.getElementById('aThread'); if(!a) return;
+    var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(thRow());
+    if(a.outerHTML!==n.outerHTML) a.replaceWith(n);
+  }
+  function thEnd(){ if(thBody) thBody.scrollTop=thBody.scrollHeight; }
+  /* the lines, drawn again only when they read differently; a reader at the foot is kept at the foot */
+  function thLines(force){
+    if(!thLog) return;
+    var out=thLanded(), since=draft.thSince, sig=JSON.stringify([thread.msgs,out.map(function(x){ return [x.t,x.state,x.why]; }),thWhy,since]);
+    if(!force&&sig===thSig) return;
+    thSig=sig;
+    var foot=!thBody||thBody.scrollHeight-thBody.scrollTop-thBody.clientHeight<48;
+    thLog.textContent='';
+    if(!thread.msgs.length&&!out.length) thLog.appendChild(el('p','salt-bubble__meta thempty',tw('th.empty')));
+    thread.msgs.forEach(function(m){
+      var his=m.by==='desk';
+      thLog.appendChild(bubble(his?'theirs':'mine',m.text||'',tw(his?'msg.reply':'msg.you',{t:Dd(stamp,m.at)}),his?'':'sent',his&&typeof since==='string'&&String(m.at)>since));
+    });
+    out.forEach(function(x){
+      var b=bubble('mine',x.t,tw('msg.you',{t:Dd(stamp,x.at)}),x.state,false);
+      if(x.state==='failed'){
+        if(x.why){ var y=el('p','salt-bubble__meta',x.why); y.setAttribute('role','status'); b.appendChild(y); }
+        var r=el('button','salt-ghost salt-ghost--lit salt-bubble__retry',tw('msg.retry')); r.type='button';
+        r.addEventListener('click',function(){ thSend(x); });
+        b.appendChild(r);
+      }
+      thLog.appendChild(b);
+    });
+    if(thWhy){ var w=el('p','salt-bubble__meta',thWhy); w.setAttribute('role','status'); thLog.appendChild(w); }
+    if(force||foot) thEnd();
+  }
+  function thSay(t){ if(thSaid){ thSaid.textContent=t||''; thSaid.hidden=!t; } }
+  function thOpen(from){
+    if(!thSheetEl||!session||view) return;
+    thFrom=from||null; draft.thSince=seenGet().o.thread||'';
+    thScrim.hidden=false; thSheetEl.hidden=false;
+    try{ thSheetEl.focus(); }catch(e){}
+    if(draft.thDraft&&!thIn.value) thIn.value=draft.thDraft;
+    thLines(true); thSeen(); drawHome();
+    if(thTimer) clearInterval(thTimer);
+    thTimer=setInterval(thRead,TH_MS);
+    thRead();
+  }
+  function thClose(){
+    if(thTimer){ clearInterval(thTimer); thTimer=null; }
+    if(!thSheetEl||thSheetEl.hidden) return;
+    thSheetEl.hidden=true; thScrim.hidden=true; thSay('');
+    try{ if(thFrom&&thFrom.isConnected) thFrom.focus(); }catch(e){}
+  }
+  /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
+  async function thRead(){
+    if(document.hidden||!session||!thSheetEl||thSheetEl.hidden) return;
+    var mine=ticket, n=++thN, r=await api('/thread');
+    if(mine!==ticket||n!==thN) return;
+    if(r.body&&r.body.ok){ thPut(r.body.thread); thWhy=''; } else if(r.status!==401) thWhy=tw('th.unread');
+    thAfter();
+  }
+  function thAfter(){ thLines(); if(thSheetEl&&!thSheetEl.hidden) thSeen(); drawHome(); }
+  async function thSend(x){
+    var mine=ticket; x.state='sending'; x.why=''; thLines(); thEnd();
+    thN++;   /* a read already on its way holds the thread from before this line */
+    var r=await api('/thread',{text:x.t,rid:x.rid});
+    if(mine!==ticket) return;
+    if(r.body&&r.body.ok){ thPut(r.body.thread); var i=thOut.indexOf(x); if(i>=0) thOut.splice(i,1); thAfter(); thEnd(); return; }
+    var why=r.body&&r.body.lost?tw('x.checkConn'):wErr(r.body,'msg.notSent');
+    /* refused, it will be refused again (their twenty today, a lapsed session): the words go back in the box */
+    if(r.status&&r.status<500){ var j=thOut.indexOf(x); if(j>=0) thOut.splice(j,1); thIn.value=thIn.value?x.t+' '+thIn.value:x.t; draft.thDraft=thIn.value; thSay(why); thLines(); return; }
+    x.state='failed'; x.why=why; thLines();
+  }
+  if(thSheetEl){
+    document.getElementById('thX').addEventListener('click', thClose);
+    thScrim.addEventListener('click', thClose);
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') thClose(); });
+    thIn.addEventListener('input', function(){ draft.thDraft=thIn.value; });
+    thForm.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var t=String(thIn.value||'').trim(); if(!t) return;
+      thSay('');
+      var w=oWords(t), x={t:t, w:w, n:thSame(w)+thOut.filter(function(y){ return y.w===w; }).length, at:new Date().toISOString(), state:'sending', rid:mintRid(), why:''};
+      thOut.push(x); thIn.value=''; draft.thDraft='';
+      thSend(x);
+    });
+  }
+  /* a banner of his line on the thread opens it (#thread), once they are in */
+  var wantThread=location.hash==='#thread';
+  function thWanted(){
+    if(!wantThread||view||!session||!lapse.hidden) return;
+    wantThread=false;
+    try{ if(location.hash==='#thread') history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    if(thSheetEl&&thSheetEl.hidden) thOpen(null); else thRead();
   }
 
   /* S12 12.2: A BANNER'S TAP OPENS ITS ORDER. The service worker opens the Counter at #o=<id>, or tells a
@@ -4358,11 +4506,13 @@ const CLIENT_JS = `
         var d=ev&&ev.data;
         if(!d||d.salt!=='news') return;
         wantOrder=orderIn('#o='+(d.order||''));
+        if(d.thread===true) wantThread=true;   /* Step 7: his line on the thread opens the thread */
         if(!session) return;   /* at the door: it opens once they are in */
         var mine=ticket;
         await oReread();
         if(mine!==ticket) return;
         openWanted();
+        thWanted();
       });
   }catch(e){ /* a browser that will not listen still opens the page */ }
 
@@ -4564,7 +4714,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); thClose(); thPut(null); thOut=[]; thSig=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
