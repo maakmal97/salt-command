@@ -38,7 +38,7 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage, shutPage } from "./page.js";
+import { landingPage, boardPage, shutPage, MON3, mtileSvg } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
@@ -49,6 +49,7 @@ import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
+import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
   exampleMove, exampleClaim, exampleMint, exampleRevoke } from "./testfix.js";
@@ -386,6 +387,8 @@ async function handleCustomer(request, env, p, m) {
     const b = (await readJson(request)) || {};
     const here = [await sessKey(String(request.headers.get("X-Stmt-Session") || ""))];
     if (typeof b.token === "string" && REM_RE.test(b.token)) here.push(await remKey(b.token));
+    /* Step 6: and the passkey this phone opens with, so signing the others out spares it */
+    if (typeof b.passkey === "string" && PK_ID_RE.test(b.passkey)) here.push(await pkKey(b.passkey));
     const isHere = (d) => here.includes(d.key) || opened(d).some((s) => here.includes(s));
     const devs = devicesIn(await pointersOf(env, u));
     if (p === "/devices") return json({ ok: true, devices: devs.map((d) => Object.assign(deviceOut(d), { here: isHere(d) })) });
@@ -442,6 +445,8 @@ async function handleCustomer(request, env, p, m) {
     await env.STMT.put(key, JSON.stringify({ u, wrap, at: now }), { expirationTtl: REM_TTL });
     return json({ ok: true, token: tok, days: REM_TTL / 86400 });
   }
+  /* STEP 6 (his decisions of 29 Sep 2026): a customer's passkey, saved, linked to this device and removed, on their session */
+  if (p.startsWith("/passkey/")) return handlePasskey(request, env, p, m, u);
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -585,6 +590,129 @@ async function handleRemember(request, env) {
   } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
+    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+  });
+}
+
+/* ---- A CUSTOMER'S PASSKEY (Step 6, his decisions of 29 Sep 2026; the mechanism is stmt/passkey.js) ----------------
+ * Saved on a session, it opens the account later with the face or finger its store asks for. This Worker checks the
+ * passkey's signature and hands back its share of the key; the other half is the device's own bytes or the secret the
+ * passkey returns, so nothing here can open an account. A passkey whose store gives no secret opens a device once the
+ * account has been signed into there (the password once a new device, his decision); Log out keeps it (his decision);
+ * Remove, Sign out everywhere and his own Sign out end it with its devices' wraps. It lasts a year from its last use. */
+const pkTok = () => b64u(crypto.getRandomValues(new Uint8Array(24)));
+const pkId = (x) => (typeof x === "string" && PK_ID_RE.test(x) ? x : null);
+/* the assertion, checked against the passkey filed under its credential: null unless every check holds */
+async function passkeyAssert(env, b, url) {
+  const id = pkId(b.id);
+  if (!id) return null;
+  const key = await pkKey(id), rec = await env.STMT.get(key, "json");
+  if (!rec || !rec.u || rec.cid !== id) return null;
+  const cd = unb64(b.clientData), ad = unb64(b.authData), sig = unb64(b.sig);
+  if (!clientOk(cd, "webauthn.get", b.challenge, url.origin) || !(await authOk(ad, url.hostname))) return null;
+  if (!(await sigOk(rec.spki, rec.alg, ad, cd, sig))) return null;
+  return { id, key, rec };
+}
+async function handlePasskey(request, env, p, m, u) {
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const b = (await readJson(request)) || {};
+  const url = new URL(request.url), now = new Date().toISOString();
+  /* a challenge for this account, with the share a passkey saved on it will keep, and the passkeys it already has, so
+     the page offers to use one of those on this device rather than save another */
+  if (p === "/passkey/new") {
+    const share = b64u(crypto.getRandomValues(new Uint8Array(32)));
+    const challenge = await mintChallenge(env, { use: "session", u, share });
+    const has = (await pointersOf(env, u)).filter((x) => /^pk:/.test(x.key) && typeof x.cid === "string").map((x) => x.cid);
+    return json({ ok: true, challenge, share, user: await handleOf(u), has });
+  }
+  if (p === "/passkey/save") {
+    const ch = await spendChallenge(env, b.challenge);
+    if (!ch || ch.use !== "session" || ch.u !== u) return refuse(refusal("pkStale"));
+    const id = pkId(b.id), cd = unb64(b.clientData), ad = unb64(b.authData);
+    if (!id || !PK_ALGS.includes(b.alg) || !unb64(b.spki) || !wrapShape(b.wrap) || (b.prfWrap != null && !wrapShape(b.prfWrap))
+      || !clientOk(cd, "webauthn.create", b.challenge, url.origin) || !(await authOk(ad, url.hostname, unb64(id)))) return refuse(refusal("pkNot"));
+    const key = await pkKey(id), was = await env.STMT.get(key, "json");
+    if (was && was.u !== u) return refuse(refusal("pkNot"));
+    const d = deviceOf(request.headers.get("user-agent")), stok = String(request.headers.get("X-Stmt-Session") || "");
+    /* the pointer first, as a remembered phone's, so a passkey is never filed where the account cannot find it again */
+    await pointAt(env, u, key, Object.assign({ how: "passkey", cid: id, at: now, last: now, label: d.label, kind: d.kind },
+      stok ? { sess: await sessKey(stok) } : {}), PK_TTL);
+    await env.STMT.put(key, JSON.stringify({ u, cid: id, spki: b.spki, alg: b.alg, share: ch.share, prfWrap: b.prfWrap || null, at: now }), { expirationTtl: PK_TTL });
+    const t = pkTok();
+    await env.STMT.put(await pkdKey(key, t), JSON.stringify({ u, wrap: b.wrap, at: now }), { expirationTtl: PK_TTL });
+    return json({ ok: true, t });
+  }
+  /* a passkey the account already has, used on this device: checked, then its share goes back for this device's wrap */
+  if (p === "/passkey/link") {
+    const ch = await spendChallenge(env, b.challenge);
+    if (!ch || ch.use !== "session" || ch.u !== u) return refuse(refusal("pkStale"));
+    const got = await passkeyAssert(env, b, url);
+    if (!got || got.rec.u !== u) return refuse(refusal("pkNot"));
+    return json({ ok: true, share: got.rec.share, roams: !!got.rec.prfWrap });
+  }
+  /* this device's wrap under the passkey, and the passkey's roaming wrap the first time a device can make one */
+  if (p === "/passkey/wrap") {
+    const id = pkId(b.id), key = id ? await pkKey(id) : null, rec = key ? await env.STMT.get(key, "json") : null;
+    if (!rec || rec.u !== u) return refuse(refusal("pkNot"));
+    if ((b.wrap != null && !wrapShape(b.wrap)) || (b.prfWrap != null && !wrapShape(b.prfWrap)) || (!b.wrap && !b.prfWrap)) return json({ ok: false, error: "send the wrap" }, 400);
+    let t = null;
+    if (b.wrap) { t = pkTok(); await env.STMT.put(await pkdKey(key, t), JSON.stringify({ u, wrap: b.wrap, at: now }), { expirationTtl: PK_TTL }); }
+    if (b.prfWrap && !rec.prfWrap) await env.STMT.put(key, JSON.stringify(Object.assign(rec, { prfWrap: b.prfWrap })), { expirationTtl: PK_TTL });
+    return json({ ok: true, t });
+  }
+  if (p === "/passkey/remove") {
+    const id = pkId(b.id), key = id ? await pkKey(id) : null;
+    const ptr = key ? (await pointersOf(env, u)).find((x) => x.key === key) : null;
+    if (ptr) await endDevice(env, u, ptr);
+    return json({ ok: true, removed: ptr ? 1 : 0 });
+  }
+  return notFound();
+}
+/* a challenge to open with, before any session; five minutes, spent once. JSON only, the door's own gate. */
+async function handlePasskeyChallenge(request, env) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!(await readJson(request))) return refused();
+  return json({ ok: true, challenge: await mintChallenge(env, { use: "open" }) });
+}
+/* THE PASSKEY OPENS THE ACCOUNT. The signature checked, the share goes back with what the passkey can open: this device's
+   wrap, named by the token the device holds, and the roaming wrap when the device says its passkey gave a secret. With
+   neither, the answer is `once`: this device signs in by password once, and the page files its wrap after. A session is
+   minted only when there is something to open, as a remembered phone's is, and the refusal is the door's one refusal. */
+async function handlePasskeyOpen(request, env) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const b = await readJson(request);
+  if (!b) return refused();
+  const ch = await spendChallenge(env, b.challenge);
+  if (!ch || ch.use !== "open") return refused();
+  const url = new URL(request.url), got = await passkeyAssert(env, b, url);
+  if (!got) return refused();
+  const u = got.rec.u, acct = await accountRecord(env, u);
+  if (!acct) return refused();
+  let wrap = null, dkey = null;
+  if (typeof b.t === "string" && PKT_RE.test(b.t)) {
+    dkey = await pkdKey(got.key, b.t);
+    const d = await env.STMT.get(dkey, "json");
+    if (d && d.u === u && d.wrap) wrap = d.wrap; else dkey = null;
+  }
+  const prfWrap = b.prf === true ? got.rec.prfWrap || null : null;
+  if (!wrap && !prfWrap) return json({ ok: true, once: true, u, share: got.rec.share });
+  await markSeen(env, u, acct, "passkey", request);
+  const now = new Date().toISOString();
+  /* a year from the last use (his decision), the passkey and this device's wrap both; best effort, as a remembered phone's */
+  try {
+    await env.STMT.put(got.key, JSON.stringify(Object.assign(got.rec, { last: now })), { expirationTtl: PK_TTL });
+    if (dkey) await env.STMT.put(dkey, JSON.stringify({ u, wrap, at: now }), { expirationTtl: PK_TTL });
+  } catch (e) { /* it opens either way */ }
+  const session = await openSession(env, u, "passkey", request);
+  try {
+    const old = await env.STMT.get(devPrefix(u) + (await idOf(got.key)), "json");
+    const was = [old && old.sess].concat((old && old.was) || []).filter((x) => typeof x === "string").slice(0, 4);
+    await pointAt(env, u, got.key, Object.assign({}, old || {}, { key: got.key, how: "passkey", cid: got.id, at: (old && old.at) || now, last: now,
+      sess: await sessKey(session), was }), PK_TTL);
+  } catch (e) { /* the next open writes it */ }
+  return json({
+    ok: true, u, passkey: true, share: got.rec.share, wrap, prfWrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, live: acct.live || null, prices: acct.prices || null, session
   });
@@ -1019,15 +1147,21 @@ const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
  * password like any account, orders like any account, and is deleted with everything it wrote:
  * its orders, its opens, its ticks and any phone it subscribed. It is marked `test`, which is how
  * every list leaves it out of a count. */
-async function testStatement() {
-  const at = new Date().toISOString();
-  const body = '<div class="w"><h1>Test account</h1>'
-    + '<p class="lead">This account is for trying the page out. Nothing on it is on the book, '
+/* C23 (29 Sep 2026): the test account's own statement is drawn as a customer's live document is, an h2 of Statement lines
+   with its date DD Mon YYYY, never the retired table under an h1 of its own. The fixture's live document stands over it. */
+export async function testStatement() {
+  const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);   /* the Kuala Lumpur day */
+  const dmy = day.slice(8) + " " + MON3[+day.slice(5, 7) - 1] + " " + day.slice(0, 4);
+  const body = '<h2 class="stmth">Test account</h2>'
+    + '<p class="meta">This account is for trying the page out. Nothing on it is on the book, '
     + "and nothing it orders reaches the ledger.</p>"
-    + '<table class="rows"><thead><tr><th class="l">Date</th><th>Quantity</th><th class="r">Amount</th></tr></thead>'
-    + '<tbody><tr><td class="l dt">1 September 2026</td><td class="q">1<span class="u">unit</span></td>'
-    + '<td class="r">RM 100.00</td></tr></tbody></table></div>';
-  return { v: 1, issued: at.slice(0, 10), statements: [{ issued: at.slice(0, 10), label: "Test", body }] };
+    + '<div class="salt-lines" role="table" aria-label="Your orders"><div class="salt-lines__head" role="row">'
+    + '<div class="salt-lines__date" role="columnheader">Date</div><div class="salt-lines__what" role="columnheader">Quantity</div>'
+    + '<div class="salt-lines__amount" role="columnheader">Amount</div><div class="salt-lines__state" role="columnheader">Status</div></div>'
+    + '<div class="salt-lines__row" role="row" data-m="' + day.slice(0, 7) + '"><div class="salt-lines__date" role="cell">' + dmy + "</div>"
+    + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
+    + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div></div>';
+  return { v: 1, issued: day, statements: [{ issued: day, label: "Test", body }] };
 }
 function testPrices() {
   const now = new Date(), day = now.toISOString().slice(0, 10);
@@ -1096,8 +1230,9 @@ async function unmakeOne(env, t) {
       /* S3 3.2: its remembered phones and live sessions, found through their pointers */
       if (pre.startsWith("dev:")) for (const k of page.keys) {
         const at = await env.STMT.get(k.name, "json");
-        if (at && /^(rem|sess|ot|ho):/.test(String(at.key))) gone.push(at.key);
+        if (at && /^(rem|sess|ot|ho|pk):/.test(String(at.key))) gone.push(at.key);
         if (at && at.pair) gone.push(at.pair);
+        if (at && /^pk:/.test(String(at.key))) gone.push(...await pkdKeys(env, at.key));   /* Step 6: its devices' wraps */
       }
       cursor = page.list_complete ? null : page.cursor;
     } while (cursor);
@@ -1132,18 +1267,31 @@ async function pointersOf(env, u) {
   return out;
 }
 /* the sessions a remembered phone opened: the newest (`sess`) and the ones before it (`was`) */
-const opened = (p) => /^rem:/.test(p.key) ? [p.sess].concat(Array.isArray(p.was) ? p.was : []).filter((x) => typeof x === "string") : [];
+const opened = (p) => /^(rem|pk):/.test(p.key) ? [p.sess].concat(Array.isArray(p.was) ? p.was : []).filter((x) => typeof x === "string") : [];
 function devicesIn(ptrs) {
   const held = new Set([].concat(...ptrs.map(opened)));
-  return ptrs.filter((p) => /^(rem|sess):/.test(p.key) && !held.has(p.key))
+  return ptrs.filter((p) => /^(rem|sess|pk):/.test(p.key) && !held.has(p.key))
     .sort((a, b) => String(b.last || b.at || "").localeCompare(String(a.last || a.at || "")));
 }
-const deviceOut = (p) => ({ label: p.label || null, kind: p.kind || null, at: p.at || null, last: p.last || p.at || null, kept: /^rem:/.test(p.key) });
+/* Step 6: a passkey is listed as a device kept, and says so (`passkey`, on a passkey's row alone) */
+const deviceOut = (p) => Object.assign({ label: p.label || null, kind: p.kind || null, at: p.at || null, last: p.last || p.at || null, kept: /^(rem|pk):/.test(p.key) },
+  /^pk:/.test(p.key) ? { passkey: true } : {});
+/* the device wraps filed under a passkey (Step 6), which end with it */
+async function pkdKeys(env, key) {
+  const out = []; let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: pkdPrefix(key), cursor });
+    for (const k of page.keys) out.push(k.name);
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
 /* one device ended: its credential, the sessions a remembered phone opened, and the pointers to all of them; and, since
    an S9 fix, the alerts filed from it (a push record names its session and the phone holding it), so a phone signed out
    by its own row stops waking (v692). Returns how many alerts it stopped. */
 async function endDevice(env, u, p) {
   await env.STMT.delete(p.key);
+  if (/^pk:/.test(p.key)) for (const k of await pkdKeys(env, p.key)) await env.STMT.delete(k);
   for (const s of opened(p)) { await env.STMT.delete(s); await unpoint(env, u, s); }
   await env.STMT.delete(p.name);
   const mine = [p.key].concat(opened(p));
@@ -1179,7 +1327,7 @@ async function signOutEverywhere(env, u, keep) {
   for (const p of ptrs) {
     /* S9 fix: a device ends as his one-device Sign out ends it, a remembered phone taking the sessions it names, whose
        own pointers may be missing (written best effort, or not yet in the list) */
-    if (/^(rem|sess):/.test(p.key)) { phones += await endDevice(env, u, p); continue; }
+    if (/^(rem|sess|pk):/.test(p.key)) { phones += await endDevice(env, u, p); continue; }
     if (keep && p.key === "ot:" + keep && !p.out) continue;
     /* S9 fix: counted only when it has left a page (`out`, POST /all/out) or is a code, which is shown; a link made as an
        account opened and never sent is burnt uncounted, so the answer names what somebody may hold */
@@ -1585,6 +1733,11 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleRemember(request, env);
     }
+    /* Step 6: a passkey's challenge, and the passkey opening an account, before any session */
+    if (p === "/passkey/challenge" || p === "/passkey/open") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return p === "/passkey/open" ? handlePasskeyOpen(request, env) : handlePasskeyChallenge(request, env);
+    }
     /* v710: the one-time link, opened */
     if (p === "/open-link") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1593,7 +1746,8 @@ export default {
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
-      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe") return handleCustomer(request, env, p, m);
+      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
+      || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")) return handleDesk(request, env, p, m);
