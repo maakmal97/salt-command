@@ -73,6 +73,7 @@ const locked = () => new Response(LOCKED_HTML, {
 const QKEY = (device) => "q:" + device;
 const VKEY = "vault";                 // the encrypted name vault, ciphertext only
 const AKEY = "vault-addr";            // F14: the places envelope, ciphertext only, read and written with the key
+const KKEY = "vault-key";             // F13: the slip key's sealed private half, read with the key, written only by seed-vault
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
 /* THE DAY IS KUALA LUMPUR'S (08 Sep 2026). COUNT_ON is written by the fold in MYT; "today" here
    was the UTC day, so between midnight and 08:00 a morning count read as not taken and
@@ -357,6 +358,18 @@ async function handleVaultAddr(request, env, m) {
   await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: at,
     vault: Object.assign({ v: 1, salt: v.salt, iv: v.iv, ct: v.ct }, Number.isInteger(v.it) && v.it > 0 ? { it: v.it } : {}) }));
   return json({ ok: true });
+}
+
+/* F13 (29 Sep 2026): THE SLIP KEY, the vault's third envelope: {updated, vault: the sealed private half, pub: the public
+ * half}. Only `node tools/seed-vault.mjs --slip-key` writes it, through wrangler, so there is no POST: nothing on the desk
+ * could replace the key every slip is sealed to. Read with the key, as the places are; the desk opens it on the unlock. */
+async function handleVaultKey(env, m) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  if (!env.SALT_QUEUE) return json({ ok: true, vault: null });
+  const raw = await env.SALT_QUEUE.get(KKEY);
+  if (!raw) return json({ ok: true, vault: null });
+  try { const v = JSON.parse(raw); return json({ ok: true, vault: v.vault || null, pub: v.pub || null, updated: v.updated || null }); }
+  catch (e) { return json({ ok: false, error: "the slip key could not be read" }, 500); }
 }
 
 /* F14: A MAPS SHORT LINK OPENED FOR THE DESK, AND NOTHING KEPT. A maps.app.goo.gl link carries no point until it is
@@ -849,7 +862,7 @@ export default {
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
     if (!accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
-        || p === "/vault/addr" || p === "/geo/expand"
+        || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand"
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
@@ -876,6 +889,7 @@ export default {
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/vault/addr" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
+      || p === "/vault/key"   /* F13: the slip key's envelope is his alone */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -1182,6 +1196,7 @@ export default {
       return json({ ok: false }, 405);
     }
     if (p === "/vault/addr") return handleVaultAddr(request, env, m);   // F14: the places, ciphertext only, keyed both ways
+    if (p === "/vault/key") return handleVaultKey(env, m);              // F13: the slip key, sealed, keyed, never written here
     if (p === "/geo/expand") {                                          // F14: a short Maps link, one redirect, nothing kept
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleGeoExpand(request);

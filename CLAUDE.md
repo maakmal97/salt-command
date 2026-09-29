@@ -244,12 +244,17 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 
 Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts `salt_bio.json`
 with `$env:SALT_VAULT_PASS` (never a file) and pushes the ciphertext to KV; the desk auto-locks on
-`visibilitychange`. **The vault is two envelopes under one passphrase; an address or an exact point
+`visibilitychange`. **The vault is three envelopes under one passphrase; an address or an exact point
 lives only in the second**: names in KV `vault`, places in `vault-addr` (`{<code>: {addr, lat, lng,
 src, at}, _base}`), filed at Add ID and Amend ID from a Maps or Waze link read on the device, while
-`PLACED` keeps the locality to 0.01 degrees. One unlock opens both, and the auto-lock clears both;
-the laptop's copy is `10_Data\salt_addr.json`, through `seed-vault.mjs --addr` and `pull-vault.mjs
---addr`. **A name and ID is committed every time, like an approved row**: Add ID on the
+`PLACED` keeps the locality to 0.01 degrees; and the slip key in `vault-key`, the private half of an
+ECDH P-256 pair every slip is sealed to, its public half in the clear beside it and on the Counter's
+KV `slipkey`. **One unlock opens all three**, the slip key imported non-extractable, and the
+auto-lock clears all three. The laptop's copies are `10_Data\salt_addr.json`, through
+`seed-vault.mjs --addr` and `pull-vault.mjs --addr`, and `10_Data\salt_slipkey.json` (ciphertext),
+through `seed-vault.mjs --slip-key` and `pull-vault.mjs --slip-key`. **No route and no other tool
+writes `vault-key`, and `--slip-key` never over a filed key unasked**: a new key loses every slip
+sealed to the old; a lost one is put back by hand from the copy. **A name and ID is committed every time, like an approved row**: Add ID on the
 phone files the name and place into the vault, encrypted on the device, before the ID is queued.
 **On the laptop run `node tools/pull-vault.mjs` before any seed**; the vault's spelling wins, and
 after a re-key take out the retired codes it brings back. When a fold finds a roster code the

@@ -10248,29 +10248,35 @@ await (async () => {
     : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
   const env = Object.fromEntries(Object.entries(process.env).filter(([k2]) => !/^(GIT_|GITHUB_|LIVE_AT$|GATED_TREE$|PUSH_KEY$)/.test(k2)));
   const root = mkdtempSync(join(tmpdir(), "fold34-")), fwd = (p) => p.replace(/\\/g, "/");
-  const log = fwd(join(root, "log.txt")), reads = fwd(join(root, "reads.txt")), sleeps = fwd(join(root, "sleeps.txt"));
+  const log = fwd(join(root, "log.txt"));
   /* BASH'S CLOCK IS THE STUBS' ALONE (28 Sep 2026). SECONDS counts real time as well as what the sleep stub adds, so
      each read's real node start ran the minute down: beside other suites a Worker that never switched was read 19
      times and slept 36 s. Unset, SECONDS is a plain variable that only sleep moves, and the minute is exactly thirty
-     sleeps of 2 s however busy the machine is. */
+     sleeps of 2 s however busy the machine is.
+     THE STUBS KEEP NO COUNT IN A FILE (29 Sep 2026). With the clock fixed, a full suite still saw a Worker that never
+     switched read 30 times over thirty sleeps: the read counter, a fork of cat and a file rewritten from a subshell,
+     lost a read the step had made. Each read and each sleep is now a line on stderr, a pipe the suite holds, and what
+     /rev serves is chosen by the stub clock, which the subshell inherits. */
   const stubs = [
     "unset SECONDS; SECONDS=0",
-    /* curl answers the nth read with the nth entry of STUB_SEQ, the last repeating; down is a failed read */
-    "curl() { echo \"$*\" >> " + JSON.stringify(log) + "; local n a v; n=$(( $(cat " + JSON.stringify(reads) + ") + 1 )); echo $n > " + JSON.stringify(reads) + ";",
-    "  IFS=, read -ra a <<< \"${STUB_SEQ:-200}\"; if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
+    /* curl answers from STUB_SEQ by the stub clock, entry k for seconds 2k to 2k+1, the last repeating; down is a failed read */
+    "curl() { echo 'stub: read' >&2; { echo \"$*\" >> " + JSON.stringify(log) + "; } 2>/dev/null || :; local n a v IFS=,; n=$(( SECONDS / 2 + 1 ));",
+    "  a=(${STUB_SEQ:-200}); if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
     "  if [ \"$v\" = down ]; then return 22; fi; if [ \"$v\" = 200 ]; then printf 200; else printf '{\"id\":\"%s\"}' \"$v\"; fi; }",
-    "sleep() { echo \"$1\" >> " + JSON.stringify(sleeps) + "; SECONDS=$((SECONDS + $1)); }",
+    "sleep() { echo \"stub: sleep $1\" >&2; SECONDS=$((SECONDS + $1)); }",
     "npm() { echo \"npm $*\" >> " + JSON.stringify(log) + "; }", ""].join("\n");
   const run = (w, name, ctx = {}, more = {}) => {
     const out = join(root, "out.txt"), envf = join(root, "env.txt");
-    writeFileSync(out, ""); writeFileSync(envf, ""); writeFileSync(reads, "0"); writeFileSync(sleeps, "");
+    writeFileSync(out, ""); writeFileSync(envf, "");
     const body = shellOf(name);
     const script = stubs + body.replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, key) => (key in ctx ? ctx[key] : ""));
     const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script],
       { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: fwd(out), GITHUB_ENV: fwd(envf) }, encoding: "utf8", timeout: 120000 });
     const kv = (f) => Object.fromEntries(readFileSync(f, "utf8").split("\n").filter((l) => l.indexOf("=") > 0).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
-    return { ran: body !== "", code: r.status, o: kv(out), e: kv(envf), text: String(r.stdout || "") + String(r.stderr || ""),
-      reads: +readFileSync(reads, "utf8"), sleeps: readFileSync(sleeps, "utf8").split("\n").filter(Boolean) };
+    const err = String(r.stderr || "").split(/\r?\n/), stub = (re) => err.map((l) => re.exec(l)).filter(Boolean);
+    return { ran: body !== "", code: r.status, o: kv(out), e: kv(envf),
+      text: String(r.stdout || "") + err.filter((l) => !/^stub: /.test(l)).join("\n"),
+      reads: stub(/^stub: read$/).length, sleeps: stub(/^stub: sleep (\S+)$/).map((m) => m[1]) };
   };
   const logLines = (re) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n").filter((l) => re.test(l)).length;
   const gitIn = (cwd, ...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd, env, encoding: "utf8", stdio: "pipe" });
@@ -37198,6 +37204,35 @@ await (async () => {
     "and the message it always checked is checked as before: " + JSON.stringify(said.j.error));
 })();
 
+section("Fix reason lock: a fix's cancel reason passes siteWords on the desk's relay before it leaves it");
+await (async () => {
+  /* 29 Sep 2026 (Step 1b review). decideFix files fix.cancel as the note of the cancellation it makes, which the page
+     prints, and the relay checked only message and note. Driven through the desk's own route, the site spied, so a
+     refusal is proved to leave nothing behind it. The site reads the reason as String() of whatever came. */
+  const deskW = (await import("../src/worker.js")).default;
+  const dkv = new KV(), u = "abcd-efgh", id = "20260929000000-fxlk", spy = [];
+  await dkv.put("stmt-users", JSON.stringify({ [u]: "CC9-OKR" }));
+  const denv = { SALT_QUEUE: dkv, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+    STMT_SITE: { fetch: (url, init) => { spy.push(String(url && url.url ? url.url : url)); return new Response(JSON.stringify({ ok: false, error: "spied" }), { status: 409 }); } } };
+  const ctx = { waitUntil: (p) => { Promise.resolve(p).catch(() => {}); } };
+  const move = async (cancel) => {
+    spy.length = 0;
+    const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + u + "/" + id, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" },
+      body: JSON.stringify({ fix: { id: "fx-lock", line: "2026-09-29T00:00:00.000Z", unpay: true, unmove: true, cancel } }) }), denv, ctx);
+    return { status: r.status, error: (await r.json()).error || "", calls: spy.length };
+  };
+  const lvl = await move("taken back, your Gold price stands");
+  ok(lvl.status === 400 && /fix's reason says something that names a level/.test(lvl.error) && lvl.calls === 0,
+    "a fix whose reason names a level is refused on the desk and never reaches the site: " + JSON.stringify(lvl));
+  const arr = await move(["held for CC9-OKR"]);
+  ok(arr.status === 400 && /roster code/.test(arr.error) && arr.calls === 0,
+    "and a reason sent as another shape is read as the site reads it, String(), so a code in an array is refused too: " + JSON.stringify(arr));
+  const fine = await move("Carried on your order of 27 Sep");
+  ok(fine.calls === 1 && !/says something/.test(fine.error),
+    "a reason that says none of those goes on to the site: " + JSON.stringify(fine));
+})();
+
 section("S11 11.4: Site orders opens on Waiting on you, one row a customer act, oldest first, counted the same on Today and the Enter badge");
 await (async () => {
   /* 24 Sep 2026 (his answer "all recommended", PLAN 5). The card listed whole orders newest first with the notice
@@ -45999,6 +46034,142 @@ await (async () => {
     "F14: salt_addr.json is kept out of the repo, and the update-names-id skill tells of both tools and that the agent never opens the file");
 })();
 
+
+section("F13 (29 Sep 2026): the slip key at /vault/key is read with the key alone, and no route writes it");
+await (async () => {
+  /* F13: the vault's third envelope. Only seed-vault --slip-key writes it, through wrangler, so the Worker reads it with the
+     key and answers every other method 405: nothing on the desk could replace the key every slip is sealed to. Proved red
+     by mutation. */
+  const deskW = (await import("../src/worker.js")).default;
+  const KEY = "k-vault-key-fixture";
+  const kv = new KV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY };
+  const call = async (r) => { try { const x = await deskW.fetch(r, env); let j = null; try { j = await x.json(); } catch (e) { j = null; } return { status: x.status, j }; } catch (e) { return { status: -1, j: null }; } };
+  const get = (h = { "X-Salt-Key": KEY }) => call(req("/vault/key", { headers: h }));
+  const unkeyed = await get({});
+  const empty = await get();
+  const ENV = { updated: "2026-09-29T01:00:00.000Z", vault: { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVy" }, pub: { kty: "EC", crv: "P-256", x: "eA", y: "eQ" } };
+  kv.m.set("vault-key", JSON.stringify(ENV));
+  const back = await get();
+  const posted = await call(req("/vault/key", { method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": KEY }, body: JSON.stringify({ vault: { v: 1, salt: "AA==", iv: "AA==", ct: "AA==" } }) }));
+  const after = kv.m.get("vault-key");
+  kv.m.set("vault-key", "{not json");
+  const bad = await get();
+  ok(unkeyed.status === 401, "F13: the slip key is read only with the key: " + unkeyed.status);
+  ok(empty.status === 200 && !!empty.j && empty.j.ok === true && empty.j.vault === null, "F13: with none filed, the read answers no envelope: " + JSON.stringify(empty));
+  ok(!!back.j && back.j.ok === true && JSON.stringify(back.j.vault) === JSON.stringify(ENV.vault) && JSON.stringify(back.j.pub) === JSON.stringify(ENV.pub) && back.j.updated === ENV.updated,
+    "F13: a filed key is answered as it was sealed, with its public half: " + JSON.stringify(back.j));
+  ok(posted.status === 405 && after === JSON.stringify(ENV), "F13: a keyed POST is refused and the filed key is untouched: " + posted.status);
+  ok(bad.status === 500 && !!bad.j && bad.j.ok === false, "F13: a key that cannot be read answers not ok, never none: " + JSON.stringify(bad));
+})();
+
+section("F13: one unlock opens the names, the places and the slip key, the key non-extractable, and every lock clears all three");
+await (async () => {
+  /* F13: vaultReveal keeps no passphrase, so the slip key is opened on the one it is given, with the names and the places,
+     and imported to derive bits alone; the desk's slipOpen reads a slip sealed to its public half by the laptop's slipSeal,
+     the customer's protocol. Proved red by mutation. */
+  const { openMaster: omK } = await import("../tools/payload.mjs");
+  const { webcrypto: wcK } = await import("node:crypto");
+  const S = await import("../tools/seed-vault.mjs");
+  const { w: wK } = await omK();
+  if (!wK.crypto || !wK.crypto.subtle) { try { Object.defineProperty(wK, "crypto", { value: wcK, configurable: true }); } catch (e) { wK.crypto = wcK; } }
+  const rdK = (e) => JSON.parse(String(wK.eval("JSON.stringify(" + e + ")")));
+  try {
+    const names = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": "Zed Slp (Qelvor)" }));
+    const places = JSON.stringify(await S.vaultEncrypt("pw", { "CZ9-SLP": { addr: "Kedai Zqor", lat: 3.1, lng: 101.6, src: "waze", at: null } }));
+    const key = await S.slipKeyMint("pw"), other = await S.slipKeyMint("not pw");
+    const stub = (k) => "(function(){NAME_VAULT=" + names + ";qSyncState='server';window.__prompts=0;window.prompt=function(){window.__prompts++;return 'pw';};window.__gets=[];"
+      + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve(s==='vault/addr'?{ok:true,vault:" + places + "}:s==='vault/key'?{ok:true,vault:" + (k ? JSON.stringify(k.vault) : "null") + "}:{ok:true});}});};})();";
+    const slipIn = (sealed) => wK.eval("slipOpen(" + JSON.stringify(sealed) + ").then(function(b){return b?Array.from(b).join(','):null;})");
+    const BYTES = new Uint8Array([255, 216, 255, 224, 1, 2, 3, 4, 5, 255, 217]);
+    wK.eval("try{cloudMode=function(){return true;};}catch(e){};" + stub(key));
+    const opened = await wK.eval("vaultReveal('pw')");
+    const o = rdK("{names:Object.keys(vaultNames),places:Object.keys(vaultPlaces),msg:vaultRevealMsg,prompts:window.__prompts,gets:window.__gets,"
+      + "k:vaultSlipKey?{type:vaultSlipKey.type,ex:vaultSlipKey.extractable,us:vaultSlipKey.usages,alg:vaultSlipKey.algorithm.name}:null}");
+    ok(opened === true && o.names.includes("CZ9-SLP") && o.places.includes("CZ9-SLP") && !!o.k && o.k.type === "private" && o.k.ex === false
+      && JSON.stringify(o.k.us) === '["deriveBits"]' && o.k.alg === "ECDH" && o.prompts === 0 && o.msg === "" && o.gets.includes("vault/key"),
+      "F13: one passphrase opens the names, the places and the slip key, imported non-extractable to derive bits alone, with no second prompt: " + JSON.stringify(o));
+    const mine = await slipIn(await S.slipSeal(key.pub, BYTES)), theirs = await slipIn(await S.slipSeal(other.pub, BYTES));
+    ok(mine === Array.from(BYTES).join(",") && theirs === null, "F13: a slip sealed to the key's public half opens to its bytes, and one sealed to another key opens to nothing: " + JSON.stringify({ mine, theirs }));
+    const sealedMine = await S.slipSeal(key.pub, BYTES);
+    wK.eval("lockVault();");
+    const l = rdK("{names:Object.keys(vaultNames).length,places:Object.keys(vaultPlaces).length,key:vaultSlipKey===null}");
+    const afterLock = await slipIn(sealedMine);
+    ok(l.names === 0 && l.places === 0 && l.key === true && afterLock === null, "F13: the lock clears the names, the places and the slip key together, and a slip no longer opens: " + JSON.stringify({ l, afterLock }));
+    wK.eval(stub(other));
+    await wK.eval("vaultReveal('pw')");
+    const half = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(half.names === 1 && half.key === true && /the slip key did not open/.test(half.msg), "F13: a slip key sealed under another passphrase stays shut, and the reveal says so: " + JSON.stringify(half));
+    wK.eval("lockVault();" + stub(null));
+    await wK.eval("vaultReveal('pw')");
+    const none = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(none.names === 1 && none.key === true && none.msg === "", "F13: with no slip key filed, the names open and nothing is said to be shut: " + JSON.stringify(none));
+    wK.eval("lockVault();" + stub(key) + "(function(){var f=window.fetch;window.fetch=function(u,o){return String(u)==='vault/key'?Promise.resolve({ok:false,status:401,json:function(){return Promise.resolve({ok:false});}}):f(u,o);};})();");
+    await wK.eval("vaultReveal('pw')");
+    const unread = rdK("{names:Object.keys(vaultNames).length,key:vaultSlipKey===null,msg:vaultRevealMsg}");
+    ok(unread.names === 1 && unread.key === true && unread.msg === "The slip key could not be read here.", "F13: a slip key that could not be read is told apart from one that would not open: " + JSON.stringify(unread));
+    wK.eval("lockVault();");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wK.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("F13: seed-vault --slip-key mints a pair proved to round-trip, sealed under the names' passphrase, never over a filed key");
+await (async () => {
+  /* F13: the laptop's road for the slip key, driven on its pure parts, the reads handed in as the places' guard is. The key
+     is minted by him with his passphrase; nothing here touches KV or 10_Data. Proved red by mutation. */
+  const S = await import("../tools/seed-vault.mjs"), P = await import("../tools/pull-vault.mjs");
+  const { mkdtempSync } = await import("node:fs"), { tmpdir } = await import("node:os");
+  const pass = "correct horse";
+  const env = await S.slipKeyMint(pass);
+  const opened = await S.vaultDecrypt(pass, env.vault);
+  const k = await S.slipKeyOpen(pass, env.vault);
+  const probe = new Uint8Array([7, 8, 9]);
+  const round = Array.from(await S.slipOpen(k, await S.slipSeal(env.pub, probe))).join();
+  let otherPass = null; try { await S.slipKeyOpen("another pass", env.vault); otherPass = "opened"; } catch (e) { otherPass = "shut"; }
+  ok(JSON.stringify(Object.keys(env.vault).sort()) === JSON.stringify(["ct", "iv", "salt", "v"]) && JSON.stringify(Object.keys(env.pub).sort()) === JSON.stringify(["crv", "kty", "x", "y"])
+    && opened.x === env.pub.x && opened.y === env.pub.y && typeof opened.d === "string" && !JSON.stringify(env).includes(opened.d)
+    && k.extractable === false && round === "7,8,9" && otherPass === "shut",
+    "F13: the mint seals the private half under the passphrase, the public half beside it in the clear, and a probe sealed to one opens with the other: " + JSON.stringify({ pub: Object.keys(env.pub), round, otherPass }));
+  const rec = S.pubRecord(env);
+  ok(JSON.stringify(Object.keys(rec).sort()) === JSON.stringify(["pub", "updated", "v"]) && JSON.stringify(Object.keys(rec.pub).sort()) === JSON.stringify(["crv", "kty", "x", "y"]) && !JSON.stringify(rec).includes(env.vault.ct),
+    "F13: the Counter is given the public half and its day, never the sealed half: " + JSON.stringify(Object.keys(rec)));
+  const names = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt(pass, { "CZ9-A": "Zed (Qelvor)" }) });
+  const other = JSON.stringify({ updated: "t", vault: await S.vaultEncrypt("another pass", { "CZ9-A": "Zed (Qelvor)" }) });
+  const live = JSON.stringify(env);
+  const said = (words) => Object.assign(new Error("Command failed"), { status: 1, stdout: "\n", stderr: "X [ERROR] " + words + "\n" });
+  const NOT_THERE = said("Failed to fetch https://api.cloudflare.com/client/v4/accounts/0/storage/kv/namespaces/0/values/vault-key - 404: Not Found");
+  const v = async (readKey, readNames, copied = false, force = false) => { try { return await S.slipSeedRefusal(pass, readKey, readNames, copied, force); } catch (e) { return e; } };
+  const wrongNames = await v(() => { throw NOT_THERE; }, () => other), wrongForced = await v(() => { throw NOT_THERE; }, () => other, false, true);
+  ok(Array.isArray(wrongNames) && /does not open the names vault/.test(wrongNames[0]) && Array.isArray(wrongForced) && /does not open the names vault/.test(wrongForced[0]),
+    "F13: a passphrase that does not open the live names vault is refused, --force or not, so every envelope shares one: " + JSON.stringify([wrongNames, wrongForced]));
+  const inKv = await v(() => live, () => names), inCopy = await v(() => { throw NOT_THERE; }, () => names, true);
+  ok(Array.isArray(inKv) && /already filed in KV "vault-key"/.test(inKv[0]) && Array.isArray(inCopy) && /already filed in 10_Data/.test(inCopy[0]) && !/KV/.test(inCopy[0]),
+    "F13: a key filed in KV or copied in 10_Data is never replaced unasked: " + JSON.stringify([inKv, inCopy]));
+  ok(await v(() => { throw NOT_THERE; }, () => names) === null && await v(() => live, () => names, true, true) === null && await v(() => { throw NOT_THERE; }, () => { throw said("x - 404: Not Found"); }) === null,
+    "F13: a first key goes on, with or without a names vault, and --force goes past a filed one");
+  const dead = await v(() => { throw said("fetch failed"); }, () => names);
+  ok(Array.isArray(dead) && /^STOPPED/.test(dead[0]), "F13: a read that failed stops the seed, and never passes for no key: " + JSON.stringify(dead));
+  let seenGet = null, seenPut = null;
+  try { S.wrGetKey((cmd, args, opts) => { seenGet = { cmd, args, opts }; return "{}"; }); S.wrPutPub("x.json", (cmd, args, opts) => { seenPut = { cmd, args, opts }; return ""; }); } catch (e) { /* read below */ }
+  ok(!!seenGet && seenGet.args.join(" ") === "wrangler kv key get vault-key --binding SALT_QUEUE --remote" && seenGet.opts.cwd === REPO
+    && !!seenPut && seenPut.args.join(" ") === "wrangler kv key put slipkey --path x.json --binding STMT --remote -c wrangler.stmt.jsonc" && seenPut.opts.shell === (process.platform === "win32"),
+    "F13: the key is read from the desk's KV and the public half written to the Counter's, each through wrangler from the repo: " + JSON.stringify([seenGet && seenGet.args, seenPut && seenPut.args]));
+  const dir = mkdtempSync(join(tmpdir(), "slipkey-"));
+  try {
+    const f = join(dir, "salt_slipkey.json");
+    const none = S.keepAside(f);
+    writeFileSync(f, "OLD");
+    const to = S.keepAside(f);
+    ok(none === null && !!to && !existsSync(f) && existsSync(to) && readFileSync(to, "utf8") === "OLD" && /salt_slipkey_was_.+\.json$/.test(to),
+      "F13: a copy in 10_Data is never overwritten: the old one is kept beside it under its own moment: " + String(to));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  const pulled = await P.slipKeyPull(pass, () => live), pulledWrong = await P.slipKeyPull("another pass", () => live), pulledNone = await P.slipKeyPull(pass, () => { throw NOT_THERE; });
+  ok(!!pulled.envelope && pulled.envelope.vault.ct === env.vault.ct && /did not open/.test(pulledWrong.error || "") && /holds no slip key/.test(pulledNone.error || ""),
+    "F13: the pull copies the key only once the passphrase is proved to open it: " + JSON.stringify([pulledWrong, pulledNone]));
+  const ign = readFileSync(join(REPO, ".gitignore"), "utf8").split(/\r?\n/);
+  const skill = readFileSync(join(REPO, ".claude", "skills", "update-names-id", "SKILL.md"), "utf8");
+  const stmtSrc = readdirSync(join(REPO, "stmt")).filter((n) => n.endsWith(".js")).map((n) => readFileSync(join(REPO, "stmt", n), "utf8")).join("\n");
+  ok(ign.includes("salt_slipkey*.json") && /seed-vault\.mjs\s+--slip-key/.test(skill) && /pull-vault\.mjs --slip-key/.test(skill) && !/vault-key/.test(stmtSrc),
+    "F13: the laptop's copy is kept out of the repo, the update-names-id skill tells of both tools, and the Counter holds no road to vault-key");
+})();
 
 section("28 Sep 2026: a lot's Payment on the Workbench previews, renders and queues its AMEND, the lot read through the engine's poStat and not a bare name that threw");
 await (async () => {

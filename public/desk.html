@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="59f0d92b6bacbf16";
+var SALT_BUILD_ID="45dec96d06a72cf7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8626,7 +8626,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v938","d":"29 Sep 2026","t":"A SHEET IS AGREED, MADE READY AND HANDED OVER TOGETHER","n":["<p><b>A SHEET IS AGREED, MADE READY AND HANDED OVER TOGETHER.</b> His word of 29 Sep 2026. While every order on a customer's sheet waits for Accept, the sheet's first order's card carries one Accept for all of them: the delivery charge is chosen there and the rest go at RM 0, each order's row is drafted and drawn on that card, and Accept stays shut until every row is. The other cards keep Decline and say where Accept is. While nothing on the sheet has moved, the first card also makes the sheet ready and hands it over whole; a part stays on each order's own card.</p>","<p><b>HOW THE ONE TAP WORKS.</b> It is each order's own move in turn, on its own road and its own row, so the Worker, the drafter and his yes behave as for one order. Each row he was shown is fixed before the first move, so a reload between moves cannot swap it; a second tap waits while the first is on its way; the first refusal stops the rest, and the answer says how many went.</p>","<p><b>PROOFS.</b> A new suite section of 19 checks, and the V4b desk section updated; 24 mutations each turned a check red. The whole suite passed on this tree. Fable's review found three risks (a second tap mid-way, a row redrafted between moves, a sibling with a yes given), all fixed and checked again by Fable: no fault.</p>"]}];
+const evolution=[{"v":"v940","d":"29 Sep 2026","t":"THE VAULT'S SLIP KEY","n":["<p><b>THE VAULT'S SLIP KEY.</b> F13's key, the Desk half of Step 5. The vault is now three envelopes under the one passphrase: names, places, and the slip key, the private half of an ECDH P-256 pair that a customer's payment slip will be sealed to on their own phone. It is minted on the laptop by <code>node tools/seed-vault.mjs --slip-key</code>, which proves a fresh pair before anything goes anywhere, seals the private half into KV <code>vault-key</code>, puts the public half on the Counter's KV <code>slipkey</code> and keeps a copy of the envelope in 10_Data. It refuses unless the passphrase opens the names vault, and while a key is already filed, since a new one leaves every slip sealed to the old one unreadable. <code>pull-vault.mjs --slip-key</code> copies it down once the passphrase is proved.</p>","<p><b>ONE UNLOCK OPENS ALL THREE.</b> The desk's unlock opens the names, the places and the slip key on the one passphrase, with no second prompt; the key is imported so the phone can use it and never export it, and leaving the app clears all three. The Worker reads the key only with the write key, at <code>GET /vault/key</code>, and has no way to write it. A slip is read by <code>slipOpen</code>, ready for View slip when the Counter side lands. Nothing moves for him until he mints the key.</p>","<p><b>PROOFS.</b> Three new suite sections of 22 checks; 22 mutations each turned a check red. The whole suite passed on this tree. Fable's review found four minor points (the SEEDED line before the last push, an unguarded copy, a key not read told apart from one not opened, the Names rule's wording), all fixed and checked again by Fable: fit to land.</p>"]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8741,7 +8741,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='29 Sep 2026, 10:46 KL';
+const LAST_UPDATED='29 Sep 2026, 11:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15995,6 +15995,33 @@ async function vaultPlacesSave(envl){
   try{const r=await fetch('vault/addr',{method:'POST',headers:qHeaders(),body:JSON.stringify({updated:new Date().toISOString(),vault:envl})});
     return r.ok&&(await r.json()).ok;}catch(e){return false;}
 }
+/* F13 (29 Sep 2026): THE SLIP KEY, the vault's third envelope, KV vault-key: the private half of an ECDH P-256 pair sealed by
+   vaultEncrypt under the one passphrase, minted only by `node tools/seed-vault.mjs --slip-key`. Opened on the unlock and
+   imported NON-EXTRACTABLE, to derive bits and nothing else, held beside the names and cleared with them. vaultSlipKeyOpen
+   answers the CryptoKey, false when none is filed, 'unread' when it could not be read (no write key here, or offline), or
+   null when it would not open on this passphrase. */
+let vaultSlipKey=null;
+async function vaultSlipKeyOpen(pass){
+  let j=null;
+  try{const r=await fetch('vault/key',{cache:'no-store',headers:qHeaders()});if(r.ok)j=await r.json();}catch(e){j=null;}
+  if(!j||!j.ok)return 'unread';
+  if(!j.vault)return false;
+  try{const k=await vaultDecrypt(pass,j.vault);
+    return await crypto.subtle.importKey('jwk',{kty:k.kty,crv:k.crv,x:k.x,y:k.y,d:k.d},{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
+  }catch(e){return null;}
+}
+/* A slip, sealed on the customer's device to the key's public half: {v, epk, iv, ct}, the ephemeral point raw in base64,
+   ECDH, HKDF-SHA-256 with no salt and info 'salt-slip v1', AES-GCM-256. The laptop's slipSeal in tools/seed-vault.mjs is the
+   same protocol. Answers the bytes, or null with the vault locked or a slip that will not open. */
+async function slipOpen(sealed){
+  if(!vaultSlipKey||!sealed)return null;
+  try{const epk=await crypto.subtle.importKey('raw',_b64d(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
+    const bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},vaultSlipKey,256);
+    const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
+    return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:_b64d(sealed.iv)},key,_b64d(sealed.ct)));
+  }catch(e){return null;}
+}
 function qServed(){try{return qSyncState==='server';}catch(e){return false;}}
 /* v277: THE PHONE'S REVEAL. Decrypts the synced envelope with a passphrase typed here and
    held only in this tab, exactly as the legacy import did, but WITHOUT writing anything back
@@ -16012,13 +16039,16 @@ async function vaultReveal(pass){
     const n=map&&typeof map==='object'?Object.keys(map).length:0;
     if(!n){vaultRevealMsg='It opened, but the vault holds no names.';vaultRevealBusy=false;try{renderReveal();}catch(e){}return false;}
     /* F14 (28 Sep 2026): ONE UNLOCK OPENS EVERY ENVELOPE. The passphrase is not kept, so each envelope is opened here on
-       the one given or not at all: the names, then the places; the slip key joins them in Step 5. */
-    const places=await vaultPlacesOpen(pass);
+       the one given or not at all: the names, then the places and the slip key (F13, 29 Sep 2026). */
+    const [places,slip]=await Promise.all([vaultPlacesOpen(pass),vaultSlipKeyOpen(pass)]);
     vaultNames={};Object.keys(map).forEach(k=>{if(map[k])vaultNames[k]=map[k];});
     vaultPlaces=places||{};
+    vaultSlipKey=slip&&typeof slip==='object'?slip:null;
     try{fillNameLookup(vaultNames);}catch(e){}
     revealed=true;                        /* the passphrase is not kept: it is not needed again */
-    vaultRevealMsg=places?'':'The names are open; the places did not open on this device.';vaultRevealBusy=false;
+    const shut=[places?'':'the places',slip===null?'the slip key':''].filter(Boolean);
+    vaultRevealMsg=(shut.length?'The names are open; '+shut.join(' and ')+' did not open on this device.':'')
+      +(slip==='unread'?(shut.length?' ':'')+'The slip key could not be read here.':'');vaultRevealBusy=false;
     render();try{renderReveal();}catch(e){}
     return true;
   }catch(e){
@@ -16028,8 +16058,8 @@ async function vaultReveal(pass){
     return false;
   }
 }
-/* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other */
-function lockVault(){vaultNames={};vaultPlaces={};revealed=false;try{fillNameLookup({});}catch(e){}}
+/* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
+function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}}
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second

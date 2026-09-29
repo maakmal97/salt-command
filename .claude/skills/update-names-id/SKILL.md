@@ -91,6 +91,16 @@ codes and counts, never a place.
 - **Prove it landed** by the tool's own `SEEDED:` line. The places' read is keyed, so `/vault/addr`
   answers 401 to `curl`; that is the gate, not a fault.
 
+## The slip key, the vault's third envelope (F13, 29 Sep 2026)
+
+The slip key in KV `vault-key` is sealed under the same passphrase, and one unlock opens it with the
+names and the places. **He mints it once**, in his own terminal: `node tools/seed-vault.mjs
+--slip-key`. It is refused unless the passphrase opens the live names vault, and while a key is
+already filed (a new one loses every slip sealed to the old). Its one `SEEDED:` line, printed only
+once the key, the copy and the Counter's public half have all landed, is the proof. `node tools/pull-vault.mjs --slip-key`
+proves the passphrase opens it and copies the ciphertext to `10_Data\salt_slipkey.json`. **The agent
+never opens that file either.**
+
 ## Why the passphrase step is his and stays his
 
 The phone-side rule is that the passphrase never leaves the browser; the laptop-side rule is
