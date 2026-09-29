@@ -1,0 +1,58 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-29T07:14:03.165Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CK4-SEN",
+    "qty": 6.25,
+    "total": 530,
+    "cash": 0,
+    "date": "2026-09-29",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260929071114-awrljg, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 6.25 unit of salt to CK4-SEN for RM 530, RM 84.8/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 180 on the goods at 34%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-29 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-29T07:14:03.165Z",
+    "type": "SELL",
+    "party": "CK4-SEN",
+    "qty": 6.25,
+    "total": 530,
+    "status": "Pending",
+    "raw": "SELL CK4-SEN 6.25 salt RM 530, nothing paid, nothing moved (order 20260929071114-awrljg)",
+    "orderKey": "CK4-SEN|2026-09-29|530",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CK4-SEN",
+     "newId": null,
+     "date": "2026-09-29",
+     "qty": 6.25,
+     "total": 530,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260929071114-awrljg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20260929071114-awrljg"
+   },
+   "decidedAt": "2026-09-29T07:14:06.217Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
