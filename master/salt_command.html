@@ -19665,7 +19665,8 @@ function ordPvBlock(o){
   const margin=j.margin?num(j.margin.rm):null;
   const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
   const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
-  const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
+  /* Step 2: measured at the goods the row is drafted at, the price he set where he set one */
+  const q=goods,gap=card==null?null:+(q-card).toFixed(2);
   const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
     :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
   const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');

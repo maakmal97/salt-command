@@ -800,7 +800,8 @@ cap per book (his point 4 of 28 Sep 2026), stamped at Place off caps written bes
 (`advanceOf` in `src/orders.js`, inside `previewAck`): what the customer owes on every row of theirs and their bucket
 (the engine's `partyOwedRM`: goods and delivery less what is paid; a gift, a write-off or a cancelled row owes nothing),
 plus their site orders agreed and not yet on the mirror, plus this order with its delivery, against `TERMS.ceiling`.
-**A sheet is one verdict** (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the mirror, count
+**A sheet is one verdict** (his answer of 29 Sep 2026; a price he sets at Accept on one line moves the figure the others
+read, each line counting at the money it is agreed for): its lines, placed or agreed and not yet on the mirror, count
 together at their goods with the sheet's charge left out, so every line reads the same figure and digest whichever is
 accepted first (once the lead's row lands on the mirror it counts with its charge, so a sheet at the edge can read the
 charge more between a fold and the next line's Accept, which is then refused as changed, as any row a fold moves is).
