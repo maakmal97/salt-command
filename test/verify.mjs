@@ -11175,7 +11175,7 @@ await (async () => {
     /* v581: the Self-use or loss mode left the Enter form on his instruction of 11 Sep 2026, so the
        test that typed into it went with it. Its removal is asserted in its own section below. */
     const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    ok(/cell\('Cost drawn',cost==null\?'&mdash;':fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
+    ok(/cell\('Cost drawn',cost==null\?NIL:fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
     /* v596: the laptop's list reads that cost the same way; it printed -401.7% for this 49.8% draft. The
        tool runs its modes only when called now, so the second proves it still does, on every machine. */
     {
@@ -11333,7 +11333,7 @@ await (async () => {
         const quietCrim = /bought \d+d ago/.test(row) && /var\(--crim\)'?">bought/.test(row.replace(/\s+/g, " "));
         const wantQuiet = s.quiet > 30 && !s.defaults && s.share >= 25;
         if (quietCrim !== wantQuiet) wrong.push(`${p}/${s.id} quiet ${s.quiet}d share ${s.share}% defaults ${s.defaults}: drawn ${quietCrim}, rule ${wantQuiet}`);
-        const fillCrim = new RegExp("color:var\\(--crim\\)\">" + (s.fill == null ? "&mdash;" : s.fill + "%")).test(row);
+        const fillCrim = new RegExp("color:var\\(--crim\\)\">" + (s.fill == null ? "-" : s.fill + "%")).test(row);
         const wantFill = s.fill != null && s.fill < 90;
         if (fillCrim !== wantFill) wrong.push(`${p}/${s.id} fill ${s.fill}%: drawn ${fillCrim}, rule ${wantFill}`);
       }
@@ -36028,7 +36028,7 @@ await (async () => {
     const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
     const lines = card ? [...card.querySelectorAll(".clmrows .salt-ledger__row")].map((r) => (r.textContent || "").replace(/\s+/g, " ").trim()) : [];
     const rcv = card && card.querySelector('button[data-ord="creceived"]'), filled = card ? [...card.querySelectorAll("button.salt-pill")] : [];
-    ok(kinds.join(",") === "paid:" + claim.id && lines.length === 2 && /2026-09-02, owes RM 50 ?RM 50/.test(lines[0]) && /2026-09-10, owes RM 60 ?RM 30/.test(lines[1])
+    ok(kinds.join(",") === "paid:" + claim.id && lines.length === 2 && /02 Sep 2026, owes RM 50 ?RM 50/.test(lines[0]) && /10 Sep 2026, owes RM 60 ?RM 30/.test(lines[1])
       && rcv && !rcv.disabled && rcv.textContent === "Received, RM 80" && filled.length === 1 && filled[0] === rcv && !!card.querySelector('button[data-ord="cnotfound"]'),
       "a claim against the account is one Paid? row, and its card draws the rows it settles, oldest first, with Received the one filled control: " + JSON.stringify({ kinds, lines }));
     rcv.click(); await new Promise((r) => setTimeout(r, 30));
