@@ -157,7 +157,8 @@ Each of these stayed green, or read clean, through a real fault.
   keyed on a shared prefix; a diff against a base that a depth-1 checkout lacks, failing into
   `2>/dev/null` and answering "no". Site the assertion where the effect must survive; make an
   unreadable input fail safe by defaulting to the idempotent work. Prove workflow bash by running
-  the extracted block with stubs.
+  the extracted block with stubs. A stub counts on stderr, never in a file it rewrites from a
+  subshell: under load such a counter lost one read of 31 (29 Sep 2026).
 - **The wrong quantity in the right words.** A census that read only `under` reported "every price
   clears break-even" over a board printing its tiers the wrong way round. Worse than silence: it
   reassures.

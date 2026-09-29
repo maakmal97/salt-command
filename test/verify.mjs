@@ -10248,29 +10248,35 @@ await (async () => {
     : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
   const env = Object.fromEntries(Object.entries(process.env).filter(([k2]) => !/^(GIT_|GITHUB_|LIVE_AT$|GATED_TREE$|PUSH_KEY$)/.test(k2)));
   const root = mkdtempSync(join(tmpdir(), "fold34-")), fwd = (p) => p.replace(/\\/g, "/");
-  const log = fwd(join(root, "log.txt")), reads = fwd(join(root, "reads.txt")), sleeps = fwd(join(root, "sleeps.txt"));
+  const log = fwd(join(root, "log.txt"));
   /* BASH'S CLOCK IS THE STUBS' ALONE (28 Sep 2026). SECONDS counts real time as well as what the sleep stub adds, so
      each read's real node start ran the minute down: beside other suites a Worker that never switched was read 19
      times and slept 36 s. Unset, SECONDS is a plain variable that only sleep moves, and the minute is exactly thirty
-     sleeps of 2 s however busy the machine is. */
+     sleeps of 2 s however busy the machine is.
+     THE STUBS KEEP NO COUNT IN A FILE (29 Sep 2026). With the clock fixed, a full suite still saw a Worker that never
+     switched read 30 times over thirty sleeps: the read counter, a fork of cat and a file rewritten from a subshell,
+     lost a read the step had made. Each read and each sleep is now a line on stderr, a pipe the suite holds, and what
+     /rev serves is chosen by the stub clock, which the subshell inherits. */
   const stubs = [
     "unset SECONDS; SECONDS=0",
-    /* curl answers the nth read with the nth entry of STUB_SEQ, the last repeating; down is a failed read */
-    "curl() { echo \"$*\" >> " + JSON.stringify(log) + "; local n a v; n=$(( $(cat " + JSON.stringify(reads) + ") + 1 )); echo $n > " + JSON.stringify(reads) + ";",
-    "  IFS=, read -ra a <<< \"${STUB_SEQ:-200}\"; if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
+    /* curl answers from STUB_SEQ by the stub clock, entry k for seconds 2k to 2k+1, the last repeating; down is a failed read */
+    "curl() { echo 'stub: read' >&2; { echo \"$*\" >> " + JSON.stringify(log) + "; } 2>/dev/null || :; local n a v IFS=,; n=$(( SECONDS / 2 + 1 ));",
+    "  a=(${STUB_SEQ:-200}); if [ $n -le ${#a[@]} ]; then v=${a[$((n - 1))]}; else v=${a[$((${#a[@]} - 1))]}; fi;",
     "  if [ \"$v\" = down ]; then return 22; fi; if [ \"$v\" = 200 ]; then printf 200; else printf '{\"id\":\"%s\"}' \"$v\"; fi; }",
-    "sleep() { echo \"$1\" >> " + JSON.stringify(sleeps) + "; SECONDS=$((SECONDS + $1)); }",
+    "sleep() { echo \"stub: sleep $1\" >&2; SECONDS=$((SECONDS + $1)); }",
     "npm() { echo \"npm $*\" >> " + JSON.stringify(log) + "; }", ""].join("\n");
   const run = (w, name, ctx = {}, more = {}) => {
     const out = join(root, "out.txt"), envf = join(root, "env.txt");
-    writeFileSync(out, ""); writeFileSync(envf, ""); writeFileSync(reads, "0"); writeFileSync(sleeps, "");
+    writeFileSync(out, ""); writeFileSync(envf, "");
     const body = shellOf(name);
     const script = stubs + body.replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, key) => (key in ctx ? ctx[key] : ""));
     const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script],
       { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: fwd(out), GITHUB_ENV: fwd(envf) }, encoding: "utf8", timeout: 120000 });
     const kv = (f) => Object.fromEntries(readFileSync(f, "utf8").split("\n").filter((l) => l.indexOf("=") > 0).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
-    return { ran: body !== "", code: r.status, o: kv(out), e: kv(envf), text: String(r.stdout || "") + String(r.stderr || ""),
-      reads: +readFileSync(reads, "utf8"), sleeps: readFileSync(sleeps, "utf8").split("\n").filter(Boolean) };
+    const err = String(r.stderr || "").split(/\r?\n/), stub = (re) => err.map((l) => re.exec(l)).filter(Boolean);
+    return { ran: body !== "", code: r.status, o: kv(out), e: kv(envf),
+      text: String(r.stdout || "") + err.filter((l) => !/^stub: /.test(l)).join("\n"),
+      reads: stub(/^stub: read$/).length, sleeps: stub(/^stub: sleep (\S+)$/).map((m) => m[1]) };
   };
   const logLines = (re) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n").filter((l) => re.test(l)).length;
   const gitIn = (cwd, ...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd, env, encoding: "utf8", stdio: "pipe" });
