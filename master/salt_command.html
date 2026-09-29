@@ -8653,6 +8653,37 @@ const noNegZero=s=>/^-0(\.0+)?$/.test(s)?s.slice(1):s;
 const fmt=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2}));
 const fmt0=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:0}));
 const units=n=>noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}))+' unit';
+/* D2 (29 Sep 2026, the fault list): ONE nil for a cell or a figure with nothing to show. It was an em
+   dash in some 96 places, a mark the house never writes; a hyphen is the accountant's nil. */
+const NIL='-';
+/* D1 (29 Sep 2026, the fault list): A DATE IS SHOWN 28 Sep 2026, NEVER AS IT IS STORED. dShow turns
+   every stored date in a piece of text into the house form, month off MAP_MON (en-GB writes Sept),
+   and hands anything else back untouched, so a "not dated" fallback stands. A timestamp is left
+   whole: a date run into a time or a word is not a date on its own. dSweep runs dShow over the text
+   and the tooltips the desk draws, so no builder can print a stored date again; a textarea, code
+   and a field's value keep the stored form, which is what he types and reads back. It runs once a
+   part is drawn and, through the observer, on whatever a card or a fetch writes later. */
+function dShow(iso){
+  /* no lookbehind: Safari before 16.4 cannot parse one, and it would blank the whole script */
+  return (iso==null?'':String(iso)).replace(/(^|[^\w-])(\d{4})-(\d{2})-(\d{2})(?![\w-])/g,
+    (m,p,y,mo,d)=>(+mo>=1&&+mo<=12&&+d>=1&&+d<=31)?p+d+' '+MAP_MON[+mo-1]+' '+y:m);
+}
+function dSweep(root){
+  if(!root||typeof document==='undefined')return;
+  const has=t=>/\d{4}-\d{2}-\d{2}/.test(t||''), off='textarea,script,style,code,pre';
+  if(root.nodeType===3){const p=root.parentElement;if(has(root.nodeValue)&&!(p&&p.closest(off))){const v=dShow(root.nodeValue);if(v!==root.nodeValue)root.nodeValue=v;}return;}
+  if(root.nodeType!==1)return;
+  const w=document.createTreeWalker(root,4),hits=[];let n;
+  while((n=w.nextNode()))if(has(n.nodeValue)&&!(n.parentElement&&n.parentElement.closest(off)))hits.push(n);
+  hits.forEach(t=>{const v=dShow(t.nodeValue);if(v!==t.nodeValue)t.nodeValue=v;});
+  [root].concat([...root.querySelectorAll('[title]')]).forEach(e=>{const t=e.getAttribute&&e.getAttribute('title');
+    if(has(t)){const v=dShow(t);if(v!==t)e.setAttribute('title',v);}});
+}
+if(typeof MutationObserver==='function'&&typeof document!=='undefined'&&document.body)
+  new MutationObserver(recs=>recs.forEach(r=>{if(r.type==='characterData')dSweep(r.target);
+    else if(r.type==='attributes'){const t=r.target.getAttribute('title');if(t&&/\d{4}-\d{2}-\d{2}/.test(t)){const v=dShow(t);if(v!==t)r.target.setAttribute('title',v);}}
+    else r.addedNodes.forEach(dSweep);}))
+    .observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title']});
 let revealed=true,newIds={},newLocs={};   /* v217: no lock, so the directory opens readable. The Hide button is a screen-privacy toggle, not encryption. */const esc=x=>(''+(x==null?'':x)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');const costOf=x=>txUnitCost(x,wavgFor(prodOf(x)));   /* v496: cost is absolute on the row; the unit figure is the engine's derivation */const nameOnly=s=>{s=(s||'')+'';const m=s.replace(/\s*\([^)]*\)\s*$/,'').trim();return m||s;};const _cmask=n=>{let h=0,s=''+n;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return '#'+h.toString(36).slice(-3).toUpperCase();};const codeOf=n=>newIds[n]||n;/* ids are codes post-rekey; identity fallback */const ID=n=>{try{return revealed?((vaultNames&&vaultNames[n])?esc(nameOnly(vaultNames[n])):codeOf(n)):codeOf(n);}catch(e){return _cmask(n);}};
 /* v783, HIS INSTRUCTION OF 22 SEP 2026: A PARTY LIST IS ALWAYS IN ALPHABETICAL ORDER.
    Every picker listed the roster in ROSTER order, which is the order parties were registered
@@ -10818,7 +10849,7 @@ function boundaryScan(){
     if(outstandingOf(s)<=0.009&&txPendUnits(s)<=0.009&&txDeferUnits(s)<=0.009)return;
     add(m<0.009?'breach':'watch','Margin floor',s.customer,fmt(p)+'/unit on '+fmt(c)+'/unit cost, '+m.toFixed(0)+'%',
       (m<0.009?'at or below cost':'still open, so still repriceable')+(under?', and under the '+fmt0(need)+' floor at '+units(s.qty):''));});
-  if(closedN)add('watch','Margin floor','&mdash;',closedN+' closed sale'+(closedN===1?'':'s')+' under floor',
+  if(closedN)add('watch','Margin floor',NIL,closedN+' closed sale'+(closedN===1?'':'s')+' under floor',
     'worth about '+fmt0(closedRM)+' at today&rsquo;s floors; banked and unrepriceable, so a pattern to price against rather than an action');
   /* 2b. AGREED BUT UNMOVED, PRICED UNDER THE BOARD FLOOR (v225).
      The block above walks pricedSales, and pricedSales excludes Pending by definition.
@@ -10941,7 +10972,7 @@ function boundaryPanel(b,r){
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
-    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
+    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?NIL:ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 /* ============ THE WALK IS A MODULE (v338) ============
@@ -11107,7 +11138,7 @@ const tierPill=id=>{
   const t=(typeof custTier==='function')?custTier(id):null;
   if(!t)return '';
   const cls=t.code==='T1'?'t1':t.code==='T2'?'t2':'t3';
-  return `<span class="tierpill ${cls}" title="${esc(t.name)} &mdash; ${esc(t.why||'')}"><span class="pd"></span>${esc(t.name)}</span>`;
+  return `<span class="tierpill ${cls}" title="${esc(t.name)}: ${esc(t.why||'')}"><span class="pd"></span>${esc(t.name)}</span>`;
 };
 /* noHi drops the High-margin badge. The database row prints cumulative margin in its own
    column and sorts on it, so the badge there restates the neighbouring cell and costs 18px
@@ -11196,7 +11227,7 @@ function tabOverview(){
   ${boundaryPanel(bnd,risks)}
   ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
   ${arG>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over.map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
-  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
+  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="sub" style="font-weight:400">money added across the books, each book's part beside it</span> <span class="rule"></span></h2>
   <div class="kpis k3">
     ${kpi('','Inventory at cost',fmt0(sum('stockVal')),split('held',units)||'nothing on hand')}
@@ -11260,7 +11291,7 @@ function tabToday(){
   const row=x=>`<div class="act" style="--sev:${ACTSEV[x.sev].c}">
     <div class="actk">${KIND[x.kind]||'Item'}</div>
     <div><div class="actt">${x.title}${x.books.length?' '+x.books.map(p=>prodTag({product:p})).join(' '):''}</div><div class="actw">${x.why}</div></div>
-    <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):'&mdash;'}</div>
+    <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):NIL}</div>
     <div class="actb">${x.copy?`<button class="navlink" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}<button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
     ${x.rm>0.009&&peak>0?`<div class="actbar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
   /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
@@ -11280,12 +11311,12 @@ function tabToday(){
   const cf=cashFlow();
   /* one row a book with anything on it: what is held, what is promised out, how long it lasts and what is owed on it. Units
      are never added across books; the money is, once, on the line under the table. */
-  const cover=b=>b.dry===0?`<b style="color:var(--crim)">empty</b>`:b.days==null?'&mdash;':`<span style="color:${b.below?'var(--crim)':'inherit'}">${b.days}d</span>`;
+  const cover=b=>b.dry===0?`<b style="color:var(--crim)">empty</b>`:b.days==null?NIL:`<span style="color:${b.below?'var(--crim)':'inherit'}">${b.days}d</span>`;
   const owedAll=+live.reduce((t,p)=>t+B[p].owed,0).toFixed(2);
   const bandRows=live.map(p=>{const b=B[p];return `<tr><td class="l">${prodTag({product:p})}</td><td class="mono">${units(b.held)}</td>`
-    +`<td class="mono">${b.prom>0.009?units(b.prom):'&mdash;'}${b.short>0.009?` <b style="color:var(--crim)">${units(b.short)} short</b>`:''}</td>`
+    +`<td class="mono">${b.prom>0.009?units(b.prom):NIL}${b.short>0.009?` <b style="color:var(--crim)">${units(b.short)} short</b>`:''}</td>`
     +`<td class="mono" title="${b.days==null?'no recent trade to read a rate from':'reorder at '+units(b.trig)+', shipping '+units(b.rate)+' a day'}">${cover(b)}</td>`
-    +`<td class="mono">${b.owed>0.009?fmt0(b.owed):'&mdash;'}</td></tr>`;}).join('');
+    +`<td class="mono">${b.owed>0.009?fmt0(b.owed):NIL}</td></tr>`;}).join('');
   /* ============ THE LIST LEADS (v385) ============
      The tab opened on five KPI cards and two charts, and the ranked list, which is the only
      reason this tab exists, started a screen and a half down. Two of those five cards said
@@ -11442,7 +11473,7 @@ function tabForward(){
   /* the book that empties first leads, because that is the order to place */
   const dryOf=p=>A.per[p].f.dry, first=ids.filter(p=>dryOf(p)!=null).sort((a,b)=>dryOf(a)-dryOf(b))[0];
   const emptyCell=g=>g.dry==null?`past ${g.days} days`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
-  const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):'&mdash;'}</td></tr>`;}).join('');
+  const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):NIL}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
   <div class="dsc dsclead" style="margin-bottom:11px">Each book's inventory and the cash, day by day, at the daily rate its restock plan measures; an order not yet placed is in none of it.</div>
@@ -11453,7 +11484,7 @@ function tabForward(){
   </div>
   ${/* v385: one sentence carries the scenario, because stripMethod cuts an .insight to its first sentence */''}${(fwdBuy&&buys.length||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy&&buys.length?`the agreed ${buyWord}, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k2" style="margin-top:13px">
-    <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):'&mdash;'}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${fwdDays} days`}</div></div>
+    <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):NIL}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${fwdDays} days`}</div></div>
     <div class="kpi salt-kpi ${f.cashEnd<0?'r':'p'}"><div class="l salt-kpi__label">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v salt-kpi__value">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n salt-kpi__note">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
   <h2 style="margin-top:18px">Inventory, book by book <span class="rule"></span></h2>
@@ -11708,7 +11739,7 @@ function tabSourcing(){
        reading the deployed build rather than the diff, which is the only place all three are
        visible at once. One rule now: concentration he has chosen is a watch; it earns the alarm
        where that same name has cost him something. */}
-    <div class="kpi salt-kpi ${conc&&conc.recentShare>80?(conc.defaults?'r':'g'):''}"><div class="l salt-kpi__label">Top supplier share</div><div class="v salt-kpi__value" style="${conc&&conc.recentShare>80?(conc.defaults?'color:var(--crim)':'color:var(--gold)'):''}">${conc?conc.recentShare.toFixed(0)+'%':'&mdash;'}</div><div class="n salt-kpi__note">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
+    <div class="kpi salt-kpi ${conc&&conc.recentShare>80?(conc.defaults?'r':'g'):''}"><div class="l salt-kpi__label">Top supplier share</div><div class="v salt-kpi__value" style="${conc&&conc.recentShare>80?(conc.defaults?'color:var(--crim)':'color:var(--gold)'):''}">${conc?conc.recentShare.toFixed(0)+'%':NIL}</div><div class="n salt-kpi__note">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
     ${''/* v553: the note has to say WHICH basis it is on. Under a COST_RULE the effective figure is
        a flat markup on the buy rate, so the old sentence, "goods plus freight loaded for leak",
        described arithmetic that no longer ran and named a leak percentage the figure did not use. */}
@@ -11732,9 +11763,9 @@ function tabSourcing(){
       <div class="kpi salt-kpi ${s.owed>0.009?'p':''}"><div class="l salt-kpi__label">Current lot</div><div class="v salt-kpi__value">${units(s.qty)}</div><div class="n salt-kpi__note">${s.lot.date||'not dated'}, from ${ID(s.lot.sup)}${s.age==null?'':`, ${s.age} day${s.age===1?'':'s'} ago`}${s.owed>0.009?`; ${units(s.recvOnLot)} landed and ${units(s.owed)} still to come`:''}</div></div>
       <div class="kpi salt-kpi"><div class="l salt-kpi__label">What it cost</div><div class="v salt-kpi__value">${fmt0(s.total)}</div><div class="n salt-kpi__note">${fmt(s.lot.rate)}/unit on the goods${s.lot.freight?` plus ${fmt0(s.lot.freight)} freight`:''}, ${fmt(s.eff)} effective at the ${s.lvl}% ${SL.label} level; average cost ${fmt(wavgBuy)}</div></div>
       <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Left of it</div><div class="v salt-kpi__value">${units(s.lot.left)}</div><div class="n salt-kpi__note">${fmt0(s.lot.costLeft)} at cost, of the ${units(s.recvOnLot)} landed${s.coverLeft==null?'':`; ${s.coverLeft} days at today's rate`}</div></div>
-      <div class="kpi salt-kpi ${s.below?'r':'g'}"><div class="l salt-kpi__label">Inventory runs dry</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.empty?'empty already':(s.dry||'&mdash;')}</div><div class="n salt-kpi__note">${s.empty?`nothing left to sell, at ${units(s.rate)}/day`:(s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`)}</div></div>
-      <div class="kpi salt-kpi ${s.below?'r':''}"><div class="l salt-kpi__label">${s.below?'Short of the mark':'Reorder mark'}</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.below?units(s.mark-s.free):(s.reorder||'&mdash;')}</div><div class="n salt-kpi__note">${s.empty?`nothing free to sell${s.free<-0.009?`, and ${units(-s.free)} owed out beyond the inventory`:''}, against a ${units(s.mark)} mark`:s.below?`under the ${units(s.mark)} mark, with ${units(s.free)} free to sell`:`${units(s.free)} free to sell against a ${units(s.mark)} mark`}</div></div>
-      <div class="kpi salt-kpi"><div class="l salt-kpi__label">Against a month</div><div class="v salt-kpi__value">${s.monthly>0.009?(s.qty/s.monthly).toFixed(1)+'&times;':'&mdash;'}</div><div class="n salt-kpi__note">${s.monthly>0.009?`${units(s.qty)} against ${units(s.monthly)} a month, ${units(s.monthly28)} at the four-week rate; ${s.multiple}&times; the largest lot bought`:'no demand rate to size it against'}</div></div>
+      <div class="kpi salt-kpi ${s.below?'r':'g'}"><div class="l salt-kpi__label">Inventory runs dry</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.empty?'empty already':(s.dry||NIL)}</div><div class="n salt-kpi__note">${s.empty?`nothing left to sell, at ${units(s.rate)}/day`:(s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`)}</div></div>
+      <div class="kpi salt-kpi ${s.below?'r':''}"><div class="l salt-kpi__label">${s.below?'Short of the mark':'Reorder mark'}</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.below?units(s.mark-s.free):(s.reorder||NIL)}</div><div class="n salt-kpi__note">${s.empty?`nothing free to sell${s.free<-0.009?`, and ${units(-s.free)} owed out beyond the inventory`:''}, against a ${units(s.mark)} mark`:s.below?`under the ${units(s.mark)} mark, with ${units(s.free)} free to sell`:`${units(s.free)} free to sell against a ${units(s.mark)} mark`}</div></div>
+      <div class="kpi salt-kpi"><div class="l salt-kpi__label">Against a month</div><div class="v salt-kpi__value">${s.monthly>0.009?(s.qty/s.monthly).toFixed(1)+'&times;':NIL}</div><div class="n salt-kpi__note">${s.monthly>0.009?`${units(s.qty)} against ${units(s.monthly)} a month, ${units(s.monthly28)} at the four-week rate; ${s.multiple}&times; the largest lot bought`:'no demand rate to size it against'}</div></div>
     </div>
     <div class="insight salt-insight" style="margin-top:11px"><b>${!(s.rate>0)
         ? `No trade in the last four weeks, so there is no rate to say when the inventory empties.`
@@ -11819,8 +11850,8 @@ function tabSourcing(){
       <td class="stkx">${s.lots}${s.pending?` <span style="color:var(--gold)">+${s.pending} agreed</span>`:''}</td>
       <td class="stkx">${units(s.kg)}</td><td style="color:${concentrated?(s.defaults?'var(--crim)':'var(--gold)'):'var(--ink)'}"><b>${s.recentShare.toFixed(0)}%</b></td>
       <td class="stkx" style="color:var(--dim)">${s.share.toFixed(0)}%</td>
-      <td>${s.wavg==null?'&mdash;':fmt(s.wavg)}</td><td class="stkx">${s.best==null?'&mdash;':fmt(s.best)}</td><td class="stkx">${s.lastRate==null?'&mdash;':fmt(s.lastRate)}</td>
-      <td class="stkx" style="color:${fillCol}">${s.fill==null?'&mdash;':s.fill+'%'}</td>
+      <td>${s.wavg==null?NIL:fmt(s.wavg)}</td><td class="stkx">${s.best==null?NIL:fmt(s.best)}</td><td class="stkx">${s.lastRate==null?NIL:fmt(s.lastRate)}</td>
+      <td class="stkx" style="color:${fillCol}">${s.fill==null?NIL:s.fill+'%'}</td>
       <td class="l">${s.defaults?`<span class="tag salt-status def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag salt-status paid">clean</span>'}</td></tr>`;}).join('')}
   </tbody></table></div>
   ${(()=>{if(!(conc&&conc.recentShare>80))return'';
@@ -11866,7 +11897,7 @@ function tabSourcing(){
               profit:+(rev-(qt.total-qt.profit)).toFixed(2)};});
     return hd('')+`<div class="card">${stkCols('tier')}<div class="stkwrap"><table><thead><tr><th class="l">Tier</th><th>Rate</th><th>Cash</th><th class="stkx">After leak</th><th class="stkx">Usable unit</th><th class="stkx">Cover<div style="font-size:10px;color:var(--dim);font-weight:400">${cv.rate>0?`at ${units(cv.rate)}/day, the measured rate`:'no rate'}</div></th><th>Profit<div style="font-size:10px;color:var(--dim);font-weight:400">on a ${units(12.5)} resale</div></th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td class="l">${units(r.q)}</td><td>${fmt(r.rate)}</td><td>${fmt0(r.cash)}</td><td class="stkx">${fmt(r.leak)}</td>
-        <td class="stkx">${units(r.q*(1-c.shrink))}</td><td class="stkx">${cv.rate>0?(r.q*(1-c.shrink)/cv.rate).toFixed(1)+'d':'&mdash;'}</td>
+        <td class="stkx">${units(r.q*(1-c.shrink))}</td><td class="stkx">${cv.rate>0?(r.q*(1-c.shrink)/cv.rate).toFixed(1)+'d':NIL}</td>
         <td><b>${fmt0(r.profit)}</b></td></tr>`).join('')}
   </tbody></table></div></div>
   ${ml?`<div class="insight salt-insight" style="margin-top:9px">Freight is <b>${fmt(c.freight)}</b> a unit at every tier, so the whole gain from stepping up this ladder is ${ID(pq.supplier)}&rsquo;s own taper.</div>`:''}`;})()}`;
@@ -11996,7 +12027,7 @@ function tabAnalysis(){
     return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
       <div class="insight salt-insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
       <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
-      ${bad.map(b=>`<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:'&mdash;'}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+      ${bad.map(b=>`<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:NIL}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
         <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
         <td class="l">${b.c.verdict==='unknown'
           ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
@@ -12071,8 +12102,8 @@ function tabAnalysis(){
     </div>
     ${slow.length?`<div class="card"><table><thead><tr><th class="l">Order</th><th class="l">Party</th><th>Value</th><th>Deliver</th><th>Paid</th></tr></thead><tbody>
       ${slow.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${ID(r.c)}</td><td>${fmt0(r.rm)}</td>
-        <td>${r.dl==null?'&mdash;':r.dl+'d'+(r.dSrc==='assumed'?'*':'')}</td>
-        <td style="color:${r.gap>0?'var(--crim)':'inherit'}">${r.pl==null?'&mdash;':r.pl+'d'+(r.pSrc==='assumed'?'*':'')}</td></tr>`).join('')}
+        <td>${r.dl==null?NIL:r.dl+'d'+(r.dSrc==='assumed'?'*':'')}</td>
+        <td style="color:${r.gap>0?'var(--crim)':'inherit'}">${r.pl==null?NIL:r.pl+'d'+(r.pSrc==='assumed'?'*':'')}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="card"><div class="dsc">No order took longer than a day at either step.</div></div>'}
     </div></details>`;})()}
 
@@ -12473,15 +12504,15 @@ function tabMap(){
     return `<div class="card mapdrill" style="margin-top:13px">
       <div class="cardh">${esc(name)} <span class="sub">${isArea?'in '+esc(dist.name):'district'}${periodTxt}</span></div>
       <div class="kpis k3" style="margin-top:8px">
-        <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">${MAP_METRICS[MAP_METRIC]}</div><div class="v salt-kpi__value">${Math.abs(t.v)>0.009?mapFmt(t.v):'&mdash;'}</div><div class="n salt-kpi__note">${mine.length} ${mine.length===1?'party':'parties'} sited</div></div>
-        <div class="kpi salt-kpi"><div class="l salt-kpi__label">Share</div><div class="v salt-kpi__value">${poolTotal&&t.v>0?Math.round(t.v/poolTotal*100)+'%':'&mdash;'}</div><div class="n salt-kpi__note">of the ${word} across ${pool.length} ${plural}</div></div>
-        <div class="kpi salt-kpi"><div class="l salt-kpi__label">Rank</div><div class="v salt-kpi__value">${rank?'#'+rank:'&mdash;'}</div><div class="n salt-kpi__note">${rank?'of '+pool.length+' '+plural:empty+' in '+(isArea?'this area':'this district')}</div></div>
+        <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">${MAP_METRICS[MAP_METRIC]}</div><div class="v salt-kpi__value">${Math.abs(t.v)>0.009?mapFmt(t.v):NIL}</div><div class="n salt-kpi__note">${mine.length} ${mine.length===1?'party':'parties'} sited</div></div>
+        <div class="kpi salt-kpi"><div class="l salt-kpi__label">Share</div><div class="v salt-kpi__value">${poolTotal&&t.v>0?Math.round(t.v/poolTotal*100)+'%':NIL}</div><div class="n salt-kpi__note">of the ${word} across ${pool.length} ${plural}</div></div>
+        <div class="kpi salt-kpi"><div class="l salt-kpi__label">Rank</div><div class="v salt-kpi__value">${rank?'#'+rank:NIL}</div><div class="n salt-kpi__note">${rank?'of '+pool.length+' '+plural:empty+' in '+(isArea?'this area':'this district')}</div></div>
       </div>
       <div style="margin-top:12px;font-size:12px;color:var(--mut)">Month by month, the period in gold</div>
       <svg class="maptrend" viewBox="0 0 ${W2} ${H2}" style="width:100%;max-width:${Math.max(W2,280)}px;height:auto;display:block;margin-top:4px" role="img" aria-label="${esc(name)}, ${word} month by month">${bars}</svg>
       ${trend.length?`<div class="maptrendx" style="display:flex;justify-content:space-between;max-width:${Math.max(W2,280)}px;font-size:10px;color:var(--mut)"><span>${MAP_MON[+trend[0].k.slice(5,7)-1]} ${trend[0].k.slice(0,4)}</span><span>${MAP_MON[+trend[trend.length-1].k.slice(5,7)-1]} ${trend[trend.length-1].k.slice(0,4)}</span></div>`:''}
       <table style="margin-top:10px"><thead><tr><th class="l">Party</th><th class="l">Where</th><th>${MAP_METRICS[MAP_METRIC]}</th></tr></thead><tbody>
-        ${shownWho.map(x=>`<tr><td class="l mono">${esc(codeOf(x.id))}</td><td class="l mapwhere">${esc(whereOf(x.id))||'&mdash;'}</td><td>${Math.abs(x.v)>0.009?mapFmt(x.v):'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="3" style="color:var(--mut)">No party sited here.</td></tr>`}
+        ${shownWho.map(x=>`<tr><td class="l mono">${esc(codeOf(x.id))}</td><td class="l mapwhere">${esc(whereOf(x.id))||NIL}</td><td>${Math.abs(x.v)>0.009?mapFmt(x.v):NIL}</td></tr>`).join('')||`<tr><td class="l" colspan="3" style="color:var(--mut)">No party sited here.</td></tr>`}
         ${who.length>shownWho.length?`<tr><td class="l" colspan="3" style="color:var(--mut)">and ${who.length-shownWho.length} more</td></tr>`:''}
       </tbody></table>
       ${isArea?`<div style="margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" onclick="mapPick(null)">Back to ${esc(dist.name)}</button></div>`:''}
@@ -12491,7 +12522,7 @@ function tabMap(){
   <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'constituency in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its constituencies'}.</div>
   <div class="kpis k4">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">${dist?'Areas':'Districts'} ${MAP_METRIC==='credit'?'owing':'with trade'}</div><div class="v salt-kpi__value">${rows.length}</div><div class="n salt-kpi__note">of ${shown.length} drawn</div></div>
-    <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Deepest</div><div class="v salt-kpi__value" style="font-size:17px">${top?esc(dist?areaName(top.a):top.a.name):'&mdash;'}</div><div class="n salt-kpi__note">${top&&total?Math.round(top.t.v/total*100)+'% of the '+word+' drawn':empty+' drawn'}</div></div>
+    <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Deepest</div><div class="v salt-kpi__value" style="font-size:17px">${top?esc(dist?areaName(top.a):top.a.name):NIL}</div><div class="n salt-kpi__note">${top&&total?Math.round(top.t.v/total*100)+'% of the '+word+' drawn':empty+' drawn'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Parties sited</div><div class="v salt-kpi__value">${dist?here.length:onMap.length}</div><div class="n salt-kpi__note">${dist?'in '+esc(dist.name):'of '+roster.length+' on the roster'}</div></div>
     <div class="kpi salt-kpi ${unknown.length+off.length?'r':'g'}"><div class="l salt-kpi__label">Not on the map</div><div class="v salt-kpi__value">${unknown.length+off.length}</div><div class="n salt-kpi__note">${off.length} beyond the districts, ${unknown.length} with no place</div></div>
   </div>
@@ -12501,7 +12532,7 @@ function tabMap(){
     ${ms.length?`<div class="mapperiod" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:12px;color:var(--mut)">
       <span class="viewsw"><button${!MAP_FROM&&!MAP_TO?' class="on"':''} onclick="mapPeriod()">All time</button></span>
       <button class="vbtn salt-pill salt-pill--sm mapplay" onclick="mapPlay()">${MAP_PLAY?'Stop':'Play by month'}</button>
-      <span style="display:inline-flex;align-items:center;gap:8px"><input class="mapmonth" type="range" min="0" max="${ms.length-1}" value="${mi<0?ms.length-1:mi}" oninput="mapMonth(this.value)" aria-label="Month" style="width:150px;min-height:var(--tap)"><b class="mapmonthname" style="color:var(--ink)">${whole?MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4):'&mdash;'}</b></span>
+      <span style="display:inline-flex;align-items:center;gap:8px"><input class="mapmonth" type="range" min="0" max="${ms.length-1}" value="${mi<0?ms.length-1:mi}" oninput="mapMonth(this.value)" aria-label="Month" style="width:150px;min-height:var(--tap)"><b class="mapmonthname" style="color:var(--ink)">${whole?MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4):NIL}</b></span>
       <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap);padding-right:74px"')}</label>
       <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap);padding-right:74px"')}</label>
     </div>`:''}
@@ -12527,12 +12558,12 @@ function tabMap(){
   ${drill}
   <details class="obsec" open><summary>${dist?'Areas in '+esc(dist.name):'Districts'} <span class="q">${rows.length} ${MAP_METRIC==='credit'?'owing':'with trade'}</span></summary>
   <div class="card"><table><thead><tr><th class="l">${dist?'Area':'District'}</th><th>Parties</th><th>${MAP_METRICS[MAP_METRIC]}</th><th>Share</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr><td class="l">${dist?`<button class="navlink" onclick="mapPick('${r.a.id}')">${esc(areaName(r.a))}</button>`:`<button class="navlink" onclick="mapZoom('${r.a.id}')">${esc(r.a.name)}</button>`}</td><td>${r.t.n}</td><td>${mapFmt(r.t.v)}</td><td>${total&&r.t.v>0?Math.round(r.t.v/total*100)+'%':'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="4" style="color:var(--mut)">${MAP_METRIC==='credit'?'Nothing owed':'No trade'} in the areas drawn.</td></tr>`}
+    ${rows.map(r=>`<tr><td class="l">${dist?`<button class="navlink" onclick="mapPick('${r.a.id}')">${esc(areaName(r.a))}</button>`:`<button class="navlink" onclick="mapZoom('${r.a.id}')">${esc(r.a.name)}</button>`}</td><td>${r.t.n}</td><td>${mapFmt(r.t.v)}</td><td>${total&&r.t.v>0?Math.round(r.t.v/total*100)+'%':NIL}</td></tr>`).join('')||`<tr><td class="l" colspan="4" style="color:var(--mut)">${MAP_METRIC==='credit'?'Nothing owed':'No trade'} in the areas drawn.</td></tr>`}
   </tbody></table></div></details>
   ${(off.length+miss.length)?`<details class="obsec"><summary>Not on the map <span class="q">${[off.length?off.length+' beyond the districts':'',unknown.length?unknown.length+' with no place':'',(miss.length-unknown.length)?(miss.length-unknown.length)+' excluded by rule':''].filter(Boolean).join(', ')}</span></summary>
   <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Suffix</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>
     ${off.map(f=>`<tr><td class="l mono">${esc(codeOf(f.id))}</td><td class="l mono" style="color:var(--dim)">${esc(f.t||'')}</td><td>${fmt0(f.value)}</td><td class="l" style="color:var(--mut)">sited, but outside every district drawn</td></tr>`).join('')}
-    ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):'&mdash;'}</td><td style="color:var(--dim)">&mdash;</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
+    ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):NIL}</td><td style="color:var(--dim)">${NIL}</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
   </tbody></table></div></details>`:''}`;
 }
 
@@ -12577,7 +12608,7 @@ function shelfCall(cv,oversold,free){
   if(currentStock<0.009)return {sev:'var(--crim)',k:'Empty',f:'0 d',
     t:'The inventory is empty',
     w:'Nothing to sell on this book. An order you cannot fill is never recorded, so the loss will not appear in any figure on this desk.'};
-  if(!(cv.rate>0))return {sev:'var(--mut)',k:'Quiet',f:'&mdash;',
+  if(!(cv.rate>0))return {sev:'var(--mut)',k:'Quiet',f:NIL,
     t:'No trade in four weeks',
     w:`${units(free)} free to sell, and no rate to measure it against, so cover cannot be stated.`};
   if(cv.below)return {sev:cv.days<3?'var(--crim)':'var(--gold)',k:'Buy',f:cv.days+' d',
@@ -12661,9 +12692,9 @@ function tabInventory(){
        again under Still to arrive, and the lines would not have summed to the figure beneath
        them. No lot on the book is part received today. Same fault in the lot list below. */
     ...receivedPO.map(p=>['Received '+(p.date||'not dated'),'+'+units(poRecvUnits(p)),fmt(poRate(p))+'/unit']),
-    ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-(loanUnits-loanIn)).toFixed(2)),'&mdash;'],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
-    loanUnits>0?['Loan out (settled)','-'+units(loanUnits),'&mdash;']:null,
-    loanIn>0?['Borrowed in (to return)','+'+units(loanIn),'&mdash;']:null,   // v518
+    ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-(loanUnits-loanIn)).toFixed(2)),NIL],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
+    loanUnits>0?['Loan out (settled)','-'+units(loanUnits),NIL]:null,
+    loanIn>0?['Borrowed in (to return)','+'+units(loanIn),NIL]:null,   // v518
     selfUse>0?['Non-revenue '+PN,'-'+units(selfUse),'&asymp; '+fmt0(selfUse*wavgBuy)]:null,   /* v531: one bucket */
     /* v429: v406 gave the walk a surplus and gave the PROSE a sentence about it, and left this
        table without a row, so on a count ABOVE the ledger the lines summed to less than the
@@ -12672,7 +12703,7 @@ function tabInventory(){
     surplus>0.001?['Surplus (count above ledger)','+'+units(surplus),'&asymp; '+fmt0(surplus*wavgBuy)]:null,
   ].filter(Boolean);
   // lots: received (in cost), plus excluded (in-transit / defaulted)
-  const lotsIn=[['Opening',units(op.qty),op.costPerKg?fmt(op.costPerKg):'&mdash;','in basis'],
+  const lotsIn=[['Opening',units(op.qty),op.costPerKg?fmt(op.costPerKg):NIL,'in basis'],
     ...receivedPO.map(p=>['Purchase '+(p.date||'not dated'),units(poRecvUnits(p)),fmt(poRate(p)),'in basis'])];
   const lotsEx=[...defaultPO.map(p=>['Defaulted '+p.date,units(p.qty),fmt(p.total/p.qty),'<span class="risk">excluded</span>']),
     /* v385: pPurch(PROD), not the bare `purchases`. Nothing is in transit on either book
@@ -12720,7 +12751,7 @@ function tabInventory(){
 
   <h2 style="margin-top:18px">How long the inventory lasts <span class="rule"></span></h2>
   <div class="kpis k4">
-    <div class="kpi salt-kpi ${cv.days!=null&&cv.days<3?'r':'gold'}"><div class="l salt-kpi__label">Cover</div><div class="v salt-kpi__value">${cv.days==null?'&mdash;':cv.days+' d'}</div><div class="n salt-kpi__note">${cv.rate>0?`at ${units(cv.rate)}/day, the measured rate`:'no recent trade to rate against'}</div></div>
+    <div class="kpi salt-kpi ${cv.days!=null&&cv.days<3?'r':'gold'}"><div class="l salt-kpi__label">Cover</div><div class="v salt-kpi__value">${cv.days==null?NIL:cv.days+' d'}</div><div class="n salt-kpi__note">${cv.rate>0?`at ${units(cv.rate)}/day, the measured rate`:'no recent trade to rate against'}</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Sold last 14 days</div><div class="v salt-kpi__value">${units(cv.units14)}</div><div class="n salt-kpi__note">${units(cv.rate14)}/day shipped</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Sold last 28 days</div><div class="v salt-kpi__value">${units(cv.units28)}</div><div class="n salt-kpi__note">${units(cv.rate28)}/day shipped</div></div>
     ${''/* round 5: a inventory sitting EXACTLY on its trigger has shortBy 0, and units(-0)
@@ -12736,7 +12767,7 @@ function tabInventory(){
       +`<tr class="tot"><td class="l" colspan="2">Attributed</td><td>${units(suUnits)}</td><td>${fmt0(suUnits*wavgBuy)}</td><td class="stkx"></td></tr>`
       +(resid<-0.009
         ? `<tr class="tot"><td class="l" colspan="2">Over-attributed</td><td>${units(-resid)}</td><td>${fmt0(-resid*wavgBuy)}</td><td class="l stkx">the split was struck against a larger gap than the book now carries</td></tr>`
-        : `<tr class="tot"><td class="l" colspan="2">Still unexplained</td><td>${units(resid>0.009?resid:0)}</td><td>${resid>0.009?fmt0(resid*wavgBuy):'&mdash;'}</td><td class="l stkx">${resid>0.009?'the plug that remains':'the split accounts for the whole gap'}</td></tr>`)
+        : `<tr class="tot"><td class="l" colspan="2">Still unexplained</td><td>${units(resid>0.009?resid:0)}</td><td>${resid>0.009?fmt0(resid*wavgBuy):NIL}</td><td class="l stkx">${resid>0.009?'the plug that remains':'the split accounts for the whole gap'}</td></tr>`)
       +`</tbody></table></div>`
     : (()=>{
       /* v385, TWICE THE v379 SHAPE, AND THE PROSE WAS INVISIBLE ANYWAY. This paragraph divided
@@ -12748,8 +12779,8 @@ function tabInventory(){
          which reads at a glance, and each one says "no basis" rather than printing one. */
       const handled=+(buyUnits+op.qty).toFixed(2);
       if(selfUse<0.009)return `<div class="kpis k3"><div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Unexplained</div><div class="v salt-kpi__value">none</div><div class="n salt-kpi__note">the ledger and the count agree</div></div></div>`;
-      const share=handled>0.009?((selfUse/handled)*100).toFixed(1)+'%':'&mdash;';
-      const mar=grossMargin>0.009?((selfUse*wavgBuy)/grossMargin*100).toFixed(0)+'%':'&mdash;';
+      const share=handled>0.009?((selfUse/handled)*100).toFixed(1)+'%':NIL;
+      const mar=grossMargin>0.009?((selfUse*wavgBuy)/grossMargin*100).toFixed(0)+'%':NIL;
       return `<div class="kpis k3">
         <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Gone missing</div><div class="v salt-kpi__value">${units(selfUse)}</div><div class="n salt-kpi__note">${handled>0.009?share+' of the '+units(handled)+' handled':'nothing bought to measure it against'}</div></div>
         <div class="kpi salt-kpi r"><div class="l salt-kpi__label">At cost</div><div class="v salt-kpi__value">${fmt0(selfUse*wavgBuy)}</div><div class="n salt-kpi__note">at the ${fmt(wavgBuy)}/unit average</div></div>
@@ -12771,7 +12802,7 @@ function tabInventory(){
 
   ${sec('Inventory reconciliation',`opening to ${units(currentStock)} on hand, with ${units(selfUse)} booked as non-revenue ${PN}`,recon.length,
     `<table><thead><tr><th class="l">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${units(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
-    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. ${countedFor(PROD)==null?'With no count, the ledger figure stands and nothing is booked as non-revenue.':surplus>0.001?`The count stands <b>${units(surplus)}</b> above the ledger &mdash; a surplus, not shrinkage: goods are on the inventory that the book has not recorded, and an unfolded lot is the usual cause. The count still wins.`:`The gap, <b>${units(selfUse)}</b>, is booked as non-revenue ${PN} &mdash; the count always wins.`}${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
+    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. ${countedFor(PROD)==null?'With no count, the ledger figure stands and nothing is booked as non-revenue.':surplus>0.001?`The count stands <b>${units(surplus)}</b> above the ledger: a surplus, not shrinkage. Goods are on the inventory that the book has not recorded, and an unfolded lot is the usual cause. The count still wins.`:`The gap, <b>${units(selfUse)}</b>, is booked as non-revenue ${PN}: the count always wins.`}${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
   ${sec('Lots and sourcing',`${fmt(wavgBuy)}/unit weighted over ${lotsIn.length} lot${lotsIn.length===1?'':'s'} in the basis`,lots.length,
     `<table><thead><tr><th class="l">Lot</th><th>Qty</th><th>Cost/unit</th><th>Basis</th></tr></thead><tbody>${lots.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
     <div class="dsc" style="margin-top:9px">Weighted-average cost <b>${fmt(wavgBuy)}/unit</b> over the received lots and opening. Defaulted and in-transit lots are excluded until (and unless) they arrive.</div>`)}
@@ -13920,7 +13951,7 @@ function ledgerAll(){
 function tabLedger(){
   const isPend=ledIsPend;
   const all=ledgerAll();
-  const nil='<span class="pnil">&mdash;</span>';
+  const nil='<span class="pnil">'+NIL+'</span>';
   const pill=(lab,cls)=>lab?`<span class="tag salt-status ${cls}">${lab}</span>`:nil;
   const stateCls=st=>st==='Completed'?'paid':st==='Pending'?'pendingt':st==='In-Kind'?'inkind':(st==='Default'||st==='Cancelled')?'def':/^Open/.test(st)?'open':'open';
   // type badge for an amendment kind
@@ -14075,7 +14106,7 @@ function tabLedger(){
         +`<span class="lc lc-prod">${o.product||''}</span>`
         +`<span class="lc lc-party">${o.party||''}</span>`
       +`</span>`;
-    const nil='<span class="lnil">&mdash;</span>';
+    const nil='<span class="lnil">'+NIL+'</span>';
     const lineHtml=(L,i)=>{
       const last=i===lines.length-1, role=L.closed?'close':'open';
       const showDate=!!L.date&&L.date!==dOf(t.date);
@@ -14425,7 +14456,7 @@ function ifrsPanel(){
   const F=ifrsPL(PROD), P=PRODUCTS[PROD], c=pxCost();
   const L=(lab,v,opt)=>{opt=opt||{};
     return `<tr class="${opt.cls||''}"><td class="l">${lab}${opt.ref?`<div class="iref">${esc(opt.ref)}</div>`:''}</td>
-      <td class="mono" style="${opt.neg?'color:var(--crim)':''}">${v==null?'&mdash;':(opt.neg?'('+fmt0(Math.abs(v))+')':fmt0(v))}</td>
+      <td class="mono" style="${opt.neg?'color:var(--crim)':''}">${v==null?NIL:(opt.neg?'('+fmt0(Math.abs(v))+')':fmt0(v))}</td>
       <td class="l isub">${esc(opt.n||'')}</td></tr>`;};
   /* SAME RULE AS THE COST PANEL (v401): Study, so it folds, and the summary carries the operating
      result rather than the title alone. The h2 became the summary. The date it carried is the
@@ -14435,13 +14466,13 @@ function ifrsPanel(){
   <div class="card">
     <table class="fintab istmt"><tbody>
       ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${units(F.soldUnits)} recognised on transfer of control`})}
-      ${L('Cost of sales &mdash; goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
-      ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
+      ${L('Cost of sales: goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
+      ${L('Cost of sales: freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
       ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct==null?'no revenue yet':`${F.grossPct}% of revenue`}${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
       ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
       ${L('Non-revenue '+P.name.toLowerCase(),-F.nonRev,{neg:true,ref:'IAS 2.16(a)',n:F.nonRevUnits?`${units(F.nonRevUnits)} out without a sale, at ${fmt(F.unitCost)}`:'none'})}
-      ${L('Impairment &mdash; trade receivables',-+(F.ecl+F.wOff).toFixed(2),{neg:true,ref:'IFRS 9',n:F.wOff?`${fmt0(F.wOff)} written off${F.ecl?`, ${fmt0(F.ecl)} loss allowance on open balances`:''}`:F.ecl?'loss allowance on open balances':'no open balance'})}
-      ${L('Impairment &mdash; supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
+      ${L('Impairment: trade receivables',-+(F.ecl+F.wOff).toFixed(2),{neg:true,ref:'IFRS 9',n:F.wOff?`${fmt0(F.wOff)} written off${F.ecl?`, ${fmt0(F.ecl)} loss allowance on open balances`:''}`:F.ecl?'loss allowance on open balances':'no open balance'})}
+      ${L('Impairment: supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
       ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:F.opPct==null?'no revenue yet':`${F.opPct}% of revenue`})}
     </tbody></table>
     <div class="dsc" style="margin-top:9px">Pricing basis ${fmt(c.eff)}, balance-sheet cost ${fmt(c.landed)}: the three lines under gross profit are in the price but cannot sit in inventory.</div>
@@ -14504,8 +14535,8 @@ function tabFinancials(){
   const unc=v=>{const u=v.rev-v.cash-v.inkind;
     return `<b>${n0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
   const td=(c,inner,style)=>`<td class="${c.cls}"${style?` style="${style}"`:''}>${inner}</td>`;
-  const each=f=>cols.map(c=>c.v?f(c):td(c,'&mdash;')).join('');
-  const col=(k,neg)=>each(c=>{const v=c.v[k];return td(c,v?n0(neg?-v:v):'&mdash;',neg&&v>0?'color:var(--crim)':'');});
+  const each=f=>cols.map(c=>c.v?f(c):td(c,NIL)).join('');
+  const col=(k,neg)=>each(c=>{const v=c.v[k];return td(c,v?n0(neg?-v:v):NIL,neg&&v>0?'color:var(--crim)':'');});
   const fyc=(inner,style)=>`<td class="fy"${style?` style="${style}"`:''}>${inner}</td>`;
   const grp=lab=>`<tr class="grp"><td class="l" colspan="${cols.length+2}">${lab}</td></tr>`;
   const groups=[['pm','Months',months.length],['pq','Quarters',quarters.length],['ph','Halves',halves.length]].filter(g=>g[2]);
@@ -14514,8 +14545,8 @@ function tabFinancials(){
     <tr><td class="l">Revenue</td>${col('rev')}${fyc(n0(fy.rev))}</tr>
     <tr><td class="l">Cost of goods</td>${col('cogs',1)}${fyc(n0(-fy.cogs),'color:var(--crim)')}</tr>
     <tr class="tot"><td class="l">Gross margin</td>${each(c=>td(c,`<b>${n0(gm(c.v))}</b><em class="finpct">${gmp(c.v).toFixed(1)}%</em>`))}${fyc(`<b>${n0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em>`)}</tr>
-    <tr><td class="l">Provision held &mdash; debtors</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):'&mdash;','color:var(--crim)')}</tr>
-    <tr><td class="l">Provision held &mdash; supplier default</td>${col('provSup',1)}${fyc(fy.provSup?n0(-fy.provSup):'&mdash;','color:var(--crim)')}</tr>
+    <tr><td class="l">Provision held: debtors</td>${col('provAR',1)}${fyc(fy.provAR?n0(-fy.provAR):NIL,'color:var(--crim)')}</tr>
+    <tr><td class="l">Provision held: supplier default</td>${col('provSup',1)}${fyc(fy.provSup?n0(-fy.provSup):NIL,'color:var(--crim)')}</tr>
     <tr class="tot"><td class="l">Result after provisions</td>${each(c=>td(c,`<b>${n0(net(c.v))}</b>`))}${fyc(`<b>${n0(net(fy))}</b>`)}</tr>
     ${grp('Cash against it')}
     <tr><td class="l">Collected in cash</td>${col('cash')}${fyc(n0(fy.cash))}</tr>
@@ -14847,7 +14878,7 @@ function costPanel(){
     return `<tr><td class="l">${units(q)}</td><td>${fmt0(price)}</td>
       <td><b>${fmt0(contrib)}</b></td>
       <td style="color:${perUnit<0?'var(--crim)':'var(--ink)'}">${fmt(perUnit)}</td>
-      <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--warn,#b87333)':'var(--ink)'}"><b>${mins==null?'&mdash;':Math.round(mins)+' min'}</b></td></tr>`;}).join('');
+      <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--warn,#b87333)':'var(--ink)'}"><b>${mins==null?NIL:Math.round(mins)+' min'}</b></td></tr>`;}).join('');
 
   const stack=s0.perOrderParts.map(p=>`<tr><td class="l">${p.k}</td>
     <td>${p.rm!=null?fmt(p.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
@@ -14915,11 +14946,11 @@ function costPanel(){
      and the reader scrolled a cost stack to reach it. Shut, it still states the two figures it
      exists for, which is the rule: a summary that says only its own title is a title with a
      chevron on it. The h2 it used to sit under IS the summary now, so the fold costs no heading. */
-  return `<details class="obsec" style="margin-top:20px"><summary>The cost of doing business <span class="q">per unit, then per order</span><span class="ct">${fmt(c.eff)} + ${s0.perOrder>0?fmt(s0.perOrder):'&mdash;'}</span></summary>
+  return `<details class="obsec" style="margin-top:20px"><summary>The cost of doing business <span class="q">per unit, then per order</span><span class="ct">${fmt(c.eff)} + ${s0.perOrder>0?fmt(s0.perOrder):NIL}</span></summary>
   <div class="kpis k3">
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Goods, per unit</div><div class="v salt-kpi__value">${fmt(c.eff)}</div><div class="n salt-kpi__note">${fmt(c.repl)} plus ${(c.shrink*100).toFixed(2)}% of the leak${c.absorbed>0.009?'; you absorb '+fmt(c.absorbed)+' more':''}</div></div>
-    <div class="kpi salt-kpi ${s0.knownParts<s0.totalParts?'r':'g'}"><div class="l salt-kpi__label">Per order</div><div class="v salt-kpi__value">${s0.perOrder>0?fmt(s0.perOrder):'&mdash;'}</div><div class="n salt-kpi__note">${s0.knownParts} of ${s0.totalParts} lines measured</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Provisioned against</div><div class="v salt-kpi__value">${R.badDebtPct==null?'&mdash;':R.badDebtPct+'%'}</div><div class="n salt-kpi__note">${fmt0(R.badDebtRM)} discounted on ${fmt0(R.revenueRM)} written</div></div>
+    <div class="kpi salt-kpi ${s0.knownParts<s0.totalParts?'r':'g'}"><div class="l salt-kpi__label">Per order</div><div class="v salt-kpi__value">${s0.perOrder>0?fmt(s0.perOrder):NIL}</div><div class="n salt-kpi__note">${s0.knownParts} of ${s0.totalParts} lines measured</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Provisioned against</div><div class="v salt-kpi__value">${R.badDebtPct==null?NIL:R.badDebtPct+'%'}</div><div class="n salt-kpi__note">${fmt0(R.badDebtRM)} discounted on ${fmt0(R.revenueRM)} written</div></div>
   </div>
 
   <div class="two" style="margin-top:13px">
@@ -14984,7 +15015,7 @@ function tabReceivables(){
   const cRef=(PROD===DEFAULT_PROD&&typeof customerRefunds!=='undefined'?customerRefunds:[]).filter(r=>!r.paidOn);
   /* v708: AN AGE, like every table beside it. This was the one open figure on the page with no
      age against it, on the one thing he said to do immediately. */
-  const cRefBody=cRef.map(r=>`<tr><td class="l mono">${ID(r.party)}</td><td class="l">${r.since||''}</td><td>${r.since?dAge(r.since)+'d':'&mdash;'}</td><td>${fmt0(r.amount)}</td></tr>`).join('');
+  const cRefBody=cRef.map(r=>`<tr><td class="l mono">${ID(r.party)}</td><td class="l">${r.since||''}</td><td>${r.since?dAge(r.since)+'d':NIL}</td><td>${fmt0(r.amount)}</td></tr>`).join('');
   const cRefTot=+cRef.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
   // Pending customer orders (agreed, nothing moved).
   const cPen=_S.map(s=>{const k=txPendUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean).sort(oldest);
@@ -15073,15 +15104,15 @@ function tabReceivables(){
   ${custN?`<div class="kpis k4" style="margin-top:12px">
     ${hero('gold','Cash owed to you',fmt0(ar),`${fmt0(arGross)} gross, net of provisioning`)}
     ${hero('r',`${NM} you owe`,units(cSaltUnits),cSaltUnits>0?`worth ${fmt0(cSaltRm)}`:'nothing deferred')}
-    ${hero('r','Refunds you owe',otherBook?'&mdash;':fmt0(cRefTot),otherBook||(cRef.length?`${cRef.length} owed back`:'none owed back'))}
+    ${hero('r','Refunds you owe',otherBook?NIL:fmt0(cRefTot),otherBook||(cRef.length?`${cRef.length} owed back`:'none owed back'))}
     ${hero('','Pending orders',units(cPenUnits),cPenUnits>0?`worth ${fmt0(cPenRm)}`:'none open')}
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth, aged from the handover</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
-  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged from the handover &amp; provisioned`,cCash.length,
-    `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`
+  ${sec('Cash owed to you',`advance deliveries: ${nm} out, payment short; aged from the handover &amp; provisioned`,cCash.length,
+    `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>${NIL}</td><td>${fmt0(ar)}</td></tr></tbody></table>`
     +(writtenOffRM>0.009?`<div class="wooff" style="margin-top:8px;font-size:12px;color:var(--mut)">Written off, and out of this table: ${fmt0(writtenOffRM)}, ${[...new Set(sales.filter(s=>prodOf(s)===PROD&&txWrittenOff(s)>0.009).map(s=>ID(s.customer)))].join(', ')}.</div>`:''))}
-  ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
-    `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit owed</th><th>Value</th></tr></thead><tbody>${cSaltBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(cSaltUnits)}</td><td>${fmt0(cSaltRm)}</td></tr></tbody></table>${cSaltUnits>currentStock?`<div class="dsc" style="margin-top:8px"><span class="risk">Exceeds ${units(currentStock)} on hand &mdash; restock to cover.</span></div>`:''}`)}
+  ${sec(`${NM} you owe them`,'paid ahead of delivery, goods still to hand over',cSalt.length,
+    `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit owed</th><th>Value</th></tr></thead><tbody>${cSaltBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(cSaltUnits)}</td><td>${fmt0(cSaltRm)}</td></tr></tbody></table>${cSaltUnits>currentStock?`<div class="dsc" style="margin-top:8px"><span class="risk">Exceeds ${units(currentStock)} on hand: restock to cover.</span></div>`:''}`)}
   ${sec(`${NM} you borrowed`,'lent to you, to return unit for unit',bIn.length,
     `<table><thead><tr><th class="l">Lender</th><th class="l">Since</th><th>Unit to return</th></tr></thead><tbody>${bInBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(bInUnits)}</td></tr></tbody></table>`)}
   ${sec('Refunds you owe','cash back to a customer',cRef.length,
@@ -15095,12 +15126,12 @@ function tabReceivables(){
   ${supN?`<div class="kpis k4" style="margin-top:12px">
     ${hero('r','Cash you owe',fmt0(sCashTot),sCashTot>0?'bills unpaid':'all lots paid')}
     ${hero('gold',`${NM} they owe you`,units(sSaltUnits),sSaltUnits>0?'in transit':'nothing in transit')}
-    ${hero('gold','Refund due',otherBook?'&mdash;':fmt0(hasRef?supRecovNet:0),otherBook||(hasRef?`${fmt0(supRecovGross)} gross, net of provisioning`:'none'))}
+    ${hero('gold','Refund due',otherBook?NIL:fmt0(hasRef?supRecovNet:0),otherBook||(hasRef?`${fmt0(supRecovGross)} gross, net of provisioning`:'none'))}
     ${hero('','Agreed to buy',fmt0(sPenRM),sPenUnits>0?`${units(sPenUnits)} on order, nothing moved`:'nothing agreed')}
   </div>
   ${sec('Cash you owe',`bills for ${nm} delivered to you, unpaid`,sCash.length,
     `<table><thead><tr><th class="l">Supplier</th><th class="l">Since</th><th>Amount</th></tr></thead><tbody>${sCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(sCashTot)}</td></tr></tbody></table>`)}
-  ${sec(`${NM} they owe you`,'ordered, not yet received &mdash; paid or not',sSalt.length,
+  ${sec(`${NM} they owe you`,'ordered, not yet received, paid or not',sSalt.length,
     `<table><thead><tr><th class="l">Supplier</th><th class="l">Since</th><th>Unit due</th><th>Value</th></tr></thead><tbody>${sSaltBody}</tbody></table>`)}
   ${sec('Refunds they owe you','recoverable default, aged &amp; provisioned',hasRef?1:0,
     `<table><thead><tr><th class="l">Supplier</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${sRefBody}</tbody></table><div class="dsc" id="recvRefNote" style="margin-top:8px">Paid 08 Jul for a lot that never arrived; recoverable pending the settlement meeting.</div>`)}
@@ -15800,7 +15831,7 @@ function obsCard(o){
     <summary>
       <span class="obsk">${S.lbl}</span>
       <span class="obst">${o.title}</span>
-      <span class="obsm${(o.rm>0.009)?'':' nil'}">${(o.rm>0.009)?fmt0(o.rm):'&mdash;'}</span>
+      <span class="obsm${(o.rm>0.009)?'':' nil'}">${(o.rm>0.009)?fmt0(o.rm):NIL}</span>
       <span class="obsc" title="${esc(K.t)}">${K.lbl}</span>
     </summary>
     <div class="obsb">
@@ -15863,7 +15894,7 @@ function tabPlans(){
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing drifting'}</div></div>
-    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):'&mdash;'}</div><div class="n salt-kpi__note">where an item names a figure</div></div>
+    <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">where an item names a figure</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Hushed</div><div class="v salt-kpi__value">${hushed.length}</div><div class="n salt-kpi__note">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
   <div class="insight salt-insight">Tags: <b>measured</b>, <b>thin</b> (under-sampled), <b>no sample</b>.</div>
@@ -16231,7 +16262,7 @@ function addParty(){
     raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind),
     payload:{mode:'addid',code:code,kind:kind,parent:parent||null,
              rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null)}});
-  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly &mdash; there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
+  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly: there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
   apSaved();
 }
 /* THE CONFIRMATION USED TO BE DESTROYED BY ITS OWN SUCCESS (v199). addParty set the
@@ -16380,11 +16411,11 @@ function renderReveal(){
         <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
         <input id="apLoc" placeholder="location; blank if to be confirmed" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
         <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#05080a">
-          <option value="customer">Customer &mdash; buys direct</option>
-          <option value="reseller">Associate, resells for you &mdash; R2</option>
-          <option value="referral">Referrer, introduces buyers &mdash; R3</option>
-          <option value="downstream">An associate&rsquo;s end buyer &mdash; you delivered, so you know the name and place</option>
-          <option value="bucket">An associate&rsquo;s end buyer you know NOTHING about &mdash; his &ldquo;-Gen&rdquo; bucket</option>
+          <option value="customer">Customer: buys direct</option>
+          <option value="reseller">Associate, resells for you: R2</option>
+          <option value="referral">Referrer, introduces buyers: R3</option>
+          <option value="downstream">An associate&rsquo;s end buyer: you delivered, so you know the name and place</option>
+          <option value="bucket">An associate&rsquo;s end buyer you know NOTHING about: his &ldquo;-Gen&rdquo; bucket</option>
           <option value="supplier">Supplier</option>
         </select>
         <select id="apParent" style="display:none;border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#05080a">
@@ -17832,7 +17863,7 @@ function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if
 }}
 function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const txq=qTx();
-  const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically &mdash; already in the ledger.</div>`:'';
+  const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically, already in the ledger.</div>`:'';
   /* v485: A STUCK ENTRY IS NAMED, because it is the one case here that asks for his hand: this
      device never saw it acknowledged and the fold has since passed its stamp, so the flag is never
      lifted and the copy held here stays in the figures. Corrected 26 Sep 2026: since 08 Sep the
@@ -17843,7 +17874,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   if(!txq.length){b.innerHTML=cleared+stuck;return;}
   b.innerHTML=cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
-    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
+    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?q.qty+'unit':NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
 /* Chart.js is vendored at assets/chart.umd.js and loaded ON DEMAND (v176), never from a
@@ -18358,7 +18389,7 @@ function approachBoard(S,bm){
         <tr><td>Buys every</td><td>${x.cad?`${x.cad.med}d over ${x.cad.n} orders`:'one order, no habit yet'}</td></tr>
         <tr><td>Last bought</td><td>${x.cad?x.cad.last+' ':''}${x.since==null?'':`(${x.since}d ago)`}</td></tr>
         <tr><td>Usual lot</td><td>${units(x.q)}</td></tr>
-        <tr><td>They have paid</td><td>${x.paid==null?'&mdash; <span style="font-size:10px;color:var(--dim)">free units only</span>':fmt(x.paid)+'/unit'}</td></tr>
+        <tr><td>They have paid</td><td>${x.paid==null?NIL+' <span style="font-size:10px;color:var(--dim)">free units only</span>':fmt(x.paid)+'/unit'}</td></tr>
         <tr><td>Their price</td><td>${fmt0(x.total)} &middot; ${fmt(x.perUnit)}/unit</td></tr>
         <tr><td>Would earn</td><td>${fmt0(x.profit)} ${x.delta==null?'':`<span style="color:${x.delta>0?'var(--grn)':x.delta<0?'var(--crim)':'var(--dim)'}">${x.delta>=0?'+':''}${x.delta}%</span>`}</td></tr>
       </table>
@@ -18396,11 +18427,11 @@ function approachBoard(S,bm){
   return `<div class="apwrap">
     <div class="apside">
       <div class="apm">${MON[pS.getUTCMonth()]} &middot; habit held</div>
-      <div class="apbig">${P.pct==null?'&mdash;':P.pct+'%'}</div>
+      <div class="apbig">${P.pct==null?NIL:P.pct+'%'}</div>
       <div class="apsub">${P.due?`<b>${P.met}</b> of ${P.due} due dates met on time`:'no due date fell in it, so there is nothing to score'}</div>
       <div class="aphr"></div>
       <div class="apm">${MON[m]} so far</div>
-      <div class="apbig" style="font-size:17px">${N.pct==null?'&mdash;':N.pct+'%'}</div>
+      <div class="apbig" style="font-size:17px">${N.pct==null?NIL:N.pct+'%'}</div>
       <div class="apsub">${N.due?`<b>${N.met}</b> of ${N.due} met`:'no due date has passed yet'}</div>
       ${RS&&!RS.empty?`<div class="aphr"></div>
       <div class="apm">Next 14 days</div>
@@ -18601,7 +18632,7 @@ function tabConcentration(){
          have bought nothing but hold cost, which a free unit gives you, read -1,427,966%.
          The three other readers of c.tot are shares of REVENUE (x.rev/c.tot), where zero over the
          sentinel is a correct 0%; this is the only one dividing a different quantity by it. */
-      return c.revSum>0.009?(M/c.revSum*100).toFixed(0)+'%':'&mdash;';})()}</td></tr></tbody></table></div>${tailBtn}`;
+      return c.revSum>0.009?(M/c.revSum*100).toFixed(0)+'%':NIL;})()}</td></tr></tbody></table></div>${tailBtn}`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
    All three read the same numbers the tables do; none of them models anything. Pareto
@@ -18786,14 +18817,14 @@ function isPrincipal(r){return (r&&r.kind==='R0');}
 function partnerBadge(r){
   if(isPrincipal(r)){
     let p=`<span class="rtag" style="border-color:var(--gold);color:var(--gold)">${PRINCIPAL_TITLE}</span>`;
-    if(typeof DIAMOND!=='undefined'&&DIAMOND.indexOf(r.id)>=0)p+=' <span class="gem" title="Diamond &mdash; top partner, awarded on a special basis">&#9670; Diamond</span>';
+    if(typeof DIAMOND!=='undefined'&&DIAMOND.indexOf(r.id)>=0)p+=' <span class="gem" title="Diamond: top partner, awarded on a special basis">&#9670; Diamond</span>';
     else if(r.starN>0)p+=` <span class="starpill s${r.starN}" title="${r.starN}-star by revenue share">${'&#9733;'.repeat(r.starN)} ${r.starN}&#8209;star</span>`;
     return p;
   }
   const lvl='#'+(r.rNum||1);
   let out=`<span class="rtag">Associate &middot; ${lvl}</span>`;
   if(typeof DIAMOND!=='undefined'&&DIAMOND.indexOf(r.id)>=0){
-    out+=' <span class="gem" title="Diamond &mdash; top partner, awarded on a special basis">&#9670; Diamond</span>';
+    out+=' <span class="gem" title="Diamond: top partner, awarded on a special basis">&#9670; Diamond</span>';
   } else if(r.starN>0){
     out+=` <span class="starpill s${r.starN}" title="${r.starN}-star by revenue share">${'&#9733;'.repeat(r.starN)} ${r.starN}&#8209;star</span>`;
   }
@@ -18941,7 +18972,7 @@ function tabNetwork(){
        NOTE_MIN but never removed, and this one is comfortably under. */
     return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
       <div class="insight salt-insight">Left ${dd.since}, ${esc(dd.reason)}. His referrals stay attributed to him.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
+  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant: ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
     <div class="insight salt-insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tIntro=ns.reduce((a,x)=>a+x.marginIntro,0);
@@ -19163,7 +19194,7 @@ function apReenter(){
 function apClock(c){
   if(!c||!c.committedAt)return '';
   const sec=(a,b)=>(a&&b)?Math.max(0,Math.round((new Date(b)-new Date(a))/1000)):null;
-  const say=(n)=>n==null?'&mdash;':n>=120?Math.round(n/60)+' min':n+' s';
+  const say=(n)=>n==null?NIL:n>=120?Math.round(n/60)+' min':n+' s';
   const live=sec(c.decidedAt,c.liveAt),done=sec(c.decidedAt,c.committedAt);
   /* v534: KL time in the header's own shape, "08 Sep 2026, 10:03 KL"; a bookkeeping entry has no
      party and is named as such rather than by its stamp; a row from before the clock had a proof
@@ -19254,9 +19285,9 @@ function apCard(d){
   const r=d.row||{}, col=d.collection||'sales', cell=(k,v,cls)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div></div>`;
   let head='',grid='';
   if(col==='count'){const dr=r.drift;head=`Count of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
-    grid=cell('Book says',r.was==null?'&mdash;':units(r.was))+cell('You counted',units(r.qty))+cell('Drift',dr==null?'&mdash;':(dr>0?'+':'')+units(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
+    grid=cell('Book says',r.was==null?NIL:units(r.was))+cell('You counted',units(r.qty))+cell('Drift',dr==null?NIL:(dr>0?'+':'')+units(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
   else if(col==='loss'||col==='lostDemand'){const lost=col==='lostDemand';head=`${lost?'Lost sale':'Loss'} of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
-    grid=cell(lost?'Wanted':'Left the inventory',units(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):'&mdash;'):'')+cell('Why',esc(LOSS_LABEL[r.why]||r.why||'-'));}
+    grid=cell(lost?'Wanted':'Left the inventory',units(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):NIL):'')+cell('Why',esc(LOSS_LABEL[r.why]||r.why||'-'));}
   else if(col==='repayment'){const cashR=r.form==='cash',show=v=>cashR?fmt(+v||0):units(+v||0);   // v595
     head=`Repay <b>${show(cashR?r.rm:r.kg)}</b> ${r.direction==='in'?'to':'from'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;
     grid=cell('Loan',esc(r.loan||'-'))+cell('Left owing',r.settles?'nothing':show(r.left))+cell(cashR?'Cash flow':'Inventory',(r.direction==='in'?'-':'+')+show(cashR?r.rm:r.kg));}
@@ -19297,10 +19328,10 @@ function apCard(d){
        thing an entry cannot be checked against. RM115 a unit is a plausible rate to read
        first; RM115 a unit against RM7 of cost is not. A purchase has neither, so it keeps
        the rate on its own. */
-    const rate=cell('Rate',per==null?'&mdash;':fmt(per)+'/unit');
+    const rate=cell('Rate',per==null?NIL:fmt(per)+'/unit');
     grid=(buy?rate
-      :cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+(qty>0?' ('+fmt(cost/qty)+'/unit)':''))   /* the order's cost, absolute (v496); it read "/unit" until 08 Sep 2026 */
-        +cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
+      :cell('Cost drawn',cost==null?NIL:fmt(cost)+(qty>0?' ('+fmt(cost/qty)+'/unit)':''))   /* the order's cost, absolute (v496); it read "/unit" until 08 Sep 2026 */
+        +cell('Margin',mar==null?NIL:mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
         +rate)
       +cell('Cash',fmt(r.cash||0))+cell(buy?'Received':'Delivered',units(buy?poRecvUnits(r):(r.deliveredQty||0)));}
     /* v385: THE RECEIVED CELL WAS A SECOND ENGINE, AND IT HAD THE PENDING RULE WRONG. It read
@@ -19744,13 +19775,13 @@ function ordPvBlock(o){
   const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
   const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
   const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
-  const cardT=card==null?tile('Their card today','&mdash;',esc(j.cardNote||'no card for this size'),'')
+  const cardT=card==null?tile('Their card today',NIL,esc(j.cardNote||'no card for this size'),'')
     :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
-  const marT=margin==null?tile('Margin','&mdash;','no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
-  const flT=floor==null?tile('Floor','&mdash;','no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
+  const marT=margin==null?tile('Margin',NIL,'no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
+  const flT=floor==null?tile('Floor',NIL,'no floor for this size',''):tile('Floor',fmt(floor),goods-floor>=-0.004?'clear by '+fmt(+(goods-floor).toFixed(2)):fmt(+(floor-goods).toFixed(2))+' under it',goods-floor>=-0.004?'verdigris':'ember');
   const dir=(usual&&rate!=null)?(rate-usual)/usual:null;
   /* S11 fix: the unit rides in the note, so a narrow tile breaks a figure at its space and never inside the word */
-  const usT=usual==null?tile('Their usual','&mdash;','no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
+  const usT=usual==null?tile('Their usual',NIL,'no priced order yet',''):tile('Their usual',fmt(usual),'a unit'+(rate==null?'':'; this is '+fmt(rate)),dir==null||Math.abs(dir)<0.005?'steel':dir>0?'verdigris':'copper');
   const flags=Array.isArray(j.flags)?j.flags:[];
   /* V5b2: the Worker's verdict on paying in advance, which his yes covers (it is in the digest) */
   const owedW=num(j.owedWith),ceil=num(j.ceiling);
@@ -20057,8 +20088,8 @@ function ordCard(o){
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
     ${ordSheetLine(o)}
-    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?'&mdash;':fmt(rate),'',rate==null?'':'a unit')
-      +cell('Their usual',usual==null?'&mdash;':fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
+    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
+      +cell('Their usual',usual==null?NIL:fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
     ${ordToldLine(o)}
@@ -20840,8 +20871,8 @@ function tabProductQuote(){
       <table style="margin-top:6px"><thead><tr><th class="l">Size</th><th>Built off the tiers</th><th class="l">Next tier up</th><th>Difference</th></tr></thead><tbody>
       ${g4.map(g=>{const cheaper=g.step!=null&&g.step<-0.009;
         return `<tr><td class="l">${units(g.q)}</td><td>${fmt0(g.built)}</td>`
-        +`<td class="l" style="color:var(--mut)">${g.up?`${units(g.up)} at ${fmt0(g.upTotal)}`:'&mdash;'}</td>`
-        +`<td style="color:${cheaper?'var(--grn)':'var(--mut)'}">${g.step==null?'&mdash;':cheaper
+        +`<td class="l" style="color:var(--mut)">${g.up?`${units(g.up)} at ${fmt0(g.upTotal)}`:NIL}</td>`
+        +`<td style="color:${cheaper?'var(--grn)':'var(--mut)'}">${g.step==null?NIL:cheaper
           ?`<b>${fmt0(-g.step)} less</b> for ${units(g.up-g.q)} more`
           :`${fmt0(g.step)} more for ${units(g.up-g.q)} more`}</td></tr>`;}).join('')}
       </tbody></table>
@@ -21214,7 +21245,7 @@ function tabPricing(){
   const anyCell=(anyQ>0)?(()=>{const L=priceLadder(anyQ);
     const p=Math.max(L.ask.total,ladderRound(floorTotal(anyQ)));
     return `<div class="qask${p<L.floor.total-0.009?' under':''}">${fmt0(p)}</div>`;})()
-    :'<div class="qask none">&mdash;</div>';
+    :'<div class="qask none">'+NIL+'</div>';
   /* restored: the headroom read was declared in the block that held the old override
      panel, and went out with it. */
   const hr=boardHeadroom(false);
@@ -21241,7 +21272,7 @@ function tabPricing(){
        and how much of the leak is charged, have moved onto the rows that carry those figures. What
        is left is the one number that is not on the stack and is the reason this view exists. -->
   <div class="kpis" style="grid-template-columns:1fr">
-    <div class="kpi salt-kpi ${hrTone}"><div class="l salt-kpi__label">Room before a price fails</div><div class="v salt-kpi__value">${hr.unbounded?'&mdash;':hr.headroom<0?'none':fmt(hr.headroom)}${hr.unbounded||hr.headroom<0?'':'<span style="font-size:12px;color:var(--mut)">/unit</span>'}</div>
+    <div class="kpi salt-kpi ${hrTone}"><div class="l salt-kpi__label">Room before a price fails</div><div class="v salt-kpi__value">${hr.unbounded?NIL:hr.headroom<0?'none':fmt(hr.headroom)}${hr.unbounded||hr.headroom<0?'':'<span style="font-size:12px;color:var(--mut)">/unit</span>'}</div>
       <div class="n">${hr.unbounded?'no live price breaches within RM200 of the buying rate'
         /* v385: THE COPY READ "-2.3% UP" AND "GIVES FIRST" WHEN THE BREACH HAD ALREADY HAPPENED.
            Headroom on this book is MINUS RM1: 42 live prices are under their floor at the rate
@@ -21378,7 +21409,7 @@ function tabPricing(){
         /* the row always has as many cells as the head has columns: a shown size the ladder has no rung for,
            and a rung short of a level, both keep the row's shape rather than sliding the table sideways */
         ?levels.map((n,i)=>{const p=fiveBy[r.q]&&fiveBy[r.q].prices[i];
-          return (p==null)?'<td class="mono" style="color:var(--dim)">&mdash;</td>':lvlCell(p,L.floor.total,r.q,i===levels.length-1);}).join('')
+          return (p==null)?'<td class="mono" style="color:var(--dim)">'+NIL+'</td>':lvlCell(p,L.floor.total,r.q,i===levels.length-1);}).join('')
         :(T1on?tCell(L.tier1):'')+tCell(L.ask))+`</tr>`;}).join('');
       /* v564: the Markup and Ask cells that stood here are now tCell, called once per tier above.
          v330's reason for stacking the rate and the margin on their own lines is why tCell does:
@@ -21395,7 +21426,7 @@ function tabPricing(){
       if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});
       /* v566: this read `under` and nothing else, so a board printing Tier 1 ABOVE Tier 2
          at half its sizes still ended on "Every price on the board, on both tiers, clears
-         break-even" — true, and the wrong question. Both tiers clearing their floor says nothing
+         break-even": true, and the wrong question. Both tiers clearing their floor says nothing
          about which of the two is the cheaper one. */
       if(L.tier1&&L.tier1.over>0.009)inverted.push({q:r.q,rm:L.tier1.over});});
     return `<div class="card"><div class="tscroll"><table class="pxboard fivetier"><thead>${head}</thead><tbody>${rows}</tbody></table></div>
@@ -21433,7 +21464,7 @@ function tabPricing(){
       const sR=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
       return `<table class="fintab istmt" style="margin-top:12px"><tbody>
       ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
-      ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
+      ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
       ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
@@ -21445,9 +21476,9 @@ function tabPricing(){
            today. Tier 1 is not derived at all, so it gets its own row saying what it IS rather than
            being folded into a table of levels and tapers it does not use. -->
       ${(()=>{const A=(typeof PRICING_ENGINE!=='undefined'&&PRICING_ENGINE.tier1Anchors)?PRICING_ENGINE.tier1Anchors(pxPolicy()):null;
-        if(!A)return sR('Tier 1','&mdash;','not stated on this book, so the board carries one tier');
+        if(!A)return sR('Tier 1',NIL,'not stated on this book, so the board carries one tier');
         return sR('Tier 1',fmt(A.rLo)+' to '+fmt(A.rHi)+'/unit',
-          `stated at ${units(A.lo)} and ${units(A.hi)}, ${fmt0(A.lo*A.rLo)} and ${fmt0(A.hi*A.rHi)}; the rate between them is interpolated in the log of size, taper ${A.b.toFixed(3)} against the supplier&rsquo;s ${(sT.b!=null?sT.b.toFixed(3):'&mdash;')}`);})()}
+          `stated at ${units(A.lo)} and ${units(A.hi)}, ${fmt0(A.lo*A.rLo)} and ${fmt0(A.hi*A.rHi)}; the rate between them is interpolated in the log of size, taper ${A.b.toFixed(3)} against the supplier&rsquo;s ${(sT.b!=null?sT.b.toFixed(3):NIL)}`);})()}
     </tbody></table>
     <!-- v506, his instruction of 07 Sep 2026: the three cards read as three things, and nothing
          walked the reader from COGS to the floor to the ask. This is that walk, one row per size,
@@ -21462,7 +21493,7 @@ function tabPricing(){
     <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">COGS, then the leak, is the floor; ${TIER_RULE[PROD]?`the ask is the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}`:'the floor at the size&rsquo;s margin is the ask'}${T1on?'. Tier 1 is stated, not derived':''}</span></div>
     <div class="tblw"><table class="fintab istmt"><thead><tr><th class="l">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
-        return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':'&mdash;'}</td><td class="mono">${raw!=null?fmt(raw):'&mdash;'}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
+        return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
     <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. ${TIER_RULE[PROD]?`The ask is ${TIER_NAMES[TIER_NAMES.length-1]}, the level a new customer starts at: COGS times the level's multiple, less a step a rung, rounded up to the ten, each level at least a ten over the one below and never rising in rate with size.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
@@ -21493,7 +21524,7 @@ function tabPricing(){
           return `<tr>
             <td class="l">${units(qq)}</td>
             <td><label style="display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin:0;cursor:pointer"><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)" style="width:20px;height:20px"></label></td>
-            <td class="mono">${ask!=null?fmt(ask):'&mdash;'}</td>
+            <td class="mono">${ask!=null?fmt(ask):NIL}</td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
         /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
@@ -21523,7 +21554,7 @@ function tabPricing(){
   <div class="card" style="margin-top:14px">
     <div class="qrow">
       <div class="qfield qunits"><label>Quote any size (unit)</label><input id="pxAnyIn" type="number" step="0.25" min="0" value="${esc(pxOver.anyQ)}" inputmode="decimal" placeholder="e.g. 7"></div>
-      <div class="qfield"><label>Markup at that size</label><div class="qask none" style="font-size:20px">${anyQ>0?ladderMarkup(anyQ).toFixed(2)+'x':'&mdash;'}</div></div>
+      <div class="qfield"><label>Markup at that size</label><div class="qask none" style="font-size:20px">${anyQ>0?ladderMarkup(anyQ).toFixed(2)+'x':NIL}</div></div>
       <div class="qfield"><label>Price</label>${anyCell}</div>
     </div>
   </div>
@@ -21628,8 +21659,8 @@ function tabPricing(){
        IIFE only, so the fitted branch threw ReferenceError and took the whole part with it:
        the v403 lever fault again, caught the same way, by rendering. Salt is the book that
        fits, so the throw was on the first block and nothing on this view drew. */
-    return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
-    <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${units(LD.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${units(LD.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
+    return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):NIL}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
+    <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):NIL}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${units(LD.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${units(LD.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
     <!-- this pointed at How a price is built and then repeated that fold's own justification
          word for word, the only restatement left inside a book on this view. The fold it names
          carries the figure and the reason; what is left here is the part that is only true of
@@ -21674,7 +21705,7 @@ function tabPricing(){
              RM 9.03 a unit and RM 47 on the lot. The pane's own lead says everything below is
              measured on the effective cost, and now both columns are. -->
         <td>${fmt0(pk*s)}</td>
-        <td style="color:var(--dim)">${one&&(one.perUnit-c.eff)>0.009?(pk/(one.perUnit-c.eff)*100).toFixed(0)+'%':'&mdash;'}</td></tr>`;}).join('');
+        <td style="color:var(--dim)">${one&&(one.perUnit-c.eff)>0.009?(pk/(one.perUnit-c.eff)*100).toFixed(0)+'%':NIL}</td></tr>`;}).join('');
     /* ============ AN EMPTY BAND EARNS NOTHING; IT DOES NOT EARN ZERO (v381) ============
        THIS IS THE v379 FAULT, ON THE TABLE NEXT DOOR. v379 guarded the shrinkage sensitivity
        table, which reads these same bands, and left the bands' own table unguarded. agg()
@@ -21686,7 +21717,7 @@ function tabPricing(){
        merely print a wrong figure, it certifies it. */
     const bandRows=E.bands.map(b=>{const none=!(b.kg>0.009);
       const cell=v=>none?'<span style="color:var(--dim)">no trade</span>':fmt(v);
-      return `<tr${none?' style="opacity:.5"':''}><td class="l">${BAND_NAME[b.band]}</td><td>${b.n}</td><td>${none?'&mdash;':units(b.kg)}</td>
+      return `<tr${none?' style="opacity:.5"':''}><td class="l">${BAND_NAME[b.band]}</td><td>${b.n}</td><td>${none?NIL:units(b.kg)}</td>
       <td>${cell(b.perUnit)}</td><td>${cell(b.pkLot)}</td>
       <td style="color:${none?'var(--dim)':b.pkEff<0?'var(--crim)':b.pkEff<10?'var(--gold)':'var(--grn)'}"><b>${cell(b.pkEff)}</b></td>
       <td style="color:${none?'var(--dim)':b.profEff<0?'var(--crim)':'var(--ink)'}">${none?'<span style="color:var(--dim)">no trade</span>':fmt0(b.profEff)}</td>
@@ -21735,7 +21766,7 @@ function tabPricing(){
            also not a warning when it is negative: a target the market already clears is the
            good case, and it was coloured gold beside the ones that are not. -->
       ${targets.map(t=>`<tr><td class="l">${t.m}%</td><td>${fmt(t.rate)}/unit</td><td><b>${fmt0(t.total)}</b></td>
-        <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed<=0?'var(--grn)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?'&mdash;':(t.vsMed>0?'+':'')+t.vsMed+'%'}</td></tr>`).join('')}
+        <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed<=0?'var(--grn)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?NIL:(t.vsMed>0?'+':'')+t.vsMed+'%'}</td></tr>`).join('')}
     </tbody></table>
     <!-- v385: was hardcoded to 12.5 in three places and asserted that the best rate ever paid
          "was the one-off" whether or not the book has one. It reads the size the table is
@@ -21790,12 +21821,12 @@ function tabPricing(){
     /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): crimson when the realised rate is under the engine's floor
        over the same units (pxMarket's fl), no longer under a 20% margin on price */
     const seg=(lab,s,tone)=>{
-      if(s.none)return `<tr style="opacity:.5"><td class="l">${lab}</td><td>0</td><td>&mdash;</td>`
+      if(s.none)return `<tr style="opacity:.5"><td class="l">${lab}</td><td>0</td><td>${NIL}</td>`
         +`<td colspan="2" style="color:var(--dim)">nothing sold in this segment</td></tr>`;
       const col=s.thin?'var(--gold)':s.fl!=null&&s.p<s.fl-0.009?'var(--crim)':tone;
       return `<tr><td class="l">${lab}${s.thin?` <span class="tag salt-status salt-status--dashed prov">${s.n} order${s.n===1?'':'s'}</span>`:''}</td>`
         +`<td>${s.n}</td><td>${units(s.k)}</td><td${s.thin?' style="color:var(--gold)"':''}>${fmt(s.p)}/unit</td>`
-        +`<td style="color:${col}">${s.m==null?'&mdash;':s.m.toFixed(1)+'%'}</td></tr>`;};
+        +`<td style="color:${col}">${s.m==null?NIL:s.m.toFixed(1)+'%'}</td></tr>`;};
     return `<div class="card"><table><thead><tr><th class="l">Segment</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Margin at ${fmt(c.eff)}/unit</th></tr></thead><tbody>
     ${seg('Everything sold',mk.all,'var(--ink)')}
     ${seg(`Small packs, under ${units(PX.bulkFrom)}`,mk.small,'var(--grn)')}
@@ -21809,15 +21840,15 @@ function tabPricing(){
        segment is empty, so each is written against the guard. The old text asserted "retail
        is under policy" off a segment that on the oil book is one sale. -->
   <div class="dsc" style="margin-top:8px">${mk.all.none?`Nothing has been sold on this book yet, so there is no realised rate to set against the board.`
-   :`The desk has actually been paid <b>${fmt(mk.all.p)}/unit</b> across ${units(mk.all.k)}, worth <b>${mk.all.m==null?'&mdash;':mk.all.m.toFixed(1)+'%'}</b> against today&rsquo;s effective cost, and the two halves are judged against their own floors. `
+   :`The desk has actually been paid <b>${fmt(mk.all.p)}/unit</b> across ${units(mk.all.k)}, worth <b>${mk.all.m==null?NIL:mk.all.m.toFixed(1)+'%'}</b> against today&rsquo;s effective cost, and the two halves are judged against their own floors. `
     +(mk.small.none?`<b>Retail</b> has never traded on this book. `
-      :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?'&mdash;':mk.small.m.toFixed(1)+'%'}</b> against its ${fmt(mk.small.fl)}/unit floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.p>=mk.small.fl-0.009?'over':'under'}</b> the floor. `}`)
+      :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?NIL:mk.small.m.toFixed(1)+'%'}</b> against its ${fmt(mk.small.fl)}/unit floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.p>=mk.small.fl-0.009?'over':'under'}</b> the floor. `}`)
     +(mk.bulk.none?`<b>Wholesale</b> has never traded on this book, so the buying lever below cannot be worked out yet.`
-      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against its ${fmt(mk.bulk.fl)}/unit floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.p>=mk.bulk.fl-0.009?'over':'under'}</b> the floor but earning very little: at the realised ${fmt(mk.bulk.p)}/unit a ${units(PRICE.aWhole.q)} lot returns about ${fmt0((mk.bulk.p-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${units(PRICE.aRetail.q)} retail lot.`}`)
+      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?NIL:mk.bulk.m.toFixed(1)+'%'}</b> against its ${fmt(mk.bulk.fl)}/unit floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.p>=mk.bulk.fl-0.009?'over':'under'}</b> the floor but earning very little: at the realised ${fmt(mk.bulk.p)}/unit a ${units(PRICE.aWhole.q)} lot returns about ${fmt0((mk.bulk.p-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${units(PRICE.aRetail.q)} retail lot.`}`)
     /* 27 Sep 2026: the lever is only a lever while wholesale is under its floor; over it, the same figure is the
        most the buying rate can reach before it is */
-    +(mk.needRate==null?'':mk.bulk.p>=mk.bulk.fl-0.009?`<br><br>The realised wholesale price clears its floor at any buying rate up to <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote.`
-      :`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the inventory is bought cheaper.`)}</div></div>
+    +(mk.needRate==null?'':mk.bulk.p>=mk.bulk.fl-0.009?`<br><br>The realised wholesale price clears its floor at any buying rate up to <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?NIL:fmt(liveQ)}/unit on this book&rsquo;s live quote.`
+      :`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?NIL:fmt(liveQ)}/unit on this book&rsquo;s live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the inventory is bought cheaper.`)}</div></div>
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
@@ -22323,9 +22354,9 @@ function wbPreview(){
     const mar=(wbDir==='SELL'&&price>0)?` &middot; margin <b>${((price-replCost())/price*100).toFixed(0)}%</b> on ${fmt(replCost())}/unit replacement <span style="color:var(--dim)">(${((price-costBasis())/price*100).toFixed(0)}% on the ${fmt(costBasis())}/unit book average)</span>`:'';
     body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">`
       +wbPill(st.pay,wbPayCls(st.pay))+wbPill(st.deliv,wbPayCls(st.deliv))+wbPill(st.state,st.cls)
-      +`<span style="font-size:13px;color:var(--mut)">${price>0?fmt(price)+'/unit':'&mdash;'}${mar}</span></div>`
-      +(st.state==='Completed'?`<div class="dsc" style="margin-top:6px">Settles in one &mdash; records as a <b>single line</b>, no movements.</div>`:'')
-      +(st.state==='Pending'?`<div class="dsc" style="margin-top:6px">Nothing has moved yet &mdash; recorded as a <b>pending order</b>.</div>`:'');
+      +`<span style="font-size:13px;color:var(--mut)">${price>0?fmt(price)+'/unit':NIL}${mar}</span></div>`
+      +(st.state==='Completed'?`<div class="dsc" style="margin-top:6px">Settles in one: records as a <b>single line</b>, no movements.</div>`:'')
+      +(st.state==='Pending'?`<div class="dsc" style="margin-top:6px">Nothing has moved yet: recorded as a <b>pending order</b>.</div>`:'');
     if(!(qty>0))errs.push('Quantity must be more than zero.');
     /* a blank total silences the whole pricing pane, because every coach test needs a
        price. Left unguarded it booked a zero-revenue order that still drew real units. */
@@ -22341,7 +22372,7 @@ function wbPreview(){
     if(!isGift&&cash>owed+0.009)errs.push(deliv>0.009?'Cash received cannot exceed the '+fmt(owed)+' owed, being '+fmt(total)+' of goods and '+fmt(deliv)+' of delivery.':'Cash received cannot exceed the goods.');
     if(unitsD>qty+0.009)errs.push('Delivered units cannot exceed the order quantity.');
     const free=+(currentStock-defUnits).toFixed(2);
-    if(wbDir==='SELL'&&unitsD>free+0.009)warns.push(`Only ${units(free)} is free to sell &mdash; short by ${units(+(unitsD-free).toFixed(2))}.`);
+    if(wbDir==='SELL'&&unitsD>free+0.009)warns.push(`Only ${units(free)} is free to sell, short by ${units(+(unitsD-free).toFixed(2))}.`);
     const advUnits=price>0?Math.max(0,unitsD-cash/price):0;
     /* the cap is on the customer, not the order: count what they already hold unpaid */
     /* an unchosen party must never fall through to whoever happens to be first in the
@@ -22404,7 +22435,7 @@ function wbPreview(){
         +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(wbRecvLbl(now.deliv),wbPayCls(now.deliv))+wbPill(now.state,now.cls)
         +`<span style="color:var(--dim)">&rarr;</span>`
         +`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(wbRecvLbl(nxt.deliv),wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls)
-        +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; lot from ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)} at ${fmt(t.qty>0?t.total/t.qty:0)}/unit &mdash; ${fmt0(sf.cash)} paid, ${units(sf.kg)} received so far.</div>`;
+        +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; lot from ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)} at ${fmt(t.qty>0?t.total/t.qty:0)}/unit: ${fmt0(sf.cash)} paid, ${units(sf.kg)} received so far.</div>`;
       const outRM=+(t.total-sf.cash).toFixed(2),outUnits=+(t.qty-sf.kg).toFixed(2);
       if(kind==='Payment'){
         if(ac<=0.009)errs.push('A payment needs cash.');
@@ -22454,9 +22485,9 @@ function wbPreview(){
         +`<span style="color:var(--dim)">&rarr;</span>`
         +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:#fff">Cancelled</span>`
           :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls))
-        +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)} &mdash; ${fmt0(sf.cash)} paid, ${units(+sf.kg.toFixed(2))} delivered so far.</div>`
+        +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)}: ${fmt0(sf.cash)} paid, ${units(+sf.kg.toFixed(2))} delivered so far.</div>`
         +(isCancel?`<div class="dsc" style="margin-top:6px">The row is marked <b>cancelled</b> outright${sf.cash>0.009?`, and the <b>${fmt0(sf.cash)} already paid becomes a refund payable</b> back to ${ID(t.who)}`:''}. Cash and units are not used here: what is owed back is what was paid.</div>`
-          :(wbVal('wbADate')===t.date)?`<div class="dsc" style="margin-top:6px">Same day as the order &mdash; this <b>folds into the opening</b> as one transaction rather than a separate movement.</div>`:'');
+          :(wbVal('wbADate')===t.date)?`<div class="dsc" style="margin-top:6px">Same day as the order: this <b>folds into the opening</b> as one transaction rather than a separate movement.</div>`:'');
       /* Nothing below applies to a Cancellation (nothing moves) or a Modification (ac/ak are
          the new total/qty, not a movement, and have their own checks just below). */
       if(!isMod&&!isCancel){
@@ -22473,7 +22504,7 @@ function wbPreview(){
           if(tot>acap+0.009)warns.push(`Takes this customer to ${units(tot)} of ${((PRODUCTS[prodOf(t)]||{}).name||prodOf(t)).toLowerCase()} delivered and unpaid, over their ${units(acap)} credit cap on this book.`);
         }
         if(ak>0.009){const fr=+(currentStock-defUnits).toFixed(2);
-          if(ak>fr+0.009)warns.push(`Only ${units(fr)} is free to sell &mdash; short by ${units(+(ak-fr).toFixed(2))}.`);}
+          if(ak>fr+0.009)warns.push(`Only ${units(fr)} is free to sell, short by ${units(+(ak-fr).toFixed(2))}.`);}
         if(ac>0.009){
           const older=sales.filter(s=>s.customer===t.customer&&ovKey(s)!==ovKey(t)&&txAdvance(s)>0.009&&s.date<t.date);
           if(older.length)warns.push(`This customer still owes ${fmt0(older.reduce((a,s)=>a+txAdvance(s),0))} on an older order, so at commit this cash may clear that instead of this one.`);}
@@ -23730,18 +23761,18 @@ async function qPost(){
     /* 401 means the gate is armed and this device has no key, or the wrong one. Ask, then
        try once more. Once only: a wrong key looping would just ask for ever. */
     if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(); gen=qGen; r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
-    if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b> &mdash; the entry is held on this device. Reopen the desk to try again.'); return false; }
+    if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b>: the entry is held on this device. Reopen the desk to try again.'); return false; }
     if(!r.ok)throw new Error('server replied '+r.status);
     const j=await r.json();
     if(sending&&sending>qSentThrough)qSentMark(sending);   // it is on the server; the load may now clear it once the fold passes it
     if(gen===qGen)qDirty=false;                            // a save while this was in flight is still owed to the cloud
     qDropRejected(j.droppedAts);                            // a rejection decided on another device leaves this one too
-    qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');
+    qStatus('Saved <b>'+QFILE+'</b> to this folder, '+j.entries+' queued.');
     return true;
   }catch(e){
     /* the server was there at load and is gone now: do not keep pretending.
        Fall back to the download route so nothing sits invisibly in the browser. */
-    qSyncState='download'; qStatus('<b style="color:var(--amber)">The desk server stopped answering</b> &mdash; falling back to downloads. Restart start_desk.bat for in-place saves.');
+    qSyncState='download'; qStatus('<b style="color:var(--amber)">The desk server stopped answering</b>, falling back to downloads. Restart start_desk.bat for in-place saves.');
     renderQueue();
     return false; }
 }
@@ -23760,7 +23791,7 @@ function qDownload(){
 }
 async function qClip(){
   const txt=queue.map(q=>q.raw).join('\n');
-  try{ await navigator.clipboard.writeText(txt); qStatus('Copied to the clipboard &mdash; paste it into the chat to commit.'); }
+  try{ await navigator.clipboard.writeText(txt); qStatus('Copied to the clipboard: paste it into the chat to commit.'); }
   catch(e){ qStatus('Clipboard blocked. Copy the lines from the table below.'); }
 }
 function qStatus(msg){const e=document.getElementById('wbSync');if(e)e.innerHTML=msg;}
@@ -23770,7 +23801,7 @@ function qNote(){
   return 'Opened directly, so Record downloads <b>'+QFILE+'</b> to your download folder. Each file holds the whole queue, so the newest wins and older copies can be deleted. Open the desk with <b>start_desk.bat</b> instead and it saves in place, with nothing to tidy.';}
 function qLabel(){return qSyncState==='server'?'saved to '+QFILE+' in this folder'
   :qSyncState==='download'?'saved as '+QFILE+' in the download folder'
-  :'<b style="color:var(--amber)">held in this browser only</b> &mdash; use Copy queue';}
+  :'<b style="color:var(--amber)">held in this browser only</b>: use Copy queue';}
 function qFlush(){ return qSyncState==='server'?qPost():qDownload(); }
 function saveQueue(){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}
   // ALWAYS write, even an emptied queue: the newest file wins, so a stale earlier
@@ -23814,12 +23845,12 @@ function consoMoney(){
 function consoBlock(){
   const C=consoMoney();
   const cell=(l,v,n)=>`<div class="kpi salt-kpi"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
-  const split=k=>C.rows.map(r=>codeOfProd(r.id)+' '+(r[k]==null?'&mdash;':fmt0(r[k]))).join(' &middot; ');
+  const split=k=>C.rows.map(r=>codeOfProd(r.id)+' '+(r[k]==null?NIL:fmt0(r[k]))).join(' &middot; ');
   return `<h1>Financials</h1>`+consoHd('Every book')
     +`<div class="conso"><div class="kpis k4">`
     +cell('Revenue',fmt0(C.rev),split('rev'))
     +cell('Collected',fmt0(C.cash),split('cash'))
-    +cell('Gross margin',C.margin==null?'&mdash;':fmt0(C.margin),C.margin==null?'a product has an uncosted row':split('margin'))
+    +cell('Gross margin',C.margin==null?NIL:fmt0(C.margin),C.margin==null?'a product has an uncosted row':split('margin'))
     +cell('Spent on inventory',fmt0(C.spend),split('spend'))
     +`</div></div>`;
 }
@@ -23886,7 +23917,7 @@ function consoOrderBlock(){
   return `<h1>Receivables</h1>`+consoHd('Every book')   /* v622: the page's own name, which the Order book destination opens on */
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
-    +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o
+    +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):NIL,o
       ? `${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`
       : wo.length
         ? `nothing left to chase; ${fmt0(woG)} on ${wo.length} order${wo.length===1?'':'s'} is written off`
@@ -23907,7 +23938,7 @@ function consoCashBlock(){
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Promised away</div><div class="v salt-kpi__value">${fmt0(cf.dueOut)}</div><div class="n salt-kpi__note">bills and refunds already committed</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">Still to come in</div><div class="v salt-kpi__value">${fmt0(cf.dueIn)}</div><div class="n salt-kpi__note">net of provisioning</div></div>
     <div class="kpi salt-kpi r"><div class="l salt-kpi__label">Supplier bills unpaid</div><div class="v salt-kpi__value">${fmt0(cf.billsOut)}</div><div class="n salt-kpi__note">${cf.billsOut>0.009?(cf.refundsOut>0.009?`and ${fmt0(cf.refundsOut)} of refunds on top`:'no refunds on top'):(cf.refundsOut>0.009?`every lot paid for; ${fmt0(cf.refundsOut)} of refunds still owed`:'every lot paid for')}</div></div>
-    <div class="kpi salt-kpi ${R.supplierPct&&R.supplierPct>3?'r':''}"><div class="l salt-kpi__label">Lost to suppliers</div><div class="v salt-kpi__value">${R.supplierPct==null?'&mdash;':R.supplierPct+'%'}</div><div class="n salt-kpi__note">${fmt0(R.supplierLostRM)} of ${fmt0(R.supplierSpentRM)} paid out</div></div>
+    <div class="kpi salt-kpi ${R.supplierPct&&R.supplierPct>3?'r':''}"><div class="l salt-kpi__label">Lost to suppliers</div><div class="v salt-kpi__value">${R.supplierPct==null?NIL:R.supplierPct+'%'}</div><div class="n salt-kpi__note">${fmt0(R.supplierLostRM)} of ${fmt0(R.supplierSpentRM)} paid out</div></div>
   </div>
   <div class="card" style="margin-top:12px"><table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>
     <tr><td class="l">Cash in from sales</td><td>${fmt0(cf.inRM)}</td><td class="l">every ringgit actually received, set-offs excluded</td></tr>
@@ -24121,6 +24152,7 @@ function renderPart(tab,el,snap){
     n.textContent='The charts on this part could not be drawn: '+((e&&e.message)||e)+'. Every figure they draw is in the tables above.';
     el.appendChild(n);
   }
+  dSweep(el);   /* D1: at once, so a part reads 28 Sep 2026 the moment it is drawn; the observer takes what comes later */
 }
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
 let curAddr='today';  // v365: the PART showing, not just the view; #inventory and #sourcing share a view but not an address
@@ -24387,7 +24419,7 @@ function renderProvBar(){
   if(!provCount){b.innerHTML='';return;}
   b.innerHTML='<div class="provbar"><span>&#9679; <b>'+provCount+'</b> entr'+(provCount===1?'y':'ies')+' recorded but <b>not yet committed</b>'
     +(provRM>0.009?', <b>'+fmt0(provRM)+'</b> of cash':'')
-    +' &mdash; every figure below includes '+(provCount===1?'it':'them')+'.</span>'
+    +': every figure below includes '+(provCount===1?'it':'them')+'.</span>'
     +'<button class="ubtn" onclick="undoLast()">Undo last</button>'
     +'<button class="ubtn" onclick="switchTab(\'add\')">Review in Transaction</button>'
     +(provNotes.length?'<span style="color:var(--crim)">'+esc(provNotes.join('; '))+'</span>':'')

@@ -72,7 +72,7 @@ function requireOnce(name, needle, why) {
 
 /* ---- P2 head block: PWA + a per-device id + service-worker registration ---------- */
 const PWA_BLOCK = [
-  '<!-- BEGIN cloud/PWA — injected by tools/build.mjs; do NOT hand-edit this built file -->',
+  '<!-- BEGIN cloud/PWA: injected by tools/build.mjs; do NOT hand-edit this built file -->',
   '<meta name="theme-color" content="#180f2c">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
@@ -238,12 +238,12 @@ replaceOnce("P5 qNote cloud line",
   "  if(qSyncState==='server')return 'Saved to <b>'+QFILE+'</b> in this folder; the daily run reads it.';");
 
 replaceOnce("P6a qPost success line",
-  "    qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');",
-  "    qStatus(window.SALT_CLOUD?('Pushed to the cloud queue &mdash; '+j.entries+' queued, drafted within seconds, folded on approval.'):('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.'));");
+  "    qStatus('Saved <b>'+QFILE+'</b> to this folder, '+j.entries+' queued.');",
+  "    qStatus(window.SALT_CLOUD?('Pushed to the cloud queue: '+j.entries+' queued, drafted within seconds, folded on approval.'):('Saved <b>'+QFILE+'</b> to this folder, '+j.entries+' queued.'));");
 
 replaceOnce("P6b qPost offline branch",
-  "    qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b> &mdash; falling back to downloads. Restart start_desk.bat for in-place saves.');",
-  "    if(window.SALT_CLOUD){qStatus('<b style=\"color:var(--amber)\">No signal</b> &mdash; held on this device; it syncs on the next open with a connection.');return false;} qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b> &mdash; falling back to downloads. Restart start_desk.bat for in-place saves.');");
+  "    qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b>, falling back to downloads. Restart start_desk.bat for in-place saves.');",
+  "    if(window.SALT_CLOUD){qStatus('<b style=\"color:var(--amber)\">No signal</b>: held on this device; it syncs on the next open with a connection.');return false;} qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b>, falling back to downloads. Restart start_desk.bat for in-place saves.');");
 
 replaceOnce("P7 qPayload device id",
   "function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue},null,1);}",
