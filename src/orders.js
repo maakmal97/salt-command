@@ -271,7 +271,9 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
    row is not on the book yet, then this order with its delivery. Everything counts until paid. A SHEET IS ONE VERDICT
    (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the book, count together at their goods, the
    sheet's charge left out, so every line reads the same figure whichever is accepted first. The orders are the list the
-   order was found in (findOrder), never a second read. Offered again, an order keeps the verdict it was agreed on, as it
+   order was found in (findOrder), never a second read. STEP 2: A PRICE HE SETS ON A LINE MOVES THE SHEET'S FIGURE: a line
+   agreed at his price counts at it and a line still placed at what it was placed at, so lines he prices differently can
+   read different figures, each at the money it is agreed for. Offered again, an order keeps the verdict it was agreed on, as it
    keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing, and an order stamped at
    Place (V3) keeps its stamp until V5b2b. */
 const AGREED_ON_SITE = ["acknowledged", "ready"];

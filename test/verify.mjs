@@ -35077,13 +35077,13 @@ await (async () => {
       ORD_OPEN=[o];ORD_PRICE={};ORD_PV[o.id]={st:'ok',d:0,p:null,j:{row:{qty:1,total:100},floor:{rm:80,at:1},flags:[],hash:'h100'}};
       const t=(h,s)=>{const d=document.createElement('div');d.innerHTML=h;const e=d.querySelector(s);return e?(e.value!=null&&e.tagName==='INPUT'?e.value:e.textContent):'';};
       const a=ordCard(o);ORD_PRICE[o.id]=90;const b=ordCard(o);
-      ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},floor:{rm:80,at:1},flags:[],hash:'h90'}};const c=ordCard(o);
+      ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},card:100,floor:{rm:80,at:1},flags:[],hash:'h90'}};const c=ordCard(o);
       return JSON.stringify({field:t(a,'input[data-price]'),floor:t(a,'.ordfloor'),acc:t(a,'button[data-ord="acknowledged"]'),stale:/ disabled/.test((b.match(/data-ord="acknowledged"[^>]*>/)||[''])[0]),
-        set:t(c,'input[data-price]'),floor2:t(c,'.ordfloor'),acc2:t(c,'button[data-ord="acknowledged"]')});})()`));
+        set:t(c,'input[data-price]'),floor2:t(c,'.ordfloor'),acc2:t(c,'button[data-ord="acknowledged"]'),cardT:t(c,'.salt-kpi')});})()`));
     ok(card.field === "100" && /^Floor RM ?80(\.00)? at 1 unit\.$/.test(card.floor) && /Accept, RM ?100/.test(card.acc) && card.stale === true
-      && card.set === "90" && /They placed it at RM ?100(\.00)?; this order alone takes your price\./.test(card.floor2) && /Accept, RM ?90/.test(card.acc2),
+      && card.set === "90" && /They placed it at RM ?100(\.00)?; this order alone takes your price\./.test(card.floor2) && /Accept, RM ?90/.test(card.acc2) && /RM ?10(.00)? under/.test(card.cardT),
       "the card has a Price field filled with what they placed it at and the floor under it; a price typed shuts Accept until its row is drawn, "
-      + "then Accept tells them the price: " + JSON.stringify(card));
+      + "then Accept tells them the price, and their card is measured against it: " + JSON.stringify(card));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
