@@ -1286,7 +1286,11 @@ const CLIENT_JS = `
   /* a refusal stands alone beside its control, so it is said as a sentence: the Worker's words are a clause, lower case
      with no stop, in either language (MY12 of the stage 13 review) */
   function sentence(t){ t=String(t||''); if(!t) return t; t=t.charAt(0).toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; }
-  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):b&&b.said?tw(b.said):(b&&b.error)||(fb?tw(fb,s):'')); }
+  /* C16 (29 Sep 2026): the Worker's English stands only for a refusal it coded (S13), never for a body with no code: a
+     fault's own words ("no KV") are not a customer's. His page keeps them. */
+  function wErr(b,fb,s){ var c=b&&b.code; return sentence(c&&has('en','e.'+c)?tw('e.'+c,b.vars):b&&b.said?tw(b.said):(b&&b.error&&(c||OWNER)?b.error:'')||(fb?tw(fb,s):'')); }
+  /* and a 5xx is the site being busy, whatever its body says, unless it carries a refusal this table words */
+  function busyOr(status,j){ return status>=500&&!(j&&j.code&&has('en','e.'+j.code))?{ok:false, said:'x.busy', busy:true}:j; }
   /* a date or a size in a sentence, said in the sentence's language */
   function Dd(f,x){ return function(L){ return f(x,L); }; }
   function Uq(q,u){ return function(L){ return unitsOf(q,u,L); }; }
@@ -1897,7 +1901,7 @@ const CLIENT_JS = `
   function lock(){
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
-    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
@@ -2044,6 +2048,22 @@ const CLIENT_JS = `
   }
   /* an account with nothing on it yet: no statement, and no order */
   function fresh(){ return !!bundle&&!bundle.statements.length&&!orders.length; }
+  /* C15 and C14 (29 Sep 2026): WHAT COULD NOT BE READ SAYS SO, with Try again, and is never drawn as an empty or an older
+     account. The live document held for (bad), and orders whose read failed (ordersFailed, kept as they last stood). */
+  var ordersFailed=false;
+  function liveBad(){ return !!bundle&&bundle.statements.some(function(s){ return s.live&&s.bad; }); }
+  function unreadNode(key,go){
+    var box=el('div','panel unread'); box.setAttribute('data-unread',key);
+    var p=el('p','lead',tw(key)); p.setAttribute('role','status'); box.appendChild(p);
+    if(go&&session&&!view&&!OWNER){
+      var b=el('button','btn salt-ghost',tw('door.again')); b.type='button';
+      b.addEventListener('click',async function(){ b.disabled=true; try{ await go(); }finally{ b.disabled=false; } });
+      box.appendChild(b);
+    }
+    return box;
+  }
+  async function retryAccount(){ await reread(); if(liveBad()) pickStmt(0); drawPayHead(); }
+  async function retryOrders(){ await oReread(); }
 
   /* ---- ACCOUNT (S7 7.3, the plan's section 4, his "all recommended" of 24 Sep 2026) -------------------------------
      The statement as stacked lines, ONE month filter with All first, the earlier statements at its foot, and This device.
@@ -2067,6 +2087,12 @@ const CLIENT_JS = `
     var s=bundle.statements[i];
     if(!s){
       out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e);
+      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      return;
+    }
+    /* C15: never an older document in its place */
+    if(s.bad){
+      out.textContent=''; out.appendChild(unreadNode('acct.unread',retryAccount));
       mfil.hidden=true; mfnote.textContent=''; drawFoot();
       return;
     }
@@ -2267,7 +2293,8 @@ const CLIENT_JS = `
     placeHide('card',!assoc);
     drawRewards(pCard);
     var lv=b.statements.filter(function(s){ return s.live; })[0];
-    payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||'';
+    /* C15: a live document that would not open leaves the gate where it last stood */
+    if(!(lv&&lv.bad)){ payDue=lv&&lv.pay&&lv.pay.now?lv.pay:null; liveAt=lv&&lv.at||''; }
     setHold();
     pickStmt(0);
     drawAccount(pStmt);
@@ -2566,7 +2593,7 @@ const CLIENT_JS = `
        caller says whatever the answer's error is, which is a pointer to them */
     if(r.status===401&&session){ lapsed(); return {status:401, body:keptMine()?{ok:false, said:'x.notSent', lost:true}:{ok:false, said:'lapse.notSent'}}; }
     var j=null; try{ j=await r.json(); }catch(e){}
-    return {status:r.status, body:j||{}};
+    return {status:r.status, body:busyOr(r.status,j)||{}};
   }
   /* one id a review and one a payment, sent with the tap, so a retry of that tap is recorded once */
   function mintRid(){ var a=crypto.getRandomValues(new Uint8Array(16)), s=''; for(var i=0;i<a.length;i++) s+=(a[i]<16?'0':'')+a[i].toString(16); return s; }
@@ -3193,7 +3220,8 @@ const CLIENT_JS = `
   function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
   function oList(shown){
     var box=el('div','olist'); box.setAttribute('data-olist','');
-    if(!orders.length){ box.appendChild(el('p','lead',tw('ord.noneYet'))); return box; }
+    if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
+    if(!orders.length){ if(!ordersFailed) box.appendChild(el('p','lead',tw('ord.noneYet'))); return box; }
     var B=oBuckets();
     function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oRow(o,shown)); }); }
     if(B.needs.length) sec(tw('x.needs'),B.needs);
@@ -3841,8 +3869,11 @@ const CLIENT_JS = `
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
-    box.hidden=!bundle||!(fr||payDue||lines.length||said.length);
+    var bad=liveBad();
+    box.hidden=!bundle||!(bad||fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
+    /* C15: an account that could not be read leads with that, never with nothing to pay */
+    if(bad) box.appendChild(unreadNode('acct.unread',retryAccount));
     if(lines.length){
       box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
@@ -3856,7 +3887,8 @@ const CLIENT_JS = `
       }
     }
     else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
-    else if(payDue) box.appendChild(kpiTile('verdigris',tw('pay.now'),rm(0),el('span',null,tw('pay.nothing'))));
+    /* C18: nothing to pay is said once, never over RM 0 */
+    else if(payDue&&!bad) box.appendChild(el('p','lead pnil',tw('pay.nothing')));
     said.forEach(function(t){ box.appendChild(statusLine(t)); });
     return box;
   }
@@ -4185,6 +4217,7 @@ const CLIENT_JS = `
   function withYouOwing(o){ return movedAll(o)&&oOwes(o); }
   function homeNeeds(){
     var box=el('div'), list=orders.filter(function(o){ return replyWaiting(o)||toCollect(o)||withYouOwing(o); });
+    if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
     if(!list.length) return box;
     box.appendChild(hHead(tw('x.needs'),list.length));
     list.forEach(function(o){
@@ -4299,7 +4332,9 @@ const CLIENT_JS = `
     var r=await api('/orders');
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; }
+    /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; }
+    else ordersFailed=true;
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -4307,9 +4342,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), failedWas=ordersFailed; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(ordersFailed!==failedWas){ drawOrder(); return; }   /* C14: the line and its Try again come and go with the list */
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
     if(JSON.stringify([claims,orders.map(oClaimed)])!==was||formSig()!==drawnSig){ setHold(); drawPayHead(); }
     if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
@@ -4402,8 +4438,10 @@ const CLIENT_JS = `
     try{
       r=await fetch('/open', {method:'POST',
         headers:{'content-type':'application/json'}, body:JSON.stringify(OWNER?{u:u, password:pass, master:pass}:{u:u, password:pass})});
-      body=await r.json();
     }catch(e){ if(stale())return; done(); say(tw('door.offline'),'bad'); return; }
+    /* C16: an answer that came back is not No connection, whatever its body */
+    try{ body=await r.json(); }catch(e){ body=null; }
+    body=busyOr(r.status,body)||{ok:false, said:'x.busy'};
     if(stale()) return;
     if(!r.ok||!body.ok){
       done();
@@ -4536,11 +4574,17 @@ const CLIENT_JS = `
   /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
   async function openBeside(body, ck, b){
     var x={assoc:body.assoc===true, card:null, prices:null};
-    if(body.live){
-      try{ var l=JSON.parse(await open(ck, body.live));
-        b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null}); }
-      catch(e){ /* the issued statements still open; the live one is simply absent */ }
-    }
+    /* C15 (29 Sep 2026): THE ACCOUNT IS THE LIVE DOCUMENT OR NOTHING. A live document that would not open was swallowed,
+       and Account drew the sealed 01 Sep issue as the account, old balance and all, while the overdue lead and the hold
+       went quiet. Now it is a place held for it (bad), drawn as could-not-be-read with Try again, and show() keeps the
+       pay gate on its last known state. An account with issues and no live document at all is read the same way; one
+       with neither is a new account, which pickStmt says so. */
+    var l=null;
+    if(body.live){ try{ l=JSON.parse(await open(ck, body.live)); }catch(e){ l=null; } }
+    if(l) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null});
+    else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:true});
+    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
+    if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;
@@ -4552,7 +4596,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; claims=[]; draft={}; closePay(); }
+    if(!same){ orders=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

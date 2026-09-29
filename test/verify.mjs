@@ -44,6 +44,12 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
    which is a property of the data and can change under you.
    The floor keeps a margin for these, and the margin is not room for a section to fall out. */
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
+/* C15 AND C13 (29 Sep 2026): THE COUNTER DRAWS THE LIVE DOCUMENT OR SAYS IT COULD NOT BE READ, never a sealed issue in its
+   place. A page fixture whose bundle carries the one document it shows seals that document as the live one beside it. */
+const asLive = async (C, ck, env) => {
+  const s = (JSON.parse(await C.decryptWith(ck, env)).statements || [])[0];
+  return s ? Object.assign({ at: "2026-09-24T04:00:00Z" }, await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: s.body }))) : null;
+};
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
    checks. A book's stock: its stated count (PROD_OPENING.stated, and salt's STATED_STOCK), else opening plus what landed
@@ -20931,7 +20937,7 @@ await (async () => {
     globalThis.fetch = realFetch27;
   }
 })();
-section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, the earlier statements at its foot, and This device");
+section("S7 7.3: Account shows the statement as stacked lines, one month filter with All first, no earlier statements since C13, and This device");
 await (async () => {
   /* THE PLAN'S SECTION 4, his "all recommended" of 24 Sep 2026: the live statement's rows are the system's Statement
      lines, the one month filter opens on All and sits on the list it filters, the issues move to the foot (never "latest
@@ -21026,18 +21032,9 @@ await (async () => {
       "a month tapped shows that month's lines alone: " + JSON.stringify([one, shown()]));
     pills[0].click();
     ok(new Set(shown()).size === months.length, "and All brings every line back");
-    /* the issues are at the foot, never called the latest */
-    const foot = D.getElementById("stmtFoot"), back = D.getElementById("stmtBack");
-    const issueBtns = [...foot.querySelectorAll("button")];
-    ok(!foot.hidden && issueBtns.map((b) => b.textContent).join("|") === "1 September 2026|1 August 2026" && back.hidden
-      && !/latest issue/i.test(D.getElementById("pStmt").textContent) && foot.compareDocumentPosition(D.getElementById("out")) === W.Node.DOCUMENT_POSITION_PRECEDING,
-      "the earlier statements sit under the statement, each by its date, and none is the latest issue: " + JSON.stringify(issueBtns.map((b) => b.textContent)));
-    issueBtns[1].click();
-    ok(/ISSUE TWO/.test(D.getElementById("out").textContent) && !back.hidden && /1 August 2026/.test(back.textContent),
-      "an issue opens in its place, with the way back above it: " + JSON.stringify(back.textContent));
-    D.getElementById("stmtBackGo").click();
-    ok(!/ISSUE/.test(D.getElementById("out").textContent) && !!D.querySelector("#out .salt-lines") && back.hidden,
-      "and Back to your statement brings the live lines back");
+    /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Account */
+    ok(D.getElementById("stmtFoot").hidden && D.getElementById("stmtBack").hidden && !/ISSUE/.test(D.getElementById("pStmt").textContent),
+      "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
     const row = (label) => [...dev.querySelectorAll(".salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === label);
@@ -21060,6 +21057,123 @@ await (async () => {
     D.getElementById("lock").click();
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
       "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
+  } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
+})();
+section("C15, C13, C14, C16 and C1: the account is the live document or says it could not be read, the issues are off the Counter, a failed read of orders is never None yet, a fault's own words never reach the page, and the footer adds the delivery");
+await (async () => {
+  /* THE FAULT LIST OF 29 SEP 2026, his yes to every fix. C15: a live document that would not open was swallowed and the sealed
+     issue drawn as the account, the hold quiet. C13 (a): the issues are off the Counter. C14: a failed read of orders read as
+     None yet. C16: an HTML 5xx said No connection and a codeless one printed the Worker's own words. C1: the footer left the
+     delivery out while Paid counted it. Driven on the customer's page as S7 7.3 drives it. */
+  const M = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
+  const { EN } = await import("../stmt/words.js");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const at = new Date("2026-09-24T04:00:00Z");
+  const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
+  /* C1: every live footer adds up, goods and delivery less paid, as txOwed does */
+  const num = (s) => +String(s).replace(/RM |,/g, "");
+  let docs = 0, withDel = 0; const off = [];
+  for (const p of parties) {
+    const d = M.liveStatement(p, at, "abcd-efgh");
+    if (!d) continue; docs++;
+    const trs = [...d.body.slice(d.body.indexOf('<div class="tot">')).matchAll(/<div class="tr( [a-z ]+)?"><span>([\s\S]*?)<\/span><span>([^<]*)<\/span><\/div>/g)]
+      .map((m) => [m[2].replace(/<[^>]+>/g, "").trim(), m[3]]);
+    const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
+    const del = sum(/^Delivery$/); if (del > 0) withDel++;
+    const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
+    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
+    if (Math.abs(lhs - (bal === "nil" ? 0 : num(bal))) > 0.009) off.push(p + " " + lhs + " against " + bal);
+  }
+  ok(docs > 10 && withDel > 0 && !off.length, "every live footer adds up, the delivery its own line between the orders and Paid: " + docs + " statements, " + withDel + " with delivery; off: " + off.slice(0, 3).join(", "));
+
+  const who = parties.find((p) => M.liveStatement(p, at, "abcd-efgh"));
+  const live = M.liveStatement(who, at, "abcd-efgh");
+  /* a live document holding an overdue part, so the hold is on while it opens */
+  const part = { date: "2026-09-10", since: "2026-09-12", due: "2026-09-13", late: true, rm: 123.45, whole: 123.45, product: "salt", qty: 1, got: 1,
+    gotOn: "2026-09-12", resale: false, goods: 123.45, deliv: 0, less: 0, rate: 123.45 };
+  const overdueLive = Object.assign({}, live, { pay: { term: 1, now: { rm: 123.45, due: "2026-09-13", parts: [part] }, overdue: { rm: 123.45, parts: [part] }, coming: { rm: 0, parts: [] } } });
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { landingPage } = await import("../stmt/page.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const u = "aaaa-cccd", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), u), other = await C.contentKey("8".repeat(64), u);
+  const env = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "01 Sept 2026", body: "<p>ISSUE ONE</p>" }] }));
+  const sealLive = async (doc, key) => Object.assign({ at: doc.at }, await C.encryptWith(key, JSON.stringify(doc)));
+  const st = { open: [], account: [], orders: [] };
+  const dom = new JSDOM(landingPage(u, "nC15", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (path) => {
+        const p = String(path);
+        const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+        const next = (q) => { const f = q.length > 1 ? q.shift() : q[0]; return f(); };
+        if (p === "/open") return next(st.open);
+        if (p === "/account") return next(st.account);
+        if (p === "/orders") return next(st.orders);
+        return js({ ok: false }, 404);
+      };
+    } });
+  const W = dom.window, D = W.document;
+  const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
+  const answer = async (liveEnv) => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv });
+  const signIn = () => {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+  };
+  const msg = () => D.getElementById("msg").textContent;
+  const vis = () => { const b = D.body.cloneNode(true); b.querySelectorAll("script,style").forEach((x) => x.remove()); return b.textContent; };
+  const outT = () => D.getElementById("out").textContent, head = () => D.getElementById("payHead").textContent;
+  try {
+    /* C16: an HTML 502 at the door is the site busy, not No connection; a codeless 500 never prints its own words; a coded
+       refusal is still worded from its code */
+    st.open = [async () => ({ ok: false, status: 502, json: async () => { throw new SyntaxError("<html>"); } })];
+    signIn();
+    ok(await until(() => msg() === EN["x.busy"]), "an HTML 502 at the door says the site is busy, not No connection: " + JSON.stringify(msg()));
+    st.open = [async () => js({ ok: false, error: "no KV binding" }, 500)];
+    signIn();
+    ok(await until(() => msg() === EN["x.busy"]) && !/KV/.test(vis()), "a codeless 500 says the site is busy and never the Worker's own words: " + JSON.stringify(msg()));
+    st.open = [async () => js({ ok: false, error: "raw words of a fault" }, 400)];
+    signIn();
+    ok(await until(() => msg() === EN["e.refused"]) && !/raw words/.test(vis()), "a codeless refusal takes the door's own words: " + JSON.stringify(msg()));
+
+    /* C15 and C13: the live document will not open; the account says so over the issue it used to draw, and Home leads with it */
+    st.orders = [async () => js({ ok: true, orders: [] })];
+    st.open = [async () => answer(await sealLive(overdueLive, other))];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')), "a live document that will not open draws could not be read, with Try again");
+    ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
+      "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
+    /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
+    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck) })];
+    D.querySelector('#out [data-unread] button').click();
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
+      "Try again opens the live document, and its overdue part holds ordering: " + JSON.stringify(head().slice(0, 120)));
+    /* a later return whose live document will not open keeps the hold where it last stood */
+    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other) })];
+    D.dispatchEvent(new W.Event("visibilitychange"));
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
+      "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    /* C13: a live document that opens is the whole account; the issue beside it is never drawn */
+    st.open = [async () => answer(await sealLive(live, ck))];
+    st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
+    signIn();
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
+      "the Counter draws the live document alone: no earlier statements, no issue");
+    /* C14: the first read of orders failed; the list and Home say so, never None yet, and Try again reads it */
+    const oArea = () => D.getElementById("oArea");
+    ok(await until(() => !!oArea() && !!oArea().querySelector('[data-unread="ord.unread"]')) && !oArea().textContent.includes(EN["ord.noneYet"])
+      && !!D.querySelector('#hNeeds [data-unread="ord.unread"]') && !/KV/.test(vis()),
+      "a failed read of orders says so on Orders and Home, never None yet: " + JSON.stringify(oArea() && oArea().textContent.slice(0, 120)));
+    oArea().querySelector("[data-unread] button").click();
+    ok(await until(() => oArea().textContent.includes(EN["ord.noneYet"])) && !D.querySelector('[data-unread="ord.unread"]'),
+      "and Try again reads them, the line gone with the failure");
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
 })();
 section("S8 8.1: Rewards opens on the associate's links, each with its state in a word, Share minted before the tap and a QR");
@@ -21168,8 +21282,9 @@ await (async () => {
   const open90 = {
     ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"],
     wrap: await C90.wrapKey(pass90, ck90), wrapMaster: null, session: "",
-    env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: body90 }] })),
-    live: null, prices: null
+    /* C13 and C15: the Counter draws the live document or nothing, so the document rides as the live one */
+    env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })),
+    live: Object.assign({ at: "2026-09-24T04:00:00Z" }, await C90.encryptWith(ck90, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: body90 }))), prices: null
   };
   const dom90 = new JD90(lp90(u90, "n90", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc90, configurable: true }); } catch (e) { win.crypto = wc90; } } });
@@ -22283,6 +22398,7 @@ await (async () => {
     env: await C92.encryptWith(ck92, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] })),
     live: null, prices: null
   };
+  openBody.live = await asLive(C92, ck92, openBody.env);
 
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
@@ -22351,7 +22467,7 @@ await (async () => {
     const second = make92(stored92, () => async (path) => {
       if (String(path) === "/remember/open") {
         return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
-          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: null, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
       }
       return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
     });
@@ -26762,11 +26878,11 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: null, session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: null, session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: null }); }
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
           if (p === "/orders") return ans(200, { ok: true, orders: [] });
           return ans(200, { ok: true });
@@ -27463,13 +27579,13 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: null, prices: listB, session: st.sB });
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
           if (p === "/remember/open") {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: null, prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
-              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: null, prices: listA, session: st.sA });
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
@@ -27595,11 +27711,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: null, prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -27931,9 +28047,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: null, prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: null, prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -32473,7 +32589,7 @@ await (async () => {
         if (p === "/orders/" + A + "/say") {
           if (st.mode === "lost") { st.order.msgs = st.order.msgs.concat([{ at: "2026-09-24T02:00:00Z", by: "customer", text: j.text.replace(/ +/g, " ") }]); throw new TypeError("Failed to fetch"); }
           if (st.mode === "drop") throw new TypeError("Failed to fetch");
-          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order" }) };
+          if (st.mode === "refuse") return { ok: false, status: 409, json: async () => ({ ok: false, error: "there are already 20 of your messages on this order", code: "sayCap", vars: { n: 20 } }) };   /* as refusal() answers it (C16: a codeless body is never worded from its error) */
         }
         return { ok: true, status: 200, json: async () => ({ ok: true }) };
       };
@@ -41748,9 +41864,9 @@ await (async () => {
       const p = String(path), m = (init && init.method) || "GET";
       if (p === "/open") return res(200, body);
       if (p === "/orders" && m === "GET") return st.ordersDown ? res(401, { ok: false }) : res(200, { ok: true, orders: list() });
-      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay" }); st.claimed = 150; return res(200, { ok: true }); }
-      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw" });
-      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say" });
+      if (p === "/orders/oA/pay") { if (!st.payOk) return res(200, { ok: false, error: "Refused by the fixture: pay", code: "fixture" }); st.claimed = 150; return res(200, { ok: true }); }
+      if (p === "/orders/oB/cancel") return res(200, { ok: false, error: "Refused by the fixture: withdraw", code: "fixture" });
+      if (p === "/orders/oB/say") return res(200, { ok: false, error: "Refused by the fixture: say", code: "fixture" });
       return res(404, { ok: false });
     };
   } });
@@ -42226,6 +42342,7 @@ await (async () => {
   const body = { ok: true, wrap: await CQ.wrapKey(pass, ck), session: "",
     env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
     prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
+  body.live = await asLive(CQ, ck, body.env);
   const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -42379,7 +42496,7 @@ await (async () => {
     + JSON.stringify([stale.rows, stale.late, stale.text.slice(0, 200)]));
   const none = await open({ term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } });
   const unsealed = await open(undefined);
-  ok(!none.hidden && /To pay nowRM 0 ?Nothing to pay now[.]/.test(none.text) && !none.pills && unsealed.hidden && unsealed.shown,
+  ok(!none.hidden && /^Nothing to pay now[.] ?$/.test(none.text) /* C18: said once, never over RM 0 */ && !none.pills && unsealed.hidden && unsealed.shown,
     "with nothing to pay and nothing coming, Home says so with no Pay (S7 7.1), and for a live document sealed before v841 it draws nothing: " + JSON.stringify(none.text));
 })();
 
@@ -42708,7 +42825,7 @@ await (async () => {
     const refused = { open: !sh.hidden, said: t(d.querySelector("#payFoot .paysaid")), yes: !!d.getElementById("paySent") };
     tap("paySent");
     await until(() => st.sent.length === 2 && sh.hidden && scr() && /sent, waiting/.test(t(scr())));
-    ok(once && refused.open && refused.said === "Refused by the fixture." && refused.yes
+    ok(once && refused.open && refused.said === "That was not recorded. Try again." /* C16: a codeless refusal takes the page's words, never its own */ && refused.yes
       && st.sent.every((x) => x[0] === "/orders/oA/pay") && st.sent[0][1].rid && st.sent[1][1].rid === st.sent[0][1].rid
       && JSON.stringify(Object.assign({}, st.sent[1][1], { rid: 1 })) === JSON.stringify({ amount: 150, method: "transfer", account: "maybank", rid: 1 }),
       "Not yet asks nothing more until the pay page is opened again; a refused Yes answers beside itself and a retry carries the same id: "
