@@ -181,7 +181,9 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
       o.status === "cancelled" ? { cancelled: true, cancelledOn: klDay(new Date(o.history[o.history.length - 1].at)) } : {}));
   }
   /* AND TWO ROWS HE ENTERED ON THE DESK: goods with them on credit, inside the term, and goods past it, overdue */
-  row({ date: klDay(new Date(T(1))), customer: FIX_CODE, qty: 1, total: 110, product: "salt", deliveredQty: 1, deliveredOn: klDay(new Date(T(1))), handover: "collected" });
+  /* handed over an hour ago, never a day and an hour: just after midnight in Kuala Lumpur that was two days back, past
+     the one-day term, and the case was lost for the first hour of every day */
+  row({ date: klDay(new Date(T(0))), customer: FIX_CODE, qty: 1, total: 110, product: "salt", deliveredQty: 1, deliveredOn: klDay(new Date(T(0))), handover: "collected" });
   const od = overdueDays(state);
   row({ date: klDay(new Date(T(od))), customer: FIX_CODE, qty: 4, total: 45, product: "candy", deliveredQty: 4, deliveredOn: klDay(new Date(T(od))), handover: "collected" });
 
