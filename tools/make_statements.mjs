@@ -832,7 +832,7 @@ export function stageDays() {
   if (STAGES) return STAGES;
   const rules = /const RULES=\{([^;]*)\};/.exec(readFileSync(MASTER, "utf8"));
   const g = (k) => { const m = rules && new RegExp("\\b" + k + ":\\s*(\\d+)").exec(rules[1]); return m ? +m[1] : null; };
-  return (STAGES = { hide: g("hideDays"), lock: g("lockDays") });
+  return (STAGES = { hide: g("hideDays"), lock: g("lockDays"), window: g("lateWindowDays") });
 }
 /* V5b2: and the ceiling on what a customer owes at once, RULES.creditCeilingRM, the same way */
 let CEILING;
@@ -883,6 +883,7 @@ export function payDue(party, day) {
   const late = now.filter(x => x.late);
   const st = stageDays();
   return { term, ...(st.hide != null ? { hide: st.hide } : {}), ...(st.lock != null ? { lock: st.lock } : {}),
+    ...(st.window != null ? { window: st.window } : {}),   /* V5c: for the page's words on paying late */
     now: { rm: sum(now), due: (now.find(x => x.due) || {}).due || null, parts: now },
     overdue: { rm: sum(late), parts: late }, coming: { rm: sum(coming), parts: coming } };
 }
