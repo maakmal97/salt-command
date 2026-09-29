@@ -101,7 +101,7 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
-h3.pmark{margin:0 0 4px;line-height:1}
+h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS FIGURE UNDER IT AND ALONE. The pressed ghost's edge and
    glass, the mark at 28px, the figure in the mono face; nothing sits beside the mark. The statement's lines take it too. */
@@ -257,7 +257,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
 }
 .panel{max-width:620px;margin:0 auto}
-.panel h2{font-size:var(--salt-text-lg);margin:0 0 4px}
+.panel h2,.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
@@ -346,7 +346,7 @@ h3.pmark{margin:0 0 4px;line-height:1}
 /* a pane is white 3% with a brass hairline */
 .pane{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);background:var(--salt-glass);
   padding:16px 18px;margin:0 0 14px}
-.pane h3{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
+.pane h3,.pane .pmark{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
 .pane td,.pane th{padding:9px 0}
@@ -879,10 +879,10 @@ export function boardPage(guest, nonce) {
   const b = (guest && guest.prices) || {};
   const products = Array.isArray(b.products) ? b.products : [];
   const week = (b.week && b.week.label) || "";
-  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
     ? products.map((p) => '<div class="pane">'
-        + '<h3 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h3>"
+        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
         /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">' + wd("board.only") + "</p>" : "")
@@ -891,7 +891,8 @@ export function boardPage(guest, nonce) {
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
         + "</tbody></table></div></div>").join("")
     : '<p class="lead">' + wd("board.none") + "</p>";
-  return guestPage("<h2>" + wd("board.h") + "</h2>"
+  /* C21 (29 Sep 2026): a guest page opens on its h1, and each board's mark is an h2 under it */
+  return guestPage('<h1 class="gh">' + wd("board.h") + "</h1>"
     + '<p class="lead">' + (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") + " " : "")
     + wd("board.goods") + " " + wd("deliv") + " "
     + wd("board.ask") + "</p>"
@@ -904,7 +905,7 @@ export function boardPage(guest, nonce) {
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
    it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
 export function shutPage(nonce) {
-  return guestPage("<h2>" + wd("shut.h") + "</h2>"
+  return guestPage('<h1 class="gh">' + wd("shut.h") + "</h1>"
     + '<p class="lead">' + wd("shut.p") + "</p>", nonce, esc(EN["shut.title"]));
 }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
@@ -978,7 +979,8 @@ function placesRail() {
     + '<p class="salt-rail__foot cfoot" data-wholine>' + whoAs() + "</p></nav>";
 }
 function placesBar() {
-  return '<nav class="salt-appbar" aria-label="Salt Counter">' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
+  /* C22 (29 Sep 2026): the bar is Places, so two landmarks never share one name */
+  return '<nav class="salt-appbar"' + wl("place.bar") + '>' + PLACES.map(([t, w]) => '<button type="button" class="salt-appbar__item"' + placeAttrs(t) + ">"
     + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
@@ -1493,7 +1495,8 @@ const CLIENT_JS = `
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   /* 28 Sep 2026: NO DRAW ASKS WHETHER THE PAGE IS STILL THERE. A page that has gone runs no script, and jsdom from 30.1.0 keeps
      a closed window's document, so the guard S9 and the S7 merge put on every late draw could never fire (docs/WORKING.md 3) */
-  function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+  /* C5 (29 Sep 2026): ONE MONEY FORM ON THE COUNTER, RM and two places, as the statement's lines print it */
+  function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   /* D11 (S4, 24 Sep 2026): units above one, unit at one and under; S13: in the language asked, the reader's by default */
   function unitsOf(q,u,L){ L=L||LANG; return unitsIn(wordIn(L,'unit.one'),wordIn(L,'unit.many'),q,u); }
 
@@ -1537,8 +1540,11 @@ const CLIENT_JS = `
     return p;
   }
   function stamp(iso,L){
-    try{ var p=klBits(iso); return p.day+' '+mon3(L)[+p.month-1]+', '+p.hour+':'+p.minute; }catch(e){ return ''; }
+    try{ var p=klBits(iso); return dmyOf(p,L)+', '+p.hour+':'+p.minute; }catch(e){ return ''; }
   }
+  /* C17 (29 Sep 2026): EVERY DATE ON THE COUNTER IS DD Mon YYYY, the time in 24 hours after it where there is one, and a
+     weekday only in front of a due date (dayName). Five shapes before it, none with a year. */
+  function dmyOf(p,L){ return ('0'+p.day).slice(-2)+' '+mon3(L)[+p.month-1]+' '+p.year; }
 
   /* ---- REMEMBER ME (v692) --------------------------------------------------------------------
      The device key lives in this browser and the wrap of the content key lives on the site: one
@@ -1695,7 +1701,7 @@ const CLIENT_JS = `
     if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
-  function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month?p.hour+':'+p.minute:+p.day+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function devDay(iso,L){ try{ var p=klBits(iso), q=klBits(new Date().toISOString()); return p.day===q.day&&p.month===q.month&&p.year===q.year?p.hour+':'+p.minute:dmyOf(p,L); }catch(e){ return ''; } }
   /* S13 13.4: a device as the site filed it ("Android phone, Chrome", deviceOf), its kind in the reader's words; a maker's
      and a browser's own names (iPhone, Mac, Chrome) are names, and a name this does not know is shown as filed */
   function devName(l){
@@ -2408,7 +2414,7 @@ const CLIENT_JS = `
   var myLinks=null, myMax=0, myNote='';
   var LINK_STATE={open:['lnk.open','verdigris'], waiting:['lnk.waiting','steel salt-status--dashed'], declined:['lnk.declined','mist'], withdrawn:['lnk.withdrawn','mist']};
   var qrShown={};
-  function linkDay(iso,L){ try{ var p=klBits(iso); return day3(L)[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function linkDay(iso,L){ try{ return dmyOf(klBits(iso),L); }catch(e){ return ''; } }
   function linkLine(r){
     if(r.state==='waiting') return tw('lnk.lineWaiting');
     if(r.state==='declined') return tw('lnk.lineDeclined');
@@ -2515,9 +2521,9 @@ const CLIENT_JS = `
     /* Malay says Selamat tengah hari until about two, Selamat petang after (MY8 of the stage 13 review); English says Good afternoon for both */
     return h<12?'home.morning':h<14?'home.noon':h<18?'home.afternoon':'home.evening';
   }
-  /* S4 4.8: a moment as the Prices stamp says it, "Thu 24 Sep, 11:59", in Kuala Lumpur; the weekday from the date's own parts */
+  /* S4 4.8: a moment as the Prices stamp says it, "24 Sep 2026, 11:59", in Kuala Lumpur (C17: no weekday, the year kept) */
   function pricesAt(iso,L){
-    try{ var p=klBits(iso); return day3(L)[new Date(Date.UTC(+p.year,+p.month-1,+p.day)).getUTCDay()]+' '+(+p.day)+' '+mon3(L)[+p.month-1]+', '+p.hour+':'+p.minute; }
+    try{ var p=klBits(iso); return dmyOf(p,L)+', '+p.hour+':'+p.minute; }
     catch(e){ return ''; }
   }
   function monthOf(d,L){
@@ -2544,7 +2550,8 @@ const CLIENT_JS = `
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
+      var h3=el('h2','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
@@ -2564,7 +2571,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      var sh=el('h3','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
+      var sh=el('h2','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
@@ -3165,7 +3172,7 @@ const CLIENT_JS = `
   /* S6 fix: less what they sent against the account that reaches this order's row (nowOf) */
   function oToPay(o){ return Math.max(0,+(dueOf(o)-oClaimed(o)-oAcct(o)).toFixed(2)); }
   function oOwes(o){ return oPayable(o)&&oToPay(o)>0.004; }
-  function oDay(iso,L){ try{ var p=klBits(iso); return p.day+' '+mon3(L)[+p.month-1]; }catch(e){ return ''; } }
+  function oDay(iso,L){ try{ return dmyOf(klBits(iso),L); }catch(e){ return ''; } }
   /* A REPLY WAITS until this device has shown it: the moment of his last line seen, per order, kept here and
      nowhere else, because there are no read receipts. The store's first moment stands for everything a closed
      order said before this device ever looked, or the first open after this shipped put every old thank-you
@@ -3258,7 +3265,7 @@ const CLIENT_JS = `
      and Cancel at the foot while the goods have not moved. Built in named parts, each rebuilt on its own. ---- */
   function movedAll(o){ var m=+o.moved||0; return m>0&&m>=(+o.qty||0)-0.0004; }
   function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
-  function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
+  function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
   /* what the last tap on this order said, beside the control it came from; where the answer took the control away
      (paid in full, cancelled), under the order's state, which is where the change shows */
   function oTap(o){
@@ -3647,7 +3654,7 @@ const CLIENT_JS = `
      Coming up. The figures are the publish's, sealed with the statement (payDue) and read here, never worked out: the
      site prices nothing. A part is a mark and a size. */
   function ymdAt(s){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null; }
-  function dayName(s,L){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return day3(L)[d.getUTCDay()]+' '+d.getUTCDate()+' '+mon3(L)[d.getUTCMonth()]; }
+  function dayName(s,L){ var t=ymdAt(s); if(t==null) return ''; var d=new Date(t); return day3(L)[d.getUTCDay()]+' '+dmyOf({day:d.getUTCDate(),month:d.getUTCMonth()+1,year:d.getUTCFullYear()},L); }
   function todayKL(){ var p=klBits(new Date().toISOString()); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
   function daysTo(s){ var t=ymdAt(s), n=ymdAt(todayKL()); return t==null||n==null?null:Math.round((t-n)/864e5); }
   /* 28 Sep 2026 (his instruction): a part is overdue from the day its goods went (since) and due is the last day it
@@ -3669,7 +3676,7 @@ const CLIENT_JS = `
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
-      d:function(L){ return dayName(p.since||p.gotOn||p.date,L); }});
+      d:function(L){ return ymdDay(p.since||p.gotOn||p.date,L); }});
   }
   function lrowN(node,value,flag,cls){ var r=lrow('',value,flag,cls); r.querySelector('.salt-ledger__label').appendChild(node); return r; }
   /* 27 Sep 2026 (his approval, "Reward cover on statements"), AMENDED THE SAME DAY (DROP THE RINGGIT): A NOTE, WITH NO
@@ -3824,7 +3831,7 @@ const CLIENT_JS = `
     var o=x.o, p=x.p, now=readyDue(o)&&!(p&&lateNow(p));
     if(!full) return now?tw('dueS.Now'):dueShort(p);
     var rd=readyDue(o)?(movedAll(o)?o.movedOn:isoDay(firstAt(o,'ready'))):'', got=p&&(p.since||p.gotOn),
-        at=rd?tw(movedAll(o)?'inv.gotOn':'inv.readySince',{d:Dd(dayName,rd)}):got?tw('inv.gotOn',{d:Dd(dayName,got)}):'',
+        at=rd?tw(movedAll(o)?'inv.gotOn':'inv.readySince',{d:Dd(ymdDay,rd)}):got?tw('inv.gotOn',{d:Dd(ymdDay,got)}):'',
         due=now?tw('due.Now'):dueWords(p);
     return at&&due?at+' '+due:at||due;
   }
@@ -4306,10 +4313,11 @@ const CLIENT_JS = `
       b.type='button';
       /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and the figure under it, alone; a reader hears the
          shape and the size in words */
-      var fq=el('span','mq',String(+a.q)); fq.setAttribute('aria-hidden','true');
+      /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
+      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
       l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
       t.appendChild(l);
-      t.appendChild(el('span','salt-option__detail',a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
+      t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
       b.appendChild(t);
       b.addEventListener('click',function(){ if(a.start) sheetOpen(a.product,a.q,b); else againOpen(a,b); });
       g.appendChild(b);
