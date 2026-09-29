@@ -1117,6 +1117,8 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     /* S3 3.11: a code from another device, or from Salt Account at the counter. S3 fix: both inside the form's box, so
        the signed-out Sheet carries them with it */
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
+    /* Step 6 (his decisions of 29 Sep 2026): a passkey saved on the account opens it; drawn where the browser has passkeys */
+    + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
     + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + keepPage())
@@ -1586,6 +1588,158 @@ const CLIENT_JS = `
       }
     }catch(e){ /* not remembered; the password still opens it */ }
   }
+  /* ---- A PASSKEY (Step 6, his decisions of 29 Sep 2026; the Worker's half is stmt/passkey.js) ---------------------------
+     Signed in, This device saves a passkey in whatever keeps theirs, and the door's Open with a passkey signs them in with
+     it. The content key is sealed under two halves: the share the Worker hands back once the passkey's signature checks,
+     and either 32 bytes this browser keeps or the secret the passkey returns where its store gives one, which opens it on
+     every device the passkey reaches. With neither on this device, the door asks for the password once and files this
+     device's wrap after it (pkWait). Log out keeps the passkey (his decision); Remove, Sign out everywhere and his own
+     Sign out end it. A challenge is fetched before the tap wherever it can be, so the tap calls the passkey at once. */
+  var PK='salt-stmt-passkey', PKOK=!!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&window.crypto&&crypto.subtle);
+  var PKSALT=null, pkCh=null, pkNew=null, pkWait=null;
+  function pkGet(){ try{ var s=localStorage.getItem(PK); return s?JSON.parse(s):null; }catch(e){ return null; } }
+  function pkSet(v){ try{ localStorage.setItem(PK, JSON.stringify(v)); }catch(e){ /* this device keeps nothing, and the password still opens it */ } }
+  function pkClear(){ try{ localStorage.removeItem(PK); }catch(e){} }
+  function pkMine(){ var r=pkGet(); return r&&r.u===user&&r.c?r:null; }
+  function b64ue(buf){ return b64e(buf).replace(/[+]/g,'-').replace(/[/]/g,'_').replace(/=+$/,''); }
+  function b64ud(t){ var s=String(t||'').replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return b64d(s); }
+  if(PKOK){ try{ crypto.subtle.digest('SHA-256', new TextEncoder().encode('salt-counter passkey prf v1')).then(function(d){ PKSALT=new Uint8Array(d); }, function(){}); }catch(e){ PKOK=false; } }
+  function pkFresh(x){ return !!x&&Date.now()-x.at<240000; }
+  async function pkKek(half, share){
+    var a=new Uint8Array(half), b=b64ud(share), ikm=new Uint8Array(a.length+b.length); ikm.set(a,0); ikm.set(b,a.length);
+    var base=await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({name:'HKDF', hash:'SHA-256', salt:new Uint8Array(0), info:new TextEncoder().encode('salt-counter passkey v1')},
+      base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  }
+  async function pkSeal(half, share, ck){
+    var k=await pkKek(half, share), iv=crypto.getRandomValues(new Uint8Array(12));
+    var ct=await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, k, await crypto.subtle.exportKey('raw', ck));
+    return {v:3, iv:b64e(iv), ct:b64e(ct)};
+  }
+  async function pkUnseal(half, share, w){
+    var k=await pkKek(half, share), raw=await crypto.subtle.decrypt({name:'AES-GCM', iv:b64d(w.iv)}, k, b64d(w.ct));
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, true, ['decrypt']);
+  }
+  function pkSecret(cred){ try{ var x=cred.getClientExtensionResults(); return x&&x.prf&&x.prf.results&&x.prf.results.first?new Uint8Array(x.prf.results.first):null; }catch(e){ return null; } }
+  function pkSigned(cred, extra){
+    var r=cred.response;
+    return Object.assign({id:cred.id, clientData:b64ue(r.clientDataJSON), authData:b64ue(r.authenticatorData), sig:b64ue(r.signature)}, extra||{});
+  }
+  function pkAsk(ch, ids){
+    return navigator.credentials.get({publicKey:{challenge:b64ud(ch), userVerification:'required', timeout:60000,
+      allowCredentials:(ids||[]).map(function(i){ return {type:'public-key', id:b64ud(i)}; }), extensions:{prf:{eval:{first:PKSALT}}}}});
+  }
+  /* the door's challenge, fetched while the door is on screen */
+  async function pkPrime(){
+    if(!PKOK||OWNER||session||pkFresh(pkCh)) return pkCh;
+    try{
+      var r=await fetch('/passkey/challenge',{method:'POST', cache:'no-store', headers:{'content-type':'application/json'}, body:'{}'});
+      var j=await r.json();
+      if(r.ok&&j.ok&&j.challenge) pkCh={c:j.challenge, at:Date.now()};
+    }catch(e){ /* the tap fetches one */ }
+    return pkCh;
+  }
+  /* This device's challenge, with the share a new passkey keeps and the passkeys the account already has */
+  async function pkPrep(){
+    if(!PKOK||!session||OWNER||view) return null;
+    if(pkFresh(pkNew)&&pkNew.u===user) return pkNew;
+    var u0=user, x=await api('/passkey/new', {});
+    if(!x.body.ok||u0!==user) return null;
+    pkNew={u:u0, at:Date.now(), c:x.body.challenge, share:x.body.share, user:x.body.user, has:x.body.has||[]};
+    return pkNew;
+  }
+  var pkGo=document.getElementById('pkGo');
+  if(pkGo&&PKOK&&!OWNER){ pkGo.hidden=false; pkGo.addEventListener('click', pkDoor); }
+  async function pkDoor(){
+    if(busy) return;
+    var ch=pkFresh(pkCh)?pkCh:await pkPrime(); pkCh=null;
+    if(!ch||!PKSALT){ say(tw('x.notSent'),'bad'); return; }
+    var mine=++ticket, stale=function(){ return mine!==ticket; }, rec=pkGet(), cred;
+    try{ cred=await pkAsk(ch.c, []); }catch(e){ if(!stale()) say(''); pkPrime(); return; }
+    if(stale()) return;
+    say(tw('x.opening'),'wait');
+    var sec=pkSecret(cred), r, body;
+    try{
+      r=await fetch('/passkey/open',{method:'POST', cache:'no-store', headers:{'content-type':'application/json'},
+        body:JSON.stringify(pkSigned(cred,{challenge:ch.c, t:rec&&rec.c===cred.id?rec.t||null:null, prf:!!sec}))});
+      body=await r.json();
+    }catch(e){ if(!stale()) say(tw('x.notSent'),'bad'); pkPrime(); return; }
+    if(stale()) return;
+    if(!r.ok||!body||!body.ok){ say(wErr(body,'x.notSent'),'bad'); pkPrime(); return; }
+    /* nothing on this device yet: the password once, and this device's wrap is filed after it */
+    if(body.once){
+      pkWait={id:cred.id, u:body.u, share:body.share, sec:sec};
+      un.value=body.u; pw.value=''; say(tw('door.pkOnce'),'wait'); try{ pw.focus(); }catch(e){}
+      pkPrime(); return;
+    }
+    var ck=null, b;
+    if(sec&&body.prfWrap){ try{ ck=await pkUnseal(sec, body.share, body.prfWrap); }catch(e){ ck=null; } }
+    if(!ck&&body.wrap&&rec&&rec.k){ try{ ck=await pkUnseal(b64d(rec.k), body.share, body.wrap); }catch(e){ ck=null; } }
+    try{ if(!ck) throw 0; b=JSON.parse(await open(ck, body.env)); }
+    catch(e){ if(!stale()) say(tw('e.pkNot'),'bad'); pkPrime(); return; }
+    if(stale()) return;
+    var x=await openBeside(body, ck, b);
+    if(stale()) return;
+    enter(body.u, body, b, x, ck, false);
+    /* the first device whose passkey gives a secret files the passkey's roaming wrap */
+    if(sec&&!body.prfWrap){ pkSeal(sec, body.share, ck).then(function(w){ return api('/passkey/wrap',{id:cred.id, prfWrap:w}); }).catch(function(){}); }
+    if(!(await follow(stale))) return;
+    askPush();
+  }
+  /* after the password once: this device's wrap under the passkey the door just checked */
+  async function pkAttach(u, ck){
+    var w=pkWait; pkWait=null;
+    if(!w||w.u!==u||!session||!ck) return;
+    try{
+      var half=crypto.getRandomValues(new Uint8Array(32)), body={id:w.id, wrap:await pkSeal(half, w.share, ck)};
+      if(w.sec) body.prfWrap=await pkSeal(w.sec, w.share, ck);
+      var x=await api('/passkey/wrap', body);
+      if(x.body.ok&&x.body.t){ pkSet({u:u, c:w.id, t:x.body.t, k:b64e(half)}); devSaid={t:tw('dev.pkLinked'),bad:false}; drawDev(); }
+    }catch(e){ /* the passkey still opens every device it reached; this one asks for the password once again */ }
+  }
+  /* This device: save a passkey, or use the one the account has on this device too */
+  async function pkSave(btn, reuse){
+    var n=await pkPrep(); pkNew=null;
+    if(!n||!PKSALT||!curCk){ devSaid={t:tw('dev.pkNotSaved'),bad:true}; drawDev(); return; }
+    btn.disabled=true; btn.textContent=tw('dev.pkWaiting');
+    var cred, half=crypto.getRandomValues(new Uint8Array(32));
+    try{
+      if(reuse){
+        cred=await pkAsk(n.c, n.has);
+        var sec=pkSecret(cred), x=await api('/passkey/link', pkSigned(cred,{challenge:n.c}));
+        if(!x.body.ok) throw x.body;
+        var body={id:cred.id, wrap:await pkSeal(half, x.body.share, curCk)};
+        if(sec&&!x.body.roams) body.prfWrap=await pkSeal(sec, x.body.share, curCk);
+        var y=await api('/passkey/wrap', body);
+        if(!y.body.ok||!y.body.t) throw y.body;
+        pkSet({u:user, c:cred.id, t:y.body.t, k:b64e(half)});
+        devSaid={t:tw('dev.pkLinked'),bad:false};
+      }else{
+        cred=await navigator.credentials.create({publicKey:{rp:{name:tw('pk.rp')}, user:{id:b64ud(n.user), name:user, displayName:user},
+          challenge:b64ud(n.c), pubKeyCredParams:[{type:'public-key', alg:-7},{type:'public-key', alg:-8},{type:'public-key', alg:-257}],
+          authenticatorSelection:{residentKey:'required', requireResidentKey:true, userVerification:'required'}, attestation:'none', timeout:60000,
+          extensions:{prf:{eval:{first:PKSALT}}}}});
+        var r=cred.response, spki=r.getPublicKey?r.getPublicKey():null, ad=r.getAuthenticatorData?r.getAuthenticatorData():null;
+        if(!spki||!ad) throw 0;
+        var sec2=pkSecret(cred), sb={challenge:n.c, id:cred.id, clientData:b64ue(r.clientDataJSON), authData:b64ue(ad), spki:b64e(spki),
+          alg:r.getPublicKeyAlgorithm?r.getPublicKeyAlgorithm():null, wrap:await pkSeal(half, n.share, curCk)};
+        if(sec2) sb.prfWrap=await pkSeal(sec2, n.share, curCk);
+        var z=await api('/passkey/save', sb);
+        if(!z.body.ok||!z.body.t) throw z.body;
+        pkSet({u:user, c:cred.id, t:z.body.t, k:b64e(half)});
+        devSaid={t:tw('dev.pkSaved'),bad:false};
+      }
+    }catch(e){ devSaid={t:e&&(e.code||e.said)?wErr(e,'dev.pkNotSaved'):tw('dev.pkNotSaved'),bad:true}; }
+    drawDev();
+  }
+  /* This device's passkey removed from the account; the store keeps its copy, which then opens nothing */
+  async function pkRemove(){
+    var m=pkMine(); if(!m) return;
+    var x=await api('/passkey/remove',{id:m.c});
+    if(x.body.ok){ pkClear(); devSaid={t:tw('dev.pkRemoved'),bad:false}; }
+    else devSaid={t:wErr(x.body,'x.notSent'),bad:true};
+    drawDev();
+  }
   /* ---- THE ACCOUNT ONLY IN THE SAVED APP (Step 1b, his Q3 of 28 Sep 2026; S3 3.10 and his D2 before it) ---------
      Signed in in a browser tab (never his page, never View as them), the keep page is the whole page and the places are
      hidden: it is a page gate, as the overdue gate is, and the Worker answers a session as it always has. An iPhone or
@@ -1705,7 +1859,8 @@ const CLIENT_JS = `
     var n=++devN, rec=remGet(), tok=rec&&rec.u===user?rec.t||null:null, r={status:0, body:{ok:false, error:tw('x.notSent')}};
     /* a read in the background, so a lapse it meets is left to the next thing they tap, which reopens the session (api) */
     try{
-      var x=await fetch('/devices',{method:'POST', cache:'no-store', headers:{'content-type':'application/json','X-Stmt-Session':session}, body:JSON.stringify({token:tok})});
+      var pm=pkMine(), x=await fetch('/devices',{method:'POST', cache:'no-store', headers:{'content-type':'application/json','X-Stmt-Session':session},
+        body:JSON.stringify({token:tok, passkey:pm?pm.c:null})});
       var j=null; try{ j=await x.json(); }catch(e){ j=null; }
       r={status:x.status, body:j||{ok:false}};
     }catch(e){ /* not sent: the card says so */ }
@@ -1715,7 +1870,7 @@ const CLIENT_JS = `
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
     devs.forEach(function(d){
       list.appendChild(devLine(devName(d.label)||tw('dev.aDevice'), d.here?chipEl('verdigris',tw('dev.thisOne')):null,
-        d.kept?tw('dev.kept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):tw('dev.visit',{a:Dd(devDay,d.at)})));
+        d.passkey?tw('dev.pkKept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):d.kept?tw('dev.kept',{a:Dd(devDay,d.at), b:Dd(devDay,d.last)}):tw('dev.visit',{a:Dd(devDay,d.at)})));
     });
     if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
     devSlot.appendChild(list);
@@ -1728,12 +1883,30 @@ const CLIENT_JS = `
         if(!armed){ so.textContent=tw('dev.outAgain'); armed=setTimeout(function(){ armed=null; so.textContent=tw('dev.outOthers'); }, 4000); return; }
         clearTimeout(armed); armed=null; so.disabled=true; so.textContent=tw('dev.outGoing');
         var s2=null; try{ s2=await phoneSub(); }catch(e){}
-        var rr=remGet(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, endpoint:s2?s2.endpoint:null});
+        var rr=remGet(), pm2=pkMine(), x=await api('/devices/signout',{token:rr&&rr.u===user?rr.t||null:null, passkey:pm2?pm2.c:null, endpoint:s2?s2.endpoint:null});
         devSaid=x.body.ok?{t:x.body.devices?tw(x.body.devices===1?'dev.outOne':'dev.outMany',{n:x.body.devices}):tw('dev.outNone'),bad:false}
           :{t:wErr(x.body,'x.notSent'),bad:true};
         drawDev();
       });
       acts.appendChild(so);
+    }
+    /* Step 6: this device's passkey, removed on a second tap; or one saved, or the account's used here too */
+    if(PKOK){
+      var pmine=pkMine();
+      if(pmine){
+        var pr=devQuiet(tw('dev.pkRemove')), parmed=null;
+        pr.addEventListener('click', function(){
+          if(!parmed){ pr.textContent=tw('dev.pkAgain'); parmed=setTimeout(function(){ parmed=null; pr.textContent=tw('dev.pkRemove'); }, 4000); return; }
+          clearTimeout(parmed); parmed=null; pr.disabled=true; pkRemove();
+        });
+        acts.appendChild(pr);
+      }else{
+        var pn=await pkPrep();
+        if(n!==devN||!session) return;
+        var has=!!pn&&pn.has.length>0;
+        if(has){ var pu=devQuiet(tw('dev.pkUse')); pu.addEventListener('click', function(){ pkSave(pu, true); }); acts.appendChild(pu); }
+        var ps=devQuiet(tw(has?'dev.pkNew':'dev.pkSave')); ps.addEventListener('click', function(){ pkSave(ps, false); }); acts.appendChild(ps);
+      }
     }
     devSlot.appendChild(acts); devSlot.appendChild(note);
     devSaid={t:'',bad:false};
@@ -1906,6 +2079,7 @@ const CLIENT_JS = `
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     keepReset(); closePay(); if(codeBox) codeBox.hidden=true;
     closeDevSheet(); devN++; if(devSlot) devSlot.textContent='';
+    pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
@@ -4456,6 +4630,7 @@ const CLIENT_JS = `
     enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
     if(!(await follow(stale))) return;
     if(keep) await remember(u, ck);
+    await pkAttach(u, ck);   /* Step 6: the password once, after Open with a passkey found nothing on this device */
     askPush();
   });
 
@@ -4732,7 +4907,7 @@ const CLIENT_JS = `
       /* S3 fix: a phone still remembered, which the site could not open just now, says so on the door with Try again,
          never on the saved app's code screen, which would send a customer still signed in to Safari for a code */
       var kept=!!remGet(), cm=hk==='code';   /* S9 fix: This device's QR (/app#code) opens on the code, in a browser's words */
-      if(APP&&!kept&&(IOS||key||qm||cm)) showCode((!!qm||cm)&&!STANDALONE); else gate.hidden=false;
+      if(APP&&!kept&&(IOS||key||qm||cm)) showCode((!!qm||cm)&&!STANDALONE); else { gate.hidden=false; pkPrime(); }
       if(APP&&qm&&INAPP&&!STANDALONE) csay(tw('code.inapp'),'bad');
       if(key&&!kept) await openHandover({token:key});
     })();
