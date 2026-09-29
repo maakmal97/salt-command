@@ -109,6 +109,13 @@ export function build(now = new Date()) {
     [T(11, 5), "customer", Object.assign({ action: "pay", amount: 48 }, rail("transfer"))],
     [T(11, 30), "desk", { verdict: { kind: "received", claim: T(11, 5), amount: 48 } }],
     [T(10), "desk", { status: "ready" }], [T(10, 30), "desk", { handover: { units: 4, mode: "deliver" } }]]));
+  /* A SHEET AGREED, MADE READY AND HANDED OVER TOGETHER (V4b.2, v938): the charge on the first order, none on the rest */
+  const sheet2 = "exampleSheet0002";
+  for (const [k, product, qty, deliv, paid] of [["12", "oil", 1, 4, 44], ["13", "candy", 1, 0, 12]]) {
+    O.push(order(oid(6, k), list, T(6), { product, qty, mode: "deliver", place: "Taman Rekaan", sheet: sheet2 }, [
+      [T(6, 20), "desk", { status: "acknowledged", delivery: deliv }], [T(5), "desk", { status: "ready" }],
+      [T(5, 30), "desk", { handover: { units: qty, mode: "deliver" } }], [T(5, 31), "desk", { cash: { amount: paid } }]]));
+  }
   /* WITHDRAWN by them */
   O.push(order(oid(14, "07"), list, T(14), { product: "rice", qty: 1, mode: "collect" }, [
     [T(14, 40), "customer", { action: "cancel" }]]));
@@ -216,6 +223,8 @@ export const FEATURES = [
   ["a claim against the account waiting on him", (f) => f.claims.some((c) => c.state === "waiting")],
   ["cash he took", (f) => has(f, (o) => (o.payments || []).some((p) => p.method === "cod" && p.by === "desk"))],
   ["a transfer he received", (f) => has(f, (o) => (o.payments || []).some((p) => p.method === "transfer" && p.claim === "received"))],
+  ["a sheet agreed together, the charge on its first order alone (V4b.2)", (f) => { const s = {}; f.orders.forEach((o) => { if (o.sheet && o.status !== "placed") (s[o.sheet] = s[o.sheet] || []).push(o); });
+    return Object.values(s).some((l) => l.length > 1 && l.filter((o) => +o.delivery > 0).length === 1); }],
   ["one sheet, several products (v936)", (f) => { const s = {}; f.orders.forEach((o) => { if (o.sheet) s[o.sheet] = (s[o.sheet] || 0) + 1; }); return Object.values(s).some((n) => n > 1); }],
   ["a friend's order, for an associate", (f) => f.assoc === true && has(f, (o) => o.forFriend === true)],
   ["a thread, theirs and his", (f) => has(f, (o) => (o.msgs || []).some((m) => m.by === "customer") && (o.msgs || []).some((m) => m.by === "desk"))],
