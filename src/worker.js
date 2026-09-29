@@ -1117,7 +1117,7 @@ export default {
        date. It is still keyed, because the rule set on 20 Aug is that a read carrying the book
        needs the key, and a rule with a convenient exception stops being a rule. */
     if (p === "/push/summary") {
-      const out = { ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], now: 0 };
+      const out = { ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], now: 0, lines: [] };
       try {
         if (env.SALT_LEDGER) {
           const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
@@ -1140,8 +1140,10 @@ export default {
         }
         /* 24 Sep 2026: `placed` apart, because only those are his to acknowledge; an acknowledged
            order is a row (v766) and the banner no longer asks him to acknowledge it */
-        const ow = await ordersWaiting(env);
-        out.orders = ow.waiting; out.placed = ow.placed;
+        /* 29 Sep 2026: and the lines a customer wrote since `?since=` (an ISO moment; none, the last ten minutes), at most three, so his banner
+           can show each on its own. Read off the orders this already reads, stored nowhere. */
+        const ow = await ordersWaiting(env, url.searchParams.get("since"));
+        out.orders = ow.waiting; out.placed = ow.placed; out.lines = ow.lines || [];
         /* v760: and the last thing a customer DID, while it is fresh. The banner is built from this
            summary and from nothing else, so without it a wake sent because somebody paid reads as
            "an order waiting", which is the wrong sentence about the right order. */

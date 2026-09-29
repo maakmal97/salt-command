@@ -16419,8 +16419,8 @@ await (async () => {
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
   const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
-  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
-    && bRow && bRow.t === "Salt Command" && /2 rows waiting/.test(bRow.opt.body) && bRow.opt.data.url === "./",
+  ok(bOrd && bOrd.t === "New order" && /^Acknowledge it on the desk\./.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
+    && bRow && bRow.t === "Waiting on you" && bRow.opt.body === "Today: approve 2 rows." && bRow.opt.data.url === "./",
     "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
   {
     const sw = runSw({}), waits = [];
@@ -32453,12 +32453,11 @@ await (async () => {
   const bRefund = await wake9({ ok: true, pending: 0, refused: 0, refunds: 1, countDue: [], orders: 0 });
   const bBoth = await wake9({ ok: true, pending: 2, refused: 0, refunds: 1, countDue: ["salt"], orders: 1, placed: 1 });
   const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
-  ok(bRefund && /1 refund to pay back/.test(bRefund.opt.body),
+  ok(bRefund && bRefund.opt.body === "Now: pay back 1 refund.",
     "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
-  ok(bBoth && bBoth.t === "New customer order" && /acknowledge/.test(bBoth.opt.body)
-    && /1 refund to pay back/.test(bBoth.opt.body) && /2 rows waiting/.test(bBoth.opt.body) && /salt not counted/.test(bBoth.opt.body),
+  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on the desk.\nNow: pay back 1 refund.\nToday: count salt, approve 2 rows.",
     "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
-  ok(bQuiet && /Nothing waiting/.test(bQuiet.opt.body) && bQuiet.t === "Salt Command is square",
+  ok(bQuiet && bQuiet.opt.body === "Nothing waiting, and nothing owed a decision." && bQuiet.t === "All square",
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
 })();
 
@@ -33639,10 +33638,10 @@ await (async () => {
   };
   const bNews = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, news: "A customer says they paid" });
   const bPlain = await wake6({ ok: true, pending: 1, refused: 0, refunds: 0, countDue: [], orders: 2, placed: 2 });
-  ok(bNews && bNews.t === "A customer says they paid" && /2 orders waiting on you/.test(bNews.opt.body)
-    && /1 row waiting for approval/.test(bNews.opt.body) && bNews.opt.data.url === "./desk#orders/newest",
+  ok(bNews && bNews.t === "A customer says they paid"
+    && bNews.opt.body === "Check it arrived, then tap Received or Not found.\nToday: approve 1 row.\n2 orders waiting on you." && bNews.opt.data.url === "./desk#orders/newest",
     "the banner leads with what they just did, and still carries what is waiting: " + JSON.stringify(bNews && bNews.opt.body));
-  ok(bPlain && bPlain.t === "2 customer orders waiting",
+  ok(bPlain && bPlain.t === "2 new orders",
     "and with no news it is the count, as it was: " + (bPlain && bPlain.t));
 })();
 
@@ -33902,7 +33901,7 @@ await (async () => {
     "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
   ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
     "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
-  ok(j.told === "They see Sent: Waiting to be confirmed." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+  ok(j.told === "They see Sent: Waiting to be acknowledged." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
     && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
     "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
 
@@ -34639,8 +34638,12 @@ await (async () => {
       registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
       clients: { matchAll: async () => [], openWindow: async () => {} }, fetch: async () => ({ ok: true, json: async () => s }) };
     vm.createContext(c); vm.runInContext(sw, c);
-    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown[0]; };
-  const told = async () => { const b = await wake(await summary()); return b ? b.t + " | " + b.opt.body : ""; };
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return shown; };
+  const wakeAll = wake, status = async (s) => (await wakeAll(s)).find((x) => x.opt.tag === "salt");
+  const say = (b) => (b ? b.t + " | " + b.opt.body : "");
+  const told = async () => say(await status(await summary()));
+  /* a line a customer wrote is its own banner (tag m-<at>), not the status's news */
+  const toldLine = async () => say((await wakeAll(await summary())).find((x) => /^m-/.test(x.opt.tag)));
   const noCodeNoMoney = (t) => !/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}\b/.test(t) && !/RM\s?\d/.test(t) && !/abcd-efgh/.test(t);
 
   /* each act, its own words */
@@ -34649,7 +34652,7 @@ await (async () => {
   const tPlaced = await told();
   await O.customerMove(senv, u, o.id, "say", { text: "can I collect on Friday" });
   await nudge();
-  const tSaid = await told();
+  const tSaid = await toldLine();
   await O.deskMove(senv, u, o.id, { status: "acknowledged", mode: "collect" });
   await O.customerMove(senv, u, o.id, "method", { method: "tngbiz", account: "tngbiz" });
   await O.customerMove(senv, u, o.id, "pay", { amount: 190 });
@@ -34662,15 +34665,15 @@ await (async () => {
   await O.customerMove(senv, u, o2.id, "cancel", {});
   await nudge();
   const tCancel = await told();
-  ok(/^New customer order \|/.test(tPlaced) && /^A customer wrote \|/.test(tSaid) && /^A customer says they paid \|/.test(tPaid) && /^A customer cancelled \|/.test(tCancel),
+  ok(/^New order \|/.test(tPlaced) && /^A customer wrote \| \u201ccan I collect on Friday\u201d$/.test(tSaid) && /^A customer says they paid \|/.test(tPaid) && /^A customer cancelled \|/.test(tCancel),
     "each wake names the kind of act, in his words: " + JSON.stringify([tPlaced, tSaid, tPaid, tCancel].map((t) => t.split(" | ")[0])));
-  ok(/^New customer order \|/.test(tPlaced2),
+  ok(/^New order \|/.test(tPlaced2),
     "a new order minutes after a payment is titled a new order, not by the payment's news still fresh: " + JSON.stringify(tPlaced2.split(" | ")[0]));
   ok([tPlaced, tSaid, tPaid, tPlaced2, tCancel].every(noCodeNoMoney),
     "and no wake carries a code, a username or an amount: " + JSON.stringify([tPlaced, tSaid, tPaid, tPlaced2, tCancel]));
 
   /* THE BANNER TAKES NEWS IN LETTERS AND SPACES ONLY, so nothing that could carry a code or a figure is ever its title */
-  const forged = await wake({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
+  const forged = await status({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 1, placed: 0, news: "CX1-AB paid RM 190" });
   ok(forged && forged.t !== "CX1-AB paid RM 190" && noCodeNoMoney(forged.t + " " + forged.opt.body),
     "news carrying a code or an amount never reaches the title: " + JSON.stringify(forged && forged.t));
 })();
@@ -37015,15 +37018,15 @@ await (async () => {
   const s1 = await summary();
   ok(s1.orders === 1 && s1.placed === 0, "the summary tells an order he has agreed from one still to agree: " + JSON.stringify({ orders: s1.orders, placed: s1.placed }));
   const b1 = await wake(s1);
-  ok(b1 && b1.t !== "New customer order" && !/acknowledge/i.test(b1.opt.body) && /1 order waiting on you/.test(b1.opt.body) && b1.opt.data.url === "./desk#orders",
+  ok(b1 && b1.t === "Waiting on you" && !/acknowledge/i.test(b1.opt.body) && b1.opt.body === "1 order waiting on you." && b1.opt.data.url === "./desk#orders",
     "an acknowledged order is still named as waiting on him, and never asked to be acknowledged again: " + JSON.stringify(b1 && [b1.t, b1.opt.body]));
   await place();
   const b2 = await wake(await summary());
-  ok(b2 && b2.t === "New customer order" && /acknowledge it\./.test(b2.opt.body) && /1 order waiting on you/.test(b2.opt.body),
+  ok(b2 && b2.t === "New order" && b2.opt.body === "Acknowledge it on the desk.\n1 order waiting on you.",
     "a new one beside it is the title, and the one already agreed rides in the body: " + JSON.stringify(b2 && [b2.t, b2.opt.body]));
   await place();
   const b3 = await wake(await summary());
-  ok(b3 && b3.t === "2 customer orders waiting" && /acknowledge them\./.test(b3.opt.body),
+  ok(b3 && b3.t === "2 new orders" && b3.opt.body === "Acknowledge them on the desk.\n1 order waiting on you.",
     "two to agree are them, not it: " + JSON.stringify(b3 && [b3.t, b3.opt.body]));
 })();
 
@@ -37229,7 +37232,7 @@ await (async () => {
     const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
       const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
     const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
-    ok(placed === "They see Sent, waiting to be confirmed, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
+    ok(placed === "They see Sent, waiting to be acknowledged, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
     const acked = card({ id: "b", status: "ready", mode: "deliver", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-20T02:00:00.000Z", status: "placed", by: "customer" }, { at: "2026-09-23T03:30:00.000Z", status: "acknowledged", by: "desk" },
         { at: "2026-09-24T03:30:00.000Z", status: "ready", by: "desk" }] });
@@ -37563,8 +37566,8 @@ await (async () => {
     const st = picks().find((x) => x.value === "stock"); st.checked = true; st.dispatchEvent(new w.Event("change", { bubbles: true }));
     go().click();
     await settle();
-    ok(moves().length === 1 && JSON.stringify(moves()[0].body) === '{"status":"declined","note":"Out of stock this week"}'
-      && /They read Not taken: Out of stock this week/.test(card().querySelector('[data-msg="p1"]').textContent),
+    ok(moves().length === 1 && JSON.stringify(moves()[0].body) === '{"status":"declined","note":"We do not have enough in hand this week."}'
+      && /They read Not taken: We do not have enough in hand this week\./.test(card().querySelector('[data-msg="p1"]').textContent),
       "a chosen reason goes with the decline, and the card says what they read: " + JSON.stringify(moves()));
     const told = String(w.eval("ordToldLine(" + JSON.stringify(Object.assign({}, base, { id: "c1", status: "cancelled", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-24T02:00:00.000Z", status: "cancelled", by: "desk", note: "Prices have changed" }] })) + ")"));
@@ -37999,7 +38002,7 @@ await (async () => {
     const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
     const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
     const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
-    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Confirmed, and the row you saw is approved\./.test(msg1),
+    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Acknowledged, and the row you saw is approved\./.test(msg1),
       "Accept approves the row it drew, moves the order, and says so: " + JSON.stringify({ pend, st: site1.status, msg1 }));
 
     const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
@@ -38018,7 +38021,7 @@ await (async () => {
     D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]').click();
     for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
     const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
-    ok(/waits under Approve, marked, and they still see Sent/.test(msg3) && !/They see Confirmed/.test(msg3),
+    ok(/waits under Approve, marked, and they still see Sent/.test(msg3) && !/They see Acknowledged/.test(msg3),
       "a row that came out other than shown is said as waiting under Approve, the customer still reading Sent: " + msg3);
   } finally {
     await new Promise((r) => setTimeout(r, 200));
@@ -46417,6 +46420,137 @@ await (async () => {
     "every one of the page's " + r.handlers + " inline handlers calls a function the page defines: " + JSON.stringify(r.calls));
 })();
 
+
+section("29 Sep 2026: his banner: a customer's line is a banner of its own, and what waits is grouped by deadline in his words");
+await (async () => {
+  /* Step 1b, the desk half. public/sw.js run as it ships, with the summary it reads stubbed and IndexedDB stood in for by a
+     store the test can read: the mark the service worker keeps beside the write key is what these prove. */
+  const vm = await import("node:vm");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const push = async (summary, data) => {
+    const L = {}, shown = [], urls = [];
+    const cell = (fn) => { const r = {}; Promise.resolve().then(() => { fn(r); if (r.onsuccess) r.onsuccess(); }); return r; };
+    const idb = { open: () => { const rq = {}; Promise.resolve().then(() => { rq.result = { createObjectStore() {}, transaction: () => ({ objectStore: () => ({
+      get: (k) => cell((r) => { r.result = data[k]; }), put: (v, k) => cell((r) => { data[k] = v; }) }) }) }; if (rq.onsuccess) rq.onsuccess(); }); return rq; } };
+    const ctx = { URL, console, caches: {}, indexedDB: idb,
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async () => {} },
+      fetch: async (u) => { urls.push(String(u)); if (summary === null) throw new Error("offline");
+        return { ok: true, json: async () => (typeof summary === "function" ? summary(new URL(String(u), "https://salt-command.example/").searchParams.get("since")) : summary) }; } };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    const waits = []; L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits);
+    return { shown, urls };
+  };
+  const quiet = { ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0, placed: 0 };
+  const L1 = { at: "2026-09-29T03:00:00.000Z", t: "can I collect on Friday" }, L2 = { at: "2026-09-29T03:01:00.000Z", t: "and is the delivery free?" };
+
+  /* EACH LINE A CUSTOMER WRITES IS A BANNER OF ITS OWN */
+  const store = { writeKey: "k-fixture" };
+  const a = await push((since) => Object.assign({}, quiet, { lines: [L1, L2].filter((x) => !since || x.at > since) }), store);
+  ok(a.shown.length === 2 && a.shown.every((x) => x.t === "A customer wrote" && x.opt.data.url === "./desk#orders/newest")
+    && a.shown.map((x) => x.opt.tag).join() === "m-" + L1.at + ",m-" + L2.at
+    && a.shown.map((x) => x.opt.body).join("|") === "“can I collect on Friday”|“and is the delivery free?”",
+    "each line a customer writes is a banner of its own, under its own tag and in curly quotation marks, and a quiet status is not shown beside them: " + JSON.stringify(a.shown.map((x) => [x.t, x.opt.tag, x.opt.body])));
+  /* THE MARK: sent as ?since=, moved to the newest line shown, so a line is shown once */
+  const b = await push((since) => Object.assign({}, quiet, { lines: [L1, L2].filter((x) => !since || x.at > since) }), store);
+  ok(store.since === L2.at && a.urls[0] === "push/summary" && b.urls[0] === "push/summary?since=" + encodeURIComponent(L2.at)
+    && b.shown.length === 1 && b.shown[0].t === "All square",
+    "the service worker keeps its mark beside the key, sends it as ?since=, and moves it to the newest line shown, so the next wake shows none: " + JSON.stringify({ since: store.since, a: a.urls, b: b.urls }));
+  /* "A customer wrote" as news is not repeated over the lines it names */
+  const c = await push(Object.assign({}, quiet, { news: "A customer wrote", orders: 1, placed: 1, lines: [L1] }), {});
+  ok(c.shown.length === 2 && c.shown[0].opt.tag === "m-" + L1.at && c.shown[1].opt.tag === "salt" && c.shown[1].t === "New order",
+    "the status banner does not repeat the news of a line already shown as its own banner: " + JSON.stringify(c.shown.map((x) => [x.t, x.opt.tag])));
+  /* a push must show one notification: a line counts, so a quiet status is dropped beside it; alone it stands as All square */
+  const d = await push(Object.assign({}, quiet, { lines: [L1] }), {}), e = await push(quiet, {});
+  ok(d.shown.length === 1 && d.shown[0].opt.tag === "m-" + L1.at && e.shown.length === 1 && e.shown[0].t === "All square",
+    "All square is not shown beside a line, and stands when nothing else is shown: " + JSON.stringify([d.shown.map((x) => x.t), e.shown.map((x) => x.t)]));
+
+  /* NOTHING WAITING, IN HIS WORDS */
+  ok(e.shown[0].t === "All square" && e.shown[0].opt.body === "Nothing waiting, and nothing owed a decision." && e.shown[0].opt.tag === "salt",
+    "nothing waiting reads All square, with his words: " + JSON.stringify(e.shown[0]));
+  const f = await push(null, {});
+  ok(f.shown.length === 1 && f.shown[0].t === "Something needs a look" && f.shown[0].opt.body === "The desk could not say what just now. Open it to see.",
+    "a summary not reached reads Something needs a look, with his words: " + JSON.stringify(f.shown[0]));
+
+  /* WHAT WAITS, BY DEADLINE: a group a line, soonest first, the acknowledged orders last with no group word */
+  const g = await push(Object.assign({}, quiet, { refunds: 1, countDue: ["oil", "rice"], pending: 2, refused: 1, orders: 1 }), {});
+  ok(g.shown.length === 1 && g.shown[0].t === "Waiting on you" && g.shown[0].opt.data.url === "./desk#orders"
+    && g.shown[0].opt.body === "Now: pay back 1 refund.\nToday: count oil and rice, approve 2 rows, check 1 refused entry.\n1 order waiting on you.",
+    "the tail groups by deadline: a refund under Now, a count and a row under Today, and the acknowledged orders last: " + JSON.stringify(g.shown[0] && g.shown[0].opt.body));
+  const h = await push(Object.assign({}, quiet, { refunds: 2, countDue: ["salt", "oil", "rice"], pending: 1, refused: 3, orders: 2 }), {}),
+    h1 = await push(Object.assign({}, quiet, { countDue: ["oil"] }), {});
+  ok(h.shown[0].opt.body === "Now: pay back 2 refunds.\nToday: count salt, oil and rice, approve 1 row, check 3 refused entries.\n2 orders waiting on you."
+    && h1.shown[0].opt.body === "Today: count oil.",
+    "and the phrasing follows the number: " + JSON.stringify([h.shown[0].opt.body, h1.shown[0].opt.body]));
+  /* news and a new order carry the tail after their own sentence */
+  const i = await push(Object.assign({}, quiet, { news: "A customer says they paid", refunds: 1, orders: 1 }), {}),
+    j = await push(Object.assign({}, quiet, { news: "A customer cancelled" }), {}),
+    k = await push(Object.assign({}, quiet, { placed: 3, orders: 3, pending: 1 }), {});
+  ok(i.shown[0].t === "A customer says they paid" && i.shown[0].opt.body === "Check it arrived, then tap Received or Not found.\nNow: pay back 1 refund.\n1 order waiting on you."
+    && j.shown[0].t === "A customer cancelled" && j.shown[0].opt.body === "Tap to see which order."
+    && k.shown[0].t === "3 new orders" && k.shown[0].opt.body === "Acknowledge them on the desk.\nToday: approve 1 row.",
+    "a payment, a withdrawal and new orders each say their own sentence, and the tail follows it: " + JSON.stringify([i, j, k].map((x) => [x.shown[0].t, x.shown[0].opt.body])));
+})();
+
+section("29 Sep 2026: /push/summary carries the customer's lines newer than the mark, at most three, cut to 200 characters");
+await (async () => {
+  const deskW = (await import("../src/worker.js")).default;
+  const at = (m) => new Date(Date.parse("2026-09-29T02:00:00.000Z") + m * 60000).toISOString();
+  const said = (m, t, by) => ({ at: at(m), by: by || "customer", text: t });
+  const summary = async (orders, since) => {
+    const env = { SALT_QUEUE: new KV(), REQUIRE_ACCESS: "0", STMT_DESK_KEY: "desk-key",
+      STMT_SITE: { fetch: async () => new Response(JSON.stringify({ ok: true, orders }), { status: 200, headers: { "content-type": "application/json" } }) } };
+    return (await (await deskW.fetch(new Request("https://salt-command.example/push/summary" + (since ? "?since=" + encodeURIComponent(since) : "")), env)).json());
+  };
+  const orders = [{ id: "o1", u: "abcd-efgh", status: "acknowledged", msgs: [said(0, "one"), said(1, "two"), said(4.5, "reply of his", "desk"), said(3, "three")] },
+    { id: "o2", u: "abcd-efgh", status: "ready", msgs: [said(4, "four"), said(5, "x".repeat(300))] }];
+  const lines = (r) => (r.lines || []).map((x) => x.at);
+  const s1 = await summary(orders, at(3.5));
+  ok(JSON.stringify(lines(s1)) === JSON.stringify([at(4), at(5)]) && s1.lines.every((x) => typeof x.t === "string"),
+    "the summary returns only the customer's lines newer than the mark, and none of his own: " + JSON.stringify(lines(s1)));
+  const s2 = await summary(orders, at(-1));
+  ok(JSON.stringify(lines(s2)) === JSON.stringify([at(3), at(4), at(5)]),
+    "at most three, the newest three, oldest first: " + JSON.stringify(lines(s2)));
+  ok(s2.lines[2].t.length === 200 && s2.lines[0].t === "three" && s2.orders === 1 && s2.placed === 0,
+    "a line is cut to 200 characters, and the counts the banner reads are as before: " + JSON.stringify({ n: s2.lines[2].t.length, orders: s2.orders }));
+  /* with no mark, only what was written in the last ten minutes */
+  const now = Date.now(), ago = (m) => new Date(now - m * 60000).toISOString();
+  const s3 = await summary([{ id: "o3", u: "abcd-efgh", status: "acknowledged", msgs: [{ at: ago(30), by: "customer", text: "old" }, { at: ago(9), by: "customer", text: "fresh" }] }]);
+  ok(s3.lines.length === 1 && s3.lines[0].t === "fresh", "with no mark, only the lines of the last ten minutes: " + JSON.stringify(s3.lines));
+  const s4 = await summary([]);
+  ok(Array.isArray(s4.lines) && s4.lines.length === 0, "and no orders is no lines, never a missing field: " + JSON.stringify(s4.lines));
+  const kr = await deskW.fetch(new Request("https://salt-command.example/push/summary"), { SALT_QUEUE: new KV(), REQUIRE_ACCESS: "0", SALT_WRITE_KEY: "k-fixture" });
+  ok(kr.status === 401, "the route stays keyed: " + kr.status);
+})();
+
+section("29 Sep 2026: Decline and Cancel reasons are sentences, a typed one is given its full stop, and Ready shows again while units are owed");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    /* THE REASONS ARE SENTENCES, since the customer's banner body is the reason itself */
+    const picks = JSON.parse(String(w.eval("JSON.stringify(ORD_WHY_PICK)")));
+    ok(JSON.stringify(picks) === JSON.stringify([["stock", "We do not have enough in hand this week."], ["place", "We cannot deliver there."], ["price", "Our prices have changed."], ["own", "Other"]]),
+      "the reasons are his sentences, each ending in a full stop, and Other opens his own words: " + JSON.stringify(picks));
+    const D = w.document, inp = D.createElement("input"); inp.setAttribute("data-why", "p1"); D.body.appendChild(inp);
+    const why = (pick, typed) => { inp.value = typed || ""; w.eval("ORD_WHY.p1=" + JSON.stringify({ st: "declined", pick }) + ";"); return String(w.eval("ordWhyText({id:'p1'})")); };
+    const own = [why("own", "  no stock   till Monday "), why("own", "already stopped."), why("own", "really?"), why("own", ""), why("stock")];
+    ok(JSON.stringify(own) === JSON.stringify(["no stock till Monday.", "already stopped.", "really?", "", "We do not have enough in hand this week."]),
+      "a reason typed in his words gets a full stop when it ends without . ! or ?, and an empty one stays empty: " + JSON.stringify(own));
+
+    /* READY, AGAIN, WHILE UNITS ARE STILL OWED */
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 2, total: 200, delivery: 0, paid: 0, moved: 0, mode: "collect", msgs: [], payments: [],
+      at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "acknowledged", by: "desk" }] };
+    const readies = (x) => { const d = D.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
+      return [...d.querySelectorAll('button[data-ord="ready"]')].map((b) => b.textContent.trim()).join("|"); };
+    const both = "Ready to collect|Ready to deliver";
+    const r = { ack: readies({ id: "a", status: "acknowledged" }), part: readies({ id: "b", status: "ready", moved: 1 }),
+      whole: readies({ id: "c", status: "ready", moved: 2 }), none: readies({ id: "d", status: "ready", moved: 0 }) };
+    ok(r.ack === both && r.part === both && r.whole === "" && r.none === "",
+      "Ready shows again at ready with units handed over and units still owed, and not at ready with nothing owed or nothing handed over: " + JSON.stringify(r));
+  } finally { try { w.close(); } catch (x) { /* best effort */ } }
+})();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
