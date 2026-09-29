@@ -249,7 +249,7 @@ export const OWNER_JS = `
   /* HOW THEY GOT IN (/all/account/<u>): each way in, newest first, with its moment and the kind of device it was used
      on, as the browser described itself then, never an address; a password refused at an address stands above them */
   /* S9 fix: a code his counter showed is scanned; a customer's own is copied across; key, before the two were told apart */
-  var HOWW={link:'Sign-in link', qr:'Code, scanned', copy:'Code, copied across', key:'Code', code:'Code, typed', password:'Password'};
+  var HOWW={link:'Sign-in link', qr:'Code, scanned', copy:'Code, copied across', key:'Code', code:'Code, typed', password:'Password', passkey:'Passkey'};
   function lineRow(label, value, flag){
     var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), v=el('span','salt-ledger__value');
     l.appendChild(el('span','salt-ledger__label',label));
@@ -268,7 +268,7 @@ export const OWNER_JS = `
       'Ten wrong '+(L.from>1?'from each of '+L.from+' addresses':'from one address')+(L.until?', shut there till '+hm(L.until):'')+'.'));
     var log=(s&&s.log)||[];
     log.forEach(function(x){
-      list.appendChild(lineRow(HOWW[x.how]||'Signed in', x.how==='password'?null:chip('verdigris','Used'), dayMon(x.at)+', '+hm(x.at)+onWhat(x.where)));
+      list.appendChild(lineRow(HOWW[x.how]||'Signed in', x.how==='password'||x.how==='passkey'?null:chip('verdigris','Used'), dayMon(x.at)+', '+hm(x.at)+onWhat(x.where)));
     });
     if(!s) list.appendChild(lineRow('Reading how they got in.', null, ''));
     else if(s.err) list.appendChild(lineRow('Not read', null, s.err));
@@ -446,7 +446,7 @@ export const OWNER_JS = `
      customer's own, copied across) and code (typed), and key where it was one word for the first two; a road this
      page does not know says no road, and only an open with none at all, from before v827 when the password was the
      one road recorded, was by password. */
-  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code'};
+  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code', passkey:'with a passkey'};
   function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
   /* the two test accounts, told apart by the state each stands in (his answer of 29 Sep 2026) */
   function testName(a){ return a.state==='locked'?'Test account, locked':'Test account, open'; }

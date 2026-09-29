@@ -25408,10 +25408,10 @@ await (async () => {
      take an associate's tick away from them on the way in, silently, and only on that one road.
      v710 added the third, which is how this assertion earned its keep. */
   /* S3 3.3: EVERY DOOR GOES THROUGH ONE WAY IN, which reads the mark once: a password open, a remembered device, a
-     one-time link, a code and a return's re-read all call openBeside, and nothing else sets the mark */
+     one-time link, a code, a return's re-read and (Step 6) a passkey all call openBeside, and nothing else sets the mark */
   ok(/var x=\{assoc:body\.assoc===true/.test(page2) && (page2.match(/assoc=x\.assoc;/g) || []).length === 1
-    && (page2.match(/await openBeside\(/g) || []).length === 5 && !/assoc=body\.assoc===true;/.test(page2),
-    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code and a return");
+    && (page2.match(/await openBeside\(/g) || []).length === 6 && !/assoc=body\.assoc===true;/.test(page2),
+    "every door reads it through the one way in: a password open, a remembered device, a one-time link, a code, a return and a passkey");
   ok(!/for resale/i.test(page2), "and nothing on it says 'for resale', which is what he changed it from");
 })();
 section("v705: a password filed under a name that has since moved is paired by its own verifier");
@@ -48437,6 +48437,184 @@ await (async () => {
   const pp = H.split(/\r?\n/).filter((l) => /^\s*Permissions-Policy:/.test(l));
   ok(pp.length === 1 && pp[0].trim() === "Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()",
     "F15: one Permissions-Policy, geolocation=(self), every other feature still shut: " + JSON.stringify(pp));
+})();
+
+section("Step 6 (29 Sep 2026): a customer's passkey is saved on a session, opens the account on its signature alone, and ends with the account's devices");
+await (async () => {
+  /* HIS DECISIONS OF 29 SEP 2026: any passkey store (NordPass gave no secret on his PC and Mac), the password once a new
+     device, the secret used where a store gives one, a year from the last use, Log out keeps it. The Worker checks the
+     signature with the key filed at saving and hands back its share of the key; driven here with a real P-256 key, the
+     signature DER-encoded as an authenticator sends it. Proved red by mutation, each on its own. */
+  const SW = (await import("../stmt/worker.js")).default;
+  const { webcrypto: wc } = await import("node:crypto");
+  const S = wc.subtle, H = (x) => createHash("sha256").update(x).digest();
+  const u = "pkpk-aaaa", sess = "sesspk0000000000000000000000", sess2 = "sesspk1111111111111111111111";
+  const kv = new KV();
+  await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"], env: { iv: "aXY=", ct: "Y3Q=" } }));
+  for (const t of [sess, sess2]) await kv.put("sess:" + H(t).toString("hex"), JSON.stringify({ u, at: new Date().toISOString() }));
+  const env = { STMT: kv }, ORIGIN = "https://k7m3p2.example", RP = "k7m3p2.example";
+  const post = (path, body, headers) => SW.fetch(new Request(ORIGIN + path, { method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env);
+  const J = async (r) => { const x = await r; let j = null; try { j = await x.json(); } catch (e) { j = null; } return Object.assign({ status: x.status }, j || {}); };
+  const S1 = { "X-Stmt-Session": sess }, S2 = { "X-Stmt-Session": sess2 };
+  const b64u = (b) => Buffer.from(b).toString("base64url");
+  const kp = await S.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const spki = Buffer.from(await S.exportKey("spki", kp.publicKey)).toString("base64");
+  const credId = new Uint8Array(wc.getRandomValues(new Uint8Array(16))), id = b64u(credId);
+  const cdj = (type, ch, origin) => Buffer.from(JSON.stringify({ type, challenge: ch, origin: origin || ORIGIN, crossOrigin: false }));
+  const authData = (flags, withCred, rp) => Buffer.concat([H(rp || RP), Buffer.from([flags]), Buffer.from([0, 0, 0, 0])]
+    .concat(withCred ? [Buffer.alloc(16), Buffer.from([0, credId.length]), Buffer.from(credId), Buffer.from([0xa0])] : []));
+  const der = (raw) => { const enc = (b) => { let i = 0; while (i < b.length - 1 && b[i] === 0) i++; b = b.slice(i); if (b[0] & 0x80) b = Buffer.concat([Buffer.from([0]), b]); return Buffer.concat([Buffer.from([2, b.length]), b]); };
+    const r = enc(Buffer.from(raw.slice(0, 32))), s2 = enc(Buffer.from(raw.slice(32))); return Buffer.concat([Buffer.from([0x30, r.length + s2.length]), r, s2]); };
+  const sign = async (ad, cd, key) => der(new Uint8Array(await S.sign({ name: "ECDSA", hash: "SHA-256" }, key || kp.privateKey, Buffer.concat([ad, H(cd)]))));
+  const wrap = { v: 3, iv: Buffer.alloc(12, 1).toString("base64"), ct: Buffer.alloc(48, 2).toString("base64") };
+  const prfWrap = { v: 3, iv: Buffer.alloc(12, 3).toString("base64"), ct: Buffer.alloc(48, 4).toString("base64") };
+  const saveBody = (ch, flags) => ({ challenge: ch, id, clientData: b64u(cdj("webauthn.create", ch)), authData: b64u(authData(flags == null ? 0x45 : flags, true)), spki, alg: -7, wrap });
+
+  const cold = await J(post("/passkey/new", {}));
+  const n1 = await J(post("/passkey/new", {}, S1));
+  ok(cold.status === 401 && n1.ok && /^[A-Za-z0-9_-]{43}$/.test(n1.challenge) && /^[A-Za-z0-9_-]{43}$/.test(n1.share) && /^[A-Za-z0-9_-]{22}$/.test(n1.user)
+    && Array.isArray(n1.has) && n1.has.length === 0,
+    "Step 6: a challenge to save a passkey is a session's alone, with the share it will keep and no passkey on the account yet: " + JSON.stringify([cold.status, n1]));
+  const noUv = await J(post("/passkey/save", saveBody(n1.challenge, 0x41), S1));
+  const n2 = await J(post("/passkey/new", {}, S1));
+  const elsewhere = await J(post("/passkey/save", Object.assign(saveBody(n2.challenge), { authData: b64u(authData(0x45, true, "evil.example")) }), S1));
+  const n3 = await J(post("/passkey/new", {}, S1));
+  const saved = await J(post("/passkey/save", saveBody(n3.challenge), S1));
+  const again = await J(post("/passkey/save", saveBody(n3.challenge), S1));
+  const pkK = "pk:" + H(id).toString("hex"), rec = JSON.parse((await kv.get(pkK)) || "{}");
+  ok(noUv.status === 400 && noUv.code === "pkNot" && elsewhere.code === "pkNot" && saved.ok && /^[A-Za-z0-9_-]{32}$/.test(saved.t)
+    && rec.u === u && rec.cid === id && rec.share === n3.share && rec.alg === -7 && (kv.opts.get(pkK) || {}).expirationTtl === 365 * 86400
+    && again.code === "pkStale",
+    "Step 6: saving needs the face checked and this address; the passkey is filed with its share for a year, and a challenge is spent once: " + JSON.stringify([noUv, elsewhere, saved, again.code]));
+
+  const openWith = async (extra, key, flags, origin) => {
+    const ch = (await J(post("/passkey/challenge", {}))).challenge, cd = cdj("webauthn.get", ch, origin), ad = authData(flags == null ? 0x05 : flags, false);
+    return J(post("/passkey/open", Object.assign({ challenge: ch, id, clientData: b64u(cd), authData: b64u(ad), sig: b64u(await sign(ad, cd, key)) }, extra || {})));
+  };
+  const o1 = await openWith({ t: saved.t });
+  const o2 = await openWith({});
+  ok(o1.ok && o1.u === u && JSON.stringify(o1.wrap) === JSON.stringify(wrap) && o1.share === n3.share && /^[A-Za-z0-9_-]{32}$/.test(o1.session) && o1.env
+    && o2.ok && o2.once === true && o2.u === u && o2.share === n3.share && !o2.session && !o2.wrap && !o2.env,
+    "Step 6: the passkey opens the account with this device's wrap and a session; with nothing on the device it answers once, and no session: " + JSON.stringify([o1.ok, o1.u, !!o1.session, o2]));
+  const other = await S.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const forged = await openWith({ t: saved.t }, other.privateKey), noFace = await openWith({ t: saved.t }, null, 0x01), away = await openWith({ t: saved.t }, null, 0x05, "https://evil.example");
+  const ch9 = (await J(post("/passkey/challenge", {}))).challenge, cd9 = cdj("webauthn.get", ch9), ad9 = authData(0x05, false), sg9 = b64u(await sign(ad9, cd9));
+  const once9 = await J(post("/passkey/open", { challenge: ch9, id, clientData: b64u(cd9), authData: b64u(ad9), sig: sg9, t: saved.t }));
+  const twice9 = await J(post("/passkey/open", { challenge: ch9, id, clientData: b64u(cd9), authData: b64u(ad9), sig: sg9, t: saved.t }));
+  ok([forged, noFace, away].every((x) => x.status === 401 && x.code === "refused") && once9.ok && twice9.status === 401,
+    "Step 6: another key's signature, a face not checked and another address are the door's one refusal, and a signed answer is spent once: "
+    + JSON.stringify([forged.status, noFace.status, away.status, once9.ok, twice9.status]));
+
+  const w1 = await J(post("/passkey/wrap", { id, prfWrap }, S1));
+  const o3 = await openWith({ prf: true }), o4 = await openWith({ prf: false });
+  ok(w1.ok && o3.ok && JSON.stringify(o3.prfWrap) === JSON.stringify(prfWrap) && !!o3.session && !o3.wrap && o4.once === true,
+    "Step 6: a passkey whose store gives a secret opens any device the passkey reaches, and one that gave none on this device answers once");
+  const ch5 = (await J(post("/passkey/new", {}, S2))).challenge, cd5 = cdj("webauthn.get", ch5), ad5 = authData(0x05, false);
+  const lk = await J(post("/passkey/link", { challenge: ch5, id, clientData: b64u(cd5), authData: b64u(ad5), sig: b64u(await sign(ad5, cd5)) }, S2));
+  const w2 = await J(post("/passkey/wrap", { id, wrap }, S2));
+  const o5 = await openWith({ t: w2.t });
+  ok(lk.ok && lk.share === n3.share && lk.roams === true && w2.ok && w2.t && w2.t !== saved.t && JSON.stringify(o5.wrap) === JSON.stringify(wrap),
+    "Step 6: a device signed in by password uses the account's passkey, and its own wrap opens it after");
+
+  const devs = await J(post("/devices", { passkey: id }, S1));
+  const pkRow = (devs.devices || []).find((d) => d.passkey);
+  await post("/logout", {}, { "X-Stmt-Session": o1.session });
+  const kept = !!(await kv.get(pkK));
+  /* signed out from the device that only linked it: the passkey is not that device's own session, so it ends */
+  const out = await J(post("/devices/signout", {}, S2));
+  const pkd = [...kv.m.keys()].filter((k) => k.startsWith("pkd:"));
+  const o6 = await openWith({ t: saved.t });
+  ok(!!pkRow && pkRow.kept && pkRow.here && kept && out.ok && !(await kv.get(pkK)) && pkd.length === 0 && o6.status === 401,
+    "Step 6: the passkey is listed with the account's devices, Log out keeps it, and signing the others out ends it and every device's wrap: "
+    + JSON.stringify({ pkRow, kept, out, pkd, o6: o6.status }));
+})();
+
+section("Step 6: the door opens with a passkey, and a device with nothing on it takes the password once and keeps its wrap");
+await (async () => {
+  /* The page's half: Open with a passkey asks the store, sends the signed answer, and opens the statement with the share
+     and this device's half; answered once, it fills the username and, after the password, files this device's wrap. */
+  const { landingPage: LP } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM: JD } = await import("jsdom");
+  const { webcrypto: wc } = await import("node:crypto");
+  const u = "pkpg-aaaa", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("8".repeat(64), u);
+  const envSealed = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "1 September 2026", body: "<div class=\"w\"><h1>Statement</h1></div>" }] }));
+  const share = Buffer.alloc(32, 7).toString("base64url"), half = wc.getRandomValues(new Uint8Array(32));
+  /* the page's own sealing, rebuilt here: HKDF over the device's half and the share, into AES-GCM */
+  const seal = async (h) => {
+    const base = await wc.subtle.importKey("raw", Buffer.concat([Buffer.from(h), Buffer.from(share, "base64url")]), "HKDF", false, ["deriveKey"]);
+    const k = await wc.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: new TextEncoder().encode("salt-counter passkey v1") }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const iv = wc.getRandomValues(new Uint8Array(12)), raw = ck;
+    return { v: 3, iv: Buffer.from(iv).toString("base64"), ct: Buffer.from(await wc.subtle.encrypt({ name: "AES-GCM", iv }, k, raw)).toString("base64") };
+  };
+  const cred = { id: "Y3JlZC1pZC1wYWdl", response: { clientDataJSON: new Uint8Array([1]), authenticatorData: new Uint8Array([2]), signature: new Uint8Array([3]) }, getClientExtensionResults: () => ({}) };
+  const make = (stored, answer) => {
+    const sent = [];
+    const dom = new JD(LP("", "npk", null), { url: "https://k7m3p2.example/app", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
+        const store = new Map(stored ? [["salt-stmt-passkey", JSON.stringify(stored)]] : []);
+        Object.defineProperty(win, "localStorage", { configurable: true, value: { getItem: (k) => (store.has(k) ? store.get(k) : null),
+          setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k), clear: () => store.clear(), key: () => null, get length() { return store.size; } } });
+        win.PublicKeyCredential = function () {};
+        Object.defineProperty(win.navigator, "credentials", { configurable: true, value: { create: async () => cred, get: async (o) => { sent.push({ get: o }); return cred; } } });
+        win.fetch = async (path, init) => {
+          const b = init && init.body ? JSON.parse(init.body) : null; sent.push({ path: String(path), body: b });
+          const r = answer(String(path), b);
+          return { ok: r.status === 200, status: r.status, json: async () => r.body };
+        };
+      } });
+    return { W: dom.window, D: dom.window.document, sent };
+  };
+  const tick = (n) => new Promise((r) => setTimeout(r, n || 40));
+  const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await tick(); return f(); };
+  const acct = { issued: "2026-09-01", issues: ["2026-09-01"], env: envSealed, live: null, prices: null, assoc: false, card: null };
+
+  /* the device holds its half: the door opens the account */
+  const wrap = await seal(half);
+  const A = make({ u, c: cred.id, t: "devtok-aaaaaaaaaaaaaaaaaaaaaaaa", k: Buffer.from(half).toString("base64") }, (path) => {
+    if (path === "/passkey/challenge") return { status: 200, body: { ok: true, challenge: "Y2hhbGxlbmdlLWNoYWxsZW5nZS1jaGFsbGVuZ2UtMTIzNDU2" } };
+    if (path === "/passkey/open") return { status: 200, body: Object.assign({ ok: true, u, passkey: true, share, wrap, prfWrap: null, session: "sessA00000000000000000000000" }, acct) };
+    return { status: 200, body: { ok: true, orders: [], devices: [] } };
+  });
+  try {
+    const go = A.D.getElementById("pkGo");
+    await until(() => A.sent.some((x) => x.path === "/passkey/challenge"));
+    const shown = !!go && !go.hidden;
+    go.click();
+    await until(() => A.D.getElementById("gate").hidden);
+    const opened = A.sent.find((x) => x.path === "/passkey/open");
+    ok(shown && !!opened && opened.body.t === "devtok-aaaaaaaaaaaaaaaaaaaaaaaa" && opened.body.id === cred.id && opened.body.challenge && opened.body.sig
+      && A.sent.some((x) => x.get && x.get.publicKey.userVerification === "required") && A.D.getElementById("gate").hidden,
+      "Step 6: the door's Open with a passkey asks for the face, sends the signed answer with this device's token, and opens the statement: "
+      + JSON.stringify({ shown, opened: opened && opened.body, gate: A.D.getElementById("gate").hidden }));
+  } finally { A.W.close(); }
+
+  /* nothing on this device: the password once, then this device's wrap is filed and kept */
+  const B = make(null, (path, b) => {
+    if (path === "/passkey/challenge") return { status: 200, body: { ok: true, challenge: "Y2hhbGxlbmdlLWNoYWxsZW5nZS1jaGFsbGVuZ2UtMTIzNDU2" } };
+    if (path === "/passkey/open") return { status: 200, body: { ok: true, once: true, u, share } };
+    if (path === "/open") return { status: 200, body: Object.assign({ ok: true, byMaster: false, wrap: null, wrapMaster: null, session: "sessB00000000000000000000000" }, acct, { wrap: B.pwWrap }) };
+    if (path === "/passkey/wrap") return { status: 200, body: { ok: true, t: "devtok-bbbbbbbbbbbbbbbbbbbbbbbb" } };
+    return { status: 200, body: { ok: true, orders: [], devices: [] } };
+  });
+  B.pwWrap = await C.wrapKey(pass, ck);
+  try {
+    await until(() => B.sent.some((x) => x.path === "/passkey/challenge"));
+    B.D.getElementById("pkGo").click();
+    await until(() => B.D.getElementById("un").value === u);
+    const said = B.D.getElementById("msg").textContent;
+    B.D.getElementById("pw").value = pass;
+    B.D.getElementById("rem").checked = false;
+    B.D.getElementById("f").dispatchEvent(new B.W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !!B.W.localStorage.getItem("salt-stmt-passkey"));
+    const filed = B.sent.find((x) => x.path === "/passkey/wrap"), kept = JSON.parse(B.W.localStorage.getItem("salt-stmt-passkey") || "{}");
+    ok(said.includes("needs your password once") && !!filed && filed.body.id === cred.id && filed.body.wrap && filed.body.wrap.v === 3
+      && kept.u === u && kept.c === cred.id && kept.t === "devtok-bbbbbbbbbbbbbbbbbbbbbbbb" && typeof kept.k === "string" && !JSON.stringify(filed.body).includes(pass),
+      "Step 6: answered once, the door fills the username and asks for the password, and after it this device's wrap is filed and kept: "
+      + JSON.stringify({ said, filed: filed && filed.body, kept }));
+  } finally { B.W.close(); }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
