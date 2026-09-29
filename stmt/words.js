@@ -121,6 +121,8 @@ export const EN = {
   "keep.small": "The code works once, within 15 minutes. Open this page again for a new one.",
   "keep.leadApp": "Your account opens only in the app. Install it, and it opens signed in with nothing to copy.",
   "keep.hNone": "This browser cannot keep Salt Counter",
+  "keep.hDone": "Salt Counter is installed",
+  "keep.leadDone": "Open the Salt Counter app. Your account opens there.",
   "keep.leadNone": "Your account opens only in the app. Open your sign-in link in Chrome or Edge on a computer, Safari on an iPhone or iPad, or Chrome or Samsung Internet on an Android phone.",
   "keep.install": "Install Salt Counter",
   "keep.sam": "Tap {menu} then Add page to, then Home screen.",

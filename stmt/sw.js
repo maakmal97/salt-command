@@ -54,7 +54,7 @@ function bodyOf(n){
   var t = typeof n.t === 'string' ? n.t.trim().slice(0, TEXT_MAX) : '';
   if (t && TEXT_KINDS.indexOf(n.k) >= 0) return n.k === 'reply' ? '“' + t + '”' : t;
   var v = typeof n.v === 'string' && CASES.indexOf(n.v) >= 0 ? nw(n.k + '.' + n.v) : '';
-  return v || nw(n.k + '.b') || (n.k === 'declined' || n.k === 'cancelled' ? nw('update') : nw('tap'));
+  return v || nw(n.k + '.b') || (n.k === 'declined' || n.k === 'cancelled' || n.k === 'reply' ? nw('update') : nw('tap'));
 }
 /* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
    service worker cannot read the page); English where there is none, or one this script has no words for. F7: or one

@@ -468,7 +468,7 @@ the code a tap of its own, and a QR of `<site>/app#code` for the other device's 
 key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
 another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. **The account opens only in the saved app** (Step 1b, his Q3 of 28 Sep 2026): signed in in a browser tab, the keep page is the
 whole page (`keepMode`), by the browser's own road: an iPhone's code minted as it draws, an Install button, a browser's own
-marks, or, where no app can be kept, the browsers that can.
+marks, or, where no app can be kept, the browsers that can; installed from the tab, it says so and to open the app.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 

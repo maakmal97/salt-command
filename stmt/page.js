@@ -1601,7 +1601,7 @@ const CLIENT_JS = `
     keepCardEl.hidden=!mode;
     if(mode) tabs.hidden=true; else if(bundle) tabs.hidden=false;
     if(!mode) return;
-    var k=mode==='ios'?'':mode==='none'?'None':'App';
+    var k=mode==='ios'?'':mode==='none'?'None':mode==='done'?'Done':'App';
     setW(document.getElementById('keepHead'),'keep.h'+k);
     setW(document.getElementById('keepLead'),'keep.lead'+k);
     document.getElementById('keepIos').hidden=mode!=='ios';

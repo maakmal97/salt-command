@@ -27095,6 +27095,10 @@ await (async () => {
     for (let i = 0; i < 40 && a.shown("keepInstall"); i++) await new Promise((r) => setTimeout(r, 5));
     ok(a.st.prompted === 1 && a.st.promptedInTap && !a.card.hidden && !a.shown("keepInstall") && !a.shown("keepDroid"),
       "and it asks the browser's own question inside the tap, then offers nothing more, the account still only in the app");
+    /* Step 1b review: installed, the page says so and where to go, never Install it over nothing to tap */
+    const said = a.D.getElementById("keepHead").textContent + " / " + a.D.getElementById("keepLead").textContent;
+    ok(said === "Salt Counter is installed / Open the Salt Counter app. Your account opens there.",
+      "and it says the app is installed and to open it there: " + said);
   } finally { a.W.close(); }
   const ca = await drive(UA.chrome, { bip: true, choice: "accepted" });
   try {
@@ -33062,6 +33066,13 @@ await (async () => {
     + "his Received of a claim of theirs that completes it, not taken, and cancelled: " + JSON.stringify(kinds));
   ok(JSON.stringify(rides) === JSON.stringify(["||", "owed||", "|Come after five|m", "||", "owed||", "||", "||", "owed||", "||", "||", "||", "||"]),
     "and each carries what its body needs: the case at Ready and at a whole handover, his words and their moment on his line: " + JSON.stringify(rides));
+  /* the Worker's own filter, before the service worker's: nothing but the kind, the order, a known case, text on a kind
+     that carries text (cut to 200) and a moment of the right shape is sealed */
+  const sealedOf = async (n) => { const c = await caught(() => P.wakeCustomer(env, u, n)); return c.news; };
+  const cut = [await sealedOf({ k: "paid", o: "20260924101500-ab12cd34", t: "RM 45 for salt", v: "rich", m: "2026-09-28T10:00:00Z", amount: 45 }),
+    await sealedOf({ k: "reply", o: "20260924101500-ab12cd34", t: "y".repeat(250), m: "not a moment" })];
+  ok(JSON.stringify(cut) === JSON.stringify([{ k: "paid", o: "20260924101500-ab12cd34" }, { k: "reply", o: "20260924101500-ab12cd34", t: "y".repeat(200) }]),
+    "the sealed payload drops text off a kind with none, an unknown case, a stray field and a malformed moment, and cuts text at 200: " + JSON.stringify(cut));
   ok(ack.news && ack.news.o === a.id && JSON.stringify(about) === JSON.stringify([a.id, a.id, a.id, a.id, a.id, a.id, b.id, b.id, b.id, c.id, d.id, d.id]),
     "each names the order it is about, for the tap: " + JSON.stringify(about));
   ok(kinds.every((k) => Object.prototype.hasOwnProperty.call(NEWS, k)), "and every kind sent is one the service worker has words for");
@@ -33133,7 +33144,8 @@ await (async () => {
     await body({ k: "confirmed-credit", o: id }), await body({ k: "confirmed", o: id, v: "nonsense" }),
     await body({ k: "reply", o: id, t: " Come after five ", m: "2026-09-28T10:00:00.000Z" }),
     await body({ k: "declined", o: id, t: "Out of stock this week." }), await body({ k: "cancelled", o: id }),
-    await body({ k: "paid", o: id, t: "RM 45 for salt" }), await body({ k: "reply", o: id, t: "x".repeat(250), m: "bad moment" })];
+    await body({ k: "paid", o: id, t: "RM 45 for salt" }), await body({ k: "reply", o: id, t: "x".repeat(250), m: "bad moment" }),
+    await body({ k: "reply", o: id })];
   ok(JSON.stringify(bodies) === JSON.stringify([
     "Order on its way / Your payment is waiting for us to confirm it. / order-" + id,
     "Order collected / Thank you. Your order is now complete. / order-" + id,
@@ -33143,7 +33155,8 @@ await (async () => {
     "Order not taken / Out of stock this week. / order-" + id,
     "Order cancelled / Open Salt Counter to see it. / order-" + id,
     "Payment received / Thank you. / order-" + id,
-    "Counter says: / “" + "x".repeat(200) + "” / order-" + id]),
+    "Counter says: / “" + "x".repeat(200) + "” / order-" + id,
+    "Counter says: / Open Salt Counter to see it. / order-" + id]),
     "each body is his sentence for its case, his line quoted under its own tag, his reason as it stands, and text on "
     + "any other kind, or past 200 characters, or a moment of the wrong shape, goes nowhere: " + JSON.stringify(bodies));
 
