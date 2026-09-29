@@ -245,16 +245,26 @@ page in the same run that reaches the phone. Its heading names that minute in Ku
 time. The dated issues beside it are the monthly statements exactly as sent, the August archive
 included, and they never change.
 
+**The account closes in stages (V5, his answers of 29 Sep 2026).** Counted from the handover of the oldest part still
+overdue (`since`), on the phone's own Kuala Lumpur day: past the term, day 2, no new order (the hold); from `pay.hide`
+(`RULES.hideDays`, 3) the prices are hidden, Prices saying why (`pr.hidden`); from `pay.lock` (`RULES.lockDays`, 4) the
+account is only for paying: To pay now and its Pay stay live, and the rest of Home and an associate's Rewards are seen but
+greyed out and out of reach (`grey`: class `lockd` and `inert`; his answer of 29 Sep 2026). The handover is day 0. Each stage is said before it comes, under To pay now
+(`stageNote`: `st.prices`, then `st.lock`, then `st.locked`), and the chase wakes them (tapered, below). A
+claim of theirs waiting on him lifts every stage, as it lifts the hold (D9), whatever its figure. `payDue` seals `hide`
+and `lock` read out of the master beside `term`; a master stating neither seals neither, and the page then stops at the
+hold. The sales provisioning ladder (V5a, `docs/DESK.md`) reaches 100% on the day the account locks.
+
 **What is to pay, sealed beside `owed`** (S6, his D9 of 24 Sep 2026, as his instruction of 28 Sep 2026
 amends it). `liveStatement` carries `owed`, the footer's figure, and `pay` from `payDue` in
-`tools/make_statements.mjs`: `{term, now: {rm, due, parts}, overdue: {rm, parts}, coming: {rm, parts}}`.
+`tools/make_statements.mjs`: `{term, hide, lock, now: {rm, due, parts}, overdue: {rm, parts}, coming: {rm, parts}}`.
 **To pay now** is the desk's receivable, `txAdvance`, row by row: goods handed over and not paid for.
 **Overdue is counted from the day the goods were collected or delivered** (28 Sep 2026, in place of ten
 days from the order date): a part's `since` is the engine's `txUnpaidSince`, the handover of the oldest
 unit still unpaid, walking the unit steps in date order against the units the money covers, so money for
 the first units starts no clock and a later handover restarts none (units with no step of their own went on
 `deliveredOn`, else the row's date; since 28 Sep 2026 the fold writes the units a Correction moved on its step, so
-a site handover in stages keeps each stage's day). `due` is `since` plus `term`, the desk's `RULES.holdDays` (3) read out
+a site handover in stages keeps each stage's day). `due` is `since` plus `term`, the desk's `RULES.holdDays` (1 since V5, 29 Sep 2026; it was 3) read out
 of the master (a master stating none stops the publish): the last day it can be paid with ordering kept
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
@@ -901,8 +911,8 @@ The username-to-code map the relay needs is written to the DESK's
 KV as `stmt-users` by every publish; the site never holds it, and an order whose username the map
 does not carry is reported as `unmapped` and waits rather than being guessed at.
 
-**THE CHASE** (v700, his instruction of 18 Sep 2026; **twice a day since S12 12.3**, his decision
-D5 of 24 Sep 2026). This is the **first clock the statements Worker has ever
+**THE CHASE** (v700, his instruction of 18 Sep 2026; twice a day from S12 12.3, his decision D5 of 24 Sep 2026;
+**every hour from 08:00 to 22:00 since V5**, his answer of 29 Sep 2026). This is the **first clock the statements Worker has ever
 had**: until v700 it woke a phone only as a side effect of the desk touching an order.
 `wrangler.stmt.jsonc` carries `"triggers": {"crons": ["0 * * * *"]}` and `stmt/worker.js` exports a
 `scheduled()` handler beside `fetch`.
@@ -914,7 +924,9 @@ customer is asked for. The same test (`aheadOnGoods`) withholds cash on handover
 chased, because nothing of his is in their hands: **only goods received are chased**. `toChase(env, at)`
 groups them by CUSTOMER, and leaves out an order inside its day's grace or with a claim waiting.
 
-**When.** **At 10:00 and 18:00 in Kuala Lumpur** (`chaseSlot`, `CHASE_HOURS`): the cron stays hourly
+**When.** **Every hour from 08:00 to 22:00 in Kuala Lumpur** (`chaseSlot`, `CHASE_HOURS`; V5, his answer of 29 Sep 2026,
+"hourly", in place of D5's 10:00 and 18:00) **for three days from the oldest unpaid handover, then at 10:00, 14:00 and
+18:00** (`chaseDue`, `chaseDay`, `CHASE_LATE_HOURS`; his "taper" of the same day, the handover day 0): the cron stays hourly
 and the code decides, so every other tick returns before it lists anything. **From the day after the
 handover** (`graceOver`): `movedOn`, the Kuala Lumpur day of the last handover, must be before today,
 so a customer paying cash at the counter is not asked again that evening; an order with no `movedOn`

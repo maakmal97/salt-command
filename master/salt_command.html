@@ -9146,11 +9146,16 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    engine's txUnpaidSince), and past holdDays the customer cannot order again until it is paid: the Counter's hold,
    read out of this master by the publish, and the desk's Credit age breach and its chase on Today, which count from
    the same day. creditDays stays for the pricing profile's "late", which moves prices (his answer of the same day),
-   and for the day the cash-in forecast expects a receivable. */
+   and for the day the cash-in forecast expects a receivable.
+   V5, HIS ANSWERS OF 29 SEP 2026: THE ACCOUNT CLOSES IN STAGES, counted from the handover: no new order from day 2 (so
+   holdDays is 1, the hold past it), prices hidden from day 3 (hideDays), and from day 4 (lockDays) the account is only
+   for paying what is owed. The publish reads all three out of this master. */
 const RULES={
   creditUnits:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
   creditDays:10,
-  holdDays:3,
+  holdDays:1,
+  hideDays:3,
+  lockDays:4,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
   /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
@@ -10687,8 +10692,9 @@ function boundaryScan(){
      customer can order nothing more on the Counter, so the desk calls it collection from the same day. An undated part
      is never past it, as on the Counter. The pricing profile keeps creditDays, ten days from the order date. */
   arList.forEach(s=>{const since=txUnpaidSince(s),dd=since?dAge(since):0;if(!(dd>RULES.holdDays))return;
-    /* V5: past the hold a sale is past day 3, so its ladder is full: said once, for a default review */
-    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade; fully provisioned, so review it for default');});
+    /* V5: the provision it has reached, and at 100% a default review */
+    const pr=Math.round(saleProvRate(s,dd)*100);
+    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade; '+(pr>=100?'fully provisioned, so review it for default':pr+'% provisioned, fully provisioned at '+SALE_FULL+' days'));});
   /* 2. margin floor, BY ORDER SIZE. A closed sale at 39% is history: the money is
      banked and the price cannot be revisited, so listing every one of them buries the
      handful you can still do something about. Only two kinds get their own row, the
@@ -10830,7 +10836,7 @@ function boundaryPanel(b,r){
   /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
      row and made the table 596px tall at 375px. Each x.why still exists where the rule is
      built, so restoring it is one cell, and the rule names stay self-stating. */
-  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.holdDays} days from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.holdDays} day${RULES.holdDays===1?'':'s'} from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')

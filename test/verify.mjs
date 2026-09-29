@@ -5705,7 +5705,13 @@ await (async () => {
     }
   };
   try {
-    const M = await load("s6pay");
+    /* V5 (his answers of 29 Sep 2026) put the desk's term at 1 day; the reading below is the three-day one, on a copy of
+       the master at 3 days, and the master's own term is read after it */
+    const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+    const three = src.replace(/(const RULES=\{[^;]*?\bholdDays:)1\b/, (all, head) => head + "3");
+    ok(three !== src, "the fixture master carries a 3-day term");
+    writeFileSync(join(tmp, "m3.html"), three);
+    const M = await load("s6pay", join(tmp, "m3.html"));
     const doc = M.liveStatement(P, at), pay = doc && doc.pay;
     const brief = (a) => (a || []).map((x) => (x.date || "undated") + ":" + x.rm + ":" + (x.due || "-")).join(" ");
     ok(pay && pay.term === 3 && pay.now.rm === 440 && pay.now.due === "2026-09-08"
@@ -5742,17 +5748,16 @@ await (async () => {
     ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
       "the live statement seals exactly the engine's reading, party by party");
 
-    /* THE TERM IS THE DESK'S RULES.holdDays, read out of the master: a copy at 1 day moves every due date, and a master that states none stops the publish */
-    const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
-    const one = src.replace(/(const RULES=\{[^;]*?\bholdDays:)3\b/, (all, head) => head + "1");
-    ok(one !== src, "the fixture master carries a 1-day term");
-    writeFileSync(join(tmp, "m1.html"), one);
-    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)holdDays:3\b/, (all, head) => head + "holdWeeks:2"));
-    const M1 = await load("s6pay1", join(tmp, "m1.html"));
+    /* THE TERM IS THE DESK'S RULES.holdDays, read out of the master: its own 1 day moves every due date, the stages
+       after it (V5) are sealed beside it, and a master that states no term stops the publish */
+    writeFileSync(join(tmp, "m0.html"), src.replace(/(const RULES=\{[^;]*?\b)holdDays:1\b/, (all, head) => head + "holdWeeks:2"));
+    const M1 = await load("s6pay1");
     const pay1 = M1.liveStatement(P, at).pay, q5 = pay1.now.parts.find((x) => x.date === "2026-09-20");
     ok(pay1.term === 1 && q5.due === "2026-09-22" && q5.late === true && pay1.overdue.rm === 400,
       "the term is the desk's RULES.holdDays: at 1 day the part collected on 21 Sep is past its day on 22 Sep and overdue: "
       + JSON.stringify({ term: pay1.term, due: q5.due, late: q5.late, overdue: pay1.overdue.rm }));
+    ok(pay1.hide === 3 && pay1.lock === 4, "and the stages after it are sealed beside it, prices hidden from day 3 and the account only for paying from day 4: "
+      + JSON.stringify({ hide: pay1.hide, lock: pay1.lock }));
     const M0 = await load("s6pay0", join(tmp, "m0.html"));
     let threw = "";
     try { M0.liveStatement(P, at); } catch (e) { threw = String(e && e.message); }
@@ -20015,7 +20020,7 @@ await (async () => {
       "the first Turn on was refused, and the page said so: " + JSON.stringify(card.textContent));
     st.answer = "granted";
     btn("Turn on").click();
-    ok(await until(() => /On[.] This computer is told when your order changes, when we write to you, and at 10:00 and 18:00 while goods you have received are unpaid[.]/.test(card.textContent) && !!btn("Turn off")),
+    ok(await until(() => /On[.] This computer is told when your order changes, when we write to you, and while goods you have received are unpaid: every hour for three days, then three times a day[.]/.test(card.textContent) && !!btn("Turn off")),
       "Turn on, allowed, says On: " + JSON.stringify(card.textContent));
     ok(!/Permission was not given/.test(card.textContent) && !/Permission was not given/.test(D.getElementById("pOrder").textContent),
       "and the earlier refusal is gone, from the card and the page: " + JSON.stringify((card.querySelector(".dnote") || {}).textContent));
@@ -24359,7 +24364,8 @@ await (async () => {
      only as a side effect of the desk touching an order. Driven through scheduled() against a
      stubbed push service, so what is proved is the wake, not the source that would send it. Every hour,
      day and night, until S12 12.3 (his decision D5 of 24 Sep 2026): 10:00 and 18:00 in Kuala Lumpur,
-     from the day after the handover, so the ticks below are 02:00 and 10:00 UTC. */
+     from the day after the handover, so the ticks below are 02:00 and 10:00 UTC; since V5 (29 Sep 2026) every hour
+     from 08:00 to 22:00, both still slots. */
   const stmtW7 = (await import("../stmt/worker.js")).default;
   const O7 = await import("../stmt/orders.js");
 
@@ -30437,7 +30443,7 @@ await (async () => {
     const rj = await at(-470, () => DO.rejectedOnOrder(deskEnv("KUL"), { orderId: id, status: "Payment" }, "2026-09-24T01:52:10.000Z"));
     ok(rj && (orderOf(A, id).sync || {}).state === "rejected", "a row he rejects is written onto its order in the book");
     /* a day of the chase: an advance (all the goods out, RM 50 of 230 paid) is woken at each slot from the day
-       after the handover (S12 12.3), 10:00 and 18:00 Kuala Lumpur, which are 02:00 and 10:00 UTC */
+       after the handover (S12 12.3), 10:00 and 18:00 Kuala Lumpur, which are 02:00 and 10:00 UTC, both slots of V5's hourly chase */
     const logs = [], realLog = console.log;
     const tick = async (sec) => { const ws = []; await at(sec, () => SW.scheduled({ scheduledTime: clock.now() }, senv("CRON"), { waitUntil: (p) => ws.push(p) })); await Promise.all(ws); };
     console.log = (...x) => logs.push(x.join(" "));
@@ -33250,12 +33256,13 @@ await (async () => {
       "an order that is not theirs moves nothing, and a message that is not the banner's is not read at all: " + JSON.stringify({ scrolled: st.scrolled, reads: st.reads - before }));
   } finally { try { W.close(); } catch (e) { /* best effort */ } }
 })();
-section("S12 12.3: the chase runs at 10:00 and 18:00 from the day after the handover, only for goods received, paused on a claim, in its own words");
+section("S12 12.3: the chase runs every hour from 08:00 to 22:00 from the day after the handover, only for goods received, paused on a claim, in its own words");
 await (async () => {
   /* 24 SEP 2026, his decision D5. v700 chased every hour, day and night, from the first top of the hour
      after the handover, with "Your order has an update" when nothing had updated: a customer paying cash at
      the counter was asked again within minutes, and every hour of the night after. Driven through
-     scheduled() against a stubbed push service, and the kind read back off the phone's own side. */
+     scheduled() against a stubbed push service, and the kind read back off the phone's own side. V5 (his answer of
+     29 Sep 2026, "hourly"): every hour from 08:00 to 22:00 in place of the two, the rest of D5 unchanged. */
   const O = await import("../stmt/orders.js");
   const stmtW = (await import("../stmt/worker.js")).default;
   const { NEWS } = await import("../stmt/sw.js");
@@ -33263,9 +33270,9 @@ await (async () => {
   /* ---- the clock and the calendar, on their own ---- */
   const day = Array.from({ length: 24 }, (_, h) => new Date(Date.UTC(2026, 8, 18, h)).toISOString());
   const slots = day.filter((t) => O.chaseSlot(t) !== null);
-  ok(JSON.stringify(slots) === '["2026-09-18T02:00:00.000Z","2026-09-18T10:00:00.000Z"]'
+  ok(JSON.stringify(slots) === JSON.stringify(Array.from({ length: 15 }, (_, h) => new Date(Date.UTC(2026, 8, 18, h)).toISOString()))
     && O.chaseSlot("2026-09-18T02:59:00Z") === O.hourOf("2026-09-18T02:00:00Z"),
-    "of the day's twenty-four ticks two are slots, 10:00 and 18:00 in Kuala Lumpur, and a late tick inside the hour is the same slot: " + JSON.stringify(slots));
+    "of the day's twenty-four ticks fifteen are slots, every hour from 08:00 to 22:00 in Kuala Lumpur, and a late tick inside the hour is the same slot: " + JSON.stringify(slots));
   ok(!O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T15:59:59Z") && O.graceOver({ movedOn: "2026-09-18" }, "2026-09-18T16:00:00Z")
     && !O.graceOver({}, "2026-09-30T02:00:00Z"),
     "the grace ends at midnight in Kuala Lumpur after the handover day, and an order with no handover day is never past it");
@@ -33309,7 +33316,7 @@ await (async () => {
   await put(ord("dddd-4444", "20260915010000-ddd1", "2026-09-15T01:00:00Z", { qty: 5, total: 500, moved: 2, paid: 200, payments: [{ amount: 200 }] }));
   await put(ord("0000-0000", "20260915010000-ttt1", "2026-09-15T01:00:00Z"));
   const phones = {};
-  for (const u of ["aaaa-1111", "bbbb-2222", "cccc-3333", "dddd-4444", "0000-0000"]) {
+  for (const u of ["aaaa-1111", "bbbb-2222", "cccc-3333", "dddd-4444", "0000-0000", "eeee-5555"]) {
     phones[u] = await phone();
     await kv.put("push:" + u + ":p1", JSON.stringify({ endpoint: "https://push.example/" + u, at: "2026-09-10T00:00:00Z", keys: phones[u].keys }));
   }
@@ -33324,24 +33331,33 @@ await (async () => {
   };
   const who = (hit) => hit.map((h) => h.u).sort().join();
   try {
-    const nine = await tick("2026-09-18T01:00:00Z"), ten = await tick("2026-09-18T02:00:00Z");
-    ok(nine.length === 0 && who(ten) === "aaaa-1111",
-      "09:00 wakes nobody; 10:00 wakes the one customer holding goods unpaid since before today, and nobody handed goods today, "
-      + "nobody with a claim waiting, nobody paid for what they hold, and not his test account: " + JSON.stringify([who(nine), who(ten)]));
-    const news = ten[0] && ten[0].body ? await phones["aaaa-1111"].read(ten[0].body) : null;
+    const seven = await tick("2026-09-17T23:00:00Z"), eight = await tick("2026-09-18T00:00:00Z");
+    ok(seven.length === 0 && who(eight) === "aaaa-1111",
+      "07:00 wakes nobody; 08:00 wakes the one customer holding goods unpaid since before today, and nobody handed goods today, "
+      + "nobody with a claim waiting, nobody paid for what they hold, and not his test account: " + JSON.stringify([who(seven), who(eight)]));
+    const news = eight[0] && eight[0].body ? await phones["aaaa-1111"].read(eight[0].body) : null;
     ok(news && news.k === "due" && NEWS[news.k] === "Payment due" && news.o === A1.id,
       "in its own words, Payment due, never 'Your order has an update', and a tap opens the oldest order it is about: " + JSON.stringify(news));
-    const again = await tick("2026-09-18T02:40:00Z"), noon = await tick("2026-09-18T05:00:00Z"), eve = await tick("2026-09-18T10:00:00Z");
+    const again = await tick("2026-09-18T00:40:00Z"), nine = await tick("2026-09-18T01:00:00Z"), late = await tick("2026-09-18T14:00:00Z");
     const night = [];
-    for (const h of ["2026-09-18T13:00:00Z", "2026-09-18T16:00:00Z", "2026-09-18T19:00:00Z", "2026-09-18T22:00:00Z"]) night.push(...(await tick(h)));
-    ok(again.length === 0 && noon.length === 0 && who(eve) === "aaaa-1111" && night.length === 0,
-      "the same slot twice wakes nobody, 13:00 wakes nobody, 18:00 wakes them again, and the night is quiet: "
-      + JSON.stringify([again.length, noon.length, who(eve), night.length]));
+    for (const h of ["2026-09-18T15:00:00Z", "2026-09-18T16:00:00Z", "2026-09-18T19:00:00Z", "2026-09-18T22:00:00Z"]) night.push(...(await tick(h)));
+    ok(again.length === 0 && who(nine) === "aaaa-1111" && who(late) === "aaaa-1111" && night.length === 0,
+      "the same slot twice wakes nobody, 09:00 wakes them again and so does 22:00, and from 23:00 the night is quiet: "
+      + JSON.stringify([again.length, who(nine), who(late), night.length]));
     const next = await tick("2026-09-19T02:00:00Z");
     ok(who(next) === "aaaa-1111,bbbb-2222", "the morning after a handover, the day's grace is over and they are chased too: " + who(next));
     await put(Object.assign({}, A1, { paid: 200, payments: [{ amount: 200 }] })); await put(Object.assign({}, A2, { paid: 200 }));
     const paid = await tick("2026-09-19T10:00:00Z");
     ok(who(paid) === "bbbb-2222", "and once what was received is paid, that customer is chased no more, with nothing to turn off: " + who(paid));
+    /* V5 (his answer of 29 Sep 2026, "taper"): hourly for three days from the handover, then 10:00, 14:00 and 18:00. On
+       21 Sep a customer handed goods on 17 Sep is on day 4 and one handed goods on 18 Sep on day 3 */
+    await put(ord("eeee-5555", "20260916010000-eee1", "2026-09-16T01:00:00Z"));
+    const d4at = (h) => tick("2026-09-21T" + String(h - 8).padStart(2, "0") + ":00:00Z");
+    const t10 = await d4at(10), t13 = await d4at(13), t14 = await d4at(14), t18 = await d4at(18), t22 = await d4at(22);
+    ok(who(t10) === "bbbb-2222,eeee-5555" && who(t13) === "bbbb-2222" && who(t14) === "bbbb-2222,eeee-5555" && who(t18) === "bbbb-2222,eeee-5555" && who(t22) === "bbbb-2222",
+      "past day 3 a customer is woken at 10:00, 14:00 and 18:00 only, while one on day 3 is still woken every hour: " + JSON.stringify([t10, t13, t14, t18, t22].map(who)));
+    ok(O.chaseDay([{ movedOn: "2026-09-17" }, { movedOn: "2026-09-19" }], "2026-09-21T05:00:00Z") === 4 && O.chaseDay([{ movedOn: null }], "2026-09-21T05:00:00Z") === null,
+      "the day is the oldest handover's among their unpaid orders, the handover being day 0, and none without one");
   } finally { globalThis.fetch = realF; }
 })();
 section("S12 fix: a key the shape check passed but WebCrypto refuses still wakes its phone, with nothing in it");
@@ -33408,7 +33424,8 @@ section("F10: how was your order is asked once, at a slot two days after the las
 await (async () => {
   /* F10 (his Q9b of 28 Sep 2026): T is the handover day (movedOn), so the ask comes at the first chase slot two days after
      the goods went. Driven through scheduled() on the KV road against a stubbed push service, the kind read back off each
-     phone's own side, as S12 12.3 drives the chase. Every order is paid, so the chase itself wakes nobody here. */
+     phone's own side, as S12 12.3 drives the chase. Every order is paid, so the chase itself wakes nobody here. Since V5
+     (29 Sep 2026) the chase's first slot of the day is 08:00, so the ask comes then. */
   const O = await import("../stmt/orders.js");
   const stmtW = (await import("../stmt/worker.js")).default;
   const { NEWS } = await import("../stmt/sw.js");
@@ -33467,13 +33484,13 @@ await (async () => {
   };
   const who = (hit) => hit.map((h) => h.u).sort().join();
   try {
-    const nine = await tick("2026-09-18T01:00:00Z"), ten = await tick("2026-09-18T02:00:00Z");
+    const nine = await tick("2026-09-17T23:00:00Z"), ten = await tick("2026-09-18T00:00:00Z");
     const news = [];
     for (const h of ten) news.push(Object.assign({ u: h.u }, h.body ? await phones[h.u].read(h.body) : {}));
     const nA = news.find((x) => x.u === "aaaa-1111"), nG = news.find((x) => x.u === "gggg-7777"), asked = news.filter((x) => x.k === "rate");
     ok(nine.length === 0 && asked.map((x) => x.u).sort().join() === "aaaa-1111,gggg-7777" && NEWS.rate === "How was your order?"
       && nA && nA.o === A.id && nG && nG.o === G2.id,
-      "09:00 asks nobody; 10:00 on the 18th asks, in its own words, How was your order?, each customer whose goods all went on the 16th, "
+      "07:00 asks nobody; 08:00 on the 18th asks, in its own words, How was your order?, each customer whose goods all went on the 16th, "
       + "once a customer however many orders, opening the newest; never goods handed over the day before, a part handover, his test account, "
       + "an order handed over weeks ago or one rated already: " + JSON.stringify([who(nine), news]));
     const nH = news.filter((x) => x.u === "hhhh-8888");
@@ -33483,7 +33500,7 @@ await (async () => {
     for (const o of [A, B, C, T, D, E, G1, G2, Hh]) if ((await get(o)).rateAsk) marked.push(o.id.slice(-4));
     ok(JSON.stringify(marked) === JSON.stringify(["aaa1", "ggg1", "ggg2"]),
       "the ask is written on each order it asked about, and on no other: " + JSON.stringify(marked));
-    const again = await tick("2026-09-18T02:40:00Z");
+    const again = await tick("2026-09-18T00:40:00Z");
     await put(Object.assign({}, Hh, { status: "done", paid: 200, payments: [{ amount: 200 }] }));
     const eve = await tick("2026-09-18T10:00:00Z"), next = await tick("2026-09-19T02:00:00Z");
     ok(again.length === 0 && who(eve) === "hhhh-8888" && who(next) === "bbbb-2222",
@@ -33771,7 +33788,7 @@ await (async () => {
     "each line of his has its own topic, never his order's, and a line with no moment falls back to the order's: " + JSON.stringify([r1.keyed, r2.keyed, r3.keyed]));
 })();
 
-section("S12 fix: the Notifications pane says what the phone will hear, the reply and the payment due at 10:00 and 18:00 included");
+section("S12 fix: the Notifications pane says what the phone will hear, the reply and the payment due every hour from 08:00 to 22:00 included");
 await (async () => {
   /* S12-C4, 24 Sep 2026: both states promised "acknowledged, ready, or completed", while the phone is also woken
      for a reply, a payment received, a handover and, twice a day, a payment due. Read off the pane as it draws. */
@@ -33812,9 +33829,9 @@ await (async () => {
     } finally { try { W.close(); } catch (e) { /* best effort */ } }
   };
   const on = await drive("granted"), off = await drive("denied");
-  const says = (t) => /when we write to you/.test(t) && /at 10:00 and 18:00 while goods you have received are unpaid/.test(t) && /your order changes/.test(t)
+  const says = (t) => /when we write to you/.test(t) && /while goods you have received are unpaid: every hour for three days, then three times a day/.test(t) && /your order changes/.test(t)
     && !/acknowledged, ready/.test(t);
-  ok(/On\. This computer is told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its two hours included: " + on);
+  ok(/On\. This computer is told/.test(on) && says(on), "switched on, it says what the phone will hear, the payment due and its hours included: " + on);
   /* S7 7.2: nothing says phone on a computer, which is what jsdom's browser says it is */
   ok(/Off\. Nothing is sent to this computer/.test(off) && !/phone/.test(off),
     "and off, it says nothing is sent, naming the device it is on: " + off);
@@ -33904,9 +33921,9 @@ await (async () => {
       finally { console.log = realLog; }
     };
     const chase = [];
-    for (const t of [aNow.movedOn + "T10:00:00Z", next + "T01:00:00Z", next + "T02:00:00Z", next + "T02:40:00Z", next + "T05:00:00Z", next + "T10:00:00Z"]) chase.push(await tick(t));
+    for (const t of [aNow.movedOn + "T10:00:00Z", aNow.movedOn + "T23:00:00Z", next + "T00:00:00Z", next + "T00:40:00Z", next + "T14:00:00Z", next + "T15:00:00Z"]) chase.push(await tick(t));
     const mark = store ? (bk.db.prepare("SELECT v FROM meta WHERE k = ?").get(O.CHASE_KEY(u)) || {}).v : kv.m.get(O.CHASE_KEY(u));
-    return { kinds, chase, mark, kvMark: kv.m.get(O.CHASE_KEY(u)), slot: String(O.chaseSlot(next + "T10:00:00Z")) };
+    return { kinds, chase, mark, kvMark: kv.m.get(O.CHASE_KEY(u)), slot: String(O.chaseSlot(next + "T14:00:00Z")) };
   };
   const kvRoad = await play(null), bookRoad = await play("object");
   const want = ["confirmed-credit@0", "ready-collect@0", "reply@0", "part-collected@0", "collected@0", "paid@0",
@@ -33917,10 +33934,10 @@ await (async () => {
   ok(JSON.stringify(bookRoad.kinds) === JSON.stringify(want),
     "and in the order book every wake is the same kind for the same order, one state machine deriving it for both roads: " + JSON.stringify(bookRoad.kinds));
   ok(want.filter((k) => k !== "bare").every((k) => Object.prototype.hasOwnProperty.call(NEWS, k.split("@")[0])), "and every kind is one the service worker has words for");
-  const wantChase = ["", "", "due@0", "", "", "due@0"];
+  const wantChase = ["", "", "due@0", "", "due@0", ""];
   ok(JSON.stringify(kvRoad.chase) === JSON.stringify(wantChase) && kvRoad.mark === kvRoad.slot,
-    "on the KV road the chase wakes nobody at 18:00 on the handover's day, at 09:00, again inside 10:00 or at 13:00, and wakes them with "
-    + "A payment is due at 10:00 and 18:00 the day after, opening the order, marked at chased:<username>: " + JSON.stringify(kvRoad));
+    "on the KV road the chase wakes nobody at 18:00 on the handover's day, at 07:00, again inside 08:00 or at 23:00, and wakes them with "
+    + "A payment is due at 08:00 and 22:00 the day after, opening the order, marked at chased:<username>: " + JSON.stringify(kvRoad));
   ok(JSON.stringify(bookRoad.chase) === JSON.stringify(wantChase) && bookRoad.mark === bookRoad.slot && bookRoad.kvMark === undefined,
     "and on the object road the same, the advance and its grace read from the book and the mark kept there, never in KV: " + JSON.stringify(bookRoad));
 })();
@@ -43049,6 +43066,137 @@ await (async () => {
   ok(v.after.ph.some((x) => /CZ9-VA/.test(x) && /"age":2,"exp":50/.test(x)), "and so does what the phone is sent: " + JSON.stringify(v.after.ph).slice(0, 300));
 })();
 
+section("V5b1 (29 Sep 2026): the account closes in stages from the handover, no order from day 2, prices hidden from day 3, only for paying from day 4, a claim waiting lifting all three");
+await (async () => {
+  /* HIS ANSWERS OF 29 SEP 2026: "see make an order on day 2, see their prices on day 3 (to ensure smooth transition), and
+     locked from account (only able to pay outstanding) on Day 4", and reminded before each. A fixture customer on a copy
+     of the book, handed goods 1 to 4 days before today, sealed by the publish and opened as a phone opens it on today's
+     clock; one more draw with a claim of theirs waiting on him. Each assertion was proved red by its own mutation. */
+  const { pathToFileURL: pu } = await import("node:url");
+  const P2 = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const WD = await import("../stmt/words.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const ago = (n) => new Date(Date.parse(today + "T00:00:00Z") - n * 864e5).toISOString().slice(0, 10);
+  const dn = (iso) => { const d = new Date(iso + "T00:00:00Z"); return WD.EN.day3.split(" ")[d.getUTCDay()] + " " + d.getUTCDate() + " " + WD.EN.mon3.split(" ")[d.getUTCMonth()]; };
+  const P = "CX7-ST";
+  const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.customerRefunds = [];
+  const tmp = join(REPO, "test", "tmp", "v5b1-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un);
+  /* the poll at a fifth of a second, so a claim a later poll takes away is read inside the check */
+  const html = P2.landingPage(un, "nv5b1", null).replace("var POLL_MS=" + P2.POLL_MS + ",", "var POLL_MS=200,");
+  ok(html.includes("var POLL_MS=200,"), "the fixture page polls fast");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let k = 0;
+  /* RM 100 handed over `held` days ago and unpaid, and RM 50 agreed today and not handed over (coming up) */
+  const docFor = async (held, rows) => {
+    book.sales = rows || [fx("st01", ago(held + 2), { deliveredQty: 1, deliveredOn: ago(held) }), fx("st02", ago(0), { total: 50 })];
+    const f = join(tmp, "book" + (++k) + ".json");
+    writeFileSync(f, JSON.stringify(book));
+    const keep = process.env.SALT_BOOK;
+    process.env.SALT_BOOK = f;
+    try { return (await import(pu(join(REPO, "tools", "make_statements.mjs")).href + "?v5b1" + k)).liveStatement(P, new Date()); }
+    finally { if (keep === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep; }
+  };
+  const draw = async (doc, claims, until, later, assoc) => {
+    let polls = 0, shift = 0;   /* above the page, whose beforeParse closes over both */
+    const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: !!assoc,
+      live: await C.encryptWith(ck, JSON.stringify(doc)),
+      prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: new Date().toISOString(), week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
+        products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
+      env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
+    const W = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(win) {
+        try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+        win.scrollTo = () => {}; win.open = () => null;
+        /* the page's clock, which a check may move on: a Date that reads now plus the shift */
+        const RD = win.Date;
+        class FD extends RD { constructor(...a) { if (a.length) super(...a); else super(RD.now() + shift); } static now() { return RD.now() + shift; } }
+        win.Date = FD;
+        win.fetch = async (p) => { p = String(p);
+          if (p === "/open") return { ok: true, status: 200, json: async () => openB };
+          if (p === "/orders") { const c = typeof claims === "function" ? claims(++polls) : claims; return { ok: true, status: 200, json: async () => ({ ok: true, orders: [], claims: c || [] }) }; }
+          return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+      } }).window;
+    const D = W.document;
+    const read = () => {
+      const pp = D.getElementById("pPrices"), sn = D.getElementById("stageNote"), kn = D.querySelector("#pOrder .pane .salt-kpi__note");
+      return { note: sn ? sn.textContent : null, hold: /Please pay the overdue amount/.test((D.getElementById("payHead") || {}).textContent || ""),
+        prices: pp ? pp.textContent.replace(/\s+/g, " ").trim() : "", hpart: D.querySelectorAll("#hComing .hpart").length, payNow: !!D.getElementById("payNow"),
+        odNote: kn ? kn.textContent : "", holdP: /prices stay open/.test(D.getElementById("pOrder").textContent),
+        /* V5 (his answer of 29 Sep 2026): greyed out and out of reach, never taken away */
+        grey: ["hNeeds", "hComing", "hAgain"].map((id) => { const n = D.getElementById(id); return !!n && n.classList.contains("lockd") && n.hasAttribute("inert"); }).join(),
+        card: [...D.querySelectorAll(".lockd[inert]")].some((n) => n.textContent.includes(WD.EN["rew.later"])),
+        cardAny: [...D.querySelectorAll(".lockd,[inert]")].some((n) => n.textContent.includes(WD.EN["rew.later"])),
+        cardSeen: D.body.textContent.includes(WD.EN["rew.later"]) };
+    };
+    try {
+      D.getElementById("pw").value = pass;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 200 && !(D.getElementById("payNow") && until(read())); i++) await wait(25);
+      if (!later) return read();
+      const first = read();
+      shift = later.shift;
+      for (let i = 0; i < 200 && !later.until(read()); i++) await wait(25);
+      return { first, then: read() };
+    } finally { try { W.close(); } catch (e) { /* best effort */ } }
+  };
+  try {
+    const d1 = await docFor(1), d2 = await docFor(2), d3 = await docFor(3), d4 = await docFor(4);
+    ok(d4.pay.hide === 3 && d4.pay.lock === 4 && d4.pay.term === 1, "the publish seals the stages beside the term: " + JSON.stringify({ term: d4.pay.term, hide: d4.pay.hide, lock: d4.pay.lock }));
+    const priced = (v) => /12/.test(v.prices) && !/hidden/.test(v.prices);
+    const s1 = await draw(d1, [], (v) => priced(v) && v.hpart === 1 && v.cardSeen, null, true);
+    ok(!s1.hold && s1.note === null && priced(s1) && s1.hpart === 1 && s1.grey === "false,false,false" && !s1.cardAny && s1.cardSeen,
+      "on the handover's next day the account is open: no hold, no warning, the prices and Coming up drawn: " + JSON.stringify(s1));
+    const s2 = await draw(d2, [], (v) => v.note !== null && priced(v) && v.hpart === 1);
+    ok(s2.hold && s2.note === "Pay it to keep your prices: they are hidden from " + dn(ago(-1)) + ", and from " + dn(ago(-2)) + " your account is only for paying."
+      && priced(s2) && s2.hpart === 1,
+      "on day 2 no order is taken, and they are told the day the prices go and the day the account is only for paying: " + JSON.stringify(s2));
+    const s3 = await draw(d3, [], (v) => v.note !== null && /hidden/.test(v.prices) && v.hpart === 1);
+    ok(s3.hold && s3.note === "Pay it before " + dn(ago(-1)) + ": from then your account is only for paying what is owed."
+      && s3.prices === "Your prices are hidden until the overdue RM 100 is paid." && s3.hpart === 1,
+      "on day 3 the prices are hidden, saying why, and they are told the day the account is only for paying: " + JSON.stringify(s3));
+    const s4 = await draw(d4, [], (v) => v.note !== null && /hidden/.test(v.prices) && v.grey === "true,true,true", null, true);
+    ok(s4.hold && s4.note === "Your account is only for paying until RM 100 is paid." && /hidden/.test(s4.prices) && s4.hpart === 1 && s4.grey === "true,true,true"
+      && s4.payNow && s4.card && s4.cardSeen,
+      "from day 4 the account is only for paying: To pay now and its Pay live, the rest of Home and an associate's Rewards still seen, greyed out and out of reach: " + JSON.stringify(s4));
+    /* a part of it: a claim waiting lifts the stages whatever its figure, as it lifts the hold (D9) */
+    const claim = [{ id: "c1", at: new Date().toISOString(), amount: 40, method: "transfer", account: "maybank", state: "waiting", claim: "waiting" }];
+    const s5 = await draw(d4, claim, (v) => v.note === null && priced(v) && v.hpart === 1 && v.grey === "false,false,false" && !v.cardAny && v.cardSeen, null, true);
+    ok(!s5.hold && s5.note === null && priced(s5) && s5.hpart === 1 && s5.grey === "false,false,false" && !s5.cardAny && s5.cardSeen,
+      "and a claim of theirs waiting on him, RM 40 of the RM 100, lifts every stage at once, the prices drawn and Home and Rewards live again: " + JSON.stringify(s5));
+    /* Fable's review: his Not found, read on a later poll, locks it again, Home trimmed with it */
+    const s6 = await draw(d4, (n) => n <= 1 ? claim : [], (v) => v.note !== null && v.grey === "true,true,true" && v.card, null, true);
+    ok(s6.hold && /^Your account is only for paying/.test(s6.note || "") && s6.grey === "true,true,true" && s6.card,
+      "and when a later poll finds the claim gone, the account is locked again, Home and Rewards greyed, without a reopen: " + JSON.stringify(s6));
+    /* Fable's review: a page left open into the next day moves to the next stage on its next poll, Home and Prices with it */
+    const s10 = await draw(d3, [], (v) => /^Pay it before/.test(v.note || "") && v.hpart === 1, { shift: 864e5, until: (v) => /^Your account is only/.test(v.note || "") && v.grey === "true,true,true" });
+    ok(/^Pay it before/.test(s10.first.note || "") && s10.first.grey === "false,false,false" && /^Your account is only for paying/.test(s10.then.note || "") && s10.then.grey === "true,true,true" && /hidden/.test(s10.then.prices),
+      "and a page left open into day 4 locks on its next poll, without a reopen: " + JSON.stringify(s10));
+    /* two parts, the older paid since the publish: the stage is the unpaid part's, day 2, and so are its dates */
+    const two = await docFor(0, [fx("st11", ago(7), { deliveredQty: 1, deliveredOn: ago(5) }), fx("st12", ago(3), { total: 50, deliveredQty: 1, deliveredOn: ago(2) }),
+      fx("st13", ago(0), { total: 50 })]);
+    const got = [{ id: "c2", at: new Date(Date.now() + 6e4).toISOString(), answered: new Date(Date.now() + 6e4).toISOString(), amount: 100, method: "transfer", account: "maybank", state: "received" }];
+    const s7 = await draw(two, got, (v) => v.note !== null && priced(v));
+    ok(s7.hold && s7.note === "Pay it to keep your prices: they are hidden from " + dn(ago(-1)) + ", and from " + dn(ago(-2)) + " your account is only for paying."
+      && priced(s7) && !s7.holdP,
+      "with the older part paid since the publish, the stage and its dates are the unpaid part's, never the paid one's, and nothing says the prices stay open: " + JSON.stringify(s7));
+    const s8 = await draw(two, [], (v) => v.note !== null && /a day after/.test(v.odNote));
+    ok(s8.odNote === "2 orders unpaid more than a day after you received them. The first is overdue by 5 days.",
+      "and both unpaid, the figure's line says a day, not 1 days: " + JSON.stringify(s8.odNote));
+    /* Fable's review: locked on the older part, his Received of it on a later poll leaves the hold and lifts the lock, and
+       Home is drawn again without a reopen */
+    const s9 = await draw(two, (n) => n <= 1 ? [] : got, (v) => /^Pay it to keep/.test(v.note || "") && v.grey === "false,false,false");
+    ok(s9.hold && /^Pay it to keep your prices/.test(s9.note || "") && priced(s9) && s9.hpart === 1 && s9.grey === "false,false,false",
+      "and his Received of the older part, read on a later poll, lifts the lock and Home is live again, the hold kept: " + JSON.stringify(s9));
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+})();
+
 section("S6 fix: To pay now and an order never ask for the same money twice, whichever of them it was sent on");
 await (async () => {
   /* HIS D7 AND D8: money sent waits for his answer and is not asked for again. To pay now is the book's rows as they
@@ -44421,7 +44569,7 @@ await (async () => {
     BASE_SALES.push(
       { rid: "z812a", customer: "CZ9-RM", qty: 1, total: 100, cost: 50, cash: 0, deliveredQty: 1, deliveredOn: ago(20), date: ago(20) },
       { rid: "z812b", customer: "CZ9-RM", qty: 2, total: 200, cost: 100, cash: 150, deliveredQty: 2, deliveredOn: ago(12), date: ago(12) },
-      { rid: "z812c", customer: "CZ9-OK", qty: 1, total: 90, cost: 45, cash: 0, deliveredQty: 1, deliveredOn: ago(3), date: ago(3) });
+      { rid: "z812c", customer: "CZ9-OK", qty: 1, total: 90, cost: 45, cash: 0, deliveredQty: 1, deliveredOn: ago(1), date: ago(1) });   // the 1-day term's last day (V5)
     queue = []; applyOverlay(); recompute(); switchTab("today");
     const card = (code) => [].find.call(document.querySelectorAll(".sec.on .act"), (r) => r.querySelector(".actt").textContent.includes(code));
     const rm = card("CZ9-RM"), ok = card("CZ9-OK");
@@ -44445,13 +44593,14 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
-section("V1b (28 Sep 2026): the desk's Credit age and its chase count three days from the handover, as the Counter's overdue does");
+section("V1b (28 Sep 2026): the desk's Credit age and its chase count the term from the handover, as the Counter's overdue does");
 await (async () => {
   /* HIS ANSWER OF 28 SEP 2026 (Q4): the desk's Credit age breach and its payment reminders follow the Counter, three days
      from the day the goods were collected or delivered; the pricing profile keeps ten days from the order date. Fixture
      customers on dates set from the desk's own clock are read on the desk, and on a copy of the book through the publish's
      payDue for the same day, so the desk and the Counter are held to one verdict. Each assertion was proved red by its own
-     mutation, one at a time. */
+     mutation, one at a time. V5 (his answers of 29 Sep 2026): the term is one day, the fixtures moved with it, and the
+     breach says the provision it has reached. */
   const { pathToFileURL: pu } = await import("node:url");
   const { mkdtempSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
@@ -44461,10 +44610,10 @@ await (async () => {
   const ago = (n) => new Date(new Date(today + "T00:00:00Z").getTime() - n * 864e5).toISOString().slice(0, 10);
   const fx = (rid, customer, date, extra) => Object.assign({ rid, customer, product: "salt", date, qty: 1, total: 100, cost: 50, cash: 0, deliveredQty: 1, deliveredOn: date }, extra || {});
   const rows = [
-    fx("zv1a", "CZ9-HA", ago(12), { deliveredOn: ago(2) }),   // ordered 12 days ago, collected 2 days ago: inside the term
+    fx("zv1a", "CZ9-HA", ago(12), { deliveredOn: ago(1) }),   // ordered 12 days ago, collected yesterday: the term's last day
     fx("zv1b", "CZ9-HB", ago(5)),                             // collected 5 days ago: past it, though ten days from the order are not
-    fx("zv1c", "CZ9-HC", ago(3)),                             // the term's last day: not yet past it
-    fx("zv1d", "CZ9-HD", ago(4)),                             // the first day past it
+    fx("zv1c", "CZ9-HC", ago(0)),                             // handed over today: inside it
+    fx("zv1d", "CZ9-HD", ago(8), { deliveredOn: ago(2) }),   // the first day past it, ordered 8 days ago: provisioned from the handover
     fx("zv1e", "CZ9-HE", ago(11), { qty: 2, total: 200, deliveredQty: 2, deliveredOn: ago(1),   // in stages: the older unpaid unit went 9 days ago
       amend: [{ kind: "Fulfilment", kg: 1, date: ago(9) }, { kind: "Fulfilment", kg: 1, date: ago(1) }] }),
     fx("zv1f", "CZ9-HF", null),                               // undated: never past it, as on the Counter
@@ -44490,21 +44639,24 @@ await (async () => {
   const breached = v.breach.map((b) => b.who).sort();
   const he = v.breach.find((b) => b.who === "CZ9-HE") || {};
 
-  ok(v.hold === 3 && JSON.stringify(breached) === '["CZ9-HB","CZ9-HD","CZ9-HE","CZ9-HG-R"]' && /^RM 200 unpaid 9 days after the handover$/.test(he.what || "")
-     && /past the 3-day limit from the handover/.test(he.why || ""),
-    "the Credit age breach counts from the handover of the goods still unpaid, past three days: collected 5, 4 and 6 days ago, and 9 for the older "
-    + "unit of an order handed over in stages; never inside the term (collected 2 days ago though ordered 12, or on its last day) nor undated: " + JSON.stringify(v.breach));
+  const hd = v.breach.find((b) => b.who === "CZ9-HD") || {};
+  ok(v.hold === 1 && JSON.stringify(breached) === '["CZ9-HB","CZ9-HD","CZ9-HE","CZ9-HG-R"]' && /^RM 200 unpaid 9 days after the handover$/.test(he.what || "")
+     && /past the 1-day limit from the handover, so it is collection rather than trade; fully provisioned, so review it for default$/.test(he.why || "")
+     && /; 50% provisioned, fully provisioned at 4 days$/.test(hd.why || ""),
+    "the Credit age breach counts from the handover of the goods still unpaid, past one day: collected 5, 2 and 6 days ago, and 9 for the older "
+    + "unit of an order handed over in stages, each saying the provision it has reached; never inside the term (collected yesterday though "
+    + "ordered 12, or today) nor undated: " + JSON.stringify(v.breach));
   ok(JSON.stringify(sev) === JSON.stringify({ "CZ9-HA": "soon", "CZ9-HB": "now", "CZ9-HC": "soon", "CZ9-HD": "now", "CZ9-HE": "now", "CZ9-HF": "watch", "CZ9-HG-R": "now" })
      && JSON.stringify(copied) === '["CZ9-HB","CZ9-HD","CZ9-HE","CZ9-HG-R"]',
     "the chase is Now past the term with a reminder to copy, This week inside it with none, and Watch when undated: " + JSON.stringify({ sev, copied }));
   const cE = (v.chase.find((c) => c.who === "CZ9-HE") || {}).copy || "", wA = (v.chase.find((c) => c.who === "CZ9-HA") || {}).why || "";
   const cB = (v.chase.find((c) => c.who === "CZ9-HB") || {}).copy || "";
-  ok(cE.includes("RM 200 for 2 unit of salt ordered on " + day(ago(11)) + ", received 9 days ago") && /^On a 3d term from the handover: RM 100 at 2d \(50% provisioned\)/.test(wA)
+  ok(cE.includes("RM 200 for 2 unit of salt ordered on " + day(ago(11)) + ", received 9 days ago") && /^On a 1d term from the handover: RM 100 at 1d \(25% provisioned\)/.test(wA)
      && cB.includes("RM 100 for 1 unit of salt ordered on " + day(ago(5)) + ", received 5 days ago; RM 100 for 1 unit of salt. Could you") && !/undated/.test(cB),
     "the reminder names the order by its date and counts from the handover, an undated debt naming no day, and the card states the term it reads, "
     + "the provision from the handover too (V5): " + JSON.stringify({ cE, cB, wA }));
-  ok(/or 3 days from the handover, nothing under/.test(v.clear) && !/or 10 days/.test(v.clear),
-    "the all-clear says the term is three days from the handover: " + (v.clear.match(/Nobody past[^.]*\./) || [""])[0]);
+  ok(/or 1 day from the handover, nothing under/.test(v.clear) && !/or 10 days/.test(v.clear),
+    "the all-clear says the term is one day from the handover: " + (v.clear.match(/Nobody past[^.]*\./) || [""])[0]);
 
   /* the Counter, on a copy of the book holding the same rows, for the same day */
   const tmp = mkdtempSync(join(tmpdir(), "salt-v1b-"));
@@ -45047,7 +45199,9 @@ await (async () => {
   const { webcrypto } = await import("node:crypto");
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify(doc)),
+    /* sealed without V5's stages (29 Sep 2026): struck on 24 Sep and opened on today's clock, the account would be locked
+       and Home would draw To pay now alone; the stages are proved in their own section */
+    live: await C.encryptWith(ck, JSON.stringify({ ...doc, pay: { ...doc.pay, hide: undefined, lock: undefined } })),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };

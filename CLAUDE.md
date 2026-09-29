@@ -334,11 +334,13 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   rating an order, one to five stars, never changed; his nudge and his card read it. **It prices nothing**: no entry,
   row or note reads it.
 - **With any amount past its term (`pay.overdue`, or a part late on the phone's own day; his D9, amended 28 Sep 2026),
-  Home leads with the overdue amount and Orders is the payment page**: the page's gate, not the Worker's. It shows each part's due date, Prices stays readable, and a
-  claim waiting on him reopens ordering, his acknowledgement still the check; what he received since the statement was
+  Home leads with the overdue amount and Orders is the payment page**: the page's gate, not the Worker's. It shows each part's due date, and a
+  claim waiting on him reopens ordering, his acknowledgement still the check. **Then it closes in stages (V5, his answers of 29 Sep
+  2026)**, from the handover of the oldest part overdue: prices hidden from `pay.hide` (`RULES.hideDays`, 3) and from `pay.lock`
+  (`RULES.lockDays`, 4) only To pay now live, the rest of Home and Rewards seen but greyed out (`grey`), each said before it comes, the handover day 0; the same waiting claim lifts every stage; what he received since the statement was
   written comes off the overdue figure. Beside `owed` the live document seals `pay` (`payDue`): to pay now
   (`txAdvance`), overdue and coming up (`txPendRM`), each part overdue from the day its goods were collected or
-  delivered (the engine's `txUnpaidSince`) and past its term `RULES.holdDays` (3) days later, read from the master;
+  delivered (the engine's `txUnpaidSince`) and past its term `RULES.holdDays` (1) day later, read from the master;
   the pricing profile keeps `RULES.creditDays`. To pay now heads Home, with one filled
   Pay; every Pay opens one sheet (D8: no account chosen for them, the username the reference, QR
   Command through `payHref`, never named), and on return it asks once, Did you send it: a claim reads "sent, waiting for
@@ -397,8 +399,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   reason at Decline or Cancel as the body, both checked by `siteWords` before they leave the desk. The acknowledgement is
   pay-now on an order over the credit cap (`prepay`, V3), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
-- **The chase, twice a day** (his decision D5): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
-  customer holding goods unpaid (`isAdvance`) only at 10:00 and 18:00 Kuala Lumpur (`chaseSlot`), from
+- **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
+  customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from
+  their oldest unpaid handover, then at 10:00, 14:00 and 18:00 (`chaseDue`), from
   the day after the handover (`graceOver`), paused while a claim of theirs waits (`claimWaits`), in its own words (`due`); one wake a slot per customer, capped by the chase
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test account is
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler

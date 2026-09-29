@@ -52,7 +52,7 @@ import { refusal } from "./words.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -1577,7 +1577,8 @@ export default {
 
   /* ---- THE CHASE (v700; S12 12.3, his decision D5 of 24 Sep 2026) ------------------------------
    * The first clock this Worker ever had. An advance is the book's own word for goods out ahead of
-   * the money (isAdvance, as the engine reads it). TWICE A DAY, at 10:00 and 18:00 in Kuala Lumpur
+   * the money (isAdvance, as the engine reads it). EVERY HOUR FROM 08:00 TO 22:00 in Kuala Lumpur for three days from
+   * the handover, then at 10:00, 14:00 and 18:00 (V5, 29 Sep 2026: chaseDue)
    * (chaseSlot: the cron stays hourly and this decides), from the day after the handover, paused
    * while a claim waits and stopped when what was received is paid: toChase in stmt/orders.js. One
    * wake a slot per CUSTOMER, not per order: two unpaid advances are one person's problem and one
@@ -1610,6 +1611,8 @@ export default {
           owing.add(u);
           /* his own test account is counted nowhere, and that includes being chased */
           if (u === TEST_USER) continue;
+          /* V5: hourly for the first three days after the handover, then three a day (chaseDue) */
+          if (!chaseDue(orders, now)) continue;
           /* S10: the mark is read and written in one step, where the orders live (markChased); S12: it is the slot's */
           if (!(await markChased(env, u, slot))) { held++; continue; }
           const r = await wakeCustomer(env, u, { k: "due", o: orders[orders.length - 1].id });

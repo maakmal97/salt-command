@@ -347,11 +347,11 @@ export function orderWork(o) {
  * a customer who has paid for the 2 of 5 units they hold is not asked about the 3 still to come, and
  * one who has been handed nothing is not chased at all.
  *
- * TWICE A DAY, NOT EVERY HOUR (D5): at 10:00 and 18:00 in Kuala Lumpur, from THE DAY AFTER the goods
+ * EVERY HOUR FROM 08:00 TO 22:00 (V5, his answer of 29 Sep 2026, in place of D5's 10:00 and 18:00), from THE DAY AFTER the goods
  * moved, PAUSED while a claim of theirs waits, and STOPPED when what they received is paid, which is
  * the same test going false (his cash, recorded on the desk, comes back through the return leg). v700
  * chased every hour, day and night, from the first top of the hour after the handover, so a customer
- * paying cash at the counter was asked again within minutes and every hour of the night. The cap is
+ * paying cash at the counter was asked again within minutes and every hour of the night; D5 made it twice a day. The cap is
  * one wake a slot per CUSTOMER, not per order, and its words are its own ("A payment is due").
  */
 export const aheadOnGoods = (o) => {
@@ -363,12 +363,27 @@ export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
-/* The two hours, Kuala Lumpur's (UTC+8, no summer time). The cron stays hourly and this decides: a slot
-   is its hour's bucket, or null for every other hour. */
-export const CHASE_HOURS = [10, 18];
+/* The hours, Kuala Lumpur's (UTC+8, no summer time). The cron stays hourly and this decides: a slot is its hour's
+   bucket, or null for every other hour. V5 (his answer of 29 Sep 2026, "hourly"): every hour from 08:00 to 22:00, in
+   place of D5's two. */
+export const CHASE_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+const klHour = (at) => new Date(new Date(at).getTime() + 8 * 3600000).getUTCHours();
 export const chaseSlot = (at) => {
   const t = new Date(at).getTime();
-  return CHASE_HOURS.includes(new Date(t + 8 * 3600000).getUTCHours()) ? hourOf(t) : null;
+  return CHASE_HOURS.includes(klHour(t)) ? hourOf(t) : null;
+};
+/* TAPERED (his answer of 29 Sep 2026, "taper"): hourly on days 1 to 3 after the handover, the days before each stage
+   of the Counter's close, then three a day. The day is counted from the oldest handover among the customer's unpaid
+   orders (movedOn, a Kuala Lumpur date), the handover being day 0 as the provisioning ladder counts it. */
+export const CHASE_HOURLY_DAYS = 3;
+export const CHASE_LATE_HOURS = [10, 14, 18];
+export const chaseDay = (orders, at) => {
+  const first = orders.map((o) => o.movedOn).filter(Boolean).sort()[0];
+  return first ? Math.round((Date.parse(klDay(at)) - Date.parse(first)) / 864e5) : null;
+};
+export const chaseDue = (orders, at) => {
+  const d = chaseDay(orders, at);
+  return d !== null && (d <= CHASE_HOURLY_DAYS || CHASE_LATE_HOURS.includes(klHour(at)));
 };
 /* A DAY'S GRACE: chased from the day after the last handover (movedOn, a Kuala Lumpur date), never the
    day the goods moved; an order that carries no such day is not chased. */

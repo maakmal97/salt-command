@@ -825,6 +825,15 @@ export function holdTerm() {
   if (!m) throw new Error("the master states no RULES.holdDays, so no due date can be written");
   return (TERM = +m[1]);
 }
+/* V5 (his answers of 29 Sep 2026): and the stages after it, prices hidden from RULES.hideDays after the handover and the
+   account only for paying from RULES.lockDays, read the same way; a master stating neither seals neither */
+let STAGES = null;
+export function stageDays() {
+  if (STAGES) return STAGES;
+  const rules = /const RULES=\{([^;]*)\};/.exec(readFileSync(MASTER, "utf8"));
+  const g = (k) => { const m = rules && new RegExp("\\b" + k + ":\\s*(\\d+)").exec(rules[1]); return m ? +m[1] : null; };
+  return (STAGES = { hide: g("hideDays"), lock: g("lockDays") });
+}
 const dayPlus = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOString().slice(0, 10);
 export function payDue(party, day) {
   const term = holdTerm(), E = POSITION_ENGINE, now = [], coming = [];
@@ -864,7 +873,9 @@ export function payDue(party, day) {
   now.sort((a, b) => k(a.due).localeCompare(k(b.due)));
   coming.sort((a, b) => k(a.date).localeCompare(k(b.date)));
   const late = now.filter(x => x.late);
-  return { term, now: { rm: sum(now), due: (now.find(x => x.due) || {}).due || null, parts: now },
+  const st = stageDays();
+  return { term, ...(st.hide != null ? { hide: st.hide } : {}), ...(st.lock != null ? { lock: st.lock } : {}),
+    now: { rm: sum(now), due: (now.find(x => x.due) || {}).due || null, parts: now },
     overdue: { rm: sum(late), parts: late }, coming: { rm: sum(coming), parts: coming } };
 }
 

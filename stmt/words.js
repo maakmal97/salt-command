@@ -261,7 +261,7 @@ export const EN = {
   "bell.done": "Done",
   "push.devIos": "Not in this browser. On an iPhone they come to the app saved on your Home Screen.",
   "push.devNo": "This {dev} cannot receive notifications. An iPhone needs iOS 16.4 or later.",
-  "push.devOn": "On. This {dev} is told when your order changes, when we write to you, and at 10:00 and 18:00 while goods you have received are unpaid.",
+  "push.devOn": "On. This {dev} is told when your order changes, when we write to you, and while goods you have received are unpaid: every hour for three days, then three times a day.",
   "push.devOff": "Off. Nothing is sent to this {dev}.",
   "push.off": "Turn off",
   "push.on": "Turn on",
@@ -405,8 +405,13 @@ export const EN = {
   "ord.view": "Read only: their orders as their own page shows them. Nothing here is placed, paid or sent.",
   "pay.overdue": "Overdue",
   "pay.hold": "Please pay the overdue amount of {rm} before placing another order.",
+  /* V5 (his answers of 29 Sep 2026): the stages, said before each comes */
+  "st.prices": "Pay it to keep your prices: they are hidden from {d}, and from {l} your account is only for paying.",
+  "st.lock": "Pay it before {d}: from then your account is only for paying what is owed.",
+  "st.locked": "Your account is only for paying until {rm} is paid.",
+  "pr.hidden": "Your prices are hidden until the overdue {rm} is paid.",
   "pay.payRm": "Pay {rm}",
-  "ord.holdP": "Ordering opens again as soon as you tell us it is sent, and your prices stay open meanwhile. Each order the amount is made of is on your statement.",
+  "ord.holdP": "Ordering opens again as soon as you tell us it is sent. Each order the amount is made of is on your statement.",
   "ord.seeStmt": "See your statement",
   "ord.lead": "Pick a size and check it over before you place it. Once we acknowledge it you can pay, and you are told when the goods are on their way.",
   /* ---- WHERE AN ORDER IS, in the customer's words ---- */
@@ -560,6 +565,7 @@ export const EN = {
      its own under the part (and the statement's order line), with no amount. */
   "part.cover": "Part paid from your reward",
   "pay.odMany": "{n} orders unpaid more than {t} days after you received them.",
+  "pay.odManyDay": "{n} orders unpaid more than a day after you received them.",
   "cl.waiting": "{rm} sent, waiting for us to confirm.",
   "cl.received": "{rm} received on {d}. Your statement shows it at its next update.",
   "cl.notFound": "We have not found the {rm} you sent on {d}. Check it left your bank, then pay it again.",
@@ -981,6 +987,7 @@ export const MS = {
   "pay.payRm": "Bayar {rm}",
   "pay.still": "Baki perlu dibayar",
   "pay.odMany": "{n} pesanan belum dibayar lebih {t} hari selepas anda menerimanya.",
+  "pay.odManyDay": "{n} pesanan belum dibayar lebih sehari selepas anda menerimanya.",
   "pay.cod": "tunai semasa serahan",
   "pay.mTo": "{m} ke {a}",
   "pn.ordered": "{mark} {u}, dipesan pada {d}.",
@@ -1056,7 +1063,7 @@ export const MS = {
   "pw.DueNow": "Perlu dibayar sekarang",
   "pw.Prepay": "Sebelum barang diserahkan",
   "ord.due": "Bayaran perlu dibuat",
-  "ord.holdP": "Pesanan dibuka semula sebaik sahaja anda beritahu bayaran sudah dihantar, dan harga anda masih boleh dilihat sementara itu. Setiap pesanan dalam jumlah ini ada pada penyata anda.",
+  "ord.holdP": "Pesanan dibuka semula sebaik sahaja anda beritahu bayaran sudah dihantar. Setiap pesanan dalam jumlah ini ada pada penyata anda.",
   "ord.seeStmt": "Lihat penyata anda",
   /* ---- THE MESSAGES on an order ---- */
   "msg.new": "Baharu",

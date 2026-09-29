@@ -470,6 +470,8 @@ button.salt-approve__party{display:inline-flex;align-items:center;min-height:var
 .acard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
   padding:14px 16px;margin:12px 0 0}
 .acard.off{opacity:.55}
+/* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
+.lockd{opacity:.45;pointer-events:none;user-select:none}
 .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .acard .acell{min-width:0}
 .acard .acell .l{display:block;font-size:var(--salt-text-xs);letter-spacing:.12em;text-transform:uppercase;
@@ -1375,7 +1377,7 @@ const CLIENT_JS = `
      next order is still the check.
      28 SEP 2026, HIS INSTRUCTION: ANY AMOUNT past its term holds, and the term is three days from the day the goods
      were collected or delivered (the publish's due); D9's RM 100 line is retired. */
-  var hold=false;
+  var hold=false, hidePrices=false, locked=false;
   /* S6: what the live statement seals beside owed (tools/make_statements.mjs payDue): to pay now, overdue and
      coming up, each part with its dates. Read, never priced here. */
   var payDue=null, liveAt='';
@@ -1890,7 +1892,7 @@ const CLIENT_JS = `
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
     bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
-    hold=false; payDue=null; liveAt='';
+    hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
@@ -2491,6 +2493,8 @@ const CLIENT_JS = `
   }
   function drawPrices(){
     pPrices.textContent='';
+    /* V5: from pay.hide after the handover the prices are hidden until the overdue amount is paid */
+    if(hidePrices){ pPrices.appendChild(el('p','lead',tw('pr.hidden',{rm:rm(odLeft())}))); return; }
     var soon=((prices&&prices.soon)||[]).concat(((prices&&prices.products)||[]).filter(function(x){ return !(x.sizes&&x.sizes.length); }));
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead',tw('pr.none')));
@@ -2994,7 +2998,7 @@ const CLIENT_JS = `
      limit, draws the tab again; otherwise the orders are patched (S5 5.5). The order sheet is never drawn by either:
      it lives at the root of the body, and only the limit step, which holds nothing typed, follows the orders */
   var drawnSig='';
-  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,openN()>=OMAX]); }
+  function formSig(){ return JSON.stringify([hold,odLeft(),view,assoc,prices,openN()>=OMAX,stageNow()]); }
   function drawOrder(){
     var sc=window.scrollY;
     drawnSig=formSig();
@@ -3659,11 +3663,35 @@ const CLIENT_JS = `
     var got=nowOf().filter(function(x){ return lateNow(x.p); }).reduce(function(t,x){ return t+x.back; },0);
     return Math.max(0,+(od-got).toFixed(2)); }
   /* S7 7.1: the places keep their names over the line; Home leads with what to pay, and Orders is the payment page */
-  function setHold(){ hold=odLeft()>0.004&&!(sentWaiting()>0.004); }
+  function setHold(){ hold=odLeft()>0.004&&!(sentWaiting()>0.004); var st=stageNow(), was=hidePrices; hidePrices=st>=2; locked=st>=3;
+    if(was!==hidePrices&&(hidePrices||prices)) drawPrices();
+    if(assoc&&rewardsEl) grey(rewardsEl,locked); }
+  /* greyed out and out of reach: seen, never tapped or tabbed into */
+  function grey(n,on){ n.classList.toggle('lockd',!!on); if(on) n.setAttribute('inert',''); else n.removeAttribute('inert'); }
+  /* V5 (his answers of 29 Sep 2026): THE ACCOUNT CLOSES IN STAGES, counted from the handover of the oldest part still
+     overdue: past the term no new order (the hold), from pay.hide the prices are hidden, and from pay.lock the account is
+     only for paying. A claim waiting on him lifts every stage, as it lifts the hold (D9). 0 open, 1 held, 2 prices
+     hidden, 3 locked. */
+  /* the late parts still unpaid once what he received since the publish is taken off, oldest first (Fable's review): a part
+     paid since is never what locks the account or dates its warning */
+  function odOpen(){ return nowOf().filter(function(x){ return x.p&&lateNow(x.p)&&x.back<(+x.p.rm||0)-0.004; }).map(function(x){ return x.p; }); }
+  function odDays(){ var n=-1; odOpen().forEach(function(p){ var f=p.since||p.gotOn||p.date; if(f){ var d=-(daysTo(f)||0); if(d>n) n=d; } }); return n; }
+  function stageNow(){ if(!hold) return 0; var d=odDays(), P=payDue||{};
+    return P.lock!=null&&d>=P.lock?3:P.hide!=null&&d>=P.hide?2:1; }
+  function isoPlus(s,n){ var t=ymdAt(s); return t==null?null:new Date(t+n*864e5).toISOString().slice(0,10); }
+  /* what they lose next and when, under To pay now while the hold stands */
+  function stageNote(){
+    var st=stageNow(), P=payDue||{}, f=null;
+    if(!st) return '';
+    odOpen().forEach(function(p){ var x=p.since||p.gotOn||p.date; if(x&&(!f||x<f)) f=x; });
+    if(st===3) return tw('st.locked',{rm:rm(odLeft())});
+    if(st===2) return P.lock!=null?tw('st.lock',{d:Dd(dayName,isoPlus(f,P.lock))}):'';
+    return P.hide!=null?tw('st.prices',{d:Dd(dayName,isoPlus(f,P.hide)), l:Dd(dayName,isoPlus(f,P.lock!=null?P.lock:P.hide))}):'';
+  }
   function odNote(od){
     var n=el('span'), ps=od.parts||[];
     if(ps.length===1){ n.appendChild(partSpan(ps[0])); n.appendChild(document.createTextNode('. '+dueWords(ps[0]))); coverTo(n,ps[0]); }
-    else n.appendChild(document.createTextNode(tw('pay.odMany',{n:ps.length, t:payDue&&payDue.term})+' '+dueWords(ps[0],true)));
+    else n.appendChild(document.createTextNode(tw(payDue&&payDue.term===1?'pay.odManyDay':'pay.odMany',{n:ps.length, t:payDue&&payDue.term})+' '+dueWords(ps[0],true)));
     return n;
   }
   /* ---- S6 6.5 (his D7): A CLAIM IS NEVER PAID UNTIL HE SAYS SO. What they said they sent on To pay now (the account's
@@ -3807,6 +3835,7 @@ const CLIENT_JS = `
       box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
       if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
+      var sn=stageNote(); if(sn){ var sp=el('p','salt-insight salt-insight--copper'); sp.id='stageNote'; sp.textContent=sn; box.appendChild(sp); }
       if(!view&&tot>0.004){
         /* S6 6.4: it opens the pay sheet on what is to pay now, the one road for Home's Pay */
         var pb=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
@@ -4057,8 +4086,9 @@ const CLIENT_JS = `
      nothing on it yet, and Prices and ordering work from here. Each part is drawn afresh and put on the page only
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
+    /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
     var parts={hNeeds:homeNeeds(), hRate:homeRate(), hComing:homeComing(), hAgain:homeAgain()};
-    Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     drawPayHead();
     placeCounts();
     placeTitle();
@@ -4198,7 +4228,8 @@ const CLIENT_JS = `
     var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
-    if(JSON.stringify([claims,orders.map(oClaimed)])!==was){ setHold(); drawPayHead(); }
+    /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
+    if(JSON.stringify([claims,orders.map(oClaimed)])!==was||formSig()!==drawnSig){ setHold(); drawPayHead(); }
     if(document.getElementById('oArea')&&formSig()!==drawnSig){ drawOrder(); return; }
     var changed=orders.filter(function(o){ return before[o.id]!==JSON.stringify(o); }).map(function(o){ return o.id; }),
         gone=Object.keys(before).some(function(id){ return !oFind(id); });
