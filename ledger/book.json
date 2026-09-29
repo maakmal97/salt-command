@@ -704,7 +704,7 @@
       "oil": "Platinum"
     },
     "CK4-SEN": {
-      "salt": "Platinum"
+      "salt": "Ambassador"
     },
     "CZ5-TM": {
       "salt": "Titanium",
@@ -942,7 +942,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-28T16:30:27.937Z",
+  "QUEUE_COMMITTED": "2026-09-29T02:13:17.994Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
