@@ -38,7 +38,7 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage, shutPage, MON3 } from "./page.js";
+import { landingPage, boardPage, shutPage, MON3, mtileSvg } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import QR from "./qr.js";
@@ -1022,7 +1022,7 @@ const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
 /* C23 (29 Sep 2026): the test account's own statement is drawn as a customer's live document is, an h2 of Statement lines
    with its date DD Mon YYYY, never the retired table under an h1 of its own. The fixture's live document stands over it. */
 export async function testStatement() {
-  const at = new Date().toISOString(), day = at.slice(0, 10);
+  const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);   /* the Kuala Lumpur day */
   const dmy = day.slice(8) + " " + MON3[+day.slice(5, 7) - 1] + " " + day.slice(0, 4);
   const body = '<h2 class="stmth">Test account</h2>'
     + '<p class="meta">This account is for trying the page out. Nothing on it is on the book, '
@@ -1031,7 +1031,7 @@ export async function testStatement() {
     + '<div class="salt-lines__date" role="columnheader">Date</div><div class="salt-lines__what" role="columnheader">Quantity</div>'
     + '<div class="salt-lines__amount" role="columnheader">Amount</div><div class="salt-lines__state" role="columnheader">Status</div></div>'
     + '<div class="salt-lines__row" role="row" data-m="' + day.slice(0, 7) + '"><div class="salt-lines__date" role="cell">' + dmy + "</div>"
-    + '<div class="salt-lines__what" role="cell">1 unit</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
+    + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
     + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div></div>';
   return { v: 1, issued: day, statements: [{ issued: day, label: "Test", body }] };
 }
