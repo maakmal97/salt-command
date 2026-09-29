@@ -20277,12 +20277,12 @@ await (async () => {
     const sj = await (await site("/all/sheet", { headers: A })).json();
     ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
     const t1 = await line();
-    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
+    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
       "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
     /* the desk looks again */
     await tell(1, 0);
     const t2 = await line();
-    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{1,2} [A-Z][a-z]{2})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
