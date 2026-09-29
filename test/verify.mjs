@@ -48413,6 +48413,7 @@ await (async () => {
     return { status: r.status, b: await r.json().catch(() => ({})) };
   };
   await O.sayThread(senv, U, { text: "first" });
+  await new Promise((r) => setTimeout(r, 5));   /* the second line a later moment, so newest first is not a tie in one millisecond */
   await O.sayThread(senv, V, { text: "second" });
   const all = await desk("/desk/threads"), anon = await desk("/desk/threads", undefined, null), bad = await desk("/desk/threads", undefined, "nope");
   ok(all.status === 200 && all.b.threads.length === 2 && all.b.threads[0].u === V && all.b.threads[1].u === U && anon.status === 401 && bad.status === 401,
@@ -48720,7 +48721,7 @@ await (async () => {
     L.fetch({ request: { method: "GET", url: "https://salt-command.example" + path, mode: "cors" }, respondWith: (p) => told.push(p) });
     return told.length;
   };
-  const was = +((/salt-shell-v(\d+)/.exec(execFileSync("git", ["show", "c5b7a100:public/sw.js"], { cwd: REPO, encoding: "utf8" })) || [])[1] || 0);
+  const was = 6;   /* salt-shell-v6, the cache a phone held before Step 7b (c5b7a10); a number, since CI's checkout holds no history */
   const now = +((/salt-shell-v(\d+)/.exec(sw) || [])[1] || 0);
   ok(answered("/threads") === 0 && answered("/threads/abcd-efgh") === 0 && answered("/icon-192.png") === 1 && now > was,
     "a GET /threads goes to the network, never the cache, and the cache name moved past the one a phone may hold: " + JSON.stringify({ was, now }));
