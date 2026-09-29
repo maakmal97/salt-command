@@ -51,11 +51,12 @@ import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleClaim, exampleMint, exampleRevoke } from "./testfix.js";
+  exampleMove, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+  threadOf, threadView, sayThread, allThreads, deskThread } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -372,6 +373,15 @@ async function handleCustomer(request, env, p, m) {
     await keepSlip(env, u, f.slip, r.claim && r.claim.slip);
     return json({ ok: true, claim: claimView(r.claim) });
   }
+  /* Step 7: THE ACCOUNT'S THREAD, on their session: read (every 2 seconds while it is on their screen), and a line of
+     theirs under its device-minted id. A test account's lives in its fixture and counts nowhere. */
+  if (p === "/thread") {
+    if (m === "GET") return json({ ok: true, thread: threadView(isTest(u) ? await exampleThread(env, u) : await threadOf(env, u)) });
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);
+    return r.error ? refuse(r) : json({ ok: true, thread: threadView(r.thread) });
+  }
   /* F13: the public half of his slip key, which their page seals a slip to; none filed, no slip is offered */
   if (p === "/slip/key") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -396,7 +406,9 @@ async function handleCustomer(request, env, p, m) {
   }
   if (p === "/orders") {
     /* S6 6.6: and their claims against the account beside the orders */
-    if (m === "GET") return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView))));
+    /* Step 7: and their thread with us, so Home's card moves on the page's own poll */
+    if (m === "GET") return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView)),
+      { thread: threadView(isTest(u) ? await exampleThread(env, u) : await threadOf(env, u)) }));
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const r = await placeOrder(env, u, await readJson(request));
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
@@ -761,6 +773,20 @@ async function handleDesk(request, env, p, m) {
   if (p === "/desk/claims") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, claims: await allClaims(env, new URL(request.url).searchParams.get("all") === "1") });
+  }
+  /* Step 7: every account's thread, newest first, for his Chat; and his line on one (checked by siteWords on the desk before
+     it comes), or his No reply needed. His line wakes their phones. */
+  if (p === "/desk/threads") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, threads: await allThreads(env) });
+  }
+  const tm = /^\/desk\/threads\/([^/]+)$/.exec(p);
+  if (tm) {
+    const u = normUser(tm[1]);
+    if (!u || isTest(u)) return notFound();   /* a test account's thread is its fixture's, never the book's */
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const r = await deskThread(env, u, await readJson(request));
+    return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, thread: r.thread, push: r.push });
   }
   /* F13: A SLIP, AS IT WAS FILED: ciphertext, for the desk to open with the key only his vault holds */
   const sm = /^\/desk\/slips\/([^/]+)\/([^/]+)$/.exec(p);
@@ -1593,10 +1619,12 @@ export default {
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
-      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe") return handleCustomer(request, env, p, m);
+      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
+      || p === "/thread") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")) return handleDesk(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")
+      || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

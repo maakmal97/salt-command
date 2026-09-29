@@ -24,7 +24,7 @@
  * (404, 410) are deleted on the spot.
  */
 
-import { NEWS, CASES, TEXT_KINDS, TEXT_MAX } from "./sw.js";
+import { NEWS, CASES, TEXT_KINDS, LINE_KINDS, TEXT_MAX } from "./sw.js";
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -131,7 +131,7 @@ export function sealedNews(news, o) {
   const out = { k: news.k, o };
   if (CASES.includes(news.v)) out.v = news.v;
   if (TEXT_KINDS.includes(news.k) && typeof news.t === "string" && news.t.trim()) out.t = news.t.trim().slice(0, TEXT_MAX);
-  if (news.k === "reply" && typeof news.m === "string" && /^[0-9TZ:.-]{10,30}$/.test(news.m)) out.m = news.m;
+  if (LINE_KINDS.includes(news.k) && typeof news.m === "string" && /^[0-9TZ:.-]{10,30}$/.test(news.m)) out.m = news.m;
   return out;
 }
 /** Wake every phone one customer has subscribed. Never throws: a banner is not worth an error path.
@@ -155,8 +155,10 @@ async function wake(env, u, topic, news) {
     /* a sealed wake collapses per ORDER, under the digest that names a subscription so the push service never
        reads the id: news of another order no longer replaces it while the phone is off. A bare wake's words
        are all the same, so it keeps the one topic. Step 1b: A LINE OF HIS COLLAPSES WITH NOTHING, its own topic
-       over the order and the line's moment, so no line of his is replaced unseen at the push service either. */
-    const orderTopic = text && o ? (news.k === "reply" && news.m ? "m-" + (await endpointId(o + "|" + news.m)) : "o-" + (await endpointId(o))) : topic;
+       over the order and the line's moment, so no line of his is replaced unseen at the push service either.
+       Step 7: and a line of his on the account's thread, which names no order, takes the same topic over the thread */
+    const line = text && LINE_KINDS.includes(news.k) && news.m ? news.m : "";
+    const orderTopic = line ? "m-" + (await endpointId((o || "thread") + "|" + line)) : text && o ? "o-" + (await endpointId(o)) : topic;
     let sent = 0, gone = 0, failed = 0, sealed = 0;
     for (const s of subs) {
       let origin;

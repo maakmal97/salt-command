@@ -30,11 +30,13 @@ import { WORDS, LIVE } from "./words.js";
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
 const KINDS = ["confirmed", "confirmed-credit", "ready-collect", "ready-deliver", "reply", "paid", "notfound", "due",
-  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate"];
+  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate", "message"];
 /* Step 1b: the cases a kind's body is chosen by (stmt/orders.js payCase), and the kinds whose body is his own text:
-   his line on the order (reply) and his reason at Decline or Cancel */
+   his line on the order (reply), his line on the account's thread (message, Step 7) and his reason at Decline or Cancel */
 export const CASES = ["owed", "waiting", "paid"];
-export const TEXT_KINDS = ["reply", "declined", "cancelled"];
+export const TEXT_KINDS = ["reply", "declined", "cancelled", "message"];
+/* the kinds that are a line of his, each a banner of its own under its moment */
+export const LINE_KINDS = ["reply", "message"];
 export const TEXT_MAX = 200;
 export const NEWS = Object.fromEntries(KINDS.map((k) => [k, WORDS.en["news." + k]]));
 const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
@@ -45,16 +47,16 @@ const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
 export function swScript(langs) {
   return `
 var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LIVE = ${JSON.stringify(langs)}, LANG = 'en';
-var CASES = ${JSON.stringify(CASES)}, TEXT_KINDS = ${JSON.stringify(TEXT_KINDS)}, TEXT_MAX = ${TEXT_MAX};
+var CASES = ${JSON.stringify(CASES)}, TEXT_KINDS = ${JSON.stringify(TEXT_KINDS)}, LINE_KINDS = ${JSON.stringify(LINE_KINDS)}, TEXT_MAX = ${TEXT_MAX};
 /* a word in the language this phone last chose, else English's */
 function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
 /* Step 1b: THE BODY OF A KIND. His own text where the kind carries it (his line in quotation marks, his reason as it
    stands), else the case's sentence, else the kind's own, else Tap to open it */
 function bodyOf(n){
   var t = typeof n.t === 'string' ? n.t.trim().slice(0, TEXT_MAX) : '';
-  if (t && TEXT_KINDS.indexOf(n.k) >= 0) return n.k === 'reply' ? '“' + t + '”' : t;
+  if (t && TEXT_KINDS.indexOf(n.k) >= 0) return LINE_KINDS.indexOf(n.k) >= 0 ? '“' + t + '”' : t;
   var v = typeof n.v === 'string' && CASES.indexOf(n.v) >= 0 ? nw(n.k + '.' + n.v) : '';
-  return v || nw(n.k + '.b') || (n.k === 'declined' || n.k === 'cancelled' || n.k === 'reply' ? nw('update') : nw('tap'));
+  return v || nw(n.k + '.b') || (TEXT_KINDS.indexOf(n.k) >= 0 ? nw('update') : nw('tap'));
 }
 /* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
    service worker cannot read the page); English where there is none, or one this script has no words for. F7: or one
@@ -72,13 +74,15 @@ self.addEventListener('push', function(e){
   var n = null;
   try { n = e.data ? e.data.json() : null; } catch (x) { n = null; }
   var o = n && typeof n.o === 'string' && /^[0-9]{14}-[a-z0-9]{1,8}$/.test(n.o) ? n.o : '';
-  var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : ''), order: o };
+  /* Step 7: his line on the account's thread opens the thread (#thread), never an order */
+  var th = !!(n && n.k === 'message');
+  var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : th ? '#thread' : ''), order: o, thread: th };
   e.waitUntil(langOf().then(function(L){
     LANG = L;
     /* one banner a message of his (plan F1): his line takes its own tag, so a second line never replaces the first unseen */
-    var m = n && n.k === 'reply' && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
+    var m = n && LINE_KINDS.indexOf(n.k) >= 0 && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
     if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
-      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + o + '-' + m : o ? 'order-' + o : 'order-update', renotify: true, data: to });
+      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + (th ? 'thread' : o) + '-' + m : o ? 'order-' + o : 'order-update', renotify: true, data: to });
     return fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(function(b){
@@ -103,7 +107,7 @@ self.addEventListener('notificationclick', function(e){
       try { path = new URL(c.url).pathname; } catch (x) { path = ''; }
       /* S5 5.6: only the Counter's own page can open an order; a guest board or his own page in another tab cannot */
       if (c.url.indexOf(self.registration.scope) === 0 && (path === '/' || path.indexOf('/s/') === 0) && 'focus' in c) {
-        try { c.postMessage({ salt: 'news', order: d.order || '' }); } catch (x) {}
+        try { c.postMessage({ salt: 'news', order: d.order || '', thread: !!d.thread }); } catch (x) {}
         return c.focus();
       }
     }

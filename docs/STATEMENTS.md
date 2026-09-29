@@ -991,6 +991,18 @@ the figure, or that they were asked and have not answered: a rating in the last 
 default list (`ratedSince`), and `GET /desk/orders?all=1` carries every one. **It prices nothing**:
 no entry, row or note reads it, and a rating queues no stage (`orderWork`). A word about the order goes on its thread.
 
+**ONE THREAD AN ACCOUNT** (Step 7, his Q5 of 28 Sep 2026): a question about no one order. `{id: "thread", u, kind: "thread",
+at, msgs[], quiet?}`, folded in the order book from `tsay` and `tmark` events under oid `thread`, one row an account in
+its own table `thr`, written behind to `thr:<username>` in the week of reading both. The KV road has no reader: there a
+line is refused (`e.threadOff`, 503) and the read is empty. Routes: `GET` and `POST /thread` on their session (a line
+under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders; `GET
+/desk/threads` (every thread, newest first) and `POST /desk/threads/<u>` `{message}` or `{noReply: true}` on the desk key.
+Theirs: 200 characters, 20 a Kuala Lumpur day (`e.threadCap`); his uncapped; the last 200 lines kept. A line of theirs marks
+`last-said` and touches no order; his wakes them as kind `message` (`Counter says:` and his words in quotation marks, tag
+`m-thread-<at>`, a push topic of its own), a tap opening `#thread`. The page opens it in a Sheet from Home's card and a
+row on Account and reads it every `THREAD_POLL_MS` (2 seconds) only while the Sheet is open and the page showing. A test
+account's thread lives in its fixture (`exampleThread`, `exampleSay`); the desk cannot write one.
+
 **A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
 cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:
 `npx wrangler deploy -c wrangler.stmt.jsonc`.
