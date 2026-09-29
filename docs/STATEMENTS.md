@@ -182,9 +182,20 @@ own position under the list does not move with the filter.
 
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
-own width), "units" above one; an issue is a standalone file and keeps its table. The earlier statements
-sit at the foot, each by its date and never "latest issue", and one opens in the statement's place with
-Back to your statement above it. **This device** follows (beside it from 1080px), ONE card: notifications on or
+own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
+document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter, kept on disk and on
+his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
+publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
+A re-read that meets either keeps the hold where it last stood; a first open has no last state, so the gate is open
+until the document reads. A failed read of orders says so on Orders and Home with Try again (C14), and a fault's own
+words never reach a customer: a 5xx is the site busy, a codeless body takes the page's words (C16). **The live document inside the Counter** (C2 to C11,
+C21, C25, the same yes): an h2 under the place's h1, the header naming the username so the document names nobody; every fully
+paid row says the day it was paid under its state word; the footer and the workings carry RM; units above one and at nought,
+the workings included, and goods, never the product's word; a refund row carries its month, and the line under the filter
+names what stays the whole account's; No orders yet, never a period; Refunds and Still to collect are h3; a book's day is
+written from its digits, never a clock. An issue keeps every word it was sent with. The page prints money as RM and two
+places, every date DD Mon YYYY with a weekday only before a due date, the bar is the Places landmark, and a guest page opens
+on its h1 (C5, C17, C19, C21, C22). **This device** follows (beside it from 1080px), ONE card: notifications on or
 off (where the bell's plain tap lands; Step 1b), Saved as an app, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
 subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
 wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.
@@ -610,7 +621,7 @@ wherever nothing else is (the limit in New order's place, the payment page, a ph
 New order, and the sheet opens on the open orders, each in stage 5's word for it (goods handed over in part say so),
 Cancel on each whose goods have not moved, going on to the form once
 one is gone; a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
-the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at Thu 24 Sep, 11:59"**
+the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at 24 Sep 2026, 11:59" (C17: every Counter date DD Mon YYYY, a weekday only before a due date)**
 in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of". **One delivery sentence**
 (`DELIVERY` in `stmt/page.js`, S4 4.9) wherever the charge is explained: Prices, a delivery's check and a guest's
 board: "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you
