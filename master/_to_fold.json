@@ -1,0 +1,77 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-30T03:12:41.051Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s216",
+    "qty": 6.25,
+    "total": 530,
+    "cash": 0,
+    "date": "2026-09-29",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 6.25
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-09-30"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CK4-SEN"
+   },
+   "reasoning": "Correction against CK4-SEN's order of 6.25 unit for RM 530 dated 2026-09-29 (s216). Sets deliveredQty from 0 to 6.25, deliveredOn from unset to 2026-09-30, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 6.25 unit goes out with RM 530 unpaid. Check it against CK4-SEN's credit cap."
+   ],
+   "amends": "s216",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-30T03:12:41.051Z",
+    "type": "SELL",
+    "party": "CK4-SEN",
+    "qty": 6.25,
+    "total": 0,
+    "status": "Handover",
+    "raw": "6.25 unit collected to CK4-SEN, order 20260929071114-awrljg, on 2026-09-30",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CK4-SEN",
+     "rid": null,
+     "orderKey": "CK4-SEN|2026-09-29|530",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-09-30",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 6.25,
+      "deliveredOn": "2026-09-30",
+      "handover": "collected"
+     },
+     "note": "6.25 unit collected for order 20260929071114-awrljg."
+    },
+    "orderId": "20260929071114-awrljg"
+   },
+   "decidedAt": "2026-09-30T03:12:44.449Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
