@@ -49784,5 +49784,46 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("D3 to D9 (29 Sep 2026): every control the hit test found short is 44px either way, at every width");
+await (async () => {
+  /* THE FAULT LIST'S D3 TO D9, measured at 1280 in a browser: the parts strip's pills 36 tall, the rail's parts 32, the
+     ledger's sort heads 17 to 39 wide, the Update panel's close 23 by 21 with its summaries 17 and its checkbox rows 21,
+     Pricing's "If it will not print" 19, Enter's None and All 40 wide, the Whiteboard's observation rows 42. jsdom applies
+     no width query, so what it reads here is what holds at the desk's own width: a rule left in the phone's query reads as
+     absent. Each control is read through the real cascade on the element drawn, var() resolved against the root, so a
+     later rule taking the size back is caught. Each check was proved red by its own mutation. */
+  const { openMaster: omT } = await import("../tools/payload.mjs");
+  const { w } = await omT();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  try {
+    w.eval("window.__tap=function(els,prop){var root=getComputedStyle(document.documentElement);"
+      + "var res=function(v){for(var i=0;i<5;i++){var m=/^var\\((--[\\w-]+)\\)$/.exec(String(v).trim());if(!m)break;v=root.getPropertyValue(m[1]).trim();}return v;};"
+      + "return [].map.call(els,function(e){return res(getComputedStyle(e)[prop]);});}");
+    const all44 = (xs) => xs.length > 0 && xs.every((v) => v === "44px");
+    w.eval("setProdView('salt');switchTab('today')");
+    const pills = rd("__tap(document.querySelectorAll('.sec.on .vpill'),'minHeight')"), parts = rd("__tap(document.querySelectorAll('.salt-rail__part'),'minHeight')");
+    ok(all44(pills), "D3: the parts strip's pills are 44px tall at the desk's width, not the phone's alone: " + JSON.stringify(pills));
+    ok(all44(parts), "D4: the rail's parts are 44px tall, from the design system's recipe: " + JSON.stringify(parts));
+    w.eval("switchTab('ledger')");
+    const heads = rd("__tap(document.querySelectorAll('.sec.on .lhead .lsb'),'minWidth')");
+    ok(heads.length >= 5 && all44(heads), "D5: every ledger sort head is at least 44px wide: " + JSON.stringify(heads));
+    w.eval("(function(){var r=sales.find(function(s){return s.rid;});ledEdit(r.rid,'SELL');})()");
+    const x = rd("(function(){var b=document.getElementById('edX');return [__tap([b],'minWidth')[0],__tap([b],'minHeight')[0],b.getAttribute('style')];})()");
+    ok(x[0] === "44px" && x[1] === "44px" && x[2] === null, "D6: the Update panel's close is 44 by 44, from a class and no inline style: " + JSON.stringify(x));
+    const sums = rd("(function(){var s=document.querySelectorAll('#edPanel summary'),a=__tap(s,'lineHeight'),b=__tap(s,'minHeight');return a.map(function(v,i){return v==='44px'||b[i]==='44px'?'44px':v+'/'+b[i];});})()"), chks = rd("__tap([].map.call(document.querySelectorAll('#edPanel input[type=checkbox]'),function(i){return i.closest('label');}),'minHeight')");
+    ok(sums.length >= 2 && all44(sums), "D7: every summary in the Update panel is 44px tall, by its line or its height: " + JSON.stringify(sums));
+    ok(chks.length >= 3 && all44(chks), "D7: every checkbox row in the Update panel is 44px tall: " + JSON.stringify(chks));
+    w.eval("edClose();switchTab('pricing')");
+    const pb = rd("__tap([].filter.call(document.querySelectorAll('#pbCard summary'),function(s){return /If it will not print/.test(s.textContent);}),'lineHeight')");
+    ok(pb.length === 1 && all44(pb), "D8: Pricing's If it will not print is a 44px line: " + JSON.stringify(pb));
+    w.eval("switchTab('add');wbMode='amend';render();");
+    const mini = rd("__tap(document.querySelectorAll('.viewsw.mini button'),'minWidth')");
+    ok(mini.length >= 2 && all44(mini), "D9: Enter's None, Half and All are 44px wide at the desk's width: " + JSON.stringify(mini));
+    w.eval("switchTab('plans')");
+    const obs = rd("__tap(document.querySelectorAll('.sec.on details.obs>summary'),'minHeight')");
+    ok(obs.length >= 1 && all44(obs), "the Whiteboard's observation rows, the same class of fault, are 44px tall: " + JSON.stringify(obs.slice(0, 3)));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

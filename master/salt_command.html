@@ -1180,7 +1180,6 @@ details.obshush:hover{opacity:.85;}
   .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
   .viewsw::-webkit-scrollbar{display:none;}
   .viewsw button{flex:0 0 auto;}
-  .vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
   /* A field under 16px makes iOS Safari zoom on focus and never zoom back (v392). The
      ledger filter strip sat at 12 and 13px; 16px on the phone only. */
   #ledQ,#ledState,#ledParty,#ledMonth,#ledProduct{font-size:16px;}
@@ -1198,8 +1197,7 @@ details.obshush:hover{opacity:.85;}
      375px: Sell 42, Buy 43, All 32, Half 40, Full 37, all of them 44 tall and none of
      them 44 wide. Their strips are 325px holding at most 110px of buttons, so this
      costs no row. Scoped because #fwdSw's own buttons already clear 44 and a global
-     rule would be a rule for one form. */
-  .vpart[data-tab="add"] .viewsw button{min-width:var(--tap);}
+     rule would be a rule for one form. D9 (29 Sep 2026): at every width now, in the tap block above. */
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
@@ -1487,6 +1485,20 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 @media (prefers-reduced-transparency:reduce) and (max-width:560px){
   .rail{background:rgba(11,18,21,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
 }
+/* ============ D3 TO D9 (29 Sep 2026, the fault list): A TAP IS 44px EITHER WAY, AT EVERY WIDTH ============
+   A hit test at 1280 found the parts strip's pills 36 tall (their --tap sat in the phone's query alone), the
+   ledger's sort heads 17 to 39 wide, the Update panel's close 23 by 21, its group summaries 17 tall and its
+   checkbox rows 21, Pricing's "If it will not print" 19 tall, Enter's None and All 40 wide (their width rule was
+   the phone's alone) and the Whiteboard's observation rows 42 tall. A summary keeps its marker, so it is raised
+   by its line, not made a flex row. The rail's parts are the design system's recipe (D4, salt-ds). */
+.vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
+.lsb{min-width:var(--tap);justify-content:center;}
+.edx{background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer;
+  min-width:var(--tap);min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;}
+.edchk{min-height:var(--tap);}
+.tapsum{line-height:var(--tap);}
+.vpart[data-tab="add"] .viewsw button,.viewsw.mini button{min-width:var(--tap);}
+details.obs>summary{min-height:var(--tap);}
 /* ==== DESIGN fonts: generated from design/fonts.css, vendored from Code/salt-ds src/fonts-local.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
 /* THE BRAND FACES, SELF-HOSTED, AND THE ONLY WAY THEY LOAD (his instruction of 22 Sep 2026: no Google
    Fonts). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
@@ -3497,13 +3509,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   border-radius: 0 0 var(--salt-radius-sm) var(--salt-radius-sm);
   background: var(--salt-glass);
 }
+/* D4 (29 Sep 2026, the desk's fault list): a part is a tap like any other, 44px tall; it was 32, measured 172 by 32 at 1280 */
 .salt-rail__part {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   text-align: left;
-  min-height: 32px;
+  min-height: var(--salt-tap);
   padding: 6px 10px 6px 18px;
   border: 0;
   border-radius: 8px;
@@ -13138,7 +13151,7 @@ function renderEditor(){
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
     if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
-    if(f.kind==='bool')return '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
+    if(f.kind==='bool')return '<label class="edchk" style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
     if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
     return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
   };
@@ -13162,7 +13175,7 @@ function renderEditor(){
       if(open)html+=(open.fold?'</details>':'')+'';
       open=f;fgi++;
       html+=f.fold
-        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
+        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary class="tapsum" style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
         : '<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin:14px 0 8px">'+edEsc(f.g)+'</p>';
       return;
     }
@@ -13177,7 +13190,7 @@ function renderEditor(){
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   pn.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
     +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">'+(edNew?'New order':'Edit the entry')+'</div>'
-    +'<button id="edX" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>'
+    +'<button id="edX" class="edx" aria-label="Close">&times;</button></div>'
     +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+(edNew
       ?'new &middot; SELL &middot; queued for approval, like every other entry'
       :edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey]))+'</div>'
@@ -21077,7 +21090,7 @@ function pbCard(){
     </div>
     <div id="pbSizes" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${sizes.map(q=>`<label style="display:flex;gap:6px;align-items:center;min-height:44px;font-size:13px"><input type="checkbox" checked data-q="${q}" style="width:18px;height:18px"> ${units(q)}</label>`).join('')}</div>
     <div id="pbMsg" class="dsc" style="margin-top:6px;min-height:15px"></div>
-    <details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:var(--gold)">If it will not print</summary>
+    <details style="margin-top:6px"><summary class="tapsum" style="cursor:pointer;font-size:12px;color:var(--gold)">If it will not print</summary>
       <ul class="dsc" style="margin:6px 0 0 18px;padding:0">
         <li>Nothing happens on the phone: the desk added to the Home Screen has no print dialog on some phones. Open the same address in Safari or Chrome, tap Print again, or use the browser&rsquo;s Share, then Print.</li>
         <li>The dialog opens but the page is blank: choose &ldquo;Save as PDF&rdquo; as the printer, then print the PDF; a blocked pop-up does the same.</li>

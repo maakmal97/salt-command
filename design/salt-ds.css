@@ -1982,13 +1982,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   border-radius: 0 0 var(--salt-radius-sm) var(--salt-radius-sm);
   background: var(--salt-glass);
 }
+/* D4 (29 Sep 2026, the desk's fault list): a part is a tap like any other, 44px tall; it was 32, measured 172 by 32 at 1280 */
 .salt-rail__part {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   text-align: left;
-  min-height: 32px;
+  min-height: var(--salt-tap);
   padding: 6px 10px 6px 18px;
   border: 0;
   border-radius: 8px;
