@@ -1445,7 +1445,7 @@ await (async () => {
 /* ---- 9. The phone app's approval panel ------------------------------------------ */
 section("Drafter — rows, refusals and flags");
 await (async () => {
-  const { draftRow, costFor, floorFor, flagsFor } = await import("../src/drafter.js");
+  const { draftRow, costFor, floorFor, flagsFor, readBook } = await import("../src/drafter.js");
 
   /* a small book with the shape the real one has: two products, a lot each, some history */
   const book = {
@@ -1475,6 +1475,51 @@ await (async () => {
      deliveredQty, and since 08 Sep 2026 the drafter reads a row with neither as pending */
   book.sales = book.sales.map((r) => ({ cash: r.total, deliveredQty: r.qty, ...r }));
   const entry = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
+
+  const readEvents = [];
+  let activeRows = 0, maxActiveRows = 0;
+  const delay = (value) => new Promise((resolve) => setTimeout(() => resolve(value), 5));
+  const mirror = {
+    prepare(sql) {
+      let args = [];
+      return {
+        bind(...values) { args = values; return this; },
+        async all() {
+          const kind = sql.includes("FROM state") ? "state" : "rows:" + args[0];
+          readEvents.push(kind + ":start");
+          if (kind !== "state") {
+            activeRows++;
+            maxActiveRows = Math.max(activeRows, maxActiveRows);
+          }
+          try {
+            const results = kind === "state" ? [{ key: "PRICING", doc: JSON.stringify({ v: "v302" }) }]
+              : [{ doc: JSON.stringify({ rid: args[0] }) }];
+            return await delay({ results });
+          } finally {
+            readEvents.push(kind + ":end");
+            if (kind !== "state") activeRows--;
+          }
+        },
+        async first() {
+          readEvents.push("snapshot:start");
+          const result = await delay({ v: "v302", stamped: "2026-08-16T00:00:00.000Z" });
+          readEvents.push("snapshot:end");
+          return result;
+        }
+      };
+    }
+  };
+  const mirrorBook = await readBook(mirror);
+  const stateEnd = readEvents.indexOf("state:end");
+  const snapshotStart = readEvents.indexOf("snapshot:start");
+  const snapshotEnd = readEvents.indexOf("snapshot:end");
+  const rowStarts = ["rows:sales:start", "rows:purchases:start"].map((event) => readEvents.indexOf(event));
+  ok(stateEnd >= 0 && snapshotStart > stateEnd && snapshotEnd > snapshotStart && rowStarts.every((at) => at > snapshotEnd),
+    "state remains ahead of the snapshot, which stays ahead of both collection reads");
+  ok(maxActiveRows === 2, "sales and purchases are fetched concurrently after the snapshot");
+  ok(mirrorBook.version === "v302" && mirrorBook.sales[0].rid === "sales"
+    && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
+    "parallel reads preserve the complete book shape and pricing state");
 
   /* the desk's own cost wins over anything recomputed */
   ok(costFor(book, "salt").cost === 56, "cost comes from the desk's shelf cost, not a recomputation");
