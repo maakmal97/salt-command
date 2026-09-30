@@ -39013,7 +39013,7 @@ await (async () => {
     const filled = [...card.querySelectorAll("button.salt-pill")];
     ok(pill && pill.textContent === "Cash received, RM 100" && filled.length === 1 && filled[0] === pill,
       "its card leads with Cash received and the sum, the card's one filled control: " + JSON.stringify(filled.map((b) => b.textContent)));
-    pill.click();
+    pill.click(); await w.eval("ordHoldFlush()");   /* 29 Sep 2026: the tap waits out its undo window first */
     await new Promise((r2) => setTimeout(r2, 30));
     const post = calls.filter((c) => /\/cash$/.test(c.p));
     ok(post.length === 1 && post[0].p === "orders/c1/cash" && JSON.stringify(post[0].body) === '{"amount":100}'
@@ -39567,7 +39567,7 @@ await (async () => {
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
     w.eval("ORD_SEL='c1';ORD_OPENED=true;ordDraw();");
-    D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click();
+    D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]').click(); await w.eval("ordHoldFlush()");   /* 29 Sep 2026: the tap waits out its undo window first */
     for (let i = 0; i < 30 && !D.querySelector('.ordlist [data-msg="c1"]'); i++) await new Promise((r) => setTimeout(r, 30));
     const said = D.querySelector('.ordlist [data-msg="c1"]');
     ok(said && /^CC9-OKR, 1 unit salt of 20 Sep, RM 100\. Recorded: RM 100 in cash\. They see it paid and the chase stops\. Booked as it is drafted/.test(said.textContent) && w.eval("ORD_OPENED") === false
@@ -46440,7 +46440,7 @@ await (async () => {
     const wait = async (cond) => { for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 30)); if (cond()) return true; } return cond(); };
 
     /* (a) untouched, the filled pill posts the whole of what is owed */
-    q("o1", 'button[data-ord="cash"]').click();
+    q("o1", 'button[data-ord="cash"]').click(); await w.eval("ordHoldFlush()");   /* 29 Sep 2026: the tap waits out its undo window first */
     await wait(() => posted.length === 1);
     ok(posted.length === 1 && posted[0].amount === 100, "the whole pill posts the amount due: " + JSON.stringify(posted[0]));
     const said = () => (q("o1", '[data-msg="o1"]') || {}).textContent || "";
@@ -46462,7 +46462,7 @@ await (async () => {
       "the typed figure survives ordDraw(): " + JSON.stringify({ value: inp.value, text: pill.textContent }));
 
     /* (b) continued: the pill posts the typed figure, not the whole */
-    q("o1", 'button[data-ord="cash"]').click();
+    q("o1", 'button[data-ord="cash"]').click(); await w.eval("ordHoldFlush()");   /* 29 Sep 2026: the tap waits out its undo window first */
     await wait(() => posted.length === 2);
     ok(posted.length === 2 && posted[1].amount === 40, "Other amount posts the typed figure: " + JSON.stringify(posted[1]));
     /* a part leaves the rest owed and the chase going: the answer says what is left, never that it is paid */
@@ -49645,6 +49645,89 @@ await (async () => {
       "Step 6: answered once, the door fills the username and asks for the password, and after it this device's wrap is filed and kept: "
       + JSON.stringify({ said, filed: filed && filed.body, kept }));
   } finally { B.W.close(); }
+})();
+
+section("29 Sep 2026: Cash received waits ten seconds on its card with Undo, and an Undo inside them sends nothing");
+await (async () => {
+  /* HIS DECISION OF 29 SEP 2026: three taps of Cash received on CE5-SA orders (RM 210, 110 and 8) were mistakes, and he
+     chose a short undo over a confirm, so his one tap stands (D6). The tap cannot be withdrawn once it leaves: the
+     Worker files his yes, moves the Counter's order paid, wakes their phone and queues the row in one request. So the
+     undo is before the send: the tap is held on the card, Undo in the pill's place, and posts when the window runs out
+     or the page goes. The window's timer is caught, never waited on. Each check was proved red by its own mutation. */
+  const { openMaster: omU } = await import("../tools/payload.mjs");
+  const { w } = await omU();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const timers = [], realST = w.setTimeout.bind(w);
+    w.setTimeout = (f, ms, ...a) => { if (ms === w.eval("ORD_UNDO_MS")) { timers.push({ f, ms }); return 9000 + timers.length; } return realST(f, ms, ...a); };
+    w.clearTimeout = ((ct) => (h) => { if (h > 9000 && h <= 9000 + timers.length) timers[h - 9001].off = true; else ct(h); })(w.clearTimeout.bind(w));
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base),
+      Object.assign({ id: "c2", status: "ready", at: "2026-09-21T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base)];
+    const posts = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (post) posts.push({ p, body: JSON.parse(init.body), keepalive: !!init.keepalive });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) }
+        : { ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => realST(r, 5)); };
+    ok(w.eval("ORD_UNDO_MS") === 10000, "the window is ten seconds");
+    /* 1. the tap is held: nothing posted, Undo stands where the pill was, and the line says when it goes */
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    const filled = [...card("c1").querySelectorAll("button.salt-pill")].map((b) => b.textContent.trim());
+    const line = (card("c1").querySelector(".ordhold") || {}).textContent || "";
+    ok(posts.length === 0 && timers.length === 1 && timers[0].ms === 10000, "a tap of Cash received posts nothing yet, and waits ten seconds: " + JSON.stringify({ posts, timers: timers.length }));
+    ok(filled.join("|") === "Undo" && !card("c1").querySelector('button[data-ord="cash"]') && /^Cash received, RM 100: it goes in 10 s\. Undo sends nothing\.$/.test(line.trim()),
+      "the card holds Undo in the pill's place, its one filled control, and says what goes and when: " + JSON.stringify({ filled, line }));
+    /* 2. an Undo inside the window sends nothing, then or ever, and the pill is back */
+    card("c1").querySelector("button[data-undo]").click();
+    await settle();
+    await w.eval("ordHoldFlush()");
+    await settle();
+    ok(posts.length === 0 && timers[0].off === true && JSON.stringify(Object.keys(w.eval("ORD_HOLD"))) === "[]"
+      && /^Undone: nothing was sent, and the order is as it was\.$/.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || "")
+      && !!card("c1").querySelector('button[data-ord="cash"]'),
+      "Undo inside the window sends nothing, then or later, says so, and the pill is back: " + JSON.stringify(posts));
+    /* 3. the window runs out: the tap posts once, the figure he was shown, kept alive */
+    card("c1").querySelector('button[data-cashopen="c1"]').click();
+    const inp = card("c1").querySelector('input[data-cashamt="c1"]'); inp.value = "40"; inp.oninput();
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    const typed = card("c1").querySelector('input[data-cashamt="c1"]'); if (typed) typed.value = "70";
+    ok(posts.length === 0 && timers.length === 2, "a custom figure is held the same way");
+    timers[1].f();
+    await settle();
+    ok(posts.length === 1 && posts[0].p === "orders/c1/cash" && posts[0].body.amount === 40 && posts[0].keepalive === true,
+      "when the window runs out the held tap posts once, the figure shown when he tapped, kept alive: " + JSON.stringify(posts));
+    ok(/^Recorded: RM 40 in cash\./.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || ""), "and the card says what it did, as a tap always has");
+    /* 4. the page going sends what is held at once */
+    card("c2").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    ok(posts.length === 1, "a second order's tap is held too");
+    Object.defineProperty(D, "visibilityState", { value: "hidden", configurable: true });
+    D.dispatchEvent(new w.Event("visibilitychange"));
+    await settle();
+    ok(posts.length === 2 && posts[1].p === "orders/c2/cash" && posts[1].body.amount === 100 && posts[1].keepalive === true,
+      "the phone locking or the page going sends a held tap at once, never losing it: " + JSON.stringify(posts[1]));
+    /* 5. a figure refused is refused at once and never held */
+    card("c1").querySelector('button[data-cashopen="c1"]').click();
+    const z = card("c1").querySelector('input[data-cashamt="c1"]'); z.value = "0"; z.oninput();
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    ok(timers.length === 3 && /^That is not a figure above RM 0/.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || ""),
+      "a figure the tap would refuse is refused at once and never held: " + timers.length);
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (x) { /* best effort */ }
+  }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

@@ -19818,6 +19818,38 @@ function ordPartSay(id){const o=ORD_OPEN.find(x=>x&&x.id===id),c=document.queryS
   const p=c.querySelector('[data-partcap]');if(p)p.innerHTML=ordPartCap(o,n);}
 /* 28 Sep 2026: CASH RECEIVED, A CUSTOM AMOUNT. Which cards have Other amount open, read off the box as a part is. */
 let ORD_CASH={};
+/* CASH RECEIVED WAITS ON THE CARD BEFORE IT LEAVES (29 Sep 2026, his decision: a short undo, not a confirm, so his one
+   tap stands, D6). Three taps of it on CE5-SA orders, RM 210, 110 and 8, were mistakes, and a tap cannot be taken back
+   once it leaves: the Worker files his yes, moves the Counter's order paid, wakes their phone and queues the row in one
+   request, and the drafter approves the row as it lands. Nothing on the server can be withdrawn after that without a
+   road back on the Counter, so the undo is before the send: the tap is held here for ORD_UNDO_MS with Undo in its
+   place, and posts when the time runs out. An Undo inside the window sends nothing at all. Leaving the page, or the
+   phone locking, sends what is held at once, since a cash tap he meant must never be lost. */
+let ORD_UNDO_MS=10000, ORD_HOLD={};
+const ordHoldLeft=id=>{const h=ORD_HOLD[id];return h?Math.max(0,Math.ceil((h.until-Date.now())/1000)):0;};
+function ordHold(ds,amount){
+  const id=ds.id;
+  ORD_HOLD[id]={amount,ds:{id,u:ds.u,ord:'cash'},until:Date.now()+ORD_UNDO_MS,
+    t:setTimeout(()=>ordHoldGo(id),ORD_UNDO_MS),
+    i:setInterval(()=>{const e=document.querySelector('[data-holdleft="'+id+'"]');if(e)e.textContent=String(ordHoldLeft(id));},1000)};
+  ORD_SAID=null;ordDraw();
+}
+/* the time is up, or the page is going: the held tap posts as the tap itself would have */
+function ordHoldGo(id){
+  const h=ORD_HOLD[id];if(!h)return Promise.resolve(false);
+  clearTimeout(h.t);
+  if(ordBusy[id]){h.t=setTimeout(()=>ordHoldGo(id),500);return Promise.resolve(false);}   /* another move of this order in flight: after it */
+  clearInterval(h.i);delete ORD_HOLD[id];
+  return ordAct({dataset:Object.assign({},h.ds,{held:String(h.amount)}),closest:()=>document.querySelector('.ordcard[data-id="'+id+'"]')});
+}
+function ordHoldFlush(){return Promise.all(Object.keys(ORD_HOLD).map(ordHoldGo));}
+function ordUndo(id){
+  const h=ORD_HOLD[id];if(!h)return;
+  clearTimeout(h.t);clearInterval(h.i);delete ORD_HOLD[id];
+  ORD_SAID={id,t:'Undone: nothing was sent, and the order is as it was.'};ordDraw();
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')ordHoldFlush();});
+window.addEventListener('pagehide',()=>{ordHoldFlush();});
 /* the pill says what its tap would send: an emptied box is RM 0, which the tap refuses, never the whole it will not send */
 function ordCashNow(o){const i=document.querySelector('input[data-cashamt="'+o.id+'"]');return i?(parseFloat(i.value)||0):ordDue(o);}
 /* the pill's own label follows each keystroke on the node already drawn, the same reason ordPartSay does */
@@ -20056,7 +20088,8 @@ function ordCard(o){
   /* 28 Sep 2026: a part-paid order takes the rest in cash too; nothing paid is no longer required */
   const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&ordDue(o)>0.004&&!c0;
   const cashPart=cashNow&&!!ORD_CASH[o.id];
-  const cashBtn=cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${cashPart?' data-cashpart="1"':''}>Cash received, ${fmt(cashPart?ordCashNow(o):ordDue(o))}</button>`
+  const hold=ORD_HOLD[o.id];
+  const cashBtn=hold?`<button class="vbtn salt-pill salt-pill--sm" data-undo="${esc(o.id)}">Undo</button>`:cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${cashPart?' data-cashpart="1"':''}>Cash received, ${fmt(cashPart?ordCashNow(o):ordDue(o))}</button>`
     +`<button class="salt-ghost" data-cash${cashPart?'off':'open'}="${esc(o.id)}">${cashPart?'Take the whole':'Other amount'}</button>`:'';
   /* S6 fix: a claim more than the order still owes is covered by money he recorded another way: Received, on the book already */
   const cov=!!c0&&(+c0.amount||0)>ordDue(o)+0.004;
@@ -20137,7 +20170,8 @@ function ordCard(o){
     ${fee}${rated}${thread}${reply}
     ${cash}${hand}${o.prepay&&handable&&ordDue(o)>0.004?`<p class="salt-approve__reason ordprepay">Paid in advance: ${fmt(ordDue(o))} is still to pay before it is handed over.</p>`:''}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
-      ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
+      ${hold?`<p class="salt-approve__reason ordhold">Cash received, ${fmt(hold.amount)}: it goes in <span data-holdleft="${esc(o.id)}">${ordHoldLeft(o.id)}</span> s. Undo sends nothing.</p>`
+      :cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
       ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}
       ${c0&&c0.slip&&!whyOpen?slipPart(o.u,c0.slip,c0.at):''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
@@ -20274,6 +20308,7 @@ function ordDraw(){
   box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
   box.querySelectorAll('button[data-cashopen]').forEach(b=>{b.onclick=()=>{ORD_CASH[b.dataset.cashopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-cashoff]').forEach(b=>{b.onclick=()=>{delete ORD_CASH[b.dataset.cashoff];ordDraw();};});
+  box.querySelectorAll('button[data-undo]').forEach(b=>{b.onclick=()=>ordUndo(b.dataset.undo);});
   /* F13: a slip opened on the card, and let go */
   box.querySelectorAll('button[data-slip]').forEach(b=>{b.onclick=()=>slipView(b.dataset.u,b.dataset.slip,b.dataset.at);});
   box.querySelectorAll('button[data-slipoff]').forEach(b=>{b.onclick=()=>{const v=SLIP_VIEW[b.dataset.slipoff];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}delete SLIP_VIEW[b.dataset.slipoff];ordDraw();};});
@@ -20334,8 +20369,9 @@ async function ordAct(b){
     /* 28 Sep 2026: a custom figure, when the pill carries data-cashpart, else the whole owed */
     const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
     const due=ordDue(o);
-    const amount=b.dataset.cashpart?+((typed('cashamt'))||0).toFixed(2):due;
+    const amount=b.dataset.held!=null?+b.dataset.held:b.dataset.cashpart?+((typed('cashamt'))||0).toFixed(2):due;
     if(!(amount>0.004)||amount>due+0.004)return refuse('That is not a figure above RM 0 and up to the '+fmt(due)+' owed; nothing moved.');
+    if(b.dataset.held==null&&b.nodeType===1){delete ordBusy[id];ordHold(b.dataset,amount);return false;}
     body=JSON.stringify({amount});
     url='orders/'+encodeURIComponent(id)+'/cash';
   }else if(st==='again'){
@@ -20372,8 +20408,9 @@ async function ordAct(b){
   /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
      system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
   {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
-  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
-    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+  const keep=b.dataset.held!=null;   /* a held cash tap may be posting as the page goes */
+  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body,keepalive:keep});
+    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body,keepalive:keep});
     let j={};try{j=await r.json();}catch(e){}
     done=r.ok;
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
