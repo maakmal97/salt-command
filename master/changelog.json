@@ -1,5 +1,14 @@
 [
  {
+  "v": "v961",
+  "d": "30 Sep 2026",
+  "t": "A RICE ORDER WITHDRAWN, A SALT DEBT SETTLED, TWO UNITS OF RICE SOLD",
+  "n": [
+   "<b>THREE ROWS FOLDED, ALL FOR CK4-SEN.</b> The customer withdrew the 1 unit rice order s218 for RM8 on the statements site. The desk took RM530 cash at the counter against s216, which had been collected on 30 Sep unpaid, and that settles it in full. A fresh rice sale of 2 units for RM16 was paid and collected the same day.",
+   "<b>INVENTORY.</b> Only the new rice sale moves stock, by 2 units of rice. The cancellation and the fulfilment move no goods, because s216 was already collected. Salt stays at 14.75 units and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v960",
   "d": "30 Sep 2026",
   "t": "ONE RICE ORDER AT THE ASK; NOTHING LEAVES THE SHELF",
