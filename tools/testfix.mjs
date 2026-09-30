@@ -15,7 +15,7 @@
  * case is here. A feature that lands later lands with its line here and its case in build(), or the suite is red.
  */
 import { createHash } from "node:crypto";
-import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
+import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, decideThread, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
   ROWED, customerView, rateDue } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
@@ -98,9 +98,11 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   const O = [];
   /* A SHEET OF TWO, placed, salt and rice beside it (v936) */
   const sheet = "exampleSheet0001";
-  O.push(order(oid(0, "01"), list, T(0, 5), { product: "salt", qty: 12.5, mode: "deliver", place: "Jalan Contoh", sheet,
+  /* and wanted by a day five days on (29 Sep 2026), which a sheet's lines share */
+  const wantBy = klDay(new Date(now.getTime() + 5 * 864e5));
+  O.push(order(oid(0, "01"), list, T(0, 5), { product: "salt", qty: 12.5, mode: "deliver", place: "Jalan Contoh", sheet, wantBy,
     note: "Please ring when you are outside." }, []));
-  O.push(order(oid(0, "02"), list, T(0, 5), { product: "rice", qty: 2, mode: "deliver", place: "Jalan Contoh", sheet }, []));
+  O.push(order(oid(0, "02"), list, T(0, 5), { product: "rice", qty: 2, mode: "deliver", place: "Jalan Contoh", sheet, wantBy }, []));
   /* AGREED, delivered, a delivery charge, a transfer they say they sent and he has not answered, and a thread */
   O.push(order(oid(2, "03"), list, T(2), { product: "oil", qty: 3, mode: "deliver", place: "Taman Rekaan" }, [
     [T(2, 30), "desk", { status: "acknowledged", delivery: 5 }],
@@ -110,8 +112,9 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120, slip: "e0a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [])));   /* F13: with a slip */
   /* READY to collect, due at Ready, for a friend of an associate's; part of it said sent with a slip long past its thirty
      days, so the page says the slip is no longer kept (F13) */
+  /* and priced at the acknowledgement under what they placed it at, which the page shows beside it (Step 2) */
   O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
-    [T(35, 20), "desk", { status: "acknowledged" }]].concat(W ? [
+    [T(35, 20), "desk", { status: "acknowledged", total: 260 }]].concat(W ? [
     [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
     [T(1, 10), "desk", { status: "ready" }]])));
   /* COLLECTED and paid in cash: complete */
@@ -218,9 +221,14 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     { product: "oil", name: "Oil", unit: "unit", summary: { bought: 115, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null,
       lines: [{ date: T(2).slice(0, 10), kind: "own", qty: 3, rm: 115 }] }] };
 
+  /* Step 7: THE ACCOUNT'S THREAD, a question about no one order, and his answer, by the book's own decide and apply */
+  let thread = null;
+  for (const [at, by, body] of [[T(4), "customer", { text: "Do you deliver on Sundays?" }], [T(4, 20), "desk", { message: "Not on Sundays, any other day." }]])
+    thread = applyEvent(thread, decideThread(thread, body, by, at, u).ev).order;
+
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    orders: O, claims, refs, card, assoc: true,
+    orders: O, claims, refs, card, assoc: true, thread,
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
 }
 
@@ -232,6 +240,8 @@ const hist = (o, p) => (o.history || []).some(p);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
   ["order agreed", (f) => has(f, (o) => o.status === "acknowledged")],
+  ["a day they want it by, placed ahead (29 Sep 2026)", (f) => has(f, (o) => o.status === "placed" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
+    && o.wantBy > klDay(new Date(f.at)))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],
@@ -239,6 +249,7 @@ export const FEATURES = [
   ["cancelled by us, with his reason", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "desk" && h.note))],
   ["not taken, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
+  ["a price set at the acknowledgement, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
   ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty
     && (o.history || []).filter((h) => h.status === "ready" && h.by === "desk" && !h.note && !h.method).length > 1)],
@@ -270,6 +281,7 @@ export const FEATURES = [
   ["one sheet, several products (v936)", (f) => { const s = {}; f.orders.forEach((o) => { if (o.sheet) s[o.sheet] = (s[o.sheet] || 0) + 1; }); return Object.values(s).some((n) => n > 1); }],
   ["a friend's order, for an associate", (f) => f.assoc === true && has(f, (o) => o.forFriend === true)],
   ["a thread, theirs and his", (f) => has(f, (o) => (o.msgs || []).some((m) => m.by === "customer") && (o.msgs || []).some((m) => m.by === "desk"))],
+  ["the account's thread, theirs and his (Step 7)", (f) => !!f.thread && f.thread.msgs.some((m) => m.by === "customer") && f.thread.msgs.some((m) => m.by === "desk")],
   ["the bulletin", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length)],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],

@@ -79,6 +79,9 @@ const { txStat, txDates, txOwed } = POSITION_ENGINE;   /* v741: what they owe is
 const esc = x => ('' + (x == null ? '' : x)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 /* "03 Sep 2026" off a Date's own clock; the month from MON3, because en-GB writes Sept (24 Sep 2026) */
 const dmy = t => String(t.getDate()).padStart(2, '0') + ' ' + MON3[t.getMonth()] + ' ' + t.getFullYear();
+/* C25 (29 Sep 2026): A BOOK'S DAY IS ITS OWN DIGITS. new Date('2026-09-20') is midnight in UTC, and dmy reads the clock the
+   tool runs on, so west of UTC every date printed a day early. A YYYY-MM-DD string is written from its digits, no clock read. */
+const dayOf = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? m[3] + ' ' + MON3[+m[2] - 1] + ' ' + m[1] : null; };
 const codeOf = n => n; /* the desk's codeOf is newIds[n]||n and newIds is {} post-rekey: identity */
 
 /* ============ STATEMENT OF ACCOUNT (v183) ============
@@ -350,7 +353,11 @@ function stmtDoc(party,rows,o){
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   /* S7 7.3: the live document's lists are Statement lines, read aloud as a table at every width; "units" above one (D11) */
   const lines=!!o.live;
-  const units=q=>n2(q)+' '+(+q>1?'units':'unit');
+  const units=q=>n2(q)+' '+(+q>1||+q===0?'units':'unit');
+  /* C7 (29 Sep 2026): the live document's workings say units as its lines do; an issue keeps the words it was sent with */
+  const uw=q=>lines?units(q):n2(q)+' unit';
+  /* C11: the live document names no product in its prose, the goods being a mark; an issue is as it was sent */
+  const goods=lines?'goods':'salt';
   /* HIS ANSWER OF 28 SEP 2026, "It will be rendered cards in the statement": each mark of the live document is a card, the
      mark a button and its figure under it, alone, as on the Counter's own cards (mtileSvg) */
   const lineTile=(p,q)=>mtileSvg(p,n2(q),units(q));
@@ -358,6 +365,8 @@ function stmtDoc(party,rows,o){
   const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
     +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  /* C5 (29 Sep 2026): the live footer's figures carry RM as its lines do; an issue's footer is as it was sent */
+  const fig=v=>(o.live?'RM ':'')+money(v);
   const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
   /* AN UNDATED ROW PRINTS AN EMPTY CELL, NOT "Invalid Date" (29 Aug 2026, the one
      behavioural change from the v387 text). The book now carries undated rows (a
@@ -366,7 +375,7 @@ function stmtDoc(party,rows,o){
      column already says what such a row is; the date cell stays quiet. Whether it
      should instead show the row's cancelledOn or agreedOn is his call, not made here. */
   /* Sep, never en-GB's Sept (24 Sep 2026), except on an archive, which is rebuilt to say what was issued */
-  const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return marked?dmy(t):t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
+  const dLong=d=>{try{const t=new Date(d);if(!d||isNaN(t))return '';return marked?(dayOf(d)||dmy(t)):t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
   /* NEVER A NAME: the one substitution in this lifted block. The desk-era useName
      option read the laptop's plaintext directory, which never reaches this repo (hard
      rule 2), so the path is removed rather than parameterised: a statement built here
@@ -382,9 +391,10 @@ function stmtDoc(party,rows,o){
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
      is the one arithmetic a reader would certainly catch. */
   T.pendQty=0;T.pendVal=0;T.pendN=0;
-  T.cxN=0;T.cxPaid=0;
-  /* 27 Sep 2026, amended (DROP THE RINGGIT): the reward's own share of an order is NAMED on the line, never valued; the
-     order line and the footer both stay at goods plus delivery, the cover never added in. */
+  T.cxN=0;T.cxPaid=0;T.delivery=0;T.pendDel=0;
+  /* 27 Sep 2026, amended (DROP THE RINGGIT): the reward's own share of an order is NAMED on the line, never valued, the cover
+     never added in. C1 (29 Sep 2026): the order line's total is the goods, and the delivery is its own line under it, so the
+     footer adds up as txOwed does; that note said the footer held the delivery, and nothing did. */
   const coverSaid=()=>esc(fill(EN['part.cover'],{},'en'));
   rows.forEach(r=>{
     /* a cancelled order contributes NOTHING: not quantity, not value, not the count of
@@ -395,13 +405,13 @@ function stmtDoc(party,rows,o){
        they handed over; the cancelled part is named on its own line, and the refund the engine
        booked at v444 is stated as Owed to you rather than left to the Refunds table alone. */
     if(r.cancelled){T.cxN++;T.cxPaid+=r.gift?0:(r.paidCash+r.inKind);T.paid+=r.gift?0:(r.paidCash+r.inKind);return;}
-    if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendN++;}
+    if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendDel+=(+r.delivery||0);T.pendN++;}
     /* v782: UNITS OF DIFFERENT BOOKS DO NOT ADD, which is his standing rule and was being broken
        here every time a customer held two. The money still adds, because a ringgit is a ringgit
        whatever it bought; only the quantity is kept apart. T.qty stays for the single-book case
        and for every caller that already reads it. */
     T.qtyBy[r.product]=(T.qtyBy[r.product]||0)+r.qty;
-    T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
+    T.qty+=r.qty;T.total+=r.total;T.delivery+=r.gift?0:(+r.delivery||0);T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
     const tg=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.toGet+=tg;T.toGetBy[r.product]=(T.toGetBy[r.product]||0)+tg;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
      against a separate arrangement rather than an unpaid earlier order, calling it an
@@ -463,16 +473,19 @@ function stmtDoc(party,rows,o){
        read inside the Counter, which carries the recipe, while an issue is a standalone file and keeps its table. */
     if(lines){
       const sub=t=>t?'<span class="salt-lines__sub">'+t+'</span>':'';
+      /* C4 (29 Sep 2026): EVERY FULLY PAID ROW SAYS WHEN, under its state word, the same day or later; it was said only when
+         the money came on a later day, so a reader could not tell paid the same day from no date known */
+      const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';
       const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
           (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
         :r.gift?['no charge','',[]]
         :r.pendingOrder?['ordered','steel',['to be collected and paid']]
         :due?['RM '+money(r.owed)+' due','ember',[]]
-        :owedUnits?['paid in full','verdigris',[units(r.toGet)+' still to collect']]
-        :['settled','verdigris',[]];
+        :owedUnits?['paid in full','verdigris',[paidSaid,units(r.toGet)+' still to collect']]
+        :['settled','verdigris',[paidSaid]];
       return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
         +(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
-        +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+sub(paidLater?'paid '+e(dLong(r.paidOn)):'')+'</div>'
+        +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+'</div>'
         +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
           +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
         +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
@@ -520,7 +533,9 @@ function stmtDoc(party,rows,o){
       no brand carries no eyebrow at all rather than an empty line. The issues already sealed keep
       the letterhead they were issued with, because a dated record is not corrected in place. */
    o.brand ? '<p class="eyebrow">'+e(o.brand)+'</p>' : '',
-   '<h1>Statement of account</h1>',
+   /* C2 (29 Sep 2026): inside the Counter the place is the page's h1 and its header names the username, so the live
+      document's title is an h2 and it names the account no second time; an issue is a page of its own */
+   o.live?'<h2 class="stmth">Statement of account</h2>':'<h1>Statement of account</h1>',
    /* the period line has to survive the reader checking it against the rows. Once a
       pending order can sit outside the window, a statement headed "to 02 Aug" can carry
       a line dated 03 Aug, and saying nothing about that is the sort of small
@@ -538,23 +553,23 @@ function stmtDoc(party,rows,o){
       written, and the moment is printed to the minute so a reader can tell two of them apart. */
    (o.live
      ? '<p class="meta">Live statement &middot; as at '+e(o.issued)+' &middot; every entry from the beginning to today, '
-       +'updated whenever an entry is approved</p>'
+       +'updated whenever your account changes</p>'
      : '<p class="meta">Issued '+e(o.issued)+
      (o.archive
        ? ' &middot; every order placed up to '+e(dLong(o.to))+', shown as the account stands today'
        : (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
          +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
             ?', plus any order agreed and not yet actioned':''):''))+'</p>'),
-   who?'<p class="whol gap1">Account</p>':'',
-   who?'<div class="who">'+e(who)+'</div>':'',
+   who&&!o.live?'<p class="whol gap1">Account</p>':'',
+   who&&!o.live?'<div class="who">'+e(who)+'</div>':'',
    '<div class="rule"></div>',
    rows.length?(lines?lineList('Your orders',['Date','Quantity','Amount','Status'],body)
      :box('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>'))
-     :'<p class="meta">No orders in this period.</p>',
-   ((o.refunds||[]).length&&lines?'<p class="whol gap2">Refunds</p>'
+     :'<p class="meta">'+(o.live?'No orders yet.':'No orders in this period.')+'</p>',
+   ((o.refunds||[]).length&&lines?'<h3 class="whol gap2">Refunds</h3>'
      +lineList('Refunds',['Date','Reason','Amount','Status'],o.refunds.slice().reverse().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(r=>
-       '<div class="salt-lines__row" role="row"><div class="salt-lines__date" role="cell">'+e(dLong(r.date))+'</div>'
+       '<div class="salt-lines__row" role="row"'+(r.date?' data-m="'+e(String(r.date).slice(0,7))+'"':'')+'><div class="salt-lines__date" role="cell">'+e(dLong(r.date))+'</div>'
        +'<div class="salt-lines__what" role="cell">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</div>'
        +'<div class="salt-lines__amount" role="cell">RM '+money(r.amount)+'</div>'
        +(r.paidOn?'<div class="salt-lines__state salt-lines__state--verdigris" role="cell">paid '+e(dLong(r.paidOn))+'</div>'
@@ -580,16 +595,18 @@ function stmtDoc(party,rows,o){
         : lines ? tiles(bookOrder(Object.keys(T.qtyBy)),p=>T.qtyBy[p])
         : ', '+bookOrder(Object.keys(T.qtyBy)).map(p=>markOf(p)+n2(T.qtyBy[p])+' unit').join(' &middot; '))
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
-     +'</span><span>'+money(T.total)+'</span></div>',
-   '<div class="tr"><span>Paid</span><span>'+money(T.paid)+'</span></div>',
-   (T.cxPaid>0.009?'<div class="tr sub"><span>of which on cancelled orders</span><span>'+money(T.cxPaid)+'</span></div>':''),
+     +'</span><span>'+fig(T.total)+'</span></div>',
+   /* C1: the delivery charged, between the goods and what was paid, on the live document; an issue is as it was sent */
+   (lines&&T.delivery>0.009?'<div class="tr"><span>Delivery</span><span>'+fig(T.delivery)+'</span></div>':''),
+   '<div class="tr"><span>Paid</span><span>'+fig(T.paid)+'</span></div>',
+   (T.cxPaid>0.009?'<div class="tr sub"><span>of which on cancelled orders</span><span>'+fig(T.cxPaid)+'</span></div>':''),
    /* say plainly which part of the total has not happened yet, so the ordered figure
       and the paid figure can be reconciled without him having to ask why they differ */
    (T.pendN?'<div class="tr sub"><span>of which not yet collected or paid</span><span>'
-      +money(T.pendVal)+'</span></div>':''),
+      +fig(T.pendVal+(lines?T.pendDel:0))+'</span></div>':''),
    '<div class="tr big'+(T.owed>0.009?'':' clear')+'"><span>'+(T.owed>0.009?'Outstanding':'Balance')+'</span><span>'
-     +(T.owed>0.009?money(T.owed):'nil')+'</span></div>',
-   (refundOwed>0.009?'<div class="tr big"><span>Owed to you</span><span>'+money(refundOwed)+'</span></div>':''),
+     +(T.owed>0.009?fig(T.owed):'nil')+'</span></div>',
+   (refundOwed>0.009?'<div class="tr big"><span>Owed to you</span><span>'+fig(refundOwed)+'</span></div>':''),
    '</div>',
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
@@ -597,7 +614,7 @@ function stmtDoc(party,rows,o){
    /* ONE LINE A BOOK, marked, and never a sum over two (v782's rule, which this block broke until
       stage 1 of the Counter redesign, 24 Sep 2026): two of one book and one and a half of another
       are not three and a half of anything. An archive keeps the one figure it was issued with. */
-   (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
+   (T.toGet>0.009?'<div class="owed">'+(lines?'<h3 class="owedl">Still to collect</h3>':'<p class="owedl">Still to collect</p>')
      +(!marked ? '<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p>'
        : lines ? tiles(bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009)),p=>T.toGetBy[p])
        : bookOrder(Object.keys(T.toGetBy).filter(p=>T.toGetBy[p]>0.009))
@@ -608,17 +625,17 @@ function stmtDoc(party,rows,o){
      let st=0;
      const step=(t,b)=>'<div class="stp"><div class="stpn">'+(++st)+'</div><div class="stpb">'
        +'<p class="stpt">'+t+'</p>'+(b?'<p class="stpd">'+b+'</p>':'')+'</div></div>';
-     const legRows=R.legs.map(l=>'<tr><td class="l">'+e(dLong(l.date))+'</td><td>'+n2(l.qty)+' unit</td>'
-       +'<td>'+money(l.billed)+'</td><td>'+money(l.paid)+'</td>'
-       +'<td class="r"><b class="short">'+money(l.short)+'</b></td></tr>').join('');
+     const legRows=R.legs.map(l=>'<tr><td class="l">'+e(dLong(l.date))+'</td><td>'+uw(l.qty)+'</td>'
+       +'<td>'+fig(l.billed)+'</td><td>'+fig(l.paid)+'</td>'
+       +'<td class="r"><b class="short">'+fig(l.short)+'</b></td></tr>').join('');
      /* v458: THE PAYMENT LIST IS A NARRATIVE BESIDE THE FIGURE, NEVER ITS SOURCE. The dated list is
         read off the amend trail, and v363 lets a Correction set the row's cash directly while the
         trail stays as it was written, so the steps can add up to money the order never carried:
         s018 holds cash 710 after its audit with steps of 650 and 200 beside it. The dated list is
         printed only when it sums to what the row says was paid; otherwise the row's figure alone. */
      const stepSum=+R.payments.reduce((a,x)=>a+x.rm,0).toFixed(2);
-     const pays=(R.payments.length&&Math.abs(stepSum-R.order.paid)<=0.009)?R.payments.map(x=>money(x.rm)+' on '+e(dLong(x.date))).join(', ')
-                              :money(R.order.paid);
+     const pays=(R.payments.length&&Math.abs(stepSum-R.order.paid)<=0.009)?R.payments.map(x=>fig(x.rm)+' on '+e(dLong(x.date))).join(', ')
+                              :fig(R.order.paid);
      /* once the salt has gone out the reconciliation is no longer a claim but a record,
         and titling it "how the 0 unit is arrived at" would be nonsense. It is kept
         either way, because the proof is worth more after a dispute than during one. */
@@ -631,53 +648,53 @@ function stmtDoc(party,rows,o){
        const gone=R.unitsOff, took=R.collected;
        return '<div class="rec"><p class="recl">How your '+e(dLong(R.order.date))+' order was settled</p>'
          +step('The order was paid in full.',
-               n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '
-               +money(R.order.total)+', received as '+pays+'.')
+               uw(R.order.qty)+' at '+fig(R.order.total/R.order.qty)+' a unit is '
+               +fig(R.order.total)+', received as '+pays+'.')
          +step('Part of it was not handed over, by agreement.',
-               '<b>'+n2(gone)+' unit</b> of that order was held back and applied to a separate '
+               '<b>'+uw(gone)+'</b> of that order was held back and applied to a separate '
                +'arrangement between us, rather than being collected or refunded. No money '
                +'changed hands on it.')
-         +step(R.owed>0.009?'So the salt still due to you is what is left.'
+         +step(R.owed>0.009?'So the '+goods+' still due to you '+(lines?'are':'is')+' what is left.'
                            :'So the balance of the order was collected in full.',
                box('<table class="mini calc"><tbody>'
-               +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
-               +'<tr><td class="l">Less applied by agreement</td><td class="r">&minus; '+n2(gone)+' unit</td></tr>'
-               +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
-               +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(took)+' unit</td></tr>'
+               +'<tr><td class="l">Bought</td><td class="r">'+uw(R.order.qty)+'</td></tr>'
+               +'<tr><td class="l">Less applied by agreement</td><td class="r">&minus; '+uw(gone)+'</td></tr>'
+               +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+uw(R.deliverable)+'</td></tr>'
+               +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+uw(took)+'</td></tr>'
                +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')
-               +'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
+               +'</td><td class="r">'+uw(R.owed)+'</td></tr>'
                +'</tbody></table>'))
          +'<p class="recn">If your own record of that arrangement differs from this, say so '
          +'and it will be gone through line by line.</p></div>';
      }
      return '<div class="rec"><p class="recl">'+(R.owed>0.009
-        ?'How the '+n2(R.owed)+' unit is arrived at'
+        ?'How the '+uw(R.owed)+' '+(lines&&+R.owed>1?'are':'is')+' arrived at'
         :'How your '+e(dLong(R.order.date))+' order was settled')+'</p>'
        +step('Earlier orders were not paid in full.',
              box('<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
              +legRows+'<tr class="tot"><td class="l" colspan="4">Carried forward</td><td class="r"><b class="short">'
-             +money(R.shortTot)+'</b></td></tr></tbody></table>'))
-       +step('That '+money(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in salt rather than cash.',
-             money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.unitsOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
+             +fig(R.shortTot)+'</b></td></tr></tbody></table>'))
+       +step('That '+fig(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in '+goods+' rather than cash.',
+             fig(R.shortTot)+' at '+fig(R.rate)+' a unit is <b>'+uw(R.unitsOff)+'</b>, withheld from that order by agreement. No money changed hands and '+(lines?'those goods':'that salt')+' stayed on the shelf.')
        +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
-             n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '+money(R.order.total)+', received as '+pays+'.')
+             uw(R.order.qty)+' at '+fig(R.order.total/R.order.qty)+' a unit is '+fig(R.order.total)+', received as '+pays+'.')
        +step(R.owed>0.009
-             ?'So the salt due to you is what you bought, less what settled the balance, less what you have taken.'
-             :'So the salt due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
+             ?'So the '+goods+' due to you '+(lines?'are':'is')+' what you bought, less what settled the balance, less what you have taken.'
+             :'So the '+goods+' due to you '+(lines?'were':'was')+' what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
              box('<table class="mini calc"><tbody>'
-             +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
-             +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.unitsOff)+' unit</td></tr>'
-             +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
-             +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(R.collected)+' unit</td></tr>'
-             +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
+             +'<tr><td class="l">Bought</td><td class="r">'+uw(R.order.qty)+'</td></tr>'
+             +'<tr><td class="l">Less applied to the '+fig(R.shortTot)+' balance</td><td class="r">&minus; '+uw(R.unitsOff)+'</td></tr>'
+             +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+uw(R.deliverable)+'</td></tr>'
+             +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+uw(R.collected)+'</td></tr>'
+             +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+uw(R.owed)+'</td></tr>'
              +'</tbody></table>'))
        /* the one contradiction a careful reader would otherwise find, answered before he
           finds it: those orders read as settled above yet show short here */
        +'<p class="recn">'+R.legs.map(l=>e(dLong(l.date))).join(' and ')
        +' show as settled at the top of this statement because that balance was cleared '
-       +'here, in salt, rather than in cash. Nothing about them is still owed in money.</p>'
+       +'here, in '+goods+', rather than in cash. Nothing about them is still owed in money.</p>'
        +'</div>';}).join(''),
-   '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>',
+   '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at '+(o.live?'the time shown above':'the issue date')+'. If anything differs from your own, say so and it will be checked.</p>',
    '</div></body></html>'].join('\n');
 }
 
@@ -701,7 +718,7 @@ export function klShort(at, time) {
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(at).forEach((x) => { p[x.type] = x.value; });
   return p.day + ' ' + MON3[+p.month - 1] + ' ' + p.year + (time ? ', ' + p.hour + ':' + p.minute : '');
 }
-const longDate = iso => dmy(new Date(iso + 'T00:00:00'));
+const longDate = iso => dayOf(iso) || dmy(new Date(iso + 'T00:00:00'));
 function usersFileFor(outDir) {
   if (process.env.SALT_USERS_FILE) return process.env.SALT_USERS_FILE;
   const here = resolve(outDir);
@@ -779,11 +796,12 @@ export function loadSecrets(outDir, opts) {
    the money, and PENDING IS ITS OWN WORD: an agreed order nobody has acted on is the line most
    likely to need chasing, not a quiet 'clear'. */
 export function accountTotals(rows, refunds) {
-  const t = { n: rows.filter(r => !r.cancelled).length, qty: 0, total: 0, paid: 0, owed: 0, toGet: 0, pend: 0, cx: 0 };
+  const t = { n: rows.filter(r => !r.cancelled).length, qty: 0, total: 0, delivery: 0, paid: 0, owed: 0, toGet: 0, pend: 0, cx: 0 };
   t.refund = (refunds || []).filter(r => !r.paidOn).reduce((a, r) => a + (+r.amount || 0), 0);   // v454: what is owed TO them
   rows.forEach(r => {
     if (r.cancelled) { t.cx++; t.paid += r.gift ? 0 : (r.paidCash + r.inKind); return; }
     t.qty += r.qty; t.total += r.total; t.paid += r.gift ? 0 : (r.paidCash + r.inKind);
+    t.delivery += r.gift ? 0 : (+r.delivery || 0);   // C1: the goods, then the delivery, then what was paid
     t.owed += r.owed;
     t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
     t.pend += r.pendingOrder ? r.total : 0;
@@ -1172,7 +1190,8 @@ export async function makeStatements(outDir, issue, opts) {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
         + (archive ? '' : '<td class="l pw">' + esc(x.user) + '</td>')
-        + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
+        + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td>'
+        + (archive ? '' : '<td>' + m2(x.t.delivery) + '</td>') + '<td>' + m2(x.t.paid) + '</td>'
         + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.pend > 0.009 ? '<b class="pd">' + m2(x.t.pend) + '</b>' : '&mdash;') + '</td></tr>';
@@ -1212,11 +1231,11 @@ export async function makeStatements(outDir, issue, opts) {
       + '</p>'
       + '<table class="idx"><thead><tr><th class="l">Account</th>' + (archive ? '' : '<th class="l">Username</th>')
       + '<th>Orders</th><th>Quantity</th>'
-      + '<th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
+      + '<th>Ordered</th>' + (archive ? '' : '<th>Delivery</th>') + '<th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
       + '<th class="r">Not actioned</th></tr></thead>'
       + '<tbody>' + rowsIdx + '</tbody>'
       + '<tfoot><tr><td class="l"><b>All</b></td>' + (archive ? '' : '<td></td>') + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
-      + '<td>' + m2(sumT('total')) + '</td><td>' + m2(sumT('paid')) + '</td>'
+      + '<td>' + m2(sumT('total')) + '</td>' + (archive ? '' : '<td>' + m2(sumT('delivery')) + '</td>') + '<td>' + m2(sumT('paid')) + '</td>'
       + '<td class="r"><b class="owe">' + m2(sumT('owed')) + '</b></td>'
       + '<td class="r"><b class="gd">' + n2(sumT('toGet')) + ' unit</b></td>'
       + '<td class="r"><b class="pd">' + m2(sumT('pend')) + '</b></td></tr></tfoot></table></div>'

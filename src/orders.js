@@ -156,6 +156,36 @@ export async function listClaims(env, all) {
   return { ok: true, claims: (b.claims || []).map((c) => Object.assign({ code: users[c.u] || null }, c)) };
 }
 
+/** Step 7: every account's thread on the site, newest first, each with the desk code its username maps to. A test
+ *  account's lives in its fixture, so it is never here. */
+export async function listThreads(env) {
+  const r = await site(env, "/desk/threads");
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, threads: (b.threads || []).map((t) => Object.assign({ code: users[t.u] || null }, t)) };
+}
+/** Step 7: HIS LINE ON AN ACCOUNT'S THREAD, or his No reply needed, relayed to the site. His words go through the same lock
+ *  as a line on an order (siteWords), here, where the roster is known; only a message or noReply is sent on. */
+export async function threadRelay(env, u, body) {
+  if (!/^[a-z0-9]{4}-[a-z0-9]{4}$/.test(String(u || ""))) return { ok: false, status: 404, error: "no such account" };
+  const noReply = !!(body && body.noReply === true);
+  const message = typeof (body && body.message) === "string" ? body.message : "";
+  if (!noReply) {
+    const why = siteWords(message);
+    if (why) return { ok: false, status: 400, error: "that message says something " + why };
+  }
+  const r = await site(env, "/desk/threads/" + encodeURIComponent(u), {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(noReply ? { noReply: true } : { message })
+  });
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  const users = await usersMap(env);
+  return { ok: true, thread: Object.assign({ code: users[b.thread && b.thread.u] || null }, b.thread), push: b.push || null };
+}
+
 /** F13: a payment slip as the site filed it, ciphertext sealed on the customer's phone to his slip key, for the desk to
  *  open with the key his vault holds. The username and the id as the claim carries them; stored nowhere here. */
 export async function slipRelay(env, u, id) {
@@ -210,6 +240,14 @@ export function toldOf(o) {
  * and the digest an Accept sends back to prove it answered this row. */
 const rm = (n) => "RM " + (Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2));
 const chargeOf = (b) => (b && typeof b.delivery === "number" && Number.isFinite(b.delivery) && b.delivery >= 0 ? +b.delivery.toFixed(2) : null);
+/* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER at its acknowledgement, the goods to 2 dp. Absent, the
+   order's own total; present and not a figure above nothing, refused. The board, the tiers and the pricing state never move. */
+const priceOf = (b) => {
+  if (!b || b.total === undefined || b.total === null) return { price: null };
+  const t = b.total;
+  if (typeof t !== "number" || !Number.isFinite(t) || !(t > 0) || t > 1000000) return { error: "the price has to be a figure above nothing" };
+  return { price: +t.toFixed(2) };
+};
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
 function cardAt(pricing, code, product, qty) {
   const snap = pricing && pricing.byProduct && pricing.byProduct[product];
@@ -224,29 +262,39 @@ function cardAt(pricing, code, product, qty) {
   if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
   return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
 }
-async function previewAck(env, o, code, delivery, now, ctx) {
+async function previewAck(env, o, code, delivery, now, ctx, price) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
-  /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection */
-  const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 });
+  /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
+     price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
+  const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 }, price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});
   const entry = pendingEntry(agreed, code, now);
   entry.orderId = o.id;
   const book = await readBook(env.SALT_LEDGER);
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
+  const product = o.product || "salt", qty = +o.qty, goods = +(+agreed.total).toFixed(2);
+  const fl = floorFor(book, product, qty);
+  /* never under the floor at this size: the one line no price he sets goes under (rule 5). A price is set only against the
+     floor AT this size: none known, or only a carded size below it (an older snapshot), and no price can be set on it */
+  if (price != null && (!fl || !fl.exact))
+    return { ok: false, status: 409, underFloor: true, floor: fl ? { rm: fl.floor, at: fl.at, exact: false } : null,
+      error: "no floor is known at " + qty + " unit, so no price can be set on it: accept it at theirs" };
+  if (price != null && price < fl.floor - 0.005)
+    return { ok: false, status: 409, underFloor: true, floor: { rm: fl.floor, at: fl.at, exact: fl.exact },
+      error: rm(price) + " is under the floor of " + rm(fl.floor) + " at " + qty + " unit, so it cannot be set" };
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
      The Worker decides, from the book and the site's own orders, never the phone; the verdict rides on the entry and in
      the digest, so his yes covers it and the order is moved with it (ackOnApproval). */
-  const adv = advanceOf(book, o, code, agreed.delivery, ctx || {});
+  const adv = advanceOf(book, agreed, code, agreed.delivery, ctx || {});
   if (adv.error) return { ok: false, status: 503, error: adv.error };
   if (adv.prepay) entry.prepay = true;
   const pricing = await pricingOf(book);
-  const product = o.product || "salt", qty = +o.qty, goods = +(+o.total).toFixed(2);
-  const priced = costFor(book, product), fl = floorFor(book, product, qty);
+  const priced = costFor(book, product);
   const cost = priced.cost == null ? null : { unit: priced.cost, total: +(priced.cost * qty).toFixed(2), source: priced.source };
   return Object.assign({ ok: true, stage: "ack", id: o.id, entry, row: d.row, flags: d.flags, reasoning: d.reasoning,
-    quote: goods, delivery: agreed.delivery, cost,
+    quote: goods, asked: +(+o.total).toFixed(2), set: price != null, delivery: agreed.delivery, cost,
     margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
     usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling,
@@ -257,7 +305,9 @@ async function previewAck(env, o, code, delivery, now, ctx) {
    row is not on the book yet, then this order with its delivery. Everything counts until paid. A SHEET IS ONE VERDICT
    (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the book, count together at their goods, the
    sheet's charge left out, so every line reads the same figure whichever is accepted first. The orders are the list the
-   order was found in (findOrder), never a second read. Offered again, an order keeps the verdict it was agreed on, as it
+   order was found in (findOrder), never a second read. STEP 2: A PRICE HE SETS ON A LINE MOVES THE SHEET'S FIGURE: a line
+   agreed at his price counts at it and a line still placed at what it was placed at, so lines he prices differently can
+   read different figures, each at the money it is agreed for. Offered again, an order keeps the verdict it was agreed on, as it
    keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing. */
 const AGREED_ON_SITE = ["acknowledged", "ready"];
 export function advanceOf(book, o, code, delivery, ctx) {
@@ -287,8 +337,10 @@ export async function previewOrder(env, id, body, now) {
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(env.SALT_LEDGER, id, "ack"));
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so its pending row is not Accept's to make" };
-  /* offered again (11.13), the charge is the one already on the order: the customer was told it */
-  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again });
+  /* offered again (11.13), the charge and the goods are the ones already on the order: the customer was told them */
+  const pr = again ? { price: null } : priceOf(body);
+  if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again }, pr.price);
   if (!p.ok) return p;
   delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
   return Object.assign(p, { again, chargeChosen: again || o.mode !== "deliver" || chargeOf(body) != null });
@@ -336,7 +388,10 @@ export async function ackOnApproval(env, pre) {
   /* an order already agreed (a row offered again) has nothing to move; one that ended meanwhile refuses the move,
      and its Cancellation then follows the approved row, as any withdrawal of an agreed order does */
   const r = shown.from !== "placed" ? { ok: true }
-    : await moveOrder(env, pre.u, pre.order_id, { status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true });
+    : await moveOrder(env, pre.u, pre.order_id, Object.assign({ status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true },
+      /* Step 2: the goods the row was drafted at, the site keeping what they placed it at beside it; a yes filed without a
+         figure (an older entry's shape) sends none, and the order keeps its own */
+      typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {}));
   /* told once the move is made, or refused for good: the order ended, or was moved already */
   if ((r.ok || r.status === 409) && env.SALT_LEDGER)
     await env.SALT_LEDGER.prepare("UPDATE preapproval SET acked_at=?1 WHERE id=?2").bind(new Date().toISOString(), pre.id).run();
@@ -362,7 +417,9 @@ export async function acceptOrder(env, id, body, by, now) {
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
   const delivery = again ? (+o.delivery || 0) : chargeOf(body);
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again });
+  const pr = again ? { price: null } : priceOf(body);
+  if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
@@ -1096,7 +1153,12 @@ export function pendingEntry(order, code, now) {
   const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
     + (friend ? ", on behalf of a friend" : "")
     + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
-    + (delivery > 0 ? ", delivery RM " + delivery : "") + ". Nothing paid and nothing handed over yet.";
+    + (delivery > 0 ? ", delivery RM " + delivery : "")
+    /* Step 2: a price he set on this order at its acknowledgement, and what they placed at */
+    + (typeof order.asked === "number" && Math.abs(order.asked - goods) > 0.004 ? ", priced at RM " + goods + " on this order, placed at RM " + order.asked : "")
+    /* 29 Sep 2026: the day they asked for rides as fixed words, never their text; the row stays dated at the acknowledgement */
+    + (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "") ? ", wanted by " + order.wantBy : "")
+    + ". Nothing paid and nothing handed over yet.";
   const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + owed
     + ", nothing paid, nothing moved (order " + order.id + ")";
   return {
@@ -1698,7 +1760,9 @@ export async function ordersWaiting(env, since) {
   if (!r.ok) return { ok: false, waiting: 0, placed: 0, lines: [] };
   const from = typeof since === "string" && Number.isFinite(Date.parse(since)) ? Date.parse(since) : Date.now() - LINE_FRESH_MS;
   const lines = [];
-  for (const o of r.orders) for (const m of (o && o.msgs) || []) {
+  /* Step 7: and their lines on the account threads, read beside the orders; a thread that cannot be read adds none */
+  const th = await listThreads(env);
+  for (const o of r.orders.concat(th.ok ? th.threads : [])) for (const m of (o && o.msgs) || []) {
     if (m && m.by === "customer" && typeof m.text === "string" && m.text.trim() && Date.parse(m.at) > from) lines.push({ at: String(m.at), t: m.text.trim().slice(0, LINE_MAX) });
   }
   lines.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));

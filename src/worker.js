@@ -31,7 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -888,6 +888,7 @@ export default {
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
+      || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
       || p === "/vault/addr" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
       || p === "/vault/key"   /* F13: the slip key's envelope is his alone */
       || p.startsWith("/slips/")   /* F13: a slip is ciphertext, and still his alone to fetch */
@@ -989,6 +990,8 @@ export default {
       const r = await listOrders(env, url.searchParams.get("all") === "1", true);
       /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
       if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
+      /* Step 7: and every account's thread, his Chat, each on a card of its own */
+      if (r.ok) { const t = await listThreads(env); r.threads = t.ok ? t.threads : []; if (!t.ok) r.threadsUnread = t.error; }
       /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
       if (r.ok && env.SALT_LEDGER) {
         const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
@@ -1002,6 +1005,21 @@ export default {
         } catch (e) { /* a store before migrations/0011 has no yes to say */ }
       }
       return json(r, r.ok ? 200 : 503);
+    }
+    /* Step 7: HIS CHAT. Every account's thread, read every 2 seconds while one is open on his screen; and his line on one,
+       or his No reply needed, checked by siteWords before it goes */
+    if (p === "/threads") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await listThreads(env);
+      return json(r, r.ok ? 200 : 503);
+    }
+    const tm = /^\/threads\/([^/]+)$/.exec(p);
+    if (tm) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await threadRelay(env, decodeURIComponent(tm[1]), b);
+      return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* S9 9.8 FIX: the desk's page tells Salt Account what waits here, its own Waiting on you count (tellWaiting) */
     if (p === "/orders/waiting") {

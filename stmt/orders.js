@@ -265,7 +265,7 @@ export async function checkStores(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -479,7 +479,18 @@ export async function ordersOwing(env) {
 }
 
 /** What the customer sent, checked field by field. Returns { order } or { error }. */
-export function checkPlacement(body, open) {
+/* FUTURE-DATED ORDERS (29 Sep 2026): a customer may say the day they want it by, tomorrow to WANT_DAYS days on in Kuala
+   Lumpur, or leave it for as soon as it can come. It is a day they asked for and nothing more: the row is dated at the
+   acknowledgement as ever, and the term and the chase count from the handover, so nothing that prices or chases reads it. */
+export const WANT_DAYS = 60;
+export function wantByFault(v, at) {
+  if (v === undefined || v === null || v === "") return "";
+  if (typeof v !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) || klDay(v + "T04:00:00Z") !== v) return "wantBy";
+  const today = klDay(at || new Date().toISOString());
+  const last = klDay(new Date(Date.parse(today + "T04:00:00Z") + WANT_DAYS * 864e5).toISOString());
+  return v > today && v <= last ? "" : "wantBy";
+}
+export function checkPlacement(body, open, at) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -504,6 +515,8 @@ export function checkPlacement(body, open) {
   const forFriend = body.forFriend === true;
   /* v751: and anything they want to say with it, optional on every order, collect or deliver */
   const note = cleanMsg(body.note, NOTE_MAX);
+  if (wantByFault(body.wantBy, at)) return refusal("wantBy", { n: WANT_DAYS });
+  const wantBy = body.wantBy ? body.wantBy : "";
   const sheet = typeof body.sheet === "string" && SHEET_RE.test(body.sheet) ? body.sheet : "";
   if (body.sheet !== undefined && body.sheet !== "" && !sheet) return { error: "the sheet is not one this page made" };
   const lines = sheet ? open.filter((o) => o.sheet === sheet) : [];
@@ -511,7 +524,7 @@ export function checkPlacement(body, open) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}), note };
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}), note };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
@@ -576,7 +589,7 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
  *  V5b2 (his answers of 29 Sep 2026): Place stamps nothing about paying in advance. V3's unit cap is retired on the
  *  Counter, and whether an order is paid in advance is the desk Worker's to decide at Accept, from the book (V5b2a). */
 export function decidePlace(u, body, open, at, digest) {
-  const c = checkPlacement(body, open);
+  const c = checkPlacement(body, open, at);
   if (c.error) return c;
   if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
@@ -807,8 +820,13 @@ export function decideDesk(order, body, at) {
   if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+  /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER is sent at the acknowledgement alone, and at no
+     other move: the desk checked it against the floor, and the site prices nothing, so it takes a positive figure to 2 dp */
+  if (body && body.total !== undefined && status !== "acknowledged") return { error: "a price is set only when the order is acknowledged", status: 400 };
+  if (body && body.total !== undefined && (!isNum(body.total) || !(body.total > 0) || body.total > 1000000)) return { error: "the price set has to be a figure above nothing", status: 400 };
   const ev = { kind: "status", at, status, by: "desk" };
   if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
+  if (status === "acknowledged" && body && isNum(body.total) && Math.abs(body.total - (+order.total || 0)) > 0.004) ev.total = +body.total.toFixed(2);
   /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because
      that is where the order becomes a row and the row carries the charge inside its total. */
   if (status === "acknowledged") {
@@ -830,10 +848,13 @@ export function applyEvent(order, ev) {
   let done = false;
   if (ev.kind === "place" || ev.kind === "copy") return { order: JSON.parse(JSON.stringify(ev.order)), done };
   if (ev.kind === "aclaim") return { order: JSON.parse(JSON.stringify(ev.claim)), done };   /* S6 6.6: an account claim, its own record */
+  if (ev.kind === "tsay" || ev.kind === "tmark") return { order: foldThread(order, ev), done };   /* Step 7: the account's thread */
   if (ev.kind === "status") {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
+    /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
+    if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
     order.status = ev.status;
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;
@@ -971,8 +992,11 @@ export function applyEvent(order, ev) {
    back mark `last-theirs` (v760), and so does a rating (F10); the ask is the desk's own, and marks nothing; his moves wake
    them, and of theirs only a payment that completes. */
 export function marksOf(ev, order) {
-  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask") return [];
+  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask" || ev.kind === "tmark") return [];
   const at = ev.at;
+  /* Step 7: a line of theirs on the account's thread wakes him as a line on an order does; it touches no order, so the
+     reconcile is not sent to list them */
+  if (ev.kind === "tsay") return ev.by === "customer" ? [[LAST_SAID, at]] : [];
   if (ev.kind === "place") return [[LAST_PLACED, at], [LAST_TOUCHED, at]].concat(order && order.msgs && order.msgs.length ? [[LAST_SAID, at]] : []);
   const k = [[LAST_TOUCHED, at]];
   if (ev.kind === "say" && ev.by === "customer") k.push([LAST_SAID, at]);
@@ -1017,6 +1041,8 @@ export function wakes(ev, order, done) {
     return w;
   }
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o, t: ev.text, m: ev.at };
+  /* Step 7: his line on the account's thread, its own kind; a tap opens the thread, never an order */
+  if (ev.kind === "tsay" && ev.by === "desk") return { k: "message", o: "", t: ev.text, m: ev.at };
   if (ev.kind === "pay" && done) return { k: "complete", o };
   if (ev.kind === "cash") return { k: done ? "complete" : "paid", o };   /* S11 11.8: his cash is their payment received */
   /* S6: his Received, and his Not found (11.14), whose own words the service worker has; an account's claim opens no order */
@@ -1257,3 +1283,66 @@ export async function claimAccount(env, u, body) {
 }
 
 const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+
+/* ---- STEP 7: THE ACCOUNT'S THREAD (his Q5 of 28 Sep 2026: one thread per account) -----------------------------------
+ * A question that is about no one order has somewhere to go: one thread an account, beside the order threads, which it
+ * copies. { id: "thread", u, kind: "thread", at, msgs[], quiet? }: each line { at, by, text }, 200 characters, the
+ * last 200 lines kept. Theirs are capped at 20 a Kuala Lumpur day, counted by `at`; his are not. His No reply needed is
+ * `quiet`, the moment of their line it answers, as on an order. IT NEVER RIDES INTO A LEDGER NOTE: nothing that
+ * queues an entry reads it. IN THE ORDER BOOK ONLY: its own table and its own events (oid `thread`), written behind to
+ * thr:<username> for the way back; the KV road has no reader, so there the thread is paused, never kept in two places.
+ * A -R bucket and a guest board have no session, so no thread; a test account's lives in its fixture. */
+export const THREAD_ID = "thread";
+export const THREAD_KEEP = 200;
+export const THREAD_DAY_CAP = 20;
+export const isThreadId = (id) => id === THREAD_ID;
+/* their lines on the thread on one Kuala Lumpur day, which the cap counts */
+export const threadToday = (t, at) => ((t && t.msgs) || []).filter((m) => m && m.by === "customer" && klDay(m.at) === klDay(at)).length;
+/** A line on the thread, theirs (`by` "customer") or his ("desk"), or his No reply needed. Returns { ev }, { none } or
+ *  { error, status }. */
+export function decideThread(thread, body, by, at, u) {
+  if (by === "desk" && body && body.noReply === true) {
+    const m = (thread && thread.msgs) || [], l = m[m.length - 1];
+    if (!l || l.by !== "customer") return { none: true };
+    return { ev: { kind: "tmark", at, quiet: String(l.at).slice(0, 40) } };
+  }
+  const text = cleanMsg(body && (by === "desk" ? body.message : body.text), MSG_MAX);
+  if (!text) return Object.assign(refusal("sayEmpty"), { status: 400 });
+  if (by !== "desk" && threadToday(thread, at) >= THREAD_DAY_CAP) return Object.assign(refusal("threadCap", { n: THREAD_DAY_CAP }), { status: 409 });
+  return { ev: { kind: "tsay", at, by: by === "desk" ? "desk" : "customer", text, u: String(u || (thread && thread.u) || "") } };
+}
+function foldThread(t, ev) {
+  t = t ? JSON.parse(JSON.stringify(t)) : { id: THREAD_ID, u: ev.u || "", kind: "thread", at: ev.at, msgs: [] };
+  if (ev.kind === "tmark") { t.quiet = ev.quiet; return t; }
+  t.msgs = (t.msgs || []).concat([{ at: ev.at, by: ev.by, text: ev.text }]).slice(-THREAD_KEEP);
+  t.at = ev.at;
+  return t;
+}
+/** What their page is handed: the lines, never whose or his marks. */
+export const threadView = (t) => ({ at: (t && t.at) || null, msgs: ((t && t.msgs) || []).map((m) => ({ at: m.at, by: m.by, text: m.text })) });
+const threadOff = () => Object.assign(refusal("threadOff"), { status: 503 });
+/** Their thread, or null for none yet; null on the KV road too, which keeps none. */
+export async function threadOf(env, u) {
+  if (!onBook(env)) return null;
+  const r = await bookRead(env, "thread", { u }, async () => ({ thread: await env.STMT.get("thr:" + u, "json") }));
+  return (r && r.thread) || null;
+}
+/** Every account's thread, newest first: the desk's read. */
+export async function allThreads(env) {
+  if (!onBook(env)) return [];
+  const r = await bookRead(env, "thread", {}, async () => ({ threads: [] }));
+  return (r && r.threads) || [];
+}
+/** POST /thread {text, rid}: a line of theirs. A retry under its id lands once. */
+export async function sayThread(env, u, body) {
+  if (!onBook(env)) return threadOff();
+  const r = await bookMove(env, "tsay", { u, body, rid: ridOf(body) });
+  return r.error ? r : { thread: r.order };
+}
+/** POST /desk/threads/<u> {message} or {noReply}: his line, which wakes them, or his No reply needed. */
+export async function deskThread(env, u, body) {
+  if (!onBook(env)) return threadOff();
+  const r = await bookMove(env, "tdesk", { u, body });
+  if (r.error) return r;
+  return { thread: r.order, push: r.wake ? await wakeCustomer(env, u, r.wake) : null };
+}

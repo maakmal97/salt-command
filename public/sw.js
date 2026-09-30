@@ -5,8 +5,9 @@
 
 /* bumped 08 Sep 2026: /orders and /stmt-users leave the cache. Bumped 28 Sep 2026: the manifest names the desk Salt Desk,
    and the manifest and icons are served cache first below and sit outside the build id, so a phone reads a new one only
-   when this name moves: a change to either bumps it in the same version. */
-const CACHE = "salt-shell-v6";
+   when this name moves: a change to either bumps it in the same version. Bumped 29 Sep 2026 (Step 7): /threads joins the API,
+   and a phone's old cache may hold a first answer to it. */
+const CACHE = "salt-shell-v7";
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
@@ -35,7 +36,8 @@ const SHELL = [
    branch stored any 200 for ever. The phone's order list froze at first load. */
 /* /bulletin joins 26 Sep 2026 for the same reason: his editor read back the notice it first cached. */
 /* /slips joins 29 Sep 2026 (F13): a slip is fetched live when he opens it, and never kept on the phone, ciphertext or not. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips)(\/|$)/;
+/* /threads joins 29 Sep 2026 (Step 7): his Chat reads it every 2 seconds, and a cached first answer would be all it ever read. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips|threads)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

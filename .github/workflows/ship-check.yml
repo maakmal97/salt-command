@@ -49,12 +49,20 @@ jobs:
       # a week of an unchanged id means the fold stopped running and nobody noticed. Reported
       # as a warning rather than a failure, because a quiet week is possible and a red cross
       # nobody believes is worse than no cross at all.
-      - name: The fold is still running
+      #
+      # `built` IS WHEN THE ID LAST MOVED, NOT WHEN A BUILD LAST RAN (18 Sep 2026), which is the
+      # question this step is actually asking. It used to be minted on every build, and that made
+      # this warning WEAKER, not stronger: any no-op `node tools/update.mjs` reset the clock, so a
+      # fold that had stopped could be hidden here indefinitely by rebuilds that produced identical
+      # bytes. A rebuild of the same bytes never was evidence that the fold ran. tools/build.mjs
+      # now keeps the stamp whenever the id and the version both stand, which also stopped those
+      # rebuilds committing a timestamp and setting off the whole cloud-commit chain.
+      - name: The build id is still moving
         run: |
           set -euo pipefail
           built=$(node -p "require('./public/rev.json').built")
           age=$(( ( $(date -u +%s) - $(date -u -d "$built" +%s) ) / 86400 ))
-          echo "last build: $built ($age days ago)"
+          echo "the build id last moved: $built ($age days ago)"
           if [ "$age" -gt 7 ]; then
-            echo "::warning::Nothing has been built for $age days. If the book has traded in that time, the fold is not running."
+            echo "::warning::The build id has not moved for $age days. If the book has traded in that time, the fold is not running."
           fi

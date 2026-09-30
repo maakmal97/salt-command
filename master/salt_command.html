@@ -1180,7 +1180,6 @@ details.obshush:hover{opacity:.85;}
   .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
   .viewsw::-webkit-scrollbar{display:none;}
   .viewsw button{flex:0 0 auto;}
-  .vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
   /* A field under 16px makes iOS Safari zoom on focus and never zoom back (v392). The
      ledger filter strip sat at 12 and 13px; 16px on the phone only. */
   #ledQ,#ledState,#ledParty,#ledMonth,#ledProduct{font-size:16px;}
@@ -1198,8 +1197,7 @@ details.obshush:hover{opacity:.85;}
      375px: Sell 42, Buy 43, All 32, Half 40, Full 37, all of them 44 tall and none of
      them 44 wide. Their strips are 325px holding at most 110px of buttons, so this
      costs no row. Scoped because #fwdSw's own buttons already clear 44 and a global
-     rule would be a rule for one form. */
-  .vpart[data-tab="add"] .viewsw button{min-width:var(--tap);}
+     rule would be a rule for one form. D9 (29 Sep 2026): at every width now, in the tap block above. */
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
@@ -1487,6 +1485,20 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 @media (prefers-reduced-transparency:reduce) and (max-width:560px){
   .rail{background:rgba(11,18,21,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
 }
+/* ============ D3 TO D9 (29 Sep 2026, the fault list): A TAP IS 44px EITHER WAY, AT EVERY WIDTH ============
+   A hit test at 1280 found the parts strip's pills 36 tall (their --tap sat in the phone's query alone), the
+   ledger's sort heads 17 to 39 wide, the Update panel's close 23 by 21, its group summaries 17 tall and its
+   checkbox rows 21, Pricing's "If it will not print" 19 tall, Enter's None and All 40 wide (their width rule was
+   the phone's alone) and the Whiteboard's observation rows 42 tall. A summary keeps its marker, so it is raised
+   by its line, not made a flex row. The rail's parts are the design system's recipe (D4, salt-ds). */
+.vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
+.lsb{min-width:var(--tap);justify-content:center;}
+.edx{background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer;
+  min-width:var(--tap);min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;}
+.edchk{min-height:var(--tap);}
+.tapsum{line-height:var(--tap);}
+.vpart[data-tab="add"] .viewsw button,.viewsw.mini button{min-width:var(--tap);}
+details.obs>summary{min-height:var(--tap);}
 /* ==== DESIGN fonts: generated from design/fonts.css, vendored from Code/salt-ds src/fonts-local.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
 /* THE BRAND FACES, SELF-HOSTED, AND THE ONLY WAY THEY LOAD (his instruction of 22 Sep 2026: no Google
    Fonts). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
@@ -3497,13 +3509,14 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   border-radius: 0 0 var(--salt-radius-sm) var(--salt-radius-sm);
   background: var(--salt-glass);
 }
+/* D4 (29 Sep 2026, the desk's fault list): a part is a tap like any other, 44px tall; it was 32, measured 172 by 32 at 1280 */
 .salt-rail__part {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   text-align: left;
-  min-height: 32px;
+  min-height: var(--salt-tap);
   padding: 6px 10px 6px 18px;
   border: 0;
   border-radius: 8px;
@@ -6657,6 +6670,7 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* ROLLED AT v961 (rice): 2 unit to CK4-SEN on 2026-09-30, so 73 less 2 is 71. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v909 (rice): 1 unit to CE5-SA on 2026-09-28, so 74 less 1 is 73. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* COUNTED AT v896 on 2026-09-27: the rice inventory held 74 against 85 on the roll, a drift of -11. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-09-27. <b>COUNT: RICE 74 UNITS ON HAND ON 27 SEP, BOOK SAID 85.</b> A hand count gives a drift of -11 units since the last rice count on 24 Sep; the dossier gives no reason for the gap. The count wins: stated rice becomes 74 and the count date moves to 27 Sep. Floors rise from RM4.08 to RM6.31 for 1 unit, RM8.16 to RM12.63 for 2 and RM51 to RM78.93 at the largest size; the ask holds at RM8 and self use moves from 1 to 12. No cost is carried. The drafter flagged the gap as shrinkage across every unit sold, and the floor rise matches that. The 11 unit gap stays unexplained. */
 /* COUNTED AT v896 on 2026-09-27: the candy inventory held 14 against 15 on the roll, a drift of -1. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-09-27. <b>COUNT: CANDY 14 UNITS ON HAND ON 27 SEP, BOOK SAID 15.</b> A hand count gives a drift of -1 unit; no earlier candy count stands on the book, so this is the first. The dossier gives no reason for the gap. The count wins: stated candy becomes 14 and the count date is set to 27 Sep. Floors rise from RM39.33 to RM40.64 for 1 unit, RM78.66 to RM81.28 for 2 and RM491.63 to RM508 at the largest size; the ask holds at RM60 and self use moves from 0 to 1. No cost is carried. The drafter flagged the gap as shrinkage, and the modest floor rise matches that. The 1 unit gap stays unexplained. */
@@ -6696,7 +6710,7 @@ const PROD_OPENING={
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 73
+    "stated": 71
   },
   "spare": {
     "qty": 0,
@@ -6704,6 +6718,7 @@ const PROD_OPENING={
     "stated": null
   }
 };
+/* ROLLED AT v959: 6.25 unit to CK4-SEN on 2026-09-30, so 21 less 6.25 is 14.75. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 6.25 unit goes out to CK4-SEN on collection against s216, with RM530 still unpaid. */
 /* ROLLED AT v955: 3 unit to CH4-KS on 2026-09-30, so 24 less 3 is 21. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 3 units went out to CH4-KS against s215, delivered on credit with RM320 unpaid. */
 /* COUNTED AT v954 on 2026-09-29: the salt inventory held 24 against 26 on the roll, a drift of -2. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-29. <b>SALT COUNT 29 SEP: 24 UNITS ON HAND AGAINST 26 ON THE BOOK.</b> A hand count found 24 units where the book said 26, a drift of -2; the last count was 27 Sep. The count wins: stated stock is set to 24 and the count date moves to 29 Sep. The dossier gives no reason for the gap. Floors move: 1 unit from RM69.78 to RM68.62, 2 units from RM139.57 to RM137.25, 125 units from RM872.29 to RM857.81; the ask stays RM140. Cost stays RM56 a unit, the inventory's own. The drafter flagged the gap as shrinkage, and that 9.5 units are owed out and already paid for; the figures do not show that stock is there to deliver. Outstanding: 9.5 units owed out. */
 /* ROLLED AT v953: 25 unit from SA5-BTR on 2026-09-29, so 1 plus 25 is 26. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 25 unit lot from SA5-BTR landed on 29 Sep at RM56 a unit, level with the shelf's own cost, so the basis holds at RM56 a unit. */
@@ -6791,7 +6806,7 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=21;
+const STATED_STOCK=14.75;
 const COUNT_ON={
   "salt": "2026-09-29",
   "oil": "2026-09-27",
@@ -7042,7 +7057,7 @@ const sales=[
   {"rid":"s180","customer":"CE4-CHE","qty":2,"total":230,"cash":0,"delivery":0,"handover":"collected","date":"2026-09-18","deliveredQty":0,"note":"<b>PENDING SALT SELL DATED 18 SEP, THE DAY IT WAS AGREED.</b> SELL to CE4-CHE, 2 unit for RM230 at RM115 a unit, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. A further unit goes free with it and is its own row. Entered on his word of 19 Sep.","amend":[{"date":"2026-09-18","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-20","kind":"Cancellation","cash":0,"kg":0,"note":"<b>CANCELLATION ON s180 DATED 20 SEP: THE PENDING SALE IS WITHDRAWN.</b> CE4-CHE's order of 18 Sep, 2 unit for RM230 at RM115 a unit, had nothing paid and nothing moved, so it drew no stock and booked no revenue. It is withdrawn on 20 Sep and counts nowhere. RM115 a unit was the top of the party's RM13 to RM115 range and above their RM92 median across 12 orders; RM230 stood outstanding before this row and the withdrawal is what removes it. The drafter raised no flag. Nothing further is left open on the row."}],"cancelled":true,"cancelledOn":"2026-09-20"},
   {"rid":"s181","customer":"CE4-CHE","qty":1,"total":48,"cash":0,"goodwill":true,"delivery":0,"handover":"collected","date":"2026-09-18","deliveredQty":0,"note":"<b>AMENDED 20 SEP: SETTLED RM AND SETTLED UNITS BOTH BACK TO 0.</b> <b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it. <b>ONE UNIT OF SALT PROMISED FREE TO CE4-CHE ON 18 SEP, WITH THE SALE ON the row above.</b> Nothing has moved, so it draws no stock and carries no cost yet; it settles as goodwill when the order is collected. Entered on his word of 19 Sep. <b>SETTLED BY GOODWILL FROM THE START, CORRECTED 19 SEP:</b> the row was entered with no settledRM because nothing had moved, and the other six giveaways on the book all carry it. Without it the row would have read RM48 OWED the moment the unit was handed over, so CE4-CHE would have entered the debtor list, counted against their own credit cap and joined the hourly chase, for a gift. A gift is settled when it is given, not when it is paid for.","settledRM":0,"settledKg":0,"mod":"corrected on 2026-09-20: settledRM 48 to 0; settledKg (unset) to 0","amend":[{"date":"2026-09-18","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-20","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S181 RECORDED 20 SEP: THE SETTLEMENT IS TAKEN BACK OFF.</b> CE4-CHE's row of 1 unit for RM48 dated 18 Sep, the unit promised free with the sale above it, has cash set to 0, delivered quantity to 0, settled RM from RM48 to 0 and settled units from unset to 0. No cash and no stock move. RM48 a unit is 47.8% under his median of RM92, inside his range of RM13 to RM115, and RM4.83 under the RM52.83 floor for this size. Twelve orders, on the roster, not an associate, RM278 outstanding before, no units on credit, nothing defaulted. Nothing has moved, so the row carries no cost yet. The drafter flagged the lot blend: the figures do not answer it."},{"date":"2026-09-20","kind":"Cancellation","cash":0,"kg":0,"note":"<b>CANCELLATION ON S181 RECORDED 20 SEP: THE ROW IS WITHDRAWN.</b> CE4-CHE's order of 1 unit for RM48 agreed 18 Sep, the unit promised free with the sale above it, is cancelled and counts nowhere: 0 unit moved, RM0 in, no floor or ask cited for this size. Twelve orders, on the roster, not an associate, median rate RM92 within a range of RM13 to RM115, RM278 outstanding before, no units on credit, nothing defaulted. Cost would have been the inventory's own RM48 a unit; no goods are drawn. The drafter flagged that a row which has moved cancels differently: the trail shows a fulfilment of RM0 and 0 unit on 18 Sep and a correction on 20 Sep, so settled cash and settled units are both 0 and nothing is clawed back. RM278 stays outstanding."}],"cancelled":true,"cancelledOn":"2026-09-20"},
   {"customer":"CF5-WM","qty":1,"total":100,"cash":100,"delivery":0,"handover":"collected","date":"2026-09-19","deliveredQty":1,"note":"<b>TOTAL RESTATED TO RM100, 19 SEP.</b> <b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding. <b>PENDING SALT SELL DATED 19 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110, collected, nothing paid and nothing moved, so the row draws no stock and books no revenue until something does. <b>CARRIAGE DROPPED 19 SEP:</b> the row carried RM10 of delivery on an order marked COLLECTED, which read the goods as RM100, RM10 under their own card. His rule of 19 Sep is that a collected order cannot carry a delivery charge at all, and this is the row that rule exists to stop. Nothing was paid or moved, so it is set right rather than corrected.","rid":"s175","mod":"corrected on 2026-09-19: total 110 to 100","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-19","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S175 RECORDED 19 SEP: TOTAL FROM RM110 TO RM100.</b> The target is CF5-WM's SELL of 1 unit dated 19 Sep, collected, RM0 in and 0 unit moved, so the row is still pending and the change moves no cash and no stock. It follows the RM10 of carriage dropped from that row on 19 Sep, which had read the goods as RM100. At RM100 the row sits below CF5-WM's range of RM110 to RM115 and below the median of RM115. Three orders, not an associate but on the roster, RM110 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The full RM100 stays outstanding."},{"date":"2026-09-19","kind":"Fulfilment","cash":100,"kg":1,"note":"<b>FULFILMENT ON S175 RECORDED 19 SEP: RM100 IN, 1 UNIT MOVED.</b> The target is CF5-WM's SELL of 1 unit for RM100 dated 19 Sep, collected, previously RM0 in and 0 unit moved after the correction that took the total from RM110 to RM100. RM100 and 1 unit go against RM100 and 1 unit outstanding, leaving RM0 and 0 unit. At RM100 the row sits at the foot of CF5-WM's range of RM100 to RM115 and below the median of RM115, and matches the board's two-unit ask of RM100 cited on s127. Three orders, not an associate but on the roster, RM100 outstanding before and 0 unit on credit, nothing defaulted. Cost is the inventory's own RM48 a unit. The drafter flagged that this settles the order in full, and the figures answer it: nothing is left outstanding.","cost":48}],"deliveredOn":"2026-09-19","paidOn":"2026-09-19","cost":48},
-  {"customer":"CN3-WM","qty":2.5,"total":250,"cost":120,"cash":40,"handover":"collected","date":"2026-09-19","deliveredQty":2.5,"deliveredOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP, DELIVERED IN FULL, RM40 IN.</b> CN6-WM takes 2.5 unit for RM250, RM100 a unit, collected, 2.5 unit moved on 19 Sep, RM40 paid and RM210 left. The total clears the RM134.61 floor for this size and sits under the RM360 ask. The rate is his median of RM100, inside his range of RM75 to RM110. Eight orders, an associate and on the roster, RM100 outstanding before and 1 unit on credit against a cap of 2 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM120 on the goods. The drafter flagged the advance against the cap: 1 unit already on credit plus 2.5 unit released goes beyond the 2 unit cap. RM210 stays outstanding.","rid":"s182"},
+  {"customer":"CN3-WM","qty":2.5,"total":250,"cost":120,"cash":140,"handover":"collected","date":"2026-09-19","deliveredQty":2.5,"deliveredOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP, DELIVERED IN FULL, RM40 IN.</b> CN6-WM takes 2.5 unit for RM250, RM100 a unit, collected, 2.5 unit moved on 19 Sep, RM40 paid and RM210 left. The total clears the RM134.61 floor for this size and sits under the RM360 ask. The rate is his median of RM100, inside his range of RM75 to RM110. Eight orders, an associate and on the roster, RM100 outstanding before and 1 unit on credit against a cap of 2 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM120 on the goods. The drafter flagged the advance against the cap: 1 unit already on credit plus 2.5 unit released goes beyond the 2 unit cap. RM210 stays outstanding.","rid":"s182","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":40,"kg":2.5,"note":"as booked"},{"date":"2026-09-30","kind":"Fulfilment","cash":100,"kg":0,"note":"<b>FULFILMENT DATED 30 SEP: RM100 CASH AGAINST ORDER S182, RM110 STILL OWED.</b> Applied to CN3-WM's order of 19 Sep, 2.5 units for RM250 at RM100 a unit, collected in full on 19 Sep with RM40 paid. This payment moves no units and takes the outstanding on the order from RM210 to RM110, approved by the desk. The dossier gives no floor or ask for a payment, so the order's own terms stand: RM134.61 floor for the size, RM360 ask. CN3-WM: 9 orders, median RM100 a unit, range RM75 to RM110, RM310 outstanding and 3.1 units on credit before this row, nothing defaulted. No cost is carried, as no salt moves. The drafter raised no flags. Outstanding: RM110."}]},
   {"customer":"CS6-BS-R","qty":5,"total":420,"cash":435,"delivery":15,"date":"2026-09-19","deliveredQty":5,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves. <b>DELIVERY BOOKED 19 SEP: 5 UNIT HANDED OVER, STILL UNPAID.</b> <b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding. <b>SALT SELL DATED 19 SEP, PENDING, NOTHING PAID AND NOTHING MOVED.</b> CS6-BS-R takes 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, ordered on the statements site as 20260919121050-zhim2a, acknowledged, on behalf of a friend, to be delivered. The total clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fourteen orders, on the roster, nothing outstanding before and nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM405 of goods. The drafter flagged the R2 booking, the 21.9% gap to CS6-BS's usual RM107.5, and that RM48 is a blend of lots. RM435 stays outstanding.","rid":"s183","deliveredOn":"2026-09-19","handover":"delivered","mod":"corrected on 2026-09-19: deliveredQty 0 to 5; deliveredOn (unset) to 2026-09-19; handover (unset) to delivered, then corrected on 2026-09-20: paidOn 2026-09-19 to (cleared), then corrected on 2026-09-24: cost (unset) to 240","amend":[{"date":"2026-09-19","kind":"Fulfilment","cash":0,"kg":5,"note":"as booked","cost":240},{"date":"2026-09-19","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 19 SEP: THE SALT GOES OUT, THE MONEY STAYS OWED.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, RM84 a unit, booked as 20260919121050-zhim2a, has delivered quantity moved from 0 to 5, delivered on from unset to 19 Sep and handover from unset to delivered. No cash moves. The total still clears the RM264.14 floor for this size and sits under the RM560 ask. The rate is below his median of RM96.67, inside his range of RM6 to RM120. Fifteen orders, on the roster, RM420 outstanding before, nothing on credit against a cap of 1 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. RM435 stays outstanding."},{"date":"2026-09-19","kind":"Fulfilment","cash":420,"kg":0,"note":"<b>PAID IN FULL 19 SEP: RM420 IN, NOTHING LEFT ON s183.</b> Fulfilment against CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM84 a unit. RM420 and 0 unit move on 19 Sep against RM420 and 0 unit outstanding, the goods having been handed over on the correction of the same day. The rate sits below his median of RM96.67 and inside his range of RM6 to RM120. Fifteen orders, on the roster, 5 unit on credit before, nothing defaulted. Cost is the inventory's own RM48 a unit, a blend of lots. The drafter flags this as settling the order in full, and the figures answer it: nothing is left outstanding."},{"date":"2026-09-20","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS STILL OWED.</b> The fulfilment of 19 Sep took RM420 against RM435 owed, the goods and the delivery together, and the fold read the goods alone as paid in full; from v738 every reader takes both. RM15 stays outstanding, and nothing else on the row moves."},{"date":"2026-09-20","kind":"Fulfilment","cash":15,"kg":0,"note":"<b>FULFILMENT ON s183 DATED 20 SEP: THE RM15 OF DELIVERY IS PAID AND THE ORDER CLOSES.</b> CS6-BS-R's order of 19 Sep, 5 unit for RM420 with RM15 delivery, RM435 owed, was delivered in full and paid RM420 on the day, and the v738 correction held the carriage open. RM15 cash moves on 20 Sep against RM15 outstanding, leaving RM0 and 0 unit, which answers the drafter's settlement flag. The party has 15 orders, a median of RM96.67 and a range of RM6 to RM120, with RM15 outstanding before this and nothing defaulted. Nothing else on the row moves."},{"date":"2026-09-24","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s183 DATED 24 SEP: COST SET TO RM240, 5 UNIT AT RM48.</b> The order went out by a correction raising the delivered quantity, which moved no units through the fold, so the shelf's cost was never written although the note of the day stated RM48 a unit. Without it the gross margin across every book read blank. Nothing else on the row moves."}],"rev":"R2","paidOn":"2026-09-20","cost":240},
   {"customer":"CZ5-TM","qty":1,"total":110,"cost":48,"cash":110,"handover":"collected","date":"2026-09-19","deliveredQty":1,"deliveredOn":"2026-09-19","paidOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP: 1 UNIT AT RM110, PAID AND COLLECTED ON THE DAY.</b> Booked to CZ5-TM, 1 unit for RM110 with no delivery or freight, RM110 cash in and 1 unit handed over on 19 Sep, so nothing stays open. The rate clears the RM51.10 floor for that size and sits under the RM160 ask and the RM140 ceiling. Costed at RM48 a unit, the inventory's own rate, for RM62 on the goods at 56.4%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn, and that CZ5-TM has no committed salt order, so there is no rate of theirs to test this against. Credit cap 1, nothing on credit.","rid":"s184"},
   {"customer":"CE4-CHE","qty":2.5,"total":250,"cost":120,"cash":250,"handover":"collected","date":"2026-09-19","deliveredQty":2.5,"deliveredOn":"2026-09-19","paidOn":"2026-09-19","note":"<b>SALT SELL DATED 19 SEP: 2.5 UNIT FOR RM250, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM100 a unit, no delivery or freight, RM250 cash in and 2.5 unit handed over on 19 Sep, so nothing stays open. The total clears the RM127.47 floor for 2.5 unit and sits under the RM360 ask and the RM350 ceiling. Costed at RM48 a unit, the inventory's own rate, RM130 on the goods at 52%. The drafter flags that RM48 is the average across more than one lot rate, not the lot drawn; that blend is not shown here. Median RM92 a unit over 12 orders, range RM13 to RM107.50, nothing outstanding, credit cap 1 and nothing on credit.","rid":"s185"},
@@ -7074,9 +7089,11 @@ const sales=[
   {"customer":"CE5-SA-R","qty":1,"total":8,"cash":0,"product":"rice","date":"2026-09-28","deliveredQty":1,"note":"<b>CORRECTED 28 SEP (v926): CASH TO RM0, PAYMENT DATE CLEARED, RM8 UNPAID ON HIS WORD.</b> <b>CORRECTION ON S212: CASH TO RM0, PAYMENT DATE CLEARED, RM8 NOW UNPAID.</b> CE5-SA-R's order of 28 Sep for 1 unit of rice at RM8 was collected, and its RM8 cash was tapped by mistake: the unit was collected and not paid, on his word of 28 Sep 2026. No cash or stock moves, and the row now stands as an advance. CE5-SA-R: 2 orders, median RM105 a unit, range RM8 to RM105, RM0 outstanding and 0 units on credit before this batch. The dossier gives no credit cap figure to answer the drafter's advance flag. As flagged, the trail of 4 steps no longer adds up to the cash figure. No cost is carried. Outstanding: RM8 from CE5-SA-R, and the site's order card still reads paid. <b>CORRECTED 28 SEP (v918): MOVED TO CE5-SA-R, STREAM R2.</b> <b>CORRECTION ON S212: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 28 Sep for 1 unit rice at RM8, collected and paid RM8 at the counter on the day. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three refused Corrections of 05:00 UTC. The drafter raised no flags. Outstanding: nothing on s212. <b>PAID IN FULL 28 SEP (v909): RM8 CASH AT THE COUNTER.</b> <b>CORRECTED 28 SEP (v909): 1 UNIT COLLECTED.</b> <b>CORRECTED 28 SEP: 1 UNIT RICE COLLECTED BY CE5-SA ON S212.</b> Order 20260927221155-ndxqjg, 1 unit for RM8: deliveredQty moves from 0 to 1, deliveredOn from unset to 28 Sep 2026, handover to collected, preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM118 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own. The drafter flagged no committed rice order, which the book confirms, and an advance of 1 unit with RM8 unpaid; the fulfilment folded next in this batch pays it. Outstanding on s212 after that: nothing. <b>PENDING SALE: 1 UNIT RICE TO CE5-SA FOR RM8, NOTHING PAID OR HANDED OVER.</b> Ordered on the statements site, order 20260927221155-ndxqjg, acknowledged, to collect, dated 28 Sep 2026 and preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 4 orders on the book, median RM110 a unit, range RM105 to RM110, RM110 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own cost, so RM4.8 on the goods at 60%. The drafter flagged no committed rice order to compare against; the book confirms it, so the ladder is the only measure. Outstanding: RM8 to be paid and 1 unit to hand over.","rid":"s212","deliveredOn":"2026-09-28","handover":"collected","mod":"corrected on 2026-09-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-28; handover (unset) to collected, then corrected on 2026-09-28: stream (unset) to R2; party CE5-SA to (cleared); assoc (unset) to CE5-SA, then corrected on 2026-09-28: cash 8 to 0; paidOn 2026-09-28 to (cleared)","amend":[{"date":"2026-09-28","kind":"Fulfilment","cash":0,"kg":1,"note":"as booked"},{"date":"2026-09-28","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTED 28 SEP: 1 UNIT RICE COLLECTED BY CE5-SA ON S212.</b> Order 20260927221155-ndxqjg, 1 unit for RM8: deliveredQty moves from 0 to 1, deliveredOn from unset to 28 Sep 2026, handover to collected, preapproved by phone. RM8 a unit sits at the desk's ask of RM8 and above its floor of RM6.31 for 1 unit. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM118 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the inventory's own. The drafter flagged no committed rice order, which the book confirms, and an advance of 1 unit with RM8 unpaid; the fulfilment folded next in this batch pays it. Outstanding on s212 after that: nothing."},{"date":"2026-09-28","kind":"Fulfilment","cash":8,"kg":0,"note":"<b>PAID IN FULL 28 SEP: RM8 CASH AT THE COUNTER FROM CE5-SA ON S212.</b> Fulfilment against order 20260927221155-ndxqjg, 1 unit rice for RM8, received at the handover and recorded on the desk, preapproved by phone. RM8 a unit is the desk's ask of RM8, above its floor of RM6.31. CE5-SA had RM118 outstanding before this batch, median RM110 a unit, range RM8 to RM110, no defaults. A payment moves no cost; the goods stay costed at RM3.2 a unit, the inventory's own. The drafter raised no flag. Its count of 1 unit left to hand over predates the correction in this batch, which records the unit collected, so s212 is closed: nothing owed, nothing to hand over."},{"date":"2026-09-28","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S212: MOVED TO CE5-SA-R AS AN R2 RESALE ROW.</b> Recorded 28 Sep against CE5-SA's order of 28 Sep for 1 unit rice at RM8, collected and paid RM8 at the counter on the day. Assoc is set from unset to CE5-SA and stream from unset to R2, moving the row to CE5-SA-R, the associate's resale account, on his word of 28 Sep 2026, CE5-SA having been appointed a reseller at v915. No cash or stock moves and the terms stand. CE5-SA: 5 orders, median RM110 a unit, range RM8 to RM110, RM110 outstanding and 1 unit on credit before this batch. Re-entered after the desk's three refused Corrections of 05:00 UTC. The drafter raised no flags. Outstanding: nothing on s212."},{"date":"2026-09-28","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON S212: CASH TO RM0, PAYMENT DATE CLEARED, RM8 NOW UNPAID.</b> CE5-SA-R's order of 28 Sep for 1 unit of rice at RM8 was collected, and its RM8 cash was tapped by mistake: the unit was collected and not paid, on his word of 28 Sep 2026. No cash or stock moves, and the row now stands as an advance. CE5-SA-R: 2 orders, median RM105 a unit, range RM8 to RM105, RM0 outstanding and 0 units on credit before this batch. The dossier gives no credit cap figure to answer the drafter's advance flag. As flagged, the trail of 4 steps no longer adds up to the cash figure. No cost is carried. Outstanding: RM8 from CE5-SA-R, and the site's order card still reads paid."}],"rev":"R2"},
   {"customer":"CE4-CHE","qty":2.5,"total":230,"cost":140,"cash":230,"handover":"collected","date":"2026-09-28","deliveredQty":2.5,"deliveredOn":"2026-09-28","paidOn":"2026-09-28","note":"<b>SALT SELL DATED 28 SEP: 2.5 UNIT FOR RM230, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit at RM92 a unit, no delivery or freight, RM230 cash in and 2.5 unit handed over on 28 Sep, the same terms as s144 and s166. The total clears the desk's floor of RM171.68 for 2.5 unit but sits below its ask of RM330. CE4-CHE: 14 orders, median RM92 a unit, range RM10 to RM107.5, RM0 outstanding and 0 units on credit before this batch, against a credit cap of 1. Costed at RM140, RM56 a unit, the inventory's own, leaving RM90 at 39.1% by the drafter's figures. The drafter raised no flags. Outstanding: nothing.","rid":"s213"},
   {"customer":"CR3-DAM","qty":1,"total":110,"cash":0,"date":"2026-09-28","deliveredQty":1,"note":"<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance. <b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.","rid":"s214","deliveredOn":"2026-09-28","handover":"collected","mod":"corrected on 2026-09-28: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-28; handover (unset) to collected","amend":[{"date":"2026-09-28","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-28","kind":"Correction","cash":0,"kg":1,"note":"<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance.","cost":56}],"cost":56},
-  {"customer":"CH4-KS","qty":3,"total":310,"cash":0,"delivery":10,"date":"2026-09-28","deliveredQty":3,"note":"<b>CORRECTED 30 SEP: 3 UNITS DELIVERED, RM320 UNPAID.</b> <b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit. <b>SALT SELL DATED 28 SEP: 3 UNIT FOR RM310 PLUS RM10 DELIVERY, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CH4-KS from the statements site, order 20260928120800-zq6mca, acknowledged and to be delivered. RM310 clears the desk's floor of RM206.01 for 3 units but sits below its ask of RM390. CH4-KS: 2 orders, median RM100 a unit, range RM86.67 to RM100, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM142 at 45.8% by the drafter's figures. The drafter flagged RM103.33 a unit as 10.7% above a usual RM93.33. The dossier's median is RM100, so the base differs, but the rate is above the top of the range. Preapproved by phone. Outstanding: RM320 and 3 units to deliver, against a credit cap of 1.","rid":"s215","deliveredOn":"2026-09-30","handover":"delivered","mod":"corrected on 2026-09-30: deliveredQty 0 to 3; deliveredOn (unset) to 2026-09-30; handover (unset) to delivered","amend":[{"date":"2026-09-28","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-30","kind":"Correction","cash":0,"kg":3,"note":"<b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit.","cost":168}],"cost":168},
-  {"customer":"CK4-SEN","qty":6.25,"total":530,"cash":0,"date":"2026-09-29","deliveredQty":0,"note":"<b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.","rid":"s216"},
-  {"customer":"CZ5-TM","qty":1,"total":110,"cash":110,"date":"2026-09-29","deliveredQty":1,"note":"<b>CORRECTED 29 SEP: 1 UNIT COLLECTED, ORDER CLOSED.</b> <b>CORRECTION ON S217, 29 SEP: 1 UNIT COLLECTED BY CZ5-TM.</b> Delivered quantity moves from 0 to 1, delivered on is set to 29 Sep and handover to collected, for order 20260929100217-rligdw. The shelf rolls 1 unit out to CZ5-TM. Terms stand: 1 unit for RM110, paid RM110 on 29 Sep, clearing the floor of RM68.67 but below the ask of RM140. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged that the trail of 2 steps, neither moving a unit, will not add up to the new figure; the correction is recorded beside it. Preapproved by phone. Outstanding: nothing. <b>SALT SELL DATED 29 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CZ5-TM from the statements site, order 20260929100217-rligdw, acknowledged and to collect. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CZ5-TM: 1 order, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM54 at 49.1% by the drafter's figures. At RM110 a unit, the rate matches his only earlier order. The drafter raised no flag. Preapproved by phone. Outstanding: RM110 and 1 unit to collect, against a credit cap of 1.","rid":"s217","amend":[{"date":"2026-09-29","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-29","kind":"Fulfilment","cash":110,"kg":0,"note":"<b>FULFILMENT ON S217, 29 SEP: RM110 PAID, NO UNITS HANDED OVER.</b> CZ5-TM paid RM110 on 29 Sep on the statements site, order 20260929100217-rligdw, by qr via maybank, against s217, 1 unit for RM110 booked the same day. Before this, RM110 and 1 unit stood outstanding; the payment clears the cash in full. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, RM110 outstanding and no units on credit before this batch, nothing defaulted. No cost moves, as no unit left the inventory. The drafter raised no flag and the figures agree with his reasoning. Preapproved by phone. Outstanding: RM0 and 1 unit to hand over, paid in advance."},{"date":"2026-09-29","kind":"Correction","cash":0,"kg":1,"note":"<b>CORRECTION ON S217, 29 SEP: 1 UNIT COLLECTED BY CZ5-TM.</b> Delivered quantity moves from 0 to 1, delivered on is set to 29 Sep and handover to collected, for order 20260929100217-rligdw. The shelf rolls 1 unit out to CZ5-TM. Terms stand: 1 unit for RM110, paid RM110 on 29 Sep, clearing the floor of RM68.67 but below the ask of RM140. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged that the trail of 2 steps, neither moving a unit, will not add up to the new figure; the correction is recorded beside it. Preapproved by phone. Outstanding: nothing.","cost":56}],"paidOn":"2026-09-29","deliveredOn":"2026-09-29","handover":"collected","mod":"corrected on 2026-09-29: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-29; handover (unset) to collected","cost":56}
+  {"customer":"CH4-KS","qty":3,"total":310,"cash":320,"delivery":10,"date":"2026-09-28","deliveredQty":3,"note":"<b>PAID 30 SEP: RM320 IN CASH, ORDER SETTLED.</b> <b>CORRECTED 30 SEP: 3 UNITS DELIVERED, RM320 UNPAID.</b> <b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit. <b>SALT SELL DATED 28 SEP: 3 UNIT FOR RM310 PLUS RM10 DELIVERY, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CH4-KS from the statements site, order 20260928120800-zq6mca, acknowledged and to be delivered. RM310 clears the desk's floor of RM206.01 for 3 units but sits below its ask of RM390. CH4-KS: 2 orders, median RM100 a unit, range RM86.67 to RM100, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM142 at 45.8% by the drafter's figures. The drafter flagged RM103.33 a unit as 10.7% above a usual RM93.33. The dossier's median is RM100, so the base differs, but the rate is above the top of the range. Preapproved by phone. Outstanding: RM320 and 3 units to deliver, against a credit cap of 1.","rid":"s215","deliveredOn":"2026-09-30","handover":"delivered","mod":"corrected on 2026-09-30: deliveredQty 0 to 3; deliveredOn (unset) to 2026-09-30; handover (unset) to delivered","amend":[{"date":"2026-09-28","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-30","kind":"Correction","cash":0,"kg":3,"note":"<b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit.","cost":168},{"date":"2026-09-30","kind":"Fulfilment","cash":320,"kg":0,"note":"<b>FULFILMENT ON S215, 30 SEP: RM320 PAID IN CASH, ORDER SETTLED.</b> CH4-KS paid RM320 at the counter on 30 Sep against order 20260928120800-zq6mca, agreed 28 Sep: 3 units for RM310 plus RM10 delivery. No units move; the 3 units were delivered on the 30 Sep correction. The dossier gives no floor or ask for this size. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding and 3 units on credit before this batch, nothing defaulted. Cost stays RM56 a unit, the inventory's own. The drafter flagged that this settles the order in full; RM320 paid against RM320 outstanding answers it. Preapproved by phone. Outstanding: nothing."}],"cost":168,"paidOn":"2026-09-30"},
+  {"customer":"CK4-SEN","qty":6.25,"total":530,"cash":530,"date":"2026-09-29","deliveredQty":6.25,"note":"<b>CORRECTED 30 SEP: 6.25 UNIT COLLECTED, RM530 UNPAID.</b> <b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit. <b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.","rid":"s216","deliveredOn":"2026-09-30","handover":"collected","mod":"corrected on 2026-09-30: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-09-30; handover (unset) to collected","amend":[{"date":"2026-09-29","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-30","kind":"Correction","cash":0,"kg":6.25,"note":"<b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit.","cost":350},{"date":"2026-09-30","kind":"Fulfilment","cash":530,"kg":0,"note":"<b>FULFILMENT ON S216, 30 SEP: RM530 CASH AT THE COUNTER SETTLES THE ORDER.</b> Payment for order 20260929071114-awrljg, 6.25 units of salt at RM84.8 a unit, the top of his range. The 6.25 units were already collected on the 30 Sep correction, so no goods move. Preapproved by phone. The dossier gives no floor or ask for this size, so none is quoted. CK4-SEN: median RM80, range RM8 to RM84.8, RM538 outstanding before this row. The drafter flagged that it settles the order in full; RM530 against RM530 owed confirms it. Outstanding: RM0 and 0 unit."}],"cost":350,"paidOn":"2026-09-30"},
+  {"customer":"CZ5-TM","qty":1,"total":110,"cash":110,"date":"2026-09-29","deliveredQty":1,"note":"<b>CORRECTED 29 SEP: 1 UNIT COLLECTED, ORDER CLOSED.</b> <b>CORRECTION ON S217, 29 SEP: 1 UNIT COLLECTED BY CZ5-TM.</b> Delivered quantity moves from 0 to 1, delivered on is set to 29 Sep and handover to collected, for order 20260929100217-rligdw. The shelf rolls 1 unit out to CZ5-TM. Terms stand: 1 unit for RM110, paid RM110 on 29 Sep, clearing the floor of RM68.67 but below the ask of RM140. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged that the trail of 2 steps, neither moving a unit, will not add up to the new figure; the correction is recorded beside it. Preapproved by phone. Outstanding: nothing. <b>SALT SELL DATED 29 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CZ5-TM from the statements site, order 20260929100217-rligdw, acknowledged and to collect. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CZ5-TM: 1 order, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM54 at 49.1% by the drafter's figures. At RM110 a unit, the rate matches his only earlier order. The drafter raised no flag. Preapproved by phone. Outstanding: RM110 and 1 unit to collect, against a credit cap of 1.","rid":"s217","amend":[{"date":"2026-09-29","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-29","kind":"Fulfilment","cash":110,"kg":0,"note":"<b>FULFILMENT ON S217, 29 SEP: RM110 PAID, NO UNITS HANDED OVER.</b> CZ5-TM paid RM110 on 29 Sep on the statements site, order 20260929100217-rligdw, by qr via maybank, against s217, 1 unit for RM110 booked the same day. Before this, RM110 and 1 unit stood outstanding; the payment clears the cash in full. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, RM110 outstanding and no units on credit before this batch, nothing defaulted. No cost moves, as no unit left the inventory. The drafter raised no flag and the figures agree with his reasoning. Preapproved by phone. Outstanding: RM0 and 1 unit to hand over, paid in advance."},{"date":"2026-09-29","kind":"Correction","cash":0,"kg":1,"note":"<b>CORRECTION ON S217, 29 SEP: 1 UNIT COLLECTED BY CZ5-TM.</b> Delivered quantity moves from 0 to 1, delivered on is set to 29 Sep and handover to collected, for order 20260929100217-rligdw. The shelf rolls 1 unit out to CZ5-TM. Terms stand: 1 unit for RM110, paid RM110 on 29 Sep, clearing the floor of RM68.67 but below the ask of RM140. CZ5-TM: 2 orders, median RM110 a unit, range RM110 to RM110, nothing outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged that the trail of 2 steps, neither moving a unit, will not add up to the new figure; the correction is recorded beside it. Preapproved by phone. Outstanding: nothing.","cost":56}],"paidOn":"2026-09-29","deliveredOn":"2026-09-29","handover":"collected","mod":"corrected on 2026-09-29: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-29; handover (unset) to collected","cost":56},
+  {"customer":"CK4-SEN","qty":1,"total":8,"cash":0,"product":"rice","date":"2026-09-30","deliveredQty":0,"note":"<b>RICE SELL DATED 30 SEP: 1 UNIT FOR RM8, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260930034419-knpgsa, acknowledged, to collect. At RM8 a unit it clears the floor of RM6.31 and meets the ask of RM8 for 1 unit, below the ceiling of RM11. CK4-SEN: 4 orders, none of them rice, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and 6.25 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the drafter's figure from the desk's own inventory cost. The drafter flagged no committed rice order to compare against; the history confirms it, so the ask is the only yardstick. Preapproved by phone. Outstanding: RM8 and 1 unit.","rid":"s218","amend":[{"date":"2026-09-30","kind":"Fulfilment","cash":0,"kg":0,"note":"as booked"},{"date":"2026-09-30","kind":"Cancellation","cash":0,"kg":0,"note":"<b>CANCELLATION ON S218, 30 SEP: RICE ORDER OF 1 UNIT FOR RM8 WITHDRAWN.</b> Withdrawn by the customer on the statements site, order 20260930034419-knpgsa, recorded 30 Sep and approved by the desk. The order counts nowhere. At RM8 it had cleared the floor of RM6.31 and met the ask of RM8. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. No cost is carried, as nothing was handed over or paid. The drafter raised no flag. Outstanding: nothing on this order."}],"cancelled":true,"cancelledOn":"2026-09-30"},
+  {"customer":"CK4-SEN","qty":2,"total":16,"cost":6.4,"cash":16,"handover":"collected","product":"rice","date":"2026-09-30","deliveredQty":2,"deliveredOn":"2026-09-30","paidOn":"2026-09-30","note":"<b>RICE SELL DATED 30 SEP: 2 UNITS FOR RM16, PAID AND COLLECTED.</b> Booked to CK4-SEN at RM8 a unit, RM16 cash and 2 units delivered the same day, approved by the desk. For 2 units it clears the floor of RM12.63 and meets the ask of RM16, below the ceiling of RM21. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, RM6.4 in all, the desk's own inventory cost. The drafter flagged no committed rice order of his to compare against; the history gives none, so the ask is the only yardstick. Outstanding: nothing.","rid":"s219"}
 ];
 const contacts=[
   {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -7595,7 +7612,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-29T16:12:54.595Z";
+const QUEUE_COMMITTED="2026-09-30T09:52:43.295Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -8600,7 +8617,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v956","d":"30 Sep 2026","t":"A LATE PAYER IS OFFERED A LEVEL DOWN, READ FROM THE HANDOVER","n":["<p><b>A LATE PAYER IS OFFERED A LEVEL DOWN, NEVER PRICED ONE.</b> His answers of 29 Sep 2026, in place of rare and late twice. Each row's delay is counted in days from its handover, across every book and the friend bucket: within the term (1 day) is on time, past it and under the lock (4 days) a short delay, the lock or more a long one. One long delay, or a second short one within 90 days of the one before, turns the offer on; one payment on time turns it off; a delay within 90 days of that turns it on again, and then it takes 3 payments on time in a row.</p>","<p><b>THE TIERS CARD OFFERS IT; HE SETS IT OR NOT.</b> Beside what the customer is quoted, the card says Late payer: offered the level down, and why. A late payer takes no promotion, from buying bigger or from a slowdown; the small buyer's drop still stands. The profile reads no lateness any more.</p>","<p><b>THE COUNTER SAYS IT.</b> Under To pay now, while something is to pay: pay within a day of receiving it to keep your price. The pay sheet gives the whole rule, off the term, lock and window the publish now seals; a statement published before this version shows neither line. The test accounts carry the case.</p>","<p><b>PROOFS.</b> Two new suite sections and the old late-twice checks rewritten; 17 mutations each turned a check red. The whole suite passed on this tree.</p>"]}];
+const evolution=[{"v":"v963","d":"30 Sep 2026","t":"A PART PAYMENT OF RM100 LANDS ON CN3-WM'S ORDER S182","n":["<b>ONE FULFILMENT FOLDED.</b> CN3-WM paid RM100 cash on 30 Sep against order s182 of 19 Sep (2.5 units for RM250), leaving RM110 outstanding. The party's own outstanding before the row was RM310.","<b>INVENTORY UNCHANGED.</b> No units moved, since the 2.5 units went out on 19 Sep. Stock stays at 14.75 units at RM56 a unit, below the reorder point of 25.25."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8746,7 +8763,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='30 Sep 2026, 02:01 KL';
+const LAST_UPDATED='30 Sep 2026, 17:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13165,7 +13182,7 @@ function renderEditor(){
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
     if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
-    if(f.kind==='bool')return '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
+    if(f.kind==='bool')return '<label class="edchk" style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
     if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
     return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
   };
@@ -13189,7 +13206,7 @@ function renderEditor(){
       if(open)html+=(open.fold?'</details>':'')+'';
       open=f;fgi++;
       html+=f.fold
-        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
+        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary class="tapsum" style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
         : '<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin:14px 0 8px">'+edEsc(f.g)+'</p>';
       return;
     }
@@ -13204,7 +13221,7 @@ function renderEditor(){
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   pn.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
     +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">'+(edNew?'New order':'Edit the entry')+'</div>'
-    +'<button id="edX" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>'
+    +'<button id="edX" class="edx" aria-label="Close">&times;</button></div>'
     +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+(edNew
       ?'new &middot; SELL &middot; queued for approval, like every other entry'
       :edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey]))+'</div>'
@@ -19164,6 +19181,10 @@ const WB_NO_PROD={amend:1,addid:1,amendid:1};
    the phone. Same endpoints, same rule: what is approved is the ROW the drafter wrote, with
    the cost it draws and the margin it makes beside the price, and nothing is computed here.
    Cloud only: the laptop server has no drafts table. */
+/* D11 (29 Sep 2026, the fault list): A FAILED READ SAYS WHAT HAPPENED IN HIS WORDS. Approve and Site orders printed
+   "the Worker answered http 500", or the browser's own "Failed to fetch", with no way on but leaving the part. The
+   server is named as the server, a read that never came back says so, and both parts offer Retry. */
+const NO_REPLY='no connection, or no reply the desk could read';
 let AP_DRAFTS=[],AP_REFUSED=[],AP_CLOCK=null,apNeedKey=false,apUnread='',apBusy={},apMsg='',apRejected=null;
 /* v525: REJECT MEANS DISCARD, WITH RE-ENTER (Part B step 7). The Worker drops the entry from every
    queue on the rejection; this device drops its own copy too, so its next post cannot bring it
@@ -19255,11 +19276,11 @@ async function apLoad(quiet){
      thing. Nothing here decides what to do about it: it records that it does not know. */
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     apNeedKey=(r.status===401); const j=r.ok?await r.json():null;
-    apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
+    apUnread=(r.ok||r.status===401)?'':'the server answered http '+r.status;
     AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[]; AP_CLOCK=(j&&j.clock)||null;
     if(r.ok){try{localStorage.setItem('saltRefusedAts',JSON.stringify(AP_REFUSED.map(x=>x.id)));}catch(e){}}   // v586: only a good read may say what is refused
     if(r.ok){AP_READ=true;AP_AT=Date.now();}
-  }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
+  }catch(e){ apUnread=NO_REPLY; AP_DRAFTS=[]; AP_REFUSED=[]; }
   if(!apUnread&&!apNeedKey)autoOffsets();   // v585: only on a read that succeeded, or its duplicate check is blind
   apDraw();
   ordTell();   /* S9 9.8 fix */
@@ -19381,10 +19402,11 @@ function apDraw(){
   apBadge();
   if(!box)return;
   if(apNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the drafts and it was not accepted. Reload to be asked again. <b>This is not an empty queue: rows may be waiting.</b></div>';
-  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b> Open this part again once the connection is back.</div>';
+  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-apretry="1" style="margin-top:8px">Retry</button>';
   else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
+  box.querySelectorAll('button[data-apretry]').forEach(b=>{b.onclick=()=>{b.disabled=true;b.textContent='Reading';apLoad();};});
   /* v586, HIS DECISION OF 11 SEP 2026: A REFUSED ENTRY IS KEPT, AND HE CAN WITHDRAW IT. v309 built this panel with no
      control at all so nothing on it could be decided by accident, and that part stands: nothing here approves or
      rejects. What changed is that a refused entry used to vanish at the next fold, cleared by the same watermark
@@ -19434,7 +19456,7 @@ async function apDecide(id,action,btn){
     let j={};try{j=await r.json();}catch(e){}
     apMsg=r.status===401?'That write key was refused. The row is still waiting.'
       :r.status===409?'That row was already decided somewhere else.'
-      :!r.ok?'The Worker refused the decision (http '+r.status+'). The row is still waiting.'
+      :!r.ok?'The server refused the decision (http '+r.status+'). The row is still waiting.'
       :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.'
         +(j.order===true?' Its order on Site orders now says so.':j.order===false?' Its order on Site orders could not be told.':'');
     if(r.ok&&action==='reject'){qForgetAt(id);apRejected=was;}
@@ -19492,14 +19514,16 @@ async function ordLoad(quiet){
   const go=()=>fetch('orders'+(ordAll?'?all=1':''),{cache:'no-store',headers:qHeaders()});
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
-    ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
+    ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the server answered http '+r.status);
     /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
+    /* Step 7: and every account's thread, his Chat, each a card of its own, waiting on him while their line is the last */
+    ORD_OPEN=ORD_OPEN.concat(((r.ok&&j&&j.threads)||[]).map(thrItem));
     /* S9 9.8: the rail's foot counts the associate links waiting in Salt Account: a count, no link and no name */
     {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Account':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
     if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
-  }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
+  }catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }
   ordDraw();
   ordTell();   /* S9 9.8 fix */
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
@@ -19561,7 +19585,7 @@ async function bullPost(clear){
   const body=JSON.stringify({lines});
   const go=()=>fetch('bulletin',{method:'POST',headers:qHeaders(),body});
   try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
-    say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The Worker refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');
+    say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');
   }catch(e){ say('No connection, so nothing was posted.'); }
   await bullLoad(true);
 }
@@ -19664,6 +19688,7 @@ function ordActs(){
   const out=[];
   open.forEach(o=>{if(!o)return;
     if(o.kind==='account'){if(o.state==='waiting')out.push({kind:'paid',o,at:o.at||''});return;}   /* S6 11.15 */
+    if(o.kind==='thread'){if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});return;}   /* Step 7 */
     const live=['acknowledged','ready'].includes(o.status);
     if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
     else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
@@ -19708,6 +19733,13 @@ async function ordTell(){
 let ORD_PV={},ORD_PV_GEN=0;
 /* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
 let ORD_CHIP={};
+/* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON ONE ORDER at Accept, the goods for that order alone, up or down and
+   never under the floor, which the desk Worker checks. Kept per order while it waits; none set is the price they placed at.
+   The board, their tier and the pricing state never move by it. */
+let ORD_PRICE={};
+function ordPriceNow(o){const v=o?ORD_PRICE[o.id]:null;return o&&o.status==='placed'&&typeof v==='number'&&v>0?v:null;}
+/* the row drawn is the row Accept sends only if it was drafted at this charge and this price */
+function ordPvFits(p,d,o){return !!p&&p.d===d&&(p.p==null?null:p.p)===ordPriceNow(o);}
 /* F15: THE DISTANCE FEE, offered when a delivery's card opens, one read a trip (a V4b sheet is one trip): the offer by
    trip, and the figure put in Other on the trip's first order alone, so a sheet is never charged twice. He may choose
    any other chip or type over it; what he sends is what the preview drafts. Cleared with the vault. */
@@ -19750,23 +19782,33 @@ async function ordPreview(o){
   if(!o||o.yes||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
   const d=ordPvDelivery(o);if(d==null)return;
   const cur=ORD_PV[o.id];
-  if(cur&&cur.d===d&&cur.gen===ORD_PV_GEN)return;
+  const pr=ordPriceNow(o);
+  if(cur&&ordPvFits(cur,d,o)&&cur.gen===ORD_PV_GEN)return;
   /* the row already drawn at this charge stays, its digest with it, while it is drafted again on a poll: Accept tapped in
      between sends that digest, and the Worker's own recheck answers a row that moved with the fresh one */
-  const mine=cur&&cur.st==='ok'&&cur.d===d?Object.assign({},cur,{gen:ORD_PV_GEN}):{d,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
+  const mine=cur&&cur.st==='ok'&&ordPvFits(cur,d,o)?Object.assign({},cur,{gen:ORD_PV_GEN}):{d,p:pr,gen:ORD_PV_GEN,st:'wait'};ORD_PV[o.id]=mine;
   let st='err',j=null,err='';
-  try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify({delivery:d})});
+  try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify(Object.assign({delivery:d},pr!=null?{total:pr}:{}))});
     try{j=await r.json();}catch(e){}
-    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the server answered http '+r.status);
   }catch(e){err='no connection';}
   if(ORD_PV[o.id]!==mine)return;   /* a newer ask has taken its place */
   ORD_PV[o.id]=Object.assign(mine,{st,j,err});
   ordDraw();
 }
+/* Step 2: THE PRICE, a field a line, filled with what they placed at, the floor the Worker read said under it */
+function ordPriceBlock(o,pv){
+  if(!o||o.status!=='placed')return '';
+  const pr=ordPriceNow(o),fl=pv&&pv.j&&pv.j.floor&&typeof pv.j.floor.rm==='number'?pv.j.floor:null;
+  const say=(fl?'Floor '+fmt(fl.rm)+' at '+units(+fl.at||+o.qty||0)+'.':'')+(pr!=null?(fl?' ':'')+'They placed it at '+fmt(+o.total||0)+'; this order alone takes your price.':'');
+  return `<label class="salt-field ordprice"><span class="salt-field__label">Price for the goods, RM</span>
+    <input type="number" inputmode="decimal" min="0" step="0.5" value="${pr!=null?pr:+o.total||0}" class="salt-field__input salt-field__input--mono" data-price="${esc(o.id)}"></label>
+    ${say?`<p class="salt-approve__reason ordfloor" data-floor="${esc(o.id)}">${esc(say)}</p>`:''}`;
+}
 function ordPvBlock(o){
   const pv=ORD_PV[o.id];
-  if(!pv||pv.st==='wait')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
-  if(pv.st==='err')return `<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Accept opens once it can, your yes being to the row drawn here.</p>`;
+  if(!pv||pv.st==='wait')return ordPriceBlock(o,null)+`<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
+  if(pv.st==='err')return ordPriceBlock(o,pv)+`<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">The row could not be drafted: ${esc(pv.err)}. Accept opens once it can, your yes being to the row drawn here.</p>`;
   const j=pv.j||{},row=j.row||{},num=v=>(typeof v==='number'&&isFinite(v))?v:null;
   const goods=num(row.total)!=null?+row.total:+o.total||0,qty=num(row.qty)!=null&&row.qty>0?+row.qty:+o.qty||0;
   /* the preview's own shapes (src/orders.js previewAck): cost {unit,total}, margin {rm,pct}, floor {rm}, usual {rate} */
@@ -19774,7 +19816,8 @@ function ordPvBlock(o){
   const margin=j.margin?num(j.margin.rm):null;
   const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
   const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
-  const q=+o.total||0,gap=card==null?null:+(q-card).toFixed(2);
+/* Step 2: measured at the goods the row is drafted at, the price he set where he set one */
+  const q=goods,gap=card==null?null:+(q-card).toFixed(2);
   const cardT=card==null?tile('Their card today',NIL,esc(j.cardNote||'no card for this size'),'')
     :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
   const marT=margin==null?tile('Margin',NIL,'no cost on this book',''):tile('Margin',fmt(margin),cost!=null?'on '+fmt(cost)+' cost':'',margin>0.004?'verdigris':'ember');
@@ -19786,7 +19829,7 @@ function ordPvBlock(o){
   /* V5b2: the Worker's verdict on paying in advance, which his yes covers (it is in the digest) */
   const owedW=num(j.owedWith),ceil=num(j.ceiling);
   const preT=ceil==null||owedW==null?'':`<p class="salt-approve__reason ordprepay">${j.prepay?'In advance':'On credit'}: ${fmt(owedW)} owed with this order, ${j.prepay?'over':'within'} ${fmt(ceil)}.${j.prepay?' They are asked to pay before it is handed over, and cash on handover is not offered.':''}</p>`;
-  return `<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>${preT}
+  return ordPriceBlock(o,pv)+`<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>${preT}
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
     ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;
 }
@@ -19824,6 +19867,38 @@ function ordPartSay(id){const o=ORD_OPEN.find(x=>x&&x.id===id),c=document.queryS
   const p=c.querySelector('[data-partcap]');if(p)p.innerHTML=ordPartCap(o,n);}
 /* 28 Sep 2026: CASH RECEIVED, A CUSTOM AMOUNT. Which cards have Other amount open, read off the box as a part is. */
 let ORD_CASH={};
+/* CASH RECEIVED WAITS ON THE CARD BEFORE IT LEAVES (29 Sep 2026, his decision: a short undo, not a confirm, so his one
+   tap stands, D6). Three taps of it on CE5-SA orders, RM 210, 110 and 8, were mistakes, and a tap cannot be taken back
+   once it leaves: the Worker files his yes, moves the Counter's order paid, wakes their phone and queues the row in one
+   request, and the drafter approves the row as it lands. Nothing on the server can be withdrawn after that without a
+   road back on the Counter, so the undo is before the send: the tap is held here for ORD_UNDO_MS with Undo in its
+   place, and posts when the time runs out. An Undo inside the window sends nothing at all. Leaving the page, or the
+   phone locking, sends what is held at once, since a cash tap he meant must never be lost. */
+let ORD_UNDO_MS=10000, ORD_HOLD={};
+const ordHoldLeft=id=>{const h=ORD_HOLD[id];return h?Math.max(0,Math.ceil((h.until-Date.now())/1000)):0;};
+function ordHold(ds,amount){
+  const id=ds.id;
+  ORD_HOLD[id]={amount,ds:{id,u:ds.u,ord:'cash'},until:Date.now()+ORD_UNDO_MS,
+    t:setTimeout(()=>ordHoldGo(id),ORD_UNDO_MS),
+    i:setInterval(()=>{const e=document.querySelector('[data-holdleft="'+id+'"]');if(e)e.textContent=String(ordHoldLeft(id));},1000)};
+  ORD_SAID=null;ordDraw();
+}
+/* the time is up, or the page is going: the held tap posts as the tap itself would have */
+function ordHoldGo(id){
+  const h=ORD_HOLD[id];if(!h)return Promise.resolve(false);
+  clearTimeout(h.t);
+  if(ordBusy[id]){h.t=setTimeout(()=>ordHoldGo(id),500);return Promise.resolve(false);}   /* another move of this order in flight: after it */
+  clearInterval(h.i);delete ORD_HOLD[id];
+  return ordAct({dataset:Object.assign({},h.ds,{held:String(h.amount)}),closest:()=>document.querySelector('.ordcard[data-id="'+id+'"]')});
+}
+function ordHoldFlush(){return Promise.all(Object.keys(ORD_HOLD).map(ordHoldGo));}
+function ordUndo(id){
+  const h=ORD_HOLD[id];if(!h)return;
+  clearTimeout(h.t);clearInterval(h.i);delete ORD_HOLD[id];
+  ORD_SAID={id,t:'Undone: nothing was sent, and the order is as it was.'};ordDraw();
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')ordHoldFlush();});
+window.addEventListener('pagehide',()=>{ordHoldFlush();});
 /* the pill says what its tap would send: an emptied box is RM 0, which the tap refuses, never the whole it will not send */
 function ordCashNow(o){const i=document.querySelector('input[data-cashamt="'+o.id+'"]');return i?(parseFloat(i.value)||0):ordDue(o);}
 /* the pill's own label follows each keystroke on the node already drawn, the same reason ordPartSay does */
@@ -19893,7 +19968,7 @@ async function slipView(u,id,at){
     let j=null;try{j=await r.json();}catch(e){}
     const age=Date.now()-Date.parse(at||'');
     if(r.status===404)msg=age>SLIP_DAYS*864e5?'The slip is no longer kept: a slip is kept '+SLIP_DAYS+' days.':age<5*60e3?'The slip is on its way. Try again in a minute.':'The slip could not be found.';
-    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The Worker answered http '+r.status+'.');
+    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The server answered http '+r.status+'.');
     else{const b=await slipOpen(j.slip);if(!b)msg='The slip would not open with this key.';else{url=URL.createObjectURL(new Blob([b],{type:'image/jpeg'}));st='ok';}}
   }catch(e){msg='No connection.';}
   /* locked while it opened: nothing is drawn, and the picture is let go */
@@ -19908,7 +19983,7 @@ async function clmPreview(c){
   let st='err',j=null,err='';
   try{const r=await fetch('claims/'+encodeURIComponent(c.id)+'/preview',{method:'POST',headers:qHeaders(),body:'{}'});
     try{j=await r.json();}catch(e){}
-    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the server answered http '+r.status);
   }catch(e){err='no connection';}
   if(CLM_PV[c.id]!==mine)return;
   CLM_PV[c.id]=Object.assign(mine,{st,j,err});
@@ -19934,8 +20009,52 @@ function clmCard(c){
       <p class="dsc ordsaid" role="status" data-msg="${esc(c.id)}">${ORD_SAID&&ORD_SAID.id===c.id?esc(ORD_SAID.t):''}</p></div>
   </div>`;
 }
+/* ---- Step 7 (his Q5 of 28 Sep 2026): HIS CHAT, one thread an account, in Enter until Admin (Step 9). A card of the same
+   Waiting on you, beside the orders: waiting on him while their line is the last and he has not said No reply needed,
+   listed under Chat otherwise. His line goes through siteSafe here and siteWords on the Worker, to threads/<username>,
+   and wakes their phone as Counter says: and his words; every line of theirs is escaped. While a thread is open on his
+   screen and the page is showing, the threads are read every THR_POLL, and the card drawn again only when a line changed. */
+const THR_POLL=2000;let thrTimer=null,thrBusy=false;
+function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
+function thrCard(o){
+  const who=o.code?codeOf(o.code):'unmapped '+esc(o.u),msgs=o.msgs||[],waiting=ordAsked(o),quick=ordQuick();
+  const lines=msgs.map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${ordWhen(m.at)}</span><br>${esc(m.text||'')}</div>`).join('');
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">Chat${waiting?', waiting for an answer':''}</span></div>
+    <div class="ordthr">${lines||'<div class="dsc">No lines yet.</div>'}</div>
+    <div class="salt-composer ordreply"><input type="text" maxlength="200" placeholder="Answer them" aria-label="Answer this customer" data-say="${esc(o.id)}" class="salt-field__input salt-composer__field">
+      <button class="salt-ghost salt-ghost--lit salt-composer__send" data-ord="say" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send</button></div>
+    <div class="ordquick">${quick.map(t=>`<button type="button" class="salt-ghost salt-ghost--tight" data-quick="${esc(o.id)}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}${waiting?`<button class="salt-ghost salt-ghost--tight" data-ord="noreply" data-u="${esc(o.u)}" data-id="${esc(o.id)}">No reply needed</button>`:''}<button type="button" class="salt-ghost salt-ghost--tight" data-keep="${esc(o.id)}">Keep as a quick reply</button></div>
+    <p class="salt-approve__reason">Their account's own thread, about no one order. Your line reaches their page and their phone as Counter says: and your words.</p>
+    <p class="dsc ordsaid" role="status" data-msg="${esc(o.id)}">${ORD_SAID&&ORD_SAID.id===o.id?esc(ORD_SAID.t):''}</p>
+  </div>`;
+}
+function thrOpen(){const o=ORD_OPEN.find(x=>x&&x.id===ORD_SEL);return !!(o&&o.kind==='thread'&&(ORD_OPENED||ordSideBySide())&&document.getElementById('ordBox'));}
+async function thrRead(){
+  if(thrBusy||document.hidden||!thrOpen()||Object.keys(ordBusy).length)return;
+  thrBusy=true;
+  try{const r=await fetch('threads',{cache:'no-store',headers:qHeaders()});if(!r.ok)return;const j=await r.json();if(!j||!j.ok)return;
+    const next=(j.threads||[]).map(thrItem);
+    if(JSON.stringify(next)===JSON.stringify(ORD_OPEN.filter(o=>o&&o.kind==='thread')))return;
+    ORD_OPEN=ORD_OPEN.filter(o=>o&&o.kind!=='thread').concat(next);ordDraw();
+  }catch(e){}finally{thrBusy=false;}
+}
+function thrWatch(){
+  if(!thrOpen()){if(thrTimer){clearInterval(thrTimer);thrTimer=null;}return;}
+  if(!thrTimer)thrTimer=setInterval(()=>{if(!thrOpen()){clearInterval(thrTimer);thrTimer=null;return;}thrRead();},THR_POLL);
+}
+/* 29 SEP 2026, FUTURE-DATED ORDERS: the day the customer asked for, while the goods are still to go. It is a day they
+   asked for and nothing more: the row is dated at the acknowledgement, and the term and the chase count from the handover. */
+function ordWantLine(o){
+  const w=String(o&&o.wantBy||''),m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(w);
+  if(!m||!['placed','acknowledged','ready'].includes(o.status)||(+o.moved||0)>=(+o.qty||0)-0.004)return '';
+  const today=new Date(Date.now()+8*36e5).toISOString().slice(0,10),n=Math.round((Date.parse(w)-Date.parse(today))/864e5);
+  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+n+' days':n===-1?'yesterday':(-n)+' days ago';
+  return `<p class="ordline ordwant">Wanted by <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
+}
 function ordCard(o){
   if(o&&o.kind==='account')return clmCard(o);
+  if(o&&o.kind==='thread')return thrCard(o);
   /* 24 Sep 2026: the month off MAP_MON, because en-GB writes Sept */
   const when=iso=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}};
   const cell=(k,v,cls,note)=>`<div class="kpi salt-kpi ${cls||''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value" style="font-size:17px">${v}</div>${note?`<div class="salt-kpi__note">${note}</div>`:''}</div>`;
@@ -20002,10 +20121,12 @@ function ordCard(o){
      he chooses on that order and RM 0 on the rest, each row drafted and shown; the other cards keep Decline */
   const G=ordSheetGroup(o),SL=ordSheetLead(o),sLead=!!SL&&SL.id===o.id,sSib=!!SL&&SL.id!==o.id;
   const feeNow=o.status==='placed'?(sSib?0:o.mode==='deliver'?ordFeeNow(o):0):againAck?(+o.delivery||0):null,pv=ORD_PV[o.id];
-  const pvFor=pv&&feeNow!=null&&pv.d===feeNow&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
-  const sum=+((+o.total||0)+(feeNow||0)).toFixed(2);
-  const sumAll=sLead?+(G.reduce((a,x)=>a+(+x.total||0),0)+(feeNow||0)).toFixed(2):sum;
-  const pvAll=!sLead||G.slice(1).every(x=>{const p=ORD_PV[x.id];return !!p&&p.st==='ok'&&p.d===0;});
+  const pvFor=pv&&feeNow!=null&&ordPvFits(pv,feeNow,o)&&pv.st!=='wait',pvOk=pvFor&&pv.st==='ok';
+  /* Step 2: the goods at the price he set, where he set one */
+  const goodsOf=x=>{const p=ordPriceNow(x);return p!=null?p:(+x.total||0);};
+  const sum=+(goodsOf(o)+(feeNow||0)).toFixed(2);
+  const sumAll=sLead?+(G.reduce((a,x)=>a+goodsOf(x),0)+(feeNow||0)).toFixed(2):sum;
+  const pvAll=!sLead||G.slice(1).every(x=>{const p=ORD_PV[x.id];return !!p&&p.st==='ok'&&ordPvFits(p,0,x);});
   /* S11 11.8: CASH TO RECORD. Goods out and nothing paid: one tap marks the order paid in cash at once, so
      their page says paid and the chase stops, and records the Fulfilment's approval for when its row is drafted
      (POST orders/<id>/cash, the contract of 11.12). It is the card's one filled control; Ready is a ghost. */
@@ -20016,7 +20137,8 @@ function ordCard(o){
   /* 28 Sep 2026: a part-paid order takes the rest in cash too; nothing paid is no longer required */
   const cashNow=['acknowledged','ready'].includes(o.status)&&moved>0.0004&&ordDue(o)>0.004&&!c0;
   const cashPart=cashNow&&!!ORD_CASH[o.id];
-  const cashBtn=cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${cashPart?' data-cashpart="1"':''}>Cash received, ${fmt(cashPart?ordCashNow(o):ordDue(o))}</button>`
+  const hold=ORD_HOLD[o.id];
+  const cashBtn=hold?`<button class="vbtn salt-pill salt-pill--sm" data-undo="${esc(o.id)}">Undo</button>`:cashNow?`<button class="vbtn salt-pill salt-pill--sm" data-ord="cash" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${cashPart?' data-cashpart="1"':''}>Cash received, ${fmt(cashPart?ordCashNow(o):ordDue(o))}</button>`
     +`<button class="salt-ghost" data-cash${cashPart?'off':'open'}="${esc(o.id)}">${cashPart?'Take the whole':'Other amount'}</button>`:'';
   /* S6 fix: a claim more than the order still owes is covered by money he recorded another way: Received, on the book already */
   const cov=!!c0&&(+c0.amount||0)>ordDue(o)+0.004;
@@ -20087,7 +20209,7 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${ordSheetLine(o)}
+    ${ordSheetLine(o)}${ordWantLine(o)}
     ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?NIL:fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
@@ -20097,7 +20219,8 @@ function ordCard(o){
     ${fee}${rated}${thread}${reply}
     ${cash}${hand}${o.prepay&&handable&&ordDue(o)>0.004?`<p class="salt-approve__reason ordprepay">Paid in advance: ${fmt(ordDue(o))} is still to pay before it is handed over.</p>`:''}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
-      ${cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
+      ${hold?`<p class="salt-approve__reason ordhold">Cash received, ${fmt(hold.amount)}: it goes in <span data-holdleft="${esc(o.id)}">${ordHoldLeft(o.id)}</span> s. Undo sends nothing.</p>`
+      :cashNow?`<p class="salt-approve__reason">${how} ${units(moved)}, ${paid>0.004?fmt(paid)+' paid':'nothing paid'}. Cash received marks the figure paid in cash at once and books it when its row is drafted, if it is this one. The chase stops once what is paid keeps up with what was handed over.</p>`:''}
       ${c0&&rowed&&!whyOpen?`<p class="salt-approve__reason ordclaim">They say they sent ${fmt(+c0.amount||0)}${c0.method?' by '+esc(c0.method)+(c0.account?' to '+esc(c0.account):''):''}, reference ${esc(o.u)}, ${when(c0.at)}${cw.length>1?', and '+(cw.length-1)+' more after it':''}. Received books its row and they see it paid; Not found files the row as not found and they are told. They see it as sent, waiting for us to confirm, until then.</p>`:''}
       ${c0&&c0.slip&&!whyOpen?slipPart(o.u,c0.slip,c0.at):''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
@@ -20131,7 +20254,7 @@ function ordSheetLine(o){
    the box, which put a typed delivery charge back to 0 and emptied a half-written answer. Each box is
    named by what it holds and the order it is on; only a figure that differs from the card's own is
    carried, so a move that went through clears its box by putting the default back first. */
-function ordField(i){return ['fee','hand','say','why','cashamt'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
+function ordField(i){return ['fee','hand','say','why','cashamt','price'].map(k=>i.dataset[k]!=null?k+':'+i.dataset[k]:'').join('');}
 /* S11 11.4: WHAT IS SELECTED, and whether the phone has opened it. On the laptop the list and the card
    stand side by side and the card is the first row's until he picks another; on the phone the list comes
    first and a row opens its card, with the way back at its head. Every card is drawn and the others are
@@ -20141,11 +20264,13 @@ let ORD_SEL='',ORD_OPENED=false,ORD_FILTER='all',ORD_SAID=null,ORD_WAKE=false;
    newest act on it, the one that woke him, is opened on the first draw that has one. The wake carries nothing but that. */
 /* S11 fix: an order named as he would name it (its code, size and day, and what it comes to), for an answer said away from
    its card: at the head of the list, once the tap that closed it has taken the card off the open list */
-function ordName(o){if(o&&o.kind==='account')return (o.code||'unmapped')+', '+fmt(+o.amount||0)+' against the account of '+ordWhen(o.at).split(',')[0];
+function ordName(o){if(o&&o.kind==='thread')return (o.code||'unmapped')+', Chat';
+  if(o&&o.kind==='account')return (o.code||'unmapped')+', '+fmt(+o.amount||0)+' against the account of '+ordWhen(o.at).split(',')[0];
   return (o.code||'unmapped')+', '+units(+o.qty||0)+' '+(o.product||'salt')+' of '+ordWhen(o.at).split(',')[0]+', '+fmt(+((+o.total||0)+(+o.delivery||0)).toFixed(2));}
 function ordWakeAddr(h){if(h==='orders/newest'){ORD_WAKE=true;return 'orders';}return h;}
 function ordWhen(iso){try{if(!iso)return '';const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(x=>{p[x.type]=x.value;});return p.day+' '+MAP_MON[+p.month-1]+', '+p.hour+':'+p.minute;}catch(e){return '';}}
 function ordWhat(a){const o=a.o;
+  if(o.kind==='thread'&&a.kind!=='asked'){const l=o.msgs[o.msgs.length-1]||{},t=String(l.text||'');return (l.by==='desk'?'You: ':'')+'&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   if(a.kind==='new')return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+(o.mode==='deliver'?'delivery':'collect');
   if(a.kind==='cash')return (o.mode==='deliver'?'Delivered ':'Collected ')+units(+o.moved||0)+' '+esc(o.product||'salt')+', nothing paid. Cash to record.';
   if(a.kind==='paid'&&o.kind==='account')return 'Says '+fmt(+o.amount||0)+' sent against the account'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Received or Not found.';
@@ -20155,7 +20280,7 @@ function ordWhat(a){const o=a.o;
     return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
   if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
-function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'};
+function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||(o.kind==='thread'?{w:'Chat',tone:'mist',act:'Open'}:{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'});
   return `<button type="button" class="salt-inbox-row" data-row="${esc(o.id)}" data-kind="${esc(a.kind)}" aria-current="${cur?'true':'false'}">
     <span class="salt-inbox-row__main"><span class="salt-inbox-row__title">${o.code?codeOf(o.code):'unmapped'} <span class="salt-status salt-status--${K.tone}">${esc(K.w)}</span></span>
       <span class="salt-inbox-row__what">${ordWhat(a)}</span></span>
@@ -20176,7 +20301,7 @@ function ordDraw(){
    if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
   const box=document.getElementById('ordBox');if(!box)return;
   const typed={};let focused='';
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt]').forEach(i=>{
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt],input[data-price]').forEach(i=>{
     if(i.value!==i.defaultValue)typed[ordField(i)]=i.value;if(i===document.activeElement)focused=ordField(i);});
   let selO=null;
   const lead=document.getElementById('ordLead');
@@ -20185,15 +20310,16 @@ function ordDraw(){
   const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
-  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
+  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-ordretry="1" style="margin-top:8px">Retry</button>';
   else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else{
     if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
     const shown=acts.filter(a=>ORD_FILTER==='all'||a.kind===ORD_FILTER);
     const inActs=new Set(acts.map(a=>a.o.id));
-    const rest=ORD_OPEN.filter(o=>o&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    const rest=ORD_OPEN.filter(o=>o&&o.kind!=='thread'&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));
+    const chats=ORD_OPEN.filter(o=>o&&o.kind==='thread'&&!inActs.has(o.id)).map(o=>({kind:'other',o,at:o.at||''}));   /* Step 7 */
     if(!ORD_OPEN.some(o=>o&&o.id===ORD_SEL)){ORD_SEL='';if(gone)ORD_OPENED=false;}
-    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||'';
+    const sel=ORD_SEL||(shown[0]&&shown[0].o.id)||(acts[0]&&acts[0].o.id)||(rest[0]&&rest[0].o.id)||(chats[0]&&chats[0].o.id)||'';
     const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
     const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
     box.classList.toggle('ord-open',!!ORD_OPENED);
@@ -20201,30 +20327,38 @@ function ordDraw(){
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
       ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':rest.some(a=>!['placed','acknowledged','ready'].includes(a.o.status))?'Other orders':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
+      ${chats.length?`<div class="salt-eyebrow ordrest">Chat</div><div class="ordrows">${chats.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
       ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
     selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
   }
-  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt]').forEach(i=>{const k=ordField(i);
+  box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt],input[data-price]').forEach(i=>{const k=ordField(i);
     if(k in typed)i.value=typed[k];if(k===focused)i.focus();});
   /* S11 11.2: the open card, if it is a new order, asks for its row, once what he typed is back in place */
-  if(selO)(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
+  if(selO&&selO.kind!=='thread')(selO.kind==='account'?clmPreview(selO):ordPreview(selO));
   /* V4b.2: and the other orders of a sheet agreed on its card, each at RM 0 */
-  if(selO&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
+  if(selO&&selO.kind!=='thread'&&ordSheetLead(selO)&&ordSheetLead(selO).id===selO.id)ordSheetGroup(selO).slice(1).forEach(x=>ordPreview(x));
   /* F15: and a delivery's card, opened, reads where he is for its fee, once a trip */
-  if(selO&&selO.kind!=='account'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
+  if(selO&&selO.kind!=='account'&&selO.kind!=='thread'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
+  thrWatch();   /* Step 7: an open thread is read every 2 seconds, and nothing else is */
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
+  box.querySelectorAll('button[data-ordretry]').forEach(b=>{b.onclick=()=>{b.disabled=true;b.textContent='Reading';ordLoad();};});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
   box.querySelectorAll('input[data-fee]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.fee);if(o){ordDraw();ordPreview(o);}};});
+  /* Step 2: a price typed is the one the row is drafted at; what they placed at, or nothing, clears it */
+  box.querySelectorAll('input[data-price]').forEach(i=>{i.onchange=()=>{const o=ORD_OPEN.find(x=>x&&x.id===i.dataset.price);if(!o)return;
+    const v=parseFloat(i.value);if(v>0&&Math.abs(v-(+o.total||0))>0.004)ORD_PRICE[o.id]=+v.toFixed(2);else delete ORD_PRICE[o.id];
+    i.defaultValue=i.value;ordDraw();ordPreview(o);};});
   box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();ordKeepSay(b.dataset.quick);}};});
   box.querySelectorAll('input[data-say]').forEach(i=>{i.oninput=()=>ordKeepSay(i.dataset.say);ordKeepSay(i.dataset.say);});
   box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
   box.querySelectorAll('button[data-cashopen]').forEach(b=>{b.onclick=()=>{ORD_CASH[b.dataset.cashopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-cashoff]').forEach(b=>{b.onclick=()=>{delete ORD_CASH[b.dataset.cashoff];ordDraw();};});
+  box.querySelectorAll('button[data-undo]').forEach(b=>{b.onclick=()=>ordUndo(b.dataset.undo);});
   /* F13: a slip opened on the card, and let go */
   box.querySelectorAll('button[data-slip]').forEach(b=>{b.onclick=()=>slipView(b.dataset.u,b.dataset.slip,b.dataset.at);});
   box.querySelectorAll('button[data-slipoff]').forEach(b=>{b.onclick=()=>{const v=SLIP_VIEW[b.dataset.slipoff];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}delete SLIP_VIEW[b.dataset.slipoff];ordDraw();};});
@@ -20269,7 +20403,8 @@ async function ordAct(b){
     const sheetHash=b.dataset.sheethash!=null?b.dataset.sheethash:undefined;
     if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
     const pv=ORD_PV[id];
-    body=JSON.stringify({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&pv.d===d&&pv.j&&pv.j.hash)||null});
+    const pr=ordPriceNow(o);
+    body=JSON.stringify(Object.assign({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.hash)||null},pr!=null?{total:pr}:{}));
     url='orders/'+encodeURIComponent(id)+'/accept';
   }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
     ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
@@ -20284,8 +20419,9 @@ async function ordAct(b){
     /* 28 Sep 2026: a custom figure, when the pill carries data-cashpart, else the whole owed */
     const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
     const due=ordDue(o);
-    const amount=b.dataset.cashpart?+((typed('cashamt'))||0).toFixed(2):due;
+    const amount=b.dataset.held!=null?+b.dataset.held:b.dataset.cashpart?+((typed('cashamt'))||0).toFixed(2):due;
     if(!(amount>0.004)||amount>due+0.004)return refuse('That is not a figure above RM 0 and up to the '+fmt(due)+' owed; nothing moved.');
+    if(b.dataset.held==null&&b.nodeType===1){delete ordBusy[id];ordHold(b.dataset,amount);return false;}
     body=JSON.stringify({amount});
     url='orders/'+encodeURIComponent(id)+'/cash';
   }else if(st==='again'){
@@ -20318,12 +20454,13 @@ async function ordAct(b){
     if(chk.warn&&!confirm(chk.warn+' Send it anyway?'))return refuse('Not sent.');
     body=JSON.stringify({message:t});
   }else body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
-  if(!url)url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  if(!url)url=String(id).startsWith('t:')?'threads/'+encodeURIComponent(u):'orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);   /* Step 7 */
   /* S11 fix: the tap in flight is seen on its card: its buttons shut and a line where the answer will be. The card is the
      system's Approve card now, which carries no .card, so the old closest('.card') found nothing and shut nothing. */
   {const card=b.closest('.ordcard');if(card){card.querySelectorAll('button').forEach(x=>x.disabled=true);const m=card.querySelector('[data-msg]');if(m)m.textContent='Sending.';}}
-  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
-    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+  const keep=b.dataset.held!=null;   /* a held cash tap may be posting as the page goes */
+  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body,keepalive:keep});
+    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body,keepalive:keep});
     let j={};try{j=await r.json();}catch(e){}
     done=r.ok;
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
@@ -20331,7 +20468,7 @@ async function ordAct(b){
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
     const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
     const said=r.status===401?'That write key was refused. The order is unchanged.'
-      :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
+      :!r.ok?'The server refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
       :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
         :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
@@ -20376,7 +20513,7 @@ async function ordSheetAct(b){
   if(st==='acknowledged'&&fee==null)return stop('Choose the delivery charge first; nothing moved.');
   /* each order's row as he was shown it, fixed now: a reload between moves drafts the next one afresh */
   const hs={};
-  if(st==='acknowledged'){for(const x of G){const p=ORD_PV[x.id],d=x.id===o.id?fee:0;hs[x.id]=(p&&p.st==='ok'&&p.d===d&&p.j&&p.j.hash)||'';}
+  if(st==='acknowledged'){for(const x of G){const p=ORD_PV[x.id],d=x.id===o.id?fee:0;hs[x.id]=(p&&p.st==='ok'&&ordPvFits(p,d,x)&&p.j&&p.j.hash)||'';}
     if(G.some(x=>!hs[x.id]))return stop('Drafting the rows first; nothing moved.');}
   ORD_SHEET_BUSY=o.sheet;ordDraw();
   const said=[];let n=0;
@@ -20984,12 +21121,12 @@ function pbCard(){
     </div>
     <div id="pbSizes" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${sizes.map(q=>`<label style="display:flex;gap:6px;align-items:center;min-height:44px;font-size:13px"><input type="checkbox" checked data-q="${q}" style="width:18px;height:18px"> ${units(q)}</label>`).join('')}</div>
     <div id="pbMsg" class="dsc" style="margin-top:6px;min-height:15px"></div>
-    <details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:var(--gold)">If it will not print</summary>
+    <details style="margin-top:6px"><summary class="tapsum" style="cursor:pointer;font-size:12px;color:var(--gold)">If it will not print</summary>
       <ul class="dsc" style="margin:6px 0 0 18px;padding:0">
         <li>Nothing happens on the phone: the desk added to the Home Screen has no print dialog on some phones. Open the same address in Safari or Chrome, tap Print again, or use the browser&rsquo;s Share, then Print.</li>
         <li>The dialog opens but the page is blank: choose &ldquo;Save as PDF&rdquo; as the printer, then print the PDF; a blocked pop-up does the same.</li>
         <li>No printer at hand: Copy as text, and paste it into the message you send him.</li>
-        <li>The username line is blank, or there is no QR: both come down the same keyed road from the Worker, so the laptop copy has neither and the cloud desk needs the write key. On the cloud desk, reload once and try again. A QR is never drawn without a username, because a code that opens nothing is worse than no code.</li>
+        <li>The username line is blank, or there is no QR: both come down the same keyed road from the server, so the laptop copy has neither and the cloud desk needs the write key. On the cloud desk, reload once and try again. A QR is never drawn without a username, because a code that opens nothing is worse than no code.</li>
         <li>Save as PDF does nothing: the sheet is drawn on a canvas first, and a browser that refuses that refuses the JPG too. Print, then choose Save as PDF in the dialog.</li>
       </ul></details>
   </div>`;}
@@ -24029,7 +24166,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   analysis:'the month read four ways',
   add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
-  orders:'what customers ordered on the statements site, and where each order stands',
+  orders:'what customers ordered on the statements site, where each order stands, and their Chat',
   plans:'what the desk noticed, from the book on this load'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),

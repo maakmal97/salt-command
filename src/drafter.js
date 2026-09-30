@@ -48,10 +48,8 @@ const rewardBook = (book, p) => {
 };
 
 /* ---- reading the book out of the mirror ------------------------------------------- */
-/* One query per collection, plus the state singletons. The mirror is kept level by the same
- * pass that commits, so a snapshot older than the master means the run should flag, not
- * proceed: pricing off a stale inventory is how a wrong cost reaches an approval screen looking
- * authoritative. */
+/* Keep state ahead of the snapshot as before. The snapshot stays ahead of collection reads: a
+ * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 
@@ -60,13 +58,14 @@ export async function readBook(db) {
     const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind(c).all();
     return (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean);
   };
-  const state = {};
   const rs = await db.prepare("SELECT key,doc FROM state").all();
-  for (const r of (rs.results || [])) { try { state[r.key] = JSON.parse(r.doc); } catch (e) { /* skip */ } }
   const snap = await db.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first();
+  const [sales, purchases] = await Promise.all([rows("sales"), rows("purchases")]);
+  const state = {};
+  for (const r of (rs.results || [])) { try { state[r.key] = JSON.parse(r.doc); } catch (e) { /* skip */ } }
   return {
-    sales: await rows("sales"),
-    purchases: await rows("purchases"),
+    sales,
+    purchases,
     state,
     version: snap ? snap.v : null,
     pricing: state.PRICING || null

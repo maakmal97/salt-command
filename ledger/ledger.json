@@ -1,6 +1,6 @@
 {
- "v": "v955",
- "stamped": "30 Sep 2026, 00:13 KL",
+ "v": "v963",
+ "stamped": "30 Sep 2026, 17:54 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 73
+    "stated": 71
    },
    "spare": {
     "qty": 0,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 21,
+  "STATED_STOCK": 14.75,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -4924,13 +4924,29 @@
     "qty": 2.5,
     "total": 250,
     "cost": 120,
-    "cash": 40,
+    "cash": 140,
     "handover": "collected",
     "date": "2026-09-19",
     "deliveredQty": 2.5,
     "deliveredOn": "2026-09-19",
     "note": "<b>SALT SELL DATED 19 SEP, DELIVERED IN FULL, RM40 IN.</b> CN6-WM takes 2.5 unit for RM250, RM100 a unit, collected, 2.5 unit moved on 19 Sep, RM40 paid and RM210 left. The total clears the RM134.61 floor for this size and sits under the RM360 ask. The rate is his median of RM100, inside his range of RM75 to RM110. Eight orders, an associate and on the roster, RM100 outstanding before and 1 unit on credit against a cap of 2 unit, nothing defaulted. Cost is the inventory's own RM48 a unit, RM120 on the goods. The drafter flagged the advance against the cap: 1 unit already on credit plus 2.5 unit released goes beyond the 2 unit cap. RM210 stays outstanding.",
-    "rid": "s182"
+    "rid": "s182",
+    "amend": [
+     {
+      "date": "2026-09-19",
+      "kind": "Fulfilment",
+      "cash": 40,
+      "kg": 2.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Fulfilment",
+      "cash": 100,
+      "kg": 0,
+      "note": "<b>FULFILMENT DATED 30 SEP: RM100 CASH AGAINST ORDER S182, RM110 STILL OWED.</b> Applied to CN3-WM's order of 19 Sep, 2.5 units for RM250 at RM100 a unit, collected in full on 19 Sep with RM40 paid. This payment moves no units and takes the outstanding on the order from RM210 to RM110, approved by the desk. The dossier gives no floor or ask for a payment, so the order's own terms stand: RM134.61 floor for the size, RM360 ask. CN3-WM: 9 orders, median RM100 a unit, range RM75 to RM110, RM310 outstanding and 3.1 units on credit before this row, nothing defaulted. No cost is carried, as no salt moves. The drafter raised no flags. Outstanding: RM110."
+     }
+    ]
    },
    {
     "customer": "CS6-BS-R",
@@ -5823,11 +5839,11 @@
     "customer": "CH4-KS",
     "qty": 3,
     "total": 310,
-    "cash": 0,
+    "cash": 320,
     "delivery": 10,
     "date": "2026-09-28",
     "deliveredQty": 3,
-    "note": "<b>CORRECTED 30 SEP: 3 UNITS DELIVERED, RM320 UNPAID.</b> <b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit. <b>SALT SELL DATED 28 SEP: 3 UNIT FOR RM310 PLUS RM10 DELIVERY, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CH4-KS from the statements site, order 20260928120800-zq6mca, acknowledged and to be delivered. RM310 clears the desk's floor of RM206.01 for 3 units but sits below its ask of RM390. CH4-KS: 2 orders, median RM100 a unit, range RM86.67 to RM100, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM142 at 45.8% by the drafter's figures. The drafter flagged RM103.33 a unit as 10.7% above a usual RM93.33. The dossier's median is RM100, so the base differs, but the rate is above the top of the range. Preapproved by phone. Outstanding: RM320 and 3 units to deliver, against a credit cap of 1.",
+    "note": "<b>PAID 30 SEP: RM320 IN CASH, ORDER SETTLED.</b> <b>CORRECTED 30 SEP: 3 UNITS DELIVERED, RM320 UNPAID.</b> <b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit. <b>SALT SELL DATED 28 SEP: 3 UNIT FOR RM310 PLUS RM10 DELIVERY, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CH4-KS from the statements site, order 20260928120800-zq6mca, acknowledged and to be delivered. RM310 clears the desk's floor of RM206.01 for 3 units but sits below its ask of RM390. CH4-KS: 2 orders, median RM100 a unit, range RM86.67 to RM100, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM142 at 45.8% by the drafter's figures. The drafter flagged RM103.33 a unit as 10.7% above a usual RM93.33. The dossier's median is RM100, so the base differs, but the rate is above the top of the range. Preapproved by phone. Outstanding: RM320 and 3 units to deliver, against a credit cap of 1.",
     "rid": "s215",
     "deliveredOn": "2026-09-30",
     "handover": "delivered",
@@ -5847,19 +5863,56 @@
       "kg": 3,
       "note": "<b>CORRECTION ON S215, 30 SEP: 3 UNITS DELIVERED TO CH4-KS.</b> Delivered quantity moves from 0 to 3, delivered on to 30 Sep, handover to delivered, for order 20260928120800-zq6mca; the shelf rolls 3 units out. Terms: 3 units for RM310 plus RM10 delivery, nothing paid; the dossier quotes no floor or ask. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding, no units on credit before. Cost RM56 a unit, the inventory's own. The drafter flagged RM103.33 as 10.7% above a RM93.33 typical, inside the recorded range, and an advance with RM320 unpaid; the dossier gives no credit cap to check. Preapproved by phone. Outstanding: RM320, 3 units on credit.",
       "cost": 168
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Fulfilment",
+      "cash": 320,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S215, 30 SEP: RM320 PAID IN CASH, ORDER SETTLED.</b> CH4-KS paid RM320 at the counter on 30 Sep against order 20260928120800-zq6mca, agreed 28 Sep: 3 units for RM310 plus RM10 delivery. No units move; the 3 units were delivered on the 30 Sep correction. The dossier gives no floor or ask for this size. CH4-KS: 3 orders, median RM100 a unit, range RM86.67 to RM103.33, RM320 outstanding and 3 units on credit before this batch, nothing defaulted. Cost stays RM56 a unit, the inventory's own. The drafter flagged that this settles the order in full; RM320 paid against RM320 outstanding answers it. Preapproved by phone. Outstanding: nothing."
      }
     ],
-    "cost": 168
+    "cost": 168,
+    "paidOn": "2026-09-30"
    },
    {
     "customer": "CK4-SEN",
     "qty": 6.25,
     "total": 530,
-    "cash": 0,
+    "cash": 530,
     "date": "2026-09-29",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.",
-    "rid": "s216"
+    "deliveredQty": 6.25,
+    "note": "<b>CORRECTED 30 SEP: 6.25 UNIT COLLECTED, RM530 UNPAID.</b> <b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit. <b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.",
+    "rid": "s216",
+    "deliveredOn": "2026-09-30",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-30: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-09-30; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-09-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 6.25,
+      "note": "<b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit.",
+      "cost": 350
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Fulfilment",
+      "cash": 530,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S216, 30 SEP: RM530 CASH AT THE COUNTER SETTLES THE ORDER.</b> Payment for order 20260929071114-awrljg, 6.25 units of salt at RM84.8 a unit, the top of his range. The 6.25 units were already collected on the 30 Sep correction, so no goods move. Preapproved by phone. The dossier gives no floor or ask for this size, so none is quoted. CK4-SEN: median RM80, range RM8 to RM84.8, RM538 outstanding before this row. The drafter flagged that it settles the order in full; RM530 against RM530 owed confirms it. Outstanding: RM0 and 0 unit."
+     }
+    ],
+    "cost": 350,
+    "paidOn": "2026-09-30"
    },
    {
     "customer": "CZ5-TM",
@@ -5899,6 +5952,50 @@
     "handover": "collected",
     "mod": "corrected on 2026-09-29: deliveredQty 0 to 1; deliveredOn (unset) to 2026-09-29; handover (unset) to collected",
     "cost": 56
+   },
+   {
+    "customer": "CK4-SEN",
+    "qty": 1,
+    "total": 8,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-09-30",
+    "deliveredQty": 0,
+    "note": "<b>RICE SELL DATED 30 SEP: 1 UNIT FOR RM8, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260930034419-knpgsa, acknowledged, to collect. At RM8 a unit it clears the floor of RM6.31 and meets the ask of RM8 for 1 unit, below the ceiling of RM11. CK4-SEN: 4 orders, none of them rice, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and 6.25 units on credit before this batch, against a credit cap of 1. Costed at RM3.2 a unit, the drafter's figure from the desk's own inventory cost. The drafter flagged no committed rice order to compare against; the history confirms it, so the ask is the only yardstick. Preapproved by phone. Outstanding: RM8 and 1 unit.",
+    "rid": "s218",
+    "amend": [
+     {
+      "date": "2026-09-30",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION ON S218, 30 SEP: RICE ORDER OF 1 UNIT FOR RM8 WITHDRAWN.</b> Withdrawn by the customer on the statements site, order 20260930034419-knpgsa, recorded 30 Sep and approved by the desk. The order counts nowhere. At RM8 it had cleared the floor of RM6.31 and met the ask of RM8. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. No cost is carried, as nothing was handed over or paid. The drafter raised no flag. Outstanding: nothing on this order."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-09-30"
+   },
+   {
+    "customer": "CK4-SEN",
+    "qty": 2,
+    "total": 16,
+    "cost": 6.4,
+    "cash": 16,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-09-30",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-30",
+    "paidOn": "2026-09-30",
+    "note": "<b>RICE SELL DATED 30 SEP: 2 UNITS FOR RM16, PAID AND COLLECTED.</b> Booked to CK4-SEN at RM8 a unit, RM16 cash and 2 units delivered the same day, approved by the desk. For 2 units it clears the floor of RM12.63 and meets the ask of RM16, below the ceiling of RM21. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, RM6.4 in all, the desk's own inventory cost. The drafter flagged no committed rice order of his to compare against; the history gives none, so the ask is the only yardstick. Outstanding: nothing.",
+    "rid": "s219"
    }
   ],
   "contacts": [
@@ -6639,9 +6736,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-29T16:12:54.595Z",
+  "QUEUE_COMMITTED": "2026-09-30T09:52:43.295Z",
   "PRICING": {
-   "takenAt": "2026-09-29T16:14:00.304Z",
+   "takenAt": "2026-09-30T09:54:41.789Z",
    "sizes": [
     0.5,
     1,
@@ -6805,13 +6902,11 @@
       "perMonth": 7.23,
       "smallShare": 0.47,
       "bigShare": 0.37,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "large and regular",
@@ -6821,13 +6916,11 @@
       "perMonth": 2.21,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CJ4-BJ": {
@@ -6839,13 +6932,11 @@
       "perMonth": 1.94,
       "smallShare": 0.17,
       "bigShare": 0.83,
-      "late": 2,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": true,
-      "rare": false,
-      "lateTwice": true
+      "rare": false
      }
     },
     "CS6-PER": {
@@ -6857,13 +6948,11 @@
       "perMonth": 3.26,
       "smallShare": 0.11,
       "bigShare": 0.56,
-      "late": 1,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "rare and large",
@@ -6873,13 +6962,11 @@
       "perMonth": 1.13,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CM4-MK": {
@@ -6891,13 +6978,11 @@
       "perMonth": 4.85,
       "smallShare": 0,
       "bigShare": 0.45,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CE4-CHE": {
@@ -6909,13 +6994,11 @@
       "perMonth": 4.65,
       "smallShare": 0,
       "bigShare": 0.18,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "large and regular",
@@ -6925,13 +7008,11 @@
       "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CM4-TO": {
@@ -6943,13 +7024,11 @@
       "perMonth": 2.65,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "rice": {
       "name": "one-off",
@@ -6959,13 +7038,11 @@
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CN3-WM": {
@@ -6977,13 +7054,11 @@
       "perMonth": 5.77,
       "smallShare": 0.55,
       "bigShare": 0.09,
-      "late": 1,
       "frequent": true,
       "small": false,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CR3-DAM": {
@@ -6995,13 +7070,11 @@
       "perMonth": 5.89,
       "smallShare": 0.78,
       "bigShare": 0.06,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CZ4-MK": {
@@ -7013,13 +7086,11 @@
       "perMonth": 1.47,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "one-off",
@@ -7029,13 +7100,11 @@
       "perMonth": 0.87,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      },
      "candy": {
       "name": "large and regular",
@@ -7045,31 +7114,41 @@
       "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CK4-SEN": {
      "salt": {
       "name": "large and regular",
-      "orders": 3,
+      "orders": 4,
       "tenureDays": 30,
-      "sinceLastDays": 12,
-      "perMonth": 3.04,
+      "sinceLastDays": 1,
+      "perMonth": 4.06,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
      }
     },
     "CE4-AD": {
@@ -7081,13 +7160,11 @@
       "perMonth": 1.43,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CM6-HCM": {
@@ -7099,13 +7176,11 @@
       "perMonth": 0.39,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CA4-DAM": {
@@ -7117,13 +7192,11 @@
       "perMonth": 4.57,
       "smallShare": 0.92,
       "bigShare": 0,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CA2-SEN": {
@@ -7135,13 +7208,11 @@
       "perMonth": 1.38,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CH4-KS": {
@@ -7153,13 +7224,11 @@
       "perMonth": 1.69,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CR4-PJ": {
@@ -7171,13 +7240,11 @@
       "perMonth": 0.43,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CM4-SK": {
@@ -7189,13 +7256,11 @@
       "perMonth": 0.39,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CC9-OKR": {
@@ -7207,13 +7272,11 @@
       "perMonth": 2.57,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": true,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "one-off",
@@ -7223,13 +7286,11 @@
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "rice": {
       "name": "one-off",
@@ -7239,13 +7300,11 @@
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CJ2-KUC": {
@@ -7257,13 +7316,11 @@
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CG5-SB": {
@@ -7275,13 +7332,11 @@
       "perMonth": 0.95,
       "smallShare": 0.33,
       "bigShare": 0.67,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CY2-NIL": {
@@ -7293,13 +7348,11 @@
       "perMonth": 1.83,
       "smallShare": 0,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CA7-AMP": {
@@ -7311,13 +7364,11 @@
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "oil": {
       "name": "large and regular",
@@ -7327,13 +7378,11 @@
       "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CI4-OKR": {
@@ -7345,13 +7394,11 @@
       "perMonth": 1.29,
       "smallShare": 0.33,
       "bigShare": 0.33,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CM6-PJ": {
@@ -7363,13 +7410,11 @@
       "perMonth": 2.28,
       "smallShare": 0.67,
       "bigShare": 0.33,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CH6-SET": {
@@ -7381,13 +7426,11 @@
       "perMonth": 1.29,
       "smallShare": 0.67,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CA5-BAN": {
@@ -7399,13 +7442,11 @@
       "perMonth": 1.43,
       "smallShare": 0.67,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CE5-SA": {
@@ -7417,13 +7458,11 @@
       "perMonth": 3.04,
       "smallShare": 0.67,
       "bigShare": 0,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      },
      "rice": {
       "name": "one-off",
@@ -7433,13 +7472,11 @@
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CF5-WM": {
@@ -7451,13 +7488,11 @@
       "perMonth": 2.03,
       "smallShare": 0.5,
       "bigShare": 0,
-      "late": 0,
       "frequent": true,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CZ6-WM": {
@@ -7469,13 +7504,11 @@
       "perMonth": 1.29,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CA5-SEN": {
@@ -7487,13 +7520,11 @@
       "perMonth": 0.5,
       "smallShare": 0,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CH4-MAL": {
@@ -7505,13 +7536,11 @@
       "perMonth": 0.65,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      },
      "oil": {
       "name": "rare and large",
@@ -7521,13 +7550,11 @@
       "perMonth": 1.3,
       "smallShare": 0.5,
       "bigShare": 0.5,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CA6-CYB": {
@@ -7539,13 +7566,11 @@
       "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CZ5-TM": {
@@ -7557,13 +7582,11 @@
       "perMonth": 2.03,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CN5-TAI": {
@@ -7575,13 +7598,11 @@
       "perMonth": 0.34,
       "smallShare": 0,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CH5-KLC": {
@@ -7593,13 +7614,11 @@
       "perMonth": 0.81,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CD4-CS": {
@@ -7611,13 +7630,11 @@
       "perMonth": 0.45,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 1,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CR3-PUD": {
@@ -7629,13 +7646,11 @@
       "perMonth": 0.62,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CD7-SEG": {
@@ -7647,13 +7662,11 @@
       "perMonth": 0.9,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": true,
-      "lateTwice": false
+      "rare": true
      }
     },
     "CB7-BJ": {
@@ -7665,13 +7678,11 @@
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     },
     "CS6-DAM": {
@@ -7683,13 +7694,11 @@
       "perMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
-      "late": 0,
       "frequent": false,
       "small": true,
       "bigger": false,
       "loyal": false,
-      "rare": false,
-      "lateTwice": false
+      "rare": false
      }
     }
    },
@@ -7703,7 +7712,6 @@
     "loyalWithinDays": 30,
     "rarePerMonth": 1,
     "rareAfterDays": 60,
-    "lateTimes": 2,
     "spanFloorDays": 30
    },
    "byProduct": {
@@ -7839,15 +7847,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32857142857142857
+         "v": 0.323943661971831
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 182,
-        "kg": 466.45,
-        "mean": 2.5629
+        "n": 183,
+        "kg": 472.7,
+        "mean": 2.5831
        }
       },
       "policy": {
@@ -12450,9 +12458,9 @@
        "attrib": 1,
        "shrinkRate": 0.12,
        "avgDel": {
-        "n": 3,
-        "kg": 15,
-        "mean": 5
+        "n": 4,
+        "kg": 17,
+        "mean": 4.25
        }
       },
       "policy": {
@@ -13263,26 +13271,12 @@
      "cards": {}
     }
    },
-   "v": "v955"
+   "v": "v963"
   },
   "OPEN": {
-   "at": "2026-09-29T16:14:00.618Z",
-   "count": 12,
+   "at": "2026-09-30T09:54:42.114Z",
+   "count": 10,
    "byKey": {
-    "CK4-SEN|2026-09-29|530": {
-     "d": "2026-09-29",
-     "p": "CK4-SEN",
-     "dir": "S",
-     "q": 6.25,
-     "t": 530,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 530,
-     "oweUnits": 6.25,
-     "rid": "s216",
-     "key": "CK4-SEN|2026-09-29|530"
-    },
     "CE5-SA-R|2026-09-28|110": {
      "d": "2026-09-28",
      "p": "CE5-SA-R",
@@ -13339,24 +13333,6 @@
      "age": 2,
      "exp": 55
     },
-    "CH4-KS|2026-09-28|320": {
-     "d": "2026-09-28",
-     "p": "CH4-KS",
-     "dir": "S",
-     "q": 3,
-     "t": 310,
-     "cash": 0,
-     "mv": 3,
-     "st": "dueMoney",
-     "oweRM": 320,
-     "dv": 10,
-     "rid": "s215",
-     "deliveredOn": "2026-09-30",
-     "handover": "delivered",
-     "key": "CH4-KS|2026-09-28|320",
-     "age": 0,
-     "exp": 320
-    },
     "CR3-DAM|2026-09-25|130": {
      "d": "2026-09-25",
      "p": "CR3-DAM",
@@ -13396,10 +13372,10 @@
      "dir": "S",
      "q": 2.5,
      "t": 250,
-     "cash": 40,
+     "cash": 140,
      "mv": 2.5,
      "st": "dueMoney",
-     "oweRM": 210,
+     "oweRM": 110,
      "rid": "s182",
      "deliveredOn": "2026-09-19",
      "handover": "collected",
@@ -13474,13 +13450,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21,
-     "free": 11.5,
+     "onHand": 14.75,
+     "free": 5.25,
      "owedOut": 9.5,
-     "coverDays": 1.9,
+     "coverDays": 0.9,
      "rate": 6.05,
-     "owedToYou": 930,
-     "promised": 15.75,
+     "owedToYou": 510,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -13507,11 +13483,11 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 73,
-     "free": 73,
+     "onHand": 71,
+     "free": 71,
      "owedOut": 0,
-     "coverDays": 102.8,
-     "rate": 0.71,
+     "coverDays": 85.5,
+     "rate": 0.83,
      "owedToYou": 8,
      "promised": 0,
      "short": 0
@@ -13535,13 +13511,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v955"
+   "v": "v963"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v955"
+   "v": "v963"
   }
  }
 }

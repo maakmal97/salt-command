@@ -1,5 +1,74 @@
 [
  {
+  "v": "v963",
+  "d": "30 Sep 2026",
+  "t": "A PART PAYMENT OF RM100 LANDS ON CN3-WM'S ORDER S182",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> CN3-WM paid RM100 cash on 30 Sep against order s182 of 19 Sep (2.5 units for RM250), leaving RM110 outstanding. The party's own outstanding before the row was RM310.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved, since the 2.5 units went out on 19 Sep. Stock stays at 14.75 units at RM56 a unit, below the reorder point of 25.25."
+  ]
+ },
+ {
+  "v": "v962",
+  "d": "30 Sep 2026",
+  "t": "HIS PRICE AT ACCEPT, ONE THREAD AN ACCOUNT, AND THE DESK'S FAULTS CLEARED",
+  "n": [
+   "<p><b>HIS PRICE AT ACCEPT (STEP 2.1).</b> At Accept on a site order he may set that one order's price up or down from its tier's figure, never under the floor at that size. The board, the price list and PRICE_SET are not repriced; the site keeps what was asked. The order card measures cost and margin at the price he sets, and on a sheet the pay-in-advance verdict counts a line agreed at his price at that price.</p>",
+   "<p><b>ONE THREAD AN ACCOUNT (STEP 7).</b> Each account has one thread beside its orders, kept in the order book and written behind to KV in the week of reading both. Home's card and a row on Account open it; it is read every 2 seconds only while open and showing. Theirs is 20 lines a Kuala Lumpur day, his uncapped, the last 200 kept. His Chat sits in Enter: a thread whose last line is theirs waits under Waiting on you, the rest under Chat. Every line goes through siteWords and is escaped on both surfaces, and none reaches a ledger note. The desk's service worker leaves /threads to the network, its cache moving to v7.</p>",
+   "<p><b>CASH RECEIVED WAITS TEN SECONDS WITH UNDO.</b> His decision of 29 Sep 2026, after three mistaken taps: the tap is held on its card with Undo in its place, and posts when the time runs out. An Undo inside the window sends nothing; leaving the page or the phone locking sends what is held at once.</p>",
+   "<p><b>THE DESK'S FAULT LIST, D1 TO D11.</b> Every date the desk shows reads DD Mon YYYY through dShow, and text written later is swept too (D1); em dashes are out of the copy, and an empty value prints NIL (D2). Every control the hit test found short is 44px either way at every width, the rail's parts included (D3 to D9). A failed read on Approve or Site orders names the server, never a raw error, and offers Retry (D11).</p>",
+   "<p><b>UNDER THE HOOD.</b> The drafter reads sales and purchases together, the state and snapshot order kept. The Anthropic SDK, jsdom and wrangler are brought up to date, TypeScript held at 5.9.3. Ship check's warning is named for what it reads: when the build id last moved.</p>"
+  ]
+ },
+ {
+  "v": "v961",
+  "d": "30 Sep 2026",
+  "t": "A RICE ORDER WITHDRAWN, A SALT DEBT SETTLED, TWO UNITS OF RICE SOLD",
+  "n": [
+   "<b>THREE ROWS FOLDED, ALL FOR CK4-SEN.</b> The customer withdrew the 1 unit rice order s218 for RM8 on the statements site. The desk took RM530 cash at the counter against s216, which had been collected on 30 Sep unpaid, and that settles it in full. A fresh rice sale of 2 units for RM16 was paid and collected the same day.",
+   "<b>INVENTORY.</b> Only the new rice sale moves stock, by 2 units of rice. The cancellation and the fulfilment move no goods, because s216 was already collected. Salt stays at 14.75 units and the cost basis is unchanged."
+  ]
+ },
+ {
+  "v": "v960",
+  "d": "30 Sep 2026",
+  "t": "ONE RICE ORDER AT THE ASK; NOTHING LEAVES THE SHELF",
+  "n": [
+   "<p><b>ONE RICE ORDER FOLDED, PENDING.</b> A single row: CK4-SEN takes 1 unit of rice for RM8 on 30 Sep, order 20260930034419-knpgsa, to collect, with nothing paid and nothing handed over. The rate meets the desk's ask of RM8 for that size and clears the floor of RM6.31. Preapproved by phone, the row draws no stock and books no revenue until something moves.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> CK4-SEN has no committed rice order, so the drafter had no rate of his to compare against. His 4 orders carry a median of RM80.8 a unit, with RM530 outstanding and 6.25 units on credit against a credit cap of 1 before this batch. The inventory did not move: stock stands at 14.75 units at RM56 a unit, and no count changes.</p>"
+  ]
+ },
+ {
+  "v": "v959",
+  "d": "30 Sep 2026",
+  "t": "CK4-SEN COLLECTS 6.25 UNIT ON S216; RM530 STAYS UNPAID",
+  "n": [
+   "<p><b>ONE CORRECTION FOLDED.</b> Order s216, CK4-SEN's sale of 6.25 unit for RM530 dated 29 Sep, is marked collected on 30 Sep: delivered quantity moves from 0 to 6.25 and handover to collected. No cash moves with it, so the whole RM530 stays outstanding. The terms clear the floor of RM429.19 for that size. The row was preapproved by phone, and cost stays RM56 a unit, the inventory's own.</p>",
+   "<p><b>WHAT WAS UNUSUAL, AND THE SHELF.</b> The drafter flagged the collection as an advance, 6.25 unit out with RM530 unpaid, to be checked against CK4-SEN's credit cap. The dossier carries no cap figure, so that check stays open. His three earlier orders were all paid in full. The shelf rolls 6.25 unit of salt out to CK4-SEN. No lot landed, so the cost basis does not move.</p>"
+  ]
+ },
+ {
+  "v": "v958",
+  "d": "30 Sep 2026",
+  "t": "A CUSTOMER'S PASSKEY OPENS THE COUNTER",
+  "n": [
+   "<p><b>A PASSKEY OPENS THE ACCOUNT.</b> His decisions of 29 Sep 2026. Signed in, a customer taps Save a passkey on This device, and whatever keeps their passkeys, NordPass, Apple or Google, keeps it under Salt Counter. The door's Open with a passkey then signs them in with the face or finger that store asks for. The Worker checks the passkey's signature, this address and that the face was checked, and only then hands back its half of the key; the other half never leaves the device, so the site still holds nothing that opens an account.</p>",
+   "<p><b>THE PASSWORD ONCE ON A NEW DEVICE.</b> A passkey that gives no secret, as NordPass does, opens each device once that device has signed in by password: the door says so, fills the username, and files the device's half after the password. A passkey that gives one, as Apple and Google do, opens every device it reaches. A device signed in by password first offers Use your passkey on this device.</p>",
+   "<p><b>A YEAR FROM ITS LAST USE; LOG OUT KEEPS IT.</b> The passkey is listed with the account's phones and computers. Remove this passkey ends it, and so do Sign out everywhere, Sign out other devices and his own Sign out on Salt Account, with every device's half. His account view names a passkey way in. Nothing here is his: no master passkey and no Face ID on the desk's vault, his word.</p>",
+   "<p><b>THE TEST PAGE WENT FIRST.</b> On his PC and Mac, NordPass made the test passkey and checked the face but gave no secret, which is why the Worker checks the signature itself. The Face ID test page is gone from both addresses.</p>",
+   "<p><b>PROOFS.</b> Two new suite sections, one driving the Worker with a real P-256 key and one the door; 15 mutations each turned a check red. The whole suite passed on this tree.</p>"
+  ]
+ },
+ {
+  "v": "v957",
+  "d": "30 Sep 2026",
+  "t": "CH4-KS PAYS RM320 IN CASH; S215 SETTLES IN FULL",
+  "n": [
+   "<p><b>ONE FULFILMENT FOLDED.</b> CH4-KS paid RM320 in cash at the counter on 30 Sep against s215, order 20260928120800-zq6mca, agreed 28 Sep for 3 units at RM310 plus RM10 delivery. The 3 units had already gone out on the 30 Sep correction, so this row carries cash only. RM320 was outstanding before it and nothing is outstanding after it. The fold was preapproved by phone.</p>",
+   "<p><b>NOTHING UNUSUAL, SHELF UNCHANGED.</b> The drafter's flag, that the payment settles the order in full, is borne out: RM320 paid against RM320 owed leaves RM0 and no units on credit for CH4-KS. No unit moves, so stock stays at 21 and cost stays RM56 a unit, the inventory's own. The dossier gives no floor or ask for this size, and no loans are open.</p>"
+  ]
+ },
+ {
   "v": "v956",
   "d": "30 Sep 2026",
   "t": "A LATE PAYER IS OFFERED A LEVEL DOWN, READ FROM THE HANDOVER",

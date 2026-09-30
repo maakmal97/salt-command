@@ -50,7 +50,8 @@ by his decision, no sign-in.
      feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
      ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is
      the level's); choose a row by code, never by index. Tier 1's stated ends and typed prices are
-     retired; `PRICE_SET` is cleared and the drafter refuses a new one.
+     retired; `PRICE_SET` is cleared and the drafter refuses a new one; the one figure he sets at Accept,
+     on one order, is that row's total, which `PRICE_SET` never records.
    - **Salt is Ambassador and four tiers** (Titanium, Platinum, Gold, Silver) from his
      `salt-command pricing_v2.xlsx` (OneDrive, read-only; copy first): `TIER_RULE` and `TIER_NAMES`
      in the master, `fiveTiers` in the engine. COGS is the supplier's QUOTE, not the landed cost.
@@ -68,7 +69,9 @@ by his decision, no sign-in.
      OFFERED a level down on the Tiers card, never priced one; frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
      from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
      next lot. **A HELD tier is never moved by a rule**, only offered one.
-   - **A customer's price is their tier.** What they paid before never lowers it (the cap retired
+   - **A customer's price is their tier, or the price he sets on one order when he acknowledges it, never
+     under the floor; the board is never repriced by it** (`total` on the preview and Accept, the site keeping
+     `asked`). What they paid before never lowers it (the cap retired
      on his decision of 27 Sep 2026); only the floor lifts a card, to the first ten above. **A
      product with no tier, held or proposed, is not priced.** One rule, the engine's `cardPrice`:
      the price list, and the desk's `cardQuote`, which every quote to a named customer reads.
@@ -333,6 +336,13 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
   a new book or level goes on both, its Malay word by hand.
+- **And one thread an account** (Step 7, his Q5): Home's card and a row on Account open it in a Sheet; theirs 20 a
+  Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
+  `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
+  showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Enter's Waiting on
+  you until Step 9: a thread whose last line is theirs is an Asked act, the rest listed under Chat, read every 2 seconds
+  only while one is open, through the keyed `/threads`.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
   order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
   writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One
@@ -368,6 +378,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **An account's card on Salt Account hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
+- **A passkey opens the account** (Step 6, his decisions of 29 Sep 2026): saved on This device, any store; the Worker
+  checks its signature and hands back only its share of the key (`stmt/passkey.js`), the other half the device's own bytes
+  or the passkey's PRF secret, so the password is typed once on a new device and the Worker still opens nothing. A year
+  from its last use; Log out keeps it; Remove, Sign out everywhere and his own Sign out end it. Detail: `docs/STATEMENTS.md`.
 - **The shared link signs them in, once, and keeps the phone signed in** (his D1: the door's split key,
   three days to use, the message naming the username): the password is never in it. A link
   inside its window is a bearer credential, and single use is best effort (KV). The `/s/` route is
@@ -423,7 +437,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   reward on the tiered books only: no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
   month and opening on the whole account. `make_statements` refuses to seal a new issue without
-  `--new-issue`; sealed issues are untouched. A question goes on an order. The account line shows
+  `--new-issue`; sealed issues are untouched. A question goes on an order, or on the account's thread. The account line shows
   the customer's username, never the roster code.
 - **The test accounts** `0000-0000` (open) and `0000-0001` (locked, his answer of 29 Sep 2026), password
   `0000-0000-0000-0000` for both, count nowhere, and are made and unmade together. **Between them they show every
