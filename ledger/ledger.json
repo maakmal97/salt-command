@@ -1,6 +1,6 @@
 {
- "v": "v963",
- "stamped": "30 Sep 2026, 17:54 KL",
+ "v": "v964",
+ "stamped": "30 Sep 2026, 20:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 14.75,
+  "STATED_STOCK": 13.75,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -5996,6 +5996,19 @@
     "paidOn": "2026-09-30",
     "note": "<b>RICE SELL DATED 30 SEP: 2 UNITS FOR RM16, PAID AND COLLECTED.</b> Booked to CK4-SEN at RM8 a unit, RM16 cash and 2 units delivered the same day, approved by the desk. For 2 units it clears the floor of RM12.63 and meets the ask of RM16, below the ceiling of RM21. CK4-SEN: 5 orders, median RM80 a unit, range RM8 to RM84.8, RM538 outstanding and 6.25 units on credit before this row, against a credit cap of 1. Costed at RM3.2 a unit, RM6.4 in all, the desk's own inventory cost. The drafter flagged no committed rice order of his to compare against; the history gives none, so the ask is the only yardstick. Outstanding: nothing.",
     "rid": "s219"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 110,
+    "cost": 56,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-30",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-30",
+    "note": "<b>SALT SELL DATED 30 SEP: 1 UNIT FOR RM110, COLLECTED, NOTHING PAID.</b> Booked to CR3-DAM at RM110 a unit, RM0 cash and 1 unit delivered the same day, approved by the desk. For 1 unit it clears the floor of RM68.62 and sits below the ask of RM140 and the ceiling of RM180. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 2.77 units on credit before this row, against a credit cap of 2. Costed at RM56 a unit, RM56 in all, the desk's own inventory cost. The drafter flagged the rate as 37.5% above his median; the figures answer that, since it is under the ask. It also flagged the advance against the cap: he is already over it, and the flag stands. Outstanding: RM110 on this row.",
+    "rid": "s220"
    }
   ],
   "contacts": [
@@ -6736,9 +6749,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-30T09:52:43.295Z",
+  "QUEUE_COMMITTED": "2026-09-30T12:29:44.131Z",
   "PRICING": {
-   "takenAt": "2026-09-30T09:54:41.789Z",
+   "takenAt": "2026-09-30T12:31:06.656Z",
    "sizes": [
     0.5,
     1,
@@ -7064,12 +7077,12 @@
     "CR3-DAM": {
      "salt": {
       "name": "small and often",
-      "orders": 18,
+      "orders": 19,
       "tenureDays": 93,
-      "sinceLastDays": 2,
-      "perMonth": 5.89,
-      "smallShare": 0.78,
-      "bigShare": 0.06,
+      "sinceLastDays": 0,
+      "perMonth": 6.22,
+      "smallShare": 0.79,
+      "bigShare": 0.05,
       "frequent": true,
       "small": true,
       "bigger": false,
@@ -7847,15 +7860,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.323943661971831
+         "v": 0.3194444444444444
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 183,
-        "kg": 472.7,
-        "mean": 2.5831
+        "n": 184,
+        "kg": 473.7,
+        "mean": 2.5745
        }
       },
       "policy": {
@@ -13271,12 +13284,29 @@
      "cards": {}
     }
    },
-   "v": "v963"
+   "v": "v964"
   },
   "OPEN": {
-   "at": "2026-09-30T09:54:42.114Z",
-   "count": 10,
+   "at": "2026-09-30T12:31:06.952Z",
+   "count": 11,
    "byKey": {
+    "CR3-DAM|2026-09-30|110": {
+     "d": "2026-09-30",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 110,
+     "rid": "s220",
+     "deliveredOn": "2026-09-30",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-30|110",
+     "age": 0,
+     "exp": 110
+    },
     "CE5-SA-R|2026-09-28|110": {
      "d": "2026-09-28",
      "p": "CE5-SA-R",
@@ -13450,12 +13480,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 14.75,
-     "free": 5.25,
+     "onHand": 13.75,
+     "free": 4.25,
      "owedOut": 9.5,
-     "coverDays": 0.9,
-     "rate": 6.05,
-     "owedToYou": 510,
+     "coverDays": 0.7,
+     "rate": 6.09,
+     "owedToYou": 620,
      "promised": 9.5,
      "short": 0
     },
@@ -13511,13 +13541,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v963"
+   "v": "v964"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v963"
+   "v": "v964"
   }
  }
 }
