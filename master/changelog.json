@@ -1,5 +1,17 @@
 [
  {
+  "v": "v962",
+  "d": "30 Sep 2026",
+  "t": "HIS PRICE AT ACCEPT, ONE THREAD AN ACCOUNT, AND THE DESK'S FAULTS CLEARED",
+  "n": [
+   "<p><b>HIS PRICE AT ACCEPT (STEP 2.1).</b> At Accept on a site order he may set that one order's price up or down from its tier's figure, never under the floor at that size. The board, the price list and PRICE_SET are not repriced; the site keeps what was asked. The order card measures cost and margin at the price he sets, and on a sheet the pay-in-advance verdict counts a line agreed at his price at that price.</p>",
+   "<p><b>ONE THREAD AN ACCOUNT (STEP 7).</b> Each account has one thread beside its orders, kept in the order book and written behind to KV in the week of reading both. Home's card and a row on Account open it; it is read every 2 seconds only while open and showing. Theirs is 20 lines a Kuala Lumpur day, his uncapped, the last 200 kept. His Chat sits in Enter: a thread whose last line is theirs waits under Waiting on you, the rest under Chat. Every line goes through siteWords and is escaped on both surfaces, and none reaches a ledger note. The desk's service worker leaves /threads to the network, its cache moving to v7.</p>",
+   "<p><b>CASH RECEIVED WAITS TEN SECONDS WITH UNDO.</b> His decision of 29 Sep 2026, after three mistaken taps: the tap is held on its card with Undo in its place, and posts when the time runs out. An Undo inside the window sends nothing; leaving the page or the phone locking sends what is held at once.</p>",
+   "<p><b>THE DESK'S FAULT LIST, D1 TO D11.</b> Every date the desk shows reads DD Mon YYYY through dShow, and text written later is swept too (D1); em dashes are out of the copy, and an empty value prints NIL (D2). Every control the hit test found short is 44px either way at every width, the rail's parts included (D3 to D9). A failed read on Approve or Site orders names the server, never a raw error, and offers Retry (D11).</p>",
+   "<p><b>UNDER THE HOOD.</b> The drafter reads sales and purchases together, the state and snapshot order kept. The Anthropic SDK, jsdom and wrangler are brought up to date, TypeScript held at 5.9.3. Ship check's warning is named for what it reads: when the build id last moved.</p>"
+  ]
+ },
+ {
   "v": "v961",
   "d": "30 Sep 2026",
   "t": "A RICE ORDER WITHDRAWN, A SALT DEBT SETTLED, TWO UNITS OF RICE SOLD",
