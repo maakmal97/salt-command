@@ -35367,6 +35367,159 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("Step 2.1 (29 Sep 2026): the price he sets at Accept drafts that one order's row at it, never under the floor, his yes covering it, and moves nothing else");
+await (async () => {
+  /* HIS Q10 OF 28 SEP 2026: "Admin will be able to amend the order price at acknowledgement ... solely at acknowledgement of
+     order. Not total repricing of the board." Up or down, never under the floor, the customer seeing the new total with what
+     they placed it at beside it. Driven on the real schema as V5b2a is; every code, username and order id is invented. Each
+     assertion was proved red by its own mutation. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the price at Accept was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const E = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CP2-AB", U1 = "abcd-efgh";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)")
+    .run("sales", seq++, "h" + seq, JSON.stringify({ rid: "s8" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d }));
+  setState("roster", [C1]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
+    return { status: r.status, j: await r.json() };
+  };
+  const place = async (qty, total) => (await O.placeOrder(senv, U1, { product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "" })).order;
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+
+  /* 1. A PRICE SET DRAFTS THE ROW AND ITS KEY AT IT, and the site keeps what they placed it at beside it */
+  const a = await place(1, 100);
+  const pvA = await call("/orders/" + a.id + "/preview", { total: 90 });
+  const acA = await call("/orders/" + a.id + "/accept", { total: 90, hash: pvA.j.hash });
+  const sA = await orderOf(a.id);
+  const rowA = db.prepare("SELECT row FROM draft WHERE status='approved' ORDER BY id DESC").get();
+  const drafted = rowA ? JSON.parse(rowA.row) : {};
+  ok(pvA.j.row && pvA.j.row.total === 90 && pvA.j.asked === 100 && pvA.j.set === true && acA.j.approved === true
+    && sA.status === "acknowledged" && sA.total === 90 && sA.asked === 100 && drafted.total === 90 && sA.ledgerKey === E.ovKey(drafted),
+    "RM 90 set on an order placed at RM 100 drafts its row at RM 90, approved by his yes, the order moved at RM 90 with RM 100 kept as what they placed it at, "
+    + "and its key is the row's: " + JSON.stringify({ row: pvA.j.row && pvA.j.row.total, approved: acA.j.approved, total: sA.total, asked: sA.asked, key: sA.ledgerKey, rowKey: E.ovKey(drafted) }));
+  ok(/priced at RM 90 on this order, placed at RM 100/.test(drafted.note || ""), "the row's note says the price was set on this order and what it was placed at: " + JSON.stringify(drafted.note));
+  const viewA = O.customerView(sA);
+  ok(viewA.total === 90 && viewA.asked === 100, "their page is sent the price set and what they placed it at: " + JSON.stringify({ total: viewA.total, asked: viewA.asked }));
+
+  /* 2. NEVER UNDER THE FLOOR: RM 70 on a size whose floor is RM 80 is refused, and nothing moves */
+  const b = await place(1, 100);
+  const pvB = await call("/orders/" + b.id + "/preview", { total: 70 });
+  const pvOk = await call("/orders/" + b.id + "/preview", { total: 95 });
+  const acB = await call("/orders/" + b.id + "/accept", { total: 70, hash: pvOk.j.hash });
+  ok(pvB.status === 409 && pvB.j.underFloor === true && /under the floor of RM 80/.test(pvB.j.error)
+    && acB.status === 409 && acB.j.underFloor === true && /under the floor of RM 80/.test(acB.j.error) && (await orderOf(b.id)).status === "placed",
+    "a price under the floor at that size is refused at the preview and at Accept, and the order stays placed: " + JSON.stringify({ pv: pvB.status, e: pvB.j.error, ac: acB.status }));
+  const bad = await call("/orders/" + b.id + "/preview", { total: 0 });
+  ok(bad.status === 400, "and a price of nothing is refused: " + bad.status);
+  /* Fable's re-check: a size with no floor of its own (only a carded size below it, on a snapshot without inputs) takes no
+     price, since the floor under it is not known; the order at their own price still previews */
+  const odd = await place(1.5, 150);
+  const pvOdd = await call("/orders/" + odd.id + "/preview", { total: 200 }), pvOddOwn = await call("/orders/" + odd.id + "/preview", {});
+  ok(pvOdd.status === 409 && /no floor is known at 1\.5 unit/.test(pvOdd.j.error) && pvOddOwn.status === 200 && pvOddOwn.j.ok === true,
+    "a price set on a size with no floor of its own is refused, and the same order at their price still previews: " + JSON.stringify({ set: pvOdd.status, e: pvOdd.j.error, own: pvOddOwn.status }));
+
+  /* 3. HIS YES COVERS THE PRICE: another price has another digest, and an Accept at a price the card did not draw is refused */
+  const pv95 = await call("/orders/" + b.id + "/preview", { total: 95 }), pv90 = await call("/orders/" + b.id + "/preview", { total: 90 });
+  const acMix = await call("/orders/" + b.id + "/accept", { total: 95, hash: pv90.j.hash });
+  ok(pv95.j.hash && pv90.j.hash && pv95.j.hash !== pv90.j.hash && acMix.status === 409 && acMix.j.differs === true && (await orderOf(b.id)).status === "placed",
+    "the price is in the digest: RM 95 and RM 90 draw two, and an Accept sending RM 95 with the digest of RM 90 is refused as changed: " + JSON.stringify({ status: acMix.status }));
+
+  /* 4. THE SITE TAKES A PRICE AT THE ACKNOWLEDGEMENT ALONE */
+  const agreed = { id: "o1", u: U1, status: "acknowledged", mode: "collect", qty: 1, total: 100, history: [] };
+  const onReady = O.decideDesk(agreed, { status: "ready", mode: "collect", total: 90 }, "2026-09-29T01:00:00Z");
+  const onAck = O.decideDesk({ id: "o2", u: U1, status: "placed", mode: "collect", qty: 1, total: 100, history: [] }, { status: "acknowledged", total: 90 }, "2026-09-29T01:00:00Z");
+  ok(onReady.error && onReady.status === 400 && onAck.ev && onAck.ev.total === 90, "the Counter refuses a price on any move but the acknowledgement: " + JSON.stringify({ onReady, ack: onAck.ev && onAck.ev.total }));
+
+  /* 5. THE CARD: a Price field on the order, the floor said under it, and Accept at the price he typed */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const card = JSON.parse(w.eval(`(function(){const o={id:'op1',u:'x',code:'CP2-AB',status:'placed',qty:1,total:100,product:'salt',mode:'collect',history:[],msgs:[]};
+      ORD_OPEN=[o];ORD_PRICE={};ORD_PV[o.id]={st:'ok',d:0,p:null,j:{row:{qty:1,total:100},floor:{rm:80,at:1},flags:[],hash:'h100'}};
+      const t=(h,s)=>{const d=document.createElement('div');d.innerHTML=h;const e=d.querySelector(s);return e?(e.value!=null&&e.tagName==='INPUT'?e.value:e.textContent):'';};
+      const a=ordCard(o);ORD_PRICE[o.id]=90;const b=ordCard(o);
+      ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},card:100,floor:{rm:80,at:1},flags:[],hash:'h90'}};const c=ordCard(o);
+      return JSON.stringify({field:t(a,'input[data-price]'),floor:t(a,'.ordfloor'),acc:t(a,'button[data-ord="acknowledged"]'),stale:/ disabled/.test((b.match(/data-ord="acknowledged"[^>]*>/)||[''])[0]),
+        set:t(c,'input[data-price]'),floor2:t(c,'.ordfloor'),acc2:t(c,'button[data-ord="acknowledged"]'),cardT:t(c,'.salt-kpi')});})()`));
+    ok(card.field === "100" && /^Floor RM ?80(\.00)? at 1 unit\.$/.test(card.floor) && /Accept, RM ?100/.test(card.acc) && card.stale === true
+      && card.set === "90" && /They placed it at RM ?100(\.00)?; this order alone takes your price\./.test(card.floor2) && /Accept, RM ?90/.test(card.acc2) && /RM ?10(.00)? under/.test(card.cardT),
+      "the card has a Price field filled with what they placed it at and the floor under it; a price typed shuts Accept until its row is drawn, "
+      + "then Accept tells them the price, and their card is measured against it: " + JSON.stringify(card));
+    /* Fable's re-check: the tap SENDS the price with the digest of the row drawn at it; without it the Worker drafts at their
+       price and refuses the digest as changed */
+    w.__sent = [];
+    w.fetch = async (u, init) => { w.__sent.push({ u: String(u), b: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
+    await w.eval(`(function(){const o=ORD_OPEN[0];ORD_PRICE[o.id]=90;ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},card:100,floor:{rm:80,at:1},flags:[],hash:'h90'}};
+      const d=document.createElement('div');d.innerHTML=ordCard(o);document.body.appendChild(d);return ordAct(d.querySelector('button[data-ord="acknowledged"]'));})()`);
+    const acc = w.__sent.filter((c) => /\/accept$/.test(c.u));
+    ok(acc.length === 1 && acc[0].b.total === 90 && acc[0].b.hash === "h90",
+      "Accept sends the price he set with the digest of the row drawn at it: " + JSON.stringify(acc));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("Step 2.1 (29 Sep 2026): their order shows the price set at the acknowledgement, with what they placed it at beside the goods");
+await (async () => {
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-s21", ck = await C.contentKey("test-secret", u);
+  const pay = { term: 10, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, status: "acknowledged", msgs: [], payments: [] };
+  const SET = "20260928030000-sett", NONE = "20260927030000-none";
+  const orders = [
+    { ...base, id: SET, at: "2026-09-28T03:00:00Z", total: 90, asked: 100, history: [{ at: "2026-09-28T03:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-28T04:00:00Z", status: "acknowledged", by: "desk" }] },
+    { ...base, id: NONE, at: "2026-09-27T03:00:00Z", total: 100, history: [{ at: "2026-09-27T03:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-27T04:00:00Z", status: "acknowledged", by: "desk" }] }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s21-price",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-28T05:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+  let work;
+  const dom = new JSDOM(landingPage(u, "ns21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path) => { const p = String(path);
+      const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+      return { ok: true, status: 200, json: async () => j }; };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 200 && !D.querySelector("#pOrder [data-olist]"); i++) await new Promise((r) => setTimeout(r, 25));
+    await work.quiet();
+    const goods = (id) => { const later = D.querySelector("#pOrder .olater");
+      if (!D.querySelector('#pOrder [data-row="' + id + '"]') && later && later.getAttribute("aria-expanded") !== "true") later.click();
+      D.querySelector('#pOrder [data-row="' + id + '"]').click();
+      const r = [...D.querySelectorAll(".oscreen .salt-ledger__row")].find((x) => /Goods/.test(x.textContent));
+      return r ? r.textContent.replace(/\s+/g, " ").trim() : ""; };
+    const set = goods(SET), none = goods(NONE);
+    ok(/RM ?90/.test(set) && /Set when we acknowledged it\. You placed it at RM ?100/.test(set) && /RM ?100/.test(none) && !/placed it at/.test(none),
+      "the order priced at the acknowledgement reads its price with what they placed it at beside the goods; one not priced so says nothing more: " + JSON.stringify({ set, none }));
+  } finally { W.close(); }
+})();
+
 section("Fold 2.1: the orders queue is one KV key an entry, read beside the old blob, pruned once committed, and the blob retired only empty");
 await (async () => {
   /* q:orders was one blob that three roads read, appended to and wrote back whole, and nothing took a folded stage

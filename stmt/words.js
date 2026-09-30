@@ -525,6 +525,7 @@ export const EN = {
   "om.to": "To {p}",
   "om.goods": "Goods",
   "om.handed": "{a} handed over of the {b} ordered",
+  "om.placedAt": "Set when we acknowledged it. You placed it at {rm}",
   "om.set": "Set when we acknowledge the order",
   "om.setToP": "To {p}. Set when we acknowledge the order",
   "om.paid": "Paid",

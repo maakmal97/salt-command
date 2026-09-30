@@ -837,7 +837,8 @@ cap per book (his point 4 of 28 Sep 2026), stamped at Place off caps written bes
 (`advanceOf` in `src/orders.js`, inside `previewAck`): what the customer owes on every row of theirs and their bucket
 (the engine's `partyOwedRM`: goods and delivery less what is paid; a gift, a write-off or a cancelled row owes nothing),
 plus their site orders agreed and not yet on the mirror, plus this order with its delivery, against `TERMS.ceiling`.
-**A sheet is one verdict** (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the mirror, count
+**A sheet is one verdict** (his answer of 29 Sep 2026; a price he sets at Accept on one line moves the figure the others
+read, each line counting at the money it is agreed for): its lines, placed or agreed and not yet on the mirror, count
 together at their goods with the sheet's charge left out, so every line reads the same figure and digest whichever is
 accepted first (once the lead's row lands on the mirror it counts with its charge, so a sheet at the edge can read the
 charge more between a fold and the next line's Accept, which is then refused as changed, as any row a fold moves is).
@@ -927,7 +928,14 @@ once. **Accept** (`POST /orders/<id>/accept {delivery, hash}`) answers a preview
 /orders/<id>/preview`, which drafts the row against the mirror and stores nothing): it drafts again,
 refuses with the fresh preview if the digest moved, records the yes, queues the pending row itself and
 runs the drafter; the digest covers every field of the row, every flag and the pricing version (the
-snapshot's `v` and a digest of the rest). **Only an approved row moves the order** (`ackOnApproval`:
+snapshot's `v` and a digest of the rest). **Step 2 (his Q10 of 28 Sep 2026): the price at Accept.** Both take an
+optional `total`, the goods for this one order, up or down: the row, its key and so the digest are drafted at it, and
+under the floor at that size (`floorFor`) or at nothing it is refused, and so is any price on a size with no floor of its own
+(none known, or only a carded size below it): it is accepted at theirs. The card has a Price field a line (a sheet's too),
+filled with what they placed it at, the floor said under it. `ackOnApproval` sends it with the acknowledgement, the only
+move the Counter takes a `total` on (`decideDesk`); the order keeps what they placed it at as `asked`, their Goods line
+saying so, and the row's note says it. Offered again, the order keeps its own total. No pricing state moves: the board,
+`TIER_OF` and `PRICE_SET` stand, and what they paid never lowers a card. **Only an approved row moves the order** (`ackOnApproval`:
 the key and moment marked first, then acknowledged with the charge), so a row that differs leaves the
 customer reading Placed, and his approval under Approve moves it then. That is the one stage the desk
 queues itself, because the row must exist before the order moves; `deskPass`, beside the reconcile,

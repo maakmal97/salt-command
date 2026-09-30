@@ -112,8 +112,9 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(1, 2), "customer", Object.assign({ action: "pay", amount: 120, slip: "e0a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [])));   /* F13: with a slip */
   /* READY to collect, due at Ready, for a friend of an associate's; part of it said sent with a slip long past its thirty
      days, so the page says the slip is no longer kept (F13) */
+  /* and priced at the acknowledgement under what they placed it at, which the page shows beside it (Step 2) */
   O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
-    [T(35, 20), "desk", { status: "acknowledged" }]].concat(W ? [
+    [T(35, 20), "desk", { status: "acknowledged", total: 260 }]].concat(W ? [
     [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
     [T(1, 10), "desk", { status: "ready" }]])));
   /* COLLECTED and paid in cash: complete */
@@ -243,6 +244,7 @@ export const FEATURES = [
   ["cancelled by us, with his reason", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "desk" && h.note))],
   ["not taken, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
+  ["a price set at the acknowledgement, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
   ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty
     && (o.history || []).filter((h) => h.status === "ready" && h.by === "desk" && !h.note && !h.method).length > 1)],
