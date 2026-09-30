@@ -1521,6 +1521,33 @@ await (async () => {
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
 
+  /* 30 Sep 2026: a money tap's room (rowRoom, through cashOrder) reads the payments on their way beside the book, not after it */
+  {
+    const { cashOrder } = await import("../src/orders.js");
+    const ev = [];
+    const d1 = { prepare(sql) {
+      const kind = sql.includes("FROM state") ? "state" : sql.includes("status='pending'") ? "pays" : sql.includes("FROM draft") ? "drafts" : "rows";
+      const run = async (value) => { ev.push(kind + ":start"); const r = await delay(value); ev.push(kind + ":end"); return r; };
+      return { bind() { return this; }, all: () => run({ results: kind === "state" ? [{ key: "PRICING", doc: "{}" }] : [] }),
+        first: () => run({ v: "v1", stamped: "2026-08-16T00:00:00.000Z" }) };
+    } };
+    const r = await cashOrder({ SALT_LEDGER: d1 }, "o1", { amount: 10 }, "desk", new Date());
+    const pays = ev.indexOf("pays:start"), stateEnd = ev.indexOf("state:end");
+    ok(!r.ok && pays >= 0 && stateEnd >= 0 && pays < stateEnd, "a money tap reads the payments on their way while the book is still being read");
+  }
+  /* 30 Sep 2026: the pass reads its q: keys six at a time, never more, and still takes every entry */
+  {
+    const { dryRunDrafter } = await import("../src/drafter.js");
+    let open = 0, peak = 0;
+    const keys = Array.from({ length: 9 }, (_, i) => ({ name: "q:dev" + i }));
+    const kv = { async list() { return { keys, list_complete: true }; },
+      async get(name) { open++; peak = Math.max(peak, open); await delay(); open--;
+        return JSON.stringify({ queue: [{ at: "2026-08-16T01:00:0" + name.slice(-1) + ".000Z", payload: { mode: "new" } }] }); } };
+    const out = await dryRunDrafter({ SALT_QUEUE: kv, SALT_LEDGER: mirror });
+    const seen = out.would.length + out.skipped.length + out.already + out.committed;
+    ok(out.ok && peak === 6 && seen === 9, "the pass reads its queue keys six at a time and takes all nine entries");
+  }
+
   /* the desk's own cost wins over anything recomputed */
   ok(costFor(book, "salt").cost === 56, "cost comes from the desk's shelf cost, not a recomputation");
   ok(/desk/.test(costFor(book, "salt").source), "and it says so");
