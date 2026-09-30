@@ -1,5 +1,14 @@
 [
  {
+  "v": "v963",
+  "d": "30 Sep 2026",
+  "t": "A PART PAYMENT OF RM100 LANDS ON CN3-WM'S ORDER S182",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> CN3-WM paid RM100 cash on 30 Sep against order s182 of 19 Sep (2.5 units for RM250), leaving RM110 outstanding. The party's own outstanding before the row was RM310.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved, since the 2.5 units went out on 19 Sep. Stock stays at 14.75 units at RM56 a unit, below the reorder point of 25.25."
+  ]
+ },
+ {
   "v": "v962",
   "d": "30 Sep 2026",
   "t": "HIS PRICE AT ACCEPT, ONE THREAD AN ACCOUNT, AND THE DESK'S FAULTS CLEARED",
