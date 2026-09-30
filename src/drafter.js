@@ -1572,6 +1572,7 @@ export function noteQueued(kv, key) {
 }
 /* `keysRead`, when given, collects each key's name and value as read (value null when it cannot be read), so the
    pass can prune the orders device's keys (fold 2.1) without reading them twice. */
+const KV_AT_ONCE = 6;
 async function queueEntries(env, keysRead) {
   const entries = [], listed = new Set();
   const take = (name, raw) => {
@@ -1582,10 +1583,11 @@ async function queueEntries(env, keysRead) {
   let cursor;
   do {
     const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
-    for (const k of list.keys) {
-      listed.add(k.name);
-      const raw = await env.SALT_QUEUE.get(k.name);
-      if (raw) take(k.name, raw);
+    /* 30 Sep 2026: six keys read at once (a Worker's open connections), taken in the listed order as before */
+    for (let i = 0; i < list.keys.length; i += KV_AT_ONCE) {
+      const part = list.keys.slice(i, i + KV_AT_ONCE);
+      const raws = await Promise.all(part.map((k) => env.SALT_QUEUE.get(k.name)));
+      part.forEach((k, j) => { listed.add(k.name); if (raws[j]) take(k.name, raws[j]); });
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);

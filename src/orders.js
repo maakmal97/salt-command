@@ -703,10 +703,11 @@ async function acctInFlight(db, except) {
    way; a tap that books money answers to both. null where the mirror has no row by that key yet, and there the fold's own
    rule measures. */
 async function rowRoom(db) {
-  const book = await readBook(db).catch(() => null);
+  /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
+  const [book, way] = await Promise.all([readBook(db).catch(() => null), paysOnWay(db)]);
   const sales = ((book && book.sales) || []).filter((s) => s && !s.cancelled);
   const keyOf = rowKeyer(sales), byKey = new Map(sales.map((s) => [POSITION_ENGINE.ovKey(s), s])), on = {};
-  for (const e of await paysOnWay(db)) { const k = keyOf(e.payload); if (k) (on[k] = on[k] || []).push(e); }
+  for (const e of way) { const k = keyOf(e.payload); if (k) (on[k] = on[k] || []).push(e); }
   return (key, own) => {
     const s = key ? byKey.get(key) : null;
     if (!s) return null;

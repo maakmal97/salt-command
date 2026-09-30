@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="e8bdacafc2124988";
+var SALT_BUILD_ID="0573226daab07789";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -19938,7 +19938,7 @@ function ordPvBlock(o){
   const margin=j.margin?num(j.margin.rm):null;
   const usual=j.usual?num(j.usual.rate):null,rate=qty?goods/qty:null;
   const tile=(k,v,note,tone)=>`<div class="kpi salt-kpi ${tone?'salt-kpi--'+tone:''}"><div class="l salt-kpi__label">${k}</div><div class="v salt-kpi__value">${v}</div><div class="salt-kpi__note">${note}</div></div>`;
-  /* Step 2: measured at the goods the row is drafted at, the price he set where he set one */
+/* Step 2: measured at the goods the row is drafted at, the price he set where he set one */
   const q=goods,gap=card==null?null:+(q-card).toFixed(2);
   const cardT=card==null?tile('Their card today',NIL,esc(j.cardNote||'no card for this size'),'')
     :tile('Their card today',fmt(card),(Math.abs(gap)<0.005?'':'the quote is ')+`<span class="salt-status salt-status--${Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel'}">${Math.abs(gap)<0.005?'matches':fmt(Math.abs(gap))+(gap<0?' under':' over')}</span>`+(Math.abs(gap)<0.005?' the quote':'')+(j.cardNote?' '+esc(j.cardNote):''),Math.abs(gap)<0.005?'verdigris':gap<0?'copper':'steel');
