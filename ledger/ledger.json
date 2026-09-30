@@ -1,6 +1,6 @@
 {
- "v": "v957",
- "stamped": "30 Sep 2026, 03:31 KL",
+ "v": "v959",
+ "stamped": "30 Sep 2026, 11:13 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 21,
+  "STATED_STOCK": 14.75,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -5865,9 +5865,30 @@
     "total": 530,
     "cash": 0,
     "date": "2026-09-29",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.",
-    "rid": "s216"
+    "deliveredQty": 6.25,
+    "note": "<b>CORRECTED 30 SEP: 6.25 UNIT COLLECTED, RM530 UNPAID.</b> <b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit. <b>SALT SELL DATED 29 SEP: 6.25 UNIT FOR RM530, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CK4-SEN from the statements site, order 20260929071114-awrljg, acknowledged and to collect. RM530 clears the desk's floor of RM429.19 for 6.25 units but sits below its ask of RM700. CK4-SEN: 3 orders, median RM80 a unit, range RM73.33 to RM80.8, nothing outstanding and no units on credit before this batch. Costed at RM56 a unit, the inventory's own, RM180 at 34% by the drafter's figures. At RM84.8 a unit by the drafter's figure, the rate is above the top of his range. The drafter raised no flag. Preapproved by phone. Outstanding: RM530 and 6.25 units to collect, against a credit cap of 1.",
+    "rid": "s216",
+    "deliveredOn": "2026-09-30",
+    "handover": "collected",
+    "mod": "corrected on 2026-09-30: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-09-30; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-09-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-30",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 6.25,
+      "note": "<b>CORRECTION ON S216, 30 SEP: 6.25 UNIT COLLECTED BY CK4-SEN, NOTHING PAID.</b> Delivered quantity moves from 0 to 6.25, delivered on is set to 30 Sep and handover to collected, for order 20260929071114-awrljg. The shelf rolls 6.25 unit out to CK4-SEN. Terms stand: 6.25 unit for RM530, dated 29 Sep, clearing the floor of RM429.19. CK4-SEN: 4 orders, median RM80.8 a unit, range RM73.33 to RM84.8, RM530 outstanding and no units on credit before this batch. Cost stays RM56 a unit, the inventory's own. The drafter flagged an advance to check against the credit cap; the dossier gives no cap figure, so the flag is not answered. Preapproved by phone. Outstanding: RM530, with 6.25 unit out on credit.",
+      "cost": 350
+     }
+    ],
+    "cost": 350
    },
    {
     "customer": "CZ5-TM",
@@ -6647,9 +6668,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-29T19:31:02.325Z",
+  "QUEUE_COMMITTED": "2026-09-30T03:12:41.051Z",
   "PRICING": {
-   "takenAt": "2026-09-29T19:31:50.297Z",
+   "takenAt": "2026-09-30T03:13:28.428Z",
    "sizes": [
     0.5,
     1,
@@ -7035,10 +7056,10 @@
     "CK4-SEN": {
      "salt": {
       "name": "large and regular",
-      "orders": 3,
+      "orders": 4,
       "tenureDays": 30,
-      "sinceLastDays": 12,
-      "perMonth": 3.04,
+      "sinceLastDays": 1,
+      "perMonth": 4.06,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7744,15 +7765,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32857142857142857
+         "v": 0.323943661971831
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 182,
-        "kg": 466.45,
-        "mean": 2.5629
+        "n": 183,
+        "kg": 472.7,
+        "mean": 2.5831
        }
       },
       "policy": {
@@ -13168,10 +13189,10 @@
      "cards": {}
     }
    },
-   "v": "v957"
+   "v": "v959"
   },
   "OPEN": {
-   "at": "2026-09-29T19:31:50.614Z",
+   "at": "2026-09-30T03:13:28.724Z",
    "count": 11,
    "byKey": {
     "CK4-SEN|2026-09-29|530": {
@@ -13181,12 +13202,15 @@
      "q": 6.25,
      "t": 530,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 6.25,
+     "st": "dueMoney",
      "oweRM": 530,
-     "oweUnits": 6.25,
      "rid": "s216",
-     "key": "CK4-SEN|2026-09-29|530"
+     "deliveredOn": "2026-09-30",
+     "handover": "collected",
+     "key": "CK4-SEN|2026-09-29|530",
+     "age": 0,
+     "exp": 530
     },
     "CE5-SA-R|2026-09-28|110": {
      "d": "2026-09-28",
@@ -13361,13 +13385,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21,
-     "free": 11.5,
+     "onHand": 14.75,
+     "free": 5.25,
      "owedOut": 9.5,
-     "coverDays": 1.9,
+     "coverDays": 0.9,
      "rate": 6.05,
-     "owedToYou": 610,
-     "promised": 15.75,
+     "owedToYou": 1140,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -13422,13 +13446,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v957"
+   "v": "v959"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v957"
+   "v": "v959"
   }
  }
 }
