@@ -9920,8 +9920,8 @@ await (async () => {
     const sentSchema = schemaOf(sent);
     ok(sentSchema && JSON.stringify(sentSchema) === JSON.stringify(s60),
       "the schema the fold's call sent is the one schema built for 60 rows (" + (sentSchema ? unionsIn(sentSchema) + " union(s)" : "no request") + ")");
-    ok(sent && sent.model === "claude-opus-5-5", "with SALT_FOLD_MODEL unset the fold calls claude-opus-5-5, his instruction of 26 Sep 2026 (" + (sent && sent.model) + ")");
-    ok(sent && sent.max_tokens >= 16000, "and leaves room for the thinking Opus 5.5 always does (max_tokens " + (sent && sent.max_tokens) + ")");
+    ok(sent && sent.model === "claude-sonnet-5-5", "with SALT_FOLD_MODEL unset the fold calls claude-sonnet-5-5, his instruction of 30 Sep 2026 (" + (sent && sent.model) + ")");
+    ok(sent && sent.max_tokens >= 16000, "and leaves room for the model's thinking tokens (max_tokens " + (sent && sent.max_tokens) + ")");
     rm9(dirM, { recursive: true, force: true });
   }
   /* a fake reply that breaks the rules is refused, and nothing is folded */

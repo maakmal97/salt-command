@@ -1,6 +1,6 @@
 {
  "ok": true,
- "count": 4,
+ "count": 3,
  "approved": [
   {
    "id": "2026-09-30T03:58:47.198Z",
@@ -98,34 +98,35 @@
    "decidedBy": "preapproved by phone"
   },
   {
-   "id": "2026-09-30T04:02:00.700Z",
+   "id": "2026-09-30T07:52:56.286Z",
    "collection": "sales",
    "row": {
     "customer": "CK4-SEN",
-    "qty": 1,
-    "total": 8,
-    "cash": 0,
+    "qty": 2,
+    "total": 16,
+    "cost": 6.4,
+    "cash": 16,
+    "handover": "collected",
     "product": "rice",
     "date": "2026-09-30",
-    "deliveredQty": 0,
-    "note": "Ordered on the statements site, order 20260930040110-kemqva, acknowledged, to collect. Nothing paid and nothing handed over yet."
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-30",
+    "paidOn": "2026-09-30",
+    "note": "One combined rice order: 2 units for RM 16, fully paid and collected on 30 Sep 2026."
    },
-   "reasoning": "Sold 1 unit of rice to CK4-SEN for RM 8, RM 8/unit. Costed at RM 3.2/unit from the desk's own inventory cost, so RM 4.8 on the goods at 60%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-30 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "reasoning": "Sold 2 unit of rice to CK4-SEN for RM 16, RM 8/unit. Costed at RM 3.2/unit from the desk's own inventory cost, so RM 9.6 on the goods at 60%. Paid in full and delivered in full on 2026-09-30. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
    "flags": [
-    "CK4-SEN has no committed rice order on the book, so there is no rate of theirs to compare this against.",
-    "This matches s218 on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay. If it is a second order, reject this and enter it again, answering yes."
+    "CK4-SEN has no committed rice order on the book, so there is no rate of theirs to compare this against."
    ],
    "amends": null,
    "amendKind": null,
    "entry": {
-    "at": "2026-09-30T04:02:00.700Z",
+    "at": "2026-09-30T07:52:56.286Z",
     "type": "SELL",
     "party": "CK4-SEN",
-    "qty": 1,
-    "total": 8,
-    "status": "Pending",
-    "raw": "SELL CK4-SEN 1 rice RM 8, nothing paid, nothing moved (order 20260930040110-kemqva)",
-    "orderKey": "CK4-SEN|2026-09-30|8|rice",
+    "qty": 2,
+    "total": 16,
+    "raw": "SELL CK4-SEN 2 rice RM 16, fully paid and collected",
     "payload": {
      "mode": "new",
      "product": "rice",
@@ -133,98 +134,24 @@
      "party": "CK4-SEN",
      "newId": null,
      "date": "2026-09-30",
-     "qty": 1,
-     "total": 8,
+     "qty": 2,
+     "total": 16,
      "delivery": 0,
-     "cash": 0,
-     "kg": 0,
+     "cash": 16,
+     "kg": 2,
      "assoc": null,
      "stream": null,
      "downstream": null,
      "kind": null,
      "orderCode": null,
      "linkTo": null,
-     "note": "Ordered on the statements site, order 20260930040110-kemqva, acknowledged, to collect. Nothing paid and nothing handed over yet.",
-     "handover": null,
+     "note": "One combined rice order: 2 units for RM 16, fully paid and collected on 30 Sep 2026.",
+     "handover": "collected",
      "second": null
-    },
-    "orderId": "20260930040110-kemqva",
-    "prepay": true
+    }
    },
-   "decidedAt": "2026-09-30T04:02:01.655Z",
-   "decidedBy": "preapproved by phone"
-  },
-  {
-   "id": "2026-09-30T04:02:04.913Z",
-   "collection": "sales",
-   "row": {
-    "rid": "s218",
-    "qty": 1,
-    "total": 8,
-    "cash": 0,
-    "date": "2026-09-30",
-    "product": "rice",
-    "changes": [
-     {
-      "field": "deliveredQty",
-      "from": 0,
-      "to": 1
-     },
-     {
-      "field": "deliveredOn",
-      "from": null,
-      "to": "2026-09-30"
-     },
-     {
-      "field": "handover",
-      "from": null,
-      "to": "collected"
-     }
-    ],
-    "customer": "CK4-SEN"
-   },
-   "reasoning": "Correction against CK4-SEN's order of 1 unit for RM 8 dated 2026-09-30 (s218). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-09-30, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
-   "flags": [
-    "CK4-SEN has no committed rice order on the book, so there is no rate of theirs to compare this against.",
-    "This is an ADVANCE: 1 unit goes out with RM 8 unpaid. Check it against CK4-SEN's credit cap."
-   ],
-   "amends": "s218",
-   "amendKind": "Correction",
-   "entry": {
-    "at": "2026-09-30T04:02:04.913Z",
-    "type": "SELL",
-    "party": "CK4-SEN",
-    "qty": 1,
-    "total": 0,
-    "status": "Handover",
-    "raw": "1 unit collected to CK4-SEN, order 20260930040110-kemqva, on 2026-09-30",
-    "payload": {
-     "mode": "amend",
-     "kind": "Correction",
-     "direction": "SELL",
-     "party": "CK4-SEN",
-     "rid": null,
-     "orderKey": "CK4-SEN|2026-09-30|8|rice",
-     "orderCode": null,
-     "linkTo": null,
-     "assoc": null,
-     "downstream": null,
-     "date": "2026-09-30",
-     "qty": 0,
-     "total": 0,
-     "cash": 0,
-     "kg": 0,
-     "fields": {
-      "deliveredQty": 1,
-      "deliveredOn": "2026-09-30",
-      "handover": "collected"
-     },
-     "note": "1 unit collected for order 20260930040110-kemqva."
-    },
-    "orderId": "20260930040110-kemqva"
-   },
-   "decidedAt": "2026-09-30T04:02:07.395Z",
-   "decidedBy": "preapproved by phone"
+   "decidedAt": "2026-09-30T07:54:19.970Z",
+   "decidedBy": "desk"
   }
  ]
 }
