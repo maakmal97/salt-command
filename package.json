@@ -15,9 +15,9 @@
     "payload": "node tools/payload.mjs"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.127.0",
-    "jsdom": "^30.1.0",
+    "@anthropic-ai/sdk": "^0.129.0",
+    "jsdom": "^30.1.1",
     "typescript": "5.9.3",
-    "wrangler": "^4.135.0"
+    "wrangler": "^4.144.0"
   }
 }
