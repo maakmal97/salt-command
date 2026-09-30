@@ -4188,7 +4188,8 @@ await (async () => {
 
   ok(/\.vpart\[data-tab="add"\] \.viewsw\{flex-wrap:wrap/.test(m),
     "the Enter form's strips wrap, so no mode sits off the right edge of a phone");
-  ok(/\.vpart\[data-tab="add"\] \.viewsw button\{min-width:var\(--tap\)/.test(m),
+  /* D9 (29 Sep 2026): the rule stands at every width now, in a selector list beside .viewsw.mini */
+  ok(/\.vpart\[data-tab="add"\] \.viewsw button(?:,[^{,]+)*\{min-width:var\(--tap\)/.test(m),
     "and every button on them is 44px WIDE, which the central height rule does not give");
   ok(/\.viewsw button\{[^}]*min-height:var\(--tap\)/.test(m),
     "the height half is the central rule, and it is still there");
@@ -49379,8 +49380,7 @@ await (async () => {
     const sideBySide = String(w.eval("ordSideBySide()")) === "true";
     ok(sideBySide || poll().length === 0, "with no thread open on his screen the 2-second read stops: " + poll().length);
   } finally {
-    await new Promise((r2) => setTimeout(r2, 200));
-    try { w.close(); } catch (e) { /* best effort */ }
+    await new Promise((r2) => setTimeout(r2, 200)); try { w.close(); } catch (e) { /* best effort */ }
   }
 })();
 
@@ -49424,9 +49424,9 @@ await (async () => {
     ok(parts.length >= 15 && !dashAt.length, "D2: no part of the salt book prints an em dash: " + (dashAt.join("; ") || "none"));
     /* 3. what is written after the draw: a card's text is swept by the observer; a textarea keeps the stored form */
     w.eval("(function(){var b=document.createElement('div');b.id='d12probe';b.innerHTML='<p>ordered 2026-09-19</p><p title=\"lot of 2026-09-27\">x</p><textarea>2026-09-20</textarea>';document.body.appendChild(b);})()");
-    await new Promise((r) => setTimeout(r, 0));
+    for (let i = 0; i < 50 && !/19 Sep 2026/.test(rd("document.querySelector('#d12probe p').textContent")); i++) await new Promise((r) => setTimeout(r, 0));
     w.eval("document.querySelector('#d12probe p').setAttribute('title','seen 2026-09-01')");
-    await new Promise((r) => setTimeout(r, 0));
+    for (let i = 0; i < 50 && rd("document.querySelector('#d12probe p').getAttribute('title')") !== "seen 01 Sep 2026"; i++) await new Promise((r) => setTimeout(r, 0));
     ok(rd("document.querySelector('#d12probe p').getAttribute('title')") === "seen 01 Sep 2026", "D1: a tooltip set later on a drawn node is written the house way too");
     const pr = rd("(function(){var b=document.getElementById('d12probe');return [b.querySelector('p').textContent,b.querySelectorAll('p')[1].getAttribute('title'),b.querySelector('textarea').value];})()");
     ok(pr[0] === "ordered 19 Sep 2026" && pr[1] === "lot of 27 Sep 2026", "D1: text a card writes after the draw, and its tooltip, are written the house way: " + JSON.stringify(pr));
@@ -49777,8 +49777,7 @@ await (async () => {
     ok(timers.length === 3 && /^That is not a figure above RM 0/.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || ""),
       "a figure the tap would refuse is refused at once and never held: " + timers.length);
   } finally {
-    await new Promise((r) => setTimeout(r, 200));
-    try { w.close(); } catch (x) { /* best effort */ }
+    await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (x) { /* best effort */ }
   }
 })();
 
