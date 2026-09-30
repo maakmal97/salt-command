@@ -19137,6 +19137,10 @@ const WB_NO_PROD={amend:1,addid:1,amendid:1};
    the phone. Same endpoints, same rule: what is approved is the ROW the drafter wrote, with
    the cost it draws and the margin it makes beside the price, and nothing is computed here.
    Cloud only: the laptop server has no drafts table. */
+/* D11 (29 Sep 2026, the fault list): A FAILED READ SAYS WHAT HAPPENED IN HIS WORDS. Approve and Site orders printed
+   "the Worker answered http 500", or the browser's own "Failed to fetch", with no way on but leaving the part. The
+   server is named as the server, a read that never came back says so, and both parts offer Retry. */
+const NO_REPLY='no connection, or no reply the desk could read';
 let AP_DRAFTS=[],AP_REFUSED=[],AP_CLOCK=null,apNeedKey=false,apUnread='',apBusy={},apMsg='',apRejected=null;
 /* v525: REJECT MEANS DISCARD, WITH RE-ENTER (Part B step 7). The Worker drops the entry from every
    queue on the rejection; this device drops its own copy too, so its next post cannot bring it
@@ -19228,11 +19232,11 @@ async function apLoad(quiet){
      thing. Nothing here decides what to do about it: it records that it does not know. */
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     apNeedKey=(r.status===401); const j=r.ok?await r.json():null;
-    apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
+    apUnread=(r.ok||r.status===401)?'':'the server answered http '+r.status;
     AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[]; AP_CLOCK=(j&&j.clock)||null;
     if(r.ok){try{localStorage.setItem('saltRefusedAts',JSON.stringify(AP_REFUSED.map(x=>x.id)));}catch(e){}}   // v586: only a good read may say what is refused
     if(r.ok){AP_READ=true;AP_AT=Date.now();}
-  }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
+  }catch(e){ apUnread=NO_REPLY; AP_DRAFTS=[]; AP_REFUSED=[]; }
   if(!apUnread&&!apNeedKey)autoOffsets();   // v585: only on a read that succeeded, or its duplicate check is blind
   apDraw();
   ordTell();   /* S9 9.8 fix */
@@ -19354,10 +19358,11 @@ function apDraw(){
   apBadge();
   if(!box)return;
   if(apNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the drafts and it was not accepted. Reload to be asked again. <b>This is not an empty queue: rows may be waiting.</b></div>';
-  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b> Open this part again once the connection is back.</div>';
+  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-apretry="1" style="margin-top:8px">Retry</button>';
   else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
+  box.querySelectorAll('button[data-apretry]').forEach(b=>{b.onclick=()=>{b.disabled=true;b.textContent='Reading';apLoad();};});
   /* v586, HIS DECISION OF 11 SEP 2026: A REFUSED ENTRY IS KEPT, AND HE CAN WITHDRAW IT. v309 built this panel with no
      control at all so nothing on it could be decided by accident, and that part stands: nothing here approves or
      rejects. What changed is that a refused entry used to vanish at the next fold, cleared by the same watermark
@@ -19407,7 +19412,7 @@ async function apDecide(id,action,btn){
     let j={};try{j=await r.json();}catch(e){}
     apMsg=r.status===401?'That write key was refused. The row is still waiting.'
       :r.status===409?'That row was already decided somewhere else.'
-      :!r.ok?'The Worker refused the decision (http '+r.status+'). The row is still waiting.'
+      :!r.ok?'The server refused the decision (http '+r.status+'). The row is still waiting.'
       :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.'
         +(j.order===true?' Its order on Site orders now says so.':j.order===false?' Its order on Site orders could not be told.':'');
     if(r.ok&&action==='reject'){qForgetAt(id);apRejected=was;}
@@ -19465,7 +19470,7 @@ async function ordLoad(quiet){
   const go=()=>fetch('orders'+(ordAll?'?all=1':''),{cache:'no-store',headers:qHeaders()});
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
-    ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
+    ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the server answered http '+r.status);
     /* S6 11.15: and each claim against an account still waiting, a card of its own beside the orders (kind 'account') */
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
     /* Step 7: and every account's thread, his Chat, each a card of its own, waiting on him while their line is the last */
@@ -19474,7 +19479,7 @@ async function ordLoad(quiet){
     {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Account':'';}
     if(r.ok)ORD_PV_GEN++;   /* S11 11.2: every read of the orders drafts the open card's row afresh */
     if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
-  }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
+  }catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }
   ordDraw();
   ordTell();   /* S9 9.8 fix */
   {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
@@ -19536,7 +19541,7 @@ async function bullPost(clear){
   const body=JSON.stringify({lines});
   const go=()=>fetch('bulletin',{method:'POST',headers:qHeaders(),body});
   try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
-    say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The Worker refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');
+    say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');
   }catch(e){ say('No connection, so nothing was posted.'); }
   await bullLoad(true);
 }
@@ -19741,7 +19746,7 @@ async function ordPreview(o){
   let st='err',j=null,err='';
   try{const r=await fetch('orders/'+encodeURIComponent(o.id)+'/preview',{method:'POST',headers:qHeaders(),body:JSON.stringify(Object.assign({delivery:d},pr!=null?{total:pr}:{}))});
     try{j=await r.json();}catch(e){}
-    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the server answered http '+r.status);
   }catch(e){err='no connection';}
   if(ORD_PV[o.id]!==mine)return;   /* a newer ask has taken its place */
   ORD_PV[o.id]=Object.assign(mine,{st,j,err});
@@ -19919,7 +19924,7 @@ async function slipView(u,id,at){
     let j=null;try{j=await r.json();}catch(e){}
     const age=Date.now()-Date.parse(at||'');
     if(r.status===404)msg=age>SLIP_DAYS*864e5?'The slip is no longer kept: a slip is kept '+SLIP_DAYS+' days.':age<5*60e3?'The slip is on its way. Try again in a minute.':'The slip could not be found.';
-    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The Worker answered http '+r.status+'.');
+    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The server answered http '+r.status+'.');
     else{const b=await slipOpen(j.slip);if(!b)msg='The slip would not open with this key.';else{url=URL.createObjectURL(new Blob([b],{type:'image/jpeg'}));st='ok';}}
   }catch(e){msg='No connection.';}
   /* locked while it opened: nothing is drawn, and the picture is let go */
@@ -19934,7 +19939,7 @@ async function clmPreview(c){
   let st='err',j=null,err='';
   try{const r=await fetch('claims/'+encodeURIComponent(c.id)+'/preview',{method:'POST',headers:qHeaders(),body:'{}'});
     try{j=await r.json();}catch(e){}
-    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the Worker answered http '+r.status);
+    if(r.ok&&j&&j.ok)st='ok';else err=r.status===401?'the write key was refused':((j&&j.error)||'the server answered http '+r.status);
   }catch(e){err='no connection';}
   if(CLM_PV[c.id]!==mine)return;
   CLM_PV[c.id]=Object.assign(mine,{st,j,err});
@@ -20261,7 +20266,7 @@ function ordDraw(){
   const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
-  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
+  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-ordretry="1" style="margin-top:8px">Retry</button>';
   else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else{
     if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
@@ -20294,6 +20299,7 @@ function ordDraw(){
   if(selO&&selO.kind!=='account'&&selO.kind!=='thread'&&(ORD_OPENED||ordSideBySide()))ordFeeRead(selO);
   thrWatch();   /* Step 7: an open thread is read every 2 seconds, and nothing else is */
   box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
+  box.querySelectorAll('button[data-ordretry]').forEach(b=>{b.onclick=()=>{b.disabled=true;b.textContent='Reading';ordLoad();};});
   box.querySelectorAll('button[data-row]').forEach(b=>{b.onclick=()=>{ORD_SEL=b.dataset.row;ORD_OPENED=true;ordDraw();ordToPane();};});
   box.querySelectorAll('button[data-of]').forEach(b=>{b.onclick=()=>{ORD_FILTER=b.dataset.of;ORD_SEL='';ordDraw();};});
   box.querySelectorAll('button[data-back]').forEach(b=>{b.onclick=()=>{ORD_OPENED=false;ordDraw();};});
@@ -20418,7 +20424,7 @@ async function ordAct(b){
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
     const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
     const said=r.status===401?'That write key was refused. The order is unchanged.'
-      :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
+      :!r.ok?'The server refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
       :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
         :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
@@ -21076,7 +21082,7 @@ function pbCard(){
         <li>Nothing happens on the phone: the desk added to the Home Screen has no print dialog on some phones. Open the same address in Safari or Chrome, tap Print again, or use the browser&rsquo;s Share, then Print.</li>
         <li>The dialog opens but the page is blank: choose &ldquo;Save as PDF&rdquo; as the printer, then print the PDF; a blocked pop-up does the same.</li>
         <li>No printer at hand: Copy as text, and paste it into the message you send him.</li>
-        <li>The username line is blank, or there is no QR: both come down the same keyed road from the Worker, so the laptop copy has neither and the cloud desk needs the write key. On the cloud desk, reload once and try again. A QR is never drawn without a username, because a code that opens nothing is worse than no code.</li>
+        <li>The username line is blank, or there is no QR: both come down the same keyed road from the server, so the laptop copy has neither and the cloud desk needs the write key. On the cloud desk, reload once and try again. A QR is never drawn without a username, because a code that opens nothing is worse than no code.</li>
         <li>Save as PDF does nothing: the sheet is drawn on a canvas first, and a browser that refuses that refuses the JPG too. Print, then choose Save as PDF in the dialog.</li>
       </ul></details>
   </div>`;}

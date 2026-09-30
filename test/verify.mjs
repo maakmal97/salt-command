@@ -49730,5 +49730,59 @@ await (async () => {
   }
 })();
 
+section("D11 (29 Sep 2026): a failed read on Approve or Site orders names the server, never prints a raw error, and offers Retry");
+await (async () => {
+  /* THE FAULT LIST'S D11: Approve and Site orders read "the Worker answered http 500", or the browser's own "Failed to
+     fetch", with no way on but leaving the part. Driven through the real loads with the fetch stubbed: a 500, then a
+     connection that never answers, then Retry reading again. Each check was proved red by its own mutation. */
+  const { openMaster: omE } = await import("../tools/payload.mjs");
+  const { w } = await omE();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    let mode = "500", reads = { drafts: 0, orders: 0 };
+    w.fetch = async (path) => {
+      const p = String(path), k = /^drafts/.test(p) ? "drafts" : /^orders/.test(p) ? "orders" : null;
+      if (k) reads[k]++;
+      if (mode === "down") throw new w.TypeError("Failed to fetch");
+      if (mode === "500") return { ok: false, status: 500, json: async () => ({}) };
+      return { ok: true, status: 200, json: async () => (k === "drafts" ? { drafts: [], refused: [] } : { ok: true, orders: [] }) };
+    };
+    const D = w.document;
+    const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 5)); };
+    const text = (id) => ((D.getElementById(id) || {}).textContent || "").replace(/\s+/g, " ");
+    /* Approve: a 500 */
+    w.eval("switchTab('approve')"); await settle();
+    const a500 = text("apBox");
+    ok(/The drafts could not be read: the server answered http 500\./.test(a500) && !/Worker/.test(a500) && !!D.querySelector("#apBox button[data-apretry]"),
+      "D11: Approve's failed read names the server and offers Retry: " + JSON.stringify(a500.slice(0, 120)));
+    /* Approve: no connection, and the browser's words never shown */
+    mode = "down"; await w.eval("apLoad(true)"); await settle();
+    const aDown = text("apBox");
+    ok(/could not be read: no connection, or no reply the desk could read\./.test(aDown) && !/Failed to fetch/.test(aDown),
+      "D11: a read that never came back says so in his words, never the browser's: " + JSON.stringify(aDown.slice(0, 120)));
+    /* Approve: Retry reads again, and a good read clears the warning */
+    mode = "ok"; const before = reads.drafts;
+    D.querySelector("#apBox button[data-apretry]").click(); await settle();
+    ok(reads.drafts === before + 1 && /Nothing waiting/.test(text("apBox")) && !D.querySelector("#apBox button[data-apretry]"),
+      "D11: Retry on Approve reads the drafts again, and a good read clears the warning: " + JSON.stringify({ reads: reads.drafts - before, box: text("apBox").slice(0, 60) }));
+    /* Site orders: the same three */
+    mode = "500"; w.eval("switchTab('orders')"); await settle();
+    const box = () => D.getElementById("ordBox");
+    const o500 = (box() || {}).textContent || "";
+    ok(/The orders could not be read: the server answered http 500\./.test(o500) && !/Worker/.test(o500) && !!D.querySelector("button[data-ordretry]"),
+      "D11: Site orders' failed read names the server and offers Retry: " + JSON.stringify(o500.slice(0, 120)));
+    mode = "down"; await w.eval("ordLoad(true)"); await settle();
+    const oDown = (box() || {}).textContent || "";
+    ok(/could not be read: no connection, or no reply the desk could read\./.test(oDown) && !/Failed to fetch/.test(oDown),
+      "D11: Site orders says the same in his words: " + JSON.stringify(oDown.slice(0, 120)));
+    mode = "ok"; const ob = reads.orders;
+    D.querySelector("button[data-ordretry]").click(); await settle();
+    ok(reads.orders >= ob + 1 && !D.querySelector("button[data-ordretry]") && !/could not be read/.test((box() || {}).textContent || ""),
+      "D11: Retry on Site orders reads again, and a good read clears the warning");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
