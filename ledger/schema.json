@@ -1,12 +1,12 @@
 {
-  "v": "v972",
-  "derivedFrom": "42163271e0423d8b",
+  "v": "v974",
+  "derivedFrom": "ff32c368a56819e7",
   "tables": {
     "sales": {
       "rows": 223,
       "fields": {
         "agreedOn": {
-          "present": 4,
+          "present": 5,
           "of": 223,
           "optional": true,
           "types": [

@@ -1,6 +1,6 @@
 {
- "v": "v972",
- "stamped": "02 Oct 2026, 00:57 KL",
+ "v": "v974",
+ "stamped": "02 Oct 2026, 02:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6051,15 +6051,15 @@
    {
     "customer": "CM6-PJ",
     "qty": 3,
-    "total": 310,
-    "cash": 310,
+    "total": 260,
+    "cash": 260,
     "date": "2026-10-01",
     "deliveredQty": 3,
-    "note": "<b>CORRECTION ON S223 DATED 01 OCT: 3 UNITS COLLECTED BY CM6-PJ, STILL UNPAID.</b> Sets deliveredQty from 0 to 3, deliveredOn to 01 Oct 2026 and handover to collected, for order 20261001150036-bxcmsq, preapproved by phone. It moves no cash; the shelf rolls by 3 units out. The order is RM310 for 3 units, RM103.33 a unit, above the floor of RM205.87 and under the ask of RM390. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, RM310 outstanding (this order) and 0 units on credit before it, against a credit cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged an advance against the cap: 3 units on credit exceeds a cap of 1, so the figures do not answer it. Outstanding: RM310. <b>SALT SELL DATED 01 OCT: 3 UNITS FOR RM310, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM6-PJ from order 20261001150036-bxcmsq on the statements site, RM0 cash and 0 unit delivered, preapproved by phone. The total of RM310, RM103.33 a unit, clears the floor of RM205.87 for 3 units and sits under the ask of RM390 and the ceiling of RM530. CM6-PJ: 3 orders, median RM100 a unit, range RM90 to RM100, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, leaving RM142 on the goods at 45.8%. The drafter raised no flag. Outstanding: RM310 and 3 units undelivered.",
+    "note": "<b>CORRECTION ON S223 DATED 01 OCT: TOTAL AND CASH CUT FROM RM310 TO RM260, AGREED ON 02 OCT.</b> Booked to CM6-PJ, 3 units of salt collected on 01 Oct. Total and cash both move from RM310 to RM260, and agreedOn is set to 02 Oct 2026. The desk decided it. It moves no stock. The new rate is RM86.67 a unit; the dossier gives no floor or ask for 3 units, so it cannot be placed against them. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, nothing outstanding, no units on credit. The drafter flagged a rate 13.3% below the usual, and a trail of 3 steps that no longer adds up to the new figure. The rate is under the party's whole range, so the figures do not answer the flag. Nothing is left outstanding. <b>CORRECTION ON S223 DATED 01 OCT: 3 UNITS COLLECTED BY CM6-PJ, STILL UNPAID.</b> Sets deliveredQty from 0 to 3, deliveredOn to 01 Oct 2026 and handover to collected, for order 20261001150036-bxcmsq, preapproved by phone. It moves no cash; the shelf rolls by 3 units out. The order is RM310 for 3 units, RM103.33 a unit, above the floor of RM205.87 and under the ask of RM390. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, RM310 outstanding (this order) and 0 units on credit before it, against a credit cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged an advance against the cap: 3 units on credit exceeds a cap of 1, so the figures do not answer it. Outstanding: RM310. <b>SALT SELL DATED 01 OCT: 3 UNITS FOR RM310, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM6-PJ from order 20261001150036-bxcmsq on the statements site, RM0 cash and 0 unit delivered, preapproved by phone. The total of RM310, RM103.33 a unit, clears the floor of RM205.87 for 3 units and sits under the ask of RM390 and the ceiling of RM530. CM6-PJ: 3 orders, median RM100 a unit, range RM90 to RM100, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, leaving RM142 on the goods at 45.8%. The drafter raised no flag. Outstanding: RM310 and 3 units undelivered.",
     "rid": "s223",
     "deliveredOn": "2026-10-01",
     "handover": "collected",
-    "mod": "corrected on 2026-10-01: deliveredQty 0 to 3; deliveredOn (unset) to 2026-10-01; handover (unset) to collected",
+    "mod": "corrected on 2026-10-01: deliveredQty 0 to 3; deliveredOn (unset) to 2026-10-01; handover (unset) to collected, then corrected on 2026-10-02: total 310 to 260; cash 310 to 260; agreedOn (unset) to 2026-10-02",
     "amend": [
      {
       "date": "2026-10-01",
@@ -6082,10 +6082,18 @@
       "cash": 310,
       "kg": 0,
       "note": "<b>FULFILMENT ON S223 DATED 01 OCT: RM310 CASH RECEIVED FROM CM6-PJ, NO UNITS MOVED.</b> Records payment of RM310 by cash at the counter against order 20261001150036-bxcmsq, 3 units for RM310, preapproved by phone. The 3 units were already collected, so this adds cash only and the shelf does not roll. The dossier gives no floor or ask for this size, so no comparison is made. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, RM310 outstanding and 3 units on credit before this row, 0 defaulted. No cost is carried, as no stock leaves. The drafter flagged nothing. Outstanding: RM0 on this order."
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S223 DATED 01 OCT: TOTAL AND CASH CUT FROM RM310 TO RM260, AGREED ON 02 OCT.</b> Booked to CM6-PJ, 3 units of salt collected on 01 Oct. Total and cash both move from RM310 to RM260, and agreedOn is set to 02 Oct 2026. The desk decided it. It moves no stock. The new rate is RM86.67 a unit; the dossier gives no floor or ask for 3 units, so it cannot be placed against them. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, nothing outstanding, no units on credit. The drafter flagged a rate 13.3% below the usual, and a trail of 3 steps that no longer adds up to the new figure. The rate is under the party's whole range, so the figures do not answer the flag. Nothing is left outstanding."
      }
     ],
     "cost": 168,
-    "paidOn": "2026-10-01"
+    "paidOn": "2026-10-01",
+    "agreedOn": "2026-10-02"
    },
    {
     "customer": "CI4-OKR",
@@ -6836,9 +6844,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-01T16:56:50.657Z",
+  "QUEUE_COMMITTED": "2026-10-01T18:30:38.856Z",
   "PRICING": {
-   "takenAt": "2026-10-01T16:57:19.307Z",
+   "takenAt": "2026-10-01T18:32:42.450Z",
    "sizes": [
     0.5,
     1,
@@ -6924,11 +6932,11 @@
     "CI4-OKR": {
      "salt": "Titanium"
     },
-    "CM6-PJ": {
-     "salt": "Titanium"
-    },
     "CJ2-KUC": {
      "salt": "Gold"
+    },
+    "CM6-PJ": {
+     "salt": "Titanium"
     },
     "CG5-SB": {
      "salt": "Platinum"
@@ -7423,22 +7431,6 @@
       "rare": false
      }
     },
-    "CM6-PJ": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 4,
-      "tenureDays": 42,
-      "sinceLastDays": 1,
-      "perMonth": 2.9,
-      "smallShare": 0.5,
-      "bigShare": 0.5,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CJ2-KUC": {
      "candy": {
       "name": "one-off",
@@ -7449,6 +7441,22 @@
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
+    "CM6-PJ": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 4,
+      "tenureDays": 42,
+      "sinceLastDays": 1,
+      "perMonth": 2.9,
+      "smallShare": 0.5,
+      "bigShare": 0.5,
+      "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -9139,56 +9147,6 @@
         1060
        ]
       ],
-      "CM6-PJ": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
       "CJ2-KUC": [
        [
         0.5,
@@ -9237,6 +9195,56 @@
        [
         12.5,
         1080
+       ]
+      ],
+      "CM6-PJ": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
        ]
       ],
       "CG5-SB": [
@@ -10895,7 +10903,7 @@
         450
        ]
       ],
-      "CM6-PJ": [
+      "CJ2-KUC": [
        [
         10,
         130
@@ -10917,7 +10925,7 @@
         450
        ]
       ],
-      "CJ2-KUC": [
+      "CM6-PJ": [
        [
         10,
         130
@@ -12001,7 +12009,7 @@
         1500
        ]
       ],
-      "CM6-PJ": [
+      "CJ2-KUC": [
        [
         1,
         60
@@ -12023,7 +12031,7 @@
         1500
        ]
       ],
-      "CJ2-KUC": [
+      "CM6-PJ": [
        [
         1,
         60
@@ -12914,7 +12922,7 @@
         64
        ]
       ],
-      "CM6-PJ": [
+      "CJ2-KUC": [
        [
         1,
         8
@@ -12928,7 +12936,7 @@
         64
        ]
       ],
-      "CJ2-KUC": [
+      "CM6-PJ": [
        [
         1,
         8
@@ -13371,10 +13379,10 @@
      "cards": {}
     }
    },
-   "v": "v972"
+   "v": "v974"
   },
   "OPEN": {
-   "at": "2026-10-01T16:57:19.480Z",
+   "at": "2026-10-01T18:32:42.678Z",
    "count": 12,
    "byKey": {
     "CI4-OKR|2026-10-02|210": {
@@ -13633,13 +13641,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v972"
+   "v": "v974"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v972"
+   "v": "v974"
   }
  }
 }

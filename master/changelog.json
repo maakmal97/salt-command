@@ -1,5 +1,14 @@
 [
  {
+  "v": "v974",
+  "d": "02 Oct 2026",
+  "t": "S223 FOR CM6-PJ CORRECTED DOWN TO RM260",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s223 for CM6-PJ, dated 01 Oct, has its total and cash both moved from RM310 to RM260, and agreedOn set to 02 Oct 2026. The desk decided it on 01 Oct. The patch is applied by the fold and the row is not rewritten.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The new rate of RM86.67 a unit sits 13.3% below the party's usual RM100 and under its range of RM90 to RM103.33. The trail of 3 steps still shows RM310 cash, so it no longer adds up to the corrected figure. No stock moves and the inventory stands at 10.75 units."
+  ]
+ },
+ {
   "v": "v973",
   "d": "02 Oct 2026",
   "t": "BROWSER ICON AND ANALYSIS REVIEW",
