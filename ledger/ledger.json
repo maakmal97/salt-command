@@ -1,6 +1,6 @@
 {
- "v": "v965",
- "stamped": "01 Oct 2026, 13:36 KL",
+ "v": "v966",
+ "stamped": "01 Oct 2026, 13:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -5750,7 +5750,7 @@
     "customer": "CE5-SA-R",
     "qty": 1,
     "total": 8,
-    "cash": 0,
+    "cash": 8,
     "product": "rice",
     "date": "2026-09-28",
     "deliveredQty": 1,
@@ -5794,9 +5794,17 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON S212: CASH TO RM0, PAYMENT DATE CLEARED, RM8 NOW UNPAID.</b> CE5-SA-R's order of 28 Sep for 1 unit of rice at RM8 was collected, and its RM8 cash was tapped by mistake: the unit was collected and not paid, on his word of 28 Sep 2026. No cash or stock moves, and the row now stands as an advance. CE5-SA-R: 2 orders, median RM105 a unit, range RM8 to RM105, RM0 outstanding and 0 units on credit before this batch. The dossier gives no credit cap figure to answer the drafter's advance flag. As flagged, the trail of 4 steps no longer adds up to the cash figure. No cost is carried. Outstanding: RM8 from CE5-SA-R, and the site's order card still reads paid."
+     },
+     {
+      "date": "2026-10-01",
+      "kind": "Fulfilment",
+      "cash": 8,
+      "kg": 0,
+      "note": "<b>RICE FULFILMENT DATED 01 OCT: RM8 CASH RECEIVED AGAINST ORDER S212, SETTLED IN FULL.</b> CE5-SA-R paid RM8 in cash at the counter on 01 Oct for the order of 28 Sep, 1 unit of rice at RM8, collected that day and left unpaid on his word at v926. No units move, so no floor or ask applies to this row. CE5-SA-R: 3 orders, median RM105 a unit, range RM8 to RM110, RM8 outstanding and 1 unit on credit before this row, no default. It carries no cost of its own, as the goods left on 28 Sep. The drafter flagged that it settles the order in full: the figures confirm it, RM8 received against RM8 outstanding. Outstanding: RM0 on this row."
      }
     ],
-    "rev": "R2"
+    "rev": "R2",
+    "paidOn": "2026-10-01"
    },
    {
     "customer": "CE4-CHE",
@@ -6757,9 +6765,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-01T05:35:33.250Z",
+  "QUEUE_COMMITTED": "2026-10-01T05:36:02.856Z",
   "PRICING": {
-   "takenAt": "2026-10-01T05:36:06.361Z",
+   "takenAt": "2026-10-01T05:37:42.244Z",
    "sizes": [
     0.5,
     1,
@@ -13292,11 +13300,11 @@
      "cards": {}
     }
    },
-   "v": "v965"
+   "v": "v966"
   },
   "OPEN": {
-   "at": "2026-10-01T05:36:06.649Z",
-   "count": 10,
+   "at": "2026-10-01T05:37:42.546Z",
+   "count": 9,
    "byKey": {
     "CR3-DAM|2026-09-30|110": {
      "d": "2026-09-30",
@@ -13314,26 +13322,6 @@
      "key": "CR3-DAM|2026-09-30|110",
      "age": 1,
      "exp": 82.5
-    },
-    "CE5-SA-R|2026-09-28|8|rice": {
-     "d": "2026-09-28",
-     "p": "CE5-SA-R",
-     "dir": "S",
-     "q": 1,
-     "t": 8,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 8,
-     "pr": "rice",
-     "rid": "s212",
-     "as": "CE5-SA",
-     "st2": "R2",
-     "deliveredOn": "2026-09-28",
-     "handover": "collected",
-     "key": "CE5-SA-R|2026-09-28|8|rice",
-     "age": 3,
-     "exp": 2
     },
     "CR3-DAM|2026-09-28|110": {
      "d": "2026-09-28",
@@ -13507,7 +13495,7 @@
      "owedOut": 0,
      "coverDays": 89.9,
      "rate": 0.79,
-     "owedToYou": 8,
+     "owedToYou": 0,
      "promised": 0,
      "short": 0
     },
@@ -13530,13 +13518,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v965"
+   "v": "v966"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v965"
+   "v": "v966"
   }
  }
 }
