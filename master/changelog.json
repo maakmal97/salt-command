@@ -1,5 +1,14 @@
 [
  {
+  "v": "v968",
+  "d": "01 Oct 2026",
+  "t": "ONE PENDING SALT SELL TO CC9-OKR, ABOVE HIS USUAL RATE AND OVER HIS CREDIT CAP",
+  "n": [
+   "<b>FOLDED:</b> one row, a salt sell dated 01 Oct to CC9-OKR, 1 unit for RM110. Nothing was paid and nothing moved, so it is booked as pending, approved by the desk. The rate clears the floor of RM68.62 for 1 unit and sits under the ask of RM140 and the ceiling of RM180.",
+   "<b>UNUSUAL:</b> CC9-OKR already carries 2 units on credit and RM268 outstanding against a credit cap of 1, and the rate is 22.2% above his usual RM90. The row draws no stock and books no revenue until something moves, so the inventory stands at 13.75 unit with its cost basis at RM56 a unit."
+  ]
+ },
+ {
   "v": "v967",
   "d": "01 Oct 2026",
   "t": "ONE PENDING OIL SALE FOLDED; STOCK DOES NOT MOVE",
