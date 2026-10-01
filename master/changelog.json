@@ -1,5 +1,14 @@
 [
  {
+  "v": "v970",
+  "d": "01 Oct 2026",
+  "t": "A CORRECTION MOVES 3 UNITS OUT TO CM6-PJ ON CREDIT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s223 records that CM6-PJ collected the 3 units of salt on 01 Oct 2026, order 20261001150036-bxcmsq. It sets deliveredQty to 3, deliveredOn to 2026-10-01 and handover to collected. It moves no cash, and the order stays at RM310 with RM0 paid. It was preapproved by phone.",
+   "<b>UNUSUAL: AN ADVANCE ABOVE THE CAP.</b> The drafter flagged that 3 units went out with RM310 unpaid. CM6-PJ's credit cap is 1 unit, so the figures do not answer the flag. The inventory rolls by 3 units out to CM6-PJ. The cost basis is unchanged at RM56 a unit."
+  ]
+ },
+ {
   "v": "v969",
   "d": "01 Oct 2026",
   "t": "ONE PENDING SALT SALE TO CM6-PJ, NO STOCK MOVED",

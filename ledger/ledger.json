@@ -1,6 +1,6 @@
 {
- "v": "v969",
- "stamped": "01 Oct 2026, 23:03 KL",
+ "v": "v970",
+ "stamped": "01 Oct 2026, 23:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13.75,
+  "STATED_STOCK": 10.75,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -6054,9 +6054,30 @@
     "total": 310,
     "cash": 0,
     "date": "2026-10-01",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 01 OCT: 3 UNITS FOR RM310, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM6-PJ from order 20261001150036-bxcmsq on the statements site, RM0 cash and 0 unit delivered, preapproved by phone. The total of RM310, RM103.33 a unit, clears the floor of RM205.87 for 3 units and sits under the ask of RM390 and the ceiling of RM530. CM6-PJ: 3 orders, median RM100 a unit, range RM90 to RM100, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, leaving RM142 on the goods at 45.8%. The drafter raised no flag. Outstanding: RM310 and 3 units undelivered.",
-    "rid": "s223"
+    "deliveredQty": 3,
+    "note": "<b>CORRECTION ON S223 DATED 01 OCT: 3 UNITS COLLECTED BY CM6-PJ, STILL UNPAID.</b> Sets deliveredQty from 0 to 3, deliveredOn to 01 Oct 2026 and handover to collected, for order 20261001150036-bxcmsq, preapproved by phone. It moves no cash; the shelf rolls by 3 units out. The order is RM310 for 3 units, RM103.33 a unit, above the floor of RM205.87 and under the ask of RM390. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, RM310 outstanding (this order) and 0 units on credit before it, against a credit cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged an advance against the cap: 3 units on credit exceeds a cap of 1, so the figures do not answer it. Outstanding: RM310. <b>SALT SELL DATED 01 OCT: 3 UNITS FOR RM310, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM6-PJ from order 20261001150036-bxcmsq on the statements site, RM0 cash and 0 unit delivered, preapproved by phone. The total of RM310, RM103.33 a unit, clears the floor of RM205.87 for 3 units and sits under the ask of RM390 and the ceiling of RM530. CM6-PJ: 3 orders, median RM100 a unit, range RM90 to RM100, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, leaving RM142 on the goods at 45.8%. The drafter raised no flag. Outstanding: RM310 and 3 units undelivered.",
+    "rid": "s223",
+    "deliveredOn": "2026-10-01",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-01: deliveredQty 0 to 3; deliveredOn (unset) to 2026-10-01; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-01",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-01",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 3,
+      "note": "<b>CORRECTION ON S223 DATED 01 OCT: 3 UNITS COLLECTED BY CM6-PJ, STILL UNPAID.</b> Sets deliveredQty from 0 to 3, deliveredOn to 01 Oct 2026 and handover to collected, for order 20261001150036-bxcmsq, preapproved by phone. It moves no cash; the shelf rolls by 3 units out. The order is RM310 for 3 units, RM103.33 a unit, above the floor of RM205.87 and under the ask of RM390. CM6-PJ: median RM100 a unit, range RM90 to RM103.33, RM310 outstanding (this order) and 0 units on credit before it, against a credit cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged an advance against the cap: 3 units on credit exceeds a cap of 1, so the figures do not answer it. Outstanding: RM310.",
+      "cost": 168
+     }
+    ],
+    "cost": 168
    }
   ],
   "contacts": [
@@ -6797,9 +6818,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-01T15:02:32.115Z",
+  "QUEUE_COMMITTED": "2026-10-01T15:22:21.047Z",
   "PRICING": {
-   "takenAt": "2026-10-01T15:03:12.345Z",
+   "takenAt": "2026-10-01T15:23:02.492Z",
    "sizes": [
     0.5,
     1,
@@ -7370,16 +7391,16 @@
     },
     "CM6-PJ": {
      "salt": {
-      "name": "small and often",
-      "orders": 3,
+      "name": "large and regular",
+      "orders": 4,
       "tenureDays": 41,
-      "sinceLastDays": 6,
-      "perMonth": 2.23,
-      "smallShare": 0.67,
-      "bigShare": 0.33,
+      "sinceLastDays": 0,
+      "perMonth": 2.97,
+      "smallShare": 0.5,
+      "bigShare": 0.5,
       "frequent": true,
-      "small": true,
-      "bigger": false,
+      "small": false,
+      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -7908,15 +7929,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3194444444444444
+         "v": 0.3150684931506849
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 184,
-        "kg": 473.7,
-        "mean": 2.5745
+        "n": 185,
+        "kg": 476.7,
+        "mean": 2.5768
        }
       },
       "policy": {
@@ -13332,10 +13353,10 @@
      "cards": {}
     }
    },
-   "v": "v969"
+   "v": "v970"
   },
   "OPEN": {
-   "at": "2026-10-01T15:03:12.506Z",
+   "at": "2026-10-01T15:23:02.831Z",
    "count": 12,
    "byKey": {
     "CC9-OKR|2026-10-01|130|oil": {
@@ -13375,12 +13396,15 @@
      "q": 3,
      "t": 310,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 3,
+     "st": "dueMoney",
      "oweRM": 310,
-     "oweUnits": 3,
      "rid": "s223",
-     "key": "CM6-PJ|2026-10-01|310"
+     "deliveredOn": "2026-10-01",
+     "handover": "collected",
+     "key": "CM6-PJ|2026-10-01|310",
+     "age": 0,
+     "exp": 310
     },
     "CR3-DAM|2026-09-30|110": {
      "d": "2026-09-30",
@@ -13533,13 +13557,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13.75,
-     "free": 4.25,
+     "onHand": 10.75,
+     "free": 1.25,
      "owedOut": 9.5,
-     "coverDays": 0.7,
+     "coverDays": 0.2,
      "rate": 5.99,
-     "owedToYou": 510,
-     "promised": 13.5,
+     "owedToYou": 820,
+     "promised": 10.5,
      "short": 0
     },
     "oil": {
@@ -13594,13 +13618,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v969"
+   "v": "v970"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v969"
+   "v": "v970"
   }
  }
 }
