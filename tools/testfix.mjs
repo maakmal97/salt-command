@@ -142,6 +142,8 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(4, 35), "customer", Object.assign({ action: "pay", amount: 530 }, rail("transfer"))],
     [T(4, 50), "desk", { verdict: { kind: "received", claim: T(4, 35), amount: 530 } }],
     [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }]]));
+  O.push(order(oid(3, "15"), list, T(3), { product: "salt", qty: 2.5, mode: "collect", wantBy: klDay(new Date(Date.parse(T(3)) + 6 * 864e5)) }, [
+    [T(3, 20), "desk", { status: "acknowledged" }], [T(0, 40), "desk", { handover: { units: 2.5 } }]]));
   /* WITHDRAWN by them */
   O.push(order(oid(14, "07"), list, T(14), { product: "rice", qty: 1, mode: "collect" }, [
     [T(14, 40), "customer", { action: "cancel" }]]));
@@ -169,13 +171,13 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(22, 30), "desk", { verdict: { kind: "received", claim: T(22), amount: 17 } }]]));
 
   /* EACH ORDER ON THE BOOK IS A ROW, dated its placing day, as the desk's reconcile would book it; the key names the
-     invented code, and the page reads only its day (rowOn) */
+     invented code, and the page reads only its day (rowOn); a wanted-day order moves to its first handover's day */
   const sales = [];
   let rid = 0;
   const row = (r) => { sales.push(Object.assign({ rid: "x" + (++rid), cash: 0, deliveredQty: 0 }, r)); return r; };
   for (const o of O) {
     if (!ROWED.includes(o.status) && !(o.status === "cancelled" && o.history.some((h) => h.status === "acknowledged"))) continue;
-    const day = klDay(new Date(o.at)), customer = o.forFriend ? FIX_CODE + "-R" : FIX_CODE;
+    const placed = klDay(new Date(o.at)), day = o.wantBy && +o.moved > 0 && o.movedOn > placed ? o.movedOn : placed, customer = o.forFriend ? FIX_CODE + "-R" : FIX_CODE;
     o.ledgerKey = customer + "|" + day + "|" + o.qty + "|" + o.product;
     row(Object.assign({ date: day, customer, qty: o.qty, total: o.total, product: o.product, cash: +o.paid || 0, deliveredQty: +o.moved || 0 },
       o.delivery ? { delivery: o.delivery } : {}, o.forFriend ? { rev: "R2" } : {},
@@ -242,6 +244,9 @@ export const FEATURES = [
   ["order agreed", (f) => has(f, (o) => o.status === "acknowledged")],
   ["a day they want it by, placed ahead (29 Sep 2026)", (f) => has(f, (o) => o.status === "placed" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
     && o.wantBy > klDay(new Date(f.at)))],
+  ["a day wanted, handed over early, its row on the handover's day (Step 2, 30 Sep 2026)", (f) => has(f, (o) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
+    && +o.moved > 0 && o.movedOn < o.wantBy && String(o.ledgerKey || "").split("|")[1] === o.movedOn && o.movedOn > klDay(new Date(o.at))
+    && !!f.live && f.live.pay.now.parts.some((p) => p.date === o.movedOn && Math.abs((+p.whole || 0) - (+o.total + (+o.delivery || 0))) < 0.005))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],

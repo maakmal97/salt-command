@@ -505,9 +505,9 @@ the phone is kept; **Sign out other devices** on a second tap (`POST /devices/si
 one, its sessions and its alerts); and **Sign in another device**, a Sheet that mints the hand-over as it opens, Copy
 the code a tap of its own, and a QR of `<site>/app#code` for the other device's camera, which opens on the code screen in a browser's own words on any device; closing the Sheet reads the list again. **The QR never carries the key**: a
 key in an address signs a browser tab in only when his counter minted it (S3), so an address one customer sends
-another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. **The account opens only in the saved app** (Step 1b, his Q3 of 28 Sep 2026): signed in in a browser tab, the keep page is the
-whole page (`keepMode`), by the browser's own road: an iPhone's code minted as it draws, an Install button, a browser's own
-marks, or, where no app can be kept, the browsers that can; installed from the tab, it says so and to open the app.
+another never signs the other in; the other device opens Salt Counter from the QR and the code is typed there. **The account works in a browser or the saved app**: installation is optional. A signed-in browser opens the
+account normally; Account > This device keeps the optional install steps and, on an iPhone, a hand-over code for a separately
+stored Home Screen app. A browser can continue using the account without installing.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -685,6 +685,13 @@ soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` 
 dated at the acknowledgement under the same key, its note carrying ", wanted by YYYY-MM-DD" in fixed words
 (`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
 reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
+
+**ITS FIRST HANDOVER REDATES THE ROW** (Step 2, 30 Sep 2026): on an order with a wanted day, the first handover on a later
+day than the acknowledgement moves the row to the handover's day, so demand and revenue read from when the goods went.
+`redateFrom` (`src/orders.js`) requires a wanted day, no earlier handover, and a row still on its acknowledgement's day.
+The redate rides on that handover's Correction (or on the close if it is the first handover); the key moves with it,
+later stages wait for it, and a rejection restores the old key. An order without a wanted day keeps its acknowledgement's
+day. On the Counter, a part sealed before the redate is paired by its acknowledgement day until the next publish.
 
 **AN ASSOCIATE SEES THEIR OWN CARD, BY MONTH, FROM THE START** (v706, his instruction of 18 Sep
 2026). `associateCard(w, code)` in `tools/book.mjs` builds one associate's own document off the same

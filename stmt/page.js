@@ -166,9 +166,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .btn{margin-top:18px;width:100%}
 /* a pay link is a .salt-ghost too (24 Sep 2026); a long account name wraps, and its lines centre */
 .btn.lnk{text-align:center;line-height:1.4}
-/* THE ACCOUNT ONLY IN THE SAVED APP (Step 1b): signed in in a browser tab, how to keep it is the whole page; its steps
-   draw the phone's own marks */
-.keeppage{max-width:520px;margin:0 auto;padding:44px 20px 60px}
+/* Optional install guide under This device; its steps draw the browser's own marks. */
+.keeppage{margin:20px 0 0;padding:0}
 .keeppage h1{margin:0 0 10px;font-size:var(--salt-text-2xl);line-height:1.15}
 .keeppage .kline{margin:14px 0 0}
 .keeppage b{color:var(--salt-text);font-weight:600}
@@ -736,18 +735,8 @@ function replaceAsk() {
     + '<button class="btn salt-ghost" id="askNo" type="button"></button></div>';
 }
 
-/* S3 3.10: KEEP IT ON YOUR HOME SCREEN. An iPhone's Home Screen app keeps its own storage, so what Safari
-   remembers never reaches it: the Sheet says so in one line and carries the sign-in across with a code. The code
-   and its key are minted as the Sheet opens, so Copy is a tap of its own (the judges' must-not-ship list), and
-   the steps draw the phone's own marks. Nothing here says a link signs the saved app in.
-   S9 fix: SAVING AS AN APP IS THIS DEVICE'S FIRST ROW (the plan's 9.9), where it was a card of its own at the head of
-   the statement: the Plain ledger's row, its way in the value and its words under it. */
-/* Step 1b (his Q3 of 28 Sep 2026, his sentences 3.5 to 3.7): THE ACCOUNT OPENS ONLY IN THE SAVED APP. Signed in in a
-   browser tab, this is the whole page, never Home, Orders or Prices: on an iPhone or iPad the steps and the code the
-   saved app takes, minted as the page draws so Copy is a tap of its own; where the browser offers an install, its one
-   button, the app sharing this browser's sign-in; else that browser's own marks; and where nothing can keep an app,
-   the browsers that can. Signing out stays within reach. The sign-in link and the door still sign in, in any
-   browser: that is what mints the iPhone's code and what an installed app inherits. */
+/* S3 3.10: OPTIONAL HOME SCREEN INSTALL. A browser session can be used as-is. In Account > This device,
+   the optional install guide carries an iPhone's sign-in across to the app's separate storage. */
 function keepPage() {
   return '<section id="keepCard" class="keeppage" aria-labelledby="keepHead" hidden>'
     + wt("h1", 'id="keepHead"', "keep.h")
@@ -767,13 +756,11 @@ function keepPage() {
     + wt("p", 'class="kline" id="keepDesk" hidden', "keep.desk", 22)
     /* S3 fix: an Android browser that offers no install, or whose offer was turned down, is shown its own menu's mark */
     + wt("p", 'class="kline" id="keepDroid" hidden', "keep.droid", 22)
-    + wt("button", 'type="button" class="btn salt-ghost" id="keepOut"', "dev.out")
     + "</section>";
 }
-/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands) and Saved as
-   an app (Step 1b: the account opens only there), the account's phones and computers with Sign in
-   another device and Sign out other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the
-   customer's one Log out (#lock, S7 7.1: it left the bar) */
+/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the
+   optional Home Screen install guide, the account's phones and computers with Sign in another device and Sign out
+   other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the customer's one Log out (#lock). */
 function thisDevice(langs) {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
@@ -781,7 +768,7 @@ function thisDevice(langs) {
     /* S13 13.4: the language, under its label, the door's own switch; F7: the row goes with the switch */
     + (langs.length < 2 ? "" : '<div class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + wt("span", 'class="salt-ledger__label"', "lang.h") + '</div><div class="salt-ledger__flag">' + langSwitch(langs) + "</div></div></div>")
-    + '<div id="devSlot"></div>'
+    + '<div id="devSlot"></div>' + keepPage()
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
 }
@@ -1144,7 +1131,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + keepPage())
+    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -1771,14 +1758,9 @@ const CLIENT_JS = `
     else devSaid={t:wErr(x.body,'x.notSent'),bad:true};
     drawDev();
   }
-  /* ---- THE ACCOUNT ONLY IN THE SAVED APP (Step 1b, his Q3 of 28 Sep 2026; S3 3.10 and his D2 before it) ---------
-     Signed in in a browser tab (never his page, never View as them), the keep page is the whole page and the places are
-     hidden: it is a page gate, as the overdue gate is, and the Worker answers a session as it always has. An iPhone or
-     iPad mints a one-use key and its eight-symbol code as the page draws (POST /handover, the content key wrapped under
-     the key), so the Copy tap copies and does nothing else: no derivation and no fetch sits between the tap and the
-     clipboard. The same tap rewrites the address to /app#<key>, so a saved app that keeps the address signs itself in;
-     one that does not takes the key by Paste, or the code typed. The code works once, for fifteen minutes; opening the
-     page again mints a new one. */
+  /* ---- OPTIONAL INSTALL GUIDE (S3 3.10) -----------------------------------------------------------------------
+     Browser access is the default. The guide lives under This device and keeps the one-use hand-over for iPhone
+     installs whose Home Screen app has separate storage. */
   var keepCardEl=document.getElementById('keepCard'), keepCode=document.getElementById('keepCode'),
       keepCopy=document.getElementById('keepCopy'), keepMsg=document.getElementById('keepMsg');
   var keepTok='', keepN=0, keepMinted=[], keepMinting=false;   /* S3 fix: every key this page minted, for Log out to burn */
@@ -1787,11 +1769,11 @@ const CLIENT_JS = `
      and a computer's Chrome or Edge is pointed at the install mark in its address bar; nothing says phone there. A
      browser that can keep no app (Firefox on a computer, an app's own browser, any that offers no install) is told
      which browsers can. */
-  var bip=null, keepDone=false;   /* Step 1b: installed from this tab, which stays the keep page, offering nothing more */
+  var bip=null, keepDone=false;   /* Installed from this browser, which remains usable after the install. */
   var SAMSUNG=/SamsungBrowser/.test(UA), ANDROID=/Android/.test(UA), DESKTOP=!IOS&&!/Mobi|Android/.test(UA), CHROMIUM=/Chrome[/]|Chromium|Edg[/]/.test(UA);
-  function appGated(){ return !!session&&!OWNER&&!view&&!STANDALONE; }
+  function keepOffer(){ return !!session&&!OWNER&&!view&&!STANDALONE; }
   function keepMode(){
-    if(!appGated()) return '';
+    if(!keepOffer()) return '';
     if(INAPP) return 'none';
     return IOS?'ios':keepDone?'done':bip?'install':SAMSUNG?'samsung':(DESKTOP&&CHROMIUM)?'desk':ANDROID?'droid':'none';
   }
@@ -1799,7 +1781,6 @@ const CLIENT_JS = `
     if(!keepCardEl) return;
     var mode=keepMode();
     keepCardEl.hidden=!mode;
-    if(mode) tabs.hidden=true; else if(bundle) tabs.hidden=false;
     if(!mode) return;
     var k=mode==='ios'?'':mode==='none'?'None':mode==='done'?'Done':'App';
     setW(document.getElementById('keepHead'),'keep.h'+k);
@@ -2149,9 +2130,6 @@ const CLIENT_JS = `
     return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
   }
   document.getElementById('lock').addEventListener('click', logOut);
-  /* Step 1b: and from the keep page, the whole page in a browser tab */
-  if(keepCardEl) document.getElementById('keepOut').addEventListener('click', logOut);
-
   /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
      silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
      memory for a fresh session, once, and repeats the request, so nobody is stranded on a page that looks alive.
@@ -2467,7 +2445,7 @@ const CLIENT_JS = `
     if(!pushCan()) devRows.appendChild(devRow(tw('push.h'),tw(IOS&&!STANDALONE?'push.devIos':'push.devNo')));
     else if(on) devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOn'),devBtn(tw('push.off'),devPushOff)));
     else devRows.appendChild(devRow(tw('push.h'),said||tw('push.devOff'),devBtn(tw('push.on'),devPushOn)));
-    /* Step 1b: the account opens only in the saved app, so this is where they are */
+    /* Saving the app is optional; the install guide sits with this device's settings. */
     if(STANDALONE) devRows.appendChild(devRow(tw('dev.saved'),tw('dev.inIt')));
   }
   async function devPushOn(){
@@ -4153,10 +4131,14 @@ const CLIENT_JS = `
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
      size, and on the friend's bucket or not. */
+  function ackDayOf(x){ var h=(x.history||[]).filter(function(e){ return e&&e.status==='acknowledged'&&e.by==='desk'&&!e.note; });
+    if(!h.length) return ''; var p=klBits(h[h.length-1].at); return p.year+'-'+('0'+p.month).slice(-2)+'-'+p.day; }
+  function redatedFrom(x,p){ return !!x.wantBy&&(+x.moved||0)>0&&!!x.rowOn&&p.date<x.rowOn&&p.date===ackDayOf(x)
+    &&String(x.movedOn||'')>=String(liveAt||'').slice(0,10); }
   function comingParts(){
     var used={};
     return ((payDue&&payDue.coming&&payDue.coming.parts)||[]).filter(function(p){
-      var o=orders.filter(function(x){ return !used[x.id]&&x.rowOn&&x.rowOn===p.date&&['cancelled','declined'].indexOf(x.status)<0
+      var o=orders.filter(function(x){ return !used[x.id]&&x.rowOn&&(x.rowOn===p.date||redatedFrom(x,p))&&['cancelled','declined'].indexOf(x.status)<0
         &&(x.product||'salt')===(p.product||'salt')&&Math.abs((+x.qty||0)-(+p.qty||0))<1e-9&&!!x.forFriend===!!p.resale; })[0];
       if(o){ used[o.id]=1; return false; }
       return true;

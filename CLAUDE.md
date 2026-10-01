@@ -402,13 +402,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
   otherwise a Sheet says so over the page, carrying the door and keeping the draft. The page re-reads on every return (`GET /account` on its session, never a
   wrap), and a remembered phone draws "Opening your account", never the door. Kept as an app:
-  manifest and icon served by the Worker, no brand; notifications are asked only from a tap. **The account opens only in
-  the saved app** (his Q3 of 28 Sep 2026, Step 1b): signed in in a tab (never his page, never View as them), the keep page is
-  the whole page (`keepMode`, a page gate); the link and the door still sign in, in any browser. It shows an Install button
-  wherever the browser offers one, Samsung Internet's steps, a computer's address-bar mark or another Android browser's menu
-  mark; on an iPhone it mints the hand-over as it draws and copies the key in a tap of its own, rewriting the address to
-  `/app#<key>` (his D2), and never says a link signs the saved app in; a browser that can keep no app names those that can.
-  **A bell asks for notifications on every view of the saved app until they are on**, its call beside it; refused, its tap
+  manifest and icon served by the Worker, no brand; notifications are asked only from a tap. **The account works in a
+  browser or the saved app**: installation is optional. A signed-in browser opens the account normally; Account > This
+  device keeps the optional install steps and, on an iPhone, a hand-over code for a separately stored Home Screen app.
+  The link and the door sign in on either. **A bell asks for notifications on every view of the saved app until they are on**, its call beside it; refused, its tap
   opens that phone's Settings steps. **The saved app starts at `/app`** (the manifest's `start_url`): with
   nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
   (`POST /handover/open`), and the app is remembered. A key in the address (`/app#<key>`) is spent by the saved app

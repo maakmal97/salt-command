@@ -454,7 +454,29 @@ async function stagePreview(env, o, stage, entry) {
   const book = await readBook(db);
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
   let against = book, waits = false;
-  if (!open[entry.payload.orderKey]) {
+  let rd = null;
+  if (!open[entry.payload.orderKey] && o.queued && o.queued.redate) {
+    const pending = await queuedAt(env, o.queued.redate);
+    if (pending) rd = { entry: JSON.stringify(pending), status: "pending" };
+    else rd = await db.prepare("SELECT entry,status FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"redate\":true%' ORDER BY id DESC LIMIT 1")
+      .bind('%"orderId":"' + o.id + '"%').first();
+  }
+  if (rd && rd.status !== "rejected") {
+    const re = JSON.parse(rd.entry), was = re.payload.orderKey, day = re.payload.fields.date;
+    let base = book;
+    if (!open[was]) {
+      const ack = o.queued && o.queued.ack;
+      const r = ack ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
+      if (!r || r.status === "rejected") return { ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" };
+      base = withPending(book, JSON.parse(r.row));
+    }
+    const row = (base.sales || []).find((s) => POSITION_ENGINE.ovKey(s) === was);
+    if (!row) return { ok: false, status: 409, error: "the row its first handover redates is not on the book, so there is no row for this to amend" };
+    const sales = base.sales.filter((s) => s !== row), st = Object.assign({}, base.state || {}), op = Object.assign({}, st.OPEN || {});
+    op.byKey = Object.assign({}, op.byKey || {}); delete op.byKey[was]; st.OPEN = op;
+    against = withPending(Object.assign({}, base, { sales, state: st }), Object.assign({}, row, { date: day }));
+    waits = true;
+  } else if (!open[entry.payload.orderKey]) {
     /* not on the book yet: the pending row, as it was drafted, is what will land */
     const ack = o.queued && o.queued.ack;
     const r = ack ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
@@ -997,8 +1019,8 @@ export async function againOrder(env, id, body, by, now) {
   if (!pv.ok) return pv;
   /* a close offered again restates the row once more, so later stages wait for it under the name it will leave, as the
      reconcile had them wait when it first queued it */
-  if (entry.status === "Close") {
-    const m = await markOrder(env, o.u, id, { ledgerKey: closedKey(o) });
+  if (entry.status === "Close" || entry.redate) {
+    const m = await markOrder(env, o.u, id, { ledgerKey: keyAfter(o, entry) });
     if (!m || !m.ok) return { ok: false, status: 502, error: "the order could not be marked for the close offered again" + (m ? " (http " + m.status + ")" : "") };
   }
   await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry, at: at.toISOString(), by,
@@ -1209,16 +1231,31 @@ export function handoverEntry(order, code, units, now) {
   const moved = +(+units).toFixed(2);
   const books = partyOnBook(order, code);
   const how = order.mode === "deliver" ? "delivered" : "collected";
-  return {
+  const was = moved > 0 ? redateFrom(order, date) : "";
+  return Object.assign({
     at: at.toISOString(), type: "SELL", party: books, qty: moved, total: 0, status: "Handover",
     raw: moved + " unit " + how + " to " + books + ", order " + order.id + ", on " + date,
     payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
-      fields: { deliveredQty: moved, deliveredOn: date, handover: how },
-      note: moved + " unit " + how + " for order " + order.id + "." }
-  };
+      fields: Object.assign({ deliveredQty: moved, deliveredOn: date, handover: how }, was ? { date } : {}),
+      note: moved + " unit " + how + " for order " + order.id + redateWords(was, date) + "." }
+  }, was ? { redate: true } : {});
 }
+
+/* The first later handover moves a wanted-day order from its acknowledgement's date. */
+export function redateFrom(order, date) {
+  if (!order || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "")) return "";
+  if (+((order.queued || {}).moved) > 0) return "";
+  const rowOn = String(order.ledgerKey || "").split("|")[1] || "";
+  const h = order.history || [];
+  let ack = null;
+  for (let i = h.length - 1; i >= 0 && !ack; i--) if (h[i] && h[i].status === "acknowledged" && h[i].by === "desk" && !h[i].note) ack = h[i].at;
+  if (!ack || isNaN(Date.parse(ack)) || rowOn !== klDate(new Date(ack))) return "";
+  return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date || "") && date > rowOn ? rowOn : "";
+}
+const redateWords = (was, date) => (was ? ", its first handover, so the row moves from " + was + " to " + date : "");
+const keyAfter = (order, e) => (e.status === "Close" || e.redate ? closedKey(order, e.redate ? e.payload.fields.date : undefined) : ledgerKeyOf(order));
 
 /** S11 11.9: an order closed at what was handed over, as a Correction restating the row: its size and the
  *  goods' total at what went, what was handed over and when. The cost follows the size in the fold. */
@@ -1228,15 +1265,16 @@ export function closeEntry(order, code, now) {
   const books = partyOnBook(order, code);
   const how = order.mode === "deliver" ? "delivered" : "collected";
   const qty = +(+order.qty).toFixed(3), goods = +(+order.total).toFixed(2), was = (order.closed && order.closed.qty) || qty;
-  return {
+  const from = +order.moved > 0 ? redateFrom(order, date) : "";
+  return Object.assign({
     at: at.toISOString(), type: "SELL", party: books, qty, total: goods, status: "Close",
     raw: "Closed at " + qty + " unit " + how + " to " + books + " for RM " + goods + ", order " + order.id + ", of " + was + " ordered",
     payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
       orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
       date, qty: 0, total: 0, cash: 0, kg: 0,
-      fields: { qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how },
-      note: "Closed at " + qty + " unit " + how + " for order " + order.id + ", of the " + was + " ordered." }
-  };
+      fields: Object.assign({ qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how }, from ? { date } : {}),
+      note: "Closed at " + qty + " unit " + how + " for order " + order.id + ", of the " + was + " ordered" + redateWords(from, date) + "." }
+  }, from ? { redate: true } : {});
 }
 /* THE ROW'S NAME MOVES WITH ITS TOTAL: the engine's ovKey of the row as the close leaves it, the party and the
    day kept from the key the acknowledgement wrote. Later stages then wait for the close to fold, as a first
@@ -1367,7 +1405,7 @@ export async function reconcileOrders(env, read) {
     else {
     /* the ids already spent on this order: two stages stamped in the same millisecond would share a
        draft id, so the later one takes the next millisecond, and takes it again on a re-queue */
-    const used = new Set([q.ack, q.cancel, q.close].filter(Boolean));
+    const used = new Set([q.ack, q.cancel, q.close, q.redate].filter(Boolean));
     try {
       /* S11 11.10: WITHDRAWN BY THEM WHILE ITS ROW WAITED UNDER APPROVE, nothing paid: the row is dropped (dropAck)
          and the withdrawal is spent with it, so no Cancellation waits behind a row that will never land */
@@ -1388,7 +1426,7 @@ export async function reconcileOrders(env, read) {
           if (!(o.sync && o.sync.state === "rejected")) {
             /* S11 (D6): THE ROW WAITED FOR MAY BE APPROVED ALREADY, by his yes on the card, and then Approve no longer lists
                it and only the fold is left; sending him there sent him to a row he could not find */
-            const what = q.close ? "close" : "pending row", id = q.close || q.ack;
+            const what = q.close ? "close" : q.redate ? "handover that redates its row" : "pending row", id = q.close || q.redate || q.ack;
             let d = null;
             try { d = id && env.SALT_LEDGER ? await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first() : null; } catch (e) { d = null; }
             state = { state: "waiting", why: "the " + (STAGE_WORD[job] || job) + " waits for the " + what + " to reach the book: "
@@ -1431,10 +1469,14 @@ export async function reconcileOrders(env, read) {
         used.add(e.at);
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
         else if (job === "pay") mark.paid = +((+q.paid || 0) + told).toFixed(2);
-        else if (job === "move") mark.moved = +(+order.moved || 0).toFixed(3);
+        else if (job === "move") {
+          mark.moved = +(+order.moved || 0).toFixed(3);
+          if (e.redate) { const nk = keyAfter(order, e); mark.ledgerKey = nk; order.ledgerKey = nk; mark.redate = e.at; }
+        }
         else if (job === "close") {
           mark.close = e.at; mark.moved = +(+order.moved || 0).toFixed(3);
-          const nk = closedKey(order); mark.ledgerKey = nk; order.ledgerKey = nk;
+          if (e.redate) mark.redate = e.at;
+          const nk = keyAfter(order, e); mark.ledgerKey = nk; order.ledgerKey = nk;
         }
         else if (job === "cancel") mark.cancel = e.at;
         if (!state) state = { state: "queued", why: "" };
@@ -1531,7 +1573,7 @@ export async function rejectedOnOrder(env, entry, at) {
   /* A CLOSE HE REJECTS NEVER LANDS, so the row keeps the name it had: the order names it by that key again, and every
      later stage, the return leg and the card's taps find the row the book still carries (offered again, the close
      moves the name once more, againOrder) */
-  if (entry.status === "Close" && entry.payload && entry.payload.orderKey) mark.ledgerKey = POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product);   /* V4a: in the key's shape now */
+  if ((entry.status === "Close" || entry.redate) && entry.payload && entry.payload.orderKey) mark.ledgerKey = POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product);   /* V4a: in the key's shape now */
   const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
   });
@@ -1570,14 +1612,19 @@ const fate = async (env, id) => { try { return id ? await env.SALT_LEDGER.prepar
    and offered again (againOrder), whose first draft queued.close still names: so the ORDER'S NEWEST Close draft is read,
    and one offered again that is not drafted yet is on its way too. A read that fails is read as on its way. */
 const NEWEST_CLOSE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Close\"%' ORDER BY id DESC LIMIT 1";
+const NEWEST_REDATE = "SELECT status, committed_at IS NOT NULL AND committed_at <= (SELECT at FROM snapshot WHERE one=1) AS landed FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"redate\":true%' ORDER BY id DESC LIMIT 1";
 async function closeOnItsWay(env, o) {
-  if (!o.queued || !o.queued.close) return false;
-  try {
-    const d = await env.SALT_LEDGER.prepare(NEWEST_CLOSE).bind('%"orderId":"' + o.id + '"%').first();
-    if (!d) return true;
-    if (d.status !== "rejected") return !d.landed;
-    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='move' AND status IN ('waiting','differs') AND entry LIKE '%\"status\":\"Close\"%'").bind(o.id).first());
-  } catch (e) { return true; }
+  const q = o.queued || {};
+  for (const [on, sql, like] of [[q.close, NEWEST_CLOSE, '%"status":"Close"%'], [q.redate, NEWEST_REDATE, '%"redate":true%']]) {
+    if (!on) continue;
+    try {
+      const d = await env.SALT_LEDGER.prepare(sql).bind('%"orderId":"' + o.id + '"%').first();
+      if (!d) return true;
+      if (d.status !== "rejected") { if (!d.landed) return true; continue; }
+      if (await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='move' AND status IN ('waiting','differs') AND entry LIKE ?2").bind(o.id, like).first()) return true;
+    } catch (e) { return true; }
+  }
+  return false;
 }
 const AMENDS = "SELECT amends, json_extract(entry,'$.orderId') AS oid FROM draft WHERE status='approved' AND amends IS NOT NULL AND entry LIKE ?1";
 async function rowOf(env, o, k, idx, amended) {

@@ -701,7 +701,7 @@ export function decideDesk(order, body, at) {
     /* 28 Sep 2026: AN ORDER FOLLOWS ITS ROW. A row moved between the associate's own code and their resale bucket takes
        its key with it and the side it books to, which the page pairs To pay now by: the desk states both (tellSite) */
     if (typeof m.forFriend === "boolean") c.forFriend = m.forFriend;
-    for (const k of ["ack", "cancel", "close"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
+    for (const k of ["ack", "cancel", "close", "redate"]) if (m[k]) c[k] = String(m[k]).slice(0, 40);
     for (const k of ["paid", "moved"]) if (typeof m[k] === "number" && Number.isFinite(m[k])) c[k] = +m[k].toFixed(3);
     /* S6 6.5: each claim queued, by its moment, with the entry that tells the ledger of it */
     if (Array.isArray(m.claims)) c.claims = m.claims.slice(0, 20).filter((x) => x && typeof x.at === "string" && typeof x.draft === "string")
@@ -918,7 +918,7 @@ export function applyEvent(order, ev) {
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
        return leg may have raised the order to the book's figure in the same minute; lowered, the next pass would
        queue the difference a second time. The goods are stated, not added, so their mark is set as read. */
-    for (const k of ["ack", "cancel", "close", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
+    for (const k of ["ack", "cancel", "close", "redate", "paid", "moved"]) if (m[k] !== undefined) q[k] = k === "paid" ? Math.max(+q.paid || 0, m[k]) : m[k];
     if (m.sync) order.sync = m.sync;
     if (m.quiet) order.quiet = m.quiet;   /* S11 11.6: a line he said needs no reply */
     /* S6 6.5: a claim queued is named by its entry, once; one he has received by then is money the ledger is now told of */

@@ -21,6 +21,17 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL: " + m); } };
+function workflowBash() {
+  if (process.platform !== "win32") return "bash";
+  const execPath = execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim();
+  const root = dirname(dirname(dirname(execPath)));
+  const bundled = [join(root, "bin", "bash.exe"), join(root, "usr", "bin", "bash.exe")].find(existsSync);
+  if (bundled) return bundled;
+  const found = spawnSync("where.exe", ["bash.exe"], { encoding: "utf8" });
+  const system = found.status === 0 && found.stdout.split(/\r?\n/).map((p) => p.trim()).find((p) => p && existsSync(p));
+  if (system) return system;
+  throw new Error("Bash was not found in the Git installation or on PATH");
+}
 /* AN ASSERTION THAT CANNOT RUN ON EVERY MACHINE IS NOT PART OF THE FLOOR (v437). Two blocks read
    files that live outside this repo and can never enter it: the plaintext directory (hard rule 3)
    and serve_desk.py. So the laptop runs ten checks CI cannot, the floor was raised to the laptop's
@@ -9197,8 +9208,7 @@ await (async () => {
     const r = lines.findIndex((l) => /^\s+run: \|$/.test(l));
     return r < 0 ? "" : lines.slice(r + 1).join("\n");
   };
-  const bash = process.platform !== "win32" ? "bash"
-    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  const bash = workflowBash();
   ok(bash === "bash" || existsSync(bash), "Git's own bash is found to run the workflow's shell: " + bash);
   /* hermetic: no GIT_ variable may point git at this checkout, and cloud-commit's own run, which runs this suite last,
      carries GITHUB_ and the LIVE_AT its proof step exported */
@@ -10234,8 +10244,7 @@ await (async () => {
     "chain hands on its deploy and the tree it proved, taken straight after the proof and before the clear: " + cs.slice(Math.max(0, iServe), iClear + 1).join(" > "));
 
   /* THE THREE SHELLS, RUN: each ${{ }} rendered from ctx, as GitHub runs them (bash -e, pipefail), curl a stub */
-  const bash = process.platform !== "win32" ? "bash"
-    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  const bash = workflowBash();
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(GIT_|GITHUB_|LIVE_AT$)/.test(k)));
   const root = mkdtempSync(join(tmpdir(), "suitejob-")), w = join(root, "w");
   const run = (block, name, ctx, pre = "", more = {}) => {
@@ -10349,8 +10358,7 @@ await (async () => {
   ok(iGate >= 0 && iDeploy === iGate + 1 && iServe === iDeploy + 1 && iWake === iServe + 1 && iMark > iWake,
     "the banner is sent straight after the proof, before any mark: " + cs.slice(Math.max(0, iGate), iMark + 1).join(" > "));
 
-  const bash = process.platform !== "win32" ? "bash"
-    : join(dirname(dirname(dirname(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim()))), "bin", "bash.exe");
+  const bash = workflowBash();
   const env = Object.fromEntries(Object.entries(process.env).filter(([k2]) => !/^(GIT_|GITHUB_|LIVE_AT$|GATED_TREE$|PUSH_KEY$)/.test(k2)));
   const root = mkdtempSync(join(tmpdir(), "fold34-")), fwd = (p) => p.replace(/\\/g, "/");
   const log = fwd(join(root, "log.txt"));
@@ -17708,7 +17716,7 @@ await (async () => {
   const signIn = async (who) => {
     const w = new JSDOM(await (await site("/")).text(), { url: "https://k7m3p2.example/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
       try { Object.defineProperty(x, "crypto", { value: crypto, configurable: true }); } catch (e) { x.crypto = crypto; }
-      /* the saved app: the account opens only there (Step 1b), so the places are up */
+      /* Exercise standalone app mode, with the account places open. */
       x.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
       x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: o.headers, body: o.body }); };
     } }).window;
@@ -20286,15 +20294,15 @@ await (async () => {
   const env = { STMT: kv };
   const ORIGIN = "https://k7m3p2.example";
   const site = (path, o) => W.fetch(new Request(ORIGIN + path, o), env);
-  /* Step 1b (his Q3 of 28 Sep 2026): the account opens only in the saved app. There, saving as an app is a row of This device
-     ("You are in it now"); in a tab the keep page stands in the account's place, a page of its own, never a card in the statement */
-  const open = async (saved) => {
+  /* Saving as an app is a row of This device in standalone mode; browser users reach the account directly and can open
+     the optional install guide under This device. */
+  const open = async (saved, agent = EDGE) => {
     const win = new JSDOM(landingPage(u, "n9r10", null), { url: ORIGIN + "/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
-      Object.defineProperty(w.navigator, "userAgent", { value: EDGE, configurable: true });
+      Object.defineProperty(w.navigator, "userAgent", { value: agent, configurable: true });
       w.scrollTo = () => {};
       w.matchMedia = (q) => ({ matches: saved && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": EDGE }, o.headers), body: o.body }); };
+      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({ "user-agent": agent }, o.headers), body: o.body }); };
     } }).window;
     const D = win.document;
     D.getElementById("pw").value = pw;
@@ -20302,22 +20310,28 @@ await (async () => {
     return { win, D };
   };
   const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-  let a = null, b = null;
+  let a = null, b = null, c = null, d = null;
   try {
     a = await open(true);
     const { D, win } = a, dev = D.getElementById("thisDevice"), keep = D.getElementById("keepCard"), body = D.getElementById("devSlot");
     ok(await until(() => !dev.hidden && /Saved as an app/.test(dev.textContent)), "signed in in the saved app, This device shows, with its Saved as an app row: " + JSON.stringify(dev.textContent.slice(0, 160)));
     const row = [...dev.querySelectorAll(".salt-ledger__row")].find((r) => /Saved as an app/.test(r.textContent));
     ok(!!row && /You are in it now[.]/.test(row.textContent) && row.querySelector(".salt-ledger__label").textContent === "Saved as an app"
-      && !!(row.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && keep.hidden && !dev.contains(keep),
-      "and saving as an app is a row of the card, above the other devices, the keep page shut and not in the card: " + JSON.stringify(dev.textContent.slice(0, 160)));
-    ok(D.getElementById("pStmt").firstElementChild !== keep && !D.getElementById("pStmt").contains(keep), "nothing about keeping it stands at the head of the statement");
+      && !!(row.compareDocumentPosition(body) & win.Node.DOCUMENT_POSITION_FOLLOWING) && keep.hidden && dev.contains(keep),
+      "and saving as an app is a row of the card, above the other devices, with the optional install guide under This device: " + JSON.stringify(dev.textContent.slice(0, 160)));
+    ok(D.getElementById("pStmt").firstElementChild !== keep && dev.contains(keep), "the install guide sits under This device, not at the head of the statement");
     b = await open(false);
     const k2 = b.D.getElementById("keepCard");
-    ok(await until(() => !k2.hidden) && b.D.getElementById("tabs").hidden && !b.D.getElementById("thisDevice").contains(k2) && !b.D.getElementById("pStmt").contains(k2)
-      && k2.classList.contains("keeppage") && !/Saved as an app/.test(b.D.getElementById("thisDevice").textContent),
-      "in a tab the keep page is the account's place, a page of its own with the places hidden, and This device does not claim the saved app");
-  } finally { for (const x of [a, b]) { try { if (x) x.win.close(); } catch (e) { /* best effort */ } } }
+    ok(await until(() => !b.D.getElementById("tabs").hidden && !b.D.getElementById("pHome").hidden)
+      && !k2.hidden && b.D.getElementById("thisDevice").contains(k2) && !/Saved as an app/.test(b.D.getElementById("thisDevice").textContent),
+      "a browser tab opens the account without an install gate, with optional app setup under This device");
+    c = await open(false, "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1");
+    ok(await until(() => !c.D.getElementById("tabs").hidden && !c.D.getElementById("pHome").hidden),
+      "an iPhone browser can use the account without installing it");
+    d = await open(false, "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36");
+    ok(await until(() => !d.D.getElementById("tabs").hidden && !d.D.getElementById("pHome").hidden),
+      "an Android browser can use the account without installing it");
+  } finally { for (const x of [a, b, c, d]) { try { if (x) x.win.close(); } catch (e) { /* best effort */ } } }
 })();
 section("S9 fix S9R-2: the desk's count reaches Salt Account with its reading's own moment, and a stale desk never overwrites a newer reading");
 await (async () => {
@@ -22851,9 +22865,9 @@ await (async () => {
     browser93.D.getElementById("f").dispatchEvent(new browser93.W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 80 && !/Your orders/.test(browser93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     await browser93.work.quiet();
-    ok(browser93.asked.times === 0 && browser93.D.getElementById("keepCard").hidden === false && browser93.D.getElementById("tabs").hidden
+    ok(browser93.asked.times === 0 && browser93.D.getElementById("keepCard").hidden === false && !browser93.D.getElementById("tabs").hidden
       && browser93.D.getElementById("bellBox").hidden,
-      "a page opened in a browser asks nothing and shows only how to keep it, once they are in: no bell there");
+      "a browser opens the account without asking to install, and has no saved-app notification bell");
   } finally { try { browser93.W.close(); } catch (e) { /* best effort */ } }
   /* S4 (S4R-4): v693 asked on the way in; the plan asks from a tap. Step 1b: in the saved app the bell's call is the
      control: the counter moves for a tap, so its standing still through the sign-in is the sign-in asking nothing */
@@ -22881,7 +22895,7 @@ await (async () => {
     for (let i = 0; i < 80 && !/Your orders/.test(app93.D.getElementById("pOrder").textContent); i++) await new Promise((r) => setTimeout(r, 50));
     const in93 = /Your orders/.test(app93.D.getElementById("pOrder").textContent) && (await app93.work.quiet());
     ok(in93 && app93.asked.times === 0, "and a browser that has already refused is not asked again, once signed in: " + JSON.stringify({ in: in93, asked: app93.asked.times }));
-    ok(in93 && app93.D.getElementById("keepCard").hidden === true, "a page already kept as an app does not teach how to keep it, once signed in");
+    ok(in93 && app93.D.getElementById("keepCard").hidden === true, "an installed app does not show the optional install guide");
     /* Step 1b (his 3.3): refused on this phone, the bell's tap opens that phone's own Settings steps, and asks nothing */
     app93.D.getElementById("bell").click();
     const sheet93 = app93.D.getElementById("bellSheet");
@@ -26981,7 +26995,7 @@ await (async () => {
     for (let i = 0; i < 100 && (D.getElementById("linkGo").disabled || !posts.length); i++) await new Promise((r) => setTimeout(r, 30));
     return { t, dom, W: dom.window, D, posts };
   };
-  /* Step 1b: a link opened in a browser tab signs in and lands on the keep page, the places hidden; only the saved app shows them */
+  /* A link opened in a browser tab signs in and lands on the account. */
   const signedIn = (g) => !g.D.getElementById("tabs").hidden || !g.D.getElementById("keepCard").hidden;
   const tapGo = async (g) => {
     g.D.getElementById("linkGo").dispatchEvent(new g.W.Event("click", { bubbles: true }));
@@ -27003,9 +27017,9 @@ await (async () => {
     ok(plain.D.getElementById("linkInapp").hidden && /salt-pill/.test(plain.D.getElementById("linkGo").className),
       "Safari is not told to go anywhere else, and Continue is the one filled control");
     await tapGo(plain);
-    ok(signedIn(plain) && !plain.D.getElementById("keepCard").hidden && plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
+    ok(signedIn(plain) && !plain.D.getElementById("keepCard").hidden && !plain.D.getElementById("tabs").hidden && plain.W.location.pathname === "/"
       && JSON.parse(await kv33.get("ot:" + (await S33.idOf(plain.t)))).spent,
-      "Continue signs them in, spends the link and rewrites the address, landing in a tab on the keep page with the places hidden");
+      "Continue signs them in, spends the link and rewrites the address, opening the account in the browser");
   } finally { await new Promise((r) => setTimeout(r, 300)); plain.W.close(); }
 
   const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1");
@@ -27441,7 +27455,7 @@ await (async () => {
   const same = await drive("/s/" + tokL, JSON.stringify({ t: "c".repeat(32), k: "x", u: uB }), "link", true);
   ok(same.done && !same.q.shown && same.kept && same.kept.u === uB, "the same account is not asked about");
 })();
-section("S3 3.10: in a Safari tab the keep page is the whole page, mints the hand-over as it draws, draws the phone's own marks, and copies the key in a tap of its own that also rewrites the address to /app#<key>");
+section("S3 3.10: Safari can use the account and the optional This device guide carries a hand-over to a Home Screen app");
 await (async () => {
   /* HIS D2 OF 24 SEP 2026. A saved iPhone app keeps its own storage, so a customer who saved it opened a door
      with nothing to get past it. The judges' must-not-ship list: no copy after a derivation and a fetch in the same
@@ -27482,11 +27496,11 @@ await (async () => {
   const g = await drive(IPHONE, minted);
   try {
     const { D, st, until } = g;
-    /* Step 1b (his Q3 of 28 Sep 2026): THE ACCOUNT OPENS ONLY IN THE SAVED APP, so signed in in a tab the keep page is the
-       whole page and the places are hidden, drawn or not */
-    ok(!D.getElementById("keepCard").hidden && /Open Salt Counter as an app/.test(D.getElementById("keepHead").textContent)
-      && D.getElementById("tabs").hidden && !D.getElementById("keepIos").hidden,
-      "an iPhone in Safari, signed in, is shown only how to open Salt Counter as an app, never Home, Orders or Prices");
+    /* Safari opens the account; the optional install guide stays under This device. */
+    ok(!D.getElementById("keepCard").hidden && /Save Salt Counter to your Home Screen/.test(D.getElementById("keepHead").textContent)
+      && !D.getElementById("tabs").hidden && !D.getElementById("keepIos").hidden
+      && D.getElementById("thisDevice").contains(D.getElementById("keepCard")),
+      "an iPhone in Safari can use the account and still open the optional Home Screen install guide");
     const copy = D.getElementById("keepCopy");
     await until(() => D.getElementById("keepCode").value);
     const ho = st.posts.find((x) => x.path === "/handover");
@@ -27501,7 +27515,7 @@ await (async () => {
       "the code is shown in the system's Code field, four and four, and Copy is ready");
     const sheetText = D.getElementById("keepCard").textContent;
     ok(D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3 && /Add to Home Screen/.test(sheetText)
-      && /paste this code into it/.test(sheetText) && /works once, within 15 minutes/.test(sheetText) && !/link/i.test(sheetText),
+      && /copy this code into the app/.test(sheetText) && /works once, within 15 minutes/.test(sheetText) && !/link/i.test(sheetText),
       "its three steps draw the phone's own marks, and nothing in it says a link signs the saved app in");
     const n = st.posts.length;
     st.inTap = true; copy.click(); st.inTap = false;
@@ -27522,9 +27536,9 @@ await (async () => {
 
   const wa = await drive("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 WhatsApp/2.24.1", minted);
   try {
-    ok(!wa.D.getElementById("keepCard").hidden && wa.D.getElementById("keepIos").hidden && wa.D.getElementById("tabs").hidden
-      && /cannot keep Salt Counter/.test(wa.D.getElementById("keepHead").textContent) && /Safari on an iPhone/.test(wa.D.getElementById("keepLead").textContent),
-      "an app's own browser, which keeps nothing, mints nothing and names the browsers that can");
+    ok(!wa.D.getElementById("keepCard").hidden && wa.D.getElementById("keepIos").hidden && !wa.D.getElementById("tabs").hidden
+      && /works in this browser/.test(wa.D.getElementById("keepHead").textContent) && /Safari on an iPhone/.test(wa.D.getElementById("keepLead").textContent),
+      "an app's own browser can use the account and sees optional install guidance without minting a hand-over");
   } finally { wa.W.close(); }
 })();
 section("S3 merge: the QR Salt Account shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
@@ -27785,16 +27799,17 @@ await (async () => {
 
   const a = await drive(UA.android, { bip: true });
   try {
-    ok(a.st.prevented && !a.card.hidden && a.shown("keepInstall") && !a.shown("keepIos") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
-      && a.D.getElementById("keepHead").textContent === "Install Salt Counter" && /nothing to copy/.test(a.D.getElementById("keepLead").textContent),
-      "where the browser offers an install, the page is one Install button: " + JSON.stringify(a.text()));
+    ok(a.st.prevented && !a.card.hidden && !a.D.getElementById("tabs").hidden && a.shown("keepInstall") && !a.shown("keepIos") && /Install Salt Counter/.test(a.D.getElementById("keepInstall").textContent)
+      && a.D.getElementById("keepHead").textContent === "Install Salt Counter" && /keep using this browser/.test(a.D.getElementById("keepLead").textContent),
+      "where the browser offers an install, the optional This device guide keeps one Install button: " + JSON.stringify(a.text()));
     a.st.inTap = true; a.D.getElementById("keepInstall").click(); a.st.inTap = false;
     for (let i = 0; i < 40 && a.shown("keepInstall"); i++) await new Promise((r) => setTimeout(r, 5));
-    ok(a.st.prompted === 1 && a.st.promptedInTap && !a.card.hidden && !a.shown("keepInstall") && !a.shown("keepDroid"),
-      "and it asks the browser's own question inside the tap, then offers nothing more, the account still only in the app");
+    ok(a.st.prompted === 1 && a.st.promptedInTap && !a.card.hidden && !a.shown("keepInstall") && !a.shown("keepDroid")
+      && !a.D.getElementById("tabs").hidden,
+      "and it asks the browser's own question inside the tap, then offers nothing more while browser access remains open");
     /* Step 1b review: installed, the page says so and where to go, never Install it over nothing to tap */
     const said = a.D.getElementById("keepHead").textContent + " / " + a.D.getElementById("keepLead").textContent;
-    ok(said === "Salt Counter is installed / Open the Salt Counter app. Your account opens there.",
+    ok(said === "Salt Counter is installed / You can keep using this browser. Open the app from your Home Screen whenever you prefer.",
       "and it says the app is installed and to open it there: " + said);
   } finally { a.W.close(); }
   const ca = await drive(UA.chrome, { bip: true, choice: "accepted" });
@@ -27828,9 +27843,9 @@ await (async () => {
 
   const f = await drive(UA.firefox, {});
   try {
-    ok(!f.card.hidden && f.D.getElementById("tabs").hidden && f.D.getElementById("keepHead").textContent === "This browser cannot keep Salt Counter"
-      && /Chrome or Edge on a computer/.test(f.text()) && !f.shown("keepInstall") && !f.shown("keepDesk") && !f.shown("keepIos"),
-      "a browser that cannot install names those that can, and the account stays shut there: " + JSON.stringify(f.text()));
+    ok(!f.card.hidden && !f.D.getElementById("tabs").hidden && f.D.getElementById("keepHead").textContent === "Salt Counter works in this browser"
+      && /Safari on an iPhone or Chrome on Android/.test(f.text()) && !f.shown("keepInstall") && !f.shown("keepDesk") && !f.shown("keepIos"),
+      "a browser without an install action still uses the account and gets optional install guidance: " + JSON.stringify(f.text()));
   } finally { f.W.close(); }
   const inApp = await drive(UA.android, { bip: true, standalone: true });
   try { ok(inApp.card.hidden && !inApp.D.getElementById("tabs").hidden, "and an installed app is not told to install itself, and opens the account"); } finally { inApp.W.close(); }
@@ -28090,7 +28105,7 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 40));
     return { st, W, D };
   };
-  /* Step 1b: a link opened in a browser tab signs in and lands on the keep page, the places hidden */
+  /* A link opened in a browser tab signs in and lands on the account. */
   const signedIn = (g) => !g.D.getElementById("tabs").hidden || !g.D.getElementById("keepCard").hidden;
   const tap = async (g) => {
     g.D.getElementById("linkGo").click();
@@ -28113,8 +28128,8 @@ await (async () => {
       "the same tab reloaded inside two minutes still offers Continue at the link's address, never 'used already': "
         + JSON.stringify({ path: reload.W.location.pathname, msg: reload.D.getElementById("msg").textContent }));
     await tap(reload);
-    ok(signedIn(reload) && !reload.D.getElementById("keepCard").hidden && reload.st.posts.filter((p) => p.path === "/open-link").every((p) => p.nonce === kept),
-      "and Continue there opens the account, on the keep page in a tab, every question carrying the tab's nonce");
+    ok(signedIn(reload) && !reload.D.getElementById("tabs").hidden && reload.st.posts.filter((p) => p.path === "/open-link").every((p) => p.nonce === kept),
+      "and Continue there opens the account in the browser, every question carrying the tab's nonce");
   } finally { await new Promise((r) => setTimeout(r, 300)); reload.W.close(); }
   const stranger = await open(t2, "nonceZZZZZZZZZZZZZZZZZZZ", false);
   try {
@@ -28224,11 +28239,11 @@ await (async () => {
     D.getElementById("keepCopy").click();
     await until(() => st.clip.length);
     ok(st.minted.length === 1 && D.getElementById("keepCode").value === "H4TN 8XWC" && st.clip[0] === st.minted[0], "the fixture: the first opening mints and Copy copies that key");
-    D.getElementById("keepOut").click();
+    D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
     ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent)
       && D.getElementById("keepCard").hidden,
-      "signing out from the keep page forgets its code, and Copy has nothing to copy");
+      "signing out from This device forgets its code, and Copy has nothing to copy");
     D.getElementById("pw").value = passF;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     await until(() => D.getElementById("keepCode").value);
@@ -28429,7 +28444,7 @@ await (async () => {
     await until(() => D.getElementById("keepCode").value);
     D.getElementById("keepCopy").click();
     ok(st.minted.length === 1 && W.location.hash === "#" + st.minted[0], "the fixture: the keep page's key minted, and copied into the address");
-    D.getElementById("keepOut").click();
+    D.getElementById("lock").click();
     await until(() => st.logout);
     ok(!!st.logout && JSON.stringify(st.logout.handover) === JSON.stringify(st.minted),
       "Log out names every key this page minted, for the site to burn: " + JSON.stringify(st.logout && st.logout.handover && st.logout.handover.length));
@@ -28679,9 +28694,11 @@ await (async () => {
     pad.D.getElementById("pw").value = passD;
     pad.D.getElementById("f").dispatchEvent(new pad.W.Event("submit", { bubbles: true, cancelable: true }));
     await pad.until(() => !pad.D.getElementById("barw").hidden);
-    ok(!pad.D.getElementById("keepCard").hidden && /Open Salt Counter as an app/.test(pad.D.getElementById("keepHead").textContent)
-      && !pad.D.getElementById("keepIos").hidden && pad.D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3,
-      "and an iPad in a tab is shown the iPhone's steps and marks to open Salt Counter as an app");
+    ok(!pad.D.getElementById("keepCard").hidden && /Save Salt Counter to your Home Screen/.test(pad.D.getElementById("keepHead").textContent)
+      && !pad.D.getElementById("tabs").hidden && !pad.D.getElementById("keepIos").hidden
+      && pad.D.getElementById("thisDevice").contains(pad.D.getElementById("keepCard"))
+      && pad.D.getElementById("keepCard").querySelectorAll(".keepsteps svg.glyph").length === 3,
+      "and an iPad in a tab can use the account and open the optional install steps");
   } finally { pad.W.close(); }
 
   const droid = await drive(DROID, {});
@@ -29137,10 +29154,10 @@ await (async () => {
     /* S3 3.3: the link waits on its own page for Continue */
     for (let i = 0; i < 100 && d10.getElementById("linkGo").disabled; i++) await new Promise((r) => setTimeout(r, 30));
     d10.getElementById("linkGo").dispatchEvent(new dom10.window.Event("click", { bubbles: true }));
-    /* Step 1b: in a browser tab the signed-in page is the keep page and the places stay hidden; the saved app shows them */
-    for (let i = 0; i < 150 && d10.getElementById("tabs").hidden && d10.getElementById("keepCard").hidden; i++) await new Promise((r) => setTimeout(r, 100));
-    ok(!d10.getElementById("keepCard").hidden && d10.getElementById("tabs").hidden && d10.getElementById("gate").hidden,
-      "a reader landing on the link is signed in with one tap and nothing typed: the keep page is up, in a tab, and the door is gone");
+    /* Browser sessions show the account; installation remains optional. */
+    for (let i = 0; i < 150 && d10.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
+    ok(!d10.getElementById("tabs").hidden && d10.getElementById("gate").hidden,
+      "a reader landing on the link is signed in with one tap and can use the account in the browser");
     ok(posts10.includes("/open-link"), "and it got there by posting the token off its own address");
     ok(dom10.window.location.pathname === "/",
       "which the page has already forgotten: the address is rewritten, so a reload never presents a spent link");
@@ -32065,7 +32082,7 @@ await (async () => {
   const dom = new JSDOM(landingPage(u, "n52", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
-    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* the account opens only in the saved app */
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* exercise standalone app behavior */
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
@@ -32165,7 +32182,7 @@ await (async () => {
   const dom = new JSDOM(landingPage(u, "n53", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
-    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });   /* the account opens only in the saved app */
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeEventListener() {} });   /* exercise standalone app behavior */
     win.fetch = async (path, init) => {
       const p = String(path), m = (init && init.method) || "GET";
       const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders } : { ok: true };
@@ -41986,14 +42003,13 @@ await (async () => {
   } finally { W.close(); }
 })();
 
-section("S7 fix, Step 1b: no keep card leads Home or sits in This device, a new account and an account with an order both open on To pay then Needs you, and See all prices follows the first sizes");
+section("S7 fix: the optional install guide stays off Home, while new and ordered accounts lead with To pay then Needs you");
 await (async () => {
   /* S7-R5 of the stage 7 review (25 Sep 2026). In a browser tab the keep card stood above To pay now on every Home, so on a
      small phone Pay sat under the bar and Needs you, Coming up and Order again below the fold; the plan drew it first only
      on a new account's first Home (f02), whose sizes to start from come before See all prices, which stood above them.
-     Step 1b (his Q3 of 28 Sep 2026) retired the card from Home and This device: in the saved app, which these run as, a new
-     account and an account with an order both lead with To pay and then Needs you, and the keep page is a section of its own
-     the saved app never shows. */
+     The optional install guide belongs under This device and never Home: both installed and browser accounts lead with To
+     pay and then Needs you. */
   const { landingPage } = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { webcrypto } = await import("node:crypto");
@@ -42003,15 +42019,14 @@ await (async () => {
     products: [{ product: "salt", name: "Salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }, { q: 2, price: 200 }] }], soon: [] }));
   const past = [{ id: "20260921030000-aaaa", product: "salt", status: "acknowledged", qty: 1, total: 110, paid: 0, moved: 0, mode: "collect",
     delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [{ by: "desk", text: "Thursday.", at: "2026-09-22T02:00:00Z" }] }];
-  const open = async (fresh) => {
+  const open = async (fresh, saved = true) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f10", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
       live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
     const dom = new JSDOM(landingPage(u, "ns7f10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
-      /* the saved app: the account opens only there (Step 1b) */
-      win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+      win.matchMedia = (q) => ({ matches: saved && /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
       win.fetch = async (path) => { const p = String(path);
         const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders: fresh ? [] : past } : { ok: true };
         return { ok: true, status: 200, json: async () => j }; };
@@ -42031,20 +42046,20 @@ await (async () => {
     const c = col(D).split(",");
     const k0 = D.getElementById("keepCard");
     ok(c.indexOf("keepCard") < 0 && c.indexOf("payHead") >= 0 && c[c.indexOf("payHead") - 1] === "bull" && c.indexOf("hNeeds") === c.indexOf("payHead") + 1
-      && !!k0 && !k0.closest("#pHome") && !D.getElementById("thisDevice").contains(k0) && k0.hidden,
-      "a new account's Home leads with To pay then Needs you, and the keep card is in neither Home nor This device, hidden in the saved app: " + JSON.stringify(col(D)));
+      && !!k0 && !k0.closest("#pHome") && D.getElementById("thisDevice").contains(k0) && k0.hidden,
+      "a new account's Home leads with To pay then Needs you; its install guide stays under This device and is hidden in the saved app: " + JSON.stringify(col(D)));
     ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("payHead").querySelector(".salt-pill"),
       "and its one filled control, See all prices, follows the sizes to start from: " + JSON.stringify(D.getElementById("hAgain").textContent.slice(0, 120)));
   } finally { a.W.close(); }
-  const b = await open(false);
+  const b = await open(false, false);
   try {
     const { D } = b, c = col(D).split(",");
-    /* S7 merge (rule 3), Step 1b: the keep card is one element, a page of its own, in neither Home nor This device */
+    /* The optional install guide is under This device, not Home. */
     const k = D.getElementById("keepCard"), dev = D.getElementById("thisDevice");
     ok(c.indexOf("payHead") >= 0 && c.indexOf("hNeeds") === c.indexOf("payHead") + 1 && c.indexOf("keepCard") < 0
-      && !dev.contains(k) && !k.closest("#pHome") && k.hidden && D.querySelectorAll("#keepCard").length === 1
+      && dev.contains(k) && !k.closest("#pHome") && !k.hidden && D.querySelectorAll("#keepCard").length === 1
       && D.querySelector("#hNeeds [data-row]") && !D.getElementById("hPrices"),
-      "an account with an order has To pay and Needs you first, the keep card is in neither Home nor This device, and no See all prices: " + JSON.stringify(c));
+      "an account with an order has To pay and Needs you first, its optional install guide under This device, and no See all prices: " + JSON.stringify(c));
   } finally { b.W.close(); }
 })();
 
@@ -49119,5 +49134,280 @@ await (async () => {
     && line({ status: "placed", qty: 2 }) === "" && line({ status: "placed", qty: 2, wantBy: "<b>" }) === "",
     "the desk's card says the day and how far off while goods are still to go, and nothing once they have gone, on a closed order or with none: " + line({ status: "placed", qty: 2, moved: 0, wantBy: t }));
 })();
+
+section("Step 2 (30 Sep 2026): the first handover of an order with a wanted day redates its row to the handover's day, the order's key following");
+await (async () => {
+  /* The Pending row stays on the acknowledgement's day; the first later handover moves it on its own Correction.
+     The key follows, later stages wait, rejection restores the old key, and offering again moves it once more. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the redate was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const E = (await import("../engine/position.mjs")).default;
+  const { rejectedOnOrder, tellSite, handoverEntry, closeEntry } = await import("../src/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  let hideRedateDraft = false;
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { if (hideRedateDraft && sql.includes('"redate":true')) return null; const r = st.get(...a); return r === undefined ? null : r; },
+      all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CW4-AB", U1 = "abcd-efgh";
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], profileRule: { smallUpTo: 1, bigFrom: 3 },
+    byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 } }, inputs: null, sizes: [1, 2] } } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const addRow = (doc) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(doc));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) addRow({ rid: "s8" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  setState("roster", [C1]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [];
+  const quiet = async (fn) => { const real = console.log; console.log = () => {}; try { return await fn(); } finally { console.log = real; } };
+  const call = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil(p) { tails.push(p); } });
+    const j = await r.json();
+    await quiet(() => Promise.all(tails.splice(0)));
+    return { status: r.status, j };
+  };
+  const kl = (n) => new Date(Date.now() + n * 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const today = kl(0), D2 = kl(-2), W5 = kl(5);
+  const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
+  const ackAt = new Date(Date.now() - 2 * 864e5).toISOString();
+  const base = { id: "o1", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", wantBy: W5,
+    ledgerKey: C1 + "|" + D2 + "|100", history: [{ status: "acknowledged", by: "desk", at: ackAt }], queued: { ack: ackAt } };
+  const hv = (o, day) => handoverEntry(Object.assign({}, base, o, { movedOn: day || today }), C1, 1, new Date());
+  const first = hv({}), noWant = hv({ wantBy: undefined }), later = hv({ queued: { ack: ackAt, moved: 0.5 } }), sameDay = hv({}, D2),
+    moved = hv({ ledgerKey: C1 + "|" + kl(-1) + "|100" });
+  ok(first.redate === true && first.payload.fields.date === today && first.payload.orderKey === base.ledgerKey
+    && first.payload.note === "1 unit collected for order o1, its first handover, so the row moves from " + D2 + " to " + today + ".",
+    "the first later handover moves the row's day and names both days in its note: " + JSON.stringify({ fields: first.payload.fields, note: first.payload.note }));
+  ok(!noWant.redate && !("date" in noWant.payload.fields), "an order with no wanted day keeps its acknowledgement's day: " + JSON.stringify(noWant.payload.fields));
+  ok(!later.redate && !("date" in later.payload.fields), "a later handover never moves the day again: " + JSON.stringify(later.payload.fields));
+  ok(!sameDay.redate && !moved.redate && !("date" in moved.payload.fields),
+    "a handover on the acknowledgement's day moves nothing, and a row already off that day is never moved twice: " + JSON.stringify([sameDay.payload.fields, moved.payload.fields]));
+  const cl = closeEntry(Object.assign({}, base, { qty: 0.5, total: 50, moved: 0.5, movedOn: today, closed: { at: today, qty: 1, total: 100 } }), C1, new Date());
+  ok(cl.redate === true && cl.payload.fields.date === today && / so the row moves from /.test(cl.payload.note),
+    "a close that is the first handover redates the row too: " + JSON.stringify(cl.payload.fields));
+
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", place: "", unit: 100, total: 100, week: "", wantBy: W5 })).order;
+  const pvA = await call("/orders/" + a.id + "/preview", {});
+  const acA = await call("/orders/" + a.id + "/accept", { hash: pvA.j.hash });
+  const dA = db.prepare("SELECT row,status FROM draft WHERE status='approved' ORDER BY id DESC").get();
+  const rowA = Object.assign(dA ? JSON.parse(dA.row) : {}, { date: D2, rid: "s9w1" });
+  const oldKey = E.ovKey(rowA);
+  db.prepare("UPDATE draft SET row=?1 WHERE status='approved'").run(JSON.stringify(Object.assign(dA ? JSON.parse(dA.row) : {}, { date: D2 })));
+  const stored = JSON.parse(await skv.get("order:" + U1 + ":" + a.id));
+  stored.ledgerKey = oldKey;
+  stored.history = stored.history.map((h) => (h.status === "acknowledged" && h.by === "desk" ? Object.assign({}, h, { at: ackAt }) : h));
+  await skv.put("order:" + U1 + ":" + a.id, JSON.stringify(stored));
+  addRow(rowA);
+  setState("OPEN", { byKey: { [oldKey]: Object.assign(E.ledgerRow(rowA, "S", "salt"), { key: oldKey }) }, position: {} });
+  db.prepare("UPDATE draft SET committed_at=?1 WHERE status='approved'").run(new Date(Date.now() - 60000).toISOString());
+  db.prepare("UPDATE snapshot SET at=?1, v='v901' WHERE one=1").run(new Date().toISOString());
+
+  const hand = await call("/orders/" + a.id + "/handed", { qty: 1 });
+  const sH = await orderOf(a.id), newKey = E.ovKey(Object.assign({}, rowA, { date: today }));
+  const dH = db.prepare("SELECT id,entry,row,status FROM draft WHERE entry LIKE '%\"status\":\"Handover\"%' ORDER BY id DESC").get();
+  const eH = dH ? JSON.parse(dH.entry) : {}, rH = dH && dH.row ? JSON.parse(dH.row) : {};
+  ok(acA.j.approved === true && hand.j.ok === true && eH.redate === true && eH.payload.fields.date === today && eH.payload.orderKey === oldKey
+    && dH.status === "approved" && (rH.changes || []).some((c) => c.field === "date" && c.from === D2 && c.to === today) && sH.ledgerKey === newKey && sH.queued && sH.queued.redate === dH.id,
+    "the handover's Correction restates the row's day, is approved, and moves the order key: "
+    + JSON.stringify({ tap: hand.j.ok, fields: eH.payload && eH.payload.fields, changes: rH.changes, status: dH && dH.status, key: sH.ledgerKey, q: sH.queued }));
+
+  const qkey = "q:orders:" + dH.id;
+  await dkv.put(qkey, JSON.stringify({ device: "orders", updated: new Date().toISOString(), queue: [eH] }));
+  hideRedateDraft = true;
+  let cash;
+  try { cash = await call("/orders/" + a.id + "/cash", { amount: 40 }); }
+  finally { hideRedateDraft = false; await dkv.delete(qkey); }
+  ok(cash.j.ok === true && cash.j.preapproval && cash.j.preapproval.waits === true,
+    "cash tapped while the redate is only in the queue is previewed against the row as it will land: " + JSON.stringify(cash.j));
+
+  await quiet(() => tellSite(denv));
+  ok((await orderOf(a.id)).ledgerKey === newKey, "the return pass leaves the redate on its way alone: " + (await orderOf(a.id)).ledgerKey);
+  await rejectedOnOrder(denv, eH, new Date().toISOString());
+  ok((await orderOf(a.id)).ledgerKey === oldKey, "a rejected redate restores the old key: " + (await orderOf(a.id)).ledgerKey);
+  db.prepare("UPDATE draft SET status='rejected', decided_at=?1, decided_by='phone' WHERE id=?2").run(new Date().toISOString(), dH.id);
+  const again = await call("/orders/" + a.id + "/again", { stage: "move" });
+  ok(again.j.ok === true && (await orderOf(a.id)).ledgerKey === newKey,
+    "offering the redate again moves the key again: " + JSON.stringify({ ok: again.j.ok, error: again.j.error, key: (await orderOf(a.id)).ledgerKey }));
+  const cash2 = await call("/orders/" + a.id + "/cash", { amount: 60 });
+  ok(cash2.j.ok === true && cash2.j.preapproval && cash2.j.preapproval.waits === true,
+    "a later cash tap waits for the re-offered redate: " + JSON.stringify(cash2.j).slice(0, 300));
+})();
+
+section("Step 2 (30 Sep 2026): Home's Coming up pairs a pre-handover part with its redated order until the next publish");
+await (async () => {
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const run = async (liveAtIso) => {
+    const u = "abcd-efgh", pass = "fixture-pass-rdt1", ck = await C.contentKey("test-secret", u);
+    const movedDate = liveAtIso >= "2026-09-11" ? "2026-09-10" : "2026-09-08";
+    const coming = [{ date: "2026-09-07", rm: 110, product: "salt", qty: 1, toCome: 1, resale: false },
+      { date: movedDate, rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }];
+    const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 110, parts: coming } };
+    const list = await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T03:59:00Z", week: { monday: "2026-09-21", label: "21 Sep 2026" },
+      products: [{ product: "salt", unit: "unit", basis: "board", sizes: [{ q: 1, price: 110 }] }], soon: [] }));
+    const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, paid: 0, total: 110, history: [], msgs: [] };
+    const orders = [{ ...base, id: "oR", status: "done", moved: 1, movedOn: "2026-09-10", wantBy: "2026-09-12", at: "2026-09-08T03:00:00Z", rowOn: "2026-09-10",
+      history: [{ at: "2026-09-08T03:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-08T03:30:00Z", status: "acknowledged", by: "desk" },
+        { at: "2026-09-10T03:00:00Z", status: "acknowledged", by: "desk", note: "1 unit collected" }] },
+      { ...base, id: "oP", status: "placed", moved: 0, at: "2026-09-23T03:00:00Z" }];
+    const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-rdt1", prices: list,
+      env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      live: await C.encryptWith(ck, JSON.stringify({ at: liveAtIso, body: "<p>Live</p>", owed: 110, pay })) };
+    const dom = new JSDOM(landingPage(u, "nrdt1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path) => { const p = String(path);
+        const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
+        return { ok: true, status: 200, json: async () => j }; };
+    } });
+    const W = dom.window, D = W.document;
+    try {
+      D.getElementById("pw").value = pass;
+      D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
+      return [...D.querySelectorAll("#hComing .salt-inbox-row")].map((r) => r.getAttribute("data-row") || (r.querySelector(".salt-inbox-row__age") || {}).textContent.slice(0, 2));
+    } finally { W.close(); }
+  };
+  const before = await run("2026-09-09T01:00:00Z"), after = await run("2026-09-11T01:00:00Z");
+  ok(before.join() === "oP,07" && after.join() === "oP,07",
+    "before the next publish, the old part is paired and hidden; after it, the moved part and unrelated part remain paired: " + JSON.stringify([before, after]));
+})();
+
+section("29 Sep 2026: Cash received waits ten seconds on its card with Undo, and an Undo inside them sends nothing");
+await (async () => {
+  /* HIS DECISION OF 29 SEP 2026: the undo is before the send; leaving or hiding the page sends what is held. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    w.localStorage.setItem("saltWriteKey", "k-fixture");
+    w.setInterval = () => 96; w.clearInterval = () => {};
+    const timers = [], realST = w.setTimeout.bind(w);
+    w.setTimeout = (f, ms, ...a) => {
+      if (ms === w.eval("ORD_UNDO_MS")) { timers.push({ f, ms }); return 9000 + timers.length; }
+      return realST(f, ms, ...a);
+    };
+    w.clearTimeout = ((ct) => (h) => {
+      if (h > 9000 && h <= 9000 + timers.length) timers[h - 9001].off = true;
+      else ct(h);
+    })(w.clearTimeout.bind(w));
+    const base = { u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0, mode: "collect", history: [], msgs: [], payments: [] };
+    const orders = [Object.assign({ id: "c1", status: "ready", at: "2026-09-20T02:00:00.000Z", moved: 1, paid: 0, movedAt: "2026-09-24T01:00:00.000Z" }, base)];
+    const posts = [];
+    w.fetch = async (path, init) => {
+      const p = String(path), post = !!(init && init.method === "POST");
+      if (post) posts.push({ p, body: JSON.parse(init.body), keepalive: !!init.keepalive });
+      return { ok: true, status: 200, json: async () => (p === "orders" && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) }
+        : { ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) };
+    };
+    const D = w.document;
+    D.body.innerHTML = String(w.eval("tabOrders()"));
+    await w.eval("ordLoad(true)");
+    const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
+    const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => realST(r, 5)); };
+    ok(w.eval("ORD_UNDO_MS") === 10000, "the window is ten seconds");
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    const filled = [...card("c1").querySelectorAll("button.salt-pill")].map((b) => b.textContent.trim());
+    const line = (card("c1").querySelector(".ordhold") || {}).textContent || "";
+    ok(posts.length === 0 && timers.length === 1 && timers[0].ms === 10000, "a cash tap posts nothing yet, and waits ten seconds: " + JSON.stringify({ posts, timers: timers.length }));
+    ok(filled.join("|") === "Undo" && !card("c1").querySelector('button[data-ord="cash"]') && /^Cash received, RM 100: it goes in 10 s\. Undo sends nothing\.$/.test(line.trim()),
+      "the card holds Undo in the pill's place and says what goes and when: " + JSON.stringify({ filled, line }));
+    card("c1").querySelector("button[data-undo]").click();
+    await settle();
+    await w.eval("ordHoldFlush()");
+    await settle();
+    ok(posts.length === 0 && timers[0].off === true && JSON.stringify(Object.keys(w.eval("ORD_HOLD"))) === "[]"
+      && /^Undone: nothing was sent, and the order is as it was\.$/.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || "")
+      && !!card("c1").querySelector('button[data-ord="cash"]'),
+      "Undo inside the window sends nothing, then or later, says so, and restores the cash button: " + JSON.stringify(posts));
+    posts.length = 0;
+    card("c1").querySelector('button[data-cashopen="c1"]').click();
+    const inp = card("c1").querySelector('input[data-cashamt="c1"]'); inp.value = "40"; inp.oninput();
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    const typed = card("c1").querySelector('input[data-cashamt="c1"]'); if (typed) typed.value = "70";
+    ok(posts.length === 0 && timers.length === 2, "a custom cash figure is held too");
+    timers[1].f();
+    await settle();
+    ok(posts.length === 1 && posts[0].p === "orders/c1/cash" && posts[0].body.amount === 40 && posts[0].keepalive,
+      "expiry posts once with the figure shown at the tap, using keepalive: " + JSON.stringify(posts));
+    ok(/^Recorded: RM 40 in cash\./.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || ""),
+      "the order card says what it did after expiry");
+    posts.length = 0;
+    await w.eval("ordHoldFlush()");
+    await settle();
+    posts.length = 0;
+    card("c1").querySelector('button[data-cashopen="c1"]').click();
+    const zero = card("c1").querySelector('input[data-cashamt="c1"]'); zero.value = "0"; zero.oninput();
+    card("c1").querySelector('button[data-ord="cash"]').click();
+    await settle();
+    ok(timers.length === 2 && posts.length === 0 && /^That is not a figure above RM 0/.test((card("c1").querySelector('[data-msg="c1"]') || {}).textContent || ""),
+      "an invalid amount is refused immediately and is never held: " + JSON.stringify({ timers: timers.length, posts: posts.length }));
+    await w.eval("ordHoldFlush()");
+    await settle();
+  } finally {
+    await new Promise((r) => setTimeout(r, 200));
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("29 Sep 2026: a held cash tap flushes when the page hides or leaves");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const run = async (event) => {
+    const { w } = await openMaster();
+    try {
+      w.SALT_CLOUD = true;
+      w.localStorage.setItem("saltWriteKey", "k-fixture");
+      w.setInterval = () => 96; w.clearInterval = () => {};
+      const realST = w.setTimeout.bind(w), posts = [];
+      w.fetch = async (path, init) => {
+        const p = String(path), post = !!(init && init.method === "POST");
+        if (post) posts.push({ p, body: JSON.parse(init.body), keepalive: !!init.keepalive });
+        return { ok: true, status: 200, json: async () => (p === "orders" && !post
+          ? { ok: true, orders: [{ id: "c1", u: "abcd-efgh", code: "CC9-OKR", product: "salt", qty: 1, total: 100, delivery: 0,
+            mode: "collect", status: "ready", moved: 1, paid: 0, history: [], msgs: [], payments: [] }] }
+          : { ok: true, preapproval: { stage: "cash", waits: false, says: "Booked as it is drafted" } }) };
+      };
+      const D = w.document;
+      D.body.innerHTML = String(w.eval("tabOrders()"));
+      await w.eval("ordLoad(true)");
+      const button = () => D.querySelector('.ordcard[data-id="c1"] button[data-ord="cash"]');
+      const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => realST(r, 5)); };
+      button().click();
+      await settle();
+      ok(posts.length === 0, event + " leaves the cash tap held before the page event");
+      if (event === "visibilitychange") {
+        Object.defineProperty(D, "visibilityState", { value: "hidden", configurable: true });
+        D.dispatchEvent(new w.Event("visibilitychange"));
+      } else {
+        w.dispatchEvent(new w.Event("pagehide"));
+      }
+      await settle();
+      ok(posts.length === 1 && posts[0].p === "orders/c1/cash" && posts[0].body.amount === 100 && posts[0].keepalive,
+        event + " flushes the held cash tap at once with keepalive: " + JSON.stringify(posts));
+      await w.eval("ordHoldFlush()");
+      await settle();
+    } finally { try { w.close(); } catch (e) { /* best effort */ } }
+  };
+  await run("visibilitychange");
+  await run("pagehide");
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
