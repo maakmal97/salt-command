@@ -1,6 +1,6 @@
 {
- "v": "v968",
- "stamped": "01 Oct 2026, 18:37 KL",
+ "v": "v969",
+ "stamped": "01 Oct 2026, 23:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6047,6 +6047,16 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 01 OCT: 1 UNIT FOR RM110, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CC9-OKR, RM0 cash and 0 unit delivered, approved by the desk. The rate clears the floor of RM68.62 for 1 unit and sits under the ask of RM140 and the ceiling of RM180. CC9-OKR: 14 orders, median RM90 a unit, range RM5 to RM90, RM268 outstanding and 2 units on credit before this row, against a credit cap of 1, so he is already over it. Costed at RM56 a unit, the inventory's own cost, leaving RM54 on the goods at 49.1%. The drafter flagged the rate as 22.2% above his usual RM90; it is under the ask, so the figures answer the flag. Outstanding: RM110 and 1 unit undelivered.",
     "rid": "s222"
+   },
+   {
+    "customer": "CM6-PJ",
+    "qty": 3,
+    "total": 310,
+    "cash": 0,
+    "date": "2026-10-01",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 01 OCT: 3 UNITS FOR RM310, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM6-PJ from order 20261001150036-bxcmsq on the statements site, RM0 cash and 0 unit delivered, preapproved by phone. The total of RM310, RM103.33 a unit, clears the floor of RM205.87 for 3 units and sits under the ask of RM390 and the ceiling of RM530. CM6-PJ: 3 orders, median RM100 a unit, range RM90 to RM100, RM0 outstanding and 0 units on credit before this row, against a credit cap of 1. Costed at RM56 a unit, the inventory's own cost, leaving RM142 on the goods at 45.8%. The drafter raised no flag. Outstanding: RM310 and 3 units undelivered.",
+    "rid": "s223"
    }
   ],
   "contacts": [
@@ -6787,9 +6797,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-01T10:35:29.713Z",
+  "QUEUE_COMMITTED": "2026-10-01T15:02:32.115Z",
   "PRICING": {
-   "takenAt": "2026-10-01T10:37:07.801Z",
+   "takenAt": "2026-10-01T15:03:12.345Z",
    "sizes": [
     0.5,
     1,
@@ -6872,6 +6882,9 @@
     "CM4-SK": {
      "salt": "Platinum"
     },
+    "CM6-PJ": {
+     "salt": "Titanium"
+    },
     "CJ2-KUC": {
      "salt": "Gold"
     },
@@ -6885,9 +6898,6 @@
      "salt": "Gold"
     },
     "CI4-OKR": {
-     "salt": "Titanium"
-    },
-    "CM6-PJ": {
      "salt": "Titanium"
     },
     "CH6-SET": {
@@ -7358,6 +7368,22 @@
       "rare": true
      }
     },
+    "CM6-PJ": {
+     "salt": {
+      "name": "small and often",
+      "orders": 3,
+      "tenureDays": 41,
+      "sinceLastDays": 6,
+      "perMonth": 2.23,
+      "smallShare": 0.67,
+      "bigShare": 0.33,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CJ2-KUC": {
      "candy": {
       "name": "one-off",
@@ -7447,22 +7473,6 @@
       "bigShare": 0.33,
       "frequent": false,
       "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CM6-PJ": {
-     "salt": {
-      "name": "small and often",
-      "orders": 3,
-      "tenureDays": 41,
-      "sinceLastDays": 6,
-      "perMonth": 2.23,
-      "smallShare": 0.67,
-      "bigShare": 0.33,
-      "frequent": true,
-      "small": true,
       "bigger": false,
       "loyal": false,
       "rare": false
@@ -9040,6 +9050,56 @@
         1070
        ]
       ],
+      "CM6-PJ": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CJ2-KUC": [
        [
         0.5,
@@ -9241,56 +9301,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CM6-PJ": [
        [
         0.5,
         60
@@ -10824,6 +10834,28 @@
         450
        ]
       ],
+      "CM6-PJ": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CJ2-KUC": [
        [
         10,
@@ -10913,28 +10945,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CM6-PJ": [
        [
         10,
         130
@@ -11930,6 +11940,28 @@
         1500
        ]
       ],
+      "CM6-PJ": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CJ2-KUC": [
        [
         1,
@@ -12019,28 +12051,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CM6-PJ": [
        [
         1,
         60
@@ -12851,6 +12861,20 @@
         64
        ]
       ],
+      "CM6-PJ": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CJ2-KUC": [
        [
         1,
@@ -12908,20 +12932,6 @@
        ]
       ],
       "CI4-OKR": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CM6-PJ": [
        [
         1,
         8
@@ -13322,11 +13332,11 @@
      "cards": {}
     }
    },
-   "v": "v968"
+   "v": "v969"
   },
   "OPEN": {
-   "at": "2026-10-01T10:37:08.084Z",
-   "count": 11,
+   "at": "2026-10-01T15:03:12.506Z",
+   "count": 12,
    "byKey": {
     "CC9-OKR|2026-10-01|130|oil": {
      "d": "2026-10-01",
@@ -13357,6 +13367,20 @@
      "oweUnits": 1,
      "rid": "s222",
      "key": "CC9-OKR|2026-10-01|110"
+    },
+    "CM6-PJ|2026-10-01|310": {
+     "d": "2026-10-01",
+     "p": "CM6-PJ",
+     "dir": "S",
+     "q": 3,
+     "t": 310,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 310,
+     "oweUnits": 3,
+     "rid": "s223",
+     "key": "CM6-PJ|2026-10-01|310"
     },
     "CR3-DAM|2026-09-30|110": {
      "d": "2026-09-30",
@@ -13513,9 +13537,9 @@
      "free": 4.25,
      "owedOut": 9.5,
      "coverDays": 0.7,
-     "rate": 5.85,
+     "rate": 5.99,
      "owedToYou": 510,
-     "promised": 10.5,
+     "promised": 13.5,
      "short": 0
     },
     "oil": {
@@ -13570,13 +13594,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v968"
+   "v": "v969"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v968"
+   "v": "v969"
   }
  }
 }
