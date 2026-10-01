@@ -8622,7 +8622,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v972","d":"02 Oct 2026","t":"ONE PENDING SALT ORDER FOR CI4-OKR; THE SHELF DOES NOT MOVE","n":["<b>ONE ROW FOLDED.</b> A pending salt sell for CI4-OKR, 2 units for RM210, dated 02 Oct 2026, from order 20261001165601-ussata. Nothing was paid and nothing handed over, so it books no revenue and draws no stock.","<b>UNUSUAL:</b> the rate of RM105 a unit is above the party's median of RM92.5, which the drafter flagged. It sits well under the ask for the size. The inventory does not move: stock stays at 10.75 units and the cost basis at RM56 a unit."]}];
+const evolution=[{"v":"v973","d":"02 Oct 2026","t":"BROWSER ICON AND ANALYSIS REVIEW","n":["<b>BROWSER ICON.</b> A same-origin PNG icon is linked for browser tabs.","<b>ANALYSIS REVIEW.</b> Potential correction warnings can be dismissed on this device after confirmation and restored later. Ledger rows and dated correction history remain unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -8768,7 +8768,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Oct 2026, 00:57 KL';
+const LAST_UPDATED='02 Oct 2026, 01:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

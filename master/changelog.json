@@ -1,5 +1,14 @@
 [
  {
+  "v": "v973",
+  "d": "02 Oct 2026",
+  "t": "BROWSER ICON AND ANALYSIS REVIEW",
+  "n": [
+   "<b>BROWSER ICON.</b> A same-origin PNG icon is linked for browser tabs.",
+   "<b>ANALYSIS REVIEW.</b> Potential correction warnings can be dismissed on this device after confirmation and restored later. Ledger rows and dated correction history remain unchanged."
+  ]
+ },
+ {
   "v": "v972",
   "d": "02 Oct 2026",
   "t": "ONE PENDING SALT ORDER FOR CI4-OKR; THE SHELF DOES NOT MOVE",
