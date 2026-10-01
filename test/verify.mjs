@@ -7902,7 +7902,7 @@ await (async () => {
   /* the mark */
   ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 3, "the crystal is drawn in the rail, in the bar and on the printed board (v537)");
   ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
-  ok(/<link rel="icon" href="data:image\/svg\+xml,[^>]*%2305080a[^>]*%23c5a059/.test(m472), "the favicon is the crystal in brass on obsidian");
+  ok(/<link rel="icon" type="image\/png" sizes="192x192" href="\/icon-192\.png">/.test(m472), "the browser favicon uses the 192px Salt icon");
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
@@ -45540,9 +45540,9 @@ await (async () => {
   const at = (x, lab) => x.rev[x.head.indexOf(lab)];
   const sumM = (x, labs) => labs.reduce((a, l) => a + (x.head.includes(l) ? at(x, l) : 0), 0);
   const s = v.salt;
-  ok(Math.abs(at(s, "Q3") - sumM(s, ["Jul", "Aug", "Sep"])) < 1.5 && Math.abs(at(s, "H2") - at(s, "Q3")) < 1.5
+  ok(Math.abs(at(s, "Q3") - sumM(s, ["Jul", "Aug", "Sep"])) < 1.5 && Math.abs(at(s, "H2") - (at(s, "Q3") + at(s, "Q4"))) < 1.5
      && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (at(s, "H1") + at(s, "H2"))) < 1.5,
-    "Q3 is July to September, H2 is Q3 so far, and CY is the two halves, read off the cells: " + JSON.stringify(s.rev));
+    "Q3 is July to September, H2 is Q3 plus Q4 to date, and CY is the two halves, read off the cells: " + JSON.stringify(s.rev));
   ok(s.rm === 0 && s.head[0] === "RM" && /\bfg-pm\b/.test(s.cls) && s.pold === Math.max(0, s.head.filter((h) => /^[A-Z][a-z]{2}( \d\d)?$/.test(h)).length - 3),
     "RM is said once in the corner and no figure cell repeats it, and a phone holds the latest three months: " + JSON.stringify({ rm: s.rm, pold: s.pold, cls: s.cls }));
   try { w.close(); } catch (e) { /* best effort */ }
