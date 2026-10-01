@@ -1,0 +1,77 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-01T15:22:21.047Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s223",
+    "qty": 3,
+    "total": 310,
+    "cash": 0,
+    "date": "2026-10-01",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 3
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-01"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CM6-PJ"
+   },
+   "reasoning": "Correction against CM6-PJ's order of 3 unit for RM 310 dated 2026-10-01 (s223). Sets deliveredQty from 0 to 3, deliveredOn from unset to 2026-10-01, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 3 unit goes out with RM 310 unpaid. Check it against CM6-PJ's credit cap."
+   ],
+   "amends": "s223",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-01T15:22:21.047Z",
+    "type": "SELL",
+    "party": "CM6-PJ",
+    "qty": 3,
+    "total": 0,
+    "status": "Handover",
+    "raw": "3 unit collected to CM6-PJ, order 20261001150036-bxcmsq, on 2026-10-01",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CM6-PJ",
+     "rid": null,
+     "orderKey": "CM6-PJ|2026-10-01|310",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-01",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 3,
+      "deliveredOn": "2026-10-01",
+      "handover": "collected"
+     },
+     "note": "3 unit collected for order 20261001150036-bxcmsq."
+    },
+    "orderId": "20261001150036-bxcmsq"
+   },
+   "decidedAt": "2026-10-01T15:22:23.827Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
