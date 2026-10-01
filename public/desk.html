@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ab3da0338fdd9a56";
+var SALT_BUILD_ID="96a1a22a6e3a566a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -135,9 +135,7 @@ var SALT_WAKE_MS=3000;
 })();
 </script>
 <!-- END cloud/PWA -->
-<!-- Inline salt-crystal icon. Declaring it stops the browser requesting /favicon.ico,
-     which is the 404 that otherwise appears in the server log on every load. -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2305080a'/%3E%3Cpath d='M50 12 84 29v34L50 80 16 63V29z' fill='none' stroke='%23c5a059' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M50 12v34l34-17M50 46 16 29M50 46v34' fill='none' stroke='%23c5a059' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M50 30 66 38 50 46 34 38z' fill='%23c5a059' opacity='.85'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <!-- Chart.js is NOT loaded here (v176). It used to sit in the head as a BLOCKING request
      to a CDN, so every open waited on the internet before the desk could run, and on a
      bad connection or none at all that wait was the whole delay. A vendored copy already
@@ -12139,6 +12137,34 @@ function anaHead(){
   return `<h1>Analysis</h1>
   <div class="dsc dsclead" style="margin-bottom:12px">The month read four ways: where the money goes, the board against what is paid, the inventory rebuilt, and whether buying in size got cheaper.</div>`;
 }
+let anCorrectionShowDeleted=false,anCorrectionMessage='';
+function anCorrectionDeleted(){
+  try{
+    const raw=localStorage.getItem('salt-analysis-correction-dismissed-v1');
+    if(!raw)return[];
+    const saved=JSON.parse(raw);
+    if(!Array.isArray(saved)||saved.some(k=>typeof k!=='string'))throw new Error('invalid saved list');
+    return [...new Set(saved)];
+  }catch(e){anCorrectionMessage='Could not read the saved correction review on this device.';return null;}
+}
+function anCorrectionKey(t,c,index){
+  const s=[t&&t.rid||'',c&&c.on||'',c&&c.field||'',c&&c.was||'',c&&c.now||'',c&&c.reads||'',c&&c.verdict||'',index||0].map(String).join('\0');
+  let h=2166136261;
+  for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);
+  return 'c'+(h>>>0).toString(36);
+}
+function anCorrectionChange(key,hide){
+  if(hide&&!confirm('Delete this warning from this device’s review? The ledger row and correction history will stay unchanged. You can restore it in Analysis.'))return;
+  const saved=anCorrectionDeleted();
+  if(saved===null){render();return;}
+  const next=hide?(saved.includes(key)?saved:saved.concat(key)):saved.filter(k=>k!==key);
+  try{
+    localStorage.setItem('salt-analysis-correction-dismissed-v1',JSON.stringify(next));
+    anCorrectionMessage=hide?'Warning deleted from this device’s review. The ledger is unchanged.':'Warning restored to this device’s review.';
+  }catch(e){anCorrectionMessage='Could not save the correction review on this device.';}
+  render();
+}
+function anCorrectionToggle(){anCorrectionShowDeleted=!anCorrectionShowDeleted;render();}
 function tabAnalysis(){
   const c=pxCost(),sg=pxSignals(),mk=pxMarket(),cv=coverStats();
   const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev);
@@ -12166,18 +12192,25 @@ function tabAnalysis(){
       const cl=modClaims(t,x[0]).filter(c=>c.verdict);
       if(!cl.length)return;
       seen.push(t);
-      cl.forEach(c=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c});});}));
+      cl.forEach((c,i)=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c,i:i});});}));
     if(!seen.length)return '';
     if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3></div>`;
-    return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
-      <div class="insight salt-insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
-      <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
-      ${bad.map(b=>`<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:NIL}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+    const saved=anCorrectionDeleted(),dismissed=new Set(saved||[]);
+    const removed=bad.filter(b=>dismissed.has(anCorrectionKey(b.t,b.c,b.i)));
+    const active=bad.length-removed.length;
+    const rows=anCorrectionShowDeleted?bad:bad.filter(b=>!dismissed.has(anCorrectionKey(b.t,b.c,b.i)));
+    return `<div class="pend def" style="margin-top:14px"><h3>Potential correction review <span class="cd crim">${active} active / ${removed.length} removed</span></h3>
+      <div class="insight salt-insight">These are potential mismatches against the row as it reads now. Open a row to review its correction history. Delete warning hides only this device’s review entry; the ledger row and dated history stay unchanged.</div>
+      ${anCorrectionMessage?`<div class="insight salt-insight" role="status" aria-live="polite">${esc(anCorrectionMessage)}</div>`:''}
+      ${removed.length?`<div style="margin-top:8px"><button type="button" class="ubtn" aria-pressed="${anCorrectionShowDeleted}" onclick="anCorrectionToggle()">${anCorrectionShowDeleted?'Hide':'Show'} removed warnings (${removed.length})</button></div>`:''}
+      ${rows.length?`<table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th><th class="l">Review</th></tr></thead><tbody>
+      ${rows.map(b=>{const key=anCorrectionKey(b.t,b.c,b.i),isRemoved=dismissed.has(key);return `<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:NIL}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
         <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
         <td class="l">${b.c.verdict==='unknown'
           ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
-          :'the row reads <b>'+esc(b.c.reads)+'</b>'}</td></tr>`).join('')}
-      </tbody></table></div>`;})()}
+          :'the row reads <b>'+esc(b.c.reads)+'</b>'}</td>
+        <td class="l"><button type="button" class="ubtn" aria-label="${isRemoved?'Restore':'Delete'} warning for ${esc(b.t.rid||'row')}" onclick="anCorrectionChange('${key}',${!isRemoved})">${isRemoved?'Restore warning':'Delete warning'}</button></td></tr>`;}).join('')}
+      </tbody></table>`:`<div class="insight salt-insight" style="margin-top:10px">No active warnings.</div>`}</div>`;})()}
 
   <h2 style="margin-top:20px">Where the money goes <span class="rule"></span></h2>
   <div class="chartbox"><canvas id="anBridge"></canvas></div>

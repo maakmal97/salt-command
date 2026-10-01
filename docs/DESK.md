@@ -130,6 +130,12 @@
 
 - **The rail** (v622): the destinations with no heading above them, and the open one's pages
   beneath it; a destination with one page lists nothing.
+- **The browser tab icon** is linked directly to the same-origin `icon-192.png`; the Apple
+  touch icon and manifest icons remain separate.
+- **Analysis correction review**: `unknown` and `differs` claims from `modClaims` are potential
+  mismatches, not proof of a bad ledger row. The row link opens its correction history. Delete
+  warning hides that finding in this device's review list only; Show removed warnings and Restore
+  bring it back. The ledger row and its dated history are never changed by these controls.
 - **`PROD`** (v625) is set only through `setProdView`, by the page's product switch, the
   single-book pages' badge and the Enter form's select, and is remembered on the device. A
   per-product page draws that product's detail alone, under a switch whose buttons carry every

@@ -786,6 +786,13 @@ await (async () => {
        and every assertion below silently passes against the app instead. */
     const html = readFileSync(join(REPO, "public", "desk.html"), "utf8");
     ok(html.includes("BEGIN cloud/PWA"), "PWA head block injected");
+    const browserIcons = html.match(/<link\b[^>]*\brel="icon"[^>]*>/g) || [];
+    const browserIcon = readFileSync(join(REPO, "public", "icon-192.png"));
+    ok(browserIcons.length === 1
+      && browserIcons[0] === '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">'
+      && browserIcon.subarray(0, 8).toString("hex") === "89504e470d0a1a0a"
+      && browserIcon.readUInt32BE(16) === 192 && browserIcon.readUInt32BE(20) === 192,
+    "the browser tab links the same-origin 192px PNG favicon, and that asset is a valid 192px PNG");
     /* SALT DESK (his Q6 of 28 Sep 2026): the desk installs as Salt Desk, the head's name for an iPhone and the manifest's
        name and short_name, while its tab keeps Salt Command, the anchor the head block is put after. The manifest is served
        cache first and sits outside the build id, so the shell cache moved with it, or no installed desk would read it */
@@ -11014,6 +11021,52 @@ await (async () => {
   ok(wrong[0].verdict === "differs" && wrong[0].reads === "CH6-TBC", "a re-key the row does not carry still differs");
   const odd = claims({ ...sale, mod: "corrected on 2026-08-26: colour red to blue" }, "SELL");
   ok(odd[0].verdict === "unknown", "a field no correction may set is still unknown");
+  try { w.close(); } catch (e) { }
+})();
+
+section("Analysis correction review: remove and restore warnings without changing ledger rows");
+await (async () => {
+  const { openMaster: omCR } = await import("../tools/payload.mjs");
+  const { w } = await omCR();
+  const setup = JSON.parse(String(w.eval(`(function(){
+    var t={rid:"review-fixture",date:"2026-08-07",customer:"CH4-KS",qty:1,total:100,cash:100,deliveredQty:1,
+      mod:"corrected on 2026-08-28: party CH4-KS to CH4-KLS",amend:[{date:"2026-08-28",kind:"Correction"}]};
+    sales.push(t);
+    if(typeof anCorrectionKey!=="function"||typeof anCorrectionChange!=="function"||typeof anCorrectionToggle!=="function")
+      return JSON.stringify({missing:true});
+    var claims=modClaims(t,"SELL"),i=claims.findIndex(function(x){return x.verdict==="unknown"||x.verdict==="differs";}),c=claims[i];
+    return t&&c?JSON.stringify({key:anCorrectionKey(t,c,i),row:JSON.stringify(t)}):JSON.stringify({fixture:true});
+  })()`)));
+  ok(!setup.missing, "Analysis exposes correction review controls");
+  if (setup.missing || setup.fixture) {
+    if (setup.fixture) ok(false, "the correction review fixture is available");
+    w.eval(`(function(){var i=sales.findIndex(function(x){return x.rid==="review-fixture";});if(i>=0)sales.splice(i,1);})()`);
+    try { w.close(); } catch (e) { }
+    return;
+  }
+  const key = setup.key;
+  const before = setup.row;
+  w.confirm = () => false;
+  w.eval(`anCorrectionChange(${JSON.stringify(key)},true)`);
+  let html = String(w.eval("tabAnalysis()"));
+  ok(html.includes(key) && !JSON.parse(String(w.eval("JSON.stringify(anCorrectionDeleted())"))).includes(key),
+    "cancelling Delete keeps the warning in the review");
+  w.confirm = () => true;
+  w.eval(`anCorrectionChange(${JSON.stringify(key)},true)`);
+  html = String(w.eval("tabAnalysis()"));
+  ok(!html.includes(key) && JSON.parse(String(w.eval("JSON.stringify(anCorrectionDeleted())"))).includes(key),
+    "confirmed Delete persists the warning's review-only dismissal");
+  ok(String(w.eval(`JSON.stringify(sales.find(function(x){return x.rid==="review-fixture";}))`)) === before,
+    "dismissing a warning leaves its ledger row and correction history unchanged");
+  w.eval("anCorrectionToggle()");
+  html = String(w.eval("tabAnalysis()"));
+  ok(html.includes(key) && html.includes("Restore warning"),
+    "Show deleted reveals a dismissed warning and its restore action");
+  w.eval(`anCorrectionChange(${JSON.stringify(key)},false)`);
+  html = String(w.eval("tabAnalysis()"));
+  ok(html.includes(key) && !JSON.parse(String(w.eval("JSON.stringify(anCorrectionDeleted())"))).includes(key),
+    "Restore returns the warning to the active review list");
+  w.eval(`(function(){var i=sales.findIndex(function(x){return x.rid==="review-fixture";});if(i>=0)sales.splice(i,1);localStorage.removeItem("salt-analysis-correction-dismissed-v1");})()`);
   try { w.close(); } catch (e) { }
 })();
 
