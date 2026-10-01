@@ -1,0 +1,59 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-01T15:02:32.115Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM6-PJ",
+    "qty": 3,
+    "total": 310,
+    "cash": 0,
+    "date": "2026-10-01",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261001150036-bxcmsq, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 3 unit of salt to CM6-PJ for RM 310, RM 103.33/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 142 on the goods at 45.8%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-01 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-01T15:02:32.115Z",
+    "type": "SELL",
+    "party": "CM6-PJ",
+    "qty": 3,
+    "total": 310,
+    "status": "Pending",
+    "raw": "SELL CM6-PJ 3 salt RM 310, nothing paid, nothing moved (order 20261001150036-bxcmsq)",
+    "orderKey": "CM6-PJ|2026-10-01|310",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM6-PJ",
+     "newId": null,
+     "date": "2026-10-01",
+     "qty": 3,
+     "total": 310,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261001150036-bxcmsq, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261001150036-bxcmsq",
+    "prepay": true
+   },
+   "decidedAt": "2026-10-01T15:02:33.981Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
