@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T07:54:07.165Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s225",
+    "qty": 1.5,
+    "total": 170,
+    "cash": 0,
+    "date": "2026-10-02",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1.5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-02"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Correction against CM4-MK's order of 1.5 unit for RM 170 dated 2026-10-02 (s225). Sets deliveredQty from 0 to 1.5, deliveredOn from unset to 2026-10-02, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CM4-MK typically pays about RM 101/unit for salt across 11 orders; this one is RM 113.33, 12.2% above that.",
+    "This is an ADVANCE: 1.5 unit goes out with RM 170 unpaid. Check it against CM4-MK's credit cap."
+   ],
+   "amends": "s225",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-02T07:54:07.165Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 1.5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1.5 unit delivered to CM4-MK, order 20261002052529-nhapeg, on 2026-10-02",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": null,
+     "orderKey": "CM4-MK|2026-10-02|170",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-02",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1.5,
+      "deliveredOn": "2026-10-02",
+      "handover": "delivered"
+     },
+     "note": "1.5 unit delivered for order 20261002052529-nhapeg."
+    },
+    "orderId": "20261002052529-nhapeg"
+   },
+   "decidedAt": "2026-10-02T07:54:10.212Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
