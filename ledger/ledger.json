@@ -1,6 +1,6 @@
 {
- "v": "v982",
- "stamped": "02 Oct 2026, 15:54 KL",
+ "v": "v983",
+ "stamped": "02 Oct 2026, 18:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6230,6 +6230,16 @@
      }
     ],
     "cost": 84
+   },
+   {
+    "customer": "CH5-KLC",
+    "qty": 0.5,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-10-02",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 02 OCT: 0.5 UNIT FOR RM90, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CH5-KLC from order 20261002100233-pj3p3g, acknowledged and preapproved by phone. The rate is RM180 a unit, above the floor of RM34.31 for 0.5 unit and level with the ask of RM90 for that size. CH5-KLC: median RM210 a unit over 3 orders, range RM150 to RM210, RM0 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter raised no flags. Outstanding: RM90 to collect and 0.5 unit to hand over.",
+    "rid": "s226"
    }
   ],
   "contacts": [
@@ -6970,9 +6980,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T07:54:07.165Z",
+  "QUEUE_COMMITTED": "2026-10-02T10:03:26.627Z",
   "PRICING": {
-   "takenAt": "2026-10-02T07:54:45.539Z",
+   "takenAt": "2026-10-02T10:04:03.494Z",
    "sizes": [
     0.5,
     1,
@@ -7088,6 +7098,9 @@
     "CZ6-WM": {
      "salt": "Platinum"
     },
+    "CH5-KLC": {
+     "salt": "Silver"
+    },
     "CA5-SEN": {
      "salt": "Silver"
     },
@@ -7106,9 +7119,6 @@
     },
     "CN5-TAI": {
      "salt": "Titanium"
-    },
-    "CH5-KLC": {
-     "salt": "Silver"
     },
     "CD4-CS": {
      "salt": "Silver"
@@ -7745,6 +7755,22 @@
       "rare": false
      }
     },
+    "CH5-KLC": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 2,
+      "tenureDays": 77,
+      "sinceLastDays": 27,
+      "perMonth": 0.79,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true
+     }
+    },
     "CA5-SEN": {
      "salt": {
       "name": "one-off",
@@ -7834,22 +7860,6 @@
       "bigShare": 0,
       "frequent": false,
       "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": true
-     }
-    },
-    "CH5-KLC": {
-     "salt": {
-      "name": "small and rare",
-      "orders": 2,
-      "tenureDays": 77,
-      "sinceLastDays": 27,
-      "perMonth": 0.79,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
       "bigger": false,
       "loyal": false,
       "rare": true
@@ -9773,6 +9783,56 @@
         1070
        ]
       ],
+      "CH5-KLC": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        330
+       ],
+       [
+        3,
+        390
+       ],
+       [
+        3.5,
+        440
+       ],
+       [
+        4,
+        490
+       ],
+       [
+        4.5,
+        540
+       ],
+       [
+        5,
+        590
+       ],
+       [
+        6.25,
+        700
+       ],
+       [
+        12.5,
+        1090
+       ]
+      ],
       "CA5-SEN": [
        [
         0.5,
@@ -10071,56 +10131,6 @@
        [
         12.5,
         1060
-       ]
-      ],
-      "CH5-KLC": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        210
-       ],
-       [
-        2,
-        270
-       ],
-       [
-        2.5,
-        330
-       ],
-       [
-        3,
-        390
-       ],
-       [
-        3.5,
-        440
-       ],
-       [
-        4,
-        490
-       ],
-       [
-        4.5,
-        540
-       ],
-       [
-        5,
-        590
-       ],
-       [
-        6.25,
-        700
-       ],
-       [
-        12.5,
-        1090
        ]
       ],
       "CD4-CS": [
@@ -11249,6 +11259,28 @@
         450
        ]
       ],
+      "CH5-KLC": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CA5-SEN": [
        [
         10,
@@ -11360,28 +11392,6 @@
        ]
       ],
       "CN5-TAI": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CH5-KLC": [
        [
         10,
         130
@@ -12355,6 +12365,28 @@
         1500
        ]
       ],
+      "CH5-KLC": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CA5-SEN": [
        [
         1,
@@ -12466,28 +12498,6 @@
        ]
       ],
       "CN5-TAI": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CH5-KLC": [
        [
         1,
         60
@@ -13188,6 +13198,20 @@
         64
        ]
       ],
+      "CH5-KLC": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CA5-SEN": [
        [
         1,
@@ -13259,20 +13283,6 @@
        ]
       ],
       "CN5-TAI": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CH5-KLC": [
        [
         1,
         8
@@ -13505,11 +13515,11 @@
      "cards": {}
     }
    },
-   "v": "v982"
+   "v": "v983"
   },
   "OPEN": {
-   "at": "2026-10-02T07:54:45.813Z",
-   "count": 12,
+   "at": "2026-10-02T10:04:03.918Z",
+   "count": 13,
    "byKey": {
     "CM4-MK|2026-10-02|170": {
      "d": "2026-10-02",
@@ -13527,6 +13537,20 @@
      "key": "CM4-MK|2026-10-02|170",
      "age": 0,
      "exp": 170
+    },
+    "CH5-KLC|2026-10-02|90": {
+     "d": "2026-10-02",
+     "p": "CH5-KLC",
+     "dir": "S",
+     "q": 0.5,
+     "t": 90,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 90,
+     "oweUnits": 0.5,
+     "rid": "s226",
+     "key": "CH5-KLC|2026-10-02|90"
     },
     "CC9-OKR|2026-10-01|110|oil": {
      "d": "2026-10-01",
@@ -13713,10 +13737,10 @@
      "free": -2.25,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.77,
+     "rate": 5.8,
      "owedToYou": 680,
-     "promised": 10.5,
-     "short": 3.25
+     "promised": 11,
+     "short": 3.75
     },
     "oil": {
      "name": "Oil",
@@ -13770,13 +13794,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v982"
+   "v": "v983"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v982"
+   "v": "v983"
   }
  }
 }

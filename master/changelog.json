@@ -1,5 +1,14 @@
 [
  {
+  "v": "v983",
+  "d": "02 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CH5-KLC; NOTHING MOVED",
+  "n": [
+   "<b>ONE ROW FOLDED, PENDING.</b> A sale of 0.5 unit of salt to CH5-KLC for RM90, order 20261002100233-pj3p3g, preapproved by phone. Nothing was paid and nothing handed over, so it books no revenue and draws no stock.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 7.25 units, costed at RM56 a unit. No lot landed, no count was taken in this fold and no amendment was made."
+  ]
+ },
+ {
   "v": "v982",
   "d": "02 Oct 2026",
   "t": "A CORRECTION DELIVERS 1.5 UNITS TO CM4-MK, STILL UNPAID",
