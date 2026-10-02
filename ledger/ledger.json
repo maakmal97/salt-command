@@ -1,6 +1,6 @@
 {
- "v": "v982",
- "stamped": "02 Oct 2026, 15:54 KL",
+ "v": "v987",
+ "stamped": "02 Oct 2026, 20:05 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 30
+    "stated": 20
    },
    "candy": {
     "qty": 0,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 7.25,
+  "STATED_STOCK": 6.25,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -6057,11 +6057,11 @@
     "customer": "CC9-OKR",
     "qty": 10,
     "total": 110,
-    "cash": 0,
+    "cash": 110,
     "handover": "delivered",
     "product": "oil",
     "date": "2026-10-01",
-    "deliveredQty": 0,
+    "deliveredQty": 10,
     "note": "<b>CORRECTION ON s221, 02 OCT: TOTAL RM130 TO RM110, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's oil order of 10 units dated 01 Oct. Only the total changes, from RM130 to RM110; no cash and no stock move. The new total clears the floor of RM78.65 for 10 units. CC9-OKR: median RM90 a unit, range RM5 to RM90, RM358 outstanding and 2 units on credit before this order; the dossier gives no cap. The dossier shows no cost for this row, so none is restated. The drafter raised no flags. Outstanding: the row still shows RM0 cash and 0 units moved, so RM110 is to collect. <b>OIL SELL DATED 01 OCT: 10 UNIT FOR RM130, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CC9-OKR at RM13 a unit, RM0 cash and 0 unit delivered, approved by the desk. The total clears the floor of RM78.65 for 10 unit and sits at the ask of RM130, under the ceiling of RM240. CC9-OKR: 13 orders, median RM90 a unit, range RM5 to RM90, RM138 outstanding and 2 units on credit before this row, against a credit cap of 10. His last oil row, s199 on 24 Sep, was also 10 unit for RM130, paid and collected. The drafter costed it at RM8 a unit but RM50 in all, so the cost needs checking. No flags raised. Outstanding: RM130 and 10 unit undelivered.",
     "rid": "s221",
     "mod": "corrected on 2026-10-02: total 130 to 110",
@@ -6079,16 +6079,25 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s221, 02 OCT: TOTAL RM130 TO RM110, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's oil order of 10 units dated 01 Oct. Only the total changes, from RM130 to RM110; no cash and no stock move. The new total clears the floor of RM78.65 for 10 units. CC9-OKR: median RM90 a unit, range RM5 to RM90, RM358 outstanding and 2 units on credit before this order; the dossier gives no cap. The dossier shows no cost for this row, so none is restated. The drafter raised no flags. Outstanding: the row still shows RM0 cash and 0 units moved, so RM110 is to collect."
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 10,
+      "note": "<b>FULFILMENT ON s221, 02 OCT: OIL, RM110 AND 10 UNITS MOVE, ORDER SETTLED IN FULL.</b> Decided by the desk for CC9-OKR's oil order of 10 units dated 01 Oct, which stood at RM110 after the correction of 02 Oct, RM0 paid and nothing moved. RM110 cash and 10 units move on 02 Oct. The dossier gives no floor or ask for this size, so the rate is not set against them. CC9-OKR: median RM90 a unit over 15 orders, range RM5 to RM90, RM338 outstanding and 2 units on credit before this, no defaults. The drafter flagged that this settles the order; the figures agree. Outstanding: nothing on this row."
      }
-    ]
+    ],
+    "deliveredOn": "2026-10-02",
+    "paidOn": "2026-10-02"
    },
    {
     "customer": "CC9-OKR",
     "qty": 1,
     "total": 90,
-    "cash": 0,
+    "cash": 90,
     "date": "2026-10-01",
-    "deliveredQty": 0,
+    "deliveredQty": 1,
     "note": "<b>CORRECTION ON s222, 02 OCT: TOTAL RM110 TO RM90, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's salt order of 1 unit dated 01 Oct. Only the total changes, from RM110 to RM90. The order now stands at RM90 a unit, which is the figure the party paid on s163 and s201, and the dossier gives no floor or ask for that size beyond what the original row quoted, so none is restated here. CC9-OKR: median RM90 a unit, range RM5 to RM110, RM378 outstanding and 2 units on credit before this order. The dossier gives no cap for this party, so credit against a cap is not stated. The row carries the inventory's own cost of RM56 a unit. The drafter raised no flags. Outstanding: RM0 cash and 0 units moved, so the full RM90 is still to collect and the unit is still to hand over. <b>SALT SELL DATED 01 OCT: 1 UNIT FOR RM110, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CC9-OKR, RM0 cash and 0 unit delivered, approved by the desk. The rate clears the floor of RM68.62 for 1 unit and sits under the ask of RM140 and the ceiling of RM180. CC9-OKR: 14 orders, median RM90 a unit, range RM5 to RM90, RM268 outstanding and 2 units on credit before this row, against a credit cap of 1, so he is already over it. Costed at RM56 a unit, the inventory's own cost, leaving RM54 on the goods at 49.1%. The drafter flagged the rate as 22.2% above his usual RM90; it is under the ask, so the figures answer the flag. Outstanding: RM110 and 1 unit undelivered.",
     "rid": "s222",
     "mod": "corrected on 2026-10-02: total 110 to 90",
@@ -6106,8 +6115,19 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s222, 02 OCT: TOTAL RM110 TO RM90, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's salt order of 1 unit dated 01 Oct. Only the total changes, from RM110 to RM90. The order now stands at RM90 a unit, which is the figure the party paid on s163 and s201, and the dossier gives no floor or ask for that size beyond what the original row quoted, so none is restated here. CC9-OKR: median RM90 a unit, range RM5 to RM110, RM378 outstanding and 2 units on credit before this order. The dossier gives no cap for this party, so credit against a cap is not stated. The row carries the inventory's own cost of RM56 a unit. The drafter raised no flags. Outstanding: RM0 cash and 0 units moved, so the full RM90 is still to collect and the unit is still to hand over."
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 90,
+      "kg": 1,
+      "note": "<b>FULFILMENT ON s222, 02 OCT: SALT, RM90 AND 1 UNIT MOVE, ORDER SETTLED IN FULL.</b> Decided by the desk for CC9-OKR's salt order of 1 unit dated 01 Oct, which stood at RM90 after the correction of 02 Oct and was pending with RM0 paid and nothing moved. RM90 cash and 1 unit move on 02 Oct. The dossier gives no floor or ask for this size, so the rate is not set against them. CC9-OKR: median RM90 a unit over 15 orders, range RM5 to RM90, RM338 outstanding and 2 units on credit before this, no defaults. The drafter flagged that this settles the order; the figures agree. Outstanding: nothing on this row.",
+      "cost": 56
      }
-    ]
+    ],
+    "deliveredOn": "2026-10-02",
+    "paidOn": "2026-10-02",
+    "cost": 56
    },
    {
     "customer": "CM6-PJ",
@@ -6230,6 +6250,43 @@
      }
     ],
     "cost": 84
+   },
+   {
+    "customer": "CH5-KLC",
+    "qty": 0.5,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-10-02",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 02 OCT: 0.5 UNIT FOR RM90, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CH5-KLC from order 20261002100233-pj3p3g, acknowledged and preapproved by phone. The rate is RM180 a unit, above the floor of RM34.31 for 0.5 unit and level with the ask of RM90 for that size. CH5-KLC: median RM210 a unit over 3 orders, range RM150 to RM210, RM0 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter raised no flags. Outstanding: RM90 to collect and 0.5 unit to hand over.",
+    "rid": "s226"
+   },
+   {
+    "customer": "CZ5-TM",
+    "qty": 1,
+    "total": 110,
+    "cash": 110,
+    "date": "2026-10-02",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 02 OCT: 1 UNIT FOR RM110, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CZ5-TM from order 20261002101739-dpvekq, acknowledged and preapproved by phone. The rate is RM110 a unit, above the floor of RM68.62 for 1 unit but below the ask of RM140. CZ5-TM: median RM110 a unit over 2 orders, range RM110 to RM110, RM0 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter raised no flags. Outstanding: RM110 to collect and 1 unit to hand over.",
+    "rid": "s227",
+    "amend": [
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>PAYMENT ON S227, 02 OCT: RM110 RECEIVED, 1 UNIT STILL TO HAND OVER.</b> Paid by CZ5-TM on order 20261002101739-dpvekq, by QR via Maybank, and preapproved by phone. The row moves cash from RM0 to RM110 and leaves the quantity moved at 0. The order was 1 unit for RM110, which is the rate CZ5-TM has paid throughout: median RM110 a unit, range RM110 to RM110. Before this payment CZ5-TM owed RM110 with 0 units on credit. The cost is the inventory's own, RM56 a unit. The drafter raised no flags. Outstanding: RM0 to collect and 1 unit to hand over."
+     }
+    ],
+    "paidOn": "2026-10-02"
    }
   ],
   "contacts": [
@@ -6718,7 +6775,7 @@
     "salt": "Ambassador"
    },
    "CZ5-TM": {
-    "salt": "Titanium",
+    "salt": "Ambassador",
     "oil": "Titanium"
    },
    "CA6-CYB": {
@@ -6970,9 +7027,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T07:54:07.165Z",
+  "QUEUE_COMMITTED": "2026-10-02T11:58:06.123Z",
   "PRICING": {
-   "takenAt": "2026-10-02T07:54:45.539Z",
+   "takenAt": "2026-10-02T12:05:39.529Z",
    "sizes": [
     0.5,
     1,
@@ -7085,8 +7142,15 @@
     "CF5-WM": {
      "salt": "Titanium"
     },
+    "CZ5-TM": {
+     "salt": "Ambassador",
+     "oil": "Titanium"
+    },
     "CZ6-WM": {
      "salt": "Platinum"
+    },
+    "CH5-KLC": {
+     "salt": "Silver"
     },
     "CA5-SEN": {
      "salt": "Silver"
@@ -7100,15 +7164,8 @@
     "CA6-CYB": {
      "salt": "Titanium"
     },
-    "CZ5-TM": {
-     "salt": "Titanium",
-     "oil": "Titanium"
-    },
     "CN5-TAI": {
      "salt": "Titanium"
-    },
-    "CH5-KLC": {
-     "salt": "Silver"
     },
     "CD4-CS": {
      "salt": "Silver"
@@ -7436,10 +7493,10 @@
     "CC9-OKR": {
      "salt": {
       "name": "small and often",
-      "orders": 7,
+      "orders": 8,
       "tenureDays": 85,
-      "sinceLastDays": 7,
-      "perMonth": 2.51,
+      "sinceLastDays": 1,
+      "perMonth": 2.86,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -7449,14 +7506,14 @@
       "rare": false
      },
      "oil": {
-      "name": "one-off",
-      "orders": 1,
+      "name": "large and regular",
+      "orders": 2,
       "tenureDays": 8,
-      "sinceLastDays": 8,
-      "perMonth": 1.01,
+      "sinceLastDays": 1,
+      "perMonth": 2.03,
       "smallShare": 0,
       "bigShare": 1,
-      "frequent": false,
+      "frequent": true,
       "small": false,
       "bigger": true,
       "loyal": false,
@@ -7729,6 +7786,22 @@
       "rare": false
      }
     },
+    "CZ5-TM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 3,
+      "tenureDays": 13,
+      "sinceLastDays": 0,
+      "perMonth": 3.04,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CZ6-WM": {
      "salt": {
       "name": "small and rare",
@@ -7743,6 +7816,22 @@
       "bigger": false,
       "loyal": false,
       "rare": false
+     }
+    },
+    "CH5-KLC": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 2,
+      "tenureDays": 77,
+      "sinceLastDays": 27,
+      "perMonth": 0.79,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true
      }
     },
     "CA5-SEN": {
@@ -7807,22 +7896,6 @@
       "rare": false
      }
     },
-    "CZ5-TM": {
-     "salt": {
-      "name": "small and often",
-      "orders": 2,
-      "tenureDays": 13,
-      "sinceLastDays": 3,
-      "perMonth": 2.03,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
     "CN5-TAI": {
      "salt": {
       "name": "one-off",
@@ -7834,22 +7907,6 @@
       "bigShare": 0,
       "frequent": false,
       "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": true
-     }
-    },
-    "CH5-KLC": {
-     "salt": {
-      "name": "small and rare",
-      "orders": 2,
-      "tenureDays": 77,
-      "sinceLastDays": 27,
-      "perMonth": 0.79,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
       "bigger": false,
       "loyal": false,
       "rare": true
@@ -8087,9 +8144,9 @@
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 187,
-        "kg": 480.2,
-        "mean": 2.5679
+        "n": 188,
+        "kg": 481.2,
+        "mean": 2.5596
        }
       },
       "policy": {
@@ -9723,6 +9780,56 @@
         1060
        ]
       ],
+      "CZ5-TM": [
+       [
+        0.5,
+        50
+       ],
+       [
+        1,
+        90
+       ],
+       [
+        1.5,
+        130
+       ],
+       [
+        2,
+        170
+       ],
+       [
+        2.5,
+        210
+       ],
+       [
+        3,
+        260
+       ],
+       [
+        3.5,
+        300
+       ],
+       [
+        4,
+        340
+       ],
+       [
+        4.5,
+        380
+       ],
+       [
+        5,
+        420
+       ],
+       [
+        6.25,
+        530
+       ],
+       [
+        12.5,
+        1050
+       ]
+      ],
       "CZ6-WM": [
        [
         0.5,
@@ -9771,6 +9878,56 @@
        [
         12.5,
         1070
+       ]
+      ],
+      "CH5-KLC": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        330
+       ],
+       [
+        3,
+        390
+       ],
+       [
+        3.5,
+        440
+       ],
+       [
+        4,
+        490
+       ],
+       [
+        4.5,
+        540
+       ],
+       [
+        5,
+        590
+       ],
+       [
+        6.25,
+        700
+       ],
+       [
+        12.5,
+        1090
        ]
       ],
       "CA5-SEN": [
@@ -9973,56 +10130,6 @@
         1060
        ]
       ],
-      "CZ5-TM": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
       "CN5-TAI": [
        [
         0.5,
@@ -10071,56 +10178,6 @@
        [
         12.5,
         1060
-       ]
-      ],
-      "CH5-KLC": [
-       [
-        0.5,
-        90
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        210
-       ],
-       [
-        2,
-        270
-       ],
-       [
-        2.5,
-        330
-       ],
-       [
-        3,
-        390
-       ],
-       [
-        3.5,
-        440
-       ],
-       [
-        4,
-        490
-       ],
-       [
-        4.5,
-        540
-       ],
-       [
-        5,
-        590
-       ],
-       [
-        6.25,
-        700
-       ],
-       [
-        12.5,
-        1090
        ]
       ],
       "CD4-CS": [
@@ -10486,15 +10543,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.42857142857142855
+         "v": 0.5
         }
        },
        "attrib": 1,
        "shrinkRate": 0.28057971014492755,
        "avgDel": {
-        "n": 14,
-        "kg": 191,
-        "mean": 13.6429
+        "n": 15,
+        "kg": 201,
+        "mean": 13.4
        }
       },
       "policy": {
@@ -11227,7 +11284,51 @@
         450
        ]
       ],
+      "CZ5-TM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CZ6-WM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
+      "CH5-KLC": [
        [
         10,
         130
@@ -11337,51 +11438,7 @@
         450
        ]
       ],
-      "CZ5-TM": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
       "CN5-TAI": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CH5-KLC": [
        [
         10,
         130
@@ -12333,7 +12390,51 @@
         1500
        ]
       ],
+      "CZ5-TM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CZ6-WM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
+      "CH5-KLC": [
        [
         1,
         60
@@ -12443,51 +12544,7 @@
         1500
        ]
       ],
-      "CZ5-TM": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
       "CN5-TAI": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CH5-KLC": [
        [
         1,
         60
@@ -13174,7 +13231,35 @@
         64
        ]
       ],
+      "CZ5-TM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CZ6-WM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
+      "CH5-KLC": [
        [
         1,
         8
@@ -13244,35 +13329,7 @@
         64
        ]
       ],
-      "CZ5-TM": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
       "CN5-TAI": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CH5-KLC": [
        [
         1,
         8
@@ -13505,10 +13562,10 @@
      "cards": {}
     }
    },
-   "v": "v982"
+   "v": "v987"
   },
   "OPEN": {
-   "at": "2026-10-02T07:54:45.813Z",
+   "at": "2026-10-02T12:05:39.924Z",
    "count": 12,
    "byKey": {
     "CM4-MK|2026-10-02|170": {
@@ -13528,35 +13585,33 @@
      "age": 0,
      "exp": 170
     },
-    "CC9-OKR|2026-10-01|110|oil": {
-     "d": "2026-10-01",
-     "p": "CC9-OKR",
+    "CH5-KLC|2026-10-02|90": {
+     "d": "2026-10-02",
+     "p": "CH5-KLC",
      "dir": "S",
-     "q": 10,
-     "t": 110,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 110,
-     "oweUnits": 10,
-     "pr": "oil",
-     "rid": "s221",
-     "handover": "delivered",
-     "key": "CC9-OKR|2026-10-01|110|oil"
-    },
-    "CC9-OKR|2026-10-01|90": {
-     "d": "2026-10-01",
-     "p": "CC9-OKR",
-     "dir": "S",
-     "q": 1,
+     "q": 0.5,
      "t": 90,
      "cash": 0,
      "mv": 0,
      "st": "part",
      "oweRM": 90,
+     "oweUnits": 0.5,
+     "rid": "s226",
+     "key": "CH5-KLC|2026-10-02|90"
+    },
+    "CZ5-TM|2026-10-02|110": {
+     "d": "2026-10-02",
+     "p": "CZ5-TM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 110,
+     "mv": 0,
+     "st": "oweStock",
      "oweUnits": 1,
-     "rid": "s222",
-     "key": "CC9-OKR|2026-10-01|90"
+     "rid": "s227",
+     "paidOn": "2026-10-02",
+     "key": "CZ5-TM|2026-10-02|110"
     },
     "CR3-DAM|2026-09-30|110": {
      "d": "2026-09-30",
@@ -13709,24 +13764,24 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 7.25,
-     "free": -2.25,
-     "owedOut": 9.5,
+     "onHand": 6.25,
+     "free": -4.25,
+     "owedOut": 10.5,
      "coverDays": 0,
-     "rate": 5.77,
+     "rate": 5.84,
      "owedToYou": 680,
-     "promised": 10.5,
-     "short": 3.25
+     "promised": 11,
+     "short": 4.75
     },
     "oil": {
      "name": "Oil",
-     "onHand": 30,
-     "free": 30,
+     "onHand": 20,
+     "free": 20,
      "owedOut": 0,
-     "coverDays": 10.7,
+     "coverDays": 7.2,
      "rate": 3.02,
      "owedToYou": 0,
-     "promised": 10,
+     "promised": 0,
      "short": 0
     },
     "candy": {
@@ -13770,13 +13825,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v982"
+   "v": "v987"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v982"
+   "v": "v987"
   }
  }
 }
