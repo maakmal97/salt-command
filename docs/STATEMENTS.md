@@ -2,10 +2,13 @@
 
 ## RETIRED, 21 Sep 2026, on his instruction
 
-**There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): the publish
-writes it into every record on every run, so it is never more than an hour behind the book, and the
-page opens on the whole account rather than a month. A monthly issue adds nothing to that, and a
-strip of issues says there is something to catch up on when there is not.
+**There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): each publish
+seals it into every real account record with the Desk build id both beside and inside the ciphertext.
+Before serving it, the Counter reads the Desk's authenticated `/stmt/rev` route and requires the
+published stamp to match. A mismatch says the statement is updating; an unavailable or invalid
+revision withholds it and says it could not be verified. The page opens on the whole account rather
+than a month. A monthly issue adds nothing to that, and a strip of issues says there is something to
+catch up on when there is not. Sealed issues and the invented test-account fixtures are unaffected.
 
 **So nothing runs on the first of the month.** `tools/make_statements.mjs` refuses to seal a NEW
 issue and says so; the routine below is kept because it is the only written account of how an issue
@@ -886,7 +889,8 @@ acknowledging, and the drafter flags it again when the row is queued.
 
 **The desk reads and moves orders through a service binding**, `STMT_SITE` in
 `wrangler.jsonc`, sending `STMT_DESK_KEY`, a secret the same on both Workers. The direction is
-desk to site only; the site has no binding, no key of the desk's and no route back. The
+desk to site for orders; the site's reverse `DESK` binding reads only `/stmt/rev` with the shared
+key to verify live statements, never the ledger or an order. The
 Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
@@ -1130,19 +1134,29 @@ touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on 
 published list stale, and v652, v654 and v655 each left the customers' pages on the lists sealed
 at v651 while the desk quoted something else. Both run after every step the ledger needs, so a
 fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
-seals the live statement into each of the newest issue's records under the content key, puts
+seals the live statement into each of the newest issue's records under the content key, stamps it
+with `public/rev.json`'s Desk build id, puts
 them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
 new set retires last month's**), and clears the attempt counters on a new issue only. **A failed
 read of the store's `issue` is not a fresh store** (27 Sep 2026): only wrangler's 404 is absent, a
 lapsed login is tried once more, and any other failure publishes as usual, clears no counter or
 older tick, and says why in a warning in wrangler's words, his answer, since stopping would fail
-the chain job and skip its suite. Without
-`STMT_KEY` in the cloud the records go up as issued and "Now" is simply absent; the step warns.
+the chain job and skip its suite. After the bulk write, every intended real account record is read back and compared in full; a
+missing or changed record makes the publish fail before the Desk's account map is updated. The
+Counter's `DESK` service binding and the Desk's `/stmt/rev` route use the existing `STMT_DESK_KEY`;
+either missing configuration, a failed read, or an invalid id withholds the live document. The Desk
+answers `GET /stmt/rev` before its human Access gate, since a service binding carries no owner JWT:
+that one path alone, keyed and read-only, so `REQUIRE_ACCESS` "1" never withholds every statement. A change
+to `wrangler.stmt.jsonc` needs its manual deploy. Without `STMT_KEY` in the cloud the records go up
+as issued and "Now" is simply absent; the step warns.
 `node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
 call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one
 list and one `kv bulk get`, falling back to a get per link, with a warning, when that open-beta
 command does not answer as text; and the three lists that feed only the retirement not at all
-under `--no-retire`. With eight links, the hourly run spawns nine where it spawned nineteen.
+under `--no-retire`. Every intended real account is verified by a separate bulk read, falling
+back to individual reads with a warning if the bulk read fails or has an invalid shape. With eight
+links and up to a hundred accounts, the hourly run spawns eleven processes, including the two
+test-account reads and the real-account verification.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
 the site does not exist until the store does. The one-time setup, in **Command Prompt** from
@@ -1287,8 +1301,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,
   so nothing is typed, and the trade is that an Access session there reads every account. The
-  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address, a
-  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Account
+  intended Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, a
+  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). Its policy must allow only
+  `maakmal97@icloud.com`; the Worker independently checks that email on `/all` and every `/all/*`
+  request. Customer routes outside `/all` keep their sign-in links, passkeys and one-time code.
+  This workstream changes code only; it does not verify or change live Access configuration.
+  **When the session lapses, Salt Account
   says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
   to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
   401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
@@ -1297,7 +1315,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie.
   It keeps the team's public keys per issuer and key id for an hour, and a key id it lacks fetches the
   certs once; the signature, issuer, audience and expiry are checked on every request, and `/all/refs`
-  takes the gate's verdict rather than verifying twice (the plan's 2.6). `roster` (codes
+  takes the gate's verdict rather than verifying twice (the plan's 2.6). The verified identity's
+  email is checked by the Worker; neither a customer account nor a caller-supplied email grants
+  Admin access. `roster` (codes
   beside usernames, never names) is written by the publish.
 - **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
   with no custom domain; the precedent is QR Command's application, and the verifier to copy is
@@ -1343,6 +1363,71 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Print a board** (v564) saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
   it, so the laptop has no username and no QR.
+
+## Counter Admin maker routes
+
+The `/all/maker/*` routes are part of the Access-gated Salt Account surface. The Counter Worker
+passes the identity object returned by `identity(request, env)` to `handleMaker`; the handler also
+requires the verified email to match `maakmal97@icloud.com`, trimmed and case-insensitive. No
+client-supplied identity header is read.
+
+The Maker place combines open site orders with pending Desk rows. Order Accept uses the Desk's
+existing preview-and-digest path; later handover, cash and Received actions use the existing
+order-stage functions. Ready and Decline use the Counter order book's `deskMove`. Desk draft
+decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
+checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`,
+`inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
+and `inputs/place`. They use the existing Position Engine constructors and drafter checks, go
+through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
+use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
+eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
+the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
+entries or unchecked notes; canonical timestamp/content makes a retry, including after a draft is
+committed. Counter notes are disabled because these specific paths cannot prove arbitrary prose is
+free of names and places. `GET inputs` returns the active-book and roster catalog, including open
+loans for repayment selection.
+
+The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
+envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
+derive codes and encrypt the name map on the device with the vault passphrase; the bridge receives
+only codes, role/parent metadata and `{v,salt,iv,ct}`. Map placement decrypts the places envelope
+on the device and sends only code-to-point pairs rounded to 0.01 degrees. Addresses and plaintext
+names are never sent to Counter or Desk. There is no generic entry writer or arbitrary queue
+forwarding on this bridge.
+
+The Counter's `DESK_MAKER` binding and the Desk's `/_internal/maker/` routes form a dedicated
+Counter-to-Desk capability. `COUNTER_MAKER_KEY` must be a high-entropy value of at least 32
+characters provisioned as a Wrangler secret on both Workers; it is neither `STMT_DESK_KEY` nor
+stored in config. The Desk matches the key in constant time, allowlists each method and path, and
+handles the private prefix before asset fallthrough. No arbitrary proxy or direct D1 path is
+available.
+
+Operating hours are stored in the Counter KV under `maker:hours`, in Kuala Lumpur time. `/hours`
+publishes only the open/closed status and timing; it contains no account data. A closed Counter
+still accepts customer orders, while the order form says acknowledgement may be delayed. Manual
+overrides expire within 14 days and may be cleared to resume the weekly schedule.
+
+Accounts > Order for them opens that customer's sealed current list on his device under the
+existing master wrap. It sends one priced size with the list digest and a request id to
+`POST /all/maker/customers/<username>/orders`. The server requires an existing account and the
+verified owner, uses `placeOrder` on the site's normal KV/Object road, and records `by: desk` in
+the initial history. A retry keeps its id. No passphrase or unchecked Admin note goes with the
+placement. A moved list is refused, not silently requoted; reopen the form to read it again.
+
+Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
+The replacement is checked against their own open order and carried over the private bridge to the
+atomic order book; missing bridge configuration fails closed.
+
+Desk Enter and Network remain available as decision-support surfaces. Counter now has the maker
+forms for New order/on-behalf ordering, stock count, sale/purchase, held-tier changes, borrow/lend,
+repayment, gift, reward redemption/oldest-advance offset, encrypted Add ID/Amend ID, and encrypted
+map placement. Existing customer order amendments use the customer's session at
+`POST /orders/<id>/amend`; the route is an atomic cancel-and-replace and refuses a lapsed session,
+identity/price fields, an acknowledged or reserved order, a stale sealed-list digest, replay, or a
+KV-only order store. Admin order review remains one flow for site orders and Desk drafts. Pricing is
+set only for one order at preview/Accept; no board price or `PRICE_SET` is written.
+The bridge binding/config is present in source, but live provisioning and deployment are still
+required before its Desk-backed actions work.
 
 ## Before committing
 

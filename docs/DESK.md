@@ -128,6 +128,33 @@
 
 ## The desk
 
+- **Counter maker bridge**: the owner works in Salt Account's Maker place. `/all/maker/*` is
+  dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
+  email; its handler receives that verified identity, not a request-supplied address. The Counter
+  uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
+  `/_internal/maker/drafts`, draft decisions, named order-stage actions, and typed
+  `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/loan`,
+  `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id` and
+  `inputs/place` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
+  encrypts names on the device before sending the sealed envelope, and placement opens the encrypted
+  places envelope on the device and sends only code-to-coordinate pairs rounded to 0.01 degrees.
+  The Desk Worker checks the key and each exact method/path before any asset handling; an unknown
+  path under `/_internal/maker/` is refused and never falls through to the desk page. It does not
+  proxy arbitrary paths or expose D1. Counts, trades, tiers, loans, repayments, gifts, redemptions,
+  IDs and placement use existing Position Engine constructors, active-book and roster checks, the
+  queue and the drafter; they wait for review. The Counter sends fixed fields only, never raw entries
+  or unchecked notes. Name and place prose is absent from the queue; the trade and ledger-input note
+  fields are disabled on Counter because those routes do not validate free text for name/place leaks.
+  Canonical request timestamps and content make a retry, not a second input.
+- **Bridge secret provisioning**: create one high-entropy value of at least 32 characters and
+  provision that same value as `COUNTER_MAKER_KEY` on both Workers, using the appropriate Wrangler
+  config for each. Never put the value in either config or source. `STMT_DESK_KEY` is a different
+  capability and remains Desk-to-Counter only.
+- **Operating hours**: Salt Account writes `maker:hours` in the Counter KV. The public `/hours`
+  route returns only the open/closed status and timing; its schedule uses Kuala Lumpur time.
+  Customers can still place orders while closed, and the order form tells them acknowledgement may
+  be delayed. A temporary open or closed override expires within 14 days; clearing it returns to
+  the weekly schedule.
 - **The rail** (v622): the destinations with no heading above them, and the open one's pages
   beneath it; a destination with one page lists nothing.
 - **The browser tab icon** is linked directly to the same-origin `icon-192.png`; the Apple
@@ -317,6 +344,24 @@ The build adds only a PWA head, a service worker, a device id and cloud-mode cop
 `30_Published`: `serve_desk.py` serves this repo's master on port 8766 for Names & IDs and writes
 `10_Data`, nothing else. Its sync passes were retired on 16 Sep 2026 (a fourth deployer, rule 8);
 `salt_sync.ps1` is dormant. `npm run dev` does the preview half better.
+
+## Desk Access boundary
+
+The Desk Worker has a fail-closed Access verifier, but the committed `REQUIRE_ACCESS` value remains
+`"0"` until its Cloudflare application is provisioned. The verifier accepts only an RS256 JWT whose
+signature matches the configured Access team's published key and whose issuer, audience and expiry
+are valid; it reads the Access assertion header or the `CF_Authorization` cookie, then requires the
+verified email to match `maakmal97@icloud.com` (case-insensitive). It does not trust a header by
+presence or a caller-supplied email. Invalid tokens and missing `ACCESS_TEAM` or `ACCESS_AUD` fail
+closed when `REQUIRE_ACCESS` is enabled.
+
+Before enabling it, create a Cloudflare Access application for the Desk Worker covering its Desk
+and API paths, with an Allow policy for that email only (not an IP allowlist). Put the Access team
+name and application's audience tag in `wrangler.jsonc`, set `REQUIRE_ACCESS` to `"1"`, and deploy
+the Wrangler config change by hand. Until those steps are completed and verified, protection is not
+live. The Counter's independent `/all` boundary applies the same verified-email check; customer
+routes outside `/all` remain on their existing sign-in paths. No live Access configuration or
+deployment is part of this workstream.
 
 ## Provisioning a sale (V5a, his answers of 29 Sep 2026)
 

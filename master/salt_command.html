@@ -4884,6 +4884,87 @@ return {qrMatrix:qrMatrix, qrSvg:qrSvg, qrRectSvg:qrRectSvg, qrRuns:qrRuns, QR_V
  * Inlined into master/salt_command.html by `node tools/engine.mjs --sync`; CI proves the copy is
  * this file. See engine/pricing.mjs for the rules of the shape, which are the same here. */
 const POSITION_ENGINE=(function(){
+function stockCountEntry({at,product,date,qty}){
+  return {at,type:'COUNT',party:'stock count',qty,total:null,status:'count',
+    raw:'Stock count: '+qty+' unit '+product+' on hand on '+date,
+    payload:{mode:'count',product,direction:null,party:null,date,qty,total:null,cash:null,kg:qty,
+      assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}};
+}
+function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
+  handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,raw}){
+  const booking={customer:party};
+  if(direction==='SELL'&&assoc&&stream==='R2')bookR2(booking,'customer',assoc,downstream);
+  const state=txStat({total,qty,cash,delivery,deliveredQty:movedUnits});
+  const status=state.pay==='Paid'?'paid':state.pay==='Unpaid'?'unpaid':'partial';
+  return {at,type:direction,party:booking.customer,qty,total,status,
+    raw:raw===undefined?(direction==='SELL'?'Sell ':'Buy ')+qty+' unit '+product
+      +(direction==='SELL'?' to ':' from ')+booking.customer+' for RM'+total+' on '+date
+      +(delivery>0.009?' plus RM'+delivery+' delivery':'')+(freight>0.009?' plus RM'+freight+' freight':'')
+      +(handover?', '+handover:'')+', RM'+cash+' cash, '+movedUnits+' unit moved → '+state.order
+      +(assoc?(stream==='R2'?' (R2 via ':' (R3 referred by ')+assoc+')':'')
+      +(downstream?', end buyer '+downstream:''):raw,
+    payload:{mode:'new',product,direction,party,newId:null,date,qty,total,delivery,freight,cash,
+      kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
+      handover,second,more,coverFree}};
+}
+function tierSetEntry({at,tiers,raw}){
+  const codes=Object.keys(tiers),copied={};
+  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
+    const t=tiers[c][p];copied[c][p]=t&&typeof t==='object'?Object.assign({},t):t;
+  });});
+  const say=t=>t==null?'not set':typeof t==='string'?t:['small','mid','big'].filter(k=>t[k]).map(k=>k+' '+t[k]).join(', ');
+  return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
+    raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
+    payload:{mode:'tierset',tiers:copied}};
+}
+function loanEntry({at,product,direction,party,date,form,amount}){
+  const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
+  return {at,type,party,qty:cash?null:amount,total:cash?amount:null,status:'open',
+    raw:cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
+    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date,
+    payload:{mode:'loan',form,product:cash?null:product,direction,party,date,qty:cash?null:amount,
+    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note:null}};
+}
+function repaymentEntry({at,loan,party,date,form,product,amount}){
+  const cash=form==='cash';
+  return {at,type:'REPAY',party,qty:cash?null:amount,total:cash?amount:null,status:'open',
+    raw:'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date,
+    payload:{mode:'repay',loan:loan.rid,party:loan.party,date,kg:cash?null:amount,rm:cash?amount:null,
+    qty:null,total:null,cash:null,note:null}};
+}
+function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null}){
+  return {at,type:'GIFT',party,qty,total:0,status:'inkind',
+    raw:'Give '+qty+' unit '+product+' free to '+party+' on '+date,
+    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note:null}};
+}
+function redeemEntry({at,product,party,date,qty,earned,applied,balance}){
+  return {at,type:'REDEEM',party,qty,total:0,status:'inkind',
+    raw:'Redeem '+qty+' free unit '+product+' for '+party+' on '+date,
+    payload:{mode:'redeem',product,party,qty,date,earned,applied,balance}};
+}
+function rebateOffsetEntry({at,party,date,sale,units,rm}){
+  return {at,type:'AMEND',party,qty:0,total:0,status:'inkind',
+    raw:'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind',
+    payload:{mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
+    orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
+      rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
+}
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null}){
+  return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
+    raw:'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''),
+    payload:{mode:'addid',code,kind,parent,rev,note:null,geo,tiers}};
+}
+function renameEntry({at,from,to,geo=null}){
+  return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
+    raw:'Amend ID: re-key '+from+' to '+to+' wherever the book names it',
+    payload:{mode:'rename',from,to,geo}};
+}
+function placeEntry({at,places}){
+  const codes=Object.keys(places);
+  return {at,type:'PLACE',party:null,qty:null,total:null,status:'place',
+    raw:'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '),
+    payload:{mode:'place',places}};
+}
 /* ---- the row helpers, verbatim from the desk ---- */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: THE PRICE AND THE CARRIAGE ARE SEPARATE ============
    "Please completely separate sell price and delivery price, from the ledger, enter, statement,
@@ -5916,7 +5997,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
@@ -23181,7 +23262,6 @@ function wbRecord(){
        Names & IDs, and the re-key to the proper code is queued from there. */
     else label=codeOf(party);   // the queue file is plaintext: codes only, never names
     const st=wbState(total,qty,cash,unitsD,{delivery:deliv});   // v728: what they owe is the goods and the carriage
-    const status=st.pay==='Paid'?'paid':st.pay==='Unpaid'?'unpaid':'partial';
     /* v620: planned again at the tap from the book as it stands, never carried over from the preview */
     const cp=(wbDir==='SELL'&&!isR2&&rewards(wbProdVal())&&wbEl('wbCover')&&wbEl('wbCover').checked)?coverPlan(party,qty,total):null;   // v728: the goods ARE the total
     /* v789: THE REFUSAL COMES BEFORE ANYTHING IS PUSHED, and it sits HERE for a reason found by
@@ -23223,14 +23303,13 @@ function wbRecord(){
       ok.innerHTML='Queued: '+units(qty)+' given free to '+esc(label)+'.';ok.style.color='var(--ok)';
       saveQueue();applyOverlay();render();qPost().catch(()=>{});return;
     }
-    queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
-      payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
-        date:date,qty:qty,total:total,delivery:deliv,freight:freight,cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
+    queue.push(POSITION_ENGINE.tradeEntry({at:new Date().toISOString(),product:wbProdVal(),direction:wbDir,party:party,
+        date:date,qty:qty,total:total,delivery:deliv,freight:freight,cash:cash,movedUnits:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,note:note||null,raw:raw,
         /* v728: A PURCHASE CARRIES ITS HANDOVER TOO. It was read only on a sale, so the select on the
            BUY pane was answered and thrown away; on a lot the word says whether HE fetched it, which
            is the same question and the thing the freight beside it answers to. */
         handover:hand,second:ra.second||null,
-        more:cp?{coverUnits:cp.kg,coverRM:cp.rm}:null,coverFree:cp?cp.free:null}});
+        more:cp?{coverUnits:cp.kg,coverRM:cp.rm}:null,coverFree:cp?cp.free:null}));
     /* v789, HIS INSTRUCTION OF 22 SEP 2026: A SECOND BOOK IS A SECOND TRANSACTION, SAME PARTY.
        Each extra book queued here shares the party, the date, the direction and the handover, and
        carries its OWN quantity, goods, cash and units moved. It goes through the SAME two guards the
@@ -23249,15 +23328,12 @@ function wbRecord(){
       const xr=replayAnswer(wbDir,xp,party,date,xq,xt,null);
       if(xr.fault){ok.innerHTML=esc(PRODUCTS[xp].name)+': '+xr.fault;ok.style.color='var(--crim)';return;}
       const xs=wbState(xt,xq,xc,xu,{});
-      queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:xq,total:xt,
-        status:xs.pay==='Paid'?'paid':xs.pay==='Unpaid'?'unpaid':'partial',
+      queue.push(POSITION_ENGINE.tradeEntry({at:new Date().toISOString(),direction:wbDir,party:party,product:xp,date:date,qty:xq,total:xt,
         raw:(wbDir==='SELL'?'Sell ':'Buy ')+units(xq)+' of '+PRODUCTS[xp].name.toLowerCase()
           +(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(xt)+' on '+date+(hand?', '+hand:'')
           +', '+fmt0(xc)+' cash, '+units(xu)+' moved → '+xs.state+(note?', '+note:''),
-        payload:{mode:'new',product:xp,direction:wbDir,party:party,newId:null,
-          date:date,qty:xq,total:xt,delivery:0,freight:0,cash:xc,kg:xu,assoc:null,stream:null,downstream:null,
-          kind:null,orderCode:null,linkTo:null,note:note||null,handover:hand,second:xr.second||null,
-          more:null,coverFree:null}});
+          delivery:0,freight:0,cash:xc,movedUnits:xu,assoc:null,stream:null,downstream:null,
+          note:note||null,handover:hand,second:xr.second||null,more:null,coverFree:null}));
       ['wbQty_','wbTotal_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='';});
       ['wbCash_','wbUnits_'].forEach(k=>{const e=wbEl(k+xp);if(e)e.value='0';});
     }
@@ -23408,8 +23484,7 @@ function wbRecord(){
     return;
   }else{
     const w=wbNum('wbCountUnits'),date=wbVal('wbCDate');
-    queue.push({at:new Date().toISOString(),type:'COUNT',party:'stock count',qty:w,total:null,status:'count',raw:'Stock count: '+units(w)+' '+wbProdName()+' on hand on '+date,
-      payload:{mode:'count',product:wbProdVal(),direction:null,party:null,date:date,qty:w,total:null,cash:null,kg:w,assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}});
+    queue.push(POSITION_ENGINE.stockCountEntry({at:new Date().toISOString(),product:wbProdVal(),date:date,qty:w}));
     const e=wbEl('wbCountUnits');if(e)e.value='';
   }
   /* fold it into the whole desk now, then re-fetch the status node: render()

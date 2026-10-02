@@ -13,6 +13,9 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
 import stmtWorker, { normUser } from "../stmt/worker.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount } from "../src/maker.js";
+import { handleMaker, publicHours } from "../stmt/maker.js";
+import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
@@ -57,9 +60,25 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
 /* C15 AND C13 (29 Sep 2026): THE COUNTER DRAWS THE LIVE DOCUMENT OR SAYS IT COULD NOT BE READ, never a sealed issue in its
    place. A page fixture whose bundle carries the one document it shows seals that document as the live one beside it. */
+const TEST_DESK_BUILD = "a".repeat(16);
+const testDeskRevision = (key, id = TEST_DESK_BUILD) => ({
+  STMT_DESK_KEY: key,
+  DESK: { async fetch(request) {
+    if (request.headers.get("X-Stmt-Desk") !== key) return new Response('{"ok":false}', { status: 401 });
+    return new Response(JSON.stringify({ ok: true, id }), { status: 200 });
+  } }
+});
 const asLive = async (C, ck, env) => {
   const s = (JSON.parse(await C.decryptWith(ck, env)).statements || [])[0];
-  return s ? Object.assign({ at: "2026-09-24T04:00:00Z" }, await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: s.body }))) : null;
+  const doc = { at: "2026-09-24T04:00:00Z", buildId: TEST_DESK_BUILD, body: s && s.body };
+  return s ? Object.assign({ at: doc.at, buildId: doc.buildId }, await C.encryptWith(ck, JSON.stringify(doc))) : null;
+};
+const sealCurrentLive = async (C, ck, doc) => {
+  const stamped = Object.assign({}, doc, { buildId: TEST_DESK_BUILD });
+  return {
+    liveStatus: "current",
+    live: Object.assign({ at: stamped.at, buildId: stamped.buildId }, await C.encryptWith(ck, JSON.stringify(stamped)))
+  };
 };
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
@@ -319,6 +338,87 @@ await (async () => {
 
   r = await worker.fetch(req("/vault"), armed(kv));
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
+})();
+
+/* ---- 1c. Worker: Cloudflare Access verifies the Desk identity --------------------- */
+section("Worker — verified Access identity");
+await (async () => {
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "desk-access-under-test", AUD = "desk-aud-under-test", KID = "desk-key";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") {
+        return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      }
+      throw new Error("the Desk Access gate fetched an unexpected URL: " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const mint = async (claims, key = kp.privateKey, kid = KID) => {
+      const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u(new Uint8Array(sig));
+    };
+    const good = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+      email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const env = { ...mkEnv(new KV(), "1"), ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const hit = (headers = {}, useEnv = env) => worker.fetch(req("/desk.html", { headers }), useEnv);
+    ok((await hit()).status === 401, "enabled Desk gate refuses requests without a JWT");
+    ok((await hit({ "cf-access-jwt-assertion": "not.a.jwt" })).status === 401,
+      "a present but malformed Access header is not identity");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, aud: ["another-app"] }) })).status === 401,
+      "the Desk rejects a validly signed token for another Access audience");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, iss: "https://another-team.cloudflareaccess.com" }) })).status === 401,
+      "the Desk rejects a validly signed token from another Access issuer");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, exp: Math.floor(Date.now() / 1000) - 5 }) })).status === 401,
+      "the Desk rejects an expired token");
+    const other = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    ok((await hit({ "cf-access-jwt-assertion": await mint(good, other.privateKey) })).status === 401,
+      "the Desk rejects correct claims signed by a key the Access team does not hold");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, email: "customer@example.test" }) })).status === 401,
+      "a different Access identity cannot open the Desk");
+
+    const authorized = await mint(good);
+    ok((await hit({ "cf-access-jwt-assertion": authorized })).status === 200,
+      "the configured team's valid signature, audience, expiry and owner email open the Desk");
+    ok((await hit({ cookie: "CF_Authorization=" + authorized })).status === 200,
+      "the Desk accepts the verified cookie used by browser requests");
+    ok((await hit({ "cf-access-jwt-assertion": authorized }, { ...env, ACCESS_TEAM: "" })).status === 401
+      && (await hit({ "cf-access-jwt-assertion": authorized }, { ...env, ACCESS_AUD: "" })).status === 401,
+      "an unset team or audience fails closed");
+    ok((await hit({}, { ...env, REQUIRE_ACCESS: "0" })).status === 200,
+      "the committed off setting remains off until Access is provisioned");
+
+    /* JOINT WITH THE LIVE STATEMENT GATE: the Counter's binding carries the shared key and no
+     * owner JWT. Under the real verifier it still reads the build id, and only that. */
+    const deskId = "c".repeat(16);
+    const revEnv = { ...env, STMT_DESK_KEY: "joint-desk-key",
+      ASSETS: { async fetch(r) {
+        return new URL(r.url).pathname === "/rev.json"
+          ? new Response(JSON.stringify({ id: deskId }), { status: 200 })
+          : assets.fetch(r);
+      } } };
+    const rev = (headers = {}, path = "/stmt/rev") => worker.fetch(req(path, { headers }), revEnv);
+    const keyed = await rev({ "X-Stmt-Desk": "joint-desk-key" });
+    const keyedBody = await keyed.json().catch(() => ({}));
+    ok(keyed.status === 200 && keyedBody.id === deskId,
+      "with the verified Access gate armed, the keyed Counter read of /stmt/rev answers with no owner JWT");
+    ok((await rev({ "X-Stmt-Desk": "wrong-desk-key" })).status === 401 && (await rev()).status === 401,
+      "with the verified Access gate armed, /stmt/rev refuses a wrong or missing shared key");
+    ok((await rev({ "cf-access-jwt-assertion": authorized })).status === 401,
+      "a verified owner JWT is not the Counter's key: /stmt/rev still needs X-Stmt-Desk");
+    ok((await rev({ "X-Stmt-Desk": "joint-desk-key" }, "/desk.html")).status === 401
+      && (await rev({ "X-Stmt-Desk": "joint-desk-key" }, "/stmt/other")).status === 401,
+      "the shared key opens neither the Desk nor any other /stmt/ path without a verified owner");
+    ok((await rev({ "X-Stmt-Desk": "joint-desk-key",
+      "cf-access-jwt-assertion": await mint({ ...good, email: "customer@example.test" }) }, "/desk.html")).status === 401,
+      "the shared key does not lift a non-owner Access identity onto the Desk");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 })();
 
 /* ---- 1f. The ledger store at /ledger, read only (v294) --------------------------- */
@@ -730,7 +830,8 @@ await (async () => {
   let r = await worker.fetch(postQ({ device: "d1", queue: [] }), mkEnv(kv, "1"));
   ok(r.status === 401, "REQUIRE_ACCESS=1 without Access header → 401");
   r = await worker.fetch(postQ({ device: "d1", queue: [] }, { "Cf-Access-Jwt-Assertion": "jwt" }), mkEnv(kv, "1"));
-  ok(r.status === 200, "REQUIRE_ACCESS=1 with Access header → 200");
+  ok(r.status === 401 && kv.m.size === 0,
+    "REQUIRE_ACCESS=1 rejects a malformed Access header without writing queue data");
 
   /* The gate fails closed on reads too. Access off at the dashboard must mean an
    * outage, not a world-readable ledger; the desk saw exactly that on 10-11 Aug. */
@@ -746,7 +847,8 @@ await (async () => {
   const pj = await r.json();
   ok(r.status === 401 && pj.ok === false, "REQUIRE_ACCESS=1: ping answers JSON {ok:false} so the desk degrades to held-locally");
   r = await worker.fetch(req("/some/page", { headers: { "Cf-Access-Jwt-Assertion": "jwt" } }), mkEnv(kv, "1"));
-  ok(r.status === 200 && (await r.text()) === "ASSET:/some/page", "REQUIRE_ACCESS=1 with Access header: assets served as normal");
+  ok(r.status === 401 && (await r.text()).includes("locked"),
+    "REQUIRE_ACCESS=1 rejects a malformed Access header before serving assets");
 
   const env = mkEnv(new KV());
   r = await worker.fetch(req("/menu/publish", { method: "POST", body: "{}" }), env);
@@ -1132,6 +1234,39 @@ await (async () => {
   const missing = { async fetch() { return new Response("nope", { status: 404 }); } };
   const r2 = await worker.fetch(req("/rev"), { ...env, ASSETS: missing });
   ok(r2.status === 404, "/rev answers 404 when no manifest is built, rather than throwing");
+
+  const deskBuild = "b".repeat(16);
+  const deskAssets = { async fetch() { return new Response(JSON.stringify({ id: deskBuild }), { status: 200 }); } };
+  const deskEnv = { ...env, ASSETS: deskAssets, STMT_DESK_KEY: "test-desk-key" };
+  const noDeskKey = await worker.fetch(req("/stmt/rev"), deskEnv);
+  ok(noDeskKey.status === 401, "the Counter's build-id route refuses a missing shared key");
+  const deskRevision = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), deskEnv);
+  const deskRevisionBody = await deskRevision.json();
+  ok(deskRevision.status === 200 && deskRevisionBody.ok && deskRevisionBody.id === deskBuild,
+    "the keyed Counter route returns only a valid Desk build id");
+  const invalidDeskRevision = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }),
+    { ...deskEnv, ASSETS: { async fetch() { return new Response('{"id":"short"}', { status: 200 }); } } });
+  ok(invalidDeskRevision.status === 503, "an invalid Desk build id is unavailable, not a freshness proof");
+
+  /* With the human Access gate armed, the Counter's binding carries the shared key and no
+   * owner JWT: it must still read the id, and nothing else may come past without the JWT. */
+  const armed = { ...deskEnv, REQUIRE_ACCESS: "1" };
+  const armedRev = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  const armedRevBody = await armedRev.json().catch(() => ({}));
+  ok(armedRev.status === 200 && armedRevBody.id === deskBuild,
+    "with Access required and no owner JWT, the keyed Counter build-id read still answers");
+  const armedWrong = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "wrong-desk-key" } }), armed);
+  ok(armedWrong.status === 401, "with Access required, a wrong shared key is refused");
+  const armedMissing = await worker.fetch(req("/stmt/rev"), armed);
+  ok(armedMissing.status === 401, "with Access required, a missing shared key is refused");
+  const armedPost = await worker.fetch(req("/stmt/rev", { method: "POST", headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedPost.status === 405, "with Access required, only GET reads the Counter build id");
+  const armedSibling = await worker.fetch(req("/stmt/other", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedSibling.status === 401, "the exception is /stmt/rev alone, never the rest of /stmt/");
+  const armedDesk = await worker.fetch(req("/desk", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedDesk.status === 401, "with Access required, the desk itself still refuses a caller with no owner JWT");
+  const armedRevPublic = await worker.fetch(req("/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedRevPublic.status === 401, "with Access required, the shared key does not open the desk's own /rev");
 
   /* the service worker must never cache it */
   const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
@@ -8122,14 +8257,25 @@ await (async () => {
   const bundle = JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
     { issued: "2026-09-01", label: "01 Sep 2026", body: '<p class="who">CX0-AA</p>' }] });
   const envB = await C.encryptWith(ck, bundle);
-  const liveAt = "2026-09-03T06:20:00.000Z";
-  const liveB = Object.assign({ at: liveAt }, await C.encryptWith(ck, JSON.stringify({ at: liveAt, body: "<p>live CX0-AA</p>" })));
+  const liveAt = "2026-09-03T06:20:00.000Z", deskBuild = "c".repeat(16);
+  const liveDoc = { at: liveAt, buildId: deskBuild, body: "<p>live CX0-AA</p>" };
+  const liveB = Object.assign({ at: liveAt, buildId: deskBuild }, await C.encryptWith(ck, JSON.stringify(liveDoc)));
   ok((await C.decryptWith(ck, envB)).includes("CX0-AA") && !JSON.stringify(envB).includes("CX0-AA") && !envB.salt,
     "the content key seals and opens a document, with no salt because nothing is derived");
   const kv = new KV();
   const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: ver, wrap, wrapMaster, env: envB, live: liveB };
   await kv.put("u:" + un, JSON.stringify(rec));
-  const senv = { STMT: kv, STMT_MASTER: "master-pass" };
+  let deskRevisionAvailable = true, deskAuthOk = false;
+  const senv = {
+    STMT: kv, STMT_MASTER: "master-pass", STMT_DESK_KEY: "test-desk-key",
+    DESK: { async fetch(request) {
+      deskAuthOk = new URL(request.url).pathname === "/stmt/rev"
+        && request.headers.get("X-Stmt-Desk") === "test-desk-key";
+      return deskRevisionAvailable
+        ? new Response(JSON.stringify({ ok: true, id: deskBuild }), { status: 200 })
+        : new Response('{"ok":false}', { status: 503 });
+    } }
+  };
   const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
   const open = (body) => sreq("/open", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
@@ -8161,8 +8307,11 @@ await (async () => {
 
   r = await stmtWorker.fetch(open({ u: un, password: pw }), senv);
   const j = await r.json();
-  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live && j.byMaster === false,
+  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live
+    && j.liveStatus === "current" && j.byMaster === false,
     "the right username and password return the record: wrap, envelope and live document");
+  ok(deskAuthOk && j.live.buildId === deskBuild,
+    "the live document is returned only after a keyed read of the Desk build id");
   /* THE MASTER WRAP NEVER TRAVELS TO A CUSTOMER (04 Sep 2026 audit). It is his content key sealed
      under STMT_MASTER, so handing it to every customer every month was handing out a self-verifying
      offline crack target against the one passphrase that opens every account: an auditor recovered
@@ -8171,9 +8320,21 @@ await (async () => {
   ok(j.wrapMaster == null,
     "and NOT the master wrap, which would be an offline crack target against every account at once");
   const ckOut = await C.unwrapKey(pw, j.wrap);
+  const openedLive = JSON.parse(await C.decryptWith(ckOut, j.live));
   ok(JSON.parse(await C.decryptWith(ckOut, j.env)).statements[0].body.includes("CX0-AA")
-    && JSON.parse(await C.decryptWith(ckOut, j.live)).body.includes("live CX0-AA"),
+    && openedLive.body.includes("live CX0-AA") && openedLive.buildId === deskBuild,
     "and the password unwraps the key that opens both the bundle and the live statement");
+  const accountRequest = () => sreq("/account", { headers: { "X-Stmt-Session": j.session } });
+  await kv.put("u:" + un, JSON.stringify({ ...rec, live: { ...liveB, buildId: "d".repeat(16) } }));
+  const staleStatement = await (await stmtWorker.fetch(accountRequest(), senv)).json();
+  ok(staleStatement.live === null && staleStatement.liveStatus === "updating",
+    "a live statement stamped with an older Desk build is withheld as updating");
+  await kv.put("u:" + un, JSON.stringify(rec));
+  deskRevisionAvailable = false;
+  const unavailableStatement = await (await stmtWorker.fetch(accountRequest(), senv)).json();
+  ok(unavailableStatement.live === null && unavailableStatement.liveStatus === "unavailable",
+    "an unavailable Desk revision withholds the live statement and reports its state");
+  deskRevisionAvailable = true;
   ok((await stmtWorker.fetch(open({ u: un.toUpperCase(), password: pw }), senv)).status === 200,
     "a username typed in capitals is the same username");
   /* THE PASSWORD IS FORGIVEN ITS HYPHENS AND ITS CASE (06 Sep 2026): the page groups the symbols as
@@ -8383,6 +8544,14 @@ await (async () => {
       && await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_TEAM: "" }) === 401,
       "and with either variable unset the route fails closed, so it deploys before the application exists");
 
+    const nonAdmin = await mint({ ...good, email: "customer@example.test" });
+    ok(await st({ "cf-access-jwt-assertion": nonAdmin }) === 401,
+      "a valid Access identity with another email cannot enter the Admin surface");
+    ok((await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sheet", {
+      headers: { "cf-access-jwt-assertion": nonAdmin }
+    }), oenv)).status === 401,
+    "the same email check guards Admin APIs below /all, not only its page");
+
     const opened = await hit({ "cf-access-jwt-assertion": await mint(good) });
     const ohtml = await opened.text();
     ok(opened.status === 200 && /id="roster"/.test(ohtml),
@@ -8393,6 +8562,8 @@ await (async () => {
       "and the master reaches the page, which is what lets a tap open an account with nothing typed");
     ok((await hit({ cookie: "CF_Authorization=" + await mint(good) })).status === 200,
       "and the cookie is read as well as the header, because the page's own fetches carry only the cookie");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, email: "Maakmal97@Icloud.com" }) })).status === 200,
+      "email matching is case-insensitive for the one authorized identity");
 
     /* and none of it leaks onto the customer's door */
     const cust = await stmtWorker.fetch(new Request("https://k7m3p2.example/"), oenv);
@@ -8451,7 +8622,7 @@ await (async () => {
     const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     /* a token minted on the section's clock, so it is still in date after the clock moves an hour */
     const mint = async (kp, kid, iss = ISS, extra = {}) => {
-      const claims = { iss, aud: [AUD], email: "owner@keep.example", exp: Math.floor(Date.now() / 1000) + 7200, ...extra };
+      const claims = { iss, aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 7200, ...extra };
       const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
       const sig = await subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c));
       return h + "." + c + "." + b64u(new Uint8Array(sig));
@@ -9497,7 +9668,7 @@ await (async () => {
     /* THE LIVE STATEMENT (his instruction, 03 Sep 2026): every entry from the start to now,
        sealed into the record by the deploy after every fold under the same content key. */
     const { liveStatement, liveRecords } = await import("../tools/make_statements.mjs");
-    const { planPublish } = await import("../tools/stmt-publish.mjs");
+    const { planPublish, readDeskBuildId, verifyAccountWrites } = await import("../tools/stmt-publish.mjs");
     const now = new Date("2026-09-03T06:20:00Z");
     const lv = liveStatement(both.who, now, u);
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sep 2026 14:20/.test(lv.body)
@@ -9528,6 +9699,7 @@ await (async () => {
     ok(lr0.records.length === sep.made && lr0.live === 0 && lr0.records.every(x => !x.live),
       "without the key the records go up as issued and no live document is written");
 
+    const buildId = readDeskBuildId();
     const plan = await planPublish(root, "test-secret", now, ["u:" + u, "u:zzzz-zzzz", "fail:" + u, "fail:aaaa-aaaa"], null);
     ok(plan.puts.length === sep.made + 2 && plan.puts.some(p => p.key === "u:" + u) && plan.puts.some(p => p.key === "sheet")
       && plan.puts.some(p => p.key === "issue" && p.value === "2026-09-01"),
@@ -9540,6 +9712,25 @@ await (async () => {
       "a re-publish of the same issue, which every fold is, retires stale records but leaves the counters alone");
     ok(JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live.at === now.toISOString(),
       "and what it puts is the record with the live statement in it");
+    const plannedAccountRecords = plan.puts.filter(p => p.key.startsWith("u:"));
+    const completeReadback = new Map(plannedAccountRecords.map(p => [p.key, p.value]));
+    const completeCheck = verifyAccountWrites(plannedAccountRecords, completeReadback);
+    const partialReadback = new Map(completeReadback);
+    partialReadback.delete(plannedAccountRecords[0].key);
+    const partialCheck = verifyAccountWrites(plannedAccountRecords, partialReadback);
+    const changedReadback = new Map(completeReadback);
+    changedReadback.set(plannedAccountRecords[0].key, plannedAccountRecords[0].value + " ");
+    const changedCheck = verifyAccountWrites(plannedAccountRecords, changedReadback);
+    ok(completeCheck.ok && completeCheck.checked === plannedAccountRecords.length,
+      "a complete account-record read-back passes only after every intended record matches");
+    ok(plannedAccountRecords.length > 0 && !partialCheck.ok && partialCheck.missing === 1,
+      "a missing record in a partial bulk write fails the publisher's per-account check");
+    ok(!changedCheck.ok && changedCheck.mismatched === 1,
+      "a changed account record fails the publisher's exact read-back comparison");
+    const plannedLive = JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live;
+    const openedPlannedLive = JSON.parse(await C.decryptWith(ckB, plannedLive));
+    ok(plannedLive.buildId === buildId && openedPlannedLive.buildId === buildId,
+      "the Desk build id is stamped both beside and inside the encrypted live statement");
 
     /* A WRONG STMT_KEY IS CAUGHT BEFORE ANYTHING IS SEALED WITH IT (04 Sep 2026 audit). The content
        key is derived in the CLOUD from the deploy's secret; the record was sealed on the LAPTOP
@@ -18135,8 +18326,8 @@ await (async () => {
     } }).window;
     const D = win.document;
     const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
-    ok(places(".salt-appbar") === "needs,accounts,links,more" && places(".salt-rail") === "needs,accounts,links,more",
-      "four places, in the App bar and in the Desk rail the bar gives way to: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    ok(places(".salt-appbar") === "needs,accounts,links,maker,more" && places(".salt-rail") === "needs,accounts,links,maker,more",
+      "five places, including Maker, in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
     ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
@@ -21212,13 +21403,14 @@ await (async () => {
   const { JSDOM } = await import("jsdom");
   const { webcrypto } = await import("node:crypto");
   const u = "aaaa-bbbb", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), u);
+  const liveBuildId = TEST_DESK_BUILD, liveDoc = Object.assign({}, live, { buildId: TEST_DESK_BUILD });
   const answer = {
     ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01", "2026-08-01"], session: "s73s73s73s73s73s73s73s73",
-    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null,
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, liveStatus: "current",
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
       { issued: "2026-09-01", label: "1 September 2026", body: issueBody + "<p>ISSUE ONE</p>" },
       { issued: "2026-08-01", label: "1 August 2026", body: issueBody + "<p>ISSUE TWO</p>" }] })),
-    live: Object.assign({ at: live.at }, await C.encryptWith(ck, JSON.stringify(live)))
+    live: Object.assign({ at: live.at, buildId: liveBuildId }, await C.encryptWith(ck, JSON.stringify(liveDoc)))
   };
   const st = { key: 0, subs: 0, unsub: 0, subbed: false, logout: 0, rem: 0 };
   const dom = new JSDOM(landingPage(u, "n73", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
@@ -21336,7 +21528,10 @@ await (async () => {
   const { webcrypto } = await import("node:crypto");
   const u = "aaaa-cccd", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), u), other = await C.contentKey("8".repeat(64), u);
   const env = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "01 Sept 2026", body: "<p>ISSUE ONE</p>" }] }));
-  const sealLive = async (doc, key) => Object.assign({ at: doc.at }, await C.encryptWith(key, JSON.stringify(doc)));
+  const sealLive = async (doc, key) => {
+    const stamped = Object.assign({}, doc, { buildId: TEST_DESK_BUILD });
+    return Object.assign({ at: doc.at, buildId: TEST_DESK_BUILD }, await C.encryptWith(key, JSON.stringify(stamped)));
+  };
   const st = { open: [], account: [], orders: [] };
   const dom = new JSDOM(landingPage(u, "nC15", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
@@ -21355,8 +21550,8 @@ await (async () => {
   const W = dom.window, D = W.document;
   const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const answer = async (liveEnv) => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
-    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv });
+  const answer = async (liveEnv, liveStatus = "current") => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv, liveStatus });
   const signIn = () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
@@ -21388,24 +21583,41 @@ await (async () => {
     ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
       "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
     /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
-    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck) })];
+    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck), liveStatus: "current" })];
     D.querySelector('#out [data-unread] button').click();
     ok(await until(() => !!D.querySelector("#out .salt-lines")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
       "Try again opens the live document, and its overdue part holds ordering: " + JSON.stringify(head().slice(0, 120)));
     /* a later return whose live document will not open keeps the hold where it last stood */
-    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other) })];
+    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other), liveStatus: "current" })];
     D.dispatchEvent(new W.Event("visibilitychange"));
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
       "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
 
-    /* a record the publish wrote no live document for (no key there) waits for the next update, with nothing to try */
-    st.open = [async () => answer(null)];
+    /* a missing fresh publish is explicit and cannot fall back to a sealed issue */
+    st.open = [async () => answer(null, "updating")];
     signIn();
-    ok(await until(() => !!D.querySelector('#out [data-unread="acct.later"]')) && !D.querySelector("#out [data-unread] button")
-      && !/ISSUE/.test(vis()) && /after the next update/.test(head()),
-      "an account with issues and no live document says it shows after the next update, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.updating"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /live statement is updating/.test(head()),
+      "an account whose live document is not fresh says it is updating, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    st.open = [async () => answer(null, "unavailable")];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unavailable"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /could not be verified/.test(head()),
+      "an unavailable Desk revision is explicit, with no Try again and no issue as a fallback");
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    const innerStampMismatch = Object.assign({ at: live.at, buildId: TEST_DESK_BUILD },
+      await C.encryptWith(ck, JSON.stringify(Object.assign({}, live, { buildId: "f".repeat(16) }))));
+    st.open = [async () => answer(innerStampMismatch, "current")];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && !D.querySelector("#out .salt-lines"),
+      "a sealed live document whose inner stamp disagrees with its record is never drawn as current");
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
 
@@ -21421,7 +21633,7 @@ await (async () => {
     await until(() => !D.getElementById("gate").hidden);
 
     /* C13: a live document that opens is the whole account; the issue beside it is never drawn */
-    st.open = [async () => answer(await sealLive(live, ck))];
+    st.open = [async () => answer(await sealLive(live, ck), "current")];
     st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
     signIn();
     ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
@@ -21640,7 +21852,7 @@ await (async () => {
     wrap: await C90.wrapKey(pass90, ck90), wrapMaster: null, session: "",
     /* C13 and C15: the Counter draws the live document or nothing, so the document rides as the live one */
     env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })),
-    live: Object.assign({ at: "2026-09-24T04:00:00Z" }, await C90.encryptWith(ck90, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: body90 }))), prices: null
+    ...await sealCurrentLive(C90, ck90, { at: "2026-09-24T04:00:00Z", body: body90 }), prices: null
   };
   const dom90 = new JD90(lp90(u90, "n90", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc90, configurable: true }); } catch (e) { win.crypto = wc90; } } });
@@ -22545,10 +22757,11 @@ await (async () => {
   /* HIS DECISION D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage, so a signed-in page hands its
      sign-in across: a key for Paste and /app#<key>, eight symbols to type. A code is 39 bits: never a plain hash. */
   const C = await import("../tools/stmt-crypto.mjs");
-  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, STMT_HANDOVER_KEY: SECRET };
+  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, ...testDeskRevision(SECRET), STMT_HANDOVER_KEY: SECRET };
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-39", u);
+  const live = await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>" });
   await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
-    env: await C.encryptWith(ck, "{}"), live: { at: "2026-09-24T01:00:00Z", iv: "aXY=", ct: "Y3Q=" } }));
+    env: await C.encryptWith(ck, "{}"), live: live.live }));
   const call = async (path, body, headers, e = env, ip = "203.0.113.9") => {
     const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
       headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": ip }, headers || {}),
@@ -22755,12 +22968,13 @@ await (async () => {
     live: null, prices: null
   };
   openBody.live = await asLive(C92, ck92, openBody.env);
+  openBody.liveStatus = "current";
 
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
   await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
   await kv92.put("sess:" + createHash("sha256").update("sess92aaaaaaaaaaaaaaaaaaaaaa").digest("hex"), JSON.stringify({ u: u92, at: new Date().toISOString() }));
-  const env92 = { STMT: kv92 };
+  const env92 = { STMT: kv92, ...testDeskRevision("test-desk-key") };
   const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
     { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
@@ -22823,7 +23037,7 @@ await (async () => {
     const second = make92(stored92, () => async (path) => {
       if (String(path) === "/remember/open") {
         return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
-          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, liveStatus: "current", prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
       }
       return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
     });
@@ -23840,7 +24054,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 0, parts: [] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 0, parts: [] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -24010,7 +24224,7 @@ await (async () => {
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
   const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-09-16", due: "2026-09-30", resale: true };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: true,
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 25, parts: [more] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 25, parts: [more] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24143,7 +24357,7 @@ await (async () => {
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
   const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-10-06", due: "2026-10-30", resale: false };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 25, parts: [more] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 25, parts: [more] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }, { issued: "2026-08-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24252,8 +24466,8 @@ await (async () => {
   /* ---- S13-L1: over RM 100 past its term, Orders is the payment page, whose head and overdue box are the slice's, in the
      list's column that says English ---- */
   const late = { product: "salt", qty: 3, rm: 150, whole: 150, date: "2026-08-01", gotOn: "2026-08-02", due: "2026-08-31", late: true };
-  const holdB = Object.assign({}, openB, { live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 150,
-    pay: { now: { rm: 150, due: "2026-08-31", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } })) });
+  const holdB = Object.assign({}, openB, { ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 150,
+    pay: { now: { rm: 150, due: "2026-08-31", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }) });
   const WH = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -24589,7 +24803,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24659,7 +24873,8 @@ await (async () => {
     ok(sheetLang === "en", "and the order sheet, drawn in English, says lang en on this Malay phone (S13-L1): " + sheetLang);
     D.querySelector("#osheet .salt-sheet-scrim").click(); await wait(10);
     D.querySelector('#oArea [data-row="20260925000000-b2"]').click(); await wait(30);
-    D.querySelector('.oscreen [data-part="foot"] button').click();
+    [...D.querySelectorAll('.oscreen [data-part="foot"] button')]
+      .find((button) => button.textContent === WD.EN["ord.cancel"]).click();
     await until(() => text('.oscreen [data-part="foot"] p.msg'));
     const cancel = text('.oscreen [data-part="foot"] p.msg');
     ok(placed === 2 && WD.MS["x.notSent"] && WD.MS["e.busy"] && dropped === WD.EN["x.notSent"] && cancel === S(WD.EN["e.busy"]),
@@ -24679,7 +24894,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const nil = { rm: 0, parts: [] };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 0, pay: { now: nil, overdue: nil, coming: nil } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 0, pay: { now: nil, overdue: nil, coming: nil } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -25047,8 +25262,8 @@ await (async () => {
       && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
       "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in eleven spawns where it took nineteen: the links in one bulk get, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
+      "in eleven spawns: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 29 Sep 2026: the test account's fixture, sealed beside its record and never in it ---- */
     const TK55 = crypto.getRandomValues(new Uint8Array(32)), trec55 = JSON.stringify({ u: "0000-0000", test: true, wrap: await C55.wrapKey("0000-0000-0000-0000", TK55) });
@@ -27236,11 +27451,11 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: await asLive(C35, ck35, st.env) }); }
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
           if (p === "/orders") return ans(200, { ok: true, orders: [] });
           return ans(200, { ok: true });
@@ -27938,13 +28153,13 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
           if (p === "/remember/open") {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
-              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
@@ -28070,11 +28285,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -28406,9 +28621,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -32556,8 +32771,8 @@ await (async () => {
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
   /* S6 6.7: the hold is what is past its term, sealed as pay.overdue */
   const late = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 150, whole: 150, product: "salt", qty: 1, got: 1, gotOn: "2026-09-01", resale: false };
-  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
-    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }));
+  const owing = await sealCurrentLive(CM, ckM, { at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
+    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } });
   const A = "20260924090000-aaaa";
   const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
   const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
@@ -32578,10 +32793,10 @@ await (async () => {
         if (p === "/remember/open") {
           if (st.remFail) throw new TypeError("Failed to fetch");
           st.reopened++;
-          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
         }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live }); }
+        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live, liveStatus: st.liveStatus }); }
         if (p === "/orders" && m === "GET") return ans(200, { ok: true, orders: orders() });
         return ans(200, { ok: true });
       };
@@ -32628,7 +32843,7 @@ await (async () => {
       "and Try again reopens it and patches the same way: " + JSON.stringify({ lapse: D.getElementById("lapse").hidden, box: box() === b0 }));
 
     /* the account now owes over RM 100: the form above the orders is the Pay page, so the tab is drawn again */
-    st.live = owing;
+    st.live = owing.live; st.liveStatus = owing.liveStatus;
     D.dispatchEvent(new W.Event("visibilitychange"));
     await until(() => /Payment due/.test((D.querySelector("#pOrder h2") || {}).textContent || ""));
     ok(/Payment due/.test(D.querySelector("#pOrder h2").textContent) && !D.getElementById("oGo") && !!D.querySelector('#pOrder .oscreen[data-order="' + A + '"]')
@@ -34334,7 +34549,7 @@ await (async () => {
     { ...base, id: Q, at: "2026-09-19T03:00:00Z", movedOn: day(3), rating: { stars: 3, at: "2026-09-25T03:00:00Z" } }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f10-rate",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   const sent = [];
   let work;
   const dom = new JSDOM(landingPage(u, "nf10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -35591,7 +35806,7 @@ await (async () => {
     { ...base, id: NONE, at: "2026-09-27T03:00:00Z", total: 100, history: [{ at: "2026-09-27T03:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-27T04:00:00Z", status: "acknowledged", by: "desk" }] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s21-price",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-28T05:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-28T05:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   let work;
   const dom = new JSDOM(landingPage(u, "ns21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -36932,7 +37147,7 @@ await (async () => {
   const page = async (pay, list) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r1",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay }) };
     const dom = new JD(lp(U, "nr1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -38967,7 +39182,7 @@ await (async () => {
   const pass = "fixture-pass-117", ck = await CR.contentKey("test-secret", u);
   const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-117",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const list = [dR, cR, await rec(wd.id)].map(O.customerView);
   const dom = new JSDOM(landingPage(u, "n117", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
@@ -39180,7 +39395,7 @@ await (async () => {
   const pass = "fixture-pass-119", ck = await CR.contentKey("test-secret", u);
   const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-119",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "n119", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
     win.scrollTo = () => {};
@@ -41273,7 +41488,7 @@ await (async () => {
   const open = async (opt) => {
     const body = { ok: true, wrap: await C71.wrapKey(pass, ck), session: "sess-71", prices: list,
       env: await C71.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: opt.fresh ? null : await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+      ...(opt.fresh ? { live: null } : await sealCurrentLive(C71, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
     const dom = new JD71(lp71(u, "n71", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc71, configurable: true }); } catch (e) { win.crypto = wc71; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -41468,7 +41683,7 @@ await (async () => {
     const posts = [];
     const body = { ok: true, wrap: await C74.wrapKey(pass, ck), session: "sess-74", prices: list,
       env: await C74.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0,
+      ...(opt.fresh ? { live: null } : await sealCurrentLive(C74, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0,
         /* S7 merge: the line counts what is past its term, the sealed pay.overdue (S6 6.7), so the fixture seals it */
         pay: opt.owed ? { term: 10, now: { rm: opt.owed, due: "2026-09-11", parts: [late74(opt.owed)] }, overdue: { rm: opt.owed, parts: [late74(opt.owed)] }, coming: { rm: 0, parts: [] } } : undefined })) };
     const dom = new JD74(lp74(u, "n74", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -41647,7 +41862,7 @@ await (async () => {
   const open = async (orders) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f2",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+      ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay }) };
     const dom = new JSDOM(landingPage(u, "ns7f2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -41714,7 +41929,7 @@ await (async () => {
   const open = async (fresh) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f3", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+      ...(fresh ? { live: null } : await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
     const dom = new JSDOM(landingPage(u, "ns7f3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -41783,7 +41998,7 @@ await (async () => {
     { ...base, id: R, status: "acknowledged", paid: 110, at: "2026-09-20T03:00:00Z", msgs: [{ by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f6",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   const dom = new JSDOM(landingPage(u, "ns7f6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -41996,7 +42211,7 @@ await (async () => {
     delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f8", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f8", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42033,7 +42248,7 @@ await (async () => {
     delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f11", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f11", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42075,7 +42290,7 @@ await (async () => {
   const open = async (fresh, saved = true) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f10", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+      ...(fresh ? { live: null } : await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
     const dom = new JSDOM(landingPage(u, "ns7f10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42135,7 +42350,7 @@ await (async () => {
   const orders = [o(A, { at: "2026-09-22T03:00:00Z" }), o(B)];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f12", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f12", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42242,7 +42457,7 @@ await (async () => {
     { ...base, id: "oP", status: "placed", at: "2026-09-23T03:00:00Z" }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-pol1", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay }) };
   const dom = new JSDOM(landingPage(u, "npol1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -42358,8 +42573,8 @@ await (async () => {
   const late = { date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false };
   const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
     env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
-      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } })) };
+    ...await sealCurrentLive(CH, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
+      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
   const st = { claimed: 0, payOk: false, ordersDown: false };
   const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: 0, claimed: st.claimed, method: "transfer", account: "maybank",
@@ -42466,10 +42681,10 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
     env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
+    ...await sealCurrentLive(CJ, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
       now: { rm: 280, due: "2026-09-10", parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
       overdue: { rm: 280, parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
-      coming: { rm: 0, parts: [] } } })) };
+      coming: { rm: 0, parts: [] } } }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
   const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
   const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42528,7 +42743,7 @@ await (async () => {
     + '<tr data-m="2026-09"><td class="dt">20 Sep</td><td class="amt">RM 150.00</td></tr></tbody></table></div>';
   const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-h08",
     env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CK.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 })) };
+    ...await sealCurrentLive(CK, ck, { at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 }) };
   const orders = [{ id: "oA", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z",
     history: [], msgs: [], status: "acknowledged", total: 150, method: "transfer", account: "maybank" }];
   const dom = new JDK(lpK(u, "nh08", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42573,7 +42788,7 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-m19", ck = await CM.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-m19",
     env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CM.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CM, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], status: "placed", total: 90 };
   let reads = 0;
   const list = () => [{ ...base, id: "oA", msgs: reads > 2 ? [{ at: "2026-09-24T02:00:00Z", by: "desk", text: "Fixture reply" }] : [] }, { ...base, id: "oB", msgs: [] }];
@@ -42628,7 +42843,7 @@ await (async () => {
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
   const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
     env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CN.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    ...await sealCurrentLive(CN, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }),
     prices: await CN.encryptWith(ck, JSON.stringify(prices)) };
   const posted = [];
   const dom = new JDN(lpN(u, "nm20", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42708,7 +42923,7 @@ await (async () => {
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [] }, { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 50 }] }] };
   const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-m21",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }),
     prices: await CR.encryptWith(ck, JSON.stringify(prices)) };
   const orders = [{ id: "oA", product: "oil", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "placed", total: 50 }];
   const dom = new JDR(lpR(u, "nm21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42856,6 +43071,7 @@ await (async () => {
     env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
     prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
   body.live = await asLive(CQ, ck, body.env);
+  body.liveStatus = "current";
   const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -42934,7 +43150,7 @@ await (async () => {
     const u = "abcd-efgh", pass = "fixture-pass-s62", ck = await C.contentKey("test-secret", u);
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(u, "ns62", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43026,7 +43242,7 @@ await (async () => {
     const u = "abcd-efgh", pass = "fixture-pass-5c", ck = await C.contentKey("test-secret", u);
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(u, "n5c", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43088,7 +43304,7 @@ await (async () => {
       overdue: { rm: +parts.filter((p) => p.late).reduce((s, p) => s + p.rm, 0).toFixed(2), parts: parts.filter((p) => p.late) }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v2",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: pay.now.rm, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: pay.now.rm, pay }),
       prices: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), week: { monday: kl(0), label: "This week" },
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 95, orders: 3, sizes: [{ q: 1, price: 95 }, { q: 2, price: 180 }] }], soon: [] })) };
     const dom = new JD(lp(u, "nv2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -43218,7 +43434,7 @@ await (async () => {
     overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s64",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+    ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay }) };
   const ord = { id: "20260920000000-s64a", product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, delivery: 0, paid: 0, moved: 0,
     at: "2026-09-20T03:00:00Z", status: "acknowledged", history: [], msgs: [] };
   const dom = new JD(lp(u, "ns64", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -43318,7 +43534,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: nowRm, due: null, parts: nowRm > 0 ? [{ date: "2026-09-10", since: null, due: null, late: false, rm: nowRm, whole: nowRm, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] : [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s65",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay })) };
+      ...await sealCurrentLive(C, ck, { at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay }) };
     const dom = new JD(lp(u, "ns65", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43466,7 +43682,7 @@ await (async () => {
   const open = async (orders, claims) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s67",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay }),
       prices: await C.encryptWith(ck, JSON.stringify(list)) };
     const dom = new JD(lp(u, "ns67", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
@@ -43531,7 +43747,7 @@ await (async () => {
   const pay = { term: 10, now: { rm: 70, due: null, parts: [{ date: "2026-09-10", since: null, due: null, late: false, rm: 70, whole: 70, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s68",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+    ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay }) };
   const st = { method: null, sent: [] };
   const list = () => [{ id: "oA", product: "salt", qty: 1, mode: "collect", total: 110, delivery: 0, paid: 0, moved: 0, at: "2026-09-20T03:00:00Z",
     status: "acknowledged", history: [], msgs: [], method: st.method }];
@@ -43693,10 +43909,10 @@ await (async () => {
     const posted = [];
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v3p", assoc, prices: await sealed(list("d1", ceiling)),
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 1, now: { rm: 30, parts: [{ date: "2026-09-28", rm: 30, whole: 200, product: "salt", qty: 2, resale: false },
+      ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 0, pay: { term: 1, now: { rm: 30, parts: [{ date: "2026-09-28", rm: 30, whole: 200, product: "salt", qty: 2, resale: false },
         /* two rows of oN's day that are not oN: a friend's of its whole, and its own side of another whole */
         { date: "2026-09-29", rm: 0, whole: 100, product: "salt", qty: 1, resale: true }, { date: "2026-09-29", rm: 0, whole: 999, product: "salt", qty: 9, resale: false }] }, overdue: { rm: 0, parts: [] },
-        coming: { rm: 20, parts: [{ date: "2026-09-27", rm: 20, product: "oil", qty: 1, toCome: 1, resale: false }] } } })) };
+        coming: { rm: 20, parts: [{ date: "2026-09-27", rm: 20, product: "oil", qty: 1, toCome: 1, resale: false }] } } }) };
     const dom = new JD(lp(u, "nv3p", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43850,7 +44066,7 @@ await (async () => {
     null, { status: 503, body: { ok: false, error: "busy" } }, null, null, { status: 503, body: { ok: false, error: "busy" } }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v4b", assoc: false, prices: await sealed(list("d1", 95)),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })) };
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } }) };
   const dom = new JD(lp(u, "nv4b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44158,7 +44374,7 @@ await (async () => {
   const draw = async (doc, claims, until, later, assoc) => {
     let polls = 0, shift = 0;   /* above the page, whose beforeParse closes over both */
     const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: !!assoc,
-      live: await C.encryptWith(ck, JSON.stringify(doc)),
+      ...await sealCurrentLive(C, ck, doc),
       prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: new Date().toISOString(), week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
       env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -44273,7 +44489,7 @@ await (async () => {
   const read = async (list, claims) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r3",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 300, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 300, pay }) };
     const dom = new JD(lp(U, "nr3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44339,7 +44555,7 @@ await (async () => {
   const read = async (list, claims) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m3",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-1), body: "<p>Live</p>", owed: 300, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-1), body: "<p>Live</p>", owed: 300, pay }) };
     const dom = new JD(lp(U, "nm3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44400,7 +44616,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: nowRm, due: null, parts: nowRm > 0 ? [{ date: "2026-09-10", since: null, due: null, late: false, rm: nowRm, whole: nowRm, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] : [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m6",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay }) };
     const dom = new JD(lp(U, "nm6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44471,7 +44687,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r4",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(U, "nr4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44550,7 +44766,7 @@ await (async () => {
   const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-rr",
     env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 0, pay }) };
   const dom = new JD(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44621,7 +44837,7 @@ await (async () => {
     const pay = overdue === undefined ? undefined : { term: 3, now: { rm: owed || overdue, due: parts.length ? parts[0].due : null, parts }, overdue: { rm: overdue, parts: overdue ? [late] : [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay })) };
+      ...await sealCurrentLive(C, ck, { at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay }) };
     const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -46255,7 +46471,7 @@ await (async () => {
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
     /* sealed without V5's stages (29 Sep 2026): struck on 24 Sep and opened on today's clock, the account would be locked
        and Home would draw To pay now alone; the stages are proved in their own section */
-    live: await C.encryptWith(ck, JSON.stringify({ ...doc, pay: { ...doc.pay, hide: undefined, lock: undefined } })),
+    ...await sealCurrentLive(C, ck, { ...doc, pay: { ...doc.pay, hide: undefined, lock: undefined } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -48481,7 +48697,7 @@ await (async () => {
     const pay = { term: 3, now: { rm: 110, due: on, parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-fx3",
       env: await C.encryptWith(ck, J({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, J({ at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: 110, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: 110, pay }),
       prices: await C.encryptWith(ck, J({ at: new Date().toISOString(), week: { monday: on, label: "This week" },
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 110, orders: 1, sizes: [{ q: 1, price: 110 }] }], soon: [] })) };
     let read = 0;   /* the orders' answer read, which To pay now is drawn from: waited for, never timed */
@@ -49317,7 +49533,7 @@ await (async () => {
       { ...base, id: "oP", status: "placed", moved: 0, at: "2026-09-23T03:00:00Z" }];
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-rdt1", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: liveAtIso, body: "<p>Live</p>", owed: 110, pay })) };
+      ...await sealCurrentLive(C, ck, { at: liveAtIso, body: "<p>Live</p>", owed: 110, pay }) };
     const dom = new JSDOM(landingPage(u, "nrdt1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -49460,6 +49676,778 @@ await (async () => {
   };
   await run("visibilitychange");
   await run("pagehide");
+})();
+
+section("Counter maker: verified owner, narrow Desk bridge and hours");
+await (async () => {
+  const inputChecks = await import("./maker-inputs.mjs");
+  await inputChecks.run({ ok });
+  const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
+  const calls = [];
+  const key = "counter-maker-test-key-0123456789abcdef";
+  const store = new KV();
+  const env = {
+    STMT: store,
+    COUNTER_MAKER_KEY: key,
+    DESK_MAKER: { fetch: async (request) => {
+      calls.push({ path: new URL(request.url).pathname, method: request.method, key: request.headers.get("X-Counter-Maker-Key") });
+      return new Response(JSON.stringify({ ok: true, drafts: [], refused: [] }), { status: 200 });
+    } }
+  };
+  const call = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+  }), env, path, owner);
+  const reviewed = await call("/all/maker/review");
+  const review = await reviewed.json();
+  ok(reviewed.status === 200 && review.ok && review.orders.length === 0 && review.drafts.length === 0
+    && calls.length === 1 && calls[0].path === "/_internal/maker/drafts" && calls[0].key === key,
+    "the verified owner receives the unified order/draft review through the named Desk route");
+  const startCalls = calls.length;
+  const denied = await handleMaker(new Request("https://counter.test/all/maker/review", {
+    headers: { "X-User-Email": "maakmal97@icloud.com" }
+  }), env, "/all/maker/review", { email: "other@example.com" });
+  const noIdentity = await handleMaker(new Request("https://counter.test/all/maker/review", {
+    headers: { "X-User-Email": owner.email }
+  }), env, "/all/maker/review", undefined);
+  const unknown = await call("/all/maker/arbitrary");
+  ok(denied.status === 403 && noIdentity.status === 403 && unknown.status === 404 && calls.length === startCalls,
+    "an unallowlisted or missing verified identity and an unknown operation cannot reach the Desk");
+  const inputCalls = [];
+  const inputEnv = { ...env, DESK_MAKER: { fetch: async (request) => {
+    inputCalls.push({ path: new URL(request.url).pathname, method: request.method,
+      body: request.method === "POST" ? await request.json() : null });
+    return new Response(JSON.stringify({ ok: true, queued: true, status: "pending" }));
+  } } };
+  const inputCall = (path, method, body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  }), inputEnv, path, owner);
+  const inputBody = { at: "2026-10-01T08:00:00.000Z", product: "salt", party: "CX1-ZED",
+    date: "2026-10-01", qty: 1, total: 100, cash: 0, movedUnits: 0, handover: null, delivery: 0 };
+  const saleInput = await inputCall("/all/maker/inputs/sale", "POST", inputBody);
+  const saleForwarded = inputCalls[0];
+  const tierBody = { at: inputBody.at, code: "CX1-ZED", product: "salt", tier: "Gold" };
+  const tierInput = await inputCall("/all/maker/inputs/tier-set", "POST", tierBody);
+  const wrongInputMethod = await inputCall("/all/maker/inputs/purchase", "GET");
+  ok(saleInput.status === 200 && tierInput.status === 200 && wrongInputMethod.status === 405
+    && saleForwarded.path === "/_internal/maker/inputs/sale" && saleForwarded.method === "POST"
+    && JSON.stringify(saleForwarded.body) === JSON.stringify(inputBody)
+    && inputCalls[1].path === "/_internal/maker/inputs/tier-set",
+    "typed sale and tier routes call only their named Desk operations, with no generic writer");
+  const sealed = { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVydGV4dA==" };
+  const ledgerInputs = [
+    ["loan", { at: inputBody.at, form: "cash", direction: "in", code: "CX1-ZED", date: inputBody.date, amount: 20 }],
+    ["repay", { at: inputBody.at, loan: "loan-1", date: inputBody.date, amount: 5 }],
+    ["gift", { at: inputBody.at, product: "salt", code: "CX1-ZED", date: inputBody.date, qty: 1, movedUnits: 1, handover: "collected" }],
+    ["redeem", { at: inputBody.at, code: "CX1-ZED", date: inputBody.date }],
+    ["add-id", { at: inputBody.at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers: null, vault: sealed }],
+    ["amend-id", { at: inputBody.at, from: "CX1-ZED", to: "CX2-TST", geo: null, vault: sealed }],
+    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68] } }]
+  ];
+  for (const [operation, body] of ledgerInputs)
+    await inputCall("/all/maker/inputs/" + operation, "POST", body);
+  const newInputCalls = inputCalls.slice(2);
+  ok(newInputCalls.length === ledgerInputs.length
+    && newInputCalls.every((call, index) => call.path === "/_internal/maker/inputs/" + ledgerInputs[index][0]
+      && call.method === "POST" && JSON.stringify(call.body) === JSON.stringify(ledgerInputs[index][1]))
+    && !newInputCalls.some((call) => Object.hasOwn(call.body, "name") || Object.hasOwn(call.body, "locality")),
+    "loans, repayments, gifts, redemptions, encrypted IDs and approximate placement use only their typed Desk routes");
+  const readNameVault = await inputCall("/all/maker/vault", "GET");
+  const readPlaceVault = await inputCall("/all/maker/vault/addr", "GET");
+  ok(readNameVault.status === 200 && readPlaceVault.status === 200
+    && inputCalls.slice(-2).every((call) => call.method === "GET"
+      && /^\/_internal\/maker\/vault(?:\/addr)?$/.test(call.path)),
+    "Add/Amend ID and placement can read only the two sealed vault envelopes through explicit read routes");
+  const wrongLedgerMethod = await inputCall("/all/maker/inputs/add-id", "GET");
+  const unknownInput = await inputCall("/all/maker/inputs/entry", "POST", inputBody);
+  ok(wrongLedgerMethod.status === 405 && unknownInput.status === 404 && inputCalls.length === 11,
+    "ledger maker operations reject wrong methods and unknown operation names before reaching the Desk");
+  const future = new Date(Date.now() + 60_000).toISOString();
+  const saved = await call("/all/maker/hours", "POST", { manual: { open: false, until: future } });
+  const savedBody = await saved.json();
+  const publicStatus = await publicHours(env);
+  ok(saved.status === 200 && savedBody.status.open === false && publicStatus.open === false
+    && publicStatus.source === "manual",
+    "manual-only hours persist and the same closed status is served publicly");
+  await store.put("u:abcd-efgh", JSON.stringify({ prices: { digest: "maker-quote" } }));
+  const makerPlacement = { product: "salt", qty: 1, total: 100, unit: 100, mode: "collect", place: "",
+    forFriend: false, week: "", digest: "maker-quote", rid: "maker-placement-rid-01" };
+  const makerPlace = (body, identity = owner) => handleMaker(new Request("https://counter.test/all/maker/customers/abcd-efgh/orders", {
+    method: "POST", body: JSON.stringify(body)
+  }), env, "/all/maker/customers/abcd-efgh/orders", identity);
+  const placedFor = await (await makerPlace(makerPlacement)).json();
+  const retriedFor = await (await makerPlace(makerPlacement)).json();
+  const storedFor = await store.get("order:abcd-efgh:" + placedFor.order.id, "json");
+  ok(placedFor.ok && retriedFor.order.id === placedFor.order.id && storedFor.history[0].by === "desk",
+    "Admin placement uses the customer's order road once and records its actual maker");
+  const deniedPlace = await makerPlace(makerPlacement, { email: "someone@example.test" });
+  const privatePlace = await makerPlace({ ...makerPlacement, note: "Not a checked Admin message" });
+  const stalePlace = await makerPlace({ ...makerPlacement, rid: "maker-placement-rid-02", digest: "old-list" });
+  ok(deniedPlace.status === 403 && privatePlace.status === 400 && stalePlace.status === 409,
+    "on-behalf orders reject other identities, unsupported prose and moved price lists");
+  const H = await import("./orderbook-harness.mjs");
+  const objectBook = H.orderBook({});
+  const objectEnv = { ...env, ORDER_STORE: "object", ORDERBOOK: objectBook.ns };
+  const objectCall = () => handleMaker(new Request("https://counter.test/all/maker/customers/abcd-efgh/orders", {
+    method: "POST", body: JSON.stringify({ ...makerPlacement, rid: "object-maker-placement-01" })
+  }), objectEnv, "/all/maker/customers/abcd-efgh/orders", owner);
+  const objectPlaced = await (await objectCall()).json(), objectRepeated = await (await objectCall()).json();
+  const storedObject = objectBook.db.prepare("SELECT doc FROM ord WHERE oid=?").get(objectPlaced.order.id);
+  ok(objectPlaced.ok && objectPlaced.order.id === objectRepeated.order.id
+    && JSON.parse(storedObject.doc).history[0].by === "desk"
+    && objectBook.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE kind='place'").get().n === 1,
+    "the Durable Object road retains maker attribution and appends one placement on a retry");
+  const noJwt = await stmtWorker.fetch(new Request("https://counter.test/all/maker/hours", {
+    headers: { "Cf-Access-Authenticated-User-Email": owner.email }
+  }), env);
+  ok(noJwt.status === 401, "the public Maker dispatch rejects an email header without a verified Access JWT");
+  const publicResponse = await stmtWorker.fetch(new Request("https://counter.test/hours"), env);
+  const publicBody = await publicResponse.json();
+  ok(publicResponse.status === 200 && publicBody.open === false,
+    "the public hours route reports closed without requiring an owner session");
+  const wrongKey = makerKeyMatches(new Request("https://desk.test/", {
+    headers: { "X-Counter-Maker-Key": "x".repeat(key.length) }
+  }), { COUNTER_MAKER_KEY: key });
+  const rightKey = makerKeyMatches(new Request("https://desk.test/", {
+    headers: { "X-Counter-Maker-Key": key }
+  }), { COUNTER_MAKER_KEY: key });
+  ok(!wrongKey && rightKey, "the Desk bridge accepts only the configured constant-time capability key");
+  ok(!makerOrderFault("preview", { total: 100, delivery: 0 })
+    && !!makerOrderFault("cash", { amount: "10" })
+    && !!makerOrderFault("accept", { total: 100 })
+    && !!makerOrderFault("handed", { qty: 1, note: "unsupported prose" }),
+    "typed order fields reject string figures, missing digests and unsupported prose");
+  let assetCalls = 0;
+  const privateMiss = await worker.fetch(new Request("https://desk.test/_internal/maker/unknown"), {
+    ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } }
+  }, { waitUntil() {} });
+  ok(privateMiss.status === 404 && assetCalls === 0,
+    "an unknown private-prefix request is refused before static asset fallthrough");
+  const privateEnv = { COUNTER_MAKER_KEY: key, SALT_QUEUE: new KV(),
+    ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } } };
+  const entryBody = { total: 100, delivery: 0, extra: "not allowed" };
+  const privatePost = (keyHeader) => worker.fetch(new Request("https://desk.test/_internal/maker/orders/20260929120000-makr/preview", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(keyHeader ? { "X-Counter-Maker-Key": keyHeader } : {}) },
+    body: JSON.stringify(entryBody)
+  }), privateEnv, { waitUntil() {} });
+  const noKey = await privatePost("");
+  const badKey = await privatePost("x".repeat(key.length));
+  const extraField = await privatePost(key);
+  ok(noKey.status === 404 && badKey.status === 404 && extraField.status === 400 && assetCalls === 0,
+    "the external Desk route refuses absent/wrong keys and rejects extra operation-body fields");
+  const draftRow = { id: "2026-09-29T12:00:00.000Z", status: "pending", collection: "sales",
+    entry: "{}", row: JSON.stringify({ qty: 1, total: 100, cost: 56 }), flags: '["Check before deciding"]',
+    cost: 56, total: 100, qty: 1, product: "salt" };
+  const db = { prepare(sql) {
+    let args = [];
+    return {
+      bind(...values) { args = values; return this; },
+      async first() {
+        if (sql.includes("committed_at IS NOT NULL")) return null;
+        if (/FROM draft WHERE id=/.test(sql)) return args[0] === draftRow.id ? { ...draftRow } : null;
+        throw new Error("unmocked first: " + sql);
+      },
+      async all() {
+        if (sql.includes("FROM refused")) return { results: [] };
+        if (sql.includes("FROM draft")) return { results: draftRow.status === "pending" ? [{ ...draftRow }] : [] };
+        throw new Error("unmocked all: " + sql);
+      },
+      async run() {
+        if (sql.startsWith("UPDATE preapproval")) return { meta: { changes: 0 } };
+        if (sql.startsWith("UPDATE draft SET status=")) {
+          if (draftRow.status !== "pending") return { meta: { changes: 0 } };
+          draftRow.status = args[0]; draftRow.decided_by = args[2]; return { meta: { changes: 1 } };
+        }
+        throw new Error("unmocked run: " + sql);
+      }
+    };
+  } };
+  const bridgeEnv = { ...privateEnv, SALT_LEDGER: db, SALT_WRITE_KEY: "desk-write-key" };
+  const integrated = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, bridgeEnv, { waitUntil() {} }) } };
+  const through = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  }), integrated, path, owner);
+  const listed = await (await through("/all/maker/drafts")).json();
+  ok(listed.ok && listed.drafts[0].row.cost === 56 && listed.drafts[0].flags[0] === "Check before deciding",
+    "actual service-bound Worker review preserves the proposed row, cost and flags");
+  const decisionPath = "/all/maker/drafts/" + encodeURIComponent(draftRow.id) + "/reject";
+  const decided = await through(decisionPath, "POST", {});
+  const repeated = await through(decisionPath, "POST", {});
+  ok(decided.status === 200 && repeated.status === 409 && draftRow.status === "rejected" && draftRow.decided_by === "Counter Admin",
+    "a bridge draft decision uses the normal Desk state transition and refuses a replay");
+  const getOrder = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/20260929120000-makr/cash", {
+    headers: { "X-Counter-Maker-Key": key }
+  }), bridgeEnv, { waitUntil() {} });
+  const removedWriter = await through("/all/maker/entries", "POST", { entry: {} });
+  const missingBridge = await handleMaker(new Request("https://counter.test/all/maker/drafts"), { STMT: store },
+    "/all/maker/drafts", owner);
+  ok(getOrder.status === 405 && removedWriter.status === 404 && missingBridge.status === 503,
+    "the bridge rejects wrong methods, has no generic entry writer and fails closed without provisioning");
+  const now = Date.UTC(2026, 8, 29, 10, 0);
+  const schedule = { days: Array(7).fill(null) };
+  schedule.days[3] = { open: "09:00", close: "17:00" };
+  const closed = hoursStatus({ schedule }, now);
+  ok(closed.open === false && closed.nextOpen === "2026-09-30T01:00:00.000Z",
+    "weekly hours use Kuala Lumpur time and report the next opening while closed");
+  const expires = hoursStatus({ schedule, manual: { open: false, until: "2026-09-30T02:00:00.000Z" } },
+    Date.parse("2026-09-30T04:00:00.000Z"));
+  ok(expires.open === true && expires.source === "schedule",
+    "an expired manual override falls back to the current weekly schedule");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const { landingPage } = await import("../stmt/page.js");
+  const user = "abcd-efgh", password = "maker-hours-fixture", contentKey = await C.contentKey("test-secret", user);
+  const priceList = { at: "2026-09-29T03:00:00Z", digest: "closed-hours-fixture",
+    week: { monday: "2026-09-28", label: "This week" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, session: "maker-hours-session", wrap: await C.wrapKey(password, contentKey),
+    env: await C.encryptWith(contentKey, JSON.stringify({ statements: [] })),
+    prices: Object.assign({ at: priceList.at, week: priceList.week.monday, digest: priceList.digest },
+      await C.encryptWith(contentKey, JSON.stringify(priceList))) };
+  const posted = [];
+  const dom = new JSDOM(landingPage(user, "maker-hours-nonce", null), {
+    url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const route = String(path), method = init && init.method || "GET";
+        if (route === "/open") return { ok: true, status: 200, json: async () => body };
+        if (route === "/hours") return { ok: true, status: 200, json: async () => ({ open: false, source: "manual", nextOpen: null }) };
+        if (route === "/orders" && method === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (route === "/orders" && method === "POST") {
+          posted.push(JSON.parse(init.body));
+          return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260929120000-makr", status: "placed" } }) };
+        }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    }
+  });
+  const page = dom.window, doc = page.document;
+  try {
+    doc.getElementById("un").value = user;
+    doc.getElementById("pw").value = password;
+    doc.getElementById("f").dispatchEvent(new page.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 120 && !doc.getElementById("oNew"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    const notice = doc.querySelector("#pOrder .salt-insight");
+    ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
+      && /acknowledgement may be delayed/.test(notice.textContent),
+      "a closed-hours customer still sees New order and the delayed-acknowledgement notice");
+    doc.getElementById("oNew").click();
+    const size = doc.querySelector('#osheet input[name="osize"][value="1"]');
+    if (size) { size.checked = true; size.dispatchEvent(new page.Event("change", { bubbles: true })); }
+    doc.getElementById("oGo").click();
+    for (let i = 0; i < 100 && !doc.getElementById("oPlace"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    if (doc.getElementById("oPlace")) doc.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(posted.length === 1 && posted[0].product === "salt" && posted[0].qty === 1,
+      "closed hours do not block the customer order POST");
+  } finally { page.close(); }
+  const countBody = { at: "2026-09-29T12:00:00.000Z", date: "2026-09-29", product: "salt", qty: 0 };
+  const builtCount = makerStockCount(countBody);
+  ok(builtCount.entry && builtCount.entry.payload.mode === "count" && builtCount.entry.payload.kg === 0
+    && !makerStockCount({ ...countBody, qty: "2" }).entry
+    && !makerStockCount({ ...countBody, date: "2026-02-30" }).entry
+    && !makerStockCount({ ...countBody, note: "a private word" }).entry,
+    "stock-count construction accepts zero but rejects string figures, impossible dates and private fields");
+  const { DatabaseSync } = await import("node:sqlite");
+  const countDb = new DatabaseSync(":memory:");
+  try {
+    for (const file of readdirSync(join(REPO, "migrations")).filter((file) => /^[0-9]+_.*[.]sql$/.test(file)).sort())
+      countDb.exec(readFileSync(join(REPO, "migrations", file), "utf8"));
+    const countD1 = { prepare(sql) {
+      const statement = countDb.prepare(sql);
+      const bound = (args) => ({
+        run() { const result = statement.run(...args); return { meta: { changes: Number(result.changes) } }; },
+        first() { return statement.get(...args) || null; },
+        all() { return { results: statement.all(...args) }; }
+      });
+      return Object.assign(bound([]), { bind: (...args) => bound(args) });
+    } };
+    countDb.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run("PRODUCTS", JSON.stringify({ salt: {}, spare: { retired: true } }));
+    countDb.prepare("INSERT INTO snapshot(one,v,stamped) VALUES (1,'maker-fixture',NULL)").run();
+    const countQueue = new KV(), countEnv = { ...privateEnv, SALT_QUEUE: countQueue, SALT_LEDGER: countD1 };
+    const countCounter = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, countEnv, { waitUntil() {} }) } };
+    const countCall = (body) => handleMaker(new Request("https://counter.test/all/maker/inputs/stock-count", {
+      method: "POST", body: JSON.stringify(body)
+    }), countCounter, "/all/maker/inputs/stock-count", owner);
+    const firstCount = await (await countCall(countBody)).json(), repeatedCount = await (await countCall(countBody)).json();
+    const persisted = countDb.prepare("SELECT status,collection,row FROM draft WHERE id=?").get(countBody.at);
+    ok(firstCount.ok && repeatedCount.ok && repeatedCount.queued === false && persisted.status === "pending"
+      && persisted.collection === "count" && JSON.parse(persisted.row).qty === 0
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "Counter stock count goes through the real Desk queue and drafter once, pending a decision");
+    const retired = await countCall({ ...countBody, product: "spare" });
+    const unknown = await countCall({ ...countBody, product: "missing" });
+    ok(retired.status === 400 && unknown.status === 400 && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "stock counts cannot enter retired or unknown books");
+    const ledgerRoutes = ["loan", "repay", "gift", "redeem", "add-id", "amend-id", "place"];
+    const deskRouteResults = [];
+    for (const operation of ledgerRoutes) {
+      const response = await worker.fetch(new Request("https://desk.test/_internal/maker/inputs/" + operation, {
+        method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+        body: JSON.stringify({ at: countBody.at, note: "unchecked prose" })
+      }), countEnv, { waitUntil() {} });
+      deskRouteResults.push({ operation, status: response.status });
+    }
+    ok(deskRouteResults.length === ledgerRoutes.length && deskRouteResults.every((result) => result.status === 400)
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "each new Desk maker route reaches typed validation and rejects unchecked notes before queue or draft writes");
+  } finally { countDb.close(); }
+  const adminCalls = [];
+  let previewRelease = null, holdPreview = false, adminWork = null;
+  const sealFixture = async (value, pass) => {
+    const salt = new Uint8Array(16).fill(7), iv = new Uint8Array(12).fill(9);
+    const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const ct = await webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(value)));
+    return { v: 1, salt: Buffer.from(salt).toString("base64"), iv: Buffer.from(iv).toString("base64"),
+      ct: Buffer.from(ct).toString("base64") };
+  };
+  let nameEnvelope = null;
+  const placeEnvelope = await sealFixture({ "CX1-AB": { addr: "Private Road", lat: 3.123, lng: 101.689 } }, "place-pass");
+  const adminOpen = { ...body, byMaster: true, session: "", wrapMaster: await C.wrapKey("fixture-master", contentKey) };
+  const admin = new JSDOM(landingPage("", "maker-admin-nonce", { master: "fixture-master", accounts: [] }), {
+    url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const route = String(path);
+        adminCalls.push({ route, body: init && init.body ? JSON.parse(init.body) : null });
+        const result = route === "/open" ? adminOpen
+          : route === "/all/sheet" ? { ok: true, accounts: [{ username: user, code: "CX1-AB", account: true }] }
+          : route === "/all/maker/vault" ? { ok: true, vault: nameEnvelope }
+          : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
+          : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
+            products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
+            parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
+            tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
+            loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }]
+          } }
+          : route === "/all/maker/customers/abcd-efgh/orders" ? { ok: true, order: { id: "20260929120000-foru" } }
+          : route === "/all/maker/review" ? { ok: true,
+          orders: [{ id: "20260929120000-makr", u: "abcd-efgh", product: "salt", qty: 1, total: 100, status: "placed" }],
+          drafts: [{ ...draftRow, status: "pending", entry: {}, row: { qty: 1, total: 100, cost: 56 }, flags: ["Check before deciding"] }] }
+          : route.endsWith("/preview") ? { ok: true, hash: "a".repeat(64), cost: { total: 56 }, margin: { rm: 44, pct: 44 },
+            row: { qty: 1, total: 100 }, flags: ["Review preview flag"] }
+          : route === "/all/maker/hours" ? { ok: true, config: null, status: { open: true, source: "default" } }
+          : route === "/all/maker/inputs/add-id" && init && init.method === "POST"
+            ? (nameEnvelope = JSON.parse(init.body).vault, { ok: true, queued: true })
+          : { ok: true, accounts: [], refs: [], tiers: [] };
+        if (holdPreview && route.endsWith("/preview")) await new Promise((resolve) => { previewRelease = resolve; });
+        return { ok: true, status: 200, json: async () => result };
+      };
+      adminWork = pageWork(win);
+    }
+  });
+  try {
+    const doc = admin.window.document;
+    doc.querySelector('button[data-m="maker"]').click();
+    for (let i = 0; i < 100 && !doc.querySelector("#makerReview .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    const cards = doc.querySelectorAll("#makerReview .maker-card");
+    ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
+      "the Admin review draws Desk row cost and frozen flags beside its decision");
+    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
+      && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
+        .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
+      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
+    const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
+    preview.click();
+    for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    ok(/Cost RM 56/.test(cards[0].textContent) && /Margin RM 44/.test(cards[0].textContent)
+      && /Review preview flag/.test(cards[0].textContent) && !!doc.querySelector("[data-accept]"),
+      "Accept appears only after the preview cost, margin and flags are shown: "
+        + JSON.stringify({ text: cards[0].textContent, accept: !!doc.querySelector("[data-accept]") }));
+    const total = cards[0].querySelector('input[type="number"]');
+    total.value = "120"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
+    ok(!doc.querySelector("[data-accept]"), "editing an order price invalidates the preview and removes Accept");
+    holdPreview = true; preview.click();
+    for (let i = 0; i < 100 && !previewRelease; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    total.value = "130"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
+    previewRelease(); await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
+    const tradeSection = doc.querySelector("#makerInputs .maker-input");
+    const tradeControls = tradeSection.querySelectorAll("select, input");
+    tradeControls[0].value = "sale";
+    tradeControls[1].value = "salt";
+    tradeControls[2].value = "CX1-AB";
+    tradeControls[3].value = "2026-10-01";
+    tradeControls[4].value = "1";
+    tradeControls[5].value = "100";
+    tradeControls[6].value = "0";
+    tradeControls[7].value = "0";
+    tradeControls[8].value = "";
+    tradeControls[9].value = "0";
+    tradeSection.querySelector("button").click();
+    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
+    ok(sentSale && sentSale.body.party === "CX1-AB" && sentSale.body.qty === 1
+      && sentSale.body.total === 100 && !Object.hasOwn(sentSale.body, "note"),
+      "the Maker trade form sends typed figures and no free-text note to the named Desk operation");
+    const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Add ID");
+    const addFields = addId.querySelectorAll("input");
+    addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
+    const sentAddId = adminCalls.find((call) => call.route === "/all/maker/inputs/add-id");
+    let openedNames = null;
+    try {
+      const sealed = sentAddId && sentAddId.body.vault;
+      if (!sealed) throw new Error("Add ID sent no sealed envelope.");
+      const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode("name-pass"), "PBKDF2", false, ["deriveKey"]);
+      const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from(sealed.salt, "base64"),
+        iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const plain = await webcrypto.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(sealed.iv, "base64") },
+        key, Buffer.from(sealed.ct, "base64"));
+      openedNames = JSON.parse(new TextDecoder().decode(plain));
+    } catch (error) { openedNames = null; }
+    ok(sentAddId && sentAddId.body.code === "CA3-KL" && !Object.hasOwn(sentAddId.body, "name")
+      && !Object.hasOwn(sentAddId.body, "locality") && openedNames && openedNames["CA3-KL"] === "Amy (Kuala Lumpur)"
+      && addFields[2].value === "",
+      "Add ID derives and encrypts the name on-device before sending only a code and sealed envelope");
+    const addKind = addId.querySelector("select");
+    addKind.value = "downstream"; addKind.dispatchEvent(new admin.window.Event("change"));
+    addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the downstream ID write finishes");
+    addKind.value = "bucket"; addKind.dispatchEvent(new admin.window.Event("change"));
+    addId.querySelector("select").value = "bucket";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the resale bucket write finishes");
+    const addRequests = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id");
+    ok(addRequests.length === 3 && addRequests[1].body.code === "CX1-AB-1-KL"
+      && addRequests[1].body.kind === "downstream" && !Object.hasOwn(addRequests[1].body, "name")
+      && addRequests[2].body.code === "CX1-AB-R" && addRequests[2].body.kind === "bucket"
+      && addRequests[2].body.vault === null,
+      "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
+    const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Amend ID");
+    const amendFields = amendId.querySelectorAll("input");
+    amendFields[0].value = "Ben"; amendFields[1].value = "Penang"; amendFields[2].value = "name-pass";
+    amendId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
+    const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
+    ok(sentAmendId && sentAmendId.body.from === "CX1-AB" && sentAmendId.body.to === "CB3-PEN"
+      && !!sentAmendId.body.vault && !Object.hasOwn(sentAmendId.body, "name") && !Object.hasOwn(sentAmendId.body, "locality"),
+      "Amend ID sends only its old/new codes and a device-sealed name map");
+    const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Map placement");
+    placement.querySelector('input[type="password"]').value = "place-pass";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the encrypted map point opens and queues");
+    const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
+    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
+      && !JSON.stringify(sentPlacement.body).includes("Private Road"),
+      "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
+    const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Borrow or lend");
+    loanForm.querySelectorAll("select")[0].value = "cash";
+    loanForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the loan form write finishes");
+    const sentLoan = adminCalls.find((call) => call.route === "/all/maker/inputs/loan");
+    const giftForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Gift");
+    giftForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the gift form write finishes");
+    const repayForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Repayment");
+    repayForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the repayment form write finishes");
+    const redeemForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Reward redemption");
+    redeemForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the reward form write finishes");
+    ok(sentLoan && sentLoan.body.form === "cash" && !Object.hasOwn(sentLoan.body, "product")
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/gift" && call.body.handover === null)
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/repay" && call.body.loan === "loan-1")
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/redeem" && call.body.code === "CX1-AB"),
+      "loan, repayment, gift and reward forms send their typed ledger fields to the corresponding Desk constructors");
+    doc.querySelector('button[data-m="accounts"]').click();
+    for (let i = 0; i < 100 && !doc.querySelector('#rlist [data-u]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    doc.querySelector('#rlist [data-u]').click();
+    const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
+    forThem.click();
+    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerFor button")].some((button) => button.textContent === "Place for them"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const placeFor = [...doc.querySelectorAll("#makerFor button")].find((button) => button.textContent === "Place for them");
+    ok(!!placeFor && /RM 100/.test(doc.querySelector("#makerFor").textContent),
+      "Order for them opens the customer's sealed prices, not a second pricing rule");
+    placeFor.click();
+    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/customers/abcd-efgh/orders"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const sentFor = adminCalls.find((call) => call.route === "/all/maker/customers/abcd-efgh/orders");
+    ok(sentFor && sentFor.body.total === 100 && sentFor.body.digest === priceList.digest && sentFor.body.rid
+      && !Object.hasOwn(sentFor.body, "master") && !Object.hasOwn(sentFor.body, "note"),
+      "on-behalf UI sends the quote and replay id only to its protected route");
+  } finally { admin.window.close(); }
+})();
+
+section("Counter amendments: atomic replacement, review reservation and session ownership");
+await (async () => {
+  const O = await import("../stmt/orders.js");
+  const H = await import("./orderbook-harness.mjs");
+  const { customerAmend } = await import("../stmt/maker.js");
+  const { build, FEATURES } = await import("../tools/testfix.mjs");
+  const { exampleReplace, isExample } = await import("../stmt/testfix.js");
+  const u = "abcd-efgh", at = new Date().toISOString(), digest = "amendment-list";
+  const body = { product: "salt", qty: 1, total: 100, unit: 100, mode: "collect", place: "", forFriend: false,
+    week: "", digest, rid: "amendment-request-0001" };
+  const original = O.decidePlace(u, body, [], at, digest).ev.order;
+  const change = { ...body, qty: 2, total: 190, unit: 95, rid: "amendment-request-0002" };
+  const book = H.orderBook({});
+  book.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const replace = (patch = {}, who = u, id = original.id) => book.book.run("replace", {
+    u: who, id, body: { ...change, ...patch }, rid: patch.rid || change.rid, digest
+  });
+  const changed = replace();
+  const old = book.book.order(u, original.id);
+  ok(changed.ok && changed.order.qty === 2 && old.status === "cancelled"
+    && old.replacement === changed.order.id && changed.order.replaces === original.id
+    && old.total === 100 && old.history[0].status === "placed",
+    "replacement cancels the original and links both immutable histories without editing its terms");
+  const repeated = replace({ total: 999 });
+  ok(repeated.ok && repeated.again && repeated.order.id === changed.order.id && repeated.order.total === 190
+    && book.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 2,
+    "a replacement request id is permanent and its retry cannot create or alter another order");
+  ok(!replace({}, "other-user").ok && book.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 2,
+    "a replacement cannot address an order owned by another account");
+  const guards = (patch) => O.decideReplace({ ...original, ...patch }, change, [original], at, digest);
+  ok(guards({ status: "acknowledged" }).code === "amendClosed",
+    "an acknowledged order cannot be replaced");
+  ok(guards({ reviewed: true }).code === "amendClosed",
+    "a book-side review reservation prevents replacement before D1 preapproval");
+  ok(guards({ queued: { ack: at } }).code === "amendClosed",
+    "a legacy queued pending row cannot be orphaned by replacement");
+  ok(guards({ paid: 1 }).code === "amendClosed" && guards({ moved: 1 }).code === "amendClosed",
+    "money or goods already moved prevent replacement");
+  ok(O.decideReplace(original, { ...change, digest: "old-list" }, [original], at, digest).code === "pricesMoved",
+    "replacement checks the current price-list digest before cancelling anything");
+  ok(O.decideReplace(original, { ...change, note: "not an amendment field" }, [original], at, digest).code === "amendShape"
+    && O.decideReplace(original, { ...change, product: "rice" }, [original], at, digest).code === "amendShape",
+    "replacement refuses unsupported fields and cannot change a sheet line to another product");
+  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+  const terms = Object.fromEntries(fields.map((key) => [key, original[key] ?? null]));
+  const reservation = O.decideDesk(original, { reserveReview: terms }, at);
+  const reserved = O.applyEvent(structuredClone(original), reservation.ev).order;
+  ok(reserved.reviewed && O.decideDesk(reserved, { reserveReview: terms }, at).none,
+    "a matching review reservation is durable and safely retried");
+  ok(O.decideDesk(original, { reserveReview: { ...terms, qty: 2 } }, at).status === 409
+    && O.decideDesk({ ...original, status: "cancelled" }, { reserveReview: terms }, at).status === 409,
+    "Accept cannot reserve a changed or cancelled order from a stale preview");
+  const failedBook = H.orderBook({});
+  failedBook.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const exec = failedBook.state.storage.sql.exec;
+  failedBook.state.storage.sql.exec = (sql, ...args) => {
+    if (sql.startsWith("INSERT INTO ev") && args[3] === "place") throw new Error("replacement write failed");
+    return exec(sql, ...args);
+  };
+  let rejected = false;
+  try { failedBook.book.run("replace", { u, id: original.id, body: change, rid: change.rid, digest }); }
+  catch (error) { rejected = error.message === "replacement write failed"; }
+  ok(rejected && failedBook.book.order(u, original.id).status === "placed"
+    && failedBook.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 1,
+    "a failed replacement write rolls back cancellation, events and the new order together");
+  const frozenBook = H.orderBook({}, { movedIn: false });
+  ok(frozenBook.book.run("replace", { u, id: original.id, body: change, rid: change.rid, digest }).frozen === true,
+    "the move-in freeze also refuses replacement writes");
+  const key = "counter-maker-test-key-0123456789abcdef", store = new KV(), queue = new KV();
+  const buildId = "abcdef0123456789";
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
+  await queue.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
+  const relayBook = H.orderBook({});
+  relayBook.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const counter = { STMT: store, ORDER_STORE: "object", ORDERBOOK: relayBook.ns, STMT_DESK_KEY: key,
+    COUNTER_MAKER_KEY: key };
+  let activePre = null, failD1 = false;
+  const pricing = { v: "v1", byProduct: { salt: { stockCost: 56, cards: { "CX1-AB": [[1, 100], [2, 190]] },
+    floors: { 1: { floor: 80 }, 2: { floor: 150 } } } } };
+  let replaceCalls = 0;
+  const desk = { COUNTER_MAKER_KEY: key, STMT_DESK_KEY: key, SALT_QUEUE: queue,
+    SALT_LEDGER: { prepare(sql) {
+      return { bind() { return this; },
+        async first() {
+          if (sql.includes("FROM preapproval")) { if (failD1) throw new Error("mirror offline"); return activePre; }
+          if (sql.includes("FROM snapshot")) return { v: "v1" };
+          throw new Error("unexpected query " + sql);
+        },
+        async all() {
+          if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: JSON.stringify(pricing) },
+            { key: "roster", doc: JSON.stringify(["CX1-AB"]) }, { key: "OPEN", doc: '{"byKey":{}}' }] };
+          if (sql.includes("FROM entry")) return { results: [] };
+          throw new Error("unexpected query " + sql);
+        }
+      };
+    } },
+    ASSETS: { fetch: async () => Response.json({ ok: true, id: buildId, v: "v1" }) },
+    STMT_SITE: { fetch: (url, init) => {
+      if (String(url).endsWith("/replace")) replaceCalls++;
+      return stmtWorker.fetch(new Request(url, init), counter);
+    } }
+  };
+  counter.DESK_MAKER = { fetch: (request) => worker.fetch(request, desk, { waitUntil() {} }) };
+  const session = await O.mintSession(counter, u);
+  const publicChange = { ...change };
+  delete publicChange.total; delete publicChange.unit;
+  const call = (replacement, token = session, id = original.id) => stmtWorker.fetch(new Request("https://counter.test/orders/" + id + "/amend", {
+    method: "POST", headers: { "X-Stmt-Session": token, "content-type": "application/json" }, body: JSON.stringify(replacement)
+  }), counter);
+  activePre = { id: "existing-preapproval" };
+  const preDenied = await call(publicChange);
+  ok(preDenied.status === 409 && relayBook.book.order(u, original.id).status === "placed",
+    "the complete bridge refuses a legacy active D1 preapproval before changing the Object");
+  activePre = null; failD1 = true;
+  const unavailable = await call(publicChange);
+  ok(unavailable.status === 500 && relayBook.book.order(u, original.id).status === "placed",
+    "a failed D1 preapproval read fails closed and leaves the original order intact");
+  failD1 = false;
+  const forged = await call({ ...publicChange, u: "other-user" }), absent = await call(publicChange, "");
+  ok(forged.status === 400 && absent.status === 401 && relayBook.book.order(u, original.id).status === "placed",
+    "the public amendment uses the session identity and refuses client identity or an absent session");
+  const otherSession = await O.mintSession(counter, "other-user");
+  const wrongOwner = await call(publicChange, otherSession), wrongSession = await call(publicChange, "wrong-session-0000000000");
+  ok(wrongOwner.status === 404 && wrongSession.status === 401 && relayBook.book.order(u, original.id).status === "placed",
+    "the actual Worker path refuses another customer's order and an invented session");
+  const privateFields = ["code", "owner", "by", "bucket", "username", "total", "unit"];
+  const smuggled = await Promise.all(privateFields.map((field) => call({ ...publicChange, [field]: "not accepted" })));
+  ok(smuggled.every((response) => response.status === 400) && relayBook.book.order(u, original.id).status === "placed",
+    "all identity and price fields are refused on the actual customer amendment path");
+  const stale = await call({ ...publicChange, digest: "stale" });
+  ok(stale.status === 409 && (await stale.json()).code === "pricesMoved" && relayBook.book.order(u, original.id).status === "placed",
+    "the complete amendment path refuses a stale sealed-list digest without cancelling the original");
+  const savedPrice = pricing.byProduct.salt.cards["CX1-AB"][1][1];
+  pricing.byProduct.salt.cards["CX1-AB"][1][1] = 100;
+  const belowFloor = await call(publicChange);
+  pricing.byProduct.salt.cards["CX1-AB"][1][1] = savedPrice;
+  ok(belowFloor.status === 409 && relayBook.book.order(u, original.id).status === "placed",
+    "a snapshot card below the exact floor cannot become a replacement order");
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0000000000000000" } }));
+  const oldPublish = await call(publicChange);
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
+  ok(oldPublish.status === 409 && (await oldPublish.json()).code === "amendPrices",
+    "the replacement refuses a list published from a different Desk build");
+  const blockedOrders = [
+    { ...original, id: "20261002120000-reserved", reviewed: true },
+    { ...original, id: "20261002120000-accepted", status: "acknowledged" },
+    { ...original, id: "20261002120000-outsider", code: "CY2-CD" }
+  ];
+  for (const order of blockedOrders) relayBook.book.append(null, u, order.id, { kind: "place", at, order }, null);
+  const beforeBlocked = replaceCalls;
+  const blocked = await Promise.all(blockedOrders.map((order) => call(publicChange, session, order.id)));
+  ok(blocked[0].status === 409 && blocked[1].status === 409 && blocked[2].status === 404 && replaceCalls === beforeBlocked,
+    "Desk independently refuses a reserved review, an agreed order and a foreign roster code");
+  const bucketOrder = { ...original, id: "20261002120000-bucket", code: "CX1-AB-R" };
+  relayBook.book.append(null, u, bucketOrder.id, { kind: "place", at, order: bucketOrder }, null);
+  const bucket = await call({ ...publicChange, rid: "amendment-bucket-0001" }, session, bucketOrder.id);
+  ok(bucket.status === 200, "the Desk ownership check includes the customer's R2 bucket");
+  const attempt = await stmtWorker.fetch(new Request("https://counter.test/all/maker/orders/" + original.id + "/accept", {
+    method: "POST", headers: { "X-Stmt-Session": session, "content-type": "application/json" }, body: "{}"
+  }), counter);
+  const privateAttempt = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + original.id + "/accept", {
+    method: "POST", headers: { "content-type": "application/json" }, body: "{}"
+  }), desk, { waitUntil() {} });
+  ok(attempt.status === 401 && privateAttempt.status === 404,
+    "a customer session cannot call Admin maker operations or the private Desk capability directly");
+  const reservationOrder = { ...original, id: "20261002120000-review" };
+  relayBook.book.append(null, u, reservationOrder.id, { kind: "place", at, order: reservationOrder }, null);
+  const previewResponse = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + reservationOrder.id + "/preview", {
+    method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: "{}"
+  }), desk, { waitUntil() {} });
+  const preview = await previewResponse.json();
+  const accepted = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + reservationOrder.id + "/accept", {
+    method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: JSON.stringify({ hash: preview.hash })
+  }), desk, { waitUntil() {} });
+  ok(previewResponse.status === 200 && accepted.status === 500 && relayBook.book.order(u, reservationOrder.id).reviewed === true,
+    "a matching actual Accept reserves the Object before even a failed D1 preapproval write");
+  for (const order of blockedOrders.concat(reservationOrder))
+    relayBook.book.run("desk", { u, id: order.id, body: { status: "cancelled" } });
+  const received = await call(publicChange), receivedBody = await received.json();
+  ok(received.status === 200 && receivedBody.order.replaces === original.id
+    && relayBook.book.order(u, original.id).status === "cancelled",
+    "the authenticated customer amendment crosses both fixed service paths and commits one replacement");
+  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0000000000000000" } }));
+  const replay = await call(publicChange), replayBody = await replay.json();
+  ok(replay.status === 200 && replayBody.order.id === receivedBody.order.id
+    && relayBook.book.ordersOf(u).filter((order) => order.replaces === original.id).length === 1,
+    "the actual Worker replay returns the existing replacement even after its price list changes");
+  const savedRoad = counter.ORDER_STORE;
+  counter.ORDER_STORE = "kv";
+  const kvRoad = await call(publicChange);
+  counter.ORDER_STORE = savedRoad;
+  ok(kvRoad.status === 503, "the complete amendment path cannot take a non-atomic KV writer");
+  const offline = await customerAmend({ STMT: store, ORDER_STORE: "object", ORDERBOOK: relayBook.ns }, u, original.id, publicChange);
+  const kvOnly = await O.replaceOrder({ STMT: store }, u, original.id, change);
+  ok(offline.status === 503 && kvOnly.status === 503,
+    "amendment fails closed without the private bridge or atomic Object storage");
+  const testUser = "0000-0000", fix = build(new Date(), "open", testUser), fixtureStore = new KV();
+  fix.salt = "amend-fixture";
+  await fixtureStore.put("u:" + testUser, JSON.stringify({ test: true, wrap: { salt: fix.salt }, prices: { digest: fix.prices.digest } }));
+  await fixtureStore.put("testfix:" + testUser, JSON.stringify(fix));
+  const example = fix.orders.find((order) => order.status === "placed" && order.sheet && order.product === "salt");
+  const exampleChange = { ...publicChange, qty: example.qty, digest: fix.prices.digest };
+  const ex = await exampleReplace({ STMT: fixtureStore }, testUser, example.id, exampleChange);
+  const exAgain = await exampleReplace({ STMT: fixtureStore }, testUser, example.id, exampleChange);
+  ok(!ex.error && exAgain.order.id === ex.order.id && isExample(testUser, ex.order.id)
+    && (await fixtureStore.list({ prefix: "order:" })).keys.length === 0
+    && FEATURES.find(([name]) => name.startsWith("order replaced"))[1](fix),
+    "test-account replacement has its acceptance case, retries once and writes only its fixture");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const { landingPage } = await import("../stmt/page.js");
+  const contentKey = await C.contentKey("amend-ui-fixture", u), password = "amend-fixture-password";
+  const list = { digest, week: { monday: "2026-10-01" }, products: [
+    { product: "salt", unit: "unit", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
+    { product: "rice", unit: "unit", sizes: [{ q: 1, price: 50 }] }
+  ] };
+  const opened = { ok: true, session: "amendment-ui-session", wrap: await C.wrapKey(password, contentKey),
+    env: await C.encryptWith(contentKey, JSON.stringify({ statements: [] })),
+    prices: await C.encryptWith(contentKey, JSON.stringify(list)) };
+  const posts = [];
+  const dom = new JSDOM(landingPage(u, "amend-ui-nonce", null), {
+    url: "https://counter.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const result = String(path) === "/open" ? opened
+          : String(path) === "/hours" ? { open: false, source: "manual" }
+          : String(path) === "/orders" ? { ok: true, orders: [original] }
+          : { ok: true, order: { ...original, id: "20261002120000-new", replaces: original.id } };
+        if (String(path).endsWith("/amend")) posts.push({ path: String(path), body: JSON.parse(init.body) });
+        return { ok: true, status: 200, json: async () => result };
+      };
+    }
+  });
+  try {
+    const doc = dom.window.document;
+    doc.getElementById("un").value = u; doc.getElementById("pw").value = password;
+    doc.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    const findChange = () => [...doc.querySelectorAll("button")].find((button) => button.textContent === "Change order");
+    for (let i = 0; i < 120 && !doc.querySelector('#pOrder [data-row="' + original.id + '"]'); i++)
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    const row = doc.querySelector('#pOrder [data-row="' + original.id + '"]');
+    if (row) row.click();
+    for (let i = 0; i < 120 && !findChange(); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(!!findChange(), "a placed customer order exposes Change order");
+    if (!findChange()) { for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close(); return; }
+    findChange().click();
+    const size = doc.querySelector('#osheet input[name="osize"][value="2"]');
+    size.checked = true; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    const sizeCount = doc.querySelectorAll("#osheet fieldset input[type=radio]").length;
+    doc.getElementById("oGo").click();
+    ok(doc.querySelector("#osheet").textContent.includes("RM 190")
+      && sizeCount === 2
+      && doc.querySelector("#osheet").textContent.includes("acknowledgement may be delayed"),
+      "customer amendment reviews one product at its sealed quote and repeats the closed-hours notice");
+    doc.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posts.length; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(posts.length === 1 && posts[0].path === "/orders/" + original.id + "/amend"
+      && posts[0].body.qty === 2 && posts[0].body.digest === digest && posts[0].body.rid
+      && !Object.hasOwn(posts[0].body, "total") && !Object.hasOwn(posts[0].body, "unit") && !Object.hasOwn(posts[0].body, "u"),
+      "the amendment sheet sends its chosen size and replay id, never a client price or identity");
+  } finally { dom.window.close(); }
+  for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close();
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

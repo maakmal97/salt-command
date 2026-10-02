@@ -28,4 +28,11 @@
 - `/claims/<id>/preview|received|notfound`
 - `GET /threads` and `POST /threads/<username>` (Step 7: his Chat; `{message}`, checked by siteWords, or `{noReply: true}`)
 - `GET /slips/<username>/<id>` (F13: a slip's ciphertext, relayed from the Counter's `slip:` KV, never cached by `sw.js`)
-- All keyed via `X-Salt-Key`.
+- `GET /stmt/rev` (Desk build id only; internal Counter service binding, keyed by `X-Stmt-Desk` using the shared `STMT_DESK_KEY`)
+- The endpoints above are keyed via `X-Salt-Key` except `/stmt/rev`, which uses `X-Stmt-Desk`.
+
+## Counter maker
+- `/all/maker/*` is Counter Admin behind verified Access identity and the exact owner email.
+- `POST /orders/<id>/amend` is the customer-session amendment path; Admin inputs stay under `/all/maker/inputs/*`.
+- Desk maker operations use the separate `DESK_MAKER` binding and `COUNTER_MAKER_KEY`; name and places vault reads return ciphertext only.
+- Source support is not live until the Counter and Desk Workers are provisioned and deployed.

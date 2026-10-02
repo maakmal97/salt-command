@@ -11,27 +11,19 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * AUTHENTICATION, AS AT 16 AUG 2026: READS ARE OPEN, WRITES ARE GATED BY A SHARED KEY, AND
- * THE GATE IS ARMED. See writeOk() below. The key lives in the SALT_WRITE_KEY secret, which
- * is set (wrangler secret list returns it) and was verified on 16 Aug 2026 refusing an
- * unkeyed POST /queue with 401 "write key required"; the phone holds it in localStorage
- * after being asked once. Zero Trust stays off either way.
- *
- * READS, AS AT 11 AUG 2026: THERE IS NO AUTHENTICATION, BY DECISION. Cloudflare Access was
- * removed and REQUIRE_ACCESS is "0" on the owner's instruction ("I want no zero trust
- * requirements right now"), so accessOk() below returns true unconditionally and every
- * path serves. That used to mean write as well: POST /queue accepted an unauthenticated
- * body from anyone and the daily run folded it into the real ledger as real rows. The write
- * gate closes that half, so the open surface is READS ONLY as at 16 Aug 2026, which is still
- * the whole ledger to anyone with the URL. See CLAUDE.md,
- * "Access, and why it is off", before changing REQUIRE_ACCESS back: doing so WITHOUT
- * first recreating the Access application locks the owner out of his own desk, because
- * nothing would be issuing the header this then demands.
+ * Access is controlled by REQUIRE_ACCESS and defaults off in the committed deployment config
+ * until its application is provisioned. When enabled, every request must carry a valid Access
+ * JWT for the configured team and audience and the owner's exact email; a header alone is not
+ * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount } from "./maker.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput } from "./maker-inputs.js";
+import { queueSale } from "./orders.js";
+import { ownerAccess } from "./access.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -86,13 +78,9 @@ const isEnvelope = (v) =>
   v && typeof v === "object" &&
   typeof v.salt === "string" && typeof v.iv === "string" && typeof v.ct === "string";
 
-/* Cloudflare injects Cf-Access-Jwt-Assertion on every request that passed Access, and
- * strips any client-supplied copy. Presence is a sound signal that Access ran. Full JWT
- * verification against the team's public keys is the next hardening step; presence is
- * enough to stop the queue being writable with Access misconfigured. */
-function accessOk(request, env) {
-  if (String(env.REQUIRE_ACCESS || "0") !== "1") return true;
-  return !!request.headers.get("Cf-Access-Jwt-Assertion");
+async function accessOk(request, env) {
+  if (String(env.REQUIRE_ACCESS || "0") === "0") return true;
+  return ownerAccess(request, env);
 }
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
@@ -118,12 +106,35 @@ function writeOk(request, env) {
   const key = String(env.SALT_WRITE_KEY || "");
   if (!key) return true;
   const got = String(request.headers.get("X-Salt-Key") || "");
-  if (got.length !== key.length) return false;
+  return secretMatches(got, key);
+}
+function secretMatches(got, key) {
+  if (!key || got.length !== key.length) return false;
   let diff = 0;
   for (let i = 0; i < key.length; i++) diff |= got.charCodeAt(i) ^ key.charCodeAt(i);
   return diff === 0;
 }
 const needsKey = () => json({ ok: false, error: "write key required", writeKey: true }, 401);
+
+/* The Counter's keyed, internal read of the Desk build id, for its live statement gate.
+ * Dispatched before the Access gate (a service binding carries no owner JWT); read-only,
+ * and it accepts only the shared STMT_DESK_KEY. */
+async function handleStmtRev(request, env, url, m) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  const key = String(env.STMT_DESK_KEY || "");
+  if (!secretMatches(String(request.headers.get("X-Stmt-Desk") || ""), key))
+    return json({ ok: false, error: "desk key required" }, 401);
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/rev.json", url), { method: "GET" }));
+    if (!res || !res.ok) return json({ ok: false, error: "no build manifest" }, 503);
+    const rev = await res.json();
+    if (!rev || typeof rev.id !== "string" || !/^[0-9a-f]{16}$/.test(rev.id))
+      return json({ ok: false, error: "invalid build manifest" }, 503);
+    return json({ ok: true, id: rev.id });
+  } catch (e) {
+    return json({ ok: false, error: "no build manifest" }, 503);
+  }
+}
 
 /* THE PUSH KEY (20 Aug 2026): A CAPABILITY, NOT A CREDENTIAL, AND IT OPENS ONE DOOR.
  *
@@ -246,7 +257,6 @@ function draftOnArrival(env, ctx) {
 
 async function handleQueuePost(request, env, ctx) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
-  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
   if (!writeOk(request, env)) return needsKey();
   let payload;
   try { payload = await readQueuePost(request); }
@@ -261,6 +271,146 @@ async function handleQueuePost(request, env, ctx) {
   }));
   draftOnArrival(env, ctx);
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
+}
+
+async function handleInternalMaker(request, env, ctx, p, m) {
+  if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
+    && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr"
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)
+    && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend)$/.test(p))
+    return json({ ok: false, error: "not found" }, 404);
+  if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
+  if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (p === "/_internal/maker/vault" || p === "/_internal/maker/vault/addr") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_QUEUE) return json({ ok: false, error: "the Desk vault store is required" }, 503);
+    const key = p.endsWith("/addr") ? AKEY : VKEY;
+    const raw = await env.SALT_QUEUE.get(key);
+    if (!raw) return json({ ok: true, vault: null });
+    let stored;
+    try { stored = JSON.parse(raw); } catch (error) {
+      return json({ ok: false, error: "the encrypted vault record is unreadable" }, 503);
+    }
+    const vault = key === VKEY ? stored.vault : stored.vault;
+    return vault == null || isSealed(vault)
+      ? json({ ok: true, vault: vault || null })
+      : json({ ok: false, error: "the encrypted vault record has an invalid envelope" }, 503);
+  }
+  if (p === "/_internal/maker/inputs") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
+      catalog: makerInputCatalog(book) });
+  }
+  if (p === "/_internal/maker/drafts") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return handleDraftsGet(env, new URL(request.url));
+  }
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)) {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 1_048_576) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch (error) { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue and mirror are required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    const operation = p.split("/").pop();
+    if (operation === "stock-count"
+      && !makerInputCatalog(book).products.some((item) => item.product === body.product))
+      return json({ ok: false, error: "Choose an active book for the stock count." }, 400);
+    const built = operation === "stock-count" ? makerStockCount(body)
+      : operation === "tier-set" ? makerTierSet(body, book)
+        : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
+          : makerLedgerInput(operation, body, book);
+    if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
+    const entry = built.entry;
+    if (built.vaultOnly) {
+      const envelope = built.vault;
+      await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: envelope, ids: null, locs: null }));
+      return json({ ok: true, vaultOnly: true });
+    }
+    const writesNameVault = operation === "amend-id" || operation === "add-id" && body.kind !== "bucket";
+    if (writesNameVault && !isSealed(body.vault))
+      return json({ ok: false, error: "File the encrypted vault on this device before adding the ID." }, 400);
+    const proposed = draftRow(entry, book);
+    if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
+    const stored = await env.SALT_LEDGER.prepare("SELECT entry,status FROM draft WHERE id=?1").bind(entry.at).first();
+    const queuedEntries = (await (await handleQueueGet(env, true)).json()).queue;
+    if (stored) queuedEntries.push(JSON.parse(stored.entry));
+    const collision = queuedEntries.find((queued) => queued.at === entry.at && JSON.stringify(queued) !== JSON.stringify(entry));
+    if (collision) return json({ ok: false, error: "That request timestamp already names another entry. Start a new input." }, 409);
+    if (operation === "sale" || operation === "purchase") {
+      const pending = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE status='pending'").all();
+      const checked = makerQueuedTradeCheck(entry, queuedEntries.concat((pending.results || []).map((row) => JSON.parse(row.entry))));
+      if (checked.error) return json({ ok: false, ...checked }, 409);
+    }
+    if (writesNameVault && (operation !== "amend-id" || body.to !== body.from)) {
+      await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.vault, ids: null, locs: null }));
+    }
+    const queued = await queueSale(env, entry);
+    await runDrafter(env);
+    const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
+    return json({ ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" });
+  }
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend)$/.exec(p);
+  if (orderMatch) {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 16384) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch (e) { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json({ ok: false, error: "send a JSON object" }, 400);
+    const fault = makerOrderFault(orderMatch[2], body);
+    if (fault) return json({ ok: false, error: fault }, 400);
+    const id = orderMatch[1];
+    const action = orderMatch[2];
+    let result;
+    try {
+      if (action === "amend") result = await amendOrder(env, id, body);
+      else if (action === "preview") result = await previewOrder(env, id, body);
+      else if (action === "accept") {
+        result = await acceptOrder(env, id, body, "Counter Admin");
+        const others = ((result.drafted && result.drafted.approved) || []).filter((x) => x !== result.draft);
+        if (others.length) await afterApproval(env, ctx, others);
+        else if (result.approved) stageOnApproval(env, ctx);
+      } else {
+        result = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
+          env, id, body, "Counter Admin"
+        );
+        if (result.ok && result.preapproval && result.preapproval.spent === "applied")
+          await afterApproval(env, ctx, [result.preapproval.draft]);
+        if (result.ok) reconcileOnTap(env, ctx);
+      }
+    } catch (e) { result = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+    return json(result, result.ok ? 200 : (result.status || 502));
+  }
+  const match = /^\/_internal\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(p);
+  let id;
+  try { id = decodeURIComponent(match[1]); } catch (e) { return json({ ok: false, error: "invalid draft id" }, 400); }
+  if (!id || id.length > 40) return json({ ok: false, error: "invalid draft id" }, 400);
+  if (!Number.isFinite(Date.parse(id)) || new Date(id).toISOString() !== id)
+    return json({ ok: false, error: "invalid draft timestamp" }, 400);
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "send JSON" }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length)
+    return json({ ok: false, error: "draft decisions take an empty object" }, 400);
+  const decision = match[2] === "approve" ? "approved" : "rejected";
+  const internal = new Request(request.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Salt-Key": String(env.SALT_WRITE_KEY || "")
+    },
+    body: JSON.stringify({ by: "Counter Admin" })
+  });
+  return handleDraftDecide(internal, env, ctx, id, decision);
 }
 
 /* v525: a rejected entry is dropped from every queue (dropQueued, src/orders.js, which a withdrawal
@@ -278,7 +428,7 @@ async function rejectedAmong(env, ats) {
 }
 
 /* Union of every device's queue, for the drain and for eyeballing behind Access. */
-async function handleQueueGet(env) {
+async function handleQueueGet(env, strict = false) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   const out = [];
   let cursor;
@@ -289,8 +439,12 @@ async function handleQueueGet(env) {
       if (!raw) continue;
       try {
         const v = JSON.parse(raw);
+        if (strict && !Array.isArray(v.queue)) throw new Error("queue shape");
         for (const entry of (v.queue || [])) out.push(entry);
-      } catch (e) { /* skip a corrupt key rather than fail the whole read */ }
+      } catch (e) {
+        if (strict) throw new Error("The Desk queue contains an unreadable entry; no maker input was added.");
+        /* skip a corrupt key rather than fail the whole read */
+      }
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);
@@ -320,7 +474,6 @@ async function handleVaultGet(env) {
 }
 async function handleVaultPost(request, env) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
-  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
   if (!writeOk(request, env)) return needsKey();
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
@@ -856,11 +1009,16 @@ export default {
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
 
+    /* Private Counter-to-Desk capability routes are matched before the public Access/read and
+       asset paths. Unknown paths under this prefix never fall through to ASSETS. */
+    if (p === "/_internal/maker" || p.startsWith("/_internal/maker/")) return handleInternalMaker(request, env, ctx, p, m);
+
     /* Fail closed. With REQUIRE_ACCESS on, a request that did not pass Cloudflare
      * Access gets nothing: not the ledger, not the queue, not the build id. Access
      * being off at the dashboard must read as an outage, never as an open desk.
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
-    if (!accessOk(request, env)) {
+    if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
+    if (!await accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")

@@ -64,7 +64,7 @@
  * sibling file, and nothing under stmt/ imports anything else (the suite checks). It is also what lets the
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
-import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideCustomer, decideDesk,
+import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread } from "./orders.js";
 
 export { BOOK_NAME };
@@ -91,7 +91,7 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk"];
+const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix; Step 7: so does an
    account's thread, one a username */
 const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : "ord");
@@ -293,6 +293,11 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, code: "frozen", status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
+    if (op === "replacement") {
+      const u = String(a.u || ""), id = String(a.id || "");
+      const seen = a.rid ? this.event("c:" + u + ":" + id + ":replace:" + a.rid) : null;
+      return { ok: true, order: seen ? this.order(u, seen.oid) : null };
+    }
     /* S6 6.6: the account claims, one customer's or all, newest first */
     if (op === "claims") return { ok: true, claims: this.state.storage.sql.exec("SELECT doc FROM acl" + (a.u ? " WHERE u = ?" : "") + " ORDER BY at DESC", ...(a.u ? [String(a.u)] : [])).toArray().map((r) => JSON.parse(r.doc)) };
     if (op === "aclaim") {
@@ -337,9 +342,22 @@ export class OrderBook {
       const u = String(a.u || ""), eid = a.rid ? "c:" + u + ":place:" + a.rid : null;
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
-      const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at, a.digest);
+      const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer");
       if (d.error) return no(d, 400);
       return this.append(eid, u, d.ev.order.id, d.ev, null);
+    }
+    if (op === "replace") {
+      const u = String(a.u || ""), id = String(a.id || "");
+      const eid = a.rid ? "c:" + u + ":" + id + ":replace:" + a.rid : null;
+      const seen = eid ? this.event(eid) : null;
+      if (seen) return { ok: true, order: this.order(u, seen.oid), again: true };
+      const order = this.order(u, id);
+      const d = decideReplace(order, a.body, this.ordersOf(u), at, a.digest);
+      if (d.error) return no(d, d.status || 400);
+      return this.state.storage.transactionSync(() => {
+        this.append(null, u, id, d.cancel, order, true);
+        return this.append(eid, u, d.place.order.id, d.place, null, true);
+      });
     }
     if (op === "customer") {
       const u = String(a.u || ""), id = String(a.id || ""), eid = a.rid ? "c:" + u + ":" + id + ":" + a.rid : null;
@@ -397,10 +415,10 @@ export class OrderBook {
   }
 
   /* the event, the order it folds into and the marks it moves, as one transaction */
-  append(eid, u, oid, ev, order) {
+  append(eid, u, oid, ev, order, withinTransaction = false) {
     const sql = this.state.storage.sql;
     let out = null;
-    this.state.storage.transactionSync(() => {
+    const write = () => {
       const r = applyEvent(order, ev);
       sql.exec("INSERT INTO ev (eid, u, oid, kind, at, body) VALUES (?, ?, ?, ?, ?, ?)",
         eid || "s:" + crypto.randomUUID(), u, oid, ev.kind, ev.at, JSON.stringify(ev));
@@ -408,7 +426,9 @@ export class OrderBook {
       for (const [k, v] of marksOf(ev, r.order)) this.setMeta(k, v);
       if (ev.kind !== "copy" && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
       out = { ok: true, order: r.order, wake: wakes(ev, r.order, r.done) };   /* the wake and its S12 kind, or null */
-    });
+    };
+    if (withinTransaction) write();
+    else this.state.storage.transactionSync(write);
     return out;
   }
 

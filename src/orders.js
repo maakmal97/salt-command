@@ -5,7 +5,8 @@
  * shared key STMT_DESK_KEY and reaches the site over a SERVICE BINDING (STMT_SITE in
  * wrangler.jsonc), so the phone talks to the desk it already talks to, with the write key it
  * already holds, and the site keeps having no route to the desk, no key of the desk's and no
- * idea the desk exists. The direction is desk to site, never the other way.
+ * idea the desk exists. These relays remain Desk-to-Counter. The separately keyed maker
+ * capability in src/maker.js is the only Counter-to-Desk writer.
  *
  * WHAT THIS ADDS TO AN ORDER IS THE CODE. The site knows a username; the book knows a code. The
  * deploy writes the map (stmt-users, username to code) into THIS Worker's store on every publish,
@@ -424,6 +425,11 @@ export async function acceptOrder(env, id, body, by, now) {
   const entry = pv.entry;
   delete pv.entry;
   if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the row has changed since the card drew it: look at it again before you accept", preview: pv };
+  if (o.status === "placed") {
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+    const reserved = await moveOrder(env, o.u, id, { reserveReview: Object.fromEntries(fields.map((key) => [key, o[key] ?? null])) });
+    if (!reserved.ok) return reserved;
+  }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash: pv.hash, entry, at: at.toISOString(), by,
     shown: { from: o.status, row: pv.row, flags: pv.flags, pricing: pv.pricing } });
   await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
@@ -439,6 +445,47 @@ export async function acceptOrder(env, id, body, by, now) {
     return Object.assign(out, { ok: true, approved: false, differs: true });
   }
   return Object.assign(out, { ok: true, approved: false, waiting: true });
+}
+
+export async function amendOrder(env, id, body) {
+  if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the Desk mirror is required to check this amendment" };
+  const found = await findOrder(env, id);
+  if (!found.ok) return found;
+  if (found.order.u !== body.u) return { ok: false, status: 404, error: "no such order" };
+  const owner = (await usersMap(env))[body.u];
+  if (!owner || !POSITION_ENGINE.ownsCode(owner, found.order.code)
+    || found.order.ledgerKey && !POSITION_ENGINE.ownsCode(owner, found.order.ledgerKey.split("|")[0]))
+    return { ok: false, status: 404, error: "no such order" };
+  const replacement = Object.assign({}, body);
+  delete replacement.u;
+  const relay = async () => {
+    const response = await site(env, "/desk/orders/" + encodeURIComponent(found.order.u) + "/" + id + "/replace", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(replacement)
+    });
+    if (!response) return { ok: false, status: 503, error: "the Counter relay is not configured" };
+    const result = await response.json();
+    return response.ok && result.ok ? result : Object.assign({}, result, { ok: false, status: response.status });
+  };
+  if (found.order.replacement) return relay();
+  if (found.order.status !== "placed" || found.order.reviewed || found.order.ledgerKey || (found.order.queued || {}).ack)
+    return { ok: false, status: 409, error: "this order is already under review or agreed", code: "amendClosed" };
+  const pre = await env.SALT_LEDGER.prepare(
+    "SELECT id FROM preapproval WHERE order_id=?1 AND status IN ('waiting','differs','applied') LIMIT 1"
+  ).bind(id).first();
+  if (pre) return { ok: false, status: 409, error: "this order has already been approved for a row and cannot be changed" };
+  if (body.product !== found.order.product) return { ok: false, status: 400, error: "replace the same product line" };
+  if (!env.ASSETS) return { ok: false, status: 503, error: "the Desk revision is unavailable" };
+  const revisionResponse = await env.ASSETS.fetch(new Request("https://desk/rev.json"));
+  if (!revisionResponse.ok) return { ok: false, status: 503, error: "the Desk revision is unavailable" };
+  const revision = await revisionResponse.json(), book = await readBook(env.SALT_LEDGER);
+  if (!revision || !/^[a-f0-9]{16}$/.test(revision.id || "") || !book.version || book.version !== revision.v)
+    return { ok: false, status: 409, error: "the Desk mirror is updating", code: "amendPrices" };
+  const quoted = cardAt(book.pricing, owner, body.product, body.qty).card;
+  const floor = floorFor(book, body.product, body.qty);
+  if (!Number.isFinite(quoted) || !(quoted > 0) || !floor || floor.exact !== true || quoted < floor.floor)
+    return { ok: false, status: 409, error: "this size has no current card above the floor", code: "amendPrices" };
+  Object.assign(replacement, { total: quoted, unit: +(quoted / body.qty).toFixed(2), buildId: revision.id });
+  return relay();
 }
 
 /* ---- COLLECTED, CASH RECEIVED, RECEIVED: A YES FOR A ROW NOT DRAFTED YET (S11 11.12, D6) ----------

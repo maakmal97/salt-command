@@ -30,6 +30,14 @@ import { isSpare, oneCodeEach } from "./stmt-pool.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
+const BUILD_ID_RE = /^[0-9a-f]{16}$/;
+
+export function readDeskBuildId(file = join(REPO, "public", "rev.json")) {
+  const rev = JSON.parse(readFileSync(file, "utf8"));
+  if (!rev || typeof rev.id !== "string" || !BUILD_ID_RE.test(rev.id))
+    throw new Error("public/rev.json has no valid Desk build id");
+  return rev.id;
+}
 
 /* THE USERNAME-TO-CODE MAP, FOR THE DESK'S OWN STORE (06 Sep 2026). An order placed on the
    statements site names a username and nothing else; the ledger's Worker turns that into the
@@ -52,7 +60,9 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      account would carry whichever code sorts last and the other would drop off every list in silence */
   const usersFile = join(root, "_users.json");
   oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
-  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null);
+  const buildId = key ? (opts && opts.buildId || readDeskBuildId()) : null;
+  if (key && !BUILD_ID_RE.test(buildId)) throw new Error("the Desk build id is invalid; live statements were not sealed");
+  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, buildId);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
@@ -177,6 +187,48 @@ export function deskPut(key, file, what, run = execFileSync) {
   }
   console.log("wrote " + key + " (" + what + ") to the desk's store, and read it back");
 }
+export function verifyAccountWrites(expected, actual) {
+  let missing = 0, mismatched = 0;
+  for (const record of expected) {
+    const value = actual.get(record.key);
+    if (typeof value !== "string") missing++;
+    else if (value !== record.value) mismatched++;
+  }
+  return { ok: missing === 0 && mismatched === 0, checked: expected.length, missing, mismatched };
+}
+function readAccountWrites(expected, outDir, run = execFileSync) {
+  const actual = new Map(), keyFile = join(outDir, "account-keys.json");
+  for (let i = 0; i < expected.length; i += 100) {
+    const part = expected.slice(i, i + 100);
+    writeFileSync(keyFile, JSON.stringify(part.map((record) => record.key)));
+    try {
+      const raw = String(wrangler(["kv", "bulk", "get", keyFile, "--remote", "--binding", "STMT"], {}, run));
+      const start = raw.indexOf("{");
+      if (start < 0) throw new Error("bulk read returned no JSON object");
+      const values = JSON.parse(raw.slice(start));
+      if (!values || typeof values !== "object" || Array.isArray(values)) throw new Error("bulk read returned an invalid shape");
+      for (const record of part) {
+        if (!Object.hasOwn(values, record.key)) throw new Error("bulk read omitted a requested record");
+        const entry = values[record.key];
+        const value = entry && typeof entry === "object" ? entry.value : entry;
+        if (value !== null && typeof value !== "string") throw new Error("bulk read returned an invalid record");
+        actual.set(record.key, value);
+      }
+    } catch (e) {
+      console.log("::warning::the account bulk read did not verify every record; checking each account record separately");
+      for (const record of part) {
+        try {
+          actual.set(record.key, String(wrangler(
+            ["kv", "key", "get", "--remote", "--binding", "STMT", record.key],
+            { stdio: ["ignore", "pipe", "pipe"] }, run)));
+        } catch (readError) {
+          actual.set(record.key, null);
+        }
+      }
+    }
+  }
+  return actual;
+}
 /* v658: the guest links themselves, so a board can be written for each. They live in the site's own
    store under g:, which this tool already reads through wrangler's login.
    ONE LIST AND ONE BULK GET, NOT A GET PER LINK (fold 5.5, 26 Sep 2026): each link was a wrangler
@@ -294,7 +346,8 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       }
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc, { noRetire, cards, issueUnread });
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc,
+    { noRetire, cards, issueUnread, buildId: key ? readDeskBuildId() : null });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
@@ -444,6 +497,16 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
   if (dry) { console.log("wrote " + putFile + ", " + delFile + " and " + usersFile); return; }
 
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" }, run);
+  const accountRecords = plan.puts.filter((record) => String(record.key || "").startsWith("u:")
+    && !TEST_USERS.includes(String(record.key).slice(2)));
+  const accountCheck = verifyAccountWrites(accountRecords, readAccountWrites(accountRecords, outDir, run));
+  if (!accountCheck.ok) {
+    console.error("::error::the bulk publish did not read back every real account record: "
+      + accountCheck.missing + " missing, " + accountCheck.mismatched + " mismatched, "
+      + accountCheck.checked + " checked.");
+    process.exit(1);
+  }
+  console.log("read back " + accountCheck.checked + " real account records from the store");
   /* the desk's map, so the ledger's Worker can name the account an order belongs to */
   deskPut("stmt-users", usersFile, Object.keys(plan.users).length + " usernames", run);
   /* ============ v564: AND THE SITE'S OWN ADDRESS, FOR THE QR ON THE BOARD SHEET ============
@@ -460,17 +523,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
   writeFileSync(siteFile, siteBaseUrl());
   deskPut("stmt-site", siteFile, siteBaseUrl(), run);
 
-  /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
-     invisible otherwise, which is the whole class of fault this file was rewritten for. */
-  const probe = plan.puts.find((x) => x.key.startsWith("u:"));
-  const got = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", probe.key],
-    { stdio: ["ignore", "pipe", "ignore"] }, run);
-  if (String(got).indexOf('"u"') < 0) {
-    console.error("::error::the bulk put reported success but " + probe.key + " does not read back from the store.");
-    process.exit(1);
-  }
-  console.log("read back " + probe.key + " from the store");
-  console.log("published " + (plan.puts.length - 1) + " records");
+  console.log("published " + accountCheck.checked + " account records");
 
   if (plan.deletes.length) {
     wrangler(["kv", "bulk", "delete", delFile, "--remote", "--binding", "STMT", "--force"], { stdio: "inherit" }, run);

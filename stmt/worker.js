@@ -51,12 +51,13 @@ import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
+import { handleMaker, publicHours, customerAmend } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -75,6 +76,9 @@ const HEADERS = {
   "referrer-policy": "no-referrer",
   "x-content-type-options": "nosniff"
 };
+const ADMIN_EMAIL = "maakmal97@icloud.com";
+const isAdminIdentity = (who) => !!who && typeof who.email === "string"
+  && who.email.trim().toLowerCase() === ADMIN_EMAIL;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: Object.assign({ "content-type": "application/json; charset=utf-8" }, HEADERS)
 });
@@ -313,6 +317,7 @@ async function handleOpen(request, env) {
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
   const session = byMaster ? null : await openSession(env, u, "password", request);
+  const live = await customerLive(env, u, rec);
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -322,7 +327,7 @@ async function handleOpen(request, env) {
     assoc: !!rec.assoc,
     /* v706: an associate's own report card, sealed under the same content key as the statement */
     card: rec.card || null,
-    env: rec.env, live: rec.live || null, prices: rec.prices || null, session
+    env: rec.env, ...live, prices: rec.prices || null, session
   }), {
     status: 200,
     headers: Object.assign({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store, private" }, HEADERS)
@@ -354,8 +359,9 @@ async function handleCustomer(request, env, p, m) {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const acct = await accountRecord(env, u);
     if (!acct) return signinAgain("signinOrders");
+    const live = await customerLive(env, u, acct);
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
-      card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
+      card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
   }
   /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
      /claims is the same road under the name the page first asked for. */
@@ -459,6 +465,16 @@ async function handleCustomer(request, env, p, m) {
   }
   /* STEP 6 (his decisions of 29 Sep 2026): a customer's passkey, saved, linked to this device and removed, on their session */
   if (p.startsWith("/passkey/")) return handlePasskey(request, env, p, m, u);
+  const amendment = /^\/orders\/([^/]+)\/amend$/.exec(p);
+  if (amendment) {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const body = await readJson(request);
+    const result = isExample(u, amendment[1])
+      ? await exampleReplace(env, u, amendment[1], body)
+      : await customerAmend(env, u, amendment[1], body);
+    return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
+      : json({ ok: true, order: customerView(result.order) });
+  }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -592,6 +608,7 @@ async function handleRemember(request, env) {
   /* S9 9.4: the session first, so the phone's pointer names it (`sess`): the account's list shows the phone once, and
      signing the phone out ends the session it opened */
   const session = await openSession(env, rec.u, "remembered", request);
+  const live = await customerLive(env, rec.u, acct);
   const d = deviceOf(request.headers.get("user-agent"));
   try {
     /* and the sessions it opened before (`was`, four at most), which may still be live in another tab on the same phone:
@@ -603,7 +620,7 @@ async function handleRemember(request, env) {
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -717,6 +734,7 @@ async function handlePasskeyOpen(request, env) {
     if (dkey) await env.STMT.put(dkey, JSON.stringify({ u, wrap, at: now }), { expirationTtl: PK_TTL });
   } catch (e) { /* it opens either way */ }
   const session = await openSession(env, u, "passkey", request);
+  const live = await customerLive(env, u, acct);
   try {
     const old = await env.STMT.get(devPrefix(u) + (await idOf(got.key)), "json");
     const was = [old && old.sess].concat((old && old.was) || []).filter((x) => typeof x === "string").slice(0, 4);
@@ -726,7 +744,7 @@ async function handlePasskeyOpen(request, env) {
   return json({
     ok: true, u, passkey: true, share: got.rec.share, wrap, prfWrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -755,10 +773,11 @@ async function handleSignin(request, env) {
   if (!acct) return refused();
   await markSeen(env, rec.u, acct, "link", request);
   const session = await openSession(env, rec.u, "link", request);
+  const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -818,10 +837,11 @@ async function handleHandover(request, env, p, m) {
   }
   await markSeen(env, rec.u, acct, rec.by, request);
   const session = await openSession(env, rec.u, rec.by, request);
+  const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -832,6 +852,30 @@ async function handleHandover(request, env, p, m) {
 function deskOk(request, env) {
   const want = String(env.STMT_DESK_KEY || "");
   return !!want && ctEq(String(request.headers.get("X-Stmt-Desk") || ""), want);
+}
+const BUILD_ID_RE = /^[0-9a-f]{16}$/;
+async function customerLive(env, u, acct) {
+  const live = acct && acct.live || null;
+  if (isTest(u)) return { live, liveStatus: "fixture" };
+  if (!env.DESK || !env.STMT_DESK_KEY) {
+    console.error("Desk build id unavailable; withholding the live statement.");
+    return { live: null, liveStatus: "unavailable" };
+  }
+  try {
+    const response = await env.DESK.fetch(new Request("https://salt-command/stmt/rev", {
+      headers: { "X-Stmt-Desk": env.STMT_DESK_KEY }
+    }));
+    if (!response.ok) throw new Error("revision endpoint returned " + response.status);
+    const revision = await response.json();
+    if (!revision || revision.ok !== true || typeof revision.id !== "string" || !BUILD_ID_RE.test(revision.id)) {
+      throw new Error("revision endpoint returned an invalid build id");
+    }
+    if (!live || live.buildId !== revision.id) return { live: null, liveStatus: "updating" };
+    return { live, liveStatus: "current" };
+  } catch (e) {
+    console.error("Desk build id unavailable; withholding the live statement.");
+    return { live: null, liveStatus: "unavailable" };
+  }
 }
 /* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter ----
  * One clear key in this store, no prefix, so no listing under u:, order:, push: or fail: ever sees it and
@@ -946,6 +990,15 @@ async function handleDesk(request, env, p, m) {
        desk's minute is one trip here and not two; without it the answer is the marks alone, as it was */
     if (new URL(request.url).searchParams.get("work") === "1") return json(Object.assign({ ok: true }, marks, { orders: await ordersOwing(env) }));
     return json(Object.assign({ ok: true }, marks));
+  }
+  const replacement = /^\/desk\/orders\/([^/]+)\/([^/]+)\/replace$/.exec(p);
+  if (replacement) {
+    const u = normUser(replacement[1]);
+    if (!u || !OID_RE.test(replacement[2])) return notFound();
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await replaceOrder(env, u, replacement[2], await readJson(request));
+    return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
+      : json({ ok: true, order: result.order });
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
@@ -1510,6 +1563,12 @@ export default {
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
 
+    if (p === "/hours") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      try { return json(await publicHours(env)); }
+      catch (e) { return json({ ok: false, error: "operating hours are unavailable" }, 503); }
+    }
+
     /* Generated per request so the inline style and script carry a nonce rather than needing
        'unsafe-inline'. One builder for the customer's door and the owner's. */
     const pageResponse = async (user, owner) => {
@@ -1541,12 +1600,13 @@ export default {
         /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
            Access application is gone or misconfigured, and that is the one thing he must be told
            rather than left to guess at. Nothing is handed over either way. */
-        if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
+        if (!isAdminIdentity(who)) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
           status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
         });
         return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
       }
-      if (!who) return json({ ok: false, error: "Access required" }, 401);
+      if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
+      if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
       /* the referral links, minted and revoked from inside the Access area only */
       /* 19 SEP 2026: HIS OWN APP. The same manifest the customer's gets, pointed at /all and named
          differently, so his home screen carries the admin page rather than a second copy of the

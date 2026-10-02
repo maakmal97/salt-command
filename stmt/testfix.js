@@ -19,7 +19,7 @@
  * a retry answered once. Until the first publish seals one, a claim or a link is refused, never made for real. The next
  * publish seals the examples afresh. One KV value an account: a tap may take a minute to show on another phone.
  */
-import { decideCustomer, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf } from "./orders.js";
+import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf } from "./orders.js";
 import { refusal } from "./words.js";
 
 export const TEST_USER = "0000-0000";
@@ -62,7 +62,7 @@ export async function withExamples(env, u, orders, claims) {
 }
 
 /** An example order's id: shown by a test account alone. */
-export const EXAMPLE_ID = /^[0-9]{14}-ex[0-9]{2}$/;
+export const EXAMPLE_ID = /^[0-9]{14}-ex[a-z0-9]{2,6}$/;
 export const isExample = (u, id) => isTest(u) && EXAMPLE_ID.test(String(id || ""));
 
 /** A move of theirs on an example order, by the order book's own rules, written back into the fixture; a retry once. */
@@ -78,6 +78,33 @@ export async function exampleMove(env, u, id, action, body) {
   const order = applyEvent(JSON.parse(JSON.stringify(fix.orders[i])), d.ev).order;
   fix.orders[i] = customerView(order);
   if (rid) rids[rid] = id;
+  await keep(env, u, fix);
+  return { order };
+}
+
+export async function exampleReplace(env, u, id, body) {
+  const fix = await fixNow(env, u);
+  if (!fix) return soon();
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || Object.hasOwn(body, "total") || Object.hasOwn(body, "unit"))
+    return Object.assign(refusal("amendShape"), { status: 400 });
+  const i = fix.orders.findIndex((order) => order.id === id);
+  if (i < 0) return Object.assign(refusal("noOrder"), { status: 404 });
+  const rid = ridOf(body), rids = fix.rids = fix.rids || {}, key = "replace:" + id + ":" + rid;
+  const seen = rid && fix.orders.find((order) => order.id === rids[key]);
+  if (seen) return { order: seen };
+  const product = (fix.prices && fix.prices.products || []).find((item) => item.product === body.product);
+  const quote = product && product.sizes.find((size) => size.q === body.qty);
+  if (!quote) return Object.assign(refusal("amendPrices"), { status: 409 });
+  const priced = Object.assign({}, body, { total: quote.price, unit: +(quote.price / quote.q).toFixed(2) });
+  const d = decideReplace(fix.orders[i], priced, fix.orders, new Date().toISOString(), fix.prices && fix.prices.digest || "");
+  if (d.error) return d;
+  d.place.order.id = d.place.order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+  d.cancel.replacement = d.place.order.id;
+  fix.orders[i] = customerView(applyEvent(fix.orders[i], d.cancel).order);
+  const order = customerView(applyEvent(null, d.place).order);
+  fix.orders.push(order);
+  rids[key] = order.id;
   await keep(env, u, fix);
   return { order };
 }

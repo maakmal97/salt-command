@@ -19,10 +19,10 @@
 export const OWNER_JS = `
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), oMore=document.getElementById('oMore'),
-      oCards=document.getElementById('oCards'), aopen=document.getElementById('aopen'),
+      oCards=document.getElementById('oCards'), oMaker=document.getElementById('oMaker'), aopen=document.getElementById('aopen'),
       sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null;
-  /* S9 9.2: FOUR PLACES, Needs you (null), Accounts, Links and More; the report card is a page of More */
-  var PLACE={accounts:'accounts', links:'links', more:'more', cards:'more'};
+  /* S9 9.2: Needs you, Accounts, Links, Maker and More; the report card is a page of More */
+  var PLACE={accounts:'accounts', links:'links', maker:'maker', more:'more', cards:'more'};
   function panel(which){
     if(which==='needs') which=null;
     mHome.hidden=!!which;
@@ -30,6 +30,7 @@ export const OWNER_JS = `
     oLinks.hidden=(which!=='links');
     oMore.hidden=(which!=='more');
     oCards.hidden=(which!=='cards');
+    oMaker.hidden=(which!=='maker');
     var here=which?PLACE[which]:'needs';
     [].slice.call(document.querySelectorAll('.place[data-m]')).forEach(function(b){
       if(b.getAttribute('data-m')===here) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
@@ -38,6 +39,7 @@ export const OWNER_JS = `
     if(!which) drawNeeds();
     if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
+    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
@@ -342,13 +344,14 @@ export const OWNER_JS = `
     c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
     c.appendChild(pn);
     var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
-    var hob=ghost('Show a code, in person'), open=ghost('View as them'), pwb=ghost('Copy password'), sob=ghost('Sign out everywhere');
+    var hob=ghost('Show a code, in person'), open=ghost('View as them'), pwb=ghost('Copy password'), sob=ghost('Sign out everywhere'), orderFor=ghost('Order for them');
     pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
-    [hob, open, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
+    [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
     hob.addEventListener('click', function(){ if(!none) showHandover(a, hob); });
     /* S9 9.5: View as them, their own page, read only */
     open.addEventListener('click', function(){ openAcct(a); });
+    orderFor.addEventListener('click', function(){ makerForAccount(a); });
     pwb.addEventListener('click', async function(){
       if(none||!a.pwMaster) return;
       pwb.disabled=true; pwb.textContent='Opening...';
@@ -631,8 +634,586 @@ export const OWNER_JS = `
     try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
     if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
-    if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
+    if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; throw failure; }
     return j;
+  }
+  var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
+  function makerReading(parent, reading){
+    if(reading.cost!=null){
+      var cost=typeof reading.cost==='object'?reading.cost.total:reading.cost;
+      parent.appendChild(el('p','maker-facts','Cost RM '+Number(cost).toFixed(2)));
+    }
+    if(reading.margin) parent.appendChild(el('p','maker-facts','Margin RM '+Number(reading.margin.rm).toFixed(2)+' · '+reading.margin.pct+'%'));
+    if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
+    (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
+    if(reading.row){
+      var detail=el('details',''), summary=el('summary','','Proposed row');
+      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
+    }
+  }
+  function makerButton(parent, label, action, primary){
+    var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
+    b.type='button'; b.addEventListener('click',action); parent.appendChild(b); return b;
+  }
+  function makerField(parent, label, type, value, step){
+    var wrap=el('label','maker-field'), title=el('span','lbl',label), input=el('input','fld salt-field__input');
+    input.type=type; input.value=value==null?'':String(value);
+    if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
+    wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
+  }
+  function makerBytes64(bytes){
+    var text=''; for(var i=0;i<bytes.length;i++) text+=String.fromCharCode(bytes[i]);
+    return btoa(text);
+  }
+  function makerFrom64(value){
+    var text=atob(value), bytes=new Uint8Array(text.length);
+    for(var i=0;i<text.length;i++) bytes[i]=text.charCodeAt(i);
+    return bytes;
+  }
+  async function makerVaultOpen(pass, envelope){
+    if(!envelope) return {};
+    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+    var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:makerFrom64(envelope.salt),
+      iterations:envelope.it||150000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+    var plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(envelope.iv)},key,makerFrom64(envelope.ct));
+    var value=JSON.parse(new TextDecoder().decode(plain));
+    if(!value||typeof value!=='object'||Array.isArray(value)) throw new Error('The encrypted vault is not a code map.');
+    return value;
+  }
+  async function makerVaultSeal(pass, value){
+    var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+    var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},
+      base,{name:'AES-GCM',length:256},false,['encrypt']);
+    var cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(value)));
+    return {v:1,salt:makerBytes64(salt),iv:makerBytes64(iv),ct:makerBytes64(new Uint8Array(cipher))};
+  }
+  function makerDerivedCode(name, locality, kind, roster, except, parent){
+    var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
+    if(!n||!local) return null;
+    var bits=local.split(/\\s+/), suffix=(bits.length>1?bits.map(function(x){return x.charAt(0);}).join(''):local.slice(0,3)).toUpperCase();
+    if(kind==='downstream'){
+      if(!parent) return null;
+      var siblings=roster.filter(function(code){return code.indexOf(parent+'-')===0&&/-\\d+-/.test(code.slice(parent.length));});
+      return parent+'-'+(siblings.length+1)+'-'+suffix;
+    }
+    var base=(kind==='supplier'?'S':'C')+n.charAt(0).toUpperCase()+n.length+'-'+suffix;
+    var free=function(code){return code===except||roster.indexOf(code)<0;};
+    if(free(base)) return base;
+    var head=base.slice(0,2), tail=base.slice(2), more=n.slice(1).replace(/[^A-Za-z]/g,'').toUpperCase();
+    for(var i=1;i<=more.length;i++){var next=head+more.slice(0,i)+tail;if(free(next)) return next;}
+    for(i=2;;i++) if(free(base+i)) return base+i;
+  }
+  function makerStatus(parent){
+    var status=el('p','msg'); status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
+    parent.appendChild(status); return status;
+  }
+  async function makerOtherInputs(parent,catalog){
+    var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
+    var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
+    var books=catalog.products||[];
+    var addSelect=function(root,label,items){
+      var wrap=el('label','maker-field'), title=el('span','lbl',label), select=el('select','fld salt-field__input');
+      items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
+      wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
+    };
+    var partyItems=parties.map(function(code){return {value:code,label:code};});
+    var productItems=books.map(function(item){return {value:item.product,label:pshape(item.product)};});
+    var loan=el('section','maker-input');loan.appendChild(el('h3',null,'Borrow or lend'));
+    loan.appendChild(el('p','msg','Cash and in-kind loans use the ledger’s loan rows. Notes are disabled here: free text could disclose names or places.'));
+    parent.appendChild(loan);
+    var loanForm=addSelect(loan,'Form',[{value:'salt',label:'In kind'},{value:'cash',label:'Cash'}]);
+    var loanDirection=addSelect(loan,'Direction',[{value:'in',label:'Borrow'},{value:'out',label:'Lend'}]);
+    var loanParty=addSelect(loan,'Party',partyItems), loanProduct=addSelect(loan,'Book',productItems);
+    var loanDate=makerField(loan,'Date','date',today), loanAmount=makerField(loan,'Units or RM','number','1');
+    var loanStatus=makerStatus(loan);
+    makerButton(loan,'Send loan for review',async function(){
+      if(!loanStatus) return;
+      loanStatus.textContent='Sending to the Desk…';
+      var body={at:new Date().toISOString(),form:loanForm.value,direction:loanDirection.value,
+        code:loanParty.value,date:loanDate.value,amount:Number(loanAmount.value)};
+      if(loanForm.value==='salt') body.product=loanProduct.value;
+      try{await refs('/all/maker/inputs/loan',body);loanStatus.textContent='Sent for review. It changes the loan book only when approved and folded.';loadMaker();}
+      catch(error){loanStatus.textContent=error.message;}
+    },true);
+    var gift=el('section','maker-input');gift.appendChild(el('h3',null,'Gift'));
+    gift.appendChild(el('p','msg','The Desk costs this from the inventory and books goodwill, not a reward redemption. No note field is sent.'));
+    parent.appendChild(gift);
+    var giftParty=addSelect(gift,'Party',partyItems), giftProduct=addSelect(gift,'Book',productItems);
+    var giftDate=makerField(gift,'Date','date',today), giftQty=makerField(gift,'Units','number','1');
+    var giftHandover=addSelect(gift,'Handover',[{value:'',label:'Not stated'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
+    var giftStatus=makerStatus(gift);
+    makerButton(gift,'Send gift for review',async function(){
+      var body={at:new Date().toISOString(),product:giftProduct.value,code:giftParty.value,date:giftDate.value,
+        qty:Number(giftQty.value),movedUnits:Number(giftQty.value),handover:giftHandover.value||null};
+      giftStatus.textContent='Sending to the Desk…';
+      try{await refs('/all/maker/inputs/gift',body);giftStatus.textContent='Sent for review. It changes nothing until approved and folded.';loadMaker();}
+      catch(error){giftStatus.textContent=error.message;}
+    },true);
+    var repay=el('section','maker-input');repay.appendChild(el('h3',null,'Repayment'));
+    repay.appendChild(el('p','msg','Choose an open loan. The Desk checks the remaining amount and whether it is due in units or RM.'));
+    parent.appendChild(repay);
+    var loanItems=(catalog.loans||[]).map(function(item){return {value:item.rid,label:item.party+' · '+item.rid+' · '+item.remaining+' '+(item.form==='cash'?'RM':'unit')};});
+    var repayLoan=addSelect(repay,'Open loan',loanItems), repayDate=makerField(repay,'Date','date',today),
+      repayAmount=makerField(repay,'Amount','number','1'), repayStatus=makerStatus(repay);
+    makerButton(repay,'Send repayment for review',async function(){
+      repayStatus.textContent='Sending to the Desk…';
+      try{await refs('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
+        date:repayDate.value,amount:Number(repayAmount.value)});
+        repayStatus.textContent='Sent for review. It settles only when approved and folded.';loadMaker();}
+      catch(error){repayStatus.textContent=error.message;}
+    },true);
+    var redeem=el('section','maker-input');redeem.appendChild(el('h3',null,'Reward redemption'));
+    redeem.appendChild(el('p','msg','The Desk derives the balance. An outstanding advance is offset first; otherwise the reward is redeemed in kind.'));
+    parent.appendChild(redeem);
+    var redeemParty=addSelect(redeem,'Party',partyItems), redeemDate=makerField(redeem,'Date','date',today),
+      redeemStatus=makerStatus(redeem);
+    makerButton(redeem,'Redeem or offset',async function(){
+      redeemStatus.textContent='Checking the reward on the Desk…';
+      try{await refs('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:redeemParty.value,date:redeemDate.value});
+        redeemStatus.textContent='Sent for review. The Desk chose the oldest advance or an in-kind redemption.';loadMaker();}
+      catch(error){redeemStatus.textContent=error.message;}
+    },true);
+    var id=el('section','maker-input');id.appendChild(el('h3',null,'Add ID'));
+    id.appendChild(el('p','msg','Name and locality stay in this device until encrypted. Only the derived code, role and sealed envelope leave it. A name/place note is never sent.'));
+    parent.appendChild(id);
+    var idKind=addSelect(id,'Role',[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
+      {value:'reseller',label:'Reseller'},{value:'referral',label:'Referral'},
+      {value:'downstream',label:'Downstream buyer'},{value:'bucket',label:'Resale account'}]);
+    var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
+    var idParent=addSelect(id,'Parent / associate',idParentItems);
+    var idName=makerField(id,'Name (device only)','text',''), idPlace=makerField(id,'Locality (device only)','text','');
+    var idPass=makerField(id,'Vault passphrase','password','');
+    var tierBooks=books.filter(function(item){return item.tiered;});
+    var idTierProduct=addSelect(id,'Starting tier book',[{value:'',label:'No starting tier'}]
+      .concat(tierBooks.map(function(item){return {value:item.product,label:pshape(item.product)};})));
+    var idTier=addSelect(id,'Starting tier',[{value:'',label:'No starting tier'}]
+      .concat((catalog.tierNames||[]).map(function(name){return {value:name,label:name};})));
+    var idStatus=makerStatus(id), idBusy=false;
+    idKind.addEventListener('change',function(){
+      var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
+      idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;
+      idParent.disabled=!needsParent;
+    });
+    idKind.dispatchEvent(new Event('change'));
+    makerButton(id,'Encrypt and send Add ID',async function(){
+      if(idBusy)return;idBusy=true;idStatus.textContent='Preparing the device-side vault…';
+      var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
+      var name=idName.value.trim(), locality=idPlace.value.trim(), code;
+      if(kind==='bucket') code=parentCode?parentCode+'-R':null;
+      else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
+      if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
+      var envelope=null;
+      try{
+        if(kind!=='bucket'){
+          var pass=idPass.value;
+          if(!pass) throw new Error('Enter the vault passphrase on this device.');
+          var current=await refs('/all/maker/vault');
+          var names=await makerVaultOpen(pass,current.vault);
+          names[code]=name+' ('+locality+')';
+          envelope=await makerVaultSeal(pass,names);
+          idPass.value='';pass='';
+        }
+        var tiers=idTier.value?{[idTierProduct.value]:idTier.value}:null;
+        if(idTier.value&&!idTierProduct.value) throw new Error('Choose a tiered book for the starting tier.');
+        await refs('/all/maker/inputs/add-id',{at:new Date().toISOString(),code:code,kind:kind,
+          parent:parentCode,geo:null,tiers:tiers,vault:envelope});
+        idName.value='';idPlace.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
+        loadMaker();
+      }catch(error){idPass.value='';idStatus.textContent=error.message;}
+      idBusy=false;
+    },true);
+    var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
+    amend.appendChild(el('p','msg','The name is encrypted here. If its derived code changes, only the old and new codes are queued for a Desk-approved re-key.'));
+    parent.appendChild(amend);
+    var amendParty=addSelect(amend,'Party',partyItems), amendName=makerField(amend,'Name (device only)','text',''),
+      amendPlace=makerField(amend,'Locality (device only)','text',''), amendPass=makerField(amend,'Vault passphrase','password',''),
+      amendStatus=makerStatus(amend), amendBusy=false;
+    makerButton(amend,'Encrypt and send Amend ID',async function(){
+      if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
+      var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
+      var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
+      if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
+      try{
+        var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
+        var current=await refs('/all/maker/vault'), names=await makerVaultOpen(pass,current.vault);
+        names[to]=name+' ('+locality+')';
+        var envelope=await makerVaultSeal(pass,names);amendPass.value='';pass='';
+        var result=await refs('/all/maker/inputs/amend-id',{at:new Date().toISOString(),from:from,to:to,geo:null,vault:envelope});
+        amendName.value='';amendPlace.value='';
+        amendStatus.textContent=result.vaultOnly?'Encrypted vault updated; the code stays '+from+'.'
+          :'Encrypted vault filed; re-key '+from+' to '+to+' is queued for Desk review.';
+        loadMaker();
+      }catch(error){amendPass.value='';amendStatus.textContent=error.message;}
+      amendBusy=false;
+    },true);
+    var placement=el('section','maker-input');placement.appendChild(el('h3',null,'Map placement'));
+    placement.appendChild(el('p','msg','Reads coordinates from the encrypted places vault on this device. Only a point rounded to 0.01° and the party code is queued; no address or locality text is sent.'));
+    parent.appendChild(placement);
+    var placeParty=addSelect(placement,'Party with a filed point',partyItems),
+      placePass=makerField(placement,'Vault passphrase','password',''), placeStatus=makerStatus(placement), placeBusy=false;
+    makerButton(placement,'Queue map placement',async function(){
+      if(placeBusy)return;placeBusy=true;placeStatus.textContent='Opening the encrypted places vault on this device…';
+      try{
+        var pass=placePass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
+        var sealed=await refs('/all/maker/vault/addr'), places=await makerVaultOpen(pass,sealed.vault);
+        var point=places[placeParty.value];
+        if(!point||!Number.isFinite(+point.lat)||!Number.isFinite(+point.lng))
+          throw new Error('That party has no point in the encrypted places vault.');
+        var coords=[Math.round(+point.lat*100)/100,Math.round(+point.lng*100)/100];
+        placePass.value='';pass='';
+        await refs('/all/maker/inputs/place',{at:new Date().toISOString(),places:{[placeParty.value]:coords}});
+        placeStatus.textContent='Approximate point queued for Desk review. The address remains encrypted.';
+        loadMaker();
+      }catch(error){placePass.value='';placeStatus.textContent=error.message;}
+      placeBusy=false;
+    },true);
+  }
+  function makerCard(parent){
+    var card=el('article','salt-glass-card maker-card');
+    parent.appendChild(card); return card;
+  }
+  function makerAction(path, body, message){
+    if(makerBusy) return Promise.resolve();
+    makerBusy=true;
+    return refs(path,body).then(function(result){
+      makerBusy=false;
+      var status=document.getElementById('makerReviewStatus');
+      return loadMaker().then(function(){
+        if(status) status.textContent=result.differs?'The row differs from the preview and waits for review.'
+          :result.waiting?'The row is being drafted; acknowledgement is still waiting.'
+          :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.';
+      });
+    },function(error){
+      makerBusy=false;
+      var status=document.getElementById('makerReviewStatus');
+      if(status) status.textContent=error.message;
+    });
+  }
+  async function loadMakerInputs(){
+    var box=document.getElementById('makerInputs'); if(!box||box.childElementCount>1) return;
+    var note=el('p','msg','Reading available books…'); note.setAttribute('role','status'); box.appendChild(note);
+    try{
+      var context=await refs('/all/maker/inputs');
+      if(!Array.isArray(context.products)||!context.products.length) throw new Error('No active book is available.');
+      note.textContent='Inputs are checked by the Desk and wait for review before they change the book.';
+      var label=el('label','maker-field','Book'), product=el('select','fld salt-field__input');
+      context.products.forEach(function(code){ var option=el('option',null,pshape(code)); option.value=code; product.appendChild(option); });
+      label.appendChild(product); box.appendChild(label);
+      var date=makerField(box,'Counted on','date',''), qty=makerField(box,'Stock count: units','number','', '0.01');
+      var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
+      var button=makerButton(box,'Record count',async function(){
+        if(pending) return;
+        var body={product:product.value,date:date.value,qty:qty.value===''?null:Number(qty.value)};
+        var now=JSON.stringify(body); if(now!==signature){ signature=now; at=new Date().toISOString(); }
+        body.at=at; pending=true; button.disabled=true; answer.textContent='Recording…';
+        try{ await refs('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. Review its row under Order review.'; loadMaker(); }
+        catch(error){ answer.textContent=error.message; }
+        pending=false; button.disabled=false;
+      },true);
+      var catalog=context.catalog||{}, tradeSection=el('section','maker-input');
+      tradeSection.appendChild(el('h3',null,'Sale or purchase'));
+      tradeSection.appendChild(el('p','msg','Goods and carriage stay separate. Notes are disabled here: this route cannot safely prove arbitrary prose contains no names or places.'));
+      box.appendChild(tradeSection);
+      var direction=el('select','fld salt-field__input');
+      [['sale','Sale'],['purchase','Purchase']].forEach(function(item){
+        var option=el('option',null,item[1]); option.value=item[0]; direction.appendChild(option);
+      });
+      var directionLabel=el('label','maker-field','Entry');
+      directionLabel.appendChild(direction); tradeSection.appendChild(directionLabel);
+      var tradeProduct=el('select','fld salt-field__input'), tradeParty=el('select','fld salt-field__input');
+      var productLabel=el('label','maker-field','Book'), partyLabel=el('label','maker-field','Party');
+      productLabel.appendChild(tradeProduct); partyLabel.appendChild(tradeParty);
+      tradeSection.appendChild(productLabel); tradeSection.appendChild(partyLabel);
+      var tradeDate=makerField(tradeSection,'Date','date',''), tradeQty=makerField(tradeSection,'Units','number','1','0.01');
+      var tradeTotal=makerField(tradeSection,'Goods total (RM)','number','','0.01');
+      var tradeCash=makerField(tradeSection,'Cash recorded (RM)','number','0','0.01');
+      var tradeMoved=makerField(tradeSection,'Units moved','number','0','0.01');
+      var handover=el('select','fld salt-field__input');
+      [['','Not stated'],['collected','Collected'],['delivered','Delivered']].forEach(function(item){
+        var option=el('option',null,item[1]); option.value=item[0]; handover.appendChild(option);
+      });
+      var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
+      var carriage=makerField(tradeSection,'Delivery (RM)','number','0','0.01');
+      var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
+      var tradePending=false, tradeAt=null, tradeSignature='';
+      function fillTradeChoices(){
+        var isSale=direction.value==='sale';
+        tradeProduct.textContent='';
+        (catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).forEach(function(item){
+          var option=el('option',null,pshape(item.product)); option.value=item.product; tradeProduct.appendChild(option);
+        });
+        tradeParty.textContent='';
+        (catalog.parties||[]).forEach(function(code){
+          var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
+        });
+        carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
+      }
+      direction.addEventListener('change',fillTradeChoices);
+      fillTradeChoices();
+      async function submitTrade(confirmedTwin){
+        if(tradePending) return;
+        var isSale=direction.value==='sale';
+        var body={product:tradeProduct.value,party:tradeParty.value,date:tradeDate.value,
+          qty:tradeQty.value===''?null:Number(tradeQty.value),total:tradeTotal.value===''?null:Number(tradeTotal.value),
+          cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
+          handover:handover.value||null};
+        body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
+        if(confirmedTwin) body.second=confirmedTwin;
+        var check=JSON.stringify(body);
+        if(check!==tradeSignature){ tradeSignature=check; tradeAt=new Date().toISOString(); }
+        body.at=tradeAt;
+        tradePending=true; tradeAnswer.textContent='Sending to the Desk…';
+        try{
+          var result=await refs('/all/maker/inputs/'+direction.value,body);
+          tradeAnswer.textContent=result.status==='pending'
+            ?'Sent for review. It changes nothing until approved and folded.'
+            :'Recorded for review.';
+          loadMaker();
+        }catch(error){
+          tradeAnswer.textContent=error.message;
+          var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
+          if(twin&&!confirmedTwin&&window.confirm('A matching row is already booked. Record this as a separate order?')){
+            tradeSignature=''; tradePending=false; await submitTrade(twin); return;
+          }
+        }
+        tradePending=false;
+      }
+      makerButton(tradeSection,'Send trade for review',function(){ submitTrade(null); },true);
+      var tierSection=el('section','maker-input');
+      tierSection.appendChild(el('h3',null,'Customer tier'));
+      tierSection.appendChild(el('p','msg','Tiered books only. Set a held level or clear it; proposals do not move held tiers.'));
+      tradeSection.parentNode.insertBefore(tierSection,tradeSection.nextSibling);
+      var tierCodes=catalog.tierCustomers||[], tierBooks=(catalog.products||[]).filter(function(item){ return item.tiered; });
+      if(!tierCodes.length||!tierBooks.length||!(catalog.tierNames||[]).length){
+        tierSection.appendChild(el('p','msg','No tiered customer input is available.'));
+      }else{
+        var tierCode=el('select','fld salt-field__input'), tierProduct=el('select','fld salt-field__input'), tierValue=el('select','fld salt-field__input');
+        tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
+        tierBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; tierProduct.appendChild(option); });
+        [['','Clear held tier']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; })).forEach(function(item){
+          var option=el('option',null,item[1]); option.value=item[0]; tierValue.appendChild(option);
+        });
+        [['Customer',tierCode],['Book',tierProduct],['Held level',tierValue]].forEach(function(item){
+          var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tierSection.appendChild(wrap);
+        });
+        var tierAnswer=el('p','msg'); tierAnswer.setAttribute('role','status'); tierSection.appendChild(tierAnswer);
+        var tierPending=false, tierAt=null, tierSignature='';
+        makerButton(tierSection,'Send tier for review',async function(){
+          if(tierPending) return;
+          var body={code:tierCode.value,product:tierProduct.value,tier:tierValue.value||null};
+          var check=JSON.stringify(body); if(check!==tierSignature){ tierSignature=check; tierAt=new Date().toISOString(); }
+          body.at=tierAt; tierPending=true;
+          try{ await refs('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }
+          catch(error){ tierAnswer.textContent=error.message; }
+          tierPending=false;
+        },true);
+      }
+      makerOtherInputs(box,catalog);
+    }catch(error){ note.textContent=error.message; note.dataset.retry='true';
+      makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
+  }
+  async function makerForAccount(account){
+    panel('maker');
+    var box=document.getElementById('makerFor'); box.hidden=false; box.textContent='';
+    box.appendChild(el('h2',null,'Order for '+account.username));
+    var note=el('p','msg','Opening their price list…'); note.setAttribute('role','status'); box.appendChild(note);
+    if(!OWNER.master){ note.textContent='The master passphrase is not configured, so their list cannot be opened.'; return; }
+    try{
+      var response=await fetch('/open',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({u:account.username,password:OWNER.master,master:OWNER.master})});
+      var result=await response.json();
+      if(!response.ok||!result.ok||!result.byMaster||!result.wrapMaster||!result.prices)
+        throw new Error('Their current price list could not be opened.');
+      var key=await unwrap(OWNER.master,result.wrapMaster), list=await openList(key,result.prices); key=null;
+      if(!box.isConnected||box.hidden) return;
+      var choices=[];
+      (list.products||[]).forEach(function(product){ (product.sizes||[]).forEach(function(size){
+        choices.push({product:product.product,qty:size.q,total:size.price});
+      }); });
+      if(!choices.length) throw new Error('No priced size is on their list.');
+      note.textContent='One order, on their current list. Acknowledgement is still checked against the Desk row.';
+      var label=el('label','maker-field','Size and price'), pick=el('select','fld salt-field__input');
+      choices.forEach(function(choice,index){ var option=el('option',null,pshape(choice.product)+' '+unitsOf(choice.qty)+' · '+rm(choice.total));
+        option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
+      var modeLabel=el('label','maker-field','Collected or delivered'), mode=el('select','fld salt-field__input');
+      [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
+      modeLabel.appendChild(mode); box.appendChild(modeLabel);
+      var place=makerField(box,'Delivery locality','text',''), want=makerField(box,'Wanted by (optional)','date','');
+      var friendLabel=el('label','tick'), friend=el('input'); friend.type='checkbox';
+      friendLabel.appendChild(friend); friendLabel.appendChild(document.createTextNode('For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
+      var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
+      var sent=false, pending=false, button=makerButton(box,'Place for them',async function(){
+        if(pending||sent) return;
+        var choice=choices[Number(pick.value)];
+        var body={product:choice.product,qty:choice.qty,total:choice.total,unit:+(choice.total/choice.qty).toFixed(2),
+          mode:mode.value,place:mode.value==='deliver'?place.value:'',forFriend:!!(result.assoc&&friend.checked),
+          week:list.week&&list.week.monday||'',digest:list.digest||'',wantBy:want.value};
+        body.rid=ridFor('maker:'+account.username,JSON.stringify(body));
+        pending=true; button.disabled=true; answer.textContent='Placing…';
+        try{
+          var placed=await refs('/all/maker/customers/'+account.username+'/orders',body);
+          sent=true; answer.textContent='Placed. Waiting for acknowledgement.'; loadMaker();
+        }catch(error){ answer.textContent=error.message; }
+        pending=false; button.disabled=sent;
+      },true);
+    }catch(error){ note.textContent=error.message; }
+  }
+  async function loadMaker(){
+    if(!oMaker||oMaker.hidden) return;
+    var status=document.getElementById('makerReviewStatus');
+    if(status) status.textContent='Reading orders and rows…';
+    try{
+      makerData=await refs('/all/maker/review');
+      drawMaker();
+    }catch(error){ if(status) status.textContent=error.message; }
+  }
+  function drawMaker(){
+    var root=document.getElementById('makerReview'), status=document.getElementById('makerReviewStatus');
+    if(!root||!makerData) return;
+    root.textContent='';
+    var open=(makerData.orders||[]).filter(function(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; });
+    if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
+    if(!open.length) root.appendChild(el('p','rnone','No open Counter orders.'));
+    open.forEach(function(order){
+      var card=makerCard(root), head=el('h3','',order.id); card.appendChild(head);
+      var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
+      card.appendChild(ownerLine);
+      card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      if(order.status==='placed'){
+        var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
+        var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
+        var delivery=makerField(form,'Delivery (RM)','number',quote.delivery==null?(order.delivery||0):quote.delivery);
+        var previewTurn=0;
+        [total,delivery].forEach(function(input){ input.addEventListener('input',function(){
+          previewTurn++;
+          delete makerQuotes[order.id]; var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
+          var old=card.querySelector('.maker-quote'); if(old) old.remove();
+        }); });
+        card.appendChild(form);
+        makerButton(card,'Preview',function(){
+          var payload={total:Number(total.value),delivery:Number(delivery.value)}, turn=++previewTurn;
+          refs('/all/maker/orders/'+encodeURIComponent(order.id)+'/preview',payload).then(function(result){
+            if(turn!==previewTurn||!card.isConnected) return;
+            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash};
+            var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
+            note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting.'));
+            makerReading(note,result);
+            var accept=card.querySelector('[data-accept]'); if(!accept){
+              accept=makerButton(card,'Accept order',function(){
+                var q=makerQuotes[order.id]; if(!q||!q.hash) return;
+                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',
+                  {total:q.total,delivery:q.delivery,hash:q.hash},'Order sent to the Desk for acknowledgement.');
+              },true); accept.setAttribute('data-accept','');
+            }
+          }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
+        },true);
+        makerButton(card,'Decline',function(){
+          if(!window.confirm('Decline this order?')) return;
+          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/move',{status:'declined'},'Order declined.');
+        },false);
+      }else if(order.status==='acknowledged'){
+        makerButton(card,'Mark ready',function(){
+          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/move',{status:'ready'},'Order marked ready.');
+        },true);
+      }else if(order.status==='ready'){
+        var qty=makerField(card,'Units handed over','number',order.qty);
+        makerButton(card,'Record handover',function(){
+          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
+        },true);
+        var cash=makerField(card,'Cash received (RM)','number','');
+        makerButton(card,'Record cash',function(){
+          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
+        },false);
+      }
+      if(order.status==='acknowledged'||order.status==='ready'){
+        (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
+          makerButton(card,'Receive claimed '+rm(payment.amount),function(){
+            makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',
+              {amount:payment.amount,claim:payment.at},'Claim confirmation sent to the Desk.');
+          },false);
+        });
+        var received=makerField(card,'Other payment received (RM)','number','');
+        makerButton(card,'Confirm received',function(){
+          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
+        },false);
+      }
+    });
+    (makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).forEach(function(draft){
+      var card=makerCard(root), entry=draft.entry||{};
+      card.appendChild(el('h3','',draft.id||'Desk row'));
+      card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
+      card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
+      makerReading(card,draft);
+      var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
+      if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
+      var approve=makerButton(card,'Approve row',function(){
+        if(!window.confirm('Approve the proposed row shown here?')) return;
+        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.');
+      },true);
+      approve.disabled=!!claim;
+      makerButton(card,'Reject row',function(){
+        if(!window.confirm('Reject this Desk row?')) return;
+        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.');
+      },false);
+    });
+    (makerData.refused||[]).forEach(function(refused){
+      var card=makerCard(root); card.appendChild(el('h3','','Refused entry'));
+      card.appendChild(el('p','salt-insight',refused.why||'This entry was refused by the drafter.'));
+    });
+    makerButton(root,'Refresh',loadMaker,false);
+  }
+  function klInputValue(iso){
+    if(!iso) return '';
+    var d=new Date(iso);
+    return new Date(d.getTime()+8*60*60*1000).toISOString().slice(0,16);
+  }
+  async function loadMakerHours(){
+    if(!oMaker||oMaker.hidden) return;
+    try{ makerHours=await refs('/all/maker/hours'); drawMakerHours(); }
+    catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) s.textContent=error.message; }
+  }
+  function drawMakerHours(){
+    var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
+    if(!root||!makerHours) return;
+    root.textContent='';
+    var state=makerHours.status||{};
+    status.textContent=(state.open?'Open now':'Closed now. Orders can still be placed; acknowledgement may be delayed.')
+      +(state.source==='default'?' · No weekly schedule set.':'');
+    var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
+    var schedule=el('div','maker-hours');
+    names.forEach(function(name,i){
+      var row=el('div','maker-day'), enabled=el('input',''); enabled.type='checkbox'; enabled.checked=!!days[i];
+      enabled.setAttribute('aria-label',name+' is open');
+      row.appendChild(enabled); row.appendChild(el('span','maker-day-name',name));
+      var open=el('input','fld salt-field__input'); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked;
+      var close=el('input','fld salt-field__input'); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked;
+      enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
+      row.appendChild(open); row.appendChild(close); row._hours={enabled:enabled,open:open,close:close}; schedule.appendChild(row);
+    });
+    root.appendChild(schedule);
+    makerButton(root,'Save weekly hours',function(){
+      var result={days:[]};
+      [].forEach.call(schedule.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
+      refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
+        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+    },true);
+    var override=el('div','maker-fields'), kind=el('select','fld salt-field__input');
+    [['false','Closed'],['true','Open']].forEach(function(x){ var option=el('option','',x[1]); option.value=x[0]; kind.appendChild(option); });
+    var until=makerField(override,'Override until (Kuala Lumpur)','datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
+    override.insertBefore(kind,override.firstChild); root.appendChild(override);
+    makerButton(root,'Set temporary override',function(){
+      var when=Date.parse(until.value+'+08:00');
+      if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }
+      refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
+        .then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary hours saved.'; })
+        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+    },false);
+    makerButton(root,'Clear temporary override',function(){
+      refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary override cleared.'; })
+        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+    },false);
   }
   var tiers=[];
   async function loadLinks(){

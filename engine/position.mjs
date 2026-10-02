@@ -10,6 +10,87 @@
  * Inlined into master/salt_command.html by `node tools/engine.mjs --sync`; CI proves the copy is
  * this file. See engine/pricing.mjs for the rules of the shape, which are the same here. */
 const POSITION_ENGINE=(function(){
+function stockCountEntry({at,product,date,qty}){
+  return {at,type:'COUNT',party:'stock count',qty,total:null,status:'count',
+    raw:'Stock count: '+qty+' unit '+product+' on hand on '+date,
+    payload:{mode:'count',product,direction:null,party:null,date,qty,total:null,cash:null,kg:qty,
+      assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}};
+}
+function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
+  handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,raw}){
+  const booking={customer:party};
+  if(direction==='SELL'&&assoc&&stream==='R2')bookR2(booking,'customer',assoc,downstream);
+  const state=txStat({total,qty,cash,delivery,deliveredQty:movedUnits});
+  const status=state.pay==='Paid'?'paid':state.pay==='Unpaid'?'unpaid':'partial';
+  return {at,type:direction,party:booking.customer,qty,total,status,
+    raw:raw===undefined?(direction==='SELL'?'Sell ':'Buy ')+qty+' unit '+product
+      +(direction==='SELL'?' to ':' from ')+booking.customer+' for RM'+total+' on '+date
+      +(delivery>0.009?' plus RM'+delivery+' delivery':'')+(freight>0.009?' plus RM'+freight+' freight':'')
+      +(handover?', '+handover:'')+', RM'+cash+' cash, '+movedUnits+' unit moved → '+state.order
+      +(assoc?(stream==='R2'?' (R2 via ':' (R3 referred by ')+assoc+')':'')
+      +(downstream?', end buyer '+downstream:''):raw,
+    payload:{mode:'new',product,direction,party,newId:null,date,qty,total,delivery,freight,cash,
+      kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
+      handover,second,more,coverFree}};
+}
+function tierSetEntry({at,tiers,raw}){
+  const codes=Object.keys(tiers),copied={};
+  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
+    const t=tiers[c][p];copied[c][p]=t&&typeof t==='object'?Object.assign({},t):t;
+  });});
+  const say=t=>t==null?'not set':typeof t==='string'?t:['small','mid','big'].filter(k=>t[k]).map(k=>k+' '+t[k]).join(', ');
+  return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
+    raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
+    payload:{mode:'tierset',tiers:copied}};
+}
+function loanEntry({at,product,direction,party,date,form,amount}){
+  const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
+  return {at,type,party,qty:cash?null:amount,total:cash?amount:null,status:'open',
+    raw:cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
+    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date,
+    payload:{mode:'loan',form,product:cash?null:product,direction,party,date,qty:cash?null:amount,
+    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note:null}};
+}
+function repaymentEntry({at,loan,party,date,form,product,amount}){
+  const cash=form==='cash';
+  return {at,type:'REPAY',party,qty:cash?null:amount,total:cash?amount:null,status:'open',
+    raw:'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date,
+    payload:{mode:'repay',loan:loan.rid,party:loan.party,date,kg:cash?null:amount,rm:cash?amount:null,
+    qty:null,total:null,cash:null,note:null}};
+}
+function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null}){
+  return {at,type:'GIFT',party,qty,total:0,status:'inkind',
+    raw:'Give '+qty+' unit '+product+' free to '+party+' on '+date,
+    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note:null}};
+}
+function redeemEntry({at,product,party,date,qty,earned,applied,balance}){
+  return {at,type:'REDEEM',party,qty,total:0,status:'inkind',
+    raw:'Redeem '+qty+' free unit '+product+' for '+party+' on '+date,
+    payload:{mode:'redeem',product,party,qty,date,earned,applied,balance}};
+}
+function rebateOffsetEntry({at,party,date,sale,units,rm}){
+  return {at,type:'AMEND',party,qty:0,total:0,status:'inkind',
+    raw:'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind',
+    payload:{mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
+    orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
+      rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
+}
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null}){
+  return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
+    raw:'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''),
+    payload:{mode:'addid',code,kind,parent,rev,note:null,geo,tiers}};
+}
+function renameEntry({at,from,to,geo=null}){
+  return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
+    raw:'Amend ID: re-key '+from+' to '+to+' wherever the book names it',
+    payload:{mode:'rename',from,to,geo}};
+}
+function placeEntry({at,places}){
+  const codes=Object.keys(places);
+  return {at,type:'PLACE',party:null,qty:null,total:null,status:'place',
+    raw:'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '),
+    payload:{mode:'place',places}};
+}
 /* ---- the row helpers, verbatim from the desk ---- */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: THE PRICE AND THE CARRIAGE ARE SEPARATE ============
    "Please completely separate sell price and delivery price, from the ledger, enter, statement,
@@ -1042,7 +1123,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
