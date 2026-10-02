@@ -33,6 +33,14 @@
 			"remote": true
 		}
 	],
+	// THE DESK'S BUILD ID, READ ONLY (02 Oct 2026): live account documents are served only
+	// when their publish stamp matches this keyed read over the shared STMT_DESK_KEY.
+	"services": [
+		{
+			"binding": "DESK",
+			"service": "salt-command"
+		}
+	],
 	// THE ORDER BOOK (S10, D10, his answer of 24 Sep 2026): ONE Durable Object for the whole site's
 	// orders, stmt/orderbook.js, SQLite-backed by choice; the account is on Workers Paid (FACTS.md §4). The migration makes the
 	// class on the first deploy of this file; a deploy is how it reaches production, and the push job

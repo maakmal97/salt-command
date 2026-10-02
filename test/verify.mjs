@@ -57,9 +57,25 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
 /* C15 AND C13 (29 Sep 2026): THE COUNTER DRAWS THE LIVE DOCUMENT OR SAYS IT COULD NOT BE READ, never a sealed issue in its
    place. A page fixture whose bundle carries the one document it shows seals that document as the live one beside it. */
+const TEST_DESK_BUILD = "a".repeat(16);
+const testDeskRevision = (key, id = TEST_DESK_BUILD) => ({
+  STMT_DESK_KEY: key,
+  DESK: { async fetch(request) {
+    if (request.headers.get("X-Stmt-Desk") !== key) return new Response('{"ok":false}', { status: 401 });
+    return new Response(JSON.stringify({ ok: true, id }), { status: 200 });
+  } }
+});
 const asLive = async (C, ck, env) => {
   const s = (JSON.parse(await C.decryptWith(ck, env)).statements || [])[0];
-  return s ? Object.assign({ at: "2026-09-24T04:00:00Z" }, await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: s.body }))) : null;
+  const doc = { at: "2026-09-24T04:00:00Z", buildId: TEST_DESK_BUILD, body: s && s.body };
+  return s ? Object.assign({ at: doc.at, buildId: doc.buildId }, await C.encryptWith(ck, JSON.stringify(doc))) : null;
+};
+const sealCurrentLive = async (C, ck, doc) => {
+  const stamped = Object.assign({}, doc, { buildId: TEST_DESK_BUILD });
+  return {
+    liveStatus: "current",
+    live: Object.assign({ at: stamped.at, buildId: stamped.buildId }, await C.encryptWith(ck, JSON.stringify(stamped)))
+  };
 };
 /* THE INVENTORY RATE, WORKED BY THE SUITE FROM A BOOK'S OWN ROWS (26 Sep 2026, his instruction that every book's stock
    cost is derived from its lots). Never through the desk's stockCostFor or the engine's stockBasis, which are what it
@@ -372,6 +388,31 @@ await (async () => {
       "an unset team or audience fails closed");
     ok((await hit({}, { ...env, REQUIRE_ACCESS: "0" })).status === 200,
       "the committed off setting remains off until Access is provisioned");
+
+    /* JOINT WITH THE LIVE STATEMENT GATE: the Counter's binding carries the shared key and no
+     * owner JWT. Under the real verifier it still reads the build id, and only that. */
+    const deskId = "c".repeat(16);
+    const revEnv = { ...env, STMT_DESK_KEY: "joint-desk-key",
+      ASSETS: { async fetch(r) {
+        return new URL(r.url).pathname === "/rev.json"
+          ? new Response(JSON.stringify({ id: deskId }), { status: 200 })
+          : assets.fetch(r);
+      } } };
+    const rev = (headers = {}, path = "/stmt/rev") => worker.fetch(req(path, { headers }), revEnv);
+    const keyed = await rev({ "X-Stmt-Desk": "joint-desk-key" });
+    const keyedBody = await keyed.json().catch(() => ({}));
+    ok(keyed.status === 200 && keyedBody.id === deskId,
+      "with the verified Access gate armed, the keyed Counter read of /stmt/rev answers with no owner JWT");
+    ok((await rev({ "X-Stmt-Desk": "wrong-desk-key" })).status === 401 && (await rev()).status === 401,
+      "with the verified Access gate armed, /stmt/rev refuses a wrong or missing shared key");
+    ok((await rev({ "cf-access-jwt-assertion": authorized })).status === 401,
+      "a verified owner JWT is not the Counter's key: /stmt/rev still needs X-Stmt-Desk");
+    ok((await rev({ "X-Stmt-Desk": "joint-desk-key" }, "/desk.html")).status === 401
+      && (await rev({ "X-Stmt-Desk": "joint-desk-key" }, "/stmt/other")).status === 401,
+      "the shared key opens neither the Desk nor any other /stmt/ path without a verified owner");
+    ok((await rev({ "X-Stmt-Desk": "joint-desk-key",
+      "cf-access-jwt-assertion": await mint({ ...good, email: "customer@example.test" }) }, "/desk.html")).status === 401,
+      "the shared key does not lift a non-owner Access identity onto the Desk");
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -1190,6 +1231,39 @@ await (async () => {
   const missing = { async fetch() { return new Response("nope", { status: 404 }); } };
   const r2 = await worker.fetch(req("/rev"), { ...env, ASSETS: missing });
   ok(r2.status === 404, "/rev answers 404 when no manifest is built, rather than throwing");
+
+  const deskBuild = "b".repeat(16);
+  const deskAssets = { async fetch() { return new Response(JSON.stringify({ id: deskBuild }), { status: 200 }); } };
+  const deskEnv = { ...env, ASSETS: deskAssets, STMT_DESK_KEY: "test-desk-key" };
+  const noDeskKey = await worker.fetch(req("/stmt/rev"), deskEnv);
+  ok(noDeskKey.status === 401, "the Counter's build-id route refuses a missing shared key");
+  const deskRevision = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), deskEnv);
+  const deskRevisionBody = await deskRevision.json();
+  ok(deskRevision.status === 200 && deskRevisionBody.ok && deskRevisionBody.id === deskBuild,
+    "the keyed Counter route returns only a valid Desk build id");
+  const invalidDeskRevision = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }),
+    { ...deskEnv, ASSETS: { async fetch() { return new Response('{"id":"short"}', { status: 200 }); } } });
+  ok(invalidDeskRevision.status === 503, "an invalid Desk build id is unavailable, not a freshness proof");
+
+  /* With the human Access gate armed, the Counter's binding carries the shared key and no
+   * owner JWT: it must still read the id, and nothing else may come past without the JWT. */
+  const armed = { ...deskEnv, REQUIRE_ACCESS: "1" };
+  const armedRev = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  const armedRevBody = await armedRev.json().catch(() => ({}));
+  ok(armedRev.status === 200 && armedRevBody.id === deskBuild,
+    "with Access required and no owner JWT, the keyed Counter build-id read still answers");
+  const armedWrong = await worker.fetch(req("/stmt/rev", { headers: { "X-Stmt-Desk": "wrong-desk-key" } }), armed);
+  ok(armedWrong.status === 401, "with Access required, a wrong shared key is refused");
+  const armedMissing = await worker.fetch(req("/stmt/rev"), armed);
+  ok(armedMissing.status === 401, "with Access required, a missing shared key is refused");
+  const armedPost = await worker.fetch(req("/stmt/rev", { method: "POST", headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedPost.status === 405, "with Access required, only GET reads the Counter build id");
+  const armedSibling = await worker.fetch(req("/stmt/other", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedSibling.status === 401, "the exception is /stmt/rev alone, never the rest of /stmt/");
+  const armedDesk = await worker.fetch(req("/desk", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedDesk.status === 401, "with Access required, the desk itself still refuses a caller with no owner JWT");
+  const armedRevPublic = await worker.fetch(req("/rev", { headers: { "X-Stmt-Desk": "test-desk-key" } }), armed);
+  ok(armedRevPublic.status === 401, "with Access required, the shared key does not open the desk's own /rev");
 
   /* the service worker must never cache it */
   const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
@@ -8180,14 +8254,25 @@ await (async () => {
   const bundle = JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
     { issued: "2026-09-01", label: "01 Sep 2026", body: '<p class="who">CX0-AA</p>' }] });
   const envB = await C.encryptWith(ck, bundle);
-  const liveAt = "2026-09-03T06:20:00.000Z";
-  const liveB = Object.assign({ at: liveAt }, await C.encryptWith(ck, JSON.stringify({ at: liveAt, body: "<p>live CX0-AA</p>" })));
+  const liveAt = "2026-09-03T06:20:00.000Z", deskBuild = "c".repeat(16);
+  const liveDoc = { at: liveAt, buildId: deskBuild, body: "<p>live CX0-AA</p>" };
+  const liveB = Object.assign({ at: liveAt, buildId: deskBuild }, await C.encryptWith(ck, JSON.stringify(liveDoc)));
   ok((await C.decryptWith(ck, envB)).includes("CX0-AA") && !JSON.stringify(envB).includes("CX0-AA") && !envB.salt,
     "the content key seals and opens a document, with no salt because nothing is derived");
   const kv = new KV();
   const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: ver, wrap, wrapMaster, env: envB, live: liveB };
   await kv.put("u:" + un, JSON.stringify(rec));
-  const senv = { STMT: kv, STMT_MASTER: "master-pass" };
+  let deskRevisionAvailable = true, deskAuthOk = false;
+  const senv = {
+    STMT: kv, STMT_MASTER: "master-pass", STMT_DESK_KEY: "test-desk-key",
+    DESK: { async fetch(request) {
+      deskAuthOk = new URL(request.url).pathname === "/stmt/rev"
+        && request.headers.get("X-Stmt-Desk") === "test-desk-key";
+      return deskRevisionAvailable
+        ? new Response(JSON.stringify({ ok: true, id: deskBuild }), { status: 200 })
+        : new Response('{"ok":false}', { status: 503 });
+    } }
+  };
   const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
   const open = (body) => sreq("/open", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
@@ -8219,8 +8304,11 @@ await (async () => {
 
   r = await stmtWorker.fetch(open({ u: un, password: pw }), senv);
   const j = await r.json();
-  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live && j.byMaster === false,
+  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live
+    && j.liveStatus === "current" && j.byMaster === false,
     "the right username and password return the record: wrap, envelope and live document");
+  ok(deskAuthOk && j.live.buildId === deskBuild,
+    "the live document is returned only after a keyed read of the Desk build id");
   /* THE MASTER WRAP NEVER TRAVELS TO A CUSTOMER (04 Sep 2026 audit). It is his content key sealed
      under STMT_MASTER, so handing it to every customer every month was handing out a self-verifying
      offline crack target against the one passphrase that opens every account: an auditor recovered
@@ -8229,9 +8317,21 @@ await (async () => {
   ok(j.wrapMaster == null,
     "and NOT the master wrap, which would be an offline crack target against every account at once");
   const ckOut = await C.unwrapKey(pw, j.wrap);
+  const openedLive = JSON.parse(await C.decryptWith(ckOut, j.live));
   ok(JSON.parse(await C.decryptWith(ckOut, j.env)).statements[0].body.includes("CX0-AA")
-    && JSON.parse(await C.decryptWith(ckOut, j.live)).body.includes("live CX0-AA"),
+    && openedLive.body.includes("live CX0-AA") && openedLive.buildId === deskBuild,
     "and the password unwraps the key that opens both the bundle and the live statement");
+  const accountRequest = () => sreq("/account", { headers: { "X-Stmt-Session": j.session } });
+  await kv.put("u:" + un, JSON.stringify({ ...rec, live: { ...liveB, buildId: "d".repeat(16) } }));
+  const staleStatement = await (await stmtWorker.fetch(accountRequest(), senv)).json();
+  ok(staleStatement.live === null && staleStatement.liveStatus === "updating",
+    "a live statement stamped with an older Desk build is withheld as updating");
+  await kv.put("u:" + un, JSON.stringify(rec));
+  deskRevisionAvailable = false;
+  const unavailableStatement = await (await stmtWorker.fetch(accountRequest(), senv)).json();
+  ok(unavailableStatement.live === null && unavailableStatement.liveStatus === "unavailable",
+    "an unavailable Desk revision withholds the live statement and reports its state");
+  deskRevisionAvailable = true;
   ok((await stmtWorker.fetch(open({ u: un.toUpperCase(), password: pw }), senv)).status === 200,
     "a username typed in capitals is the same username");
   /* THE PASSWORD IS FORGIVEN ITS HYPHENS AND ITS CASE (06 Sep 2026): the page groups the symbols as
@@ -9565,7 +9665,7 @@ await (async () => {
     /* THE LIVE STATEMENT (his instruction, 03 Sep 2026): every entry from the start to now,
        sealed into the record by the deploy after every fold under the same content key. */
     const { liveStatement, liveRecords } = await import("../tools/make_statements.mjs");
-    const { planPublish } = await import("../tools/stmt-publish.mjs");
+    const { planPublish, readDeskBuildId, verifyAccountWrites } = await import("../tools/stmt-publish.mjs");
     const now = new Date("2026-09-03T06:20:00Z");
     const lv = liveStatement(both.who, now, u);
     ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sep 2026 14:20/.test(lv.body)
@@ -9596,6 +9696,7 @@ await (async () => {
     ok(lr0.records.length === sep.made && lr0.live === 0 && lr0.records.every(x => !x.live),
       "without the key the records go up as issued and no live document is written");
 
+    const buildId = readDeskBuildId();
     const plan = await planPublish(root, "test-secret", now, ["u:" + u, "u:zzzz-zzzz", "fail:" + u, "fail:aaaa-aaaa"], null);
     ok(plan.puts.length === sep.made + 2 && plan.puts.some(p => p.key === "u:" + u) && plan.puts.some(p => p.key === "sheet")
       && plan.puts.some(p => p.key === "issue" && p.value === "2026-09-01"),
@@ -9608,6 +9709,25 @@ await (async () => {
       "a re-publish of the same issue, which every fold is, retires stale records but leaves the counters alone");
     ok(JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live.at === now.toISOString(),
       "and what it puts is the record with the live statement in it");
+    const plannedAccountRecords = plan.puts.filter(p => p.key.startsWith("u:"));
+    const completeReadback = new Map(plannedAccountRecords.map(p => [p.key, p.value]));
+    const completeCheck = verifyAccountWrites(plannedAccountRecords, completeReadback);
+    const partialReadback = new Map(completeReadback);
+    partialReadback.delete(plannedAccountRecords[0].key);
+    const partialCheck = verifyAccountWrites(plannedAccountRecords, partialReadback);
+    const changedReadback = new Map(completeReadback);
+    changedReadback.set(plannedAccountRecords[0].key, plannedAccountRecords[0].value + " ");
+    const changedCheck = verifyAccountWrites(plannedAccountRecords, changedReadback);
+    ok(completeCheck.ok && completeCheck.checked === plannedAccountRecords.length,
+      "a complete account-record read-back passes only after every intended record matches");
+    ok(plannedAccountRecords.length > 0 && !partialCheck.ok && partialCheck.missing === 1,
+      "a missing record in a partial bulk write fails the publisher's per-account check");
+    ok(!changedCheck.ok && changedCheck.mismatched === 1,
+      "a changed account record fails the publisher's exact read-back comparison");
+    const plannedLive = JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live;
+    const openedPlannedLive = JSON.parse(await C.decryptWith(ckB, plannedLive));
+    ok(plannedLive.buildId === buildId && openedPlannedLive.buildId === buildId,
+      "the Desk build id is stamped both beside and inside the encrypted live statement");
 
     /* A WRONG STMT_KEY IS CAUGHT BEFORE ANYTHING IS SEALED WITH IT (04 Sep 2026 audit). The content
        key is derived in the CLOUD from the deploy's secret; the record was sealed on the LAPTOP
@@ -21280,13 +21400,14 @@ await (async () => {
   const { JSDOM } = await import("jsdom");
   const { webcrypto } = await import("node:crypto");
   const u = "aaaa-bbbb", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("7".repeat(64), u);
+  const liveBuildId = TEST_DESK_BUILD, liveDoc = Object.assign({}, live, { buildId: TEST_DESK_BUILD });
   const answer = {
     ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01", "2026-08-01"], session: "s73s73s73s73s73s73s73s73",
-    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null,
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, liveStatus: "current",
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
       { issued: "2026-09-01", label: "1 September 2026", body: issueBody + "<p>ISSUE ONE</p>" },
       { issued: "2026-08-01", label: "1 August 2026", body: issueBody + "<p>ISSUE TWO</p>" }] })),
-    live: Object.assign({ at: live.at }, await C.encryptWith(ck, JSON.stringify(live)))
+    live: Object.assign({ at: live.at, buildId: liveBuildId }, await C.encryptWith(ck, JSON.stringify(liveDoc)))
   };
   const st = { key: 0, subs: 0, unsub: 0, subbed: false, logout: 0, rem: 0 };
   const dom = new JSDOM(landingPage(u, "n73", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
@@ -21404,7 +21525,10 @@ await (async () => {
   const { webcrypto } = await import("node:crypto");
   const u = "aaaa-cccd", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), u), other = await C.contentKey("8".repeat(64), u);
   const env = await C.encryptWith(ck, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [{ issued: "2026-09-01", label: "01 Sept 2026", body: "<p>ISSUE ONE</p>" }] }));
-  const sealLive = async (doc, key) => Object.assign({ at: doc.at }, await C.encryptWith(key, JSON.stringify(doc)));
+  const sealLive = async (doc, key) => {
+    const stamped = Object.assign({}, doc, { buildId: TEST_DESK_BUILD });
+    return Object.assign({ at: doc.at, buildId: TEST_DESK_BUILD }, await C.encryptWith(key, JSON.stringify(stamped)));
+  };
   const st = { open: [], account: [], orders: [] };
   const dom = new JSDOM(landingPage(u, "nC15", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
@@ -21423,8 +21547,8 @@ await (async () => {
   const W = dom.window, D = W.document;
   const js = (b, s) => ({ ok: (s || 200) < 400, status: s || 200, json: async () => b });
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 20)); return !!f(); };
-  const answer = async (liveEnv) => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
-    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv });
+  const answer = async (liveEnv, liveStatus = "current") => js({ ok: true, byMaster: false, issued: "2026-09-01", issues: ["2026-09-01"], session: "c15c15c15c15c15c15c15c15",
+    wrap: await C.wrapKey(pass, ck), wrapMaster: null, prices: null, env, live: liveEnv, liveStatus });
   const signIn = () => {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
@@ -21456,24 +21580,41 @@ await (async () => {
     ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
       "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
     /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
-    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck) })];
+    st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck), liveStatus: "current" })];
     D.querySelector('#out [data-unread] button').click();
     ok(await until(() => !!D.querySelector("#out .salt-lines")) && /123[.]45/.test(head()) && /Please pay the overdue amount/.test(head()),
       "Try again opens the live document, and its overdue part holds ordering: " + JSON.stringify(head().slice(0, 120)));
     /* a later return whose live document will not open keeps the hold where it last stood */
-    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other) })];
+    st.account = [async () => js({ ok: true, env, live: await sealLive(live, other), liveStatus: "current" })];
     D.dispatchEvent(new W.Event("visibilitychange"));
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
       "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
 
-    /* a record the publish wrote no live document for (no key there) waits for the next update, with nothing to try */
-    st.open = [async () => answer(null)];
+    /* a missing fresh publish is explicit and cannot fall back to a sealed issue */
+    st.open = [async () => answer(null, "updating")];
     signIn();
-    ok(await until(() => !!D.querySelector('#out [data-unread="acct.later"]')) && !D.querySelector("#out [data-unread] button")
-      && !/ISSUE/.test(vis()) && /after the next update/.test(head()),
-      "an account with issues and no live document says it shows after the next update, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.updating"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /live statement is updating/.test(head()),
+      "an account whose live document is not fresh says it is updating, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    st.open = [async () => answer(null, "unavailable")];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unavailable"]')) && !D.querySelector("#out [data-unread] button")
+      && !/ISSUE/.test(vis()) && /could not be verified/.test(head()),
+      "an unavailable Desk revision is explicit, with no Try again and no issue as a fallback");
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+
+    const innerStampMismatch = Object.assign({ at: live.at, buildId: TEST_DESK_BUILD },
+      await C.encryptWith(ck, JSON.stringify(Object.assign({}, live, { buildId: "f".repeat(16) }))));
+    st.open = [async () => answer(innerStampMismatch, "current")];
+    signIn();
+    ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && !D.querySelector("#out .salt-lines"),
+      "a sealed live document whose inner stamp disagrees with its record is never drawn as current");
     D.getElementById("lock").click();
     await until(() => !D.getElementById("gate").hidden);
 
@@ -21489,7 +21630,7 @@ await (async () => {
     await until(() => !D.getElementById("gate").hidden);
 
     /* C13: a live document that opens is the whole account; the issue beside it is never drawn */
-    st.open = [async () => answer(await sealLive(live, ck))];
+    st.open = [async () => answer(await sealLive(live, ck), "current")];
     st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
     signIn();
     ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
@@ -21708,7 +21849,7 @@ await (async () => {
     wrap: await C90.wrapKey(pass90, ck90), wrapMaster: null, session: "",
     /* C13 and C15: the Counter draws the live document or nothing, so the document rides as the live one */
     env: await C90.encryptWith(ck90, JSON.stringify({ v: 1, issued: "2026-09-01", statements: [] })),
-    live: Object.assign({ at: "2026-09-24T04:00:00Z" }, await C90.encryptWith(ck90, JSON.stringify({ at: "2026-09-24T04:00:00Z", body: body90 }))), prices: null
+    ...await sealCurrentLive(C90, ck90, { at: "2026-09-24T04:00:00Z", body: body90 }), prices: null
   };
   const dom90 = new JD90(lp90(u90, "n90", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) { try { Object.defineProperty(win, "crypto", { value: wc90, configurable: true }); } catch (e) { win.crypto = wc90; } } });
@@ -22613,10 +22754,11 @@ await (async () => {
   /* HIS DECISION D2 OF 24 SEP 2026. The saved iPhone app keeps its own storage, so a signed-in page hands its
      sign-in across: a key for Paste and /app#<key>, eight symbols to type. A code is 39 bits: never a plain hash. */
   const C = await import("../tools/stmt-crypto.mjs");
-  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, STMT_HANDOVER_KEY: SECRET };
+  const kv = new KV(), SECRET = "s3-39-handover-secret", env = { STMT: kv, ...testDeskRevision(SECRET), STMT_HANDOVER_KEY: SECRET };
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s3-39", u);
+  const live = await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>" });
   await kv.put("u:" + u, JSON.stringify({ u, issued: "2026-09-01", verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
-    env: await C.encryptWith(ck, "{}"), live: { at: "2026-09-24T01:00:00Z", iv: "aXY=", ct: "Y3Q=" } }));
+    env: await C.encryptWith(ck, "{}"), live: live.live }));
   const call = async (path, body, headers, e = env, ip = "203.0.113.9") => {
     const r = await stmtWorker.fetch(new Request("https://k7m3p2.example" + path, { method: "POST",
       headers: Object.assign({ "content-type": "application/json", "CF-Connecting-IP": ip }, headers || {}),
@@ -22823,12 +22965,13 @@ await (async () => {
     live: null, prices: null
   };
   openBody.live = await asLive(C92, ck92, openBody.env);
+  openBody.liveStatus = "current";
 
   /* the Worker's own half: a session mints a token, the token brings the wrap back, logging out ends both */
   const kv92 = new KV();
   await kv92.put("u:" + u92, JSON.stringify({ u: u92, issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env }));
   await kv92.put("sess:" + createHash("sha256").update("sess92aaaaaaaaaaaaaaaaaaaaaa").digest("hex"), JSON.stringify({ u: u92, at: new Date().toISOString() }));
-  const env92 = { STMT: kv92 };
+  const env92 = { STMT: kv92, ...testDeskRevision("test-desk-key") };
   const post92 = (path, body, headers) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
     { method: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: JSON.stringify(body) }), env92);
   const fakeWrap = { v: 2, salt: "c2FsdA==", iv: "aXZpdml2aXZpdg==", ct: "Y3Q=" };
@@ -22891,7 +23034,7 @@ await (async () => {
     const second = make92(stored92, () => async (path) => {
       if (String(path) === "/remember/open") {
         return { ok: true, status: 200, json: async () => ({ ok: true, u: u92, remembered: true, wrap: posted.wrap,
-          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
+          issued: "2026-09-01", issues: ["2026-09-01"], env: openBody.env, live: openBody.live, liveStatus: "current", prices: null, session: "sess92bbbbbbbbbbbbbbbbbbbbbb" }) };
       }
       return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
     });
@@ -23908,7 +24051,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 0, parts: [] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 0, parts: [] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -24078,7 +24221,7 @@ await (async () => {
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-09-20", late: true };
   const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-09-16", due: "2026-09-30", resale: true };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: true,
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 25, parts: [more] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-09-20", parts: [part] }, overdue: { rm: 40, parts: [part] }, coming: { rm: 25, parts: [more] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24211,7 +24354,7 @@ await (async () => {
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
   const more = { product: "oil", qty: 2.5, rm: 25, whole: 25, date: "2026-10-06", due: "2026-10-30", resale: false };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 25, parts: [more] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 25, parts: [more] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }, { issued: "2026-08-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24320,8 +24463,8 @@ await (async () => {
   /* ---- S13-L1: over RM 100 past its term, Orders is the payment page, whose head and overdue box are the slice's, in the
      list's column that says English ---- */
   const late = { product: "salt", qty: 3, rm: 150, whole: 150, date: "2026-08-01", gotOn: "2026-08-02", due: "2026-08-31", late: true };
-  const holdB = Object.assign({}, openB, { live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 150,
-    pay: { now: { rm: 150, due: "2026-08-31", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } })) });
+  const holdB = Object.assign({}, openB, { ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 150,
+    pay: { now: { rm: 150, due: "2026-08-31", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }) });
   const WH = new JSDOM(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -24657,7 +24800,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const part = { product: "salt", qty: 3, rm: 40, whole: 45, date: "2026-09-10", gotOn: "2026-09-12", due: "2026-10-20", late: false };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 40, pay: { now: { rm: 40, due: "2026-10-20", parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -24747,7 +24890,7 @@ await (async () => {
   const un = "abcd-efgh", pass = "2345-6789-abcd-efgh", ck = await C.contentKey("9".repeat(64), un), now = new Date().toISOString();
   const nil = { rm: 0, parts: [] };
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>STMT</p>", owed: 0, pay: { now: nil, overdue: nil, coming: nil } })),
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>STMT</p>", owed: 0, pay: { now: nil, overdue: nil, coming: nil } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "LABELQ", body: "<p>STMT</p>" }] })) };
@@ -25115,8 +25258,8 @@ await (async () => {
       && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
       "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in eleven spawns where it took nineteen: the links in one bulk get, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
+      "in eleven spawns: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 29 Sep 2026: the test account's fixture, sealed beside its record and never in it ---- */
     const TK55 = crypto.getRandomValues(new Uint8Array(32)), trec55 = JSON.stringify({ u: "0000-0000", test: true, wrap: await C55.wrapKey("0000-0000-0000-0000", TK55) });
@@ -27304,11 +27447,11 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, live: await asLive(C35, ck35, st.env) }); }
+          if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
           if (p === "/orders") return ans(200, { ok: true, orders: [] });
           return ans(200, { ok: true });
@@ -28006,13 +28149,13 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
+            : ans(200, { ok: true, u: uB, wrap: await CK.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: st.sB });
           if (p === "/remember/open") {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
-              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body }); return ans(200, { ok: true, order: {} }); }
@@ -28138,11 +28281,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -28474,9 +28617,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -32624,8 +32767,8 @@ await (async () => {
     products: [{ product: "salt", name: "Salt", unit: "unit", rate: 120, orders: 4, basis: "yours", sizes: [{ q: 1, price: 130 }] }], soon: [] }));
   /* S6 6.7: the hold is what is past its term, sealed as pay.overdue */
   const late = { date: "2026-09-01", due: "2026-09-11", late: true, rm: 150, whole: 150, product: "salt", qty: 1, got: 1, gotOn: "2026-09-01", resale: false };
-  const owing = await CM.encryptWith(ckM, JSON.stringify({ at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
-    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } }));
+  const owing = await sealCurrentLive(CM, ckM, { at: "2026-09-25T01:00:00Z", body: "<p>Live</p>", owed: 150,
+    pay: { term: 10, now: { rm: 150, due: "2026-09-11", parts: [late] }, overdue: { rm: 150, parts: [late] }, coming: { rm: 0, parts: [] } } });
   const A = "20260924090000-aaaa";
   const st = { dead: new Set(), n: 0, last: "", reopened: 0, remFail: false, accounts: 0, lines: 0, live: null };
   const said = (k) => ({ at: "2026-09-25T0" + k + ":00:00Z", by: "desk", text: "Answer " + k });
@@ -32646,10 +32789,10 @@ await (async () => {
         if (p === "/remember/open") {
           if (st.remFail) throw new TypeError("Failed to fetch");
           st.reopened++;
-          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
         }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
-        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live }); }
+        if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live, liveStatus: st.liveStatus }); }
         if (p === "/orders" && m === "GET") return ans(200, { ok: true, orders: orders() });
         return ans(200, { ok: true });
       };
@@ -32696,7 +32839,7 @@ await (async () => {
       "and Try again reopens it and patches the same way: " + JSON.stringify({ lapse: D.getElementById("lapse").hidden, box: box() === b0 }));
 
     /* the account now owes over RM 100: the form above the orders is the Pay page, so the tab is drawn again */
-    st.live = owing;
+    st.live = owing.live; st.liveStatus = owing.liveStatus;
     D.dispatchEvent(new W.Event("visibilitychange"));
     await until(() => /Payment due/.test((D.querySelector("#pOrder h2") || {}).textContent || ""));
     ok(/Payment due/.test(D.querySelector("#pOrder h2").textContent) && !D.getElementById("oGo") && !!D.querySelector('#pOrder .oscreen[data-order="' + A + '"]')
@@ -34402,7 +34545,7 @@ await (async () => {
     { ...base, id: Q, at: "2026-09-19T03:00:00Z", movedOn: day(3), rating: { stars: 3, at: "2026-09-25T03:00:00Z" } }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-f10-rate",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   const sent = [];
   let work;
   const dom = new JSDOM(landingPage(u, "nf10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -35659,7 +35802,7 @@ await (async () => {
     { ...base, id: NONE, at: "2026-09-27T03:00:00Z", total: 100, history: [{ at: "2026-09-27T03:00:00Z", status: "placed", by: "customer" }, { at: "2026-09-27T04:00:00Z", status: "acknowledged", by: "desk" }] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s21-price",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-28T05:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-28T05:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   let work;
   const dom = new JSDOM(landingPage(u, "ns21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -37000,7 +37143,7 @@ await (async () => {
   const page = async (pay, list) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r1",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: pay.now.rm, pay }) };
     const dom = new JD(lp(U, "nr1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -39035,7 +39178,7 @@ await (async () => {
   const pass = "fixture-pass-117", ck = await CR.contentKey("test-secret", u);
   const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-117",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const list = [dR, cR, await rec(wd.id)].map(O.customerView);
   const dom = new JSDOM(landingPage(u, "n117", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
@@ -39248,7 +39391,7 @@ await (async () => {
   const pass = "fixture-pass-119", ck = await CR.contentKey("test-secret", u);
   const openB = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-119",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "n119", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (x) { win.crypto = webcrypto; }
     win.scrollTo = () => {};
@@ -41341,7 +41484,7 @@ await (async () => {
   const open = async (opt) => {
     const body = { ok: true, wrap: await C71.wrapKey(pass, ck), session: "sess-71", prices: list,
       env: await C71.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: opt.fresh ? null : await C71.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+      ...(opt.fresh ? { live: null } : await sealCurrentLive(C71, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
     const dom = new JD71(lp71(u, "n71", null), { url: "https://site.test/" + (opt.hash || ""), runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc71, configurable: true }); } catch (e) { win.crypto = wc71; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -41536,7 +41679,7 @@ await (async () => {
     const posts = [];
     const body = { ok: true, wrap: await C74.wrapKey(pass, ck), session: "sess-74", prices: list,
       env: await C74.encryptWith(ck, JSON.stringify({ statements: opt.fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: opt.fresh ? null : await C74.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0,
+      ...(opt.fresh ? { live: null } : await sealCurrentLive(C74, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: opt.owed || 0,
         /* S7 merge: the line counts what is past its term, the sealed pay.overdue (S6 6.7), so the fixture seals it */
         pay: opt.owed ? { term: 10, now: { rm: opt.owed, due: "2026-09-11", parts: [late74(opt.owed)] }, overdue: { rm: opt.owed, parts: [late74(opt.owed)] }, coming: { rm: 0, parts: [] } } : undefined })) };
     const dom = new JD74(lp74(u, "n74", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -41715,7 +41858,7 @@ await (async () => {
   const open = async (orders) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f2",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay })) };
+      ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 90, pay }) };
     const dom = new JSDOM(landingPage(u, "ns7f2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -41782,7 +41925,7 @@ await (async () => {
   const open = async (fresh) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f3", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+      ...(fresh ? { live: null } : await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
     const dom = new JSDOM(landingPage(u, "ns7f3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -41851,7 +41994,7 @@ await (async () => {
     { ...base, id: R, status: "acknowledged", paid: 110, at: "2026-09-20T03:00:00Z", msgs: [{ by: "desk", text: "Ready Thursday.", at: "2026-09-21T02:00:00Z" }] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f6",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
   const dom = new JSDOM(landingPage(u, "ns7f6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42064,7 +42207,7 @@ await (async () => {
     delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f8", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f8", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42101,7 +42244,7 @@ await (async () => {
     delivery: 0, at: "2026-09-21T03:00:00Z", history: [], msgs: [] }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f11", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f11", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42143,7 +42286,7 @@ await (async () => {
   const open = async (fresh, saved = true) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f10", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: fresh ? [] : [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: fresh ? null : await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+      ...(fresh ? { live: null } : await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
     const dom = new JSDOM(landingPage(u, "ns7f10", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42203,7 +42346,7 @@ await (async () => {
   const orders = [o(A, { at: "2026-09-22T03:00:00Z" }), o(B)];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s7f12", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const dom = new JSDOM(landingPage(u, "ns7f12", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
@@ -42310,7 +42453,7 @@ await (async () => {
     { ...base, id: "oP", status: "placed", at: "2026-09-23T03:00:00Z" }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-pol1", prices: list,
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay })) };
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 480, pay }) };
   const dom = new JSDOM(landingPage(u, "npol1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -42426,8 +42569,8 @@ await (async () => {
   const late = { date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false };
   const body = { ok: true, wrap: await CH.wrapKey(pass, ck), session: "sess-h06",
     env: await CH.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CH.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
-      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } })) };
+    ...await sealCurrentLive(CH, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280,
+      pay: { term: 10, now: { rm: 280, due: "2026-09-10", parts: [late] }, overdue: { rm: 280, parts: [late] }, coming: { rm: 0, parts: [] } } }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [] };
   const st = { claimed: 0, payOk: false, ordersDown: false };
   const list = () => [{ ...base, id: "oA", status: "acknowledged", total: 150, paid: 0, claimed: st.claimed, method: "transfer", account: "maybank",
@@ -42534,10 +42677,10 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-h07", ck = await CJ.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CJ.wrapKey(pass, ck), session: "sess-h07",
     env: await CJ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CJ.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
+    ...await sealCurrentLive(CJ, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 280, pay: { term: 10,
       now: { rm: 280, due: "2026-09-10", parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
       overdue: { rm: 280, parts: [{ date: "2026-08-31", due: "2026-09-10", late: true, rm: 280, whole: 280, product: "salt", qty: 2.5, got: 2.5, gotOn: "2026-08-31", resale: false }] },
-      coming: { rm: 0, parts: [] } } })) };
+      coming: { rm: 0, parts: [] } } }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "acknowledged" };
   const orders = [{ ...base, id: "oA", total: 150, method: "transfer", account: "maybank" }, { ...base, id: "oC", total: 60 }];
   const dom = new JDJ(lpJ(u, "nh07", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42596,7 +42739,7 @@ await (async () => {
     + '<tr data-m="2026-09"><td class="dt">20 Sep</td><td class="amt">RM 150.00</td></tr></tbody></table></div>';
   const body = { ok: true, wrap: await CK.wrapKey(pass, ck), session: "sess-h08",
     env: await CK.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CK.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 })) };
+    ...await sealCurrentLive(CK, ck, { at: "2026-09-24T01:00:00Z", body: stmtBody, owed: 40 }) };
   const orders = [{ id: "oA", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z",
     history: [], msgs: [], status: "acknowledged", total: 150, method: "transfer", account: "maybank" }];
   const dom = new JDK(lpK(u, "nh08", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42641,7 +42784,7 @@ await (async () => {
   const u = "abcd-efgh", pass = "fixture-pass-m19", ck = await CM.contentKey("test-secret", u);
   const body = { ok: true, wrap: await CM.wrapKey(pass, ck), session: "sess-m19",
     env: await CM.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CM.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })) };
+    ...await sealCurrentLive(CM, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }) };
   const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], status: "placed", total: 90 };
   let reads = 0;
   const list = () => [{ ...base, id: "oA", msgs: reads > 2 ? [{ at: "2026-09-24T02:00:00Z", by: "desk", text: "Fixture reply" }] : [] }, { ...base, id: "oB", msgs: [] }];
@@ -42696,7 +42839,7 @@ await (async () => {
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 120 }, { q: 2, price: 230 }] }] };
   const body = { ok: true, wrap: await CN.wrapKey(pass, ck), session: "sess-m20",
     env: await CN.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CN.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    ...await sealCurrentLive(CN, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }),
     prices: await CN.encryptWith(ck, JSON.stringify(prices)) };
   const posted = [];
   const dom = new JDN(lpN(u, "nm20", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42776,7 +42919,7 @@ await (async () => {
     products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [] }, { product: "oil", unit: "unit", basis: "board", tier: null, sizes: [{ q: 1, price: 50 }] }] };
   const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-m21",
     env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await CR.encryptWith(ck, JSON.stringify({ at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 })),
+    ...await sealCurrentLive(CR, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0 }),
     prices: await CR.encryptWith(ck, JSON.stringify(prices)) };
   const orders = [{ id: "oA", product: "oil", qty: 1, mode: "collect", delivery: 0, moved: 0, paid: 0, at: "2026-09-20T03:00:00Z", history: [], msgs: [], status: "placed", total: 50 }];
   const dom = new JDR(lpR(u, "nm21", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -42924,6 +43067,7 @@ await (async () => {
     env: await CQ.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: stmtBody }] })),
     prices: await CQ.encryptWith(ck, JSON.stringify(prices)) };
   body.live = await asLive(CQ, ck, body.env);
+  body.liveStatus = "current";
   const dom = new JDQ(lpQ(u, "nl50", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wcQ, configurable: true }); } catch (e) { win.crypto = wcQ; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43002,7 +43146,7 @@ await (async () => {
     const u = "abcd-efgh", pass = "fixture-pass-s62", ck = await C.contentKey("test-secret", u);
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(u, "ns62", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43094,7 +43238,7 @@ await (async () => {
     const u = "abcd-efgh", pass = "fixture-pass-5c", ck = await C.contentKey("test-secret", u);
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(u, "n5c", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43156,7 +43300,7 @@ await (async () => {
       overdue: { rm: +parts.filter((p) => p.late).reduce((s, p) => s + p.rm, 0).toFixed(2), parts: parts.filter((p) => p.late) }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v2",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: pay.now.rm, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: pay.now.rm, pay }),
       prices: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), week: { monday: kl(0), label: "This week" },
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 95, orders: 3, sizes: [{ q: 1, price: 95 }, { q: 2, price: 180 }] }], soon: [] })) };
     const dom = new JD(lp(u, "nv2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -43286,7 +43430,7 @@ await (async () => {
     overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s64",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+    ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay }) };
   const ord = { id: "20260920000000-s64a", product: "salt", qty: 2, mode: "collect", unit: 100, total: 200, delivery: 0, paid: 0, moved: 0,
     at: "2026-09-20T03:00:00Z", status: "acknowledged", history: [], msgs: [] };
   const dom = new JD(lp(u, "ns64", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
@@ -43386,7 +43530,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: nowRm, due: null, parts: nowRm > 0 ? [{ date: "2026-09-10", since: null, due: null, late: false, rm: nowRm, whole: nowRm, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] : [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s65",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay })) };
+      ...await sealCurrentLive(C, ck, { at: iso(-2), body: "<p>Live</p>", owed: nowRm, pay }) };
     const dom = new JD(lp(u, "ns65", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43534,7 +43678,7 @@ await (async () => {
   const open = async (orders, claims) => {
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s67",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 300, pay }),
       prices: await C.encryptWith(ck, JSON.stringify(list)) };
     const dom = new JD(lp(u, "ns67", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
@@ -43599,7 +43743,7 @@ await (async () => {
   const pay = { term: 10, now: { rm: 70, due: null, parts: [{ date: "2026-09-10", since: null, due: null, late: false, rm: 70, whole: 70, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-s68",
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay })) };
+    ...await sealCurrentLive(C, ck, { at: new Date().toISOString(), body: "<p>Live</p>", owed: 70, pay }) };
   const st = { method: null, sent: [] };
   const list = () => [{ id: "oA", product: "salt", qty: 1, mode: "collect", total: 110, delivery: 0, paid: 0, moved: 0, at: "2026-09-20T03:00:00Z",
     status: "acknowledged", history: [], msgs: [], method: st.method }];
@@ -43761,10 +43905,10 @@ await (async () => {
     const posted = [];
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v3p", assoc, prices: await sealed(list("d1", ceiling)),
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 1, now: { rm: 30, parts: [{ date: "2026-09-28", rm: 30, whole: 200, product: "salt", qty: 2, resale: false },
+      ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 0, pay: { term: 1, now: { rm: 30, parts: [{ date: "2026-09-28", rm: 30, whole: 200, product: "salt", qty: 2, resale: false },
         /* two rows of oN's day that are not oN: a friend's of its whole, and its own side of another whole */
         { date: "2026-09-29", rm: 0, whole: 100, product: "salt", qty: 1, resale: true }, { date: "2026-09-29", rm: 0, whole: 999, product: "salt", qty: 9, resale: false }] }, overdue: { rm: 0, parts: [] },
-        coming: { rm: 20, parts: [{ date: "2026-09-27", rm: 20, product: "oil", qty: 1, toCome: 1, resale: false }] } } })) };
+        coming: { rm: 20, parts: [{ date: "2026-09-27", rm: 20, product: "oil", qty: 1, toCome: 1, resale: false }] } } }) };
     const dom = new JD(lp(u, "nv3p", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -43918,7 +44062,7 @@ await (async () => {
     null, { status: 503, body: { ok: false, error: "busy" } }, null, null, { status: 503, body: { ok: false, error: "busy" } }];
   const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-v4b", assoc: false, prices: await sealed(list("d1", 95)),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await C.encryptWith(ck, JSON.stringify({ at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } })) };
+    ...await sealCurrentLive(C, ck, { at: now, body: "<p>Live</p>", owed: 0, pay: { term: 3, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } } }) };
   const dom = new JD(lp(u, "nv4b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44226,7 +44370,7 @@ await (async () => {
   const draw = async (doc, claims, until, later, assoc) => {
     let polls = 0, shift = 0;   /* above the page, whose beforeParse closes over both */
     const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa", assoc: !!assoc,
-      live: await C.encryptWith(ck, JSON.stringify(doc)),
+      ...await sealCurrentLive(C, ck, doc),
       prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: new Date().toISOString(), week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
       env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -44341,7 +44485,7 @@ await (async () => {
   const read = async (list, claims) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r3",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 300, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 300, pay }) };
     const dom = new JD(lp(U, "nr3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44407,7 +44551,7 @@ await (async () => {
   const read = async (list, claims) => {
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m3",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-1), body: "<p>Live</p>", owed: 300, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-1), body: "<p>Live</p>", owed: 300, pay }) };
     const dom = new JD(lp(U, "nm3", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44468,7 +44612,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: nowRm, due: null, parts: nowRm > 0 ? [{ date: "2026-09-10", since: null, due: null, late: false, rm: nowRm, whole: nowRm, product: "salt", qty: 1, got: 1, gotOn: "2026-09-10", resale: false }] : [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-m6",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-48), body: "<p>Live</p>", owed: nowRm, pay }) };
     const dom = new JD(lp(U, "nm6", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44539,7 +44683,7 @@ await (async () => {
     const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-r4",
       env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+      ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 0, pay }) };
     const dom = new JD(lp(U, "nr4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44618,7 +44762,7 @@ await (async () => {
   const pay = { term: 10, now: { rm: 0, due: null, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
   const body = { ok: true, wrap: await Cr.wrapKey(pass, ck), session: "sess-rr",
     env: await Cr.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-    live: await Cr.encryptWith(ck, JSON.stringify({ at: iso(-2), body: "<p>Live</p>", owed: 0, pay })) };
+    ...await sealCurrentLive(Cr, ck, { at: iso(-2), body: "<p>Live</p>", owed: 0, pay }) };
   const dom = new JD(html, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -44689,7 +44833,7 @@ await (async () => {
     const pay = overdue === undefined ? undefined : { term: 3, now: { rm: owed || overdue, due: parts.length ? parts[0].due : null, parts }, overdue: { rm: overdue, parts: overdue ? [late] : [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "",
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay })) };
+      ...await sealCurrentLive(C, ck, { at: at.toISOString(), body: "<p>Live</p>", owed: owed || overdue, pay }) };
     const dom = new JD(lp(u, "nhold", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wc, configurable: true }); } catch (e) { win.crypto = wc; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -46323,7 +46467,7 @@ await (async () => {
   const openB = { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), wrapMaster: null, session: "sessNaaaaaaaaaaaaaaaaaaaaaaa",
     /* sealed without V5's stages (29 Sep 2026): struck on 24 Sep and opened on today's clock, the account would be locked
        and Home would draw To pay now alone; the stages are proved in their own section */
-    live: await C.encryptWith(ck, JSON.stringify({ ...doc, pay: { ...doc.pay, hide: undefined, lock: undefined } })),
+    ...await sealCurrentLive(C, ck, { ...doc, pay: { ...doc.pay, hide: undefined, lock: undefined } }),
     prices: await C.encryptWith(ck, JSON.stringify({ v: 1, at: now, week: { label: "21 Sep 2026", monday: "2026-09-21" }, digest: "d1", since: "2026-03-02",
       products: [{ product: "salt", unit: "unit", basis: "yours", rate: 12, orders: 3, sizes: [{ q: 1, price: 12 }, { q: 3, price: 33 }] }], soon: [] })),
     env: await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-01", label: "1 Sep 2026", body: "<p>Statement</p>" }] })) };
@@ -48549,7 +48693,7 @@ await (async () => {
     const pay = { term: 3, now: { rm: 110, due: on, parts: [part] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-fx3",
       env: await C.encryptWith(ck, J({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, J({ at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: 110, pay })),
+      ...await sealCurrentLive(C, ck, { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: 110, pay }),
       prices: await C.encryptWith(ck, J({ at: new Date().toISOString(), week: { monday: on, label: "This week" },
         products: [{ product: "salt", unit: "unit", basis: "yours", rate: 110, orders: 1, sizes: [{ q: 1, price: 110 }] }], soon: [] })) };
     let read = 0;   /* the orders' answer read, which To pay now is drawn from: waited for, never timed */
@@ -49385,7 +49529,7 @@ await (async () => {
       { ...base, id: "oP", status: "placed", moved: 0, at: "2026-09-23T03:00:00Z" }];
     const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-rdt1", prices: list,
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
-      live: await C.encryptWith(ck, JSON.stringify({ at: liveAtIso, body: "<p>Live</p>", owed: 110, pay })) };
+      ...await sealCurrentLive(C, ck, { at: liveAtIso, body: "<p>Live</p>", owed: 110, pay }) };
     const dom = new JSDOM(landingPage(u, "nrdt1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;

@@ -439,7 +439,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   associates report card** (`/all/assoc`, whitelist `ASSOC_FIELDS`), every book's sales progress; the
   reward on the tiered books only: no margin crosses.
 - **One live document, no monthly statement**: every order from the start, the page filtering by
-  month and opening on the whole account. `make_statements` refuses to seal a new issue without
+  month and opening on the whole account. The publish stamps the encrypted document with the Desk
+  build id, and the Counter serves it only after its authenticated Desk revision read matches;
+  stale or unverifiable statements are withheld with an explicit state. The publisher reads every
+  intended real account record back after its bulk write. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order, or on the account's thread. The account line shows
   the customer's username, never the roster code.
 - **The test accounts** `0000-0000` (open) and `0000-0001` (locked, his answer of 29 Sep 2026), password

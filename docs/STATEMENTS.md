@@ -2,10 +2,13 @@
 
 ## RETIRED, 21 Sep 2026, on his instruction
 
-**There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): the publish
-writes it into every record on every run, so it is never more than an hour behind the book, and the
-page opens on the whole account rather than a month. A monthly issue adds nothing to that, and a
-strip of issues says there is something to catch up on when there is not.
+**There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): each publish
+seals it into every real account record with the Desk build id both beside and inside the ciphertext.
+Before serving it, the Counter reads the Desk's authenticated `/stmt/rev` route and requires the
+published stamp to match. A mismatch says the statement is updating; an unavailable or invalid
+revision withholds it and says it could not be verified. The page opens on the whole account rather
+than a month. A monthly issue adds nothing to that, and a strip of issues says there is something to
+catch up on when there is not. Sealed issues and the invented test-account fixtures are unaffected.
 
 **So nothing runs on the first of the month.** `tools/make_statements.mjs` refuses to seal a NEW
 issue and says so; the routine below is kept because it is the only written account of how an issue
@@ -886,7 +889,8 @@ acknowledging, and the drafter flags it again when the row is queued.
 
 **The desk reads and moves orders through a service binding**, `STMT_SITE` in
 `wrangler.jsonc`, sending `STMT_DESK_KEY`, a secret the same on both Workers. The direction is
-desk to site only; the site has no binding, no key of the desk's and no route back. The
+desk to site for orders; the site's reverse `DESK` binding reads only `/stmt/rev` with the shared
+key to verify live statements, never the ledger or an order. The
 Site orders card in Enter (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
@@ -1130,19 +1134,29 @@ touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on 
 published list stale, and v652, v654 and v655 each left the customers' pages on the lists sealed
 at v651 while the desk quoted something else. Both run after every step the ledger needs, so a
 fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
-seals the live statement into each of the newest issue's records under the content key, puts
+seals the live statement into each of the newest issue's records under the content key, stamps it
+with `public/rev.json`'s Desk build id, puts
 them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
 new set retires last month's**), and clears the attempt counters on a new issue only. **A failed
 read of the store's `issue` is not a fresh store** (27 Sep 2026): only wrangler's 404 is absent, a
 lapsed login is tried once more, and any other failure publishes as usual, clears no counter or
 older tick, and says why in a warning in wrangler's words, his answer, since stopping would fail
-the chain job and skip its suite. Without
-`STMT_KEY` in the cloud the records go up as issued and "Now" is simply absent; the step warns.
+the chain job and skip its suite. After the bulk write, every intended real account record is read back and compared in full; a
+missing or changed record makes the publish fail before the Desk's account map is updated. The
+Counter's `DESK` service binding and the Desk's `/stmt/rev` route use the existing `STMT_DESK_KEY`;
+either missing configuration, a failed read, or an invalid id withholds the live document. The Desk
+answers `GET /stmt/rev` before its human Access gate, since a service binding carries no owner JWT:
+that one path alone, keyed and read-only, so `REQUIRE_ACCESS` "1" never withholds every statement. A change
+to `wrangler.stmt.jsonc` needs its manual deploy. Without `STMT_KEY` in the cloud the records go up
+as issued and "Now" is simply absent; the step warns.
 `node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
 call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one
 list and one `kv bulk get`, falling back to a get per link, with a warning, when that open-beta
 command does not answer as text; and the three lists that feed only the retirement not at all
-under `--no-retire`. With eight links, the hourly run spawns nine where it spawned nineteen.
+under `--no-retire`. Every intended real account is verified by a separate bulk read, falling
+back to individual reads with a warning if the bulk read fails or has an invalid shape. With eight
+links and up to a hundred accounts, the hourly run spawns eleven processes, including the two
+test-account reads and the real-account verification.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
 the site does not exist until the store does. The one-time setup, in **Command Prompt** from

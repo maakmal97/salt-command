@@ -946,7 +946,7 @@ export function liveFor(invented, party, now, user) {
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
    customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
-export async function liveRecords(root, key, now, pricing, cards) {
+export async function liveRecords(root, key, now, pricing, cards, buildId) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -987,7 +987,9 @@ export async function liveRecords(root, key, now, pricing, cards) {
       if (!ck) { wrongKey.push(rec.u); records.push(rec); continue; }
       const doc = liveStatement(code, now, rec.u);
       if (doc) {
-        rec.live = Object.assign({ at: doc.at }, await encryptWith(ck, JSON.stringify(doc)));
+        const liveDoc = buildId ? Object.assign({}, doc, { buildId }) : doc;
+        rec.live = Object.assign(buildId ? { at: doc.at, buildId } : { at: doc.at },
+          await encryptWith(ck, JSON.stringify(liveDoc)));
         live++;
       }
       if (pricing) {
