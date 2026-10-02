@@ -1,0 +1,68 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T04:04:35.737Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s208",
+    "qty": 1,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-08-03",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "settledRM",
+      "from": 47,
+      "to": 90
+     },
+     {
+      "field": "settledKg",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CI4-OKR"
+   },
+   "reasoning": "Correction against CI4-OKR's order of 1 unit for RM 90 dated 2026-08-03 (s208). Sets settledRM from 47 to 90, settledKg from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s208",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-02T04:04:35.737Z",
+    "type": "AMEND",
+    "party": "CI4-OKR",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CI4-OKR s208: settledRM to 90, settledKg to 0, recorded 2026-10-02",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "rid": "s208",
+     "orderKey": "CI4-OKR|2026-08-03|90",
+     "kind": "Correction",
+     "date": "2026-10-02",
+     "fields": {
+      "settledRM": 90,
+      "settledKg": 0
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-02T04:05:29.672Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
