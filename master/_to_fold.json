@@ -1,0 +1,107 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T06:58:16.236Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s224",
+    "qty": 2,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-02",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 110,
+      "to": 210
+     },
+     {
+      "field": "cash",
+      "from": 0,
+      "to": 110
+     },
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2
+     },
+     {
+      "field": "agreedOn",
+      "from": null,
+      "to": "2026-10-02"
+     },
+     {
+      "field": "paidOn",
+      "from": null,
+      "to": "2026-10-02"
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-02"
+     },
+     {
+      "field": "settledRM",
+      "from": null,
+      "to": 100
+     },
+     {
+      "field": "settledKg",
+      "from": null,
+      "to": 1
+     }
+    ],
+    "customer": "CI4-OKR"
+   },
+   "reasoning": "Correction against CI4-OKR's order of 2 unit for RM 110 dated 2026-10-02 (s224). Sets total from 110 to 210, cash from 0 to 110, deliveredQty from 0 to 2, agreedOn from unset to 2026-10-02, paidOn from unset to 2026-10-02, deliveredOn from unset to 2026-10-02, settledRM from unset to 100, settledKg from unset to 1. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "CI4-OKR typically pays about RM 91.25/unit for salt across 4 orders; this one is RM 105, 15.1% above that."
+   ],
+   "amends": "s224",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-02T06:58:16.236Z",
+    "type": "AMEND",
+    "party": "CI4-OKR",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CI4-OKR s224: total to 210, cash to 110, deliveredQty to 2, agreedOn to 2026-10-02, paidOn to 2026-10-02, deliveredOn to 2026-10-02, settledRM to 100, settledKg to 1, recorded 2026-10-02",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "rid": "s224",
+     "orderKey": "CI4-OKR|2026-10-02|110",
+     "kind": "Correction",
+     "date": "2026-10-02",
+     "fields": {
+      "total": 210,
+      "cash": 110,
+      "deliveredQty": 2,
+      "agreedOn": "2026-10-02",
+      "paidOn": "2026-10-02",
+      "deliveredOn": "2026-10-02",
+      "settledRM": 100,
+      "settledKg": 1
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-02T06:59:28.777Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
