@@ -1287,8 +1287,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,
   so nothing is typed, and the trade is that an Access session there reads every account. The
-  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address, a
-  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). **When the session lapses, Salt Account
+  intended Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, a
+  week's session, 168h, by his D13 of 24 Sep 2026; it was 24h). Its policy must allow only
+  `maakmal97@icloud.com`; the Worker independently checks that email on `/all` and every `/all/*`
+  request. Customer routes outside `/all` keep their sign-in links, passkeys and one-time code.
+  This workstream changes code only; it does not verify or change live Access configuration.
+  **When the session lapses, Salt Account
   says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
   to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
   401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
@@ -1297,7 +1301,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `/all`, since a home screen fetches an icon without the Access cookie. `stmt/access.js` reads the header or the `CF_Authorization` cookie.
   It keeps the team's public keys per issuer and key id for an hour, and a key id it lacks fetches the
   certs once; the signature, issuer, audience and expiry are checked on every request, and `/all/refs`
-  takes the gate's verdict rather than verifying twice (the plan's 2.6). `roster` (codes
+  takes the gate's verdict rather than verifying twice (the plan's 2.6). The verified identity's
+  email is checked by the Worker; neither a customer account nor a caller-supplied email grants
+  Admin access. `roster` (codes
   beside usernames, never names) is written by the publish.
 - **Access on a `workers.dev` path, and how to prove it.** Zero Trust gates one path of a Worker
   with no custom domain; the precedent is QR Command's application, and the verifier to copy is

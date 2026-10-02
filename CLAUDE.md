@@ -276,15 +276,19 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
 
 ## Access, and why it is off; the write gate
 
-- **`REQUIRE_ACCESS` (current value in MEMORY.md).** Setting
-  it to `"1"` without recreating the application locks him out. To restore: first the Access
-  application (Self-hosted, Workers, `salt-command`, policy Allow for his two addresses), then the
-  var, then deploy by hand. **This is the DESK; the statements site's Access is live** and gates
-  only `/all` there.
+- **`REQUIRE_ACCESS` (current value in MEMORY.md).** It remains `"0"` until the Desk Access application is provisioned.
+  This workstream does not change Access configuration or deploy. Before setting it to `"1"`,
+  create an application covering the Desk Worker, allow only `maakmal97@icloud.com`, set
+  `ACCESS_TEAM` and `ACCESS_AUD` in `wrangler.jsonc`, then deploy by hand. The Worker verifies the
+  JWT signature, issuer, audience, expiry and exact email from the Access header or cookie; a header
+  alone is not identity. The Counter's `/all` applies the same verified-email rule, while customer
+  sign-in routes outside `/all` remain unchanged. Do not treat either boundary as live until its
+  Access application and deployment have been verified.
 - **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
   `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`, and the places' `/vault/addr` and
-  `/geo/expand`.** The desk, `/rev`, `/queue/ping` and the names vault's ciphertext stay open. Rotate
-  with `npx wrangler secret put SALT_WRITE_KEY` from the
+  `/geo/expand`.** This is the separate write key; when enabled, the Desk's Access gate also covers
+  its assets, `/rev` and `/queue/ping`. The names vault's ciphertext stays encrypted. Rotate with
+  `npx wrangler secret put SALT_WRITE_KEY` from the
   repo, then clear `saltWriteKey` from the phone's storage. `drain.mjs` and `seed-vault.mjs` go
   through wrangler, unaffected. **`wrangler dev` binds the LIVE KV.**
 - Withdraw a queued entry: `node tools/drain.mjs --status`, then `--forget <at>`; a drafted one is rejected under Approve instead.
@@ -373,8 +377,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
   published username.
 - **`/all` IS THE MASTER ACCOUNT, behind Access with two locks, neither trusted alone**: the Access
-  application and `stmt/access.js` verifying the JWT again (RS256, issuer, audience, expiry). Empty
-  `ACCESS_TEAM` or `ACCESS_AUD` closes `/all`. **`stmt/owner.js` travels only there.**
+  application and `stmt/access.js` verifying the JWT (RS256, issuer, audience, expiry), followed by
+  an exact `maakmal97@icloud.com` email check in the Worker. Empty `ACCESS_TEAM` or `ACCESS_AUD`,
+  an invalid token or any other email closes `/all`. Customer sign-in routes outside `/all` are not
+  Admin routes. **`stmt/owner.js` travels only there.**
 - **An account's card on Salt Account hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
