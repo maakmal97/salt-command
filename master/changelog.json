@@ -1,5 +1,14 @@
 [
  {
+  "v": "v988",
+  "d": "02 Oct 2026",
+  "t": "CZ5-TM COLLECTS HIS UNIT; THE SHELF ROLLS BY 1",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s227 records that CZ5-TM collected 1 unit on 02 Oct, for order 20261002101739-dpvekq. It sets delivered quantity from 0 to 1, delivered on to 2026-10-02 and handover to collected. It was preapproved by phone. No cash moves, and the order is now closed.",
+   "<b>INVENTORY.</b> Salt rolls out by 1 unit to CZ5-TM. The cost basis is unchanged at RM56 a unit, and no lot landed."
+  ]
+ },
+ {
   "v": "v987",
   "d": "02 Oct 2026",
   "t": "TWO PENDING ORDERS FOR CC9-OKR SETTLED IN FULL, SALT AND OIL",
