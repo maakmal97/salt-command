@@ -1,5 +1,59 @@
 [
  {
+  "v": "v989",
+  "d": "03 Oct 2026",
+  "t": "ONE SALT SALE TO CA6-CYB, PAID AND COLLECTED",
+  "n": [
+   "<b>ONE SALT SALE FOLDED.</b> The sale of 3 units to CA6-CYB for RM260 on 02 Oct is appended to sales. It was paid and collected in full the same day and decided by the desk on 02 Oct. Nothing was amended, the drafter raised no flags, and nothing is left open on the row.",
+   "<b>NOTHING UNUSUAL, STOCK ROLLS OUT.</b> The rate of RM86.67 a unit sits between the desk's floor and ask for 3 units. The shelf rolls out by 3 units at RM56 a unit, the inventory's own cost, so the cost basis does not move. No lot landed and no loan is open."
+  ]
+ },
+ {
+  "v": "v988",
+  "d": "02 Oct 2026",
+  "t": "CZ5-TM COLLECTS HIS UNIT; THE SHELF ROLLS BY 1",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s227 records that CZ5-TM collected 1 unit on 02 Oct, for order 20261002101739-dpvekq. It sets delivered quantity from 0 to 1, delivered on to 2026-10-02 and handover to collected. It was preapproved by phone. No cash moves, and the order is now closed.",
+   "<b>INVENTORY.</b> Salt rolls out by 1 unit to CZ5-TM. The cost basis is unchanged at RM56 a unit, and no lot landed."
+  ]
+ },
+ {
+  "v": "v987",
+  "d": "02 Oct 2026",
+  "t": "TWO PENDING ORDERS FOR CC9-OKR SETTLED IN FULL, SALT AND OIL",
+  "n": [
+   "<b>TWO FULFILMENTS FOLDED.</b> Both are amendments of CC9-OKR's orders of 01 Oct: s222 (salt, 1 unit, RM90) and s221 (oil, 10 units, RM110). Each moves its cash and units on 02 Oct and settles in full, so nothing is left outstanding on either. Both were decided by the desk.",
+   "<b>INVENTORY.</b> The moves are 1 unit of salt and 10 units of oil out to CC9-OKR. The dossier gives no floor or ask for these sizes and no cost for the rows, so none is quoted here."
+  ]
+ },
+ {
+  "v": "v986",
+  "d": "02 Oct 2026",
+  "t": "CZ5-TM SALT TIER MOVES TO AMBASSADOR",
+  "n": [
+   "<b>ONE TIER CHANGE FOLDED.</b> CZ5-TM's salt tier is set to Ambassador, moving from Titanium. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "<b>INVENTORY UNCHANGED.</b> Salt stock stays at 7.25 units, last counted on 29 Sep 2026, with the stock cost at RM56 a unit and no lot landed."
+  ]
+ },
+ {
+  "v": "v985",
+  "d": "02 Oct 2026",
+  "t": "ONE PAYMENT CLEARS THE CASH ON CZ5-TM'S ORDER; THE UNIT IS STILL TO HAND OVER",
+  "n": [
+   "<b>ONE AMENDMENT FOLDED.</b> A payment of RM110 by QR via Maybank was applied to CZ5-TM's order s227 of 02 Oct, preapproved by phone. The cash is settled, but the one unit has not yet moved, so the order stays open on delivery. Nothing unusual and no flags were raised.",
+   "<b>INVENTORY UNCHANGED.</b> No unit left or arrived in this fold, so stock stays at 7.25 units and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v984",
+  "d": "02 Oct 2026",
+  "t": "ONE PENDING SALT SELL TO CZ5-TM, NOTHING MOVED",
+  "n": [
+   "<b>FOLDED:</b> one salt sell dated 02 Oct to CZ5-TM, 1 unit for RM110, preapproved by phone. Nothing is paid and nothing is handed over, so the row is pending. The rate sits below the desk's ask for that size, which is the one unusual point. The drafter raised no flags.",
+   "<b>INVENTORY:</b> no stock moved, no revenue is booked and the roll stays as it stood. Salt was last counted on 29 Sep. The cost basis is unchanged at RM56 a unit."
+  ]
+ },
+ {
   "v": "v983",
   "d": "02 Oct 2026",
   "t": "ONE PENDING SALT SALE TO CH5-KLC; NOTHING MOVED",

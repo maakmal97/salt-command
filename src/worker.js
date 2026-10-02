@@ -1016,7 +1016,12 @@ export default {
     /* Fail closed. With REQUIRE_ACCESS on, a request that did not pass Cloudflare
      * Access gets nothing: not the ledger, not the queue, not the build id. Access
      * being off at the dashboard must read as an outage, never as an open desk.
-     * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
+     * The API paths answer JSON so the desk's ping-fail path degrades cleanly.
+     *
+     * ONE EXCEPTION, AND ONLY THIS PATH: the Counter's service-binding read of the build id
+     * carries STMT_DESK_KEY and no owner JWT, so it is answered before the human gate. It is
+     * a capability, not a sign-in: GET only, the key checked in constant time, the manifest
+     * validated, and nothing else under /stmt/ is let past. */
     if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
     if (!await accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
