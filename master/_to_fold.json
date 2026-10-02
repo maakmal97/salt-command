@@ -1,0 +1,84 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T03:51:02.513Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s224",
+    "qty": 2,
+    "total": 210,
+    "cash": 0,
+    "date": "2026-10-02",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 210,
+      "to": 110
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     },
+     {
+      "field": "rebate",
+      "from": false,
+      "to": true
+     },
+     {
+      "field": "rebateKg",
+      "from": null,
+      "to": 1
+     }
+    ],
+    "customer": "CI4-OKR"
+   },
+   "reasoning": "Correction against CI4-OKR's order of 2 unit for RM 210 dated 2026-10-02 (s224). Sets total from 210 to 110, handover from unset to collected, rebate from false to true, rebateKg from unset to 1. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CI4-OKR typically pays about RM 92.5/unit for salt across 3 orders; this one is RM 55, 40.5% below that.",
+    "RM 110 for the goods is RM 27.25 under the floor of RM 137.25, which is what the order costs to take out: the goods after the leak, with nothing above them.",
+    "This sells at RM 55/unit against a cost of RM 56 from the inventory: it loses money on every unit."
+   ],
+   "amends": "s224",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-02T03:51:02.513Z",
+    "type": "AMEND",
+    "party": "CI4-OKR",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CI4-OKR s224: total to 110, handover to collected, rebate to true, rebateKg to 1, recorded 2026-10-02",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "rid": "s224",
+     "orderKey": "CI4-OKR|2026-10-02|210",
+     "kind": "Correction",
+     "date": "2026-10-02",
+     "fields": {
+      "total": 110,
+      "handover": "collected",
+      "rebate": true,
+      "rebateKg": 1
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-02T03:52:26.165Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
