@@ -59,19 +59,18 @@
 			"service": "k7m3p2"
 		}
 	],
-	// The Worker-side gate. "1" makes the Worker refuse EVERY request, reads and
-	// writes both, that did not arrive through Cloudflare Access.
+	// The Worker-side gate. "1" requires a verified Cloudflare Access JWT from the
+	// configured team and audience, with the exact Admin email; header presence alone
+	// is never accepted. The Access application must cover this Worker and allow only
+	// maakmal97@icloud.com.
 	//
-	// SET TO "0" ON 11 AUG 2026 ON THE OWNER'S EXPLICIT INSTRUCTION ("I want no zero
-	// trust requirements right now"), alongside removing the Access application.
-	// BE CLEAR WHAT THAT MEANS: with both off this Worker serves the real trading
-	// ledger to anyone who knows the URL, with no sign-in of any kind. It is now a
-	// deliberate choice; it is also the exact state the site was found in on 10-11
-	// Aug, when it was NOT deliberate, so do not read this value as evidence that
-	// someone decided. Only this comment is that evidence.
+	// The application is not currently provisioned. REQUIRE_ACCESS stays off until the
+	// owner-only Access policy, team and audience vars are configured and verified.
+	// While off, the Desk remains open; this code change does not make the live boundary
+	// effective.
 	//
-	// Nothing is deleted, only switched off: restoring protection is this var back
-	// to "1" plus an Access application, per CLAUDE.md "Deploying" step 3.
+	// REQUIRE_ACCESS stays "0" until the Access application is provisioned and verified.
+	// Then set ACCESS_TEAM and ACCESS_AUD below, change it to "1", and deploy by hand.
 	// THE CLOUD DRAFTER (v303). Every fifteen minutes it reads the queue from KV, reads the
 	// book from the D1 mirror, and writes a proposed ROW into `draft` for anything new. It
 	// drafts and stops: the phone approves, and only approved rows reach the master.
@@ -93,6 +92,8 @@
 	},
 	"vars": {
 		"REQUIRE_ACCESS": "0",
+		"ACCESS_TEAM": "",
+		"ACCESS_AUD": "",
 		// The VAPID PUBLIC key. Public by definition: a browser cannot create a push
 		// subscription without it and it authorises nothing. The private half is the
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.

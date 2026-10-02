@@ -75,6 +75,9 @@ const HEADERS = {
   "referrer-policy": "no-referrer",
   "x-content-type-options": "nosniff"
 };
+const ADMIN_EMAIL = "maakmal97@icloud.com";
+const isAdminIdentity = (who) => !!who && typeof who.email === "string"
+  && who.email.trim().toLowerCase() === ADMIN_EMAIL;
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: Object.assign({ "content-type": "application/json; charset=utf-8" }, HEADERS)
 });
@@ -1541,12 +1544,12 @@ export default {
         /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
            Access application is gone or misconfigured, and that is the one thing he must be told
            rather than left to guess at. Nothing is handed over either way. */
-        if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
+        if (!isAdminIdentity(who)) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
           status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
         });
         return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
       }
-      if (!who) return json({ ok: false, error: "Access required" }, 401);
+      if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
       /* the referral links, minted and revoked from inside the Access area only */
       /* 19 SEP 2026: HIS OWN APP. The same manifest the customer's gets, pointed at /all and named
          differently, so his home screen carries the admin page rather than a second copy of the

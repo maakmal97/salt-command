@@ -318,6 +318,24 @@ The build adds only a PWA head, a service worker, a device id and cloud-mode cop
 `10_Data`, nothing else. Its sync passes were retired on 16 Sep 2026 (a fourth deployer, rule 8);
 `salt_sync.ps1` is dormant. `npm run dev` does the preview half better.
 
+## Desk Access boundary
+
+The Desk Worker has a fail-closed Access verifier, but the committed `REQUIRE_ACCESS` value remains
+`"0"` until its Cloudflare application is provisioned. The verifier accepts only an RS256 JWT whose
+signature matches the configured Access team's published key and whose issuer, audience and expiry
+are valid; it reads the Access assertion header or the `CF_Authorization` cookie, then requires the
+verified email to match `maakmal97@icloud.com` (case-insensitive). It does not trust a header by
+presence or a caller-supplied email. Invalid tokens and missing `ACCESS_TEAM` or `ACCESS_AUD` fail
+closed when `REQUIRE_ACCESS` is enabled.
+
+Before enabling it, create a Cloudflare Access application for the Desk Worker covering its Desk
+and API paths, with an Allow policy for that email only (not an IP allowlist). Put the Access team
+name and application's audience tag in `wrangler.jsonc`, set `REQUIRE_ACCESS` to `"1"`, and deploy
+the Wrangler config change by hand. Until those steps are completed and verified, protection is not
+live. The Counter's independent `/all` boundary applies the same verified-email check; customer
+routes outside `/all` remain on their existing sign-in paths. No live Access configuration or
+deployment is part of this workstream.
+
 ## Provisioning a sale (V5a, his answers of 29 Sep 2026)
 
 A sale's provision is its own ladder, counted from the handover of the goods still unpaid (the engine's `saleProvSince`,

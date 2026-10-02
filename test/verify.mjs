@@ -321,6 +321,62 @@ await (async () => {
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
 })();
 
+/* ---- 1c. Worker: Cloudflare Access verifies the Desk identity --------------------- */
+section("Worker — verified Access identity");
+await (async () => {
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "desk-access-under-test", AUD = "desk-aud-under-test", KID = "desk-key";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") {
+        return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      }
+      throw new Error("the Desk Access gate fetched an unexpected URL: " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const mint = async (claims, key = kp.privateKey, kid = KID) => {
+      const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u(new Uint8Array(sig));
+    };
+    const good = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+      email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+    const env = { ...mkEnv(new KV(), "1"), ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const hit = (headers = {}, useEnv = env) => worker.fetch(req("/desk.html", { headers }), useEnv);
+    ok((await hit()).status === 401, "enabled Desk gate refuses requests without a JWT");
+    ok((await hit({ "cf-access-jwt-assertion": "not.a.jwt" })).status === 401,
+      "a present but malformed Access header is not identity");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, aud: ["another-app"] }) })).status === 401,
+      "the Desk rejects a validly signed token for another Access audience");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, iss: "https://another-team.cloudflareaccess.com" }) })).status === 401,
+      "the Desk rejects a validly signed token from another Access issuer");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, exp: Math.floor(Date.now() / 1000) - 5 }) })).status === 401,
+      "the Desk rejects an expired token");
+    const other = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    ok((await hit({ "cf-access-jwt-assertion": await mint(good, other.privateKey) })).status === 401,
+      "the Desk rejects correct claims signed by a key the Access team does not hold");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, email: "customer@example.test" }) })).status === 401,
+      "a different Access identity cannot open the Desk");
+
+    const authorized = await mint(good);
+    ok((await hit({ "cf-access-jwt-assertion": authorized })).status === 200,
+      "the configured team's valid signature, audience, expiry and owner email open the Desk");
+    ok((await hit({ cookie: "CF_Authorization=" + authorized })).status === 200,
+      "the Desk accepts the verified cookie used by browser requests");
+    ok((await hit({ "cf-access-jwt-assertion": authorized }, { ...env, ACCESS_TEAM: "" })).status === 401
+      && (await hit({ "cf-access-jwt-assertion": authorized }, { ...env, ACCESS_AUD: "" })).status === 401,
+      "an unset team or audience fails closed");
+    ok((await hit({}, { ...env, REQUIRE_ACCESS: "0" })).status === 200,
+      "the committed off setting remains off until Access is provisioned");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+})();
+
 /* ---- 1f. The ledger store at /ledger, read only (v294) --------------------------- */
 section("The ledger store at /ledger");
 await (async () => {
@@ -730,7 +786,8 @@ await (async () => {
   let r = await worker.fetch(postQ({ device: "d1", queue: [] }), mkEnv(kv, "1"));
   ok(r.status === 401, "REQUIRE_ACCESS=1 without Access header → 401");
   r = await worker.fetch(postQ({ device: "d1", queue: [] }, { "Cf-Access-Jwt-Assertion": "jwt" }), mkEnv(kv, "1"));
-  ok(r.status === 200, "REQUIRE_ACCESS=1 with Access header → 200");
+  ok(r.status === 401 && kv.m.size === 0,
+    "REQUIRE_ACCESS=1 rejects a malformed Access header without writing queue data");
 
   /* The gate fails closed on reads too. Access off at the dashboard must mean an
    * outage, not a world-readable ledger; the desk saw exactly that on 10-11 Aug. */
@@ -746,7 +803,8 @@ await (async () => {
   const pj = await r.json();
   ok(r.status === 401 && pj.ok === false, "REQUIRE_ACCESS=1: ping answers JSON {ok:false} so the desk degrades to held-locally");
   r = await worker.fetch(req("/some/page", { headers: { "Cf-Access-Jwt-Assertion": "jwt" } }), mkEnv(kv, "1"));
-  ok(r.status === 200 && (await r.text()) === "ASSET:/some/page", "REQUIRE_ACCESS=1 with Access header: assets served as normal");
+  ok(r.status === 401 && (await r.text()).includes("locked"),
+    "REQUIRE_ACCESS=1 rejects a malformed Access header before serving assets");
 
   const env = mkEnv(new KV());
   r = await worker.fetch(req("/menu/publish", { method: "POST", body: "{}" }), env);
@@ -8383,6 +8441,14 @@ await (async () => {
       && await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_TEAM: "" }) === 401,
       "and with either variable unset the route fails closed, so it deploys before the application exists");
 
+    const nonAdmin = await mint({ ...good, email: "customer@example.test" });
+    ok(await st({ "cf-access-jwt-assertion": nonAdmin }) === 401,
+      "a valid Access identity with another email cannot enter the Admin surface");
+    ok((await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sheet", {
+      headers: { "cf-access-jwt-assertion": nonAdmin }
+    }), oenv)).status === 401,
+    "the same email check guards Admin APIs below /all, not only its page");
+
     const opened = await hit({ "cf-access-jwt-assertion": await mint(good) });
     const ohtml = await opened.text();
     ok(opened.status === 200 && /id="roster"/.test(ohtml),
@@ -8393,6 +8459,8 @@ await (async () => {
       "and the master reaches the page, which is what lets a tap open an account with nothing typed");
     ok((await hit({ cookie: "CF_Authorization=" + await mint(good) })).status === 200,
       "and the cookie is read as well as the header, because the page's own fetches carry only the cookie");
+    ok((await hit({ "cf-access-jwt-assertion": await mint({ ...good, email: "Maakmal97@Icloud.com" }) })).status === 200,
+      "email matching is case-insensitive for the one authorized identity");
 
     /* and none of it leaks onto the customer's door */
     const cust = await stmtWorker.fetch(new Request("https://k7m3p2.example/"), oenv);
@@ -8451,7 +8519,7 @@ await (async () => {
     const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     /* a token minted on the section's clock, so it is still in date after the clock moves an hour */
     const mint = async (kp, kid, iss = ISS, extra = {}) => {
-      const claims = { iss, aud: [AUD], email: "owner@keep.example", exp: Math.floor(Date.now() / 1000) + 7200, ...extra };
+      const claims = { iss, aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 7200, ...extra };
       const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
       const sig = await subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c));
       return h + "." + c + "." + b64u(new Uint8Array(sig));

@@ -11,27 +11,16 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * AUTHENTICATION, AS AT 16 AUG 2026: READS ARE OPEN, WRITES ARE GATED BY A SHARED KEY, AND
- * THE GATE IS ARMED. See writeOk() below. The key lives in the SALT_WRITE_KEY secret, which
- * is set (wrangler secret list returns it) and was verified on 16 Aug 2026 refusing an
- * unkeyed POST /queue with 401 "write key required"; the phone holds it in localStorage
- * after being asked once. Zero Trust stays off either way.
- *
- * READS, AS AT 11 AUG 2026: THERE IS NO AUTHENTICATION, BY DECISION. Cloudflare Access was
- * removed and REQUIRE_ACCESS is "0" on the owner's instruction ("I want no zero trust
- * requirements right now"), so accessOk() below returns true unconditionally and every
- * path serves. That used to mean write as well: POST /queue accepted an unauthenticated
- * body from anyone and the daily run folded it into the real ledger as real rows. The write
- * gate closes that half, so the open surface is READS ONLY as at 16 Aug 2026, which is still
- * the whole ledger to anyone with the URL. See CLAUDE.md,
- * "Access, and why it is off", before changing REQUIRE_ACCESS back: doing so WITHOUT
- * first recreating the Access application locks the owner out of his own desk, because
- * nothing would be issuing the header this then demands.
+ * Access is controlled by REQUIRE_ACCESS and defaults off in the committed deployment config
+ * until its application is provisioned. When enabled, every request must carry a valid Access
+ * JWT for the configured team and audience and the owner's exact email; a header alone is not
+ * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { ownerAccess } from "./access.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -86,13 +75,9 @@ const isEnvelope = (v) =>
   v && typeof v === "object" &&
   typeof v.salt === "string" && typeof v.iv === "string" && typeof v.ct === "string";
 
-/* Cloudflare injects Cf-Access-Jwt-Assertion on every request that passed Access, and
- * strips any client-supplied copy. Presence is a sound signal that Access ran. Full JWT
- * verification against the team's public keys is the next hardening step; presence is
- * enough to stop the queue being writable with Access misconfigured. */
-function accessOk(request, env) {
-  if (String(env.REQUIRE_ACCESS || "0") !== "1") return true;
-  return !!request.headers.get("Cf-Access-Jwt-Assertion");
+async function accessOk(request, env) {
+  if (String(env.REQUIRE_ACCESS || "0") === "0") return true;
+  return ownerAccess(request, env);
 }
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
@@ -246,7 +231,6 @@ function draftOnArrival(env, ctx) {
 
 async function handleQueuePost(request, env, ctx) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
-  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
   if (!writeOk(request, env)) return needsKey();
   let payload;
   try { payload = await readQueuePost(request); }
@@ -320,7 +304,6 @@ async function handleVaultGet(env) {
 }
 async function handleVaultPost(request, env) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
-  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
   if (!writeOk(request, env)) return needsKey();
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
@@ -860,7 +843,7 @@ export default {
      * Access gets nothing: not the ledger, not the queue, not the build id. Access
      * being off at the dashboard must read as an outage, never as an open desk.
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
-    if (!accessOk(request, env)) {
+    if (!await accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
