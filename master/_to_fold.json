@@ -1,0 +1,62 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T16:25:41.895Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA6-CYB",
+    "qty": 3,
+    "total": 260,
+    "cost": 168,
+    "cash": 260,
+    "handover": "collected",
+    "date": "2026-10-02",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-10-02",
+    "paidOn": "2026-10-02"
+   },
+   "reasoning": "Sold 3 unit of salt to CA6-CYB for RM 260, RM 86.67/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 92 on the goods at 35.4%. Paid in full and delivered in full on 2026-10-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-02T16:25:41.895Z",
+    "type": "SELL",
+    "party": "CA6-CYB",
+    "qty": 3,
+    "total": 260,
+    "status": "paid",
+    "raw": "Sell 3 unit to CA6-CYB for RM 260 on 2026-10-02, collected, RM 260 cash, 3 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA6-CYB",
+     "newId": null,
+     "date": "2026-10-02",
+     "qty": 3,
+     "total": 260,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 260,
+     "kg": 3,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-10-02T16:25:56.256Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
