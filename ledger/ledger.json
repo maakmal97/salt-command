@@ -1,6 +1,6 @@
 {
- "v": "v981",
- "stamped": "02 Oct 2026, 15:00 KL",
+ "v": "v982",
+ "stamped": "02 Oct 2026, 15:54 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 8.75,
+  "STATED_STOCK": 7.25,
   "COUNT_ON": {
    "salt": "2026-09-29",
    "oil": "2026-09-27",
@@ -6206,9 +6206,30 @@
     "total": 170,
     "cash": 0,
     "date": "2026-10-02",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 02 OCT: 1.5 UNITS FOR RM170, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM4-MK from order 20261002052529-nhapeg, acknowledged and preapproved by phone. The rate is RM113.33 a unit. The total of RM170 is above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM101 a unit over 11 orders, range RM85 to RM110, RM0 outstanding and 0 units on credit before this order, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual; the figures confirm it rather than answer it, though the rate stays above cost. Outstanding: RM170 to collect and 1.5 units to hand over.",
-    "rid": "s225"
+    "deliveredQty": 1.5,
+    "note": "<b>CORRECTION ON S225, DATED 02 OCT: 1.5 UNITS DELIVERED TO CM4-MK, RM170 STILL UNPAID.</b> Order 20261002052529-nhapeg is marked delivered on 02 Oct, preapproved by phone on his word. The rate is RM113.33 a unit, above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM103.33 a unit over 12 orders, range RM85 to RM113.33, RM170 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual and an advance. The figures confirm both rather than answer them, though the rate stays above cost. Outstanding: RM170 to collect. <b>SALT SELL DATED 02 OCT: 1.5 UNITS FOR RM170, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM4-MK from order 20261002052529-nhapeg, acknowledged and preapproved by phone. The rate is RM113.33 a unit. The total of RM170 is above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM101 a unit over 11 orders, range RM85 to RM110, RM0 outstanding and 0 units on credit before this order, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual; the figures confirm it rather than answer it, though the rate stays above cost. Outstanding: RM170 to collect and 1.5 units to hand over.",
+    "rid": "s225",
+    "deliveredOn": "2026-10-02",
+    "handover": "delivered",
+    "mod": "corrected on 2026-10-02: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-10-02; handover (unset) to delivered",
+    "amend": [
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1.5,
+      "note": "<b>CORRECTION ON S225, DATED 02 OCT: 1.5 UNITS DELIVERED TO CM4-MK, RM170 STILL UNPAID.</b> Order 20261002052529-nhapeg is marked delivered on 02 Oct, preapproved by phone on his word. The rate is RM113.33 a unit, above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM103.33 a unit over 12 orders, range RM85 to RM113.33, RM170 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual and an advance. The figures confirm both rather than answer them, though the rate stays above cost. Outstanding: RM170 to collect.",
+      "cost": 84
+     }
+    ],
+    "cost": 84
    }
   ],
   "contacts": [
@@ -6949,9 +6970,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T06:58:16.236Z",
+  "QUEUE_COMMITTED": "2026-10-02T07:54:07.165Z",
   "PRICING": {
-   "takenAt": "2026-10-02T07:00:20.157Z",
+   "takenAt": "2026-10-02T07:54:45.539Z",
    "sizes": [
     0.5,
     1,
@@ -7139,12 +7160,12 @@
     "CM4-MK": {
      "salt": {
       "name": "large and regular",
-      "orders": 11,
+      "orders": 12,
       "tenureDays": 71,
-      "sinceLastDays": 13,
-      "perMonth": 4.72,
+      "sinceLastDays": 0,
+      "perMonth": 5.14,
       "smallShare": 0,
-      "bigShare": 0.45,
+      "bigShare": 0.42,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -8060,15 +8081,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32
+         "v": 0.32894736842105265
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08290769633051513,
        "avgDel": {
-        "n": 186,
-        "kg": 478.7,
-        "mean": 2.5737
+        "n": 187,
+        "kg": 480.2,
+        "mean": 2.5679
        }
       },
       "policy": {
@@ -13484,10 +13505,10 @@
      "cards": {}
     }
    },
-   "v": "v981"
+   "v": "v982"
   },
   "OPEN": {
-   "at": "2026-10-02T07:00:20.507Z",
+   "at": "2026-10-02T07:54:45.813Z",
    "count": 12,
    "byKey": {
     "CM4-MK|2026-10-02|170": {
@@ -13497,12 +13518,15 @@
      "q": 1.5,
      "t": 170,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1.5,
+     "st": "dueMoney",
      "oweRM": 170,
-     "oweUnits": 1.5,
      "rid": "s225",
-     "key": "CM4-MK|2026-10-02|170"
+     "deliveredOn": "2026-10-02",
+     "handover": "delivered",
+     "key": "CM4-MK|2026-10-02|170",
+     "age": 0,
+     "exp": 170
     },
     "CC9-OKR|2026-10-01|110|oil": {
      "d": "2026-10-01",
@@ -13685,13 +13709,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8.75,
-     "free": -0.75,
+     "onHand": 7.25,
+     "free": -2.25,
      "owedOut": 9.5,
      "coverDays": 0,
      "rate": 5.77,
-     "owedToYou": 510,
-     "promised": 12,
+     "owedToYou": 680,
+     "promised": 10.5,
      "short": 3.25
     },
     "oil": {
@@ -13746,13 +13770,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v981"
+   "v": "v982"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v981"
+   "v": "v982"
   }
  }
 }

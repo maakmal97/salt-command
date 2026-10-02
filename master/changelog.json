@@ -1,5 +1,14 @@
 [
  {
+  "v": "v982",
+  "d": "02 Oct 2026",
+  "t": "A CORRECTION DELIVERS 1.5 UNITS TO CM4-MK, STILL UNPAID",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> It amends s225, the 02 Oct salt sale to CM4-MK of 1.5 units for RM170. It sets deliveredQty to 1.5, deliveredOn to 02 Oct and handover to delivered. It moves no cash. The 1.5 units were already booked as a sale but had not left the shelf.",
+   "<b>UNUSUAL, AND WHAT THE SHELF DID.</b> This is an advance: the goods go out with RM170 unpaid, on his word by phone. The shelf rolls out by 1.5 units. The cost basis is untouched at RM56 a unit."
+  ]
+ },
+ {
   "v": "v981",
   "d": "02 Oct 2026",
   "t": "A CORRECTION ON S224 SETS THE TOTAL TO RM210 AND THE SHELF ROLLS BY 2 UNITS",
