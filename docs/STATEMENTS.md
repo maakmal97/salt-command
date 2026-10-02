@@ -1364,6 +1364,71 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
   it, so the laptop has no username and no QR.
 
+## Counter Admin maker routes
+
+The `/all/maker/*` routes are part of the Access-gated Salt Account surface. The Counter Worker
+passes the identity object returned by `identity(request, env)` to `handleMaker`; the handler also
+requires the verified email to match `maakmal97@icloud.com`, trimmed and case-insensitive. No
+client-supplied identity header is read.
+
+The Maker place combines open site orders with pending Desk rows. Order Accept uses the Desk's
+existing preview-and-digest path; later handover, cash and Received actions use the existing
+order-stage functions. Ready and Decline use the Counter order book's `deskMove`. Desk draft
+decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
+checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`,
+`inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
+and `inputs/place`. They use the existing Position Engine constructors and drafter checks, go
+through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
+use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
+eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
+the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
+entries or unchecked notes; canonical timestamp/content makes a retry, including after a draft is
+committed. Counter notes are disabled because these specific paths cannot prove arbitrary prose is
+free of names and places. `GET inputs` returns the active-book and roster catalog, including open
+loans for repayment selection.
+
+The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
+envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
+derive codes and encrypt the name map on the device with the vault passphrase; the bridge receives
+only codes, role/parent metadata and `{v,salt,iv,ct}`. Map placement decrypts the places envelope
+on the device and sends only code-to-point pairs rounded to 0.01 degrees. Addresses and plaintext
+names are never sent to Counter or Desk. There is no generic entry writer or arbitrary queue
+forwarding on this bridge.
+
+The Counter's `DESK_MAKER` binding and the Desk's `/_internal/maker/` routes form a dedicated
+Counter-to-Desk capability. `COUNTER_MAKER_KEY` must be a high-entropy value of at least 32
+characters provisioned as a Wrangler secret on both Workers; it is neither `STMT_DESK_KEY` nor
+stored in config. The Desk matches the key in constant time, allowlists each method and path, and
+handles the private prefix before asset fallthrough. No arbitrary proxy or direct D1 path is
+available.
+
+Operating hours are stored in the Counter KV under `maker:hours`, in Kuala Lumpur time. `/hours`
+publishes only the open/closed status and timing; it contains no account data. A closed Counter
+still accepts customer orders, while the order form says acknowledgement may be delayed. Manual
+overrides expire within 14 days and may be cleared to resume the weekly schedule.
+
+Accounts > Order for them opens that customer's sealed current list on his device under the
+existing master wrap. It sends one priced size with the list digest and a request id to
+`POST /all/maker/customers/<username>/orders`. The server requires an existing account and the
+verified owner, uses `placeOrder` on the site's normal KV/Object road, and records `by: desk` in
+the initial history. A retry keeps its id. No passphrase or unchecked Admin note goes with the
+placement. A moved list is refused, not silently requoted; reopen the form to read it again.
+
+Customer amendments use the customer's session at `POST /orders/<id>/amend`, not an Admin route.
+The replacement is checked against their own open order and carried over the private bridge to the
+atomic order book; missing bridge configuration fails closed.
+
+Desk Enter and Network remain available as decision-support surfaces. Counter now has the maker
+forms for New order/on-behalf ordering, stock count, sale/purchase, held-tier changes, borrow/lend,
+repayment, gift, reward redemption/oldest-advance offset, encrypted Add ID/Amend ID, and encrypted
+map placement. Existing customer order amendments use the customer's session at
+`POST /orders/<id>/amend`; the route is an atomic cancel-and-replace and refuses a lapsed session,
+identity/price fields, an acknowledged or reserved order, a stale sealed-list digest, replay, or a
+KV-only order store. Admin order review remains one flow for site orders and Desk drafts. Pricing is
+set only for one order at preview/Accept; no board price or `PRICE_SET` is written.
+The bridge binding/config is present in source, but live provisioning and deployment are still
+required before its Desk-backed actions work.
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the

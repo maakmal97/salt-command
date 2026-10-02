@@ -39,7 +39,9 @@
 		{
 			"binding": "DESK",
 			"service": "salt-command"
-		}
+		},
+		// Separate maker capability; never reuse the read-only revision credential.
+		{ "binding": "DESK_MAKER", "service": "salt-command" }
 	],
 	// THE ORDER BOOK (S10, D10, his answer of 24 Sep 2026): ONE Durable Object for the whole site's
 	// orders, stmt/orderbook.js, SQLite-backed by choice; the account is on Workers Paid (FACTS.md §4). The migration makes the

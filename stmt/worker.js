@@ -51,12 +51,13 @@ import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
+import { handleMaker, publicHours, customerAmend } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -464,6 +465,16 @@ async function handleCustomer(request, env, p, m) {
   }
   /* STEP 6 (his decisions of 29 Sep 2026): a customer's passkey, saved, linked to this device and removed, on their session */
   if (p.startsWith("/passkey/")) return handlePasskey(request, env, p, m, u);
+  const amendment = /^\/orders\/([^/]+)\/amend$/.exec(p);
+  if (amendment) {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const body = await readJson(request);
+    const result = isExample(u, amendment[1])
+      ? await exampleReplace(env, u, amendment[1], body)
+      : await customerAmend(env, u, amendment[1], body);
+    return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
+      : json({ ok: true, order: customerView(result.order) });
+  }
   const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -979,6 +990,15 @@ async function handleDesk(request, env, p, m) {
        desk's minute is one trip here and not two; without it the answer is the marks alone, as it was */
     if (new URL(request.url).searchParams.get("work") === "1") return json(Object.assign({ ok: true }, marks, { orders: await ordersOwing(env) }));
     return json(Object.assign({ ok: true }, marks));
+  }
+  const replacement = /^\/desk\/orders\/([^/]+)\/([^/]+)\/replace$/.exec(p);
+  if (replacement) {
+    const u = normUser(replacement[1]);
+    if (!u || !OID_RE.test(replacement[2])) return notFound();
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await replaceOrder(env, u, replacement[2], await readJson(request));
+    return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
+      : json({ ok: true, order: result.order });
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
@@ -1543,6 +1563,12 @@ export default {
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
 
+    if (p === "/hours") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      try { return json(await publicHours(env)); }
+      catch (e) { return json({ ok: false, error: "operating hours are unavailable" }, 503); }
+    }
+
     /* Generated per request so the inline style and script carry a nonce rather than needing
        'unsafe-inline'. One builder for the customer's door and the owner's. */
     const pageResponse = async (user, owner) => {
@@ -1580,6 +1606,7 @@ export default {
         return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
       }
       if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
+      if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
       /* the referral links, minted and revoked from inside the Access area only */
       /* 19 SEP 2026: HIS OWN APP. The same manifest the customer's gets, pointed at /all and named
          differently, so his home screen carries the admin page rather than a second copy of the

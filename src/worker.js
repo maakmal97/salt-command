@@ -17,9 +17,12 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount } from "./maker.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput } from "./maker-inputs.js";
+import { queueSale } from "./orders.js";
 import { ownerAccess } from "./access.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
@@ -270,6 +273,146 @@ async function handleQueuePost(request, env, ctx) {
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
 }
 
+async function handleInternalMaker(request, env, ctx, p, m) {
+  if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
+    && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr"
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)
+    && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend)$/.test(p))
+    return json({ ok: false, error: "not found" }, 404);
+  if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
+  if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (p === "/_internal/maker/vault" || p === "/_internal/maker/vault/addr") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_QUEUE) return json({ ok: false, error: "the Desk vault store is required" }, 503);
+    const key = p.endsWith("/addr") ? AKEY : VKEY;
+    const raw = await env.SALT_QUEUE.get(key);
+    if (!raw) return json({ ok: true, vault: null });
+    let stored;
+    try { stored = JSON.parse(raw); } catch (error) {
+      return json({ ok: false, error: "the encrypted vault record is unreadable" }, 503);
+    }
+    const vault = key === VKEY ? stored.vault : stored.vault;
+    return vault == null || isSealed(vault)
+      ? json({ ok: true, vault: vault || null })
+      : json({ ok: false, error: "the encrypted vault record has an invalid envelope" }, 503);
+  }
+  if (p === "/_internal/maker/inputs") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
+      catalog: makerInputCatalog(book) });
+  }
+  if (p === "/_internal/maker/drafts") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return handleDraftsGet(env, new URL(request.url));
+  }
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)) {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 1_048_576) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch (error) { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue and mirror are required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    const operation = p.split("/").pop();
+    if (operation === "stock-count"
+      && !makerInputCatalog(book).products.some((item) => item.product === body.product))
+      return json({ ok: false, error: "Choose an active book for the stock count." }, 400);
+    const built = operation === "stock-count" ? makerStockCount(body)
+      : operation === "tier-set" ? makerTierSet(body, book)
+        : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
+          : makerLedgerInput(operation, body, book);
+    if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
+    const entry = built.entry;
+    if (built.vaultOnly) {
+      const envelope = built.vault;
+      await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: envelope, ids: null, locs: null }));
+      return json({ ok: true, vaultOnly: true });
+    }
+    const writesNameVault = operation === "amend-id" || operation === "add-id" && body.kind !== "bucket";
+    if (writesNameVault && !isSealed(body.vault))
+      return json({ ok: false, error: "File the encrypted vault on this device before adding the ID." }, 400);
+    const proposed = draftRow(entry, book);
+    if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
+    const stored = await env.SALT_LEDGER.prepare("SELECT entry,status FROM draft WHERE id=?1").bind(entry.at).first();
+    const queuedEntries = (await (await handleQueueGet(env, true)).json()).queue;
+    if (stored) queuedEntries.push(JSON.parse(stored.entry));
+    const collision = queuedEntries.find((queued) => queued.at === entry.at && JSON.stringify(queued) !== JSON.stringify(entry));
+    if (collision) return json({ ok: false, error: "That request timestamp already names another entry. Start a new input." }, 409);
+    if (operation === "sale" || operation === "purchase") {
+      const pending = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE status='pending'").all();
+      const checked = makerQueuedTradeCheck(entry, queuedEntries.concat((pending.results || []).map((row) => JSON.parse(row.entry))));
+      if (checked.error) return json({ ok: false, ...checked }, 409);
+    }
+    if (writesNameVault && (operation !== "amend-id" || body.to !== body.from)) {
+      await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.vault, ids: null, locs: null }));
+    }
+    const queued = await queueSale(env, entry);
+    await runDrafter(env);
+    const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
+    return json({ ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" });
+  }
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend)$/.exec(p);
+  if (orderMatch) {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 16384) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch (e) { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json({ ok: false, error: "send a JSON object" }, 400);
+    const fault = makerOrderFault(orderMatch[2], body);
+    if (fault) return json({ ok: false, error: fault }, 400);
+    const id = orderMatch[1];
+    const action = orderMatch[2];
+    let result;
+    try {
+      if (action === "amend") result = await amendOrder(env, id, body);
+      else if (action === "preview") result = await previewOrder(env, id, body);
+      else if (action === "accept") {
+        result = await acceptOrder(env, id, body, "Counter Admin");
+        const others = ((result.drafted && result.drafted.approved) || []).filter((x) => x !== result.draft);
+        if (others.length) await afterApproval(env, ctx, others);
+        else if (result.approved) stageOnApproval(env, ctx);
+      } else {
+        result = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
+          env, id, body, "Counter Admin"
+        );
+        if (result.ok && result.preapproval && result.preapproval.spent === "applied")
+          await afterApproval(env, ctx, [result.preapproval.draft]);
+        if (result.ok) reconcileOnTap(env, ctx);
+      }
+    } catch (e) { result = { ok: false, status: 500, error: String((e && e.message) || e) }; }
+    return json(result, result.ok ? 200 : (result.status || 502));
+  }
+  const match = /^\/_internal\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(p);
+  let id;
+  try { id = decodeURIComponent(match[1]); } catch (e) { return json({ ok: false, error: "invalid draft id" }, 400); }
+  if (!id || id.length > 40) return json({ ok: false, error: "invalid draft id" }, 400);
+  if (!Number.isFinite(Date.parse(id)) || new Date(id).toISOString() !== id)
+    return json({ ok: false, error: "invalid draft timestamp" }, 400);
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "send JSON" }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length)
+    return json({ ok: false, error: "draft decisions take an empty object" }, 400);
+  const decision = match[2] === "approve" ? "approved" : "rejected";
+  const internal = new Request(request.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Salt-Key": String(env.SALT_WRITE_KEY || "")
+    },
+    body: JSON.stringify({ by: "Counter Admin" })
+  });
+  return handleDraftDecide(internal, env, ctx, id, decision);
+}
+
 /* v525: a rejected entry is dropped from every queue (dropQueued, src/orders.js, which a withdrawal
    uses too since S11 11.10), and a queue POST drops any entry whose draft was rejected, so no device
    can bring it back. */
@@ -285,7 +428,7 @@ async function rejectedAmong(env, ats) {
 }
 
 /* Union of every device's queue, for the drain and for eyeballing behind Access. */
-async function handleQueueGet(env) {
+async function handleQueueGet(env, strict = false) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   const out = [];
   let cursor;
@@ -296,8 +439,12 @@ async function handleQueueGet(env) {
       if (!raw) continue;
       try {
         const v = JSON.parse(raw);
+        if (strict && !Array.isArray(v.queue)) throw new Error("queue shape");
         for (const entry of (v.queue || [])) out.push(entry);
-      } catch (e) { /* skip a corrupt key rather than fail the whole read */ }
+      } catch (e) {
+        if (strict) throw new Error("The Desk queue contains an unreadable entry; no maker input was added.");
+        /* skip a corrupt key rather than fail the whole read */
+      }
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);
@@ -861,6 +1008,10 @@ export default {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
+
+    /* Private Counter-to-Desk capability routes are matched before the public Access/read and
+       asset paths. Unknown paths under this prefix never fall through to ASSETS. */
+    if (p === "/_internal/maker" || p.startsWith("/_internal/maker/")) return handleInternalMaker(request, env, ctx, p, m);
 
     /* Fail closed. With REQUIRE_ACCESS on, a request that did not pass Cloudflare
      * Access gets nothing: not the ledger, not the queue, not the build id. Access

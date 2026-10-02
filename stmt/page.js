@@ -423,7 +423,22 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* THE MASTER ACCOUNT (v687). An item on More wraps to two lines, its name and what it is for. */
 .rlist button[data-m]{flex-wrap:wrap}
 .rlist button[data-m] span{flex:1 0 100%;margin-top:4px;color:var(--salt-text-muted)}
-#mHome h1,#oAccts h1,#oLinks h1,#oMore h1{margin-top:0}
+#mHome h1,#oAccts h1,#oLinks h1,#oMore h1,#oMaker h1{margin-top:0}
+#oMaker{max-width:760px}
+#oMaker section+section{margin-top:28px}
+#oMaker input{max-width:100%}
+.maker-card{margin:14px 0;padding:16px}
+.maker-card>*+*{margin-top:12px}
+.maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+.maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
+.maker-field .lbl{margin-top:0}
+.maker-hours{display:grid;gap:6px;margin:14px 0}
+.maker-day{display:grid;grid-template-columns:44px minmax(72px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:8px;align-items:center}
+.maker-day input[type=checkbox]{width:44px;height:44px;margin:0}
+.maker-day-name{font-size:var(--salt-text-sm)}
+.maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
+.maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
+@media(max-width:440px){.maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.maker-day-name{grid-column:2 / 4}.maker-day input[type=time]{grid-row:2}.maker-day input[type=time]:nth-last-child(2){grid-column:2}.maker-day input[type=time]:last-child{grid-column:3}}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
 body.ended>*:not(#aEnded){display:none}
 /* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
@@ -951,12 +966,13 @@ function noticeCard(b) {
 }
 /* S9 9.2: SALT ACCOUNT'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
-const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["more", "More"]];
+const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["maker", "Maker"], ["more", "More"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
   accounts: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
   links: '<path d="M10.2 13.8 L13.8 10.2 M8.6 11.4 L6.7 13.3 A3.3 3.3 0 0 0 11.4 18 L13.3 16.1 M10.7 7.9 L12.6 6 A3.3 3.3 0 0 1 17.3 10.7 L15.4 12.6"/>',
+  maker: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
   more: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
   desk: '<rect x="3.4" y="5" width="17.2" height="11.6" rx="1.6"/><path d="M9 19.6 H15 M12 16.6 V19.6"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
@@ -1089,6 +1105,18 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + "<h1>Associates report card</h1>"
         + '<p class="lead" id="ccount"></p>'
         + '<div id="clist"></div>'
+        + "</div>"
+        + '<div id="oMaker" hidden>'
+        + "<h1>Maker</h1>"
+        + '<p class="lead">Review Counter orders and Desk rows together. Changes are checked by the Desk before they reach the ledger.</p>'
+        + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
+        + '<section id="makerInputs" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
+        + '<section aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
+        + '<p class="lead" id="makerHoursStatus">Reading hours…</p>'
+        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<section aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
+        + '<p class="lead" id="makerReviewStatus">Reading orders and rows…</p>'
+        + '<div id="makerReview"></div></section>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'
@@ -1239,7 +1267,7 @@ const CLIENT_JS = `
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={};
+  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={}, counterHours=null, hoursError=false;
   /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
   var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
@@ -2864,8 +2892,15 @@ const CLIENT_JS = `
   function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
-  function sheetOpen(product,q,opener){
+  function sheetOpen(product,q,opener,amend){
     if(view||hold||!sold().length||!lapse.hidden) return;
+    draft.amend=amend?amend.id:'';
+    if(amend){
+      draft.mode=amend.mode; draft.place=amend.place||''; draft.placeWas=draft.place;
+      draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
+      draft.wantBy=wantOk(amend.wantBy)?amend.wantBy:'';
+      draft.when=draft.wantBy?'day':'soon'; draft.sheetKeep='';
+    }
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
     else {
@@ -2879,7 +2914,7 @@ const CLIENT_JS = `
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
     if(draft.mode==null){ var L=oLatest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
     if(draft.place==null){ var W=oLatest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
-    draft.step=openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
+    draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
       var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',sheetDismiss);
@@ -2910,7 +2945,7 @@ const CLIENT_JS = `
   function sheetClose(){
     if(!osh) return;
     dropPlaced(false);
-    var s=osh; osh=null; draft.step=''; draft.check=null;
+    var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend='';
     s.wrap.parentNode.removeChild(s.wrap);
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
@@ -2980,8 +3015,9 @@ const CLIENT_JS = `
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
   }
   function drawForm(){
-    sheetHead(tw('sh.new'));
+    sheetHead(tw(draft.amend?'ord.amend':'sh.new'));
     var S=sold(), B=osh.body, ff=!!(assoc&&draft.forFriend);
+    if(draft.amend){ var original=oFind(draft.amend); S=S.filter(function(p){ return original&&p.product===original.product; }); }
     /* a list that came back with nothing priced (a 409, then Change) leaves nothing to pick: the Order tab's own line */
     if(!S.length){ B.appendChild(el('p','lead',noOrderLine())); return; }
     /* V4b: a size no longer on the list leaves the sheet; with one product on the list a size is always chosen, as before */
@@ -3040,13 +3076,13 @@ const CLIENT_JS = `
       df.appendChild(dl); df.appendChild(di); df.appendChild(el('span','salt-field__hint',tw('sh.wantHint',{n:WANT_DAYS}))); B.appendChild(df);
     }
     /* v751: a line with it, never required; it opens the order's thread. Folded until it is wanted */
-    if(draft.noteOpen||String(draft.say||'').trim()){
+    if(!draft.amend&&(draft.noteOpen||String(draft.say||'').trim())){
       var nf=el('div','salt-field'), nl=el('label','salt-field__label',tw('sh.note')); nl.htmlFor='oSay';
       var ni=el('input','salt-field__input'); ni.id='oSay'; ni.type='text'; ni.maxLength=140; ni.value=draft.say||''; ni.autocomplete='off';
       ni.placeholder=tw('sh.notePh'); ni.setAttribute('data-k','say');
       ni.addEventListener('input',function(){ draft.say=ni.value; });
       nf.appendChild(nl); nf.appendChild(ni); B.appendChild(nf);
-    } else {
+    } else if(!draft.amend) {
       var an=el('button','salt-ghost ofull',tw('sh.addNote')); an.type='button'; an.id='oAddNote'; an.setAttribute('data-k','addnote');
       an.addEventListener('click',function(){ draft.noteOpen=true; sheetDraw(); var f=document.getElementById('oSay'); if(f) try{ f.focus(); }catch(e){} });
       B.appendChild(an);
@@ -3074,7 +3110,7 @@ const CLIENT_JS = `
     draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(),
         /* S4 4.4: the price as shown, for a moved list to be told against; placed, the order Place made of it */
         shown:qt.total, was:null, gone:false, placed:''}; }),
-      sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
+      amend:draft.amend||'', sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
       place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(), forFriend:ff,
       wantBy:draft.when==='day'&&wantOk(draft.wantBy)?draft.wantBy:'',
       /* S4 4.4: the stamp of the list these prices were read from */
@@ -3155,7 +3191,10 @@ const CLIENT_JS = `
     var c=draft.check, B=osh.body, one=c.lines.length===1, a=c.lines[0];
     /* V5b2: one forecast for the sheet, every line still on the list counted at its goods */
     var lk=advanceLikely(c.lines.filter(function(l){ return !l.gone; }).map(function(l){ return l.total; }));
-    sheetHead(tw('sh.check'),toForm);
+    sheetHead(tw(c.amend?'ord.amendReview':'sh.check'),toForm);
+    if(c.amend) B.appendChild(el('p','salt-insight',tw('ord.amendAsk')));
+    if(c.amend&&(hoursError||counterHours&&!counterHours.open))
+      B.appendChild(el('p','salt-insight',twE(hoursError?'hours.unavailable':'hours.closed')));
     /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
        place of a What line that set the mark beside its size; V4b: a card a line */
     var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
@@ -3192,7 +3231,7 @@ const CLIENT_JS = `
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
     var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md',was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
+    var pl=el('button','salt-pill salt-pill--md',c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     pl.disabled=!!draft.busy||gone||!!c.shut; pl.setAttribute('data-k','place');
     pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
@@ -3211,7 +3250,8 @@ const CLIENT_JS = `
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
       if(c.wantBy) body.wantBy=c.wantBy;
-      var r=await api('/orders',body);
+      if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
+      var r=await api(c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
       if(mine!==ticket) return;
       if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ draft.busy=false; await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
       /* a retry the Worker already has on this sheet (its request id not yet read back on the kv road) is placed */
@@ -3221,7 +3261,7 @@ const CLIENT_JS = `
         draft.snote=wErrE(r.body,'sh.notPlaced');
         /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
         if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
-          if(openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
+          if(!c.amend&&openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
         sheetDraw(); return;
       }
       l.placed=(r.body.order&&r.body.order.id)||'placed';
@@ -3302,6 +3342,9 @@ const CLIENT_JS = `
       var full=openN()>=OMAX;
       if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openN())); lim.id='oLimit'; top.appendChild(lim); }
       else {
+        if(hoursError||counterHours&&!counterHours.open){
+          top.appendChild(el('p','salt-insight',twE(hoursError?'hours.unavailable':'hours.closed')));
+        }
         var nb=el('button','btn salt-pill salt-pill--md',twE('sh.new')); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
         top.appendChild(nb);
@@ -3713,6 +3756,10 @@ const CLIENT_JS = `
   /* WHAT HAPPENED, STEP BY STEP, folded: the record, under the thread a reader came back for */
   function oHist(o){
     var w=el('div','ohist'), h=o.history||[];
+    if(o.replacement||o.replaces){
+      var replacement=el('a','salt-ghost',tw(o.replacement?'ord.replaced':'ord.replaces'));
+      replacement.href='#o='+encodeURIComponent(o.replacement||o.replaces); w.appendChild(replacement);
+    }
     if(!h.length) return w;
     var dt=el('details','salt-plan'); dt.open=!!(draft.oHist||{})[o.id];
     dt.addEventListener('toggle',function(){ (draft.oHist=draft.oHist||{})[o.id]=dt.open; });
@@ -3731,6 +3778,14 @@ const CLIENT_JS = `
     /* S6 fix: not while what they sent waits on him, which a cancelled order would leave with nobody to answer it */
     else if(oClaimed(o)>0.004) f.appendChild(el('p','sub2',tw('of.checking',{rm:rm(oClaimed(o))})));
     else {
+      if(o.status==='placed'&&!hold){
+        var amend=el('button','salt-ghost',tw('ord.amend')); amend.type='button';
+        amend.addEventListener('click',function(){
+          if(!oSoldHas(o.product,o.qty)){ tapSaid(o,'amend',tw('ord.amendMissing')); oDraw(); return; }
+          sheetOpen(o.product,o.qty,amend,o);
+        });
+        f.appendChild(amend);
+      }
       var wb=el('button','salt-ghost salt-ghost--danger',tw('ord.cancel')); wb.type='button';
       wb.addEventListener('click', async function(){
         var cur=oFind(o.id)||o, paid=+cur.paid||0;
@@ -3742,7 +3797,7 @@ const CLIENT_JS = `
         await loadOrders(); if(mine!==ticket) return; oDraw();
       });
       f.appendChild(wb);
-      if(tp.k==='withdraw'&&tp.t) f.appendChild(statusLine(tp.t));
+      if((tp.k==='withdraw'||tp.k==='amend')&&tp.t) f.appendChild(statusLine(tp.t));
     }
     return f;
   }
@@ -4598,9 +4653,21 @@ const CLIENT_JS = `
     if(changed.length||gone){ oSync(changed); drawHome(); if(osh&&draft.step==='limit') sheetDraw(); }
     else if(JSON.stringify(thread)!==thWas) thAfter();   /* Step 7: a line on the thread, with no order moved */
   }
+  async function loadCounterHours(){
+    if(!session) return;
+    var before=JSON.stringify([counterHours,hoursError]);
+    try{
+      var response=await fetch('/hours',{cache:'no-store',redirect:'manual'});
+      if(response.type==='opaqueredirect'||!response.ok) throw new Error(twE('hours.unavailable'));
+      var result=await response.json();
+      if(!result||typeof result.open!=='boolean') throw new Error(twE('hours.unavailable'));
+      counterHours=result; hoursError=false;
+    }catch(error){ hoursError=true; }
+    if(before!==JSON.stringify([counterHours,hoursError])&&tab==='order'&&!view) drawOrder();
+  }
   async function refresh(){
     if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */
-    await oReread();
+    await oReread(); await loadCounterHours();
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
   }
 
@@ -5002,7 +5069,7 @@ const CLIENT_JS = `
     }
   }
   async function follow(stale){
-    if(session){ await loadOrders(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
+    if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */

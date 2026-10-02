@@ -265,7 +265,7 @@ export async function checkStores(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -588,14 +588,30 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
 /** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }.
  *  V5b2 (his answers of 29 Sep 2026): Place stamps nothing about paying in advance. V3's unit cap is retired on the
  *  Counter, and whether an order is paid in advance is the desk Worker's to decide at Accept, from the book (V5b2a). */
-export function decidePlace(u, body, open, at, digest) {
+export function decidePlace(u, body, open, at, digest, by = "customer") {
   const c = checkPlacement(body, open, at);
   if (c.error) return c;
   if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
-    msgs: c.note ? [{ at, by: "customer", text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
-    history: [{ at, status: "placed", by: "customer" }] }, c.order);
+    msgs: c.note ? [{ at, by, text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
+    history: [{ at, status: "placed", by }] }, c.order);
   return { ev: { kind: "place", at, order } };
+}
+
+export function decideReplace(order, body, mine, at, digest) {
+  if (!order) return Object.assign(refusal("noOrder"), { status: 404 });
+  if (order.status !== "placed" || order.reviewed || order.ledgerKey || (order.queued || {}).ack
+    || (+order.paid || 0) > 0 || (+order.moved || 0) > 0 || claimWaits(order))
+    return Object.assign(refusal("amendClosed"), { status: 409 });
+  const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy"];
+  if (!body || typeof body !== "object" || Object.keys(body).some((key) => !fields.includes(key))
+    || !ridOf(body) || typeof body.digest !== "string" || body.product !== order.product)
+    return Object.assign(refusal("amendShape"), { status: 400 });
+  const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {});
+  const placed = decidePlace(order.u, next, mine.filter((item) => item.id !== order.id && OPEN_STATES.includes(item.status)), at, digest);
+  if (placed.error) return placed;
+  placed.ev.order.replaces = order.id;
+  return { cancel: { kind: "status", at, status: "cancelled", by: "customer", replacement: placed.ev.order.id }, place: placed.ev };
 }
 
 const SAID_AS = { done: "cancelDone", cancelled: "cancelCancelled", declined: "cancelDeclined" };
@@ -692,6 +708,14 @@ export function decideFix(order, f, at) {
  *  nothing to record, or { error, status }. */
 export function decideDesk(order, body, at) {
   if (!order) return { error: "no such order", status: 404 };
+  if (body && body.reserveReview) {
+    const terms = body.reserveReview;
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+    if (order.status !== "placed" || !terms || typeof terms !== "object" || Array.isArray(terms)
+      || Object.keys(terms).length !== fields.length || fields.some((key) => terms[key] !== (order[key] ?? null)))
+      return { error: "the order changed before its review could be reserved", status: 409 };
+    return order.reviewed ? { none: true } : { ev: { kind: "mark", at, mark: { reviewed: true } } };
+  }
   /* v694: the desk's own bookkeeping, not a move. It is what the ledger has been told, written
      back by the reconcile the moment it queues a stage, and it is the only thing that stops a
      stage being queued twice. It never moves the order and never wakes anybody. */
@@ -850,6 +874,7 @@ export function applyEvent(order, ev) {
   if (ev.kind === "aclaim") return { order: JSON.parse(JSON.stringify(ev.claim)), done };   /* S6 6.6: an account claim, its own record */
   if (ev.kind === "tsay" || ev.kind === "tmark") return { order: foldThread(order, ev), done };   /* Step 7: the account's thread */
   if (ev.kind === "status") {
+    if (ev.replacement) order.replacement = ev.replacement;
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
@@ -913,6 +938,7 @@ export function applyEvent(order, ev) {
     order.msgs = ((order.msgs) || []).concat([{ at, by: ev.by, text: ev.text }]);
   } else if (ev.kind === "mark") {
     const m = ev.mark, q = Object.assign({}, order.queued || {});
+    if (m.reviewed === true) order.reviewed = true;
     if (m.ledgerKey) order.ledgerKey = m.ledgerKey;
     if (typeof m.forFriend === "boolean") order.forFriend = m.forFriend;
     /* WHAT THE LEDGER HAS BEEN TOLD OF THE MONEY ONLY RISES (S10 10.2): the reconcile marks what it read, and the
@@ -1072,12 +1098,12 @@ export async function dropOrders(env, u) {
   return n;
 }
 
-export async function placeOrder(env, u, body) {
+export async function placeOrder(env, u, body, by = "customer") {
   /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
   const rec = await accountRecord(env, u), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";   /* the test account's fixture list */
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest });
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by });
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
@@ -1086,7 +1112,7 @@ export async function placeOrder(env, u, body) {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest);
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by);
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
@@ -1094,6 +1120,23 @@ export async function placeOrder(env, u, body) {
   await fileRid(env, u, rid, order.id);
   for (const [k, v] of marksOf(d.ev, order)) await putSoft(env, k, v);
   return { order };
+}
+
+export async function replaceOrder(env, u, id, body) {
+  if (!onBook(env)) return Object.assign(refusal("amendStore"), { status: 503 });
+  const receipt = await bookMove(env, "replacement", { u, id, rid: ridOf(body) });
+  if (receipt.error) return receipt;
+  if (receipt.order) return { order: receipt.order };
+  const account = await accountRecord(env, u);
+  if (!account) return Object.assign(refusal("noOrder"), { status: 404 });
+  if (!account.live || !body || !body.buildId || account.live.buildId !== body.buildId)
+    return Object.assign(refusal("amendPrices"), { status: 409 });
+  const digest = account.prices && account.prices.digest || "";
+  const replacement = Object.assign({}, body);
+  delete replacement.buildId;
+  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest });
+  if (result.error === PRICES_MOVED) return Object.assign({}, result, { status: 409, prices: account.prices || null });
+  return result.error ? result : { order: result.order };
 }
 
 /** The customer's own moves: a rail at ready, or a withdrawal before anything is on the road. */

@@ -13,6 +13,9 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
 import stmtWorker, { normUser } from "../stmt/worker.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount } from "../src/maker.js";
+import { handleMaker, publicHours } from "../stmt/maker.js";
+import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
@@ -18323,8 +18326,8 @@ await (async () => {
     } }).window;
     const D = win.document;
     const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
-    ok(places(".salt-appbar") === "needs,accounts,links,more" && places(".salt-rail") === "needs,accounts,links,more",
-      "four places, in the App bar and in the Desk rail the bar gives way to: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    ok(places(".salt-appbar") === "needs,accounts,links,maker,more" && places(".salt-rail") === "needs,accounts,links,maker,more",
+      "five places, including Maker, in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
     ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
@@ -24870,7 +24873,8 @@ await (async () => {
     ok(sheetLang === "en", "and the order sheet, drawn in English, says lang en on this Malay phone (S13-L1): " + sheetLang);
     D.querySelector("#osheet .salt-sheet-scrim").click(); await wait(10);
     D.querySelector('#oArea [data-row="20260925000000-b2"]').click(); await wait(30);
-    D.querySelector('.oscreen [data-part="foot"] button').click();
+    [...D.querySelectorAll('.oscreen [data-part="foot"] button')]
+      .find((button) => button.textContent === WD.EN["ord.cancel"]).click();
     await until(() => text('.oscreen [data-part="foot"] p.msg'));
     const cancel = text('.oscreen [data-part="foot"] p.msg');
     ok(placed === 2 && WD.MS["x.notSent"] && WD.MS["e.busy"] && dropped === WD.EN["x.notSent"] && cancel === S(WD.EN["e.busy"]),
@@ -49672,6 +49676,778 @@ await (async () => {
   };
   await run("visibilitychange");
   await run("pagehide");
+})();
+
+section("Counter maker: verified owner, narrow Desk bridge and hours");
+await (async () => {
+  const inputChecks = await import("./maker-inputs.mjs");
+  await inputChecks.run({ ok });
+  const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
+  const calls = [];
+  const key = "counter-maker-test-key-0123456789abcdef";
+  const store = new KV();
+  const env = {
+    STMT: store,
+    COUNTER_MAKER_KEY: key,
+    DESK_MAKER: { fetch: async (request) => {
+      calls.push({ path: new URL(request.url).pathname, method: request.method, key: request.headers.get("X-Counter-Maker-Key") });
+      return new Response(JSON.stringify({ ok: true, drafts: [], refused: [] }), { status: 200 });
+    } }
+  };
+  const call = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+  }), env, path, owner);
+  const reviewed = await call("/all/maker/review");
+  const review = await reviewed.json();
+  ok(reviewed.status === 200 && review.ok && review.orders.length === 0 && review.drafts.length === 0
+    && calls.length === 1 && calls[0].path === "/_internal/maker/drafts" && calls[0].key === key,
+    "the verified owner receives the unified order/draft review through the named Desk route");
+  const startCalls = calls.length;
+  const denied = await handleMaker(new Request("https://counter.test/all/maker/review", {
+    headers: { "X-User-Email": "maakmal97@icloud.com" }
+  }), env, "/all/maker/review", { email: "other@example.com" });
+  const noIdentity = await handleMaker(new Request("https://counter.test/all/maker/review", {
+    headers: { "X-User-Email": owner.email }
+  }), env, "/all/maker/review", undefined);
+  const unknown = await call("/all/maker/arbitrary");
+  ok(denied.status === 403 && noIdentity.status === 403 && unknown.status === 404 && calls.length === startCalls,
+    "an unallowlisted or missing verified identity and an unknown operation cannot reach the Desk");
+  const inputCalls = [];
+  const inputEnv = { ...env, DESK_MAKER: { fetch: async (request) => {
+    inputCalls.push({ path: new URL(request.url).pathname, method: request.method,
+      body: request.method === "POST" ? await request.json() : null });
+    return new Response(JSON.stringify({ ok: true, queued: true, status: "pending" }));
+  } } };
+  const inputCall = (path, method, body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  }), inputEnv, path, owner);
+  const inputBody = { at: "2026-10-01T08:00:00.000Z", product: "salt", party: "CX1-ZED",
+    date: "2026-10-01", qty: 1, total: 100, cash: 0, movedUnits: 0, handover: null, delivery: 0 };
+  const saleInput = await inputCall("/all/maker/inputs/sale", "POST", inputBody);
+  const saleForwarded = inputCalls[0];
+  const tierBody = { at: inputBody.at, code: "CX1-ZED", product: "salt", tier: "Gold" };
+  const tierInput = await inputCall("/all/maker/inputs/tier-set", "POST", tierBody);
+  const wrongInputMethod = await inputCall("/all/maker/inputs/purchase", "GET");
+  ok(saleInput.status === 200 && tierInput.status === 200 && wrongInputMethod.status === 405
+    && saleForwarded.path === "/_internal/maker/inputs/sale" && saleForwarded.method === "POST"
+    && JSON.stringify(saleForwarded.body) === JSON.stringify(inputBody)
+    && inputCalls[1].path === "/_internal/maker/inputs/tier-set",
+    "typed sale and tier routes call only their named Desk operations, with no generic writer");
+  const sealed = { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVydGV4dA==" };
+  const ledgerInputs = [
+    ["loan", { at: inputBody.at, form: "cash", direction: "in", code: "CX1-ZED", date: inputBody.date, amount: 20 }],
+    ["repay", { at: inputBody.at, loan: "loan-1", date: inputBody.date, amount: 5 }],
+    ["gift", { at: inputBody.at, product: "salt", code: "CX1-ZED", date: inputBody.date, qty: 1, movedUnits: 1, handover: "collected" }],
+    ["redeem", { at: inputBody.at, code: "CX1-ZED", date: inputBody.date }],
+    ["add-id", { at: inputBody.at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers: null, vault: sealed }],
+    ["amend-id", { at: inputBody.at, from: "CX1-ZED", to: "CX2-TST", geo: null, vault: sealed }],
+    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68] } }]
+  ];
+  for (const [operation, body] of ledgerInputs)
+    await inputCall("/all/maker/inputs/" + operation, "POST", body);
+  const newInputCalls = inputCalls.slice(2);
+  ok(newInputCalls.length === ledgerInputs.length
+    && newInputCalls.every((call, index) => call.path === "/_internal/maker/inputs/" + ledgerInputs[index][0]
+      && call.method === "POST" && JSON.stringify(call.body) === JSON.stringify(ledgerInputs[index][1]))
+    && !newInputCalls.some((call) => Object.hasOwn(call.body, "name") || Object.hasOwn(call.body, "locality")),
+    "loans, repayments, gifts, redemptions, encrypted IDs and approximate placement use only their typed Desk routes");
+  const readNameVault = await inputCall("/all/maker/vault", "GET");
+  const readPlaceVault = await inputCall("/all/maker/vault/addr", "GET");
+  ok(readNameVault.status === 200 && readPlaceVault.status === 200
+    && inputCalls.slice(-2).every((call) => call.method === "GET"
+      && /^\/_internal\/maker\/vault(?:\/addr)?$/.test(call.path)),
+    "Add/Amend ID and placement can read only the two sealed vault envelopes through explicit read routes");
+  const wrongLedgerMethod = await inputCall("/all/maker/inputs/add-id", "GET");
+  const unknownInput = await inputCall("/all/maker/inputs/entry", "POST", inputBody);
+  ok(wrongLedgerMethod.status === 405 && unknownInput.status === 404 && inputCalls.length === 11,
+    "ledger maker operations reject wrong methods and unknown operation names before reaching the Desk");
+  const future = new Date(Date.now() + 60_000).toISOString();
+  const saved = await call("/all/maker/hours", "POST", { manual: { open: false, until: future } });
+  const savedBody = await saved.json();
+  const publicStatus = await publicHours(env);
+  ok(saved.status === 200 && savedBody.status.open === false && publicStatus.open === false
+    && publicStatus.source === "manual",
+    "manual-only hours persist and the same closed status is served publicly");
+  await store.put("u:abcd-efgh", JSON.stringify({ prices: { digest: "maker-quote" } }));
+  const makerPlacement = { product: "salt", qty: 1, total: 100, unit: 100, mode: "collect", place: "",
+    forFriend: false, week: "", digest: "maker-quote", rid: "maker-placement-rid-01" };
+  const makerPlace = (body, identity = owner) => handleMaker(new Request("https://counter.test/all/maker/customers/abcd-efgh/orders", {
+    method: "POST", body: JSON.stringify(body)
+  }), env, "/all/maker/customers/abcd-efgh/orders", identity);
+  const placedFor = await (await makerPlace(makerPlacement)).json();
+  const retriedFor = await (await makerPlace(makerPlacement)).json();
+  const storedFor = await store.get("order:abcd-efgh:" + placedFor.order.id, "json");
+  ok(placedFor.ok && retriedFor.order.id === placedFor.order.id && storedFor.history[0].by === "desk",
+    "Admin placement uses the customer's order road once and records its actual maker");
+  const deniedPlace = await makerPlace(makerPlacement, { email: "someone@example.test" });
+  const privatePlace = await makerPlace({ ...makerPlacement, note: "Not a checked Admin message" });
+  const stalePlace = await makerPlace({ ...makerPlacement, rid: "maker-placement-rid-02", digest: "old-list" });
+  ok(deniedPlace.status === 403 && privatePlace.status === 400 && stalePlace.status === 409,
+    "on-behalf orders reject other identities, unsupported prose and moved price lists");
+  const H = await import("./orderbook-harness.mjs");
+  const objectBook = H.orderBook({});
+  const objectEnv = { ...env, ORDER_STORE: "object", ORDERBOOK: objectBook.ns };
+  const objectCall = () => handleMaker(new Request("https://counter.test/all/maker/customers/abcd-efgh/orders", {
+    method: "POST", body: JSON.stringify({ ...makerPlacement, rid: "object-maker-placement-01" })
+  }), objectEnv, "/all/maker/customers/abcd-efgh/orders", owner);
+  const objectPlaced = await (await objectCall()).json(), objectRepeated = await (await objectCall()).json();
+  const storedObject = objectBook.db.prepare("SELECT doc FROM ord WHERE oid=?").get(objectPlaced.order.id);
+  ok(objectPlaced.ok && objectPlaced.order.id === objectRepeated.order.id
+    && JSON.parse(storedObject.doc).history[0].by === "desk"
+    && objectBook.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE kind='place'").get().n === 1,
+    "the Durable Object road retains maker attribution and appends one placement on a retry");
+  const noJwt = await stmtWorker.fetch(new Request("https://counter.test/all/maker/hours", {
+    headers: { "Cf-Access-Authenticated-User-Email": owner.email }
+  }), env);
+  ok(noJwt.status === 401, "the public Maker dispatch rejects an email header without a verified Access JWT");
+  const publicResponse = await stmtWorker.fetch(new Request("https://counter.test/hours"), env);
+  const publicBody = await publicResponse.json();
+  ok(publicResponse.status === 200 && publicBody.open === false,
+    "the public hours route reports closed without requiring an owner session");
+  const wrongKey = makerKeyMatches(new Request("https://desk.test/", {
+    headers: { "X-Counter-Maker-Key": "x".repeat(key.length) }
+  }), { COUNTER_MAKER_KEY: key });
+  const rightKey = makerKeyMatches(new Request("https://desk.test/", {
+    headers: { "X-Counter-Maker-Key": key }
+  }), { COUNTER_MAKER_KEY: key });
+  ok(!wrongKey && rightKey, "the Desk bridge accepts only the configured constant-time capability key");
+  ok(!makerOrderFault("preview", { total: 100, delivery: 0 })
+    && !!makerOrderFault("cash", { amount: "10" })
+    && !!makerOrderFault("accept", { total: 100 })
+    && !!makerOrderFault("handed", { qty: 1, note: "unsupported prose" }),
+    "typed order fields reject string figures, missing digests and unsupported prose");
+  let assetCalls = 0;
+  const privateMiss = await worker.fetch(new Request("https://desk.test/_internal/maker/unknown"), {
+    ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } }
+  }, { waitUntil() {} });
+  ok(privateMiss.status === 404 && assetCalls === 0,
+    "an unknown private-prefix request is refused before static asset fallthrough");
+  const privateEnv = { COUNTER_MAKER_KEY: key, SALT_QUEUE: new KV(),
+    ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } } };
+  const entryBody = { total: 100, delivery: 0, extra: "not allowed" };
+  const privatePost = (keyHeader) => worker.fetch(new Request("https://desk.test/_internal/maker/orders/20260929120000-makr/preview", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(keyHeader ? { "X-Counter-Maker-Key": keyHeader } : {}) },
+    body: JSON.stringify(entryBody)
+  }), privateEnv, { waitUntil() {} });
+  const noKey = await privatePost("");
+  const badKey = await privatePost("x".repeat(key.length));
+  const extraField = await privatePost(key);
+  ok(noKey.status === 404 && badKey.status === 404 && extraField.status === 400 && assetCalls === 0,
+    "the external Desk route refuses absent/wrong keys and rejects extra operation-body fields");
+  const draftRow = { id: "2026-09-29T12:00:00.000Z", status: "pending", collection: "sales",
+    entry: "{}", row: JSON.stringify({ qty: 1, total: 100, cost: 56 }), flags: '["Check before deciding"]',
+    cost: 56, total: 100, qty: 1, product: "salt" };
+  const db = { prepare(sql) {
+    let args = [];
+    return {
+      bind(...values) { args = values; return this; },
+      async first() {
+        if (sql.includes("committed_at IS NOT NULL")) return null;
+        if (/FROM draft WHERE id=/.test(sql)) return args[0] === draftRow.id ? { ...draftRow } : null;
+        throw new Error("unmocked first: " + sql);
+      },
+      async all() {
+        if (sql.includes("FROM refused")) return { results: [] };
+        if (sql.includes("FROM draft")) return { results: draftRow.status === "pending" ? [{ ...draftRow }] : [] };
+        throw new Error("unmocked all: " + sql);
+      },
+      async run() {
+        if (sql.startsWith("UPDATE preapproval")) return { meta: { changes: 0 } };
+        if (sql.startsWith("UPDATE draft SET status=")) {
+          if (draftRow.status !== "pending") return { meta: { changes: 0 } };
+          draftRow.status = args[0]; draftRow.decided_by = args[2]; return { meta: { changes: 1 } };
+        }
+        throw new Error("unmocked run: " + sql);
+      }
+    };
+  } };
+  const bridgeEnv = { ...privateEnv, SALT_LEDGER: db, SALT_WRITE_KEY: "desk-write-key" };
+  const integrated = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, bridgeEnv, { waitUntil() {} }) } };
+  const through = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  }), integrated, path, owner);
+  const listed = await (await through("/all/maker/drafts")).json();
+  ok(listed.ok && listed.drafts[0].row.cost === 56 && listed.drafts[0].flags[0] === "Check before deciding",
+    "actual service-bound Worker review preserves the proposed row, cost and flags");
+  const decisionPath = "/all/maker/drafts/" + encodeURIComponent(draftRow.id) + "/reject";
+  const decided = await through(decisionPath, "POST", {});
+  const repeated = await through(decisionPath, "POST", {});
+  ok(decided.status === 200 && repeated.status === 409 && draftRow.status === "rejected" && draftRow.decided_by === "Counter Admin",
+    "a bridge draft decision uses the normal Desk state transition and refuses a replay");
+  const getOrder = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/20260929120000-makr/cash", {
+    headers: { "X-Counter-Maker-Key": key }
+  }), bridgeEnv, { waitUntil() {} });
+  const removedWriter = await through("/all/maker/entries", "POST", { entry: {} });
+  const missingBridge = await handleMaker(new Request("https://counter.test/all/maker/drafts"), { STMT: store },
+    "/all/maker/drafts", owner);
+  ok(getOrder.status === 405 && removedWriter.status === 404 && missingBridge.status === 503,
+    "the bridge rejects wrong methods, has no generic entry writer and fails closed without provisioning");
+  const now = Date.UTC(2026, 8, 29, 10, 0);
+  const schedule = { days: Array(7).fill(null) };
+  schedule.days[3] = { open: "09:00", close: "17:00" };
+  const closed = hoursStatus({ schedule }, now);
+  ok(closed.open === false && closed.nextOpen === "2026-09-30T01:00:00.000Z",
+    "weekly hours use Kuala Lumpur time and report the next opening while closed");
+  const expires = hoursStatus({ schedule, manual: { open: false, until: "2026-09-30T02:00:00.000Z" } },
+    Date.parse("2026-09-30T04:00:00.000Z"));
+  ok(expires.open === true && expires.source === "schedule",
+    "an expired manual override falls back to the current weekly schedule");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const { landingPage } = await import("../stmt/page.js");
+  const user = "abcd-efgh", password = "maker-hours-fixture", contentKey = await C.contentKey("test-secret", user);
+  const priceList = { at: "2026-09-29T03:00:00Z", digest: "closed-hours-fixture",
+    week: { monday: "2026-09-28", label: "This week" }, soon: [],
+    products: [{ product: "salt", unit: "unit", basis: "tier", sizes: [{ q: 1, price: 100 }] }] };
+  const body = { ok: true, session: "maker-hours-session", wrap: await C.wrapKey(password, contentKey),
+    env: await C.encryptWith(contentKey, JSON.stringify({ statements: [] })),
+    prices: Object.assign({ at: priceList.at, week: priceList.week.monday, digest: priceList.digest },
+      await C.encryptWith(contentKey, JSON.stringify(priceList))) };
+  const posted = [];
+  const dom = new JSDOM(landingPage(user, "maker-hours-nonce", null), {
+    url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const route = String(path), method = init && init.method || "GET";
+        if (route === "/open") return { ok: true, status: 200, json: async () => body };
+        if (route === "/hours") return { ok: true, status: 200, json: async () => ({ open: false, source: "manual", nextOpen: null }) };
+        if (route === "/orders" && method === "GET") return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) };
+        if (route === "/orders" && method === "POST") {
+          posted.push(JSON.parse(init.body));
+          return { ok: true, status: 200, json: async () => ({ ok: true, order: { id: "20260929120000-makr", status: "placed" } }) };
+        }
+        return { ok: false, status: 404, json: async () => ({ ok: false }) };
+      };
+    }
+  });
+  const page = dom.window, doc = page.document;
+  try {
+    doc.getElementById("un").value = user;
+    doc.getElementById("pw").value = password;
+    doc.getElementById("f").dispatchEvent(new page.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 120 && !doc.getElementById("oNew"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    const notice = doc.querySelector("#pOrder .salt-insight");
+    ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
+      && /acknowledgement may be delayed/.test(notice.textContent),
+      "a closed-hours customer still sees New order and the delayed-acknowledgement notice");
+    doc.getElementById("oNew").click();
+    const size = doc.querySelector('#osheet input[name="osize"][value="1"]');
+    if (size) { size.checked = true; size.dispatchEvent(new page.Event("change", { bubbles: true })); }
+    doc.getElementById("oGo").click();
+    for (let i = 0; i < 100 && !doc.getElementById("oPlace"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    if (doc.getElementById("oPlace")) doc.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posted.length; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(posted.length === 1 && posted[0].product === "salt" && posted[0].qty === 1,
+      "closed hours do not block the customer order POST");
+  } finally { page.close(); }
+  const countBody = { at: "2026-09-29T12:00:00.000Z", date: "2026-09-29", product: "salt", qty: 0 };
+  const builtCount = makerStockCount(countBody);
+  ok(builtCount.entry && builtCount.entry.payload.mode === "count" && builtCount.entry.payload.kg === 0
+    && !makerStockCount({ ...countBody, qty: "2" }).entry
+    && !makerStockCount({ ...countBody, date: "2026-02-30" }).entry
+    && !makerStockCount({ ...countBody, note: "a private word" }).entry,
+    "stock-count construction accepts zero but rejects string figures, impossible dates and private fields");
+  const { DatabaseSync } = await import("node:sqlite");
+  const countDb = new DatabaseSync(":memory:");
+  try {
+    for (const file of readdirSync(join(REPO, "migrations")).filter((file) => /^[0-9]+_.*[.]sql$/.test(file)).sort())
+      countDb.exec(readFileSync(join(REPO, "migrations", file), "utf8"));
+    const countD1 = { prepare(sql) {
+      const statement = countDb.prepare(sql);
+      const bound = (args) => ({
+        run() { const result = statement.run(...args); return { meta: { changes: Number(result.changes) } }; },
+        first() { return statement.get(...args) || null; },
+        all() { return { results: statement.all(...args) }; }
+      });
+      return Object.assign(bound([]), { bind: (...args) => bound(args) });
+    } };
+    countDb.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run("PRODUCTS", JSON.stringify({ salt: {}, spare: { retired: true } }));
+    countDb.prepare("INSERT INTO snapshot(one,v,stamped) VALUES (1,'maker-fixture',NULL)").run();
+    const countQueue = new KV(), countEnv = { ...privateEnv, SALT_QUEUE: countQueue, SALT_LEDGER: countD1 };
+    const countCounter = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, countEnv, { waitUntil() {} }) } };
+    const countCall = (body) => handleMaker(new Request("https://counter.test/all/maker/inputs/stock-count", {
+      method: "POST", body: JSON.stringify(body)
+    }), countCounter, "/all/maker/inputs/stock-count", owner);
+    const firstCount = await (await countCall(countBody)).json(), repeatedCount = await (await countCall(countBody)).json();
+    const persisted = countDb.prepare("SELECT status,collection,row FROM draft WHERE id=?").get(countBody.at);
+    ok(firstCount.ok && repeatedCount.ok && repeatedCount.queued === false && persisted.status === "pending"
+      && persisted.collection === "count" && JSON.parse(persisted.row).qty === 0
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "Counter stock count goes through the real Desk queue and drafter once, pending a decision");
+    const retired = await countCall({ ...countBody, product: "spare" });
+    const unknown = await countCall({ ...countBody, product: "missing" });
+    ok(retired.status === 400 && unknown.status === 400 && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "stock counts cannot enter retired or unknown books");
+    const ledgerRoutes = ["loan", "repay", "gift", "redeem", "add-id", "amend-id", "place"];
+    const deskRouteResults = [];
+    for (const operation of ledgerRoutes) {
+      const response = await worker.fetch(new Request("https://desk.test/_internal/maker/inputs/" + operation, {
+        method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+        body: JSON.stringify({ at: countBody.at, note: "unchecked prose" })
+      }), countEnv, { waitUntil() {} });
+      deskRouteResults.push({ operation, status: response.status });
+    }
+    ok(deskRouteResults.length === ledgerRoutes.length && deskRouteResults.every((result) => result.status === 400)
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "each new Desk maker route reaches typed validation and rejects unchecked notes before queue or draft writes");
+  } finally { countDb.close(); }
+  const adminCalls = [];
+  let previewRelease = null, holdPreview = false, adminWork = null;
+  const sealFixture = async (value, pass) => {
+    const salt = new Uint8Array(16).fill(7), iv = new Uint8Array(12).fill(9);
+    const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const ct = await webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(value)));
+    return { v: 1, salt: Buffer.from(salt).toString("base64"), iv: Buffer.from(iv).toString("base64"),
+      ct: Buffer.from(ct).toString("base64") };
+  };
+  let nameEnvelope = null;
+  const placeEnvelope = await sealFixture({ "CX1-AB": { addr: "Private Road", lat: 3.123, lng: 101.689 } }, "place-pass");
+  const adminOpen = { ...body, byMaster: true, session: "", wrapMaster: await C.wrapKey("fixture-master", contentKey) };
+  const admin = new JSDOM(landingPage("", "maker-admin-nonce", { master: "fixture-master", accounts: [] }), {
+    url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const route = String(path);
+        adminCalls.push({ route, body: init && init.body ? JSON.parse(init.body) : null });
+        const result = route === "/open" ? adminOpen
+          : route === "/all/sheet" ? { ok: true, accounts: [{ username: user, code: "CX1-AB", account: true }] }
+          : route === "/all/maker/vault" ? { ok: true, vault: nameEnvelope }
+          : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
+          : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
+            products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
+            parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
+            tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
+            loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }]
+          } }
+          : route === "/all/maker/customers/abcd-efgh/orders" ? { ok: true, order: { id: "20260929120000-foru" } }
+          : route === "/all/maker/review" ? { ok: true,
+          orders: [{ id: "20260929120000-makr", u: "abcd-efgh", product: "salt", qty: 1, total: 100, status: "placed" }],
+          drafts: [{ ...draftRow, status: "pending", entry: {}, row: { qty: 1, total: 100, cost: 56 }, flags: ["Check before deciding"] }] }
+          : route.endsWith("/preview") ? { ok: true, hash: "a".repeat(64), cost: { total: 56 }, margin: { rm: 44, pct: 44 },
+            row: { qty: 1, total: 100 }, flags: ["Review preview flag"] }
+          : route === "/all/maker/hours" ? { ok: true, config: null, status: { open: true, source: "default" } }
+          : route === "/all/maker/inputs/add-id" && init && init.method === "POST"
+            ? (nameEnvelope = JSON.parse(init.body).vault, { ok: true, queued: true })
+          : { ok: true, accounts: [], refs: [], tiers: [] };
+        if (holdPreview && route.endsWith("/preview")) await new Promise((resolve) => { previewRelease = resolve; });
+        return { ok: true, status: 200, json: async () => result };
+      };
+      adminWork = pageWork(win);
+    }
+  });
+  try {
+    const doc = admin.window.document;
+    doc.querySelector('button[data-m="maker"]').click();
+    for (let i = 0; i < 100 && !doc.querySelector("#makerReview .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    const cards = doc.querySelectorAll("#makerReview .maker-card");
+    ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
+      "the Admin review draws Desk row cost and frozen flags beside its decision");
+    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
+      && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
+        .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
+      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
+    const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
+    preview.click();
+    for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    ok(/Cost RM 56/.test(cards[0].textContent) && /Margin RM 44/.test(cards[0].textContent)
+      && /Review preview flag/.test(cards[0].textContent) && !!doc.querySelector("[data-accept]"),
+      "Accept appears only after the preview cost, margin and flags are shown: "
+        + JSON.stringify({ text: cards[0].textContent, accept: !!doc.querySelector("[data-accept]") }));
+    const total = cards[0].querySelector('input[type="number"]');
+    total.value = "120"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
+    ok(!doc.querySelector("[data-accept]"), "editing an order price invalidates the preview and removes Accept");
+    holdPreview = true; preview.click();
+    for (let i = 0; i < 100 && !previewRelease; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    total.value = "130"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
+    previewRelease(); await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
+    const tradeSection = doc.querySelector("#makerInputs .maker-input");
+    const tradeControls = tradeSection.querySelectorAll("select, input");
+    tradeControls[0].value = "sale";
+    tradeControls[1].value = "salt";
+    tradeControls[2].value = "CX1-AB";
+    tradeControls[3].value = "2026-10-01";
+    tradeControls[4].value = "1";
+    tradeControls[5].value = "100";
+    tradeControls[6].value = "0";
+    tradeControls[7].value = "0";
+    tradeControls[8].value = "";
+    tradeControls[9].value = "0";
+    tradeSection.querySelector("button").click();
+    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
+    ok(sentSale && sentSale.body.party === "CX1-AB" && sentSale.body.qty === 1
+      && sentSale.body.total === 100 && !Object.hasOwn(sentSale.body, "note"),
+      "the Maker trade form sends typed figures and no free-text note to the named Desk operation");
+    const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Add ID");
+    const addFields = addId.querySelectorAll("input");
+    addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
+    const sentAddId = adminCalls.find((call) => call.route === "/all/maker/inputs/add-id");
+    let openedNames = null;
+    try {
+      const sealed = sentAddId && sentAddId.body.vault;
+      if (!sealed) throw new Error("Add ID sent no sealed envelope.");
+      const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode("name-pass"), "PBKDF2", false, ["deriveKey"]);
+      const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from(sealed.salt, "base64"),
+        iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const plain = await webcrypto.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(sealed.iv, "base64") },
+        key, Buffer.from(sealed.ct, "base64"));
+      openedNames = JSON.parse(new TextDecoder().decode(plain));
+    } catch (error) { openedNames = null; }
+    ok(sentAddId && sentAddId.body.code === "CA3-KL" && !Object.hasOwn(sentAddId.body, "name")
+      && !Object.hasOwn(sentAddId.body, "locality") && openedNames && openedNames["CA3-KL"] === "Amy (Kuala Lumpur)"
+      && addFields[2].value === "",
+      "Add ID derives and encrypts the name on-device before sending only a code and sealed envelope");
+    const addKind = addId.querySelector("select");
+    addKind.value = "downstream"; addKind.dispatchEvent(new admin.window.Event("change"));
+    addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the downstream ID write finishes");
+    addKind.value = "bucket"; addKind.dispatchEvent(new admin.window.Event("change"));
+    addId.querySelector("select").value = "bucket";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the resale bucket write finishes");
+    const addRequests = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id");
+    ok(addRequests.length === 3 && addRequests[1].body.code === "CX1-AB-1-KL"
+      && addRequests[1].body.kind === "downstream" && !Object.hasOwn(addRequests[1].body, "name")
+      && addRequests[2].body.code === "CX1-AB-R" && addRequests[2].body.kind === "bucket"
+      && addRequests[2].body.vault === null,
+      "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
+    const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Amend ID");
+    const amendFields = amendId.querySelectorAll("input");
+    amendFields[0].value = "Ben"; amendFields[1].value = "Penang"; amendFields[2].value = "name-pass";
+    amendId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
+    const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
+    ok(sentAmendId && sentAmendId.body.from === "CX1-AB" && sentAmendId.body.to === "CB3-PEN"
+      && !!sentAmendId.body.vault && !Object.hasOwn(sentAmendId.body, "name") && !Object.hasOwn(sentAmendId.body, "locality"),
+      "Amend ID sends only its old/new codes and a device-sealed name map");
+    const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Map placement");
+    placement.querySelector('input[type="password"]').value = "place-pass";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the encrypted map point opens and queues");
+    const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
+    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
+      && !JSON.stringify(sentPlacement.body).includes("Private Road"),
+      "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
+    const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Borrow or lend");
+    loanForm.querySelectorAll("select")[0].value = "cash";
+    loanForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the loan form write finishes");
+    const sentLoan = adminCalls.find((call) => call.route === "/all/maker/inputs/loan");
+    const giftForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Gift");
+    giftForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the gift form write finishes");
+    const repayForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Repayment");
+    repayForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the repayment form write finishes");
+    const redeemForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Reward redemption");
+    redeemForm.querySelector("button").click();
+    ok(await adminWork.quiet(), "the reward form write finishes");
+    ok(sentLoan && sentLoan.body.form === "cash" && !Object.hasOwn(sentLoan.body, "product")
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/gift" && call.body.handover === null)
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/repay" && call.body.loan === "loan-1")
+      && adminCalls.some((call) => call.route === "/all/maker/inputs/redeem" && call.body.code === "CX1-AB"),
+      "loan, repayment, gift and reward forms send their typed ledger fields to the corresponding Desk constructors");
+    doc.querySelector('button[data-m="accounts"]').click();
+    for (let i = 0; i < 100 && !doc.querySelector('#rlist [data-u]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    doc.querySelector('#rlist [data-u]').click();
+    const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
+    forThem.click();
+    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerFor button")].some((button) => button.textContent === "Place for them"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const placeFor = [...doc.querySelectorAll("#makerFor button")].find((button) => button.textContent === "Place for them");
+    ok(!!placeFor && /RM 100/.test(doc.querySelector("#makerFor").textContent),
+      "Order for them opens the customer's sealed prices, not a second pricing rule");
+    placeFor.click();
+    for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/customers/abcd-efgh/orders"); i++)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    const sentFor = adminCalls.find((call) => call.route === "/all/maker/customers/abcd-efgh/orders");
+    ok(sentFor && sentFor.body.total === 100 && sentFor.body.digest === priceList.digest && sentFor.body.rid
+      && !Object.hasOwn(sentFor.body, "master") && !Object.hasOwn(sentFor.body, "note"),
+      "on-behalf UI sends the quote and replay id only to its protected route");
+  } finally { admin.window.close(); }
+})();
+
+section("Counter amendments: atomic replacement, review reservation and session ownership");
+await (async () => {
+  const O = await import("../stmt/orders.js");
+  const H = await import("./orderbook-harness.mjs");
+  const { customerAmend } = await import("../stmt/maker.js");
+  const { build, FEATURES } = await import("../tools/testfix.mjs");
+  const { exampleReplace, isExample } = await import("../stmt/testfix.js");
+  const u = "abcd-efgh", at = new Date().toISOString(), digest = "amendment-list";
+  const body = { product: "salt", qty: 1, total: 100, unit: 100, mode: "collect", place: "", forFriend: false,
+    week: "", digest, rid: "amendment-request-0001" };
+  const original = O.decidePlace(u, body, [], at, digest).ev.order;
+  const change = { ...body, qty: 2, total: 190, unit: 95, rid: "amendment-request-0002" };
+  const book = H.orderBook({});
+  book.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const replace = (patch = {}, who = u, id = original.id) => book.book.run("replace", {
+    u: who, id, body: { ...change, ...patch }, rid: patch.rid || change.rid, digest
+  });
+  const changed = replace();
+  const old = book.book.order(u, original.id);
+  ok(changed.ok && changed.order.qty === 2 && old.status === "cancelled"
+    && old.replacement === changed.order.id && changed.order.replaces === original.id
+    && old.total === 100 && old.history[0].status === "placed",
+    "replacement cancels the original and links both immutable histories without editing its terms");
+  const repeated = replace({ total: 999 });
+  ok(repeated.ok && repeated.again && repeated.order.id === changed.order.id && repeated.order.total === 190
+    && book.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 2,
+    "a replacement request id is permanent and its retry cannot create or alter another order");
+  ok(!replace({}, "other-user").ok && book.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 2,
+    "a replacement cannot address an order owned by another account");
+  const guards = (patch) => O.decideReplace({ ...original, ...patch }, change, [original], at, digest);
+  ok(guards({ status: "acknowledged" }).code === "amendClosed",
+    "an acknowledged order cannot be replaced");
+  ok(guards({ reviewed: true }).code === "amendClosed",
+    "a book-side review reservation prevents replacement before D1 preapproval");
+  ok(guards({ queued: { ack: at } }).code === "amendClosed",
+    "a legacy queued pending row cannot be orphaned by replacement");
+  ok(guards({ paid: 1 }).code === "amendClosed" && guards({ moved: 1 }).code === "amendClosed",
+    "money or goods already moved prevent replacement");
+  ok(O.decideReplace(original, { ...change, digest: "old-list" }, [original], at, digest).code === "pricesMoved",
+    "replacement checks the current price-list digest before cancelling anything");
+  ok(O.decideReplace(original, { ...change, note: "not an amendment field" }, [original], at, digest).code === "amendShape"
+    && O.decideReplace(original, { ...change, product: "rice" }, [original], at, digest).code === "amendShape",
+    "replacement refuses unsupported fields and cannot change a sheet line to another product");
+  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+  const terms = Object.fromEntries(fields.map((key) => [key, original[key] ?? null]));
+  const reservation = O.decideDesk(original, { reserveReview: terms }, at);
+  const reserved = O.applyEvent(structuredClone(original), reservation.ev).order;
+  ok(reserved.reviewed && O.decideDesk(reserved, { reserveReview: terms }, at).none,
+    "a matching review reservation is durable and safely retried");
+  ok(O.decideDesk(original, { reserveReview: { ...terms, qty: 2 } }, at).status === 409
+    && O.decideDesk({ ...original, status: "cancelled" }, { reserveReview: terms }, at).status === 409,
+    "Accept cannot reserve a changed or cancelled order from a stale preview");
+  const failedBook = H.orderBook({});
+  failedBook.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const exec = failedBook.state.storage.sql.exec;
+  failedBook.state.storage.sql.exec = (sql, ...args) => {
+    if (sql.startsWith("INSERT INTO ev") && args[3] === "place") throw new Error("replacement write failed");
+    return exec(sql, ...args);
+  };
+  let rejected = false;
+  try { failedBook.book.run("replace", { u, id: original.id, body: change, rid: change.rid, digest }); }
+  catch (error) { rejected = error.message === "replacement write failed"; }
+  ok(rejected && failedBook.book.order(u, original.id).status === "placed"
+    && failedBook.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n === 1,
+    "a failed replacement write rolls back cancellation, events and the new order together");
+  const frozenBook = H.orderBook({}, { movedIn: false });
+  ok(frozenBook.book.run("replace", { u, id: original.id, body: change, rid: change.rid, digest }).frozen === true,
+    "the move-in freeze also refuses replacement writes");
+  const key = "counter-maker-test-key-0123456789abcdef", store = new KV(), queue = new KV();
+  const buildId = "abcdef0123456789";
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
+  await queue.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
+  const relayBook = H.orderBook({});
+  relayBook.book.append(null, u, original.id, { kind: "place", at, order: original }, null);
+  const counter = { STMT: store, ORDER_STORE: "object", ORDERBOOK: relayBook.ns, STMT_DESK_KEY: key,
+    COUNTER_MAKER_KEY: key };
+  let activePre = null, failD1 = false;
+  const pricing = { v: "v1", byProduct: { salt: { stockCost: 56, cards: { "CX1-AB": [[1, 100], [2, 190]] },
+    floors: { 1: { floor: 80 }, 2: { floor: 150 } } } } };
+  let replaceCalls = 0;
+  const desk = { COUNTER_MAKER_KEY: key, STMT_DESK_KEY: key, SALT_QUEUE: queue,
+    SALT_LEDGER: { prepare(sql) {
+      return { bind() { return this; },
+        async first() {
+          if (sql.includes("FROM preapproval")) { if (failD1) throw new Error("mirror offline"); return activePre; }
+          if (sql.includes("FROM snapshot")) return { v: "v1" };
+          throw new Error("unexpected query " + sql);
+        },
+        async all() {
+          if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: JSON.stringify(pricing) },
+            { key: "roster", doc: JSON.stringify(["CX1-AB"]) }, { key: "OPEN", doc: '{"byKey":{}}' }] };
+          if (sql.includes("FROM entry")) return { results: [] };
+          throw new Error("unexpected query " + sql);
+        }
+      };
+    } },
+    ASSETS: { fetch: async () => Response.json({ ok: true, id: buildId, v: "v1" }) },
+    STMT_SITE: { fetch: (url, init) => {
+      if (String(url).endsWith("/replace")) replaceCalls++;
+      return stmtWorker.fetch(new Request(url, init), counter);
+    } }
+  };
+  counter.DESK_MAKER = { fetch: (request) => worker.fetch(request, desk, { waitUntil() {} }) };
+  const session = await O.mintSession(counter, u);
+  const publicChange = { ...change };
+  delete publicChange.total; delete publicChange.unit;
+  const call = (replacement, token = session, id = original.id) => stmtWorker.fetch(new Request("https://counter.test/orders/" + id + "/amend", {
+    method: "POST", headers: { "X-Stmt-Session": token, "content-type": "application/json" }, body: JSON.stringify(replacement)
+  }), counter);
+  activePre = { id: "existing-preapproval" };
+  const preDenied = await call(publicChange);
+  ok(preDenied.status === 409 && relayBook.book.order(u, original.id).status === "placed",
+    "the complete bridge refuses a legacy active D1 preapproval before changing the Object");
+  activePre = null; failD1 = true;
+  const unavailable = await call(publicChange);
+  ok(unavailable.status === 500 && relayBook.book.order(u, original.id).status === "placed",
+    "a failed D1 preapproval read fails closed and leaves the original order intact");
+  failD1 = false;
+  const forged = await call({ ...publicChange, u: "other-user" }), absent = await call(publicChange, "");
+  ok(forged.status === 400 && absent.status === 401 && relayBook.book.order(u, original.id).status === "placed",
+    "the public amendment uses the session identity and refuses client identity or an absent session");
+  const otherSession = await O.mintSession(counter, "other-user");
+  const wrongOwner = await call(publicChange, otherSession), wrongSession = await call(publicChange, "wrong-session-0000000000");
+  ok(wrongOwner.status === 404 && wrongSession.status === 401 && relayBook.book.order(u, original.id).status === "placed",
+    "the actual Worker path refuses another customer's order and an invented session");
+  const privateFields = ["code", "owner", "by", "bucket", "username", "total", "unit"];
+  const smuggled = await Promise.all(privateFields.map((field) => call({ ...publicChange, [field]: "not accepted" })));
+  ok(smuggled.every((response) => response.status === 400) && relayBook.book.order(u, original.id).status === "placed",
+    "all identity and price fields are refused on the actual customer amendment path");
+  const stale = await call({ ...publicChange, digest: "stale" });
+  ok(stale.status === 409 && (await stale.json()).code === "pricesMoved" && relayBook.book.order(u, original.id).status === "placed",
+    "the complete amendment path refuses a stale sealed-list digest without cancelling the original");
+  const savedPrice = pricing.byProduct.salt.cards["CX1-AB"][1][1];
+  pricing.byProduct.salt.cards["CX1-AB"][1][1] = 100;
+  const belowFloor = await call(publicChange);
+  pricing.byProduct.salt.cards["CX1-AB"][1][1] = savedPrice;
+  ok(belowFloor.status === 409 && relayBook.book.order(u, original.id).status === "placed",
+    "a snapshot card below the exact floor cannot become a replacement order");
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0000000000000000" } }));
+  const oldPublish = await call(publicChange);
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
+  ok(oldPublish.status === 409 && (await oldPublish.json()).code === "amendPrices",
+    "the replacement refuses a list published from a different Desk build");
+  const blockedOrders = [
+    { ...original, id: "20261002120000-reserved", reviewed: true },
+    { ...original, id: "20261002120000-accepted", status: "acknowledged" },
+    { ...original, id: "20261002120000-outsider", code: "CY2-CD" }
+  ];
+  for (const order of blockedOrders) relayBook.book.append(null, u, order.id, { kind: "place", at, order }, null);
+  const beforeBlocked = replaceCalls;
+  const blocked = await Promise.all(blockedOrders.map((order) => call(publicChange, session, order.id)));
+  ok(blocked[0].status === 409 && blocked[1].status === 409 && blocked[2].status === 404 && replaceCalls === beforeBlocked,
+    "Desk independently refuses a reserved review, an agreed order and a foreign roster code");
+  const bucketOrder = { ...original, id: "20261002120000-bucket", code: "CX1-AB-R" };
+  relayBook.book.append(null, u, bucketOrder.id, { kind: "place", at, order: bucketOrder }, null);
+  const bucket = await call({ ...publicChange, rid: "amendment-bucket-0001" }, session, bucketOrder.id);
+  ok(bucket.status === 200, "the Desk ownership check includes the customer's R2 bucket");
+  const attempt = await stmtWorker.fetch(new Request("https://counter.test/all/maker/orders/" + original.id + "/accept", {
+    method: "POST", headers: { "X-Stmt-Session": session, "content-type": "application/json" }, body: "{}"
+  }), counter);
+  const privateAttempt = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + original.id + "/accept", {
+    method: "POST", headers: { "content-type": "application/json" }, body: "{}"
+  }), desk, { waitUntil() {} });
+  ok(attempt.status === 401 && privateAttempt.status === 404,
+    "a customer session cannot call Admin maker operations or the private Desk capability directly");
+  const reservationOrder = { ...original, id: "20261002120000-review" };
+  relayBook.book.append(null, u, reservationOrder.id, { kind: "place", at, order: reservationOrder }, null);
+  const previewResponse = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + reservationOrder.id + "/preview", {
+    method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: "{}"
+  }), desk, { waitUntil() {} });
+  const preview = await previewResponse.json();
+  const accepted = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/" + reservationOrder.id + "/accept", {
+    method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: JSON.stringify({ hash: preview.hash })
+  }), desk, { waitUntil() {} });
+  ok(previewResponse.status === 200 && accepted.status === 500 && relayBook.book.order(u, reservationOrder.id).reviewed === true,
+    "a matching actual Accept reserves the Object before even a failed D1 preapproval write");
+  for (const order of blockedOrders.concat(reservationOrder))
+    relayBook.book.run("desk", { u, id: order.id, body: { status: "cancelled" } });
+  const received = await call(publicChange), receivedBody = await received.json();
+  ok(received.status === 200 && receivedBody.order.replaces === original.id
+    && relayBook.book.order(u, original.id).status === "cancelled",
+    "the authenticated customer amendment crosses both fixed service paths and commits one replacement");
+  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0000000000000000" } }));
+  const replay = await call(publicChange), replayBody = await replay.json();
+  ok(replay.status === 200 && replayBody.order.id === receivedBody.order.id
+    && relayBook.book.ordersOf(u).filter((order) => order.replaces === original.id).length === 1,
+    "the actual Worker replay returns the existing replacement even after its price list changes");
+  const savedRoad = counter.ORDER_STORE;
+  counter.ORDER_STORE = "kv";
+  const kvRoad = await call(publicChange);
+  counter.ORDER_STORE = savedRoad;
+  ok(kvRoad.status === 503, "the complete amendment path cannot take a non-atomic KV writer");
+  const offline = await customerAmend({ STMT: store, ORDER_STORE: "object", ORDERBOOK: relayBook.ns }, u, original.id, publicChange);
+  const kvOnly = await O.replaceOrder({ STMT: store }, u, original.id, change);
+  ok(offline.status === 503 && kvOnly.status === 503,
+    "amendment fails closed without the private bridge or atomic Object storage");
+  const testUser = "0000-0000", fix = build(new Date(), "open", testUser), fixtureStore = new KV();
+  fix.salt = "amend-fixture";
+  await fixtureStore.put("u:" + testUser, JSON.stringify({ test: true, wrap: { salt: fix.salt }, prices: { digest: fix.prices.digest } }));
+  await fixtureStore.put("testfix:" + testUser, JSON.stringify(fix));
+  const example = fix.orders.find((order) => order.status === "placed" && order.sheet && order.product === "salt");
+  const exampleChange = { ...publicChange, qty: example.qty, digest: fix.prices.digest };
+  const ex = await exampleReplace({ STMT: fixtureStore }, testUser, example.id, exampleChange);
+  const exAgain = await exampleReplace({ STMT: fixtureStore }, testUser, example.id, exampleChange);
+  ok(!ex.error && exAgain.order.id === ex.order.id && isExample(testUser, ex.order.id)
+    && (await fixtureStore.list({ prefix: "order:" })).keys.length === 0
+    && FEATURES.find(([name]) => name.startsWith("order replaced"))[1](fix),
+    "test-account replacement has its acceptance case, retries once and writes only its fixture");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const { landingPage } = await import("../stmt/page.js");
+  const contentKey = await C.contentKey("amend-ui-fixture", u), password = "amend-fixture-password";
+  const list = { digest, week: { monday: "2026-10-01" }, products: [
+    { product: "salt", unit: "unit", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
+    { product: "rice", unit: "unit", sizes: [{ q: 1, price: 50 }] }
+  ] };
+  const opened = { ok: true, session: "amendment-ui-session", wrap: await C.wrapKey(password, contentKey),
+    env: await C.encryptWith(contentKey, JSON.stringify({ statements: [] })),
+    prices: await C.encryptWith(contentKey, JSON.stringify(list)) };
+  const posts = [];
+  const dom = new JSDOM(landingPage(u, "amend-ui-nonce", null), {
+    url: "https://counter.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
+      win.fetch = async (path, init) => {
+        const result = String(path) === "/open" ? opened
+          : String(path) === "/hours" ? { open: false, source: "manual" }
+          : String(path) === "/orders" ? { ok: true, orders: [original] }
+          : { ok: true, order: { ...original, id: "20261002120000-new", replaces: original.id } };
+        if (String(path).endsWith("/amend")) posts.push({ path: String(path), body: JSON.parse(init.body) });
+        return { ok: true, status: 200, json: async () => result };
+      };
+    }
+  });
+  try {
+    const doc = dom.window.document;
+    doc.getElementById("un").value = u; doc.getElementById("pw").value = password;
+    doc.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    const findChange = () => [...doc.querySelectorAll("button")].find((button) => button.textContent === "Change order");
+    for (let i = 0; i < 120 && !doc.querySelector('#pOrder [data-row="' + original.id + '"]'); i++)
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    const row = doc.querySelector('#pOrder [data-row="' + original.id + '"]');
+    if (row) row.click();
+    for (let i = 0; i < 120 && !findChange(); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(!!findChange(), "a placed customer order exposes Change order");
+    if (!findChange()) { for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close(); return; }
+    findChange().click();
+    const size = doc.querySelector('#osheet input[name="osize"][value="2"]');
+    size.checked = true; size.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    const sizeCount = doc.querySelectorAll("#osheet fieldset input[type=radio]").length;
+    doc.getElementById("oGo").click();
+    ok(doc.querySelector("#osheet").textContent.includes("RM 190")
+      && sizeCount === 2
+      && doc.querySelector("#osheet").textContent.includes("acknowledgement may be delayed"),
+      "customer amendment reviews one product at its sealed quote and repeats the closed-hours notice");
+    doc.getElementById("oPlace").click();
+    for (let i = 0; i < 100 && !posts.length; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    ok(posts.length === 1 && posts[0].path === "/orders/" + original.id + "/amend"
+      && posts[0].body.qty === 2 && posts[0].body.digest === digest && posts[0].body.rid
+      && !Object.hasOwn(posts[0].body, "total") && !Object.hasOwn(posts[0].body, "unit") && !Object.hasOwn(posts[0].body, "u"),
+      "the amendment sheet sends its chosen size and replay id, never a client price or identity");
+  } finally { dom.window.close(); }
+  for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close();
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
