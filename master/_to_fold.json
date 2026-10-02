@@ -1,0 +1,42 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T10:29:28.574Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CZ5-TM": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CZ5-TM Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CZ5-TM's Salt moves from Titanium to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-02T10:29:28.574Z",
+    "type": "TIER",
+    "party": "CZ5-TM",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CZ5-TM: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CZ5-TM": {
+       "salt": "Ambassador"
+      }
+     }
+    }
+   },
+   "decidedAt": "2026-10-02T10:29:46.769Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
