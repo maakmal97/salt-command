@@ -1,6 +1,6 @@
 {
- "v": "v976",
- "stamped": "02 Oct 2026, 11:54 KL",
+ "v": "v977",
+ "stamped": "02 Oct 2026, 11:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6029,14 +6029,31 @@
    {
     "customer": "CC9-OKR",
     "qty": 10,
-    "total": 130,
+    "total": 110,
     "cash": 0,
     "handover": "delivered",
     "product": "oil",
     "date": "2026-10-01",
     "deliveredQty": 0,
-    "note": "<b>OIL SELL DATED 01 OCT: 10 UNIT FOR RM130, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CC9-OKR at RM13 a unit, RM0 cash and 0 unit delivered, approved by the desk. The total clears the floor of RM78.65 for 10 unit and sits at the ask of RM130, under the ceiling of RM240. CC9-OKR: 13 orders, median RM90 a unit, range RM5 to RM90, RM138 outstanding and 2 units on credit before this row, against a credit cap of 10. His last oil row, s199 on 24 Sep, was also 10 unit for RM130, paid and collected. The drafter costed it at RM8 a unit but RM50 in all, so the cost needs checking. No flags raised. Outstanding: RM130 and 10 unit undelivered.",
-    "rid": "s221"
+    "note": "<b>CORRECTION ON s221, 02 OCT: TOTAL RM130 TO RM110, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's oil order of 10 units dated 01 Oct. Only the total changes, from RM130 to RM110; no cash and no stock move. The new total clears the floor of RM78.65 for 10 units. CC9-OKR: median RM90 a unit, range RM5 to RM90, RM358 outstanding and 2 units on credit before this order; the dossier gives no cap. The dossier shows no cost for this row, so none is restated. The drafter raised no flags. Outstanding: the row still shows RM0 cash and 0 units moved, so RM110 is to collect. <b>OIL SELL DATED 01 OCT: 10 UNIT FOR RM130, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CC9-OKR at RM13 a unit, RM0 cash and 0 unit delivered, approved by the desk. The total clears the floor of RM78.65 for 10 unit and sits at the ask of RM130, under the ceiling of RM240. CC9-OKR: 13 orders, median RM90 a unit, range RM5 to RM90, RM138 outstanding and 2 units on credit before this row, against a credit cap of 10. His last oil row, s199 on 24 Sep, was also 10 unit for RM130, paid and collected. The drafter costed it at RM8 a unit but RM50 in all, so the cost needs checking. No flags raised. Outstanding: RM130 and 10 unit undelivered.",
+    "rid": "s221",
+    "mod": "corrected on 2026-10-02: total 130 to 110",
+    "amend": [
+     {
+      "date": "2026-10-01",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s221, 02 OCT: TOTAL RM130 TO RM110, STILL PENDING.</b> Decided by the desk and recorded 02 Oct 2026 for CC9-OKR's oil order of 10 units dated 01 Oct. Only the total changes, from RM130 to RM110; no cash and no stock move. The new total clears the floor of RM78.65 for 10 units. CC9-OKR: median RM90 a unit, range RM5 to RM90, RM358 outstanding and 2 units on credit before this order; the dossier gives no cap. The dossier shows no cost for this row, so none is restated. The drafter raised no flags. Outstanding: the row still shows RM0 cash and 0 units moved, so RM110 is to collect."
+     }
+    ]
    },
    {
     "customer": "CC9-OKR",
@@ -6881,9 +6898,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T03:52:32.311Z",
+  "QUEUE_COMMITTED": "2026-10-02T03:53:14.649Z",
   "PRICING": {
-   "takenAt": "2026-10-02T03:54:33.688Z",
+   "takenAt": "2026-10-02T03:56:06.554Z",
    "sizes": [
     0.5,
     1,
@@ -13416,10 +13433,10 @@
      "cards": {}
     }
    },
-   "v": "v976"
+   "v": "v977"
   },
   "OPEN": {
-   "at": "2026-10-02T03:54:33.915Z",
+   "at": "2026-10-02T03:56:06.884Z",
    "count": 12,
    "byKey": {
     "CI4-OKR|2026-10-02|110": {
@@ -13439,21 +13456,21 @@
      "rebateKg": 1,
      "key": "CI4-OKR|2026-10-02|110"
     },
-    "CC9-OKR|2026-10-01|130|oil": {
+    "CC9-OKR|2026-10-01|110|oil": {
      "d": "2026-10-01",
      "p": "CC9-OKR",
      "dir": "S",
      "q": 10,
-     "t": 130,
+     "t": 110,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 130,
+     "oweRM": 110,
      "oweUnits": 10,
      "pr": "oil",
      "rid": "s221",
      "handover": "delivered",
-     "key": "CC9-OKR|2026-10-01|130|oil"
+     "key": "CC9-OKR|2026-10-01|110|oil"
     },
     "CC9-OKR|2026-10-01|90": {
      "d": "2026-10-01",
@@ -13681,13 +13698,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v976"
+   "v": "v977"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v976"
+   "v": "v977"
   }
  }
 }
