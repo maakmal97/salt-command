@@ -1,0 +1,77 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T14:04:57.543Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s227",
+    "qty": 1,
+    "total": 110,
+    "cash": 110,
+    "date": "2026-10-02",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-02"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CZ5-TM"
+   },
+   "reasoning": "Correction against CZ5-TM's order of 1 unit for RM 110 dated 2026-10-02 (s227). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-10-02, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s227",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-02T14:04:57.543Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit collected to CZ5-TM, order 20261002101739-dpvekq, on 2026-10-02",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-10-02|110",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-02",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-10-02",
+      "handover": "collected"
+     },
+     "note": "1 unit collected for order 20261002101739-dpvekq."
+    },
+    "orderId": "20261002101739-dpvekq"
+   },
+   "decidedAt": "2026-10-02T14:05:00.579Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
