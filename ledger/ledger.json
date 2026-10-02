@@ -1,6 +1,6 @@
 {
- "v": "v977",
- "stamped": "02 Oct 2026, 11:56 KL",
+ "v": "v978",
+ "stamped": "02 Oct 2026, 11:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1849,15 +1849,34 @@
     "rid": "s208",
     "customer": "CI4-OKR",
     "qty": 1,
-    "total": 47,
+    "total": 90,
     "cost": 47,
     "cash": 0,
     "settledRM": 47,
-    "goodwill": true,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-04",
     "date": "2026-08-03",
-    "note": "<b>ONE UNIT OF SALT GIVEN FREE TO CI4-OKR ON 03 AUG, WITH THE SALE ON s053.</b> RM47 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 27 Sep 2026: it had been folded into s053 as a reward redemption."
+    "note": "<b>CORRECTION ON s208, 02 OCT: TOTAL RM47 TO RM90, DELIVERED, REBATE OF 1 UNIT, GOODWILL OFF.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit dated 03 Aug 2026. Handover moves from unset to delivered, rebate from false to true, rebate quantity from unset to 1 unit, goodwill from true to false. The dossier gives no floor or ask for this size, so the rate is not set against them. CI4-OKR: median RM92.5 a unit, range RM47 to RM96.67, RM47 outstanding and 1 unit on credit before this change. The dossier states no credit cap. The row carries no cost figure of its own, so the draft's cost stands. The drafter flagged an advance with RM43 unpaid and a check against the credit cap; the figures do not answer it. Outstanding: the row still shows RM0 cash, so RM90 is to collect. <b>ONE UNIT OF SALT GIVEN FREE TO CI4-OKR ON 03 AUG, WITH THE SALE ON s053.</b> RM47 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 27 Sep 2026: it had been folded into s053 as a reward redemption.",
+    "rebateKg": 1,
+    "handover": "delivered",
+    "rebate": true,
+    "mod": "corrected on 2026-10-02: total 47 to 90; rebateKg (unset) to 1; rebate (unset) to true; goodwill true to (cleared); handover (unset) to delivered",
+    "amend": [
+     {
+      "date": "2026-08-03",
+      "kind": "Fulfilment",
+      "cash": 47,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s208, 02 OCT: TOTAL RM47 TO RM90, DELIVERED, REBATE OF 1 UNIT, GOODWILL OFF.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit dated 03 Aug 2026. Handover moves from unset to delivered, rebate from false to true, rebate quantity from unset to 1 unit, goodwill from true to false. The dossier gives no floor or ask for this size, so the rate is not set against them. CI4-OKR: median RM92.5 a unit, range RM47 to RM96.67, RM47 outstanding and 1 unit on credit before this change. The dossier states no credit cap. The row carries no cost figure of its own, so the draft's cost stands. The drafter flagged an advance with RM43 unpaid and a check against the credit cap; the figures do not answer it. Outstanding: the row still shows RM0 cash, so RM90 is to collect."
+     }
+    ]
    },
    {
     "date": "2026-08-04",
@@ -6898,9 +6917,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T03:53:14.649Z",
+  "QUEUE_COMMITTED": "2026-10-02T03:57:40.900Z",
   "PRICING": {
-   "takenAt": "2026-10-02T03:56:06.554Z",
+   "takenAt": "2026-10-02T03:59:37.727Z",
    "sizes": [
     0.5,
     1,
@@ -6983,13 +7002,13 @@
     "CM4-SK": {
      "salt": "Platinum"
     },
+    "CI4-OKR": {
+     "salt": "Titanium"
+    },
     "CJ2-KUC": {
      "salt": "Gold"
     },
     "CM6-PJ": {
-     "salt": "Titanium"
-    },
-    "CI4-OKR": {
      "salt": "Titanium"
     },
     "CG5-SB": {
@@ -7469,6 +7488,22 @@
       "rare": true
      }
     },
+    "CI4-OKR": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 3,
+      "tenureDays": 73,
+      "sinceLastDays": 30,
+      "perMonth": 1.25,
+      "smallShare": 0.33,
+      "bigShare": 0.33,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CJ2-KUC": {
      "candy": {
       "name": "one-off",
@@ -7497,22 +7532,6 @@
       "frequent": true,
       "small": false,
       "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CI4-OKR": {
-     "salt": {
-      "name": "occasional mid",
-      "orders": 3,
-      "tenureDays": 73,
-      "sinceLastDays": 30,
-      "perMonth": 1.25,
-      "smallShare": 0.33,
-      "bigShare": 0.33,
-      "frequent": false,
-      "small": false,
-      "bigger": false,
       "loyal": false,
       "rare": false
      }
@@ -8009,7 +8028,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3150684931506849
+         "v": 0.32432432432432434
         }
        },
        "attrib": 1,
@@ -9151,6 +9170,56 @@
         1070
        ]
       ],
+      "CI4-OKR": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CJ2-KUC": [
        [
         0.5,
@@ -9202,56 +9271,6 @@
        ]
       ],
       "CM6-PJ": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CI4-OKR": [
        [
         0.5,
         60
@@ -10935,6 +10954,28 @@
         450
        ]
       ],
+      "CI4-OKR": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CJ2-KUC": [
        [
         10,
@@ -10958,28 +10999,6 @@
        ]
       ],
       "CM6-PJ": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CI4-OKR": [
        [
         10,
         130
@@ -12041,6 +12060,28 @@
         1500
        ]
       ],
+      "CI4-OKR": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CJ2-KUC": [
        [
         1,
@@ -12064,28 +12105,6 @@
        ]
       ],
       "CM6-PJ": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CI4-OKR": [
        [
         1,
         60
@@ -12962,6 +12981,20 @@
         64
        ]
       ],
+      "CI4-OKR": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CJ2-KUC": [
        [
         1,
@@ -12977,20 +13010,6 @@
        ]
       ],
       "CM6-PJ": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CI4-OKR": [
        [
         1,
         8
@@ -13433,11 +13452,11 @@
      "cards": {}
     }
    },
-   "v": "v977"
+   "v": "v978"
   },
   "OPEN": {
-   "at": "2026-10-02T03:56:06.884Z",
-   "count": 12,
+   "at": "2026-10-02T03:59:38.043Z",
+   "count": 13,
    "byKey": {
     "CI4-OKR|2026-10-02|110": {
      "d": "2026-10-02",
@@ -13619,6 +13638,27 @@
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100"
     },
+    "CI4-OKR|2026-08-03|90": {
+     "d": "2026-08-03",
+     "p": "CI4-OKR",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 47,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 43,
+     "rid": "s208",
+     "cashRaw": 0,
+     "deliveredOn": "2026-08-04",
+     "handover": "delivered",
+     "rebate": true,
+     "settledRM": 47,
+     "rebateKg": 1,
+     "key": "CI4-OKR|2026-08-03|90",
+     "age": 60,
+     "exp": 0
+    },
     "SF6-KLC|2026-07-08|750": {
      "d": "2026-07-08",
      "p": "SF6-KLC",
@@ -13642,7 +13682,7 @@
      "owedOut": 9.5,
      "coverDays": 0.3,
      "rate": 5.7,
-     "owedToYou": 510,
+     "owedToYou": 553,
      "promised": 12.5,
      "short": 1.75
     },
@@ -13698,13 +13738,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v977"
+   "v": "v978"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v977"
+   "v": "v978"
   }
  }
 }
