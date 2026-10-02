@@ -103,12 +103,35 @@ function writeOk(request, env) {
   const key = String(env.SALT_WRITE_KEY || "");
   if (!key) return true;
   const got = String(request.headers.get("X-Salt-Key") || "");
-  if (got.length !== key.length) return false;
+  return secretMatches(got, key);
+}
+function secretMatches(got, key) {
+  if (!key || got.length !== key.length) return false;
   let diff = 0;
   for (let i = 0; i < key.length; i++) diff |= got.charCodeAt(i) ^ key.charCodeAt(i);
   return diff === 0;
 }
 const needsKey = () => json({ ok: false, error: "write key required", writeKey: true }, 401);
+
+/* The Counter's keyed, internal read of the Desk build id, for its live statement gate.
+ * Dispatched before the Access gate (a service binding carries no owner JWT); read-only,
+ * and it accepts only the shared STMT_DESK_KEY. */
+async function handleStmtRev(request, env, url, m) {
+  if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+  const key = String(env.STMT_DESK_KEY || "");
+  if (!secretMatches(String(request.headers.get("X-Stmt-Desk") || ""), key))
+    return json({ ok: false, error: "desk key required" }, 401);
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/rev.json", url), { method: "GET" }));
+    if (!res || !res.ok) return json({ ok: false, error: "no build manifest" }, 503);
+    const rev = await res.json();
+    if (!rev || typeof rev.id !== "string" || !/^[0-9a-f]{16}$/.test(rev.id))
+      return json({ ok: false, error: "invalid build manifest" }, 503);
+    return json({ ok: true, id: rev.id });
+  } catch (e) {
+    return json({ ok: false, error: "no build manifest" }, 503);
+  }
+}
 
 /* THE PUSH KEY (20 Aug 2026): A CAPABILITY, NOT A CREDENTIAL, AND IT OPENS ONE DOOR.
  *
@@ -842,7 +865,13 @@ export default {
     /* Fail closed. With REQUIRE_ACCESS on, a request that did not pass Cloudflare
      * Access gets nothing: not the ledger, not the queue, not the build id. Access
      * being off at the dashboard must read as an outage, never as an open desk.
-     * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
+     * The API paths answer JSON so the desk's ping-fail path degrades cleanly.
+     *
+     * ONE EXCEPTION, AND ONLY THIS PATH: the Counter's service-binding read of the build id
+     * carries STMT_DESK_KEY and no owner JWT, so it is answered before the human gate. It is
+     * a capability, not a sign-in: GET only, the key checked in constant time, the manifest
+     * validated, and nothing else under /stmt/ is let past. */
+    if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
     if (!await accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")

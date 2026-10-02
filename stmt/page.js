@@ -4956,9 +4956,17 @@ const CLIENT_JS = `
        pay gate on its last known state. An account with issues and no live document at all is read the same way; one
        with neither is a new account, which pickStmt says so. */
     var l=null;
-    if(body.live){ try{ l=JSON.parse(await open(ck, body.live)); }catch(e){ l=null; } }
+    if(body.live&&(body.liveStatus==='current'||body.liveStatus==='fixture')){
+      try{
+        l=JSON.parse(await open(ck, body.live));
+        if(body.liveStatus==='current'&&(!body.live.buildId||l.buildId!==body.live.buildId)) l=null;
+      }catch(e){ l=null; }
+    }
     if(l) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, at:l.at||body.live.at, body:l.body, owed:l.owed, pay:l.pay||null});
-    /* one that would not open is worth a Try again; one the publish wrote none of (no key there) waits for the next update */
+    /* A current live document needs both the Worker's revision check and its matching sealed stamp.
+       Test fixtures are separate from real accounts and keep their own invented document. */
+    else if(body.liveStatus==='updating') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.updating'});
+    else if(body.liveStatus==='unavailable') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.unavailable'});
     else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
     /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
     if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });

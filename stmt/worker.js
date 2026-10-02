@@ -316,6 +316,7 @@ async function handleOpen(request, env) {
      because this is the one place the password has just been proved. Fifteen minutes in the store;
      the page forgets it the moment it locks. The override gets none: the owner does not order. */
   const session = byMaster ? null : await openSession(env, u, "password", request);
+  const live = await customerLive(env, u, rec);
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
@@ -325,7 +326,7 @@ async function handleOpen(request, env) {
     assoc: !!rec.assoc,
     /* v706: an associate's own report card, sealed under the same content key as the statement */
     card: rec.card || null,
-    env: rec.env, live: rec.live || null, prices: rec.prices || null, session
+    env: rec.env, ...live, prices: rec.prices || null, session
   }), {
     status: 200,
     headers: Object.assign({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store, private" }, HEADERS)
@@ -357,8 +358,9 @@ async function handleCustomer(request, env, p, m) {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const acct = await accountRecord(env, u);
     if (!acct) return signinAgain("signinOrders");
+    const live = await customerLive(env, u, acct);
     return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
-      card: acct.card || null, env: acct.env, live: acct.live || null, prices: acct.prices || null });
+      card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
   }
   /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
      /claims is the same road under the name the page first asked for. */
@@ -595,6 +597,7 @@ async function handleRemember(request, env) {
   /* S9 9.4: the session first, so the phone's pointer names it (`sess`): the account's list shows the phone once, and
      signing the phone out ends the session it opened */
   const session = await openSession(env, rec.u, "remembered", request);
+  const live = await customerLive(env, rec.u, acct);
   const d = deviceOf(request.headers.get("user-agent"));
   try {
     /* and the sessions it opened before (`was`, four at most), which may still be live in another tab on the same phone:
@@ -606,7 +609,7 @@ async function handleRemember(request, env) {
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -720,6 +723,7 @@ async function handlePasskeyOpen(request, env) {
     if (dkey) await env.STMT.put(dkey, JSON.stringify({ u, wrap, at: now }), { expirationTtl: PK_TTL });
   } catch (e) { /* it opens either way */ }
   const session = await openSession(env, u, "passkey", request);
+  const live = await customerLive(env, u, acct);
   try {
     const old = await env.STMT.get(devPrefix(u) + (await idOf(got.key)), "json");
     const was = [old && old.sess].concat((old && old.was) || []).filter((x) => typeof x === "string").slice(0, 4);
@@ -729,7 +733,7 @@ async function handlePasskeyOpen(request, env) {
   return json({
     ok: true, u, passkey: true, share: got.rec.share, wrap, prfWrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -758,10 +762,11 @@ async function handleSignin(request, env) {
   if (!acct) return refused();
   await markSeen(env, rec.u, acct, "link", request);
   const session = await openSession(env, rec.u, "link", request);
+  const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -821,10 +826,11 @@ async function handleHandover(request, env, p, m) {
   }
   await markSeen(env, rec.u, acct, rec.by, request);
   const session = await openSession(env, rec.u, rec.by, request);
+  const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
     issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
-    env: acct.env, live: acct.live || null, prices: acct.prices || null, session
+    env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
 
@@ -835,6 +841,30 @@ async function handleHandover(request, env, p, m) {
 function deskOk(request, env) {
   const want = String(env.STMT_DESK_KEY || "");
   return !!want && ctEq(String(request.headers.get("X-Stmt-Desk") || ""), want);
+}
+const BUILD_ID_RE = /^[0-9a-f]{16}$/;
+async function customerLive(env, u, acct) {
+  const live = acct && acct.live || null;
+  if (isTest(u)) return { live, liveStatus: "fixture" };
+  if (!env.DESK || !env.STMT_DESK_KEY) {
+    console.error("Desk build id unavailable; withholding the live statement.");
+    return { live: null, liveStatus: "unavailable" };
+  }
+  try {
+    const response = await env.DESK.fetch(new Request("https://salt-command/stmt/rev", {
+      headers: { "X-Stmt-Desk": env.STMT_DESK_KEY }
+    }));
+    if (!response.ok) throw new Error("revision endpoint returned " + response.status);
+    const revision = await response.json();
+    if (!revision || revision.ok !== true || typeof revision.id !== "string" || !BUILD_ID_RE.test(revision.id)) {
+      throw new Error("revision endpoint returned an invalid build id");
+    }
+    if (!live || live.buildId !== revision.id) return { live: null, liveStatus: "updating" };
+    return { live, liveStatus: "current" };
+  } catch (e) {
+    console.error("Desk build id unavailable; withholding the live statement.");
+    return { live: null, liveStatus: "unavailable" };
+  }
 }
 /* ---- THE BULLETIN (20 Sep 2026, his instruction): a notice board across the top of Salt Counter ----
  * One clear key in this store, no prefix, so no listing under u:, order:, push: or fail: ever sees it and
