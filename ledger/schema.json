@@ -1,12 +1,12 @@
 {
-  "v": "v980",
-  "derivedFrom": "8d62b7987883707a",
+  "v": "v981",
+  "derivedFrom": "9a39e753aab1e9af",
   "tables": {
     "sales": {
       "rows": 224,
       "fields": {
         "agreedOn": {
-          "present": 5,
+          "present": 6,
           "of": 224,
           "optional": true,
           "types": [
@@ -46,7 +46,7 @@
           ]
         },
         "cost": {
-          "present": 208,
+          "present": 209,
           "of": 224,
           "optional": true,
           "types": [
@@ -78,7 +78,7 @@
           ]
         },
         "deliveredOn": {
-          "present": 175,
+          "present": 176,
           "of": 224,
           "optional": true,
           "types": [
@@ -150,7 +150,7 @@
           ]
         },
         "paidOn": {
-          "present": 153,
+          "present": 154,
           "of": 224,
           "optional": true,
           "types": [
@@ -238,7 +238,7 @@
           ]
         },
         "settledKg": {
-          "present": 6,
+          "present": 7,
           "of": 224,
           "optional": true,
           "types": [
@@ -246,7 +246,7 @@
           ]
         },
         "settledRM": {
-          "present": 24,
+          "present": 25,
           "of": 224,
           "optional": true,
           "types": [
