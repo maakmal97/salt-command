@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-02T05:26:01.563Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-MK",
+    "qty": 1.5,
+    "total": 170,
+    "cash": 0,
+    "date": "2026-10-02",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261002052529-nhapeg, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1.5 unit of salt to CM4-MK for RM 170, RM 113.33/unit. Costed at RM 56/unit from the desk's own inventory cost, so RM 86 on the goods at 50.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-02 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM4-MK typically pays about RM 101/unit for salt across 11 orders; this one is RM 113.33, 12.2% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-02T05:26:01.563Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 1.5,
+    "total": 170,
+    "status": "Pending",
+    "raw": "SELL CM4-MK 1.5 salt RM 170, nothing paid, nothing moved (order 20261002052529-nhapeg)",
+    "orderKey": "CM4-MK|2026-10-02|170",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "newId": null,
+     "date": "2026-10-02",
+     "qty": 1.5,
+     "total": 170,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261002052529-nhapeg, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261002052529-nhapeg"
+   },
+   "decidedAt": "2026-10-02T05:26:03.248Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
