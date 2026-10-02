@@ -1,6 +1,6 @@
 {
- "v": "v984",
- "stamped": "02 Oct 2026, 18:19 KL",
+ "v": "v985",
+ "stamped": "02 Oct 2026, 18:27 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6245,11 +6245,28 @@
     "customer": "CZ5-TM",
     "qty": 1,
     "total": 110,
-    "cash": 0,
+    "cash": 110,
     "date": "2026-10-02",
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 02 OCT: 1 UNIT FOR RM110, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CZ5-TM from order 20261002101739-dpvekq, acknowledged and preapproved by phone. The rate is RM110 a unit, above the floor of RM68.62 for 1 unit but below the ask of RM140. CZ5-TM: median RM110 a unit over 2 orders, range RM110 to RM110, RM0 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter raised no flags. Outstanding: RM110 to collect and 1 unit to hand over.",
-    "rid": "s227"
+    "rid": "s227",
+    "amend": [
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>PAYMENT ON S227, 02 OCT: RM110 RECEIVED, 1 UNIT STILL TO HAND OVER.</b> Paid by CZ5-TM on order 20261002101739-dpvekq, by QR via Maybank, and preapproved by phone. The row moves cash from RM0 to RM110 and leaves the quantity moved at 0. The order was 1 unit for RM110, which is the rate CZ5-TM has paid throughout: median RM110 a unit, range RM110 to RM110. Before this payment CZ5-TM owed RM110 with 0 units on credit. The cost is the inventory's own, RM56 a unit. The drafter raised no flags. Outstanding: RM0 to collect and 1 unit to hand over."
+     }
+    ],
+    "paidOn": "2026-10-02"
    }
   ],
   "contacts": [
@@ -6990,9 +7007,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T10:19:04.584Z",
+  "QUEUE_COMMITTED": "2026-10-02T10:26:40.452Z",
   "PRICING": {
-   "takenAt": "2026-10-02T10:19:38.769Z",
+   "takenAt": "2026-10-02T10:27:59.058Z",
    "sizes": [
     0.5,
     1,
@@ -7752,10 +7769,10 @@
     "CZ5-TM": {
      "salt": {
       "name": "small and often",
-      "orders": 2,
+      "orders": 3,
       "tenureDays": 13,
-      "sinceLastDays": 3,
-      "perMonth": 2.03,
+      "sinceLastDays": 0,
+      "perMonth": 3.04,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -13525,10 +13542,10 @@
      "cards": {}
     }
    },
-   "v": "v984"
+   "v": "v985"
   },
   "OPEN": {
-   "at": "2026-10-02T10:19:39.090Z",
+   "at": "2026-10-02T10:27:59.461Z",
    "count": 14,
    "byKey": {
     "CM4-MK|2026-10-02|170": {
@@ -13568,12 +13585,12 @@
      "dir": "S",
      "q": 1,
      "t": 110,
-     "cash": 0,
+     "cash": 110,
      "mv": 0,
-     "st": "part",
-     "oweRM": 110,
+     "st": "oweStock",
      "oweUnits": 1,
      "rid": "s227",
+     "paidOn": "2026-10-02",
      "key": "CZ5-TM|2026-10-02|110"
     },
     "CC9-OKR|2026-10-01|110|oil": {
@@ -13758,8 +13775,8 @@
     "salt": {
      "name": "Salt",
      "onHand": 7.25,
-     "free": -2.25,
-     "owedOut": 9.5,
+     "free": -3.25,
+     "owedOut": 10.5,
      "coverDays": 0,
      "rate": 5.84,
      "owedToYou": 680,
@@ -13818,13 +13835,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v984"
+   "v": "v985"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v984"
+   "v": "v985"
   }
  }
 }
