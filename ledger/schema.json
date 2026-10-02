@@ -1,6 +1,6 @@
 {
-  "v": "v978",
-  "derivedFrom": "a60c37c91026af6d",
+  "v": "v979",
+  "derivedFrom": "5969713e4665c1b2",
   "tables": {
     "sales": {
       "rows": 223,
@@ -238,7 +238,7 @@
           ]
         },
         "settledKg": {
-          "present": 5,
+          "present": 6,
           "of": 223,
           "optional": true,
           "types": [

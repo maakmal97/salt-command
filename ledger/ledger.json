@@ -1,6 +1,6 @@
 {
- "v": "v978",
- "stamped": "02 Oct 2026, 11:59 KL",
+ "v": "v979",
+ "stamped": "02 Oct 2026, 12:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1852,15 +1852,15 @@
     "total": 90,
     "cost": 47,
     "cash": 0,
-    "settledRM": 47,
+    "settledRM": 90,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-04",
     "date": "2026-08-03",
-    "note": "<b>CORRECTION ON s208, 02 OCT: TOTAL RM47 TO RM90, DELIVERED, REBATE OF 1 UNIT, GOODWILL OFF.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit dated 03 Aug 2026. Handover moves from unset to delivered, rebate from false to true, rebate quantity from unset to 1 unit, goodwill from true to false. The dossier gives no floor or ask for this size, so the rate is not set against them. CI4-OKR: median RM92.5 a unit, range RM47 to RM96.67, RM47 outstanding and 1 unit on credit before this change. The dossier states no credit cap. The row carries no cost figure of its own, so the draft's cost stands. The drafter flagged an advance with RM43 unpaid and a check against the credit cap; the figures do not answer it. Outstanding: the row still shows RM0 cash, so RM90 is to collect. <b>ONE UNIT OF SALT GIVEN FREE TO CI4-OKR ON 03 AUG, WITH THE SALE ON s053.</b> RM47 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 27 Sep 2026: it had been folded into s053 as a reward redemption.",
+    "note": "<b>CORRECTION ON s208, 02 OCT: SETTLEDRM 47 TO 90, SETTLEDKG UNSET TO 0, NO CASH, NO STOCK.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit for RM90 dated 03 Aug 2026. The row's rate is RM90 a unit. The dossier gives no floor or ask for this size, so no comparison is made. CI4-OKR: median RM92.5 a unit, range RM90 to RM96.67, RM0 outstanding and no units on credit before this entry, against no stated cap. The row stays delivered, with 1 unit moved and RM0 cash on it. The dossier gives no cost for this row beyond the inventory's RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the dossier states nothing further. <b>CORRECTION ON s208, 02 OCT: TOTAL RM47 TO RM90, DELIVERED, REBATE OF 1 UNIT, GOODWILL OFF.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit dated 03 Aug 2026. Handover moves from unset to delivered, rebate from false to true, rebate quantity from unset to 1 unit, goodwill from true to false. The dossier gives no floor or ask for this size, so the rate is not set against them. CI4-OKR: median RM92.5 a unit, range RM47 to RM96.67, RM47 outstanding and 1 unit on credit before this change. The dossier states no credit cap. The row carries no cost figure of its own, so the draft's cost stands. The drafter flagged an advance with RM43 unpaid and a check against the credit cap; the figures do not answer it. Outstanding: the row still shows RM0 cash, so RM90 is to collect. <b>ONE UNIT OF SALT GIVEN FREE TO CI4-OKR ON 03 AUG, WITH THE SALE ON s053.</b> RM47 of cost settled by goodwill, no cash and no revenue, on his ruling of 11 Sep 2026 that a giveaway is booked as cost. Entered 27 Sep 2026: it had been folded into s053 as a reward redemption.",
     "rebateKg": 1,
     "handover": "delivered",
     "rebate": true,
-    "mod": "corrected on 2026-10-02: total 47 to 90; rebateKg (unset) to 1; rebate (unset) to true; goodwill true to (cleared); handover (unset) to delivered",
+    "mod": "corrected on 2026-10-02: total 47 to 90; rebateKg (unset) to 1; rebate (unset) to true; goodwill true to (cleared); handover (unset) to delivered, then corrected on 2026-10-02: settledRM 47 to 90; settledKg (unset) to 0",
     "amend": [
      {
       "date": "2026-08-03",
@@ -1875,8 +1875,16 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s208, 02 OCT: TOTAL RM47 TO RM90, DELIVERED, REBATE OF 1 UNIT, GOODWILL OFF.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit dated 03 Aug 2026. Handover moves from unset to delivered, rebate from false to true, rebate quantity from unset to 1 unit, goodwill from true to false. The dossier gives no floor or ask for this size, so the rate is not set against them. CI4-OKR: median RM92.5 a unit, range RM47 to RM96.67, RM47 outstanding and 1 unit on credit before this change. The dossier states no credit cap. The row carries no cost figure of its own, so the draft's cost stands. The drafter flagged an advance with RM43 unpaid and a check against the credit cap; the figures do not answer it. Outstanding: the row still shows RM0 cash, so RM90 is to collect."
+     },
+     {
+      "date": "2026-10-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s208, 02 OCT: SETTLEDRM 47 TO 90, SETTLEDKG UNSET TO 0, NO CASH, NO STOCK.</b> Decided by the desk and recorded 02 Oct 2026 for CI4-OKR's order of 1 unit for RM90 dated 03 Aug 2026. The row's rate is RM90 a unit. The dossier gives no floor or ask for this size, so no comparison is made. CI4-OKR: median RM92.5 a unit, range RM90 to RM96.67, RM0 outstanding and no units on credit before this entry, against no stated cap. The row stays delivered, with 1 unit moved and RM0 cash on it. The dossier gives no cost for this row beyond the inventory's RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the dossier states nothing further."
      }
-    ]
+    ],
+    "settledKg": 0
    },
    {
     "date": "2026-08-04",
@@ -6917,9 +6925,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T03:57:40.900Z",
+  "QUEUE_COMMITTED": "2026-10-02T04:04:35.737Z",
   "PRICING": {
-   "takenAt": "2026-10-02T03:59:37.727Z",
+   "takenAt": "2026-10-02T04:06:04.688Z",
    "sizes": [
     0.5,
     1,
@@ -13452,11 +13460,11 @@
      "cards": {}
     }
    },
-   "v": "v978"
+   "v": "v979"
   },
   "OPEN": {
-   "at": "2026-10-02T03:59:38.043Z",
-   "count": 13,
+   "at": "2026-10-02T04:06:05.036Z",
+   "count": 12,
    "byKey": {
     "CI4-OKR|2026-10-02|110": {
      "d": "2026-10-02",
@@ -13638,27 +13646,6 @@
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100"
     },
-    "CI4-OKR|2026-08-03|90": {
-     "d": "2026-08-03",
-     "p": "CI4-OKR",
-     "dir": "S",
-     "q": 1,
-     "t": 90,
-     "cash": 47,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 43,
-     "rid": "s208",
-     "cashRaw": 0,
-     "deliveredOn": "2026-08-04",
-     "handover": "delivered",
-     "rebate": true,
-     "settledRM": 47,
-     "rebateKg": 1,
-     "key": "CI4-OKR|2026-08-03|90",
-     "age": 60,
-     "exp": 0
-    },
     "SF6-KLC|2026-07-08|750": {
      "d": "2026-07-08",
      "p": "SF6-KLC",
@@ -13682,7 +13669,7 @@
      "owedOut": 9.5,
      "coverDays": 0.3,
      "rate": 5.7,
-     "owedToYou": 553,
+     "owedToYou": 510,
      "promised": 12.5,
      "short": 1.75
     },
@@ -13738,13 +13725,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v978"
+   "v": "v979"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v978"
+   "v": "v979"
   }
  }
 }
