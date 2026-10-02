@@ -1,6 +1,6 @@
 {
- "v": "v985",
- "stamped": "02 Oct 2026, 18:27 KL",
+ "v": "v986",
+ "stamped": "02 Oct 2026, 18:30 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6755,7 +6755,7 @@
     "salt": "Ambassador"
    },
    "CZ5-TM": {
-    "salt": "Titanium",
+    "salt": "Ambassador",
     "oil": "Titanium"
    },
    "CA6-CYB": {
@@ -7007,9 +7007,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T10:26:40.452Z",
+  "QUEUE_COMMITTED": "2026-10-02T10:29:28.574Z",
   "PRICING": {
-   "takenAt": "2026-10-02T10:27:59.058Z",
+   "takenAt": "2026-10-02T10:30:14.069Z",
    "sizes": [
     0.5,
     1,
@@ -7123,7 +7123,7 @@
      "salt": "Titanium"
     },
     "CZ5-TM": {
-     "salt": "Titanium",
+     "salt": "Ambassador",
      "oil": "Titanium"
     },
     "CZ6-WM": {
@@ -9763,51 +9763,51 @@
       "CZ5-TM": [
        [
         0.5,
-        60
+        50
        ],
        [
         1,
-        110
+        90
        ],
        [
         1.5,
-        160
+        130
        ],
        [
         2,
-        210
+        170
        ],
        [
         2.5,
-        260
+        210
        ],
        [
         3,
-        310
+        260
        ],
        [
         3.5,
-        350
+        300
        ],
        [
         4,
-        390
+        340
        ],
        [
         4.5,
-        430
+        380
        ],
        [
         5,
-        470
+        420
        ],
        [
         6.25,
-        550
+        530
        ],
        [
         12.5,
-        1060
+        1050
        ]
       ],
       "CZ6-WM": [
@@ -13542,10 +13542,10 @@
      "cards": {}
     }
    },
-   "v": "v985"
+   "v": "v986"
   },
   "OPEN": {
-   "at": "2026-10-02T10:27:59.461Z",
+   "at": "2026-10-02T10:30:14.309Z",
    "count": 14,
    "byKey": {
     "CM4-MK|2026-10-02|170": {
@@ -13835,13 +13835,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v985"
+   "v": "v986"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v985"
+   "v": "v986"
   }
  }
 }

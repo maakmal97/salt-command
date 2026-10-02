@@ -721,7 +721,7 @@
       "salt": "Ambassador"
     },
     "CZ5-TM": {
-      "salt": "Titanium",
+      "salt": "Ambassador",
       "oil": "Titanium"
     },
     "CA6-CYB": {
@@ -956,7 +956,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-02T10:26:40.452Z",
+  "QUEUE_COMMITTED": "2026-10-02T10:29:28.574Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
