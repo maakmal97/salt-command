@@ -418,6 +418,52 @@ await (async () => {
     ok((await rev({ "X-Stmt-Desk": "joint-desk-key",
       "cf-access-jwt-assertion": await mint({ ...good, email: "customer@example.test" }) }, "/desk.html")).status === 401,
       "the shared key does not lift a non-owner Access identity onto the Desk");
+
+    /* CI's ACCESS SERVICE TOKEN: Access signs a JWT with the client id in common_name, an empty
+     * sub and no email. Verified, it reads GET /rev and passes the gate to POST /push/send, whose
+     * push key is still asked; it opens nothing else. */
+    const CID = "ci-client-under-test.access";
+    const ciEnv = { ...revEnv, ACCESS_CI_CLIENT_ID: CID, SALT_PUSH_KEY: "push-key-under-test", SALT_WRITE_KEY: "write-key-under-test" };
+    const ciGood = { iss: good.iss, aud: [AUD], common_name: CID, sub: "", exp: good.exp };
+    const ci = async (path, claims = ciGood, init = {}, useEnv = ciEnv) => worker.fetch(req(path, { ...init,
+      headers: { "cf-access-jwt-assertion": await mint(claims), ...(init.headers || {}) } }), useEnv);
+    const ciRev = await ci("/rev");
+    ok(ciRev.status === 200 && (await ciRev.json().catch(() => ({}))).id === deskId,
+      "a verified CI service token reads GET /rev with the Desk gate armed");
+    ok((await ci("/rev", { ...ciGood, common_name: "another-client.access" })).status === 401,
+      "a service token with another client id is refused on /rev");
+    ok((await ci("/rev", ciGood, {}, { ...ciEnv, ACCESS_CI_CLIENT_ID: "" })).status === 401
+      && (await ci("/rev", { ...ciGood, common_name: "" }, {}, { ...ciEnv, ACCESS_CI_CLIENT_ID: "" })).status === 401,
+      "with no CI client id configured, a service token reads nothing, an empty common_name included");
+    ok((await ci("/rev", { ...ciGood, aud: ["another-app"] })).status === 401,
+      "a CI token for another Access audience is refused on /rev");
+    ok((await ci("/rev", { ...ciGood, sub: "a-user" })).status === 401
+      && (await ci("/rev", { ...ciGood, email: "maakmal97@example.test" })).status === 401,
+      "a token naming the CI client id with a user subject or email is not the service token");
+    const gateSaid = async (r) => (await r.json().catch(() => ({}))).error;
+    ok((await ci("/desk.html")).status === 401 && (await ci("/ledger")).status === 401
+      && await gateSaid(await ci("/vault/addr")) === "not authenticated" && await gateSaid(await ci("/vault/key")) === "not authenticated"
+      && await gateSaid(await ci("/queue")) === "not authenticated" && (await ci("/rev", ciGood, { method: "POST" })).status === 401,
+      "the CI service token opens no other path or method on the Desk");
+    /* THE VAULT IS THE OWNER'S (his decision, 3 Oct 2026): a leaked CI secret with the write key must not
+       read the pair or write names or places. Each route refused at the gate, the write key offered. */
+    const vaultKeyed = { "X-Salt-Key": "write-key-under-test", "content-type": "application/json" };
+    ok(await gateSaid(await ci("/vault", ciGood, { headers: vaultKeyed })) === "not authenticated",
+      "the service token alone is refused at the gate on GET /vault");
+    ok(await gateSaid(await ci("/vault/pair", ciGood, { headers: vaultKeyed })) === "not authenticated",
+      "the service token alone is refused at the gate on GET /vault/pair, the write key offered");
+    ok(await gateSaid(await ci("/vault/pair", ciGood, { method: "POST", headers: vaultKeyed, body: "{}" })) === "not authenticated",
+      "the service token alone is refused at the gate on POST /vault/pair, the write key offered");
+    ok(await gateSaid(await ci("/vault", ciGood, { method: "POST", headers: vaultKeyed, body: "{}" })) === "not authenticated",
+      "the service token alone is refused at the gate on the legacy names write, POST /vault");
+    const ciPushBare = await ci("/push/send", ciGood, { method: "POST" });
+    ok(ciPushBare.status === 401 && (await ciPushBare.json().catch(() => ({}))).writeKey === true,
+      "the CI token passes the Access gate to /push/send but its push key is still required");
+    const ciPush = await ci("/push/send", ciGood, { method: "POST", headers: { "X-Push-Key": "push-key-under-test" } });
+    ok(ciPush.status !== 401,
+      "the CI token with the push key rings /push/send");
+    ok((await worker.fetch(req("/push/send", { method: "POST", headers: { "X-Push-Key": "push-key-under-test" } }), ciEnv)).status === 401,
+      "the push key alone does not pass the armed Access gate");
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -41080,6 +41126,66 @@ await (async () => {
   ok(/import \{ idleVerdict \} from "\.\/preflight\.mjs";/.test(upI) && /IDLE = v\.idle;/.test(upI)
     && /else if \(IDLE\) ok\("skipped: nothing to ship"\);\nelse if \(sh\("npm", \["test"\]\)/.test(upI.replace(/\r\n/g, "\n")),
     "update.mjs reads the verdict after the build and skips the suite on it");
+})();
+
+section("The laptop's /rev read carries the Desk's Access service token, and the vault tools only the owner's");
+await (async () => {
+  const { accessHeaders } = await import("../tools/preflight.mjs");
+  const both = accessHeaders({ CF_ACCESS_CLIENT_ID: "id-under-test.access", CF_ACCESS_CLIENT_SECRET: "secret-under-test" });
+  ok(both["CF-Access-Client-Id"] === "id-under-test.access" && both["CF-Access-Client-Secret"] === "secret-under-test"
+    && Object.keys(both).length === 2, "both halves set send exactly the two Access service-token headers");
+  ok(Object.keys(accessHeaders({ CF_ACCESS_CLIENT_ID: "id-under-test.access" })).length === 0
+    && Object.keys(accessHeaders({ CF_ACCESS_CLIENT_SECRET: "secret-under-test" })).length === 0
+    && Object.keys(accessHeaders({})).length === 0,
+    "one half alone, or neither, sends no Access header");
+  const src = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+  ok(/fetch\(SITE \+ "\/rev", \{[^}]*headers: accessHeaders\(process\.env\)/.test(src),
+    "update.mjs's /rev read is the one that carries them");
+
+  /* The vault tools send the owner's own token alone (his decision, 3 Oct 2026): as cf-access-token, the header the
+     edge accepts, and never the CI service token, even with both halves in the environment. */
+  const { deskAccess, pairClient, readVaultAuthority } = await import("../tools/vault-pair-client.mjs");
+  const { seedLegacyEnvelope } = await import("../tools/seed-vault.mjs");
+  const seen = [];
+  const env1 = { v: 1, salt: Buffer.alloc(16, 1).toString("base64"), iv: Buffer.alloc(12, 2).toString("base64"),
+    ct: Buffer.alloc(24, 3).toString("base64") };
+  const transport = async (r) => { seen.push(r.headers);
+    return new Response(JSON.stringify({ ok: true, revision: 3, names: env1, places: null }), { status: 200 }); };
+  const held = { id: process.env.CF_ACCESS_CLIENT_ID, secret: process.env.CF_ACCESS_CLIENT_SECRET };
+  process.env.CF_ACCESS_CLIENT_ID = "id-under-test.access"; process.env.CF_ACCESS_CLIENT_SECRET = "secret-under-test";
+  try {
+    const base = "https://desk.example.test", tok = "owner-jwt-under-test";
+    await readVaultAuthority(base, transport, tok);
+    await pairClient({ base, writeKey: "k", accessToken: tok, fetch: transport }).read();
+    await pairClient({ base, writeKey: "k", accessToken: tok, fetch: transport }).write({});
+    await seedLegacyEnvelope({}, "places", { base, writeKey: "k", accessToken: tok, fetch: transport });
+  } finally {
+    if (held.id === undefined) delete process.env.CF_ACCESS_CLIENT_ID; else process.env.CF_ACCESS_CLIENT_ID = held.id;
+    if (held.secret === undefined) delete process.env.CF_ACCESS_CLIENT_SECRET; else process.env.CF_ACCESS_CLIENT_SECRET = held.secret;
+  }
+  ok(seen.length === 4 && seen.every((h) => h.get("cf-access-token") === "owner-jwt-under-test"),
+    "the authority read, the pair read, the pair write and the legacy writer each send the owner's token as cf-access-token");
+  ok(seen.length === 4 && seen.every((h) => !h.has("CF-Access-Client-Id") && !h.has("CF-Access-Client-Secret")),
+    "no vault call sends the CI service token, though both halves are in the environment");
+  ok(Object.keys(deskAccess(undefined)).length === 0 && Object.keys(deskAccess("")).length === 0,
+    "with no owner token a vault call sends no Access header at all");
+  for (const f of ["vault-pair-client.mjs", "pull-vault.mjs", "seed-vault.mjs"]) {
+    const t = readFileSync(join(REPO, "tools", f), "utf8");
+    ok(!/accessHeaders|CF_ACCESS_CLIENT|CF-Access-Client/.test(t), f + " never reaches for the CI service token");
+  }
+  /* CI's Desk readers: every curl to the Desk sends the token array, built in its own step from both secrets */
+  for (const f of ["cloud-commit.yml", "ship-check.yml"]) {
+    const wf = readFileSync(join(REPO, ".github", "workflows", f), "utf8");
+    const steps = wf.split(/\n      - name: /).slice(1);
+    const readers = steps.filter((s) => /curl [^\n]*salt-command\.qyts8mh72kyg\.workers\.dev/.test(s));
+    const bad = readers.filter((s) => !(/CF_ACCESS_CLIENT_ID: \$\{\{ secrets\.CF_ACCESS_CLIENT_ID \}\}/.test(s)
+      && /CF_ACCESS_CLIENT_SECRET: \$\{\{ secrets\.CF_ACCESS_CLIENT_SECRET \}\}/.test(s)
+      && /acc=\(\); if \[ -n "\$\{CF_ACCESS_CLIENT_ID:-\}" \] && \[ -n "\$\{CF_ACCESS_CLIENT_SECRET:-\}" \]/.test(s)
+      && (s.match(/curl [^\n]*workers\.dev/g) || []).every((c) => c.includes('"${acc[@]}"'))));
+    ok(readers.length >= (f === "cloud-commit.yml" ? 4 : 1) && bad.length === 0,
+      f + ": every Desk reader sends the Access service token when both secrets are set (" + readers.length + " readers; "
+      + bad.map((s) => s.split("\n")[0]).join(", ") + ")");
+  }
 })();
 
 section("A stale deploy record: a build the phone already serves is written down, never redeployed, and the run stays idle");

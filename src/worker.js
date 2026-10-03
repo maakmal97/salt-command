@@ -26,7 +26,7 @@ import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequ
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
 import { queueSale } from "./orders.js";
-import { ownerAccess } from "./access.js";
+import { ciAccess, ownerAccess } from "./access.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
 import { withVaultWrite, vaultWriteStatus } from "./vault-write-gate.js";
@@ -88,10 +88,15 @@ const isEnvelope = (v) =>
   v && typeof v === "object" &&
   typeof v.salt === "string" && typeof v.iv === "string" && typeof v.ct === "string";
 
-async function accessOk(request, env) {
+async function accessOk(request, env, p, m) {
   if (String(env.REQUIRE_ACCESS || "0") === "0") return true;
-  return ownerAccess(request, env);
+  if (await ownerAccess(request, env)) return true;
+  /* The verified service token (CI, and update.mjs's /rev read) reads the build id and rings the
+     push, nothing else; the push still needs its own key below. The vault stays the owner's: a
+     leaked CI secret with the write key must not reach names or places. */
+  return CI_ROUTES.has(m + " " + p) && ciAccess(request, env);
 }
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -1358,7 +1363,7 @@ export default {
      * a capability, not a sign-in: GET only, the key checked in constant time, the manifest
      * validated, and nothing else under /stmt/ is let past. */
     if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
-    if (!await accessOk(request, env)) {
+    if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")

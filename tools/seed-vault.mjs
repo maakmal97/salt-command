@@ -40,7 +40,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
-import { pairClient, readVaultAuthority, vaultMapMerge } from "./vault-pair-client.mjs";
+import { pairClient, readVaultAuthority, vaultMapMerge, deskAccess } from "./vault-pair-client.mjs";
 import { withVaultFiles } from "./vault-local-files.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -102,7 +102,7 @@ export async function seedLegacyEnvelope(envelope, kind, { base, writeKey, acces
     throw new Error("Set SALT_WRITE_KEY for the maintenance-gated names/places writer; it is never saved or printed.");
   const response = await transport(new Request(base.replace(/\/+$/, "") + (kind === "names" ? "/vault" : "/vault/addr"), {
     method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": writeKey,
-      ...(accessToken ? { "Cf-Access-Jwt-Assertion": accessToken } : {}) }, body: JSON.stringify(envelope)
+      ...deskAccess(accessToken) }, body: JSON.stringify(envelope)
   }));
   const result = await response.json();
   if (!response.ok || result.ok !== true) throw new Error(result.error || "The gated vault write was not confirmed.");
