@@ -6780,14 +6780,16 @@ await (async () => {
   const { execSync: exF } = await import("node:child_process");
   const { join: jF } = await import("node:path");
 
-  const bk0 = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
   /* NOT s117 BY NAME, from 05 Sep 2026. This pinned s117 as its victim, and on that day s117
      became a declared default: its advance provisions in full whatever its date, so the four bad
      dates and the control would all have produced the same ar and the differential would have
      passed while proving nothing about dAge. The victim is any live, dated, priced advance that
      is neither cancelled nor defaulted, so the date it is given can still move a figure. */
-  const victim = (bk0.sales || []).find((x) => x.date && (+x.total || 0) > 0 && !x.cancelled && !x.defaulted && (x.deliveredQty || 0) > 0 && (x.cash || 0) < (x.total || 0));
-  ok(!!victim, "the book carries a dated receivable to drive the four bad dates through");
+  /* 4 Oct 2026: THE VICTIM IS THE SECTION'S OWN. A live row stopped being one: the provision runs from the dated handover
+     (txUnpaidSince), so the row's own date moved nothing on a row with deliveredOn, and once every salt advance stood four
+     days past its handover the control read RM 0. A salt sale handed over undated and unpaid is added to each copy of the
+     book, so its age is its date and nothing else. */
+  const victim = { rid: "zDA1", customer: "CZ9-DAG", qty: 1, total: 100, cash: 0, deliveredQty: 1 };
 
   /* the desk's own clock, so "today" here is the same day the desk thinks it is */
   const { w: wNow } = await omF();
@@ -6796,7 +6798,8 @@ await (async () => {
 
   const build = async (mutate, tag) => {
     const bk = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
-    const row = (bk.sales || []).find((x) => x.rid === victim.rid);
+    bk.sales.push(Object.assign({ date: todayISO }, victim));
+    const row = bk.sales[bk.sales.length - 1];
     mutate(row);
     const B = jF(REPO, "test", `.v445.${tag}.json`), M = jF(REPO, "test", `.v445.${tag}.html`);
     wfF(B, JSON.stringify(bk, null, 1));
@@ -45858,7 +45861,11 @@ await (async () => {
      was proved red by its own mutation, one at a time. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
-  /* v798: a refund of its own, as above: the rule is that an event every walk raises lands once, whatever the book holds */
+  /* 4 Oct 2026: SALT'S RECEIVABLE IS THE SECTION'S OWN. It was read off the live book, and went red on v1002, when every
+     open salt receivable stood provisioned in full, so none reached the walk. A salt sale handed over today and unpaid is
+     pushed under a fixture code; the window is closed after, so nothing is taken off. */
+  w.eval("BASE_SALES.push({rid:'zFW1',customer:'CZ9-FWD',qty:1,total:100,cash:0,deliveredQty:1,date:TODAY.toISOString().slice(0,10)}); queue=[]; applyOverlay(); recompute();");
+  /* v798: a refund of its own, as above, pushed after the overlay, which rebuilds the refunds: the rule is that an event every walk raises lands once, whatever the book holds */
   w.eval("customerRefunds.push({party:'CZ9-RF',amount:20,since:'2026-09-01'})");
   function probe() {
     const T = (e) => e.textContent.replace(/\s+/g, " ").trim();
@@ -45885,7 +45892,7 @@ await (async () => {
     "the cash is walked once for the business, and it is the book's own sum, not the books' walks added: " + JSON.stringify({ walked: v.end, book: v.book, added: summed }));
   ok(v.ev.filter((e) => /refund you owe/.test(e.t)).length === 1 && v.ev.filter((e) => /refund you owe/.test(e.t)).every((e) => e.tags.length === 0),
     "a refund every book's walk raises lands once, with no book on it");
-  ok(v.ev.some((e) => /receivable/.test(e.t) && JSON.stringify(e.tags) === '["Salt"]'), "salt's receivables land with oil in view, tagged Salt");
+  ok(v.ev.some((e) => /receivable/.test(e.t) && /CZ9-FWD/.test(e.t) && JSON.stringify(e.tags) === '["Salt"]'), "salt's receivables land with oil in view, tagged Salt: " + JSON.stringify(v.ev));
   const firstBook = Object.entries(v.perBook).filter(([, x]) => x.dry != null).sort((a, b) => a[1].dry - b[1].dry)[0];
   ok(JSON.stringify(v.rows) === JSON.stringify(v.live) && firstBook && v.first === v.live[Object.keys(v.perBook).indexOf(firstBook[0])],
     "one row a live book, and the first to run empty is the book whose own walk empties soonest: " + JSON.stringify({ rows: v.rows, first: v.first }));
