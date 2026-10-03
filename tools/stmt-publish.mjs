@@ -187,14 +187,48 @@ export function deskPut(key, file, what, run = execFileSync) {
   }
   console.log("wrote " + key + " (" + what + ") to the desk's store, and read it back");
 }
+/* A RECORD A LATER PUBLISH WROTE OVER OURS (03 Oct 2026, run 37122717841: 29 of 51 read back as other
+   than written, its chain two seconds behind another publish of the same records). It counts as
+   written only when it is the same account on the same issue and its live statement is stamped
+   STRICTLY LATER than ours: that publish is answerable for its own read-back, and the Counter still
+   withholds a stamp that is not the live Desk build. An older stamp, no stamp, another issue or a
+   value that does not parse is a mismatch. */
+export function supersedes(expectedValue, actualValue) {
+  let want, got;
+  try { want = JSON.parse(expectedValue); got = JSON.parse(actualValue); } catch (e) { return false; }
+  if (!want || !got || typeof want !== "object" || typeof got !== "object") return false;
+  if (!want.live || !got.live || want.u !== got.u || want.issued !== got.issued) return false;
+  const a = Date.parse(want.live.at), b = Date.parse(got.live.at);
+  return Number.isFinite(a) && Number.isFinite(b) && b > a;
+}
 export function verifyAccountWrites(expected, actual) {
-  let missing = 0, mismatched = 0;
+  let missing = 0, mismatched = 0, superseded = 0;
+  const pending = [];
   for (const record of expected) {
     const value = actual.get(record.key);
-    if (typeof value !== "string") missing++;
-    else if (value !== record.value) mismatched++;
+    if (typeof value !== "string") { missing++; pending.push(record); }
+    else if (value === record.value) continue;
+    else if (supersedes(record.value, value)) superseded++;
+    else { mismatched++; pending.push(record); }
   }
-  return { ok: missing === 0 && mismatched === 0, checked: expected.length, missing, mismatched };
+  return { ok: missing === 0 && mismatched === 0, checked: expected.length, missing, mismatched, superseded, pending };
+}
+/* KV IS EVENTUALLY CONSISTENT: a read straight after a bulk put may answer the value before it, for up
+   to about a minute. So a record that does not read back is read again, only the records still out,
+   after each of these waits; one that is still missing or different after the last is red. */
+export const ACCOUNT_READBACK_WAITS_MS = [5000, 10000, 20000, 30000];
+export async function confirmAccountWrites(expected, read, sleep, waits = ACCOUNT_READBACK_WAITS_MS) {
+  let check = verifyAccountWrites(expected, read(expected));
+  let superseded = check.superseded, reads = 1;
+  for (const ms of waits) {
+    if (check.ok) break;
+    console.log("::warning::" + (check.missing + check.mismatched) + " account record(s) did not read back yet; reading them again in "
+      + Math.round(ms / 1000) + "s (KV is eventually consistent)");
+    await sleep(ms);
+    check = verifyAccountWrites(check.pending, read(check.pending));
+    superseded += check.superseded; reads++;
+  }
+  return { ok: check.ok, checked: expected.length, missing: check.missing, mismatched: check.mismatched, superseded, reads };
 }
 function readAccountWrites(expected, outDir, run = execFileSync) {
   const actual = new Map(), keyFile = join(outDir, "account-keys.json");
@@ -288,7 +322,8 @@ export async function fixtureEntry(recText, now = new Date()) {
 }
 
 /* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own */
-export async function main(argv = process.argv, { run = execFileSync, out = join(REPO, "statements", ".publish") } = {}) {
+export async function main(argv = process.argv, { run = execFileSync, out = join(REPO, "statements", ".publish"),
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const dryAt = argv.indexOf("--dry");
   const dry = dryAt >= 0;
   const outDir = dry ? resolve(argv[dryAt + 1] || out) : out;
@@ -499,14 +534,16 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" }, run);
   const accountRecords = plan.puts.filter((record) => String(record.key || "").startsWith("u:")
     && !TEST_USERS.includes(String(record.key).slice(2)));
-  const accountCheck = verifyAccountWrites(accountRecords, readAccountWrites(accountRecords, outDir, run));
+  const accountCheck = await confirmAccountWrites(accountRecords, (recs) => readAccountWrites(recs, outDir, run), sleep);
   if (!accountCheck.ok) {
     console.error("::error::the bulk publish did not read back every real account record: "
       + accountCheck.missing + " missing, " + accountCheck.mismatched + " mismatched, "
-      + accountCheck.checked + " checked.");
+      + accountCheck.checked + " checked, after " + accountCheck.reads + " reads.");
     process.exit(1);
   }
-  console.log("read back " + accountCheck.checked + " real account records from the store");
+  console.log("read back " + accountCheck.checked + " real account records from the store"
+    + (accountCheck.superseded ? ", " + accountCheck.superseded + " of them already replaced by a later publish" : "")
+    + (accountCheck.reads > 1 ? ", in " + accountCheck.reads + " reads" : ""));
   /* the desk's map, so the ledger's Worker can name the account an order belongs to */
   deskPut("stmt-users", usersFile, Object.keys(plan.users).length + " usernames", run);
   /* ============ v564: AND THE SITE'S OWN ADDRESS, FOR THE QR ON THE BOARD SHEET ============
