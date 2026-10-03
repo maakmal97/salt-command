@@ -1,6 +1,6 @@
 {
- "v": "v997",
- "stamped": "03 Oct 2026, 20:35 KL",
+ "v": "v999",
+ "stamped": "03 Oct 2026, 21:14 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 71
+    "stated": 61
    },
    "spare": {
     "qty": 0,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 0,
+  "STATED_STOCK": -1.5,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-09-27",
@@ -6346,8 +6346,8 @@
     "cash": 80,
     "product": "rice",
     "date": "2026-10-03",
-    "deliveredQty": 0,
-    "note": "<b>RICE SELL DATED 03 OCT: 10 UNITS FOR RM80, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-iffcoq, acknowledged and to collect, preapproved by phone. The rate is RM8 a unit; for 10 units the desk's floor is RM63.14 and its ask RM64, so the order sits above both, under the ceiling of RM102. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The row carries the desk's own rice cost of RM3.2 a unit. The drafter flagged that CS6-PER has no committed rice order, so no rate of theirs exists to compare; the figures cannot answer that. Outstanding: the full RM80 and 10 units to collect.",
+    "deliveredQty": 10,
+    "note": "<b>CORRECTION ON S230: 10 UNITS OF RICE RECORDED COLLECTED ON 03 OCT.</b> Against CS6-PER's rice order of 10 units for RM80, a rate of RM8 a unit. The correction sets deliveredQty from 0 to 10, deliveredOn to 2026-10-03 and handover to collected, preapproved by phone. It moves no cash. The dossier gives no rice floor or ask for this size, so none is quoted. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM160 outstanding and 0 units on credit before this. The drafter flagged that the row carries a trail of 2 steps which the direct figure does not rewrite, so the trail will no longer add up; the correction is recorded beside them. Outstanding: nothing further on this row. <b>RICE SELL DATED 03 OCT: 10 UNITS FOR RM80, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-iffcoq, acknowledged and to collect, preapproved by phone. The rate is RM8 a unit; for 10 units the desk's floor is RM63.14 and its ask RM64, so the order sits above both, under the ceiling of RM102. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The row carries the desk's own rice cost of RM3.2 a unit. The drafter flagged that CS6-PER has no committed rice order, so no rate of theirs exists to compare; the figures cannot answer that. Outstanding: the full RM80 and 10 units to collect.",
     "rid": "s230",
     "amend": [
      {
@@ -6363,9 +6363,19 @@
       "cash": 80,
       "kg": 0,
       "note": "<b>PAYMENT OF RM80 ON S230, 03 OCT: PAID BY QR, NOTHING HANDED OVER.</b> Amends CS6-PER's rice order s230, 10 units for RM80 at RM8 a unit, order 20261003121352-iffcoq. It was paid on the statements site by QR via RYT and preapproved by phone. Cash moves from RM0 to RM80 and no units move. The dossier gives no rice floor or ask, so the rate cannot be set against them here. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM240 outstanding before this, 0 units on credit; the cap is not stated. The row carries no cost and needs no correction. The drafter raised no flags. Outstanding: RM0 and 10 units to collect."
+     },
+     {
+      "date": "2026-10-03",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 10,
+      "note": "<b>CORRECTION ON S230: 10 UNITS OF RICE RECORDED COLLECTED ON 03 OCT.</b> Against CS6-PER's rice order of 10 units for RM80, a rate of RM8 a unit. The correction sets deliveredQty from 0 to 10, deliveredOn to 2026-10-03 and handover to collected, preapproved by phone. It moves no cash. The dossier gives no rice floor or ask for this size, so none is quoted. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM160 outstanding and 0 units on credit before this. The drafter flagged that the row carries a trail of 2 steps which the direct figure does not rewrite, so the trail will no longer add up; the correction is recorded beside them. Outstanding: nothing further on this row."
      }
     ],
-    "paidOn": "2026-10-03"
+    "paidOn": "2026-10-03",
+    "deliveredOn": "2026-10-03",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-03: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-03; handover (unset) to collected"
    },
    {
     "customer": "CS6-PER",
@@ -6373,10 +6383,30 @@
     "total": 160,
     "cash": 0,
     "date": "2026-10-03",
-    "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 03 OCT: 1.5 UNITS FOR RM160, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-viyxlq, acknowledged and to collect, preapproved by phone. The rate is RM106.67 a unit; for 1.5 units the desk's floor is RM100.87 and its ask RM210, so the order sits above the floor and under the ask. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The draft carried RM76 on the goods, not the inventory's own RM56 a unit, so the cost is corrected. The drafter flagged the rate as 33.3% above their usual RM80; the figures confirm it, as it tops their range. Outstanding: the full RM160 and 1.5 units to collect.",
+    "deliveredQty": 1.5,
+    "note": "<b>CORRECTION ON S231: 1.5 UNITS OF SALT RECORDED COLLECTED ON 03 OCT, RM160 STILL UNPAID.</b> Against CS6-PER's salt order of 1.5 units for RM160, a rate of RM106.67 a unit. The correction sets deliveredQty from 0 to 1.5, deliveredOn to 2026-10-03 and handover to collected, preapproved by phone. The dossier gives no salt floor or ask for this size, so none is quoted. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM160 outstanding and 0 units on credit before this. The drafter flagged the rate as 33.3% above their usual RM80, and that this is an advance to check against the credit cap; the range confirms the rate is their highest, and the dossier states no cap figure. Outstanding: the full RM160. <b>SALT SELL DATED 03 OCT: 1.5 UNITS FOR RM160, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-viyxlq, acknowledged and to collect, preapproved by phone. The rate is RM106.67 a unit; for 1.5 units the desk's floor is RM100.87 and its ask RM210, so the order sits above the floor and under the ask. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The draft carried RM76 on the goods, not the inventory's own RM56 a unit, so the cost is corrected. The drafter flagged the rate as 33.3% above their usual RM80; the figures confirm it, as it tops their range. Outstanding: the full RM160 and 1.5 units to collect.",
     "cost": 84,
-    "rid": "s231"
+    "rid": "s231",
+    "deliveredOn": "2026-10-03",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-03: deliveredQty 0 to 1.5; deliveredOn (unset) to 2026-10-03; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-03",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-03",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1.5,
+      "note": "<b>CORRECTION ON S231: 1.5 UNITS OF SALT RECORDED COLLECTED ON 03 OCT, RM160 STILL UNPAID.</b> Against CS6-PER's salt order of 1.5 units for RM160, a rate of RM106.67 a unit. The correction sets deliveredQty from 0 to 1.5, deliveredOn to 2026-10-03 and handover to collected, preapproved by phone. The dossier gives no salt floor or ask for this size, so none is quoted. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM160 outstanding and 0 units on credit before this. The drafter flagged the rate as 33.3% above their usual RM80, and that this is an advance to check against the credit cap; the range confirms the rate is their highest, and the dossier states no cap figure. Outstanding: the full RM160.",
+      "cost": 84
+     }
+    ]
    }
   ],
   "contacts": [
@@ -7117,9 +7147,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-03T12:32:42.479Z",
+  "QUEUE_COMMITTED": "2026-10-03T13:14:00.379Z",
   "PRICING": {
-   "takenAt": "2026-10-03T12:35:46.533Z",
+   "takenAt": "2026-10-03T13:14:33.936Z",
    "sizes": [
     0.5,
     1,
@@ -7307,12 +7337,12 @@
     "CS6-PER": {
      "salt": {
       "name": "large and regular",
-      "orders": 9,
+      "orders": 10,
       "tenureDays": 87,
-      "sinceLastDays": 7,
-      "perMonth": 3.15,
-      "smallShare": 0.11,
-      "bigShare": 0.56,
+      "sinceLastDays": 0,
+      "perMonth": 3.5,
+      "smallShare": 0.1,
+      "bigShare": 0.5,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -8115,40 +8145,40 @@
      "replCost": 56,
      "floors": {
       "1": {
-       "floor": 67.25
+       "floor": 67.03
       },
       "2": {
-       "floor": 134.5
+       "floor": 134.06
       },
       "3": {
-       "floor": 201.75
+       "floor": 201.1
       },
       "4": {
-       "floor": 269
+       "floor": 268.13
       },
       "5": {
-       "floor": 336.24
+       "floor": 335.16
       },
       "0.5": {
-       "floor": 33.62
+       "floor": 33.52
       },
       "1.5": {
-       "floor": 100.87
+       "floor": 100.55
       },
       "2.5": {
-       "floor": 168.12
+       "floor": 167.58
       },
       "3.5": {
-       "floor": 235.37
+       "floor": 234.61
       },
       "4.5": {
-       "floor": 302.62
+       "floor": 301.65
       },
       "6.25": {
-       "floor": 420.31
+       "floor": 418.95
       },
       "12.5": {
-       "floor": 840.61
+       "floor": 837.9
       }
      },
      "inputs": {
@@ -8223,9 +8253,9 @@
        "repl": 56,
        "freightRate": 2.5333,
        "leak": {
-        "ratio": 0.1489,
+        "ratio": 0.1452,
         "leak": 8.75,
-        "sold": 58.75,
+        "sold": 60.25,
         "cycles": 3,
         "from": "2026-09-23",
         "to": "2026-10-03"
@@ -8242,15 +8272,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32051282051282054
+         "v": 0.31645569620253167
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08682994857491502,
        "avgDel": {
-        "n": 190,
-        "kg": 485.2,
-        "mean": 2.5537
+        "n": 191,
+        "kg": 486.7,
+        "mean": 2.5482
        }
       },
       "policy": {
@@ -12853,9 +12883,9 @@
        "attrib": 1,
        "shrinkRate": 0.12,
        "avgDel": {
-        "n": 4,
-        "kg": 17,
-        "mean": 4.25
+        "n": 5,
+        "kg": 27,
+        "mean": 5.4
        }
       },
       "policy": {
@@ -13666,11 +13696,11 @@
      "cards": {}
     }
    },
-   "v": "v997"
+   "v": "v999"
   },
   "OPEN": {
-   "at": "2026-10-03T12:35:46.763Z",
-   "count": 13,
+   "at": "2026-10-03T13:14:34.263Z",
+   "count": 12,
    "byKey": {
     "CH6-SET|2026-10-03|220": {
      "d": "2026-10-03",
@@ -13686,21 +13716,6 @@
      "rid": "s229",
      "key": "CH6-SET|2026-10-03|220"
     },
-    "CS6-PER|2026-10-03|80|rice": {
-     "d": "2026-10-03",
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 10,
-     "t": 80,
-     "cash": 80,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 10,
-     "pr": "rice",
-     "rid": "s230",
-     "paidOn": "2026-10-03",
-     "key": "CS6-PER|2026-10-03|80|rice"
-    },
     "CS6-PER|2026-10-03|160": {
      "d": "2026-10-03",
      "p": "CS6-PER",
@@ -13708,12 +13723,15 @@
      "q": 1.5,
      "t": 160,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1.5,
+     "st": "dueMoney",
      "oweRM": 160,
-     "oweUnits": 1.5,
      "rid": "s231",
-     "key": "CS6-PER|2026-10-03|160"
+     "deliveredOn": "2026-10-03",
+     "handover": "collected",
+     "key": "CS6-PER|2026-10-03|160",
+     "age": 0,
+     "exp": 160
     },
     "CH5-KLC|2026-10-02|90": {
      "d": "2026-10-02",
@@ -13880,13 +13898,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 0,
-     "free": -9.5,
+     "onHand": -1.5,
+     "free": -11,
      "owedOut": 9.5,
      "coverDays": 0,
      "rate": 5.87,
-     "owedToYou": 510,
-     "promised": 13.5,
+     "owedToYou": 670,
+     "promised": 12,
      "short": 13.5
     },
     "oil": {
@@ -13913,13 +13931,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 71,
+     "onHand": 61,
      "free": 61,
-     "owedOut": 10,
+     "owedOut": 0,
      "coverDays": 44.9,
      "rate": 1.36,
      "owedToYou": 0,
-     "promised": 10,
+     "promised": 0,
      "short": 0
     },
     "spare": {
@@ -13941,13 +13959,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v997"
+   "v": "v999"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v997"
+   "v": "v999"
   }
  }
 }
