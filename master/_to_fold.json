@@ -1,0 +1,149 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-03T13:13:59.284Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s230",
+    "qty": 10,
+    "total": 80,
+    "cash": 80,
+    "date": "2026-10-03",
+    "product": "rice",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 10
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-03"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Correction against CS6-PER's order of 10 unit for RM 80 dated 2026-10-03 (s230). Sets deliveredQty from 0 to 10, deliveredOn from unset to 2026-10-03, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s230",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-03T13:13:59.284Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 10,
+    "total": 0,
+    "status": "Handover",
+    "raw": "10 unit collected to CS6-PER, order 20261003121352-iffcoq, on 2026-10-03",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": null,
+     "orderKey": "CS6-PER|2026-10-03|80|rice",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 10,
+      "deliveredOn": "2026-10-03",
+      "handover": "collected"
+     },
+     "note": "10 unit collected for order 20261003121352-iffcoq."
+    },
+    "orderId": "20261003121352-iffcoq"
+   },
+   "decidedAt": "2026-10-03T13:14:01.320Z",
+   "decidedBy": "preapproved by phone"
+  },
+  {
+   "id": "2026-10-03T13:14:00.379Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s231",
+    "qty": 1.5,
+    "total": 160,
+    "cash": 0,
+    "date": "2026-10-03",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1.5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-03"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Correction against CS6-PER's order of 1.5 unit for RM 160 dated 2026-10-03 (s231). Sets deliveredQty from 0 to 1.5, deliveredOn from unset to 2026-10-03, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-PER typically pays about RM 80/unit for salt across 9 orders; this one is RM 106.67, 33.3% above that.",
+    "This is an ADVANCE: 1.5 unit goes out with RM 160 unpaid. Check it against CS6-PER's credit cap."
+   ],
+   "amends": "s231",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-03T13:14:00.379Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 1.5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1.5 unit collected to CS6-PER, order 20261003121352-viyxlq, on 2026-10-03",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": null,
+     "orderKey": "CS6-PER|2026-10-03|160",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-03",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1.5,
+      "deliveredOn": "2026-10-03",
+      "handover": "collected"
+     },
+     "note": "1.5 unit collected for order 20261003121352-viyxlq."
+    },
+    "orderId": "20261003121352-viyxlq"
+   },
+   "decidedAt": "2026-10-03T13:14:01.372Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
