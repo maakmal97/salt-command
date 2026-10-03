@@ -1,0 +1,43 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-03T11:27:44.680Z",
+   "collection": "tierset",
+   "row": {
+    "tiers": {
+     "CA6-CYB": {
+      "salt": "Ambassador"
+     }
+    }
+   },
+   "reasoning": "Sets the tiers of 1 customer: CA6-CYB Salt Ambassador. It moves no cash and no stock, and until the quotes switch it moves no price.",
+   "flags": [
+    "CA6-CYB's Salt moves from Titanium to Ambassador."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-03T11:27:44.680Z",
+    "type": "TIER",
+    "party": "CA6-CYB",
+    "qty": null,
+    "total": null,
+    "status": "tierset",
+    "raw": "Set CA6-CYB: Salt Ambassador",
+    "payload": {
+     "mode": "tierset",
+     "tiers": {
+      "CA6-CYB": {
+       "salt": "Ambassador"
+      }
+     }
+    },
+    "stuck": true
+   },
+   "decidedAt": "2026-10-03T15:50:22.813Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
