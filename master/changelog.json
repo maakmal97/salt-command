@@ -1,5 +1,14 @@
 [
  {
+  "v": "v995",
+  "d": "03 Oct 2026",
+  "t": "CM4-MK SETTLES S225 IN FULL; NO STOCK MOVES",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> RM170 cash received at the counter on 03 Oct settles order s225 for CM4-MK, which had been delivered on 02 Oct. It clears the order completely, leaving RM0 and 0 units outstanding. Nothing was unusual: the drafter's only flag was that the order is settled in full.",
+   "<b>INVENTORY UNCHANGED.</b> The row is a payment against goods already delivered, so no units moved and the stock stays at 0. The cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v994",
   "d": "03 Oct 2026",
   "t": "SALT COUNT OF ZERO AGAINST A BOOK OF 2.25 UNIT",

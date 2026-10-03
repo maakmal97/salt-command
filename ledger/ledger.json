@@ -1,6 +1,6 @@
 {
- "v": "v994",
- "stamped": "03 Oct 2026, 15:54 KL",
+ "v": "v995",
+ "stamped": "03 Oct 2026, 19:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6231,7 +6231,7 @@
     "customer": "CM4-MK",
     "qty": 1.5,
     "total": 170,
-    "cash": 0,
+    "cash": 170,
     "date": "2026-10-02",
     "deliveredQty": 1.5,
     "note": "<b>CORRECTION ON S225, DATED 02 OCT: 1.5 UNITS DELIVERED TO CM4-MK, RM170 STILL UNPAID.</b> Order 20261002052529-nhapeg is marked delivered on 02 Oct, preapproved by phone on his word. The rate is RM113.33 a unit, above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM103.33 a unit over 12 orders, range RM85 to RM113.33, RM170 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual and an advance. The figures confirm both rather than answer them, though the rate stays above cost. Outstanding: RM170 to collect. <b>SALT SELL DATED 02 OCT: 1.5 UNITS FOR RM170, NOTHING PAID, NOTHING MOVED, PENDING.</b> Booked to CM4-MK from order 20261002052529-nhapeg, acknowledged and preapproved by phone. The rate is RM113.33 a unit. The total of RM170 is above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM101 a unit over 11 orders, range RM85 to RM110, RM0 outstanding and 0 units on credit before this order, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual; the figures confirm it rather than answer it, though the rate stays above cost. Outstanding: RM170 to collect and 1.5 units to hand over.",
@@ -6254,9 +6254,17 @@
       "kg": 1.5,
       "note": "<b>CORRECTION ON S225, DATED 02 OCT: 1.5 UNITS DELIVERED TO CM4-MK, RM170 STILL UNPAID.</b> Order 20261002052529-nhapeg is marked delivered on 02 Oct, preapproved by phone on his word. The rate is RM113.33 a unit, above the floor of RM102.94 for 1.5 units and below the ask of RM210. CM4-MK: median RM103.33 a unit over 12 orders, range RM85 to RM113.33, RM170 outstanding and 0 units on credit before this, against a cap of 1. Costed at RM56 a unit, the inventory's own. The drafter flagged a rate 12.2% above usual and an advance. The figures confirm both rather than answer them, though the rate stays above cost. Outstanding: RM170 to collect.",
       "cost": 84
+     },
+     {
+      "date": "2026-10-03",
+      "kind": "Fulfilment",
+      "cash": 170,
+      "kg": 0,
+      "note": "<b>FULFILMENT DATED 03 OCT: RM170 CASH RECEIVED FROM CM4-MK, SETTLING S225 IN FULL.</b> Order 20261002052529-nhapeg, agreed on 02 Oct for 1.5 units at RM170 and delivered that day, is paid in cash at the counter, preapproved by phone. The original rate was RM113.33 a unit, the top of the party's range of RM85 to RM113.33, against a median of RM103.33 over 12 orders. Before this CM4-MK owed RM170 and had 1.5 units on credit. No units move now, so no inventory cost is carried. The drafter's flag was that the order is settled in full, and the figures agree: RM170 against RM170 outstanding. Outstanding: nothing, RM0 and 0 units."
      }
     ],
-    "cost": 84
+    "cost": 84,
+    "paidOn": "2026-10-03"
    },
    {
     "customer": "CH5-KLC",
@@ -7070,9 +7078,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-03T07:53:16.744Z",
+  "QUEUE_COMMITTED": "2026-10-03T11:25:19.325Z",
   "PRICING": {
-   "takenAt": "2026-10-03T07:54:26.036Z",
+   "takenAt": "2026-10-03T11:25:54.749Z",
    "sizes": [
     0.5,
     1,
@@ -13605,11 +13613,11 @@
      "cards": {}
     }
    },
-   "v": "v994"
+   "v": "v995"
   },
   "OPEN": {
-   "at": "2026-10-03T07:54:26.232Z",
-   "count": 12,
+   "at": "2026-10-03T11:25:55.083Z",
+   "count": 11,
    "byKey": {
     "CH6-SET|2026-10-03|220": {
      "d": "2026-10-03",
@@ -13624,23 +13632,6 @@
      "oweUnits": 2,
      "rid": "s229",
      "key": "CH6-SET|2026-10-03|220"
-    },
-    "CM4-MK|2026-10-02|170": {
-     "d": "2026-10-02",
-     "p": "CM4-MK",
-     "dir": "S",
-     "q": 1.5,
-     "t": 170,
-     "cash": 0,
-     "mv": 1.5,
-     "st": "dueMoney",
-     "oweRM": 170,
-     "rid": "s225",
-     "deliveredOn": "2026-10-02",
-     "handover": "delivered",
-     "key": "CM4-MK|2026-10-02|170",
-     "age": 1,
-     "exp": 127.5
     },
     "CH5-KLC|2026-10-02|90": {
      "d": "2026-10-02",
@@ -13812,7 +13803,7 @@
      "owedOut": 9.5,
      "coverDays": 0,
      "rate": 5.8,
-     "owedToYou": 680,
+     "owedToYou": 510,
      "promised": 12,
      "short": 12
     },
@@ -13868,13 +13859,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v994"
+   "v": "v995"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v994"
+   "v": "v995"
   }
  }
 }
