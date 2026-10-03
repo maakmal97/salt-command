@@ -8922,7 +8922,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v990","d":"03 Oct 2026","t":"ONE PENDING SALT SELL TO CH6-SET, NOTHING MOVED","n":["<b>ONE ROW FOLDED.</b> A salt sell dated 03 Oct 2026 to CH6-SET: 2 units for RM220, from order 20261003013258-yitorw on the statements site. It was preapproved by phone. Nothing has been paid and nothing handed over, so the row is appended to sales as pending.","<b>UNUSUAL AND INVENTORY.</b> The order is 2 units on credit against a cap of 1 unit for this party, and the drafter raised no flag on it. The inventory did nothing: a pending row draws no stock and books no revenue. Stock stays at 2.25 units, last counted on 29 Sep 2026."]}];
+const evolution=[{"v":"v991","d":"03 Oct 2026","t":"DURABLE MAKER INPUTS, VAULT AUTHORITY UNCHANGED","n":["<b>FIXED REQUESTS.</b> Counter inputs retain one request through retries. Loan repayments and reward draws reserve their balance through every queue road, with the fold checking it again. Supported ledger amendments share the engine's constructors; restricted edits remain on the desk.","<b>ENCRYPTED RECOVERY.</b> Device retries keep ciphertext and fixed input metadata across reloads. The opt-in vault pair has revision checks, receipts and a recoverable outbox; laptop names, places and their baseline reconcile under a recoverable journal. A server write-maintenance gate precedes any storage move. The setting remains off: names and places still use KV, the slip key is unchanged, and Desk inputs remain.","<b>WRITTEN OFF.</b> The Counter's live balance excludes a written-off row while its goods, delivery and receipts remain in the record. Its footer names the deduction, separately from any part never handed over. No ledger row, pricing rule, inventory or held tier changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9068,7 +9068,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Oct 2026, 09:35 KL';
+const LAST_UPDATED='03 Oct 2026, 12:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
