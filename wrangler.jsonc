@@ -9,6 +9,11 @@
 	// dev and the edge agree. rev.json's id does not cover this file, so a change here is
 	// deployed BY HAND.
 	"compatibility_date": "2026-09-21",
+	// NO PREVIEW URLS. A version's own <version>-salt-command URL would sit outside the Access
+	// application that will cover the Desk, so it stays off. Nothing reads one: the desk, the
+	// workflows and the tools all use the workers.dev address; Workers Builds' branch uploads
+	// still upload, serving no preview address.
+	"preview_urls": false,
 	// A Worker WITH static assets. The desk and its shell live in public/; the
 	// Worker code is the cloud stand-in for serve_desk.py, backed by KV. The Worker
 	// runs first on every request (run_worker_first), handles the /queue, /vault and
@@ -96,6 +101,9 @@
 		"REQUIRE_ACCESS": "0",
 		"ACCESS_TEAM": "",
 		"ACCESS_AUD": "",
+		// The Access service token's client id that may read GET /rev and send POST /push/send,
+		// and nothing else. Empty until the token exists: an empty id admits no service token.
+		"ACCESS_CI_CLIENT_ID": "",
 		// The VAPID PUBLIC key. Public by definition: a browser cannot create a push
 		// subscription without it and it authorises nothing. The private half is the
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.

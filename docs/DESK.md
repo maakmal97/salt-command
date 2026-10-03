@@ -447,8 +447,11 @@
   at `.../builds/workers/{script_tag}/builds`, logs at `.../builds/builds/{uuid}/logs`, and the
   logs are the only place that shows what the build actually ran. The MCP builds tool reports
   zero where the API reports 280.
-- The `master` trigger deploys; the other excludes master, uploads a version rather than
-  deploying, is off (`previews_enabled: false`), and is still on the ungated `npm run build`.
+- The `master` trigger deploys; the other excludes master and uploads a version rather than
+  deploying, still on the ungated `npm run build`. It is live, whatever `previews_enabled` once
+  read: the version list on 3 Oct 2026 held uploads aliased to two work branches, and each PR
+  shows its non-required `Workers Builds` check. From `preview_urls: false` (3 Oct 2026) such a
+  version still uploads but serves no preview address.
 - **Watch paths (set 26 Sep 2026, read back through the API):** the `master` trigger
   (`1ea7ed86-00d5-4e4e-8967-8074061264b4`) keeps `path_includes: ["*"]` and has `path_excludes:
   ["master/_to_fold.json", "master/_folded.json", "docs/*", "test/*", "statements/*"]`, so a stage,
@@ -506,6 +509,33 @@ the Wrangler config change by hand. Until those steps are completed and verified
 live. The Counter's independent `/all` boundary applies the same verified-email check; customer
 routes outside `/all` remain on their existing sign-in paths. No live Access configuration or
 deployment is part of this workstream.
+
+### Who passes the Desk's Access, and with what (drafted 3 Oct 2026; not live until the app exists)
+
+- **CI and `tools/update.mjs`'s `/rev` read**: an Access service token, sent as `CF-Access-Client-Id`
+  and `CF-Access-Client-Secret` from `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` (GitHub
+  secrets in CI, the laptop's environment, never a file), and only when both are set. The Desk app
+  carries it as a `non_identity` policy. The Worker admits that verified token (`common_name` equal
+  to `ACCESS_CI_CLIENT_ID`, an empty `sub`, no email) on `GET /rev` and `POST /push/send` only; the
+  push still needs its own key. It opens nothing else, the vault included.
+- **The vault tools** (`pull-vault.mjs`, `seed-vault.mjs`, through `tools/vault-pair-client.mjs`):
+  the owner's own token alone, never the service token, so a leaked CI secret with the write key
+  reaches no names or places. Before a run, with `cloudflared` installed:
+  ```
+  cloudflared access login https://salt-command.qyts8mh72kyg.workers.dev
+  $env:SALT_ACCESS_JWT = (cloudflared access token -app=https://salt-command.qyts8mh72kyg.workers.dev)
+  node tools/pull-vault.mjs
+  Remove-Item Env:SALT_ACCESS_JWT
+  ```
+  The login opens the browser for his own sign-in; the token is sent as `cf-access-token`, the
+  header the edge accepts, and is never filed or printed.
+- **Wrangler tools** (`drafts.mjs`, `drain.mjs`, `stmt-publish.mjs`, `seed-vault --slip-key`) and the
+  service bindings (`/stmt/rev`, `/_internal/maker/*`) do not pass the edge and are unaffected.
+- **`wrangler.jsonc`**: `ACCESS_CI_CLIENT_ID` is `""` until the service token exists, so no token is
+  admitted; its client id goes there on his go. `preview_urls` is `false`, because a version's own
+  preview address would sit outside the app. Nothing used one (checked 3 Oct 2026: no reference in
+  the repo or the workflows; the work-branch uploads Workers Builds makes were never read, and its
+  PR check reports the upload, which still succeeds). Both ride the next desk deploy; a change here alone deploys by hand.
 
 ## Provisioning a sale (V5a, his answers of 29 Sep 2026)
 

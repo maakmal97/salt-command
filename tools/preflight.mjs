@@ -77,3 +77,10 @@ export function deployVerdict({ revId, deployedId, liveId } = {}) {
   if (id && deployedId === id) return { act: "none", text: id + " is already deployed on record; the phone serves " + (liveId || "nothing readable") };
   return { act: "deploy", text: "built " + (id || "(no id)") + ", last deployed " + (deployedId || "(none)") };
 }
+
+/* THE DESK'S ACCESS SERVICE TOKEN, FOR THE LAPTOP'S /rev READ. Both halves from the environment or
+ * nothing: one half alone sends nothing, and the values are never logged or written anywhere. */
+export function accessHeaders(env = {}) {
+  const id = String(env.CF_ACCESS_CLIENT_ID || "").trim(), secret = String(env.CF_ACCESS_CLIENT_SECRET || "").trim();
+  return id && secret ? { "CF-Access-Client-Id": id, "CF-Access-Client-Secret": secret } : {};
+}

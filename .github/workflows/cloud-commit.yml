@@ -318,11 +318,15 @@ jobs:
       - name: Already serving?
         id: already
         if: steps.plan.outputs.deploy == '1'
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
           live=0
           want=$(node -p "require('./public/rev.json').id")
-          got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+          got=$(curl -fsS --max-time 20 "${acc[@]}" https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
           if [ "$got" = "$want" ] && ! git cat-file -e HEAD:master/_folded.json 2>/dev/null; then live=1; fi
           echo "live=$live" >> "$GITHUB_OUTPUT"
           echo "live=$live (phone on $got, repo at $want)"
@@ -359,14 +363,18 @@ jobs:
       # to try again, never the end of the proof.
       - name: The phone is serving it
         if: steps.plan.outputs.deploy == '1'
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
           want=$(node -p "require('./public/rev.json').id")
           end=$((SECONDS + 60))
           i=0
           while :; do
             i=$((i + 1))
-            got=$(curl -fsS --max-time 10 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+            got=$(curl -fsS --max-time 10 "${acc[@]}" https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
             [ "$got" = "$want" ] && { echo "live at $got, read $i"; echo "LIVE_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"; exit 0; }
             echo "read $i: live=$got want=$want"
             [ "$SECONDS" -ge "$end" ] && break
@@ -385,9 +393,12 @@ jobs:
         continue-on-error: true
         env:
           PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
           TEST="${{ inputs.test_push }}"
           if [ "$TEST" = "true" ]; then
             n="test"
@@ -396,7 +407,7 @@ jobs:
             n=$(node -p "(require('./master/_folded.json').ids||[]).length")
             [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
           fi
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${acc[@]}" -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
       # THE TREE THE SUITE TESTS (26 Sep 2026): the commit the proof just saw live, taken before
@@ -572,9 +583,13 @@ jobs:
       - name: Is the phone still on this build?
         id: live
         if: always()
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
+          got=$(curl -fsS --max-time 20 "${acc[@]}" https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
           same=0
           if [ "$got" = "${{ needs.chain.outputs.rev }}" ]; then same=1; fi
           echo "same=$same" >> "$GITHUB_OUTPUT"

@@ -41,7 +41,7 @@ async function teamKey(issuer, kid) {
   return found;
 }
 
-async function identity(request, env) {
+async function verifiedClaims(request, env) {
   const team = String((env && env.ACCESS_TEAM) || "").trim();
   const aud = String((env && env.ACCESS_AUD) || "").trim();
   if (!team || !aud) return null;
@@ -61,13 +61,22 @@ async function identity(request, env) {
     if (!key) return null;
     const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64url(parts[2]),
       new TextEncoder().encode(parts[0] + "." + parts[1]));
-    return valid && typeof claims.email === "string" ? claims.email : null;
+    return valid ? claims : null;
   } catch (e) {
     return null;
   }
 }
 
 export async function ownerAccess(request, env) {
-  const email = await identity(request, env);
-  return !!email && email.trim().toLowerCase() === ADMIN_EMAIL;
+  const claims = await verifiedClaims(request, env);
+  return !!claims && typeof claims.email === "string" && claims.email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+/* CI's Access service token. Access puts its client id in `common_name` and leaves `email` out
+   and `sub` empty; the client id is configured, never read from a request header. */
+export async function ciAccess(request, env) {
+  const id = String((env && env.ACCESS_CI_CLIENT_ID) || "").trim();
+  if (!id) return false;
+  const claims = await verifiedClaims(request, env);
+  return !!claims && claims.common_name === id && claims.sub === "" && claims.email === undefined;
 }

@@ -46,6 +46,7 @@ import { messageFrom } from "./commitmsg.mjs";
 import { aheadVerdict } from "./preflight.mjs";
 import { idleVerdict } from "./preflight.mjs";
 import { deployVerdict } from "./preflight.mjs";
+import { accessHeaders } from "./preflight.mjs";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -308,7 +309,7 @@ const deployed = readJson(resolve(REPO, ".deployed.json"), {});
 let deployedNow = false;
 
 async function liveRev() {
-  try { return await (await fetch(SITE + "/rev", { cache: "no-store" })).json(); }
+  try { return await (await fetch(SITE + "/rev", { cache: "no-store", headers: accessHeaders(process.env) })).json(); }
   catch (e) { return null; }
 }
 /* WAIT FOR THE EDGE, do not race it. `wrangler deploy` returns once Cloudflare has accepted
