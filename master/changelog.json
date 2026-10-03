@@ -1,5 +1,14 @@
 [
  {
+  "v": "v994",
+  "d": "03 Oct 2026",
+  "t": "SALT COUNT OF ZERO AGAINST A BOOK OF 2.25 UNIT",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Salt was counted by hand on 03 Oct 2026 at 0 unit, against 2.25 unit on the book, so 2.25 unit is short. The previous salt count was 29 Sep 2026. A count wins over the ledger, so the stated salt inventory is set to 0 and the count date moves to 03 Oct.",
+   "<b>UNUSUAL, AND OPEN.</b> 9.5 unit is owed out and already paid for, and the drafter counts 12 unit of promises in all, so no open order can be met until a lot lands. The dossier gives no reason for the gap. The salt floors move down; the ask stays at RM140. No cost basis changes."
+  ]
+ },
+ {
   "v": "v993",
   "d": "03 Oct 2026",
   "t": "COUNTER MAKER, CHAT AND NOTICE",
