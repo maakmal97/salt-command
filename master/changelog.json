@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1001",
+  "d": "03 Oct 2026",
+  "t": "DESK ACCESS, READY AND OFF",
+  "n": [
+   "<b>THE CI TOKEN.</b> The Worker can admit a verified Access service token on the build id read and the push ring alone, the push still needing its own key. Its client id is empty, so it admits nothing yet.",
+   "<b>THE VAULT IS HIS.</b> The names and places tools send his own sign-in alone, never the CI token, so a leaked CI secret with the write key reaches no name or place.",
+   "<b>NO PREVIEW ADDRESSES.</b> A version no longer serves an address of its own beside the live one. Nothing read one; branch uploads still upload.",
+   "<b>STILL OPEN.</b> The Access application, the service token, its secrets and the gate stay off until his go. The build id read answers anyone, as before. No ledger row, inventory, pricing rule, held tier or vault key changed."
+  ]
+ },
+ {
   "v": "v1000",
   "d": "03 Oct 2026",
   "t": "CS6-PER PAYS RM160 CASH AND S231 IS SETTLED",
