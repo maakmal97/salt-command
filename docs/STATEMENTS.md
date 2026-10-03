@@ -1442,6 +1442,10 @@ identity/price fields, an acknowledged or reserved order, a stale sealed-list di
 KV-only order store. Admin order review remains one flow for site orders and Desk drafts. Pricing is
 set only for one order at preview/Accept; no board price or `PRICE_SET` is written.
 The bridge and matching secrets shipped with #30. Live owner-JWT acceptance is still unverified.
+Maker Chat/No reply needed and Notice shipped in #33, v993, with the complete deploy/publish
+chain and deployed-tree suite green. Immutable owner reply receipts, encrypted device reload
+recovery and isolated serialized example threads are deployed. Remaining action/control parity
+and restrictions are listed in [the maker inventory](MAKER_INVENTORY.md); Desk controls remain.
 `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and
 `0016_vault_write_gate.sql` were applied individually on 03 Oct 2026 under explicit release
 authorization, with schema readback after each. Neither admission migration rebuilds `draft`

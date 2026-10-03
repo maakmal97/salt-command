@@ -852,7 +852,7 @@ async function draftedOf(db, ids) {
 async function inFlight(env, db, c, sales) {
   const all = await listOrders(env, true);
   if (!all.ok) return null;
-  const by = {}, cash = {}, keyOf = rowKeyer(sales), ready = [];
+  const by = {}, keyOf = rowKeyer(sales);
   const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
   const done = new Map(all.orders.filter((o) => o.u === c.u && o.status === "done").map((o) => [o.id, o]));
   /* a claim against the account's own rows are its own; an open order's own moves are read off the site below, which knows
@@ -866,14 +866,35 @@ async function inFlight(env, db, c, sales) {
   for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: ledgerKeyOf(o), rm: p.amount });
   const drafted = await draftedOf(db, wait.map((w) => w.id).filter(Boolean));
   for (const w of wait) if (!w.id || !drafted.has(w.id)) add(w.k, w.rm);
+  return claimOrderFlight(sales, all.orders, c.u, by);
+}
+function claimOrderFlight(sales, orders, u, by = {}) {
+  const cash = {}, ready = [];
+  const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
+  const done = new Set(orders.filter((o) => o.u === u && o.status === "done").map((o) => o.id));
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
-  for (const o of all.orders) {
-    if (o.u !== c.u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+  for (const o of orders) {
+    if (o.u !== u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
     if (o.status === "ready") ready.push(lk);
     add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
   }
   return { by, ready };
+}
+export async function fixtureClaimPreview(snapshot, u, id, generation) {
+  if (!["0000-0000", "0000-0001"].includes(u) || !snapshot?.prepared
+    || !Array.isArray(snapshot.account?.sales) || !Array.isArray(snapshot.account?.claims)
+    || !Array.isArray(snapshot.orders) || !Number.isInteger(snapshot.account.revision))
+    return { ok: false, error: "Publish the new acceptance cases before previewing example claims.", status: 409 };
+  const claim = snapshot.account.claims.find((c) => c.id === id && c.u === u);
+  if (!claim) return { ok: false, error: "No such acceptance claim.", status: 404 };
+  if (claim.state !== "waiting") return { ok: false, error: "That acceptance claim is answered already.", status: 409 };
+  const sales = snapshot.account.sales, flight = claimOrderFlight(sales, snapshot.orders, u);
+  const adjusted = sales.map((s) => Object.assign({}, s, { cash: +((+s.cash || 0) + (flight.by[POSITION_ENGINE.ovKey(s)] || 0)).toFixed(2) }));
+  const allocation = POSITION_ENGINE.claimAlloc(adjusted, "TX0-FIX", claim.amount, flight.ready);
+  const hash = await hex(JSON.stringify({ generation, revision: snapshot.account.revision, claim, allocation }));
+  return { ok: true, test: true, claim, rows: allocation.rows, left: allocation.left, hash,
+    generation, revision: snapshot.account.revision };
 }
 function claimRows(book, c, fl) {
   const sales = (book.sales || []).map((s) => { const on = fl && fl.by[POSITION_ENGINE.ovKey(s)];

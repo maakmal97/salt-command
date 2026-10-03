@@ -34,7 +34,7 @@ export const OWNER_JS = `
     oMore.hidden=(which!=='more');
     oCards.hidden=(which!=='cards');
     oMaker.hidden=(which!=='maker');
-    if(which!=='maker') stopMakerChat();
+    if(which!=='maker'){ stopMakerChat(); makerSlipLock(); }
     var here=which?PLACE[which]:'needs';
     [].slice.call(document.querySelectorAll('.place[data-m]')).forEach(function(b){
       if(b.getAttribute('data-m')===here) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
@@ -43,7 +43,7 @@ export const OWNER_JS = `
     if(!which) drawNeeds();
     if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
-    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); }
+    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); loadMakerClaims(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
@@ -503,6 +503,7 @@ export const OWNER_JS = `
   }
   /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
   function openCard(u){
+    makerSlipLock();
     var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
     aOpen=a?u:null;
     oAccts.classList.toggle('open', !!a);
@@ -642,6 +643,110 @@ export const OWNER_JS = `
     return j;
   }
   var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
+  var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
+  function makerSlipClose(){
+    makerSlipGeneration++;
+    makerSlipUrls.forEach(function(url){ URL.revokeObjectURL(url); }); makerSlipUrls=[];
+    document.querySelectorAll('[data-maker-slip]').forEach(function(node){ node.remove(); });
+  }
+  function makerSlipLock(){ makerSlipClose(); makerSlipPrivate=null; }
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) makerSlipLock(); });
+  function makerClaimButton(parent,label,action,primary){
+    var button=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
+    button.type='button'; button.onclick=function(){ return action(button); }; parent.appendChild(button); return button;
+  }
+  async function loadMakerClaims(){
+    var root=document.getElementById('makerClaims'); if(!root||oMaker.hidden) return;
+    makerSlipClose(); root.textContent='Reading account claims…';
+    try{
+      var result=await refs('/all/maker/claims'); makerClaims=result.claims||[];
+      if(!root.isConnected||oMaker.hidden) return;
+      root.textContent='';
+      var waiting=makerClaims.filter(function(c){ return c.state==='waiting'; });
+      if(!waiting.length) root.appendChild(el('p','rnone','No account claims waiting.'));
+      waiting.forEach(function(claim){
+        var card=makerCard(root), preview=null;
+        card.appendChild(el('h3',null,claim.u+' · '+rm(claim.amount)));
+        card.appendChild(el('p','maker-facts',claim.id+(claim.test?' · Test, counts nowhere':'')));
+        var note=el('div','maker-quote'); card.appendChild(note);
+        var route='/all/maker/claims/'+claim.u+'/'+claim.id;
+        var receipt=makerClaimButton(card,'Received',function(button){ return decideMakerClaim(false,false,button); },true);
+        var covered=makerClaimButton(card,'Received, on the book already',function(button){ return decideMakerClaim(true,false,button); },false);
+        receipt.disabled=true; covered.disabled=true;
+        makerClaimButton(card,'Preview rows',async function(button){
+          button.disabled=true;
+          try{
+            preview=await refs(route+'/preview',{}); note.textContent='';
+            (preview.rows||[]).forEach(function(row){
+              note.appendChild(el('p','maker-row',(row.date||'undated')+' · '+rm(row.rm)+' of '+rm(row.owed)+' · '+(row.rid||row.key)));
+              (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:JSON.stringify(flag))); });
+            });
+            note.appendChild(el('p','salt-insight',preview.booked?'Already booked. Received tells the customer again without booking.':
+              preview.left>0.004?rm(preview.left)+' exceeds the rows. Do not book it again if already recorded.':'These rows are answered together.'));
+            receipt.disabled=preview.left>0.004; covered.disabled=!(preview.left>0.004);
+          }catch(error){ note.textContent=error.message; }
+          button.disabled=false;
+        },false);
+        makerClaimButton(card,'Not found',function(button){ return decideMakerClaim(false,true,button); },false);
+        async function decideMakerClaim(onBook,notFound,button){
+          if(!notFound&&!preview) return;
+          var key=claim.u+':'+claim.id, pending=makerClaimRequests[key];
+          var body=notFound?{amount:claim.amount}:{hash:preview.hash};
+          if(onBook) body.covered=true;
+          var action=notFound?'notfound':'received', intended=JSON.stringify({action:action,body:body});
+          if(pending&&pending.intended!==intended){ note.textContent='Read the retained decision before choosing another answer.'; return; }
+          if(!pending){
+            if(!window.confirm(notFound?'Record this claim as Not found?':'Confirm the amount and rows shown?')) return;
+            pending={intended:intended,action:action,body:Object.assign({rid:crypto.randomUUID()},body),busy:false};
+            makerClaimRequests[key]=pending;
+          }
+          if(pending.busy) return; pending.busy=true; button.disabled=true;
+          try{
+            await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key]; await loadMakerClaims(); await loadMaker();
+          }catch(error){ note.textContent='Confirmation not received. Retry this same answer: '+error.message; }
+          pending.busy=false; button.disabled=false;
+        }
+        if(claim.slip) makerSlipControl(card,claim.u,claim.slip);
+      });
+    }catch(error){ root.textContent=error.message; }
+  }
+  function makerSlipControl(parent,u,id){
+    var pass=makerField(parent,'Vault passphrase','password',''), note=el('p','msg'); parent.appendChild(note);
+    pass.autocomplete='off';
+    makerClaimButton(parent,'View slip',async function(button){
+      var generation=++makerSlipGeneration, secret=pass.value; pass.value=''; button.disabled=true;
+      try{
+        if(!makerSlipPrivate){
+          if(!secret) throw new Error('Unlock the slip key with the vault passphrase.');
+          var envelope=await refs('/all/maker/vault/key');
+          if(generation!==makerSlipGeneration) return;
+          if(!envelope.vault) throw new Error('No slip key is filed.');
+          var jwk=await makerVaultOpen(secret,envelope.vault); secret='';
+          var imported=await crypto.subtle.importKey('jwk',{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y,d:jwk.d},
+            {name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
+          if(generation!==makerSlipGeneration) return;
+          makerSlipPrivate=imported;
+        }
+        var privateKey=makerSlipPrivate, sealed=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
+        if(generation!==makerSlipGeneration) return;
+        if(!sealed||sealed.v!==1) throw new Error('The sealed slip is malformed.');
+        var epk=await crypto.subtle.importKey('raw',makerFrom64(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
+        var bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},privateKey,256);
+        var hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+        var key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},
+          hk,{name:'AES-GCM',length:256},false,['decrypt']);
+        var bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealed.iv)},key,makerFrom64(sealed.ct));
+        if(generation!==makerSlipGeneration||!parent.isConnected||oMaker.hidden||document.hidden) return;
+        var url=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
+        if(generation!==makerSlipGeneration){ URL.revokeObjectURL(url); return; }
+        makerSlipUrls.push(url);
+        var image=el('img','maker-slip'); image.src=url; image.alt='Payment slip'; image.setAttribute('data-maker-slip','');
+        parent.appendChild(image); note.textContent='Opened on this device only.';
+      }catch(error){ if(generation===makerSlipGeneration) note.textContent='Slip could not be opened: '+error.message; }
+      finally{ secret=''; button.disabled=false; }
+    },false);
+    makerClaimButton(parent,'Close and lock slip',function(){ makerSlipLock(); pass.value=''; note.textContent='Slip locked.'; },false);
+  }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   function stopMakerChat(){
     if(makerThreadTimer!==null) clearInterval(makerThreadTimer);
