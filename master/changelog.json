@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1000",
+  "d": "03 Oct 2026",
+  "t": "CS6-PER PAYS RM160 CASH AND S231 IS SETTLED",
+  "n": [
+   "<b>ONE AMENDMENT FOLDED.</b> A fulfilment on s231 records RM160 cash received at the counter from CS6-PER, on his word as preapproved by phone. The order of 1.5 units was already collected on 03 Oct, so this clears the whole balance and leaves nothing outstanding on it.",
+   "<b>INVENTORY UNCHANGED.</b> The payment moves no goods and no salt count changes. Stock stays at -1.5 units, still below zero, and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
   "v": "v999",
   "d": "03 Oct 2026",
   "t": "TWO COLLECTIONS RECORDED FOR CS6-PER, RICE AND SALT",
