@@ -1,6 +1,6 @@
 {
- "v": "v996",
- "stamped": "03 Oct 2026, 20:24 KL",
+ "v": "v997",
+ "stamped": "03 Oct 2026, 20:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6343,12 +6343,29 @@
     "customer": "CS6-PER",
     "qty": 10,
     "total": 80,
-    "cash": 0,
+    "cash": 80,
     "product": "rice",
     "date": "2026-10-03",
     "deliveredQty": 0,
     "note": "<b>RICE SELL DATED 03 OCT: 10 UNITS FOR RM80, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-iffcoq, acknowledged and to collect, preapproved by phone. The rate is RM8 a unit; for 10 units the desk's floor is RM63.14 and its ask RM64, so the order sits above both, under the ceiling of RM102. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The row carries the desk's own rice cost of RM3.2 a unit. The drafter flagged that CS6-PER has no committed rice order, so no rate of theirs exists to compare; the figures cannot answer that. Outstanding: the full RM80 and 10 units to collect.",
-    "rid": "s230"
+    "rid": "s230",
+    "amend": [
+     {
+      "date": "2026-10-03",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-03",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM80 ON S230, 03 OCT: PAID BY QR, NOTHING HANDED OVER.</b> Amends CS6-PER's rice order s230, 10 units for RM80 at RM8 a unit, order 20261003121352-iffcoq. It was paid on the statements site by QR via RYT and preapproved by phone. Cash moves from RM0 to RM80 and no units move. The dossier gives no rice floor or ask, so the rate cannot be set against them here. CS6-PER: median RM85.52 a unit over 11 orders, range RM8 to RM106.67, RM240 outstanding before this, 0 units on credit; the cap is not stated. The row carries no cost and needs no correction. The drafter raised no flags. Outstanding: RM0 and 10 units to collect."
+     }
+    ],
+    "paidOn": "2026-10-03"
    },
    {
     "customer": "CS6-PER",
@@ -7100,9 +7117,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-03T12:23:28.109Z",
+  "QUEUE_COMMITTED": "2026-10-03T12:32:42.479Z",
   "PRICING": {
-   "takenAt": "2026-10-03T12:24:11.565Z",
+   "takenAt": "2026-10-03T12:35:46.533Z",
    "sizes": [
     0.5,
     1,
@@ -7308,6 +7325,20 @@
       "tenureDays": 57,
       "sinceLastDays": 20,
       "perMonth": 1.07,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -13635,10 +13666,10 @@
      "cards": {}
     }
    },
-   "v": "v996"
+   "v": "v997"
   },
   "OPEN": {
-   "at": "2026-10-03T12:24:11.917Z",
+   "at": "2026-10-03T12:35:46.763Z",
    "count": 13,
    "byKey": {
     "CH6-SET|2026-10-03|220": {
@@ -13661,13 +13692,13 @@
      "dir": "S",
      "q": 10,
      "t": 80,
-     "cash": 0,
+     "cash": 80,
      "mv": 0,
-     "st": "part",
-     "oweRM": 80,
+     "st": "oweStock",
      "oweUnits": 10,
      "pr": "rice",
      "rid": "s230",
+     "paidOn": "2026-10-03",
      "key": "CS6-PER|2026-10-03|80|rice"
     },
     "CS6-PER|2026-10-03|160": {
@@ -13883,9 +13914,9 @@
     "rice": {
      "name": "Rice",
      "onHand": 71,
-     "free": 71,
-     "owedOut": 0,
-     "coverDays": 52.2,
+     "free": 61,
+     "owedOut": 10,
+     "coverDays": 44.9,
      "rate": 1.36,
      "owedToYou": 0,
      "promised": 10,
@@ -13910,13 +13941,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v996"
+   "v": "v997"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v996"
+   "v": "v997"
   }
  }
 }
