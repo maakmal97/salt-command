@@ -171,9 +171,15 @@ export function plan(book, staged, notes) {
      applied to, so the rule reads what the row will say when this item lands, not what it said before the batch. */
   const simSoFar = new Map();
   const simOf = (row) => simSoFar.has(row) ? simSoFar.get(row) : JSON.parse(JSON.stringify(row));
+  const reservedEntries = [];
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
+    const resourceEntry = it.collection === "repayment" ? { at: it.id,
+      payload: { mode: "repay", loan: r.loan, kg: r.kg, rm: r.rm } } : it.entry;
+    const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
+      { state: book, sales: book.sales || [], purchases: book.purchases || [] });
+    if (reservationFault) { out.refused.push({ id: it.id, why: reservationFault }); continue; }
     /* round six: the fold took row.product verbatim, so a row folded under an unregistered
        product shipped to the phone as a ledger line while every total excluded it. This is
        the third-product bootstrap path (the drafter refuses the first lot, so it is
@@ -455,6 +461,7 @@ export function plan(book, staged, notes) {
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
+    if (resourceEntry) reservedEntries.push(resourceEntry);
   }
   return out;
 }

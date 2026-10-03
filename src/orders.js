@@ -23,6 +23,8 @@
 import { sendPush } from "./push.js";
 import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { admitInput } from "./input-admission.js";
+import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 
 const DEVICE = "orders";
@@ -741,13 +743,17 @@ const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256"
    the mirror, and a tap in them saw neither. A row committed after the mirror was seeded (snapshot.at) is still on its way. */
 const ON_ITS_WAY = "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1))))";
 /* every payment on its way to a sale's row: a Fulfilment carrying cash, pending, or approved and not yet on the mirror */
-async function paysOnWay(db) {
-  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND entry LIKE ?1").bind('%"kind":"Fulfilment"%').all();
+async function paysOnWay(db, direction = "SELL") {
+  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND (entry LIKE ?1 OR entry LIKE ?2)")
+    .bind('%"kind":"Fulfilment"%', '%"kind":"Correction"%').all();
   const out = [];
   for (const r of rs.results || []) {
     let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; }
     const p = e && e.payload;
-    if (p && p.mode === "amend" && p.kind === "Fulfilment" && p.direction !== "BUY" && +p.cash > 0.004) out.push(e);
+    if (p && p.mode === "amend" && (direction === "BUY" ? p.direction === "BUY" : p.direction !== "BUY")
+      && (p.kind === "Fulfilment" && +p.cash > 0.004
+        || p.kind === "Correction" && p.fields && (+p.fields.cash > 0.004 || +p.fields.settledRM > 0.004)))
+      out.push(e);
   }
   return out;
 }
@@ -771,19 +777,34 @@ async function acctInFlight(db, except) {
    knows its own moves at once and a claim against the account never; the mirror knows every folded row and nothing on its
    way; a tap that books money answers to both. null where the mirror has no row by that key yet, and there the fold's own
    rule measures. */
-async function rowRoom(db) {
+export async function rowRoom(db, direction = "SELL") {
   /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
-  const [book, way] = await Promise.all([readBook(db).catch(() => null), paysOnWay(db)]);
-  const sales = ((book && book.sales) || []).filter((s) => s && !s.cancelled);
-  const keyOf = rowKeyer(sales), byKey = new Map(sales.map((s) => [POSITION_ENGINE.ovKey(s), s])), on = {};
+  const [book, way] = await Promise.all([readBook(db).catch(() => null), paysOnWay(db, direction)]);
+  const isSale = direction !== "BUY";
+  const sales = ((book && book[isSale ? "sales" : "purchases"]) || []).filter((s) => s && !s.cancelled);
+  const keyOf = rowKeyer(sales), byRid = new Map(sales.filter((s) => s.rid).map((s) => [s.rid, s]));
+  const byKey = new Map(), on = {};
+  for (const s of sales) {
+    const key = POSITION_ENGINE.ovKey(s);
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(s);
+  }
   for (const e of way) { const k = keyOf(e.payload); if (k) (on[k] = on[k] || []).push(e); }
-  return (key, own) => {
-    const s = key ? byKey.get(key) : null;
+  return Object.assign((key, own) => {
+    const matches = key ? byKey.get(key) || [] : [];
+    const rid = own && own.payload && own.payload.rid;
+    const s = rid ? byRid.get(rid) : matches.length === 1 ? matches[0] : null;
     if (!s) return null;
-    const way = +((on[key] || []).filter((e) => !own || e.at !== own.at).reduce((n, e) => n + (+e.payload.cash), 0)).toFixed(2);
-    const owes = +Math.max(0, POSITION_ENGINE.txOwed(s) - POSITION_ENGINE.txPaid(s)).toFixed(2);
+    const paid = (row) => isSale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row);
+    const way = +((on[key] || []).filter((e) => (!own || e.at !== own.at)
+      && (!e.payload.rid || e.payload.rid === s.rid)).reduce((n, e) => {
+      const p = e.payload;
+      return n + (p.kind === "Correction" ? Math.max(0, paid({ ...s, ...p.fields }) - paid(s)) : +p.cash);
+    }, 0)).toFixed(2);
+    const owes = +Math.max(0, isSale ? POSITION_ENGINE.txOwed(s) - POSITION_ENGINE.txPaid(s)
+      : (+s.total || 0) - POSITION_ENGINE.poCash(s)).toFixed(2);
     return { owes, on: way, left: +Math.max(0, owes - way).toFixed(2) };
-  };
+  }, { version: book && book.version });
 }
 /* 28 Sep 2026, s210: the refusal a tap gives when its payment would take the row past what it can still take. A claim of
    theirs is also told how it is answered: Received, on the book already, which the site takes only once its order has
@@ -1382,7 +1403,14 @@ export function stageAt(order, job, now) {
  * id is the `at` and two ids cannot be one. A millisecond is spent while its entry is queued in either
  * shape, and for good once the draft table holds it: the drafter prunes a committed entry from the queue,
  * and a stage landing on its millisecond after that would be counted committed and never drafted. */
-export async function queueSale(env, entry) {
+export async function queueSale(env, entry, fixedId = false) {
+  const resourceInput = POSITION_ENGINE.inputConsumesResource(entry);
+  const admissionCheck = async () => {
+    if (!resourceInput) return;
+    const book = env.SALT_LEDGER ? await readBook(env.SALT_LEDGER) : null;
+    const admission = await admitInput(env.SALT_LEDGER, entry, book, "orders");
+    if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
+  };
   const raw = await env.SALT_QUEUE.get(BLOB);
   let blob = [];
   if (raw) {
@@ -1390,18 +1418,28 @@ export async function queueSale(env, entry) {
     catch (e) { console.log("orders queue: " + BLOB + " could not be read and is left alone, so this entry takes its own key (" + String((e && e.message) || e) + "); it held: " + String(raw).slice(0, 200)); }
   }
   const spent = async (at) => {
-    let own = null; try { own = await env.SALT_QUEUE.get(OKEY(at), "json"); } catch (e) { own = null; }   /* its own key unreadable: written over */
+    let own = null; try { own = await env.SALT_QUEUE.get(OKEY(at), "json"); } catch (e) { if (fixedId) throw e; own = null; }   /* its own key unreadable: written over */
     const hit = ((own && Array.isArray(own.queue) && own.queue) || []).concat(blob).find((x) => x && x.at === at);
     if (hit || !env.SALT_LEDGER) return hit || null;
     try { const d = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(at).first(); return d && d.entry ? (JSON.parse(d.entry) || {}) : null; }
-    catch (e) { return null; }
+    catch (e) { if (fixedId) throw e; return null; }
   };
   for (;;) {
     const hit = await spent(entry.at);
     if (!hit) break;
-    if (hit.raw === entry.raw) return false;
+    if (fixedId) {
+      if (await makerRequestFingerprint("fixed-input", hit) !== await makerRequestFingerprint("fixed-input", entry))
+        throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+      return false;
+    }
+    if (resourceInput && (hit.raw !== entry.raw
+      || await makerRequestFingerprint("resource-payload", hit.payload)
+        !== await makerRequestFingerprint("resource-payload", entry.payload)))
+      throw Object.assign(new Error("That timestamp already names another input. Start a new input."), { status: 409 });
+    if (hit.raw === entry.raw) { await admissionCheck(); return false; }
     entry.at = new Date(Date.parse(entry.at) + 1).toISOString();
   }
+  await admissionCheck();
   await env.SALT_QUEUE.put(OKEY(entry.at), JSON.stringify({ device: DEVICE, updated: new Date().toISOString(), queue: [entry] }));
   noteQueued(env.SALT_QUEUE, OKEY(entry.at));   /* a new key may be missing from the listing for a minute; the drafter reads it by name */
   return true;

@@ -21,9 +21,15 @@ import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput } from "./maker-inputs.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
+import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
+import POSITION_ENGINE from "../engine/position.mjs";
+import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
 import { queueSale } from "./orders.js";
 import { ownerAccess } from "./access.js";
+import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
+import { officialVaultPoint } from "./vault-locality.js";
+import { withVaultWrite, vaultWriteStatus } from "./vault-write-gate.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -38,6 +44,10 @@ const JSON_HEADERS = {
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
+const vaultWriteResponse = async (env, action) => {
+  const result = await withVaultWrite(env, action);
+  return result instanceof Response ? result : json(result, result.status || 503);
+};
 
 /* Served in place of every asset when the gate is on and the Access header is absent.
  * Deliberately tiny, self-contained and dataless: no figure from the desk appears here.
@@ -255,35 +265,97 @@ function draftOnArrival(env, ctx) {
   })());
 }
 
-async function handleQueuePost(request, env, ctx) {
+async function handleQueuePost(request, env, ctx, gateHeld = false) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (!writeOk(request, env)) return needsKey();
   let payload;
+  const retainedRequest = request.clone();
   try { payload = await readQueuePost(request); }
   catch (e) { return json({ ok: false, error: String(e && e.message || e) }, 400); }
+  if (!gateHeld && payload.queue.some(entry => ["addid", "rename", "place"].includes(entry?.payload?.mode)))
+    return vaultWriteResponse(env, () => handleQueuePost(retainedRequest, env, ctx, true));
   /* v525: an entry whose draft was rejected never comes back, whichever device re-posts it */
   const gone = await rejectedAmong(env, payload.queue.map((e) => e && e.at));
   const kept = gone.size ? payload.queue.filter((e) => !(e && gone.has(e.at))) : payload.queue;
+  if (env.VAULT_STORE === "pair" && kept.some((entry) => ["rename", "place"].includes(entry?.payload?.mode)
+    || entry?.payload?.mode === "addid" && entry.payload.kind !== "bucket"))
+    return json({ ok: false, error: "ID and place inputs must file the versioned ciphertext pair and transactional outbox. Upgrade this client; nothing was queued." }, 409);
+  const previousQueue = (await (await handleQueueGet(env, true)).json()).queue;
+  const reserved = kept.some((entry) => entry && entry.payload
+    && (entry.payload.mode === "repay" || entry.payload.mode === "redeem"
+      || entry.payload.fields && (entry.payload.fields.rebateKg != null || entry.payload.fields.coverUnits != null)
+      || entry.payload.more && entry.payload.more.coverUnits != null));
+  let book, waiting = [];
+  if (reserved) {
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The ledger is required to check pending reward and loan inputs." }, 503);
+    book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded. Keep the input and retry." }, 503);
+    const drafts = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+    waiting = (drafts.results || []).map((row) => JSON.parse(row.entry));
+  }
+  for (const entry of kept) {
+    const previous = previousQueue.find((queued) => queued && entry && queued.at === entry.at);
+    if (previous && await makerRequestFingerprint("queue", previous) !== await makerRequestFingerprint("queue", entry))
+      return json({ ok: false, error: "A queued timestamp cannot carry a changed input. Keep the original or start a new input." }, 409);
+    if (reserved) {
+      const fault = POSITION_ENGINE.entryReservationFault(entry, previousQueue.concat(waiting, kept), book);
+      if (fault) return json({ ok: false, error: fault }, 409);
+    }
+  }
+  const admissions = [];
+  if (reserved) {
+    for (const entry of kept) {
+      const result = await admitInput(env.SALT_LEDGER, entry, book, "device:" + payload.device);
+      if (result.error) {
+        for (const id of admissions) await withdrawInputAdmission(env.SALT_LEDGER, id, "device:" + payload.device);
+        return json({ ok: false, error: result.error }, result.status);
+      }
+      if (result.newSource) admissions.push(entry.at);
+    }
+  }
   // Per-device replace: this device's key holds its whole current queue, so an undo on
   // the device (which re-posts the shortened queue) is reflected rather than merged away.
   await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
     updated: payload.updated, device: payload.device, queue: kept
   }));
+  if (env.SALT_LEDGER) {
+    const owned = await env.SALT_LEDGER.prepare("SELECT id FROM input_admission_source WHERE source=?1")
+      .bind("device:" + payload.device).all();
+    for (const entry of owned.results || [])
+      if (!kept.some((item) => item && item.at === entry.id))
+        await withdrawInputAdmission(env.SALT_LEDGER, entry.id, "device:" + payload.device);
+  }
   draftOnArrival(env, ctx);
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
 }
 
-async function handleInternalMaker(request, env, ctx, p, m) {
+async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
-    && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr"
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)
+    && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
+    && p !== "/_internal/maker/geo/expand"
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (!gateHeld && m === "POST" && /^\/_internal\/maker\/inputs\/(add-id|amend-id|place)$/.test(p))
+    return vaultWriteResponse(env, () => handleInternalMaker(request, env, ctx, p, m, true));
+  if (p === "/_internal/maker/vault/pair") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return handleVaultPair(request, env, m);
+  }
+  if (p === "/_internal/maker/geo/expand") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    return handleGeoExpand(request);
+  }
   if (p === "/_internal/maker/vault" || p === "/_internal/maker/vault/addr") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (env.VAULT_STORE === "pair") {
+      const pair = await readVaultPair(env.SALT_LEDGER);
+      return pair.ok ? json({ ok: true, vault: p.endsWith("/addr") ? pair.places : pair.names,
+        revision: pair.revision, updated: pair.updated }) : json(pair, pair.status);
+    }
     if (!env.SALT_QUEUE) return json({ ok: false, error: "the Desk vault store is required" }, 503);
     const key = p.endsWith("/addr") ? AKEY : VKEY;
     const raw = await env.SALT_QUEUE.get(key);
@@ -310,36 +382,75 @@ async function handleInternalMaker(request, env, ctx, p, m) {
     return handleDraftsGet(env, new URL(request.url));
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(p)) {
+  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
       if (text.length > 1_048_576) return json({ ok: false, error: "request is too large" }, 413);
       body = JSON.parse(text);
     } catch (error) { return json({ ok: false, error: "send JSON" }, 400); }
+    const operation = p.split("/").pop();
+    if (env.VAULT_STORE === "pair" && ["add-id", "amend-id", "place"].includes(operation)
+      && !(operation === "add-id" && body?.kind === "bucket"))
+      return handleVaultInput(env, operation, body);
     if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue and mirror are required" }, 503);
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
-    const operation = p.split("/").pop();
+    if (!body || typeof body !== "object" || Array.isArray(body)
+      || typeof body.at !== "string" || !Number.isFinite(Date.parse(body.at))
+      || new Date(body.at).toISOString() !== body.at)
+      return json({ ok: false, error: "The input needs its canonical request timestamp." }, 400);
+    const fingerprint = await makerRequestFingerprint(operation, body);
+    const previous = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
+    if (previous?.pending) return resumeMakerInput(env, previous.pending, fingerprint);
+    if (previous) return json(previous.response || { ok: false, error: previous.error }, previous.response ? 200 : 409);
     if (operation === "stock-count"
       && !makerInputCatalog(book).products.some((item) => item.product === body.product))
       return json({ ok: false, error: "Choose an active book for the stock count." }, 400);
     const built = operation === "stock-count" ? makerStockCount(body)
       : operation === "tier-set" ? makerTierSet(body, book)
-        : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
+        : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
+          : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
           : makerLedgerInput(operation, body, book);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
     const entry = built.entry;
     if (built.vaultOnly) {
+      if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint))
+        return json({ ok: false, error: "That input is already being recorded. Retry the original request." }, 409);
       const envelope = built.vault;
       await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: envelope, ids: null, locs: null }));
-      return json({ ok: true, vaultOnly: true });
+      if (body.addrVault) await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.addrVault }));
+      const response = { ok: true, vaultOnly: true };
+      await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, response);
+      return json(response);
     }
+
+    async function resumeMakerInput(env, entry, fingerprint) {
+      if (entry.makerRequest !== fingerprint)
+        return json({ ok: false, error: "The retained Maker input fingerprint is invalid." }, 409);
+      try { await queueSale(env, entry, true); }
+      catch (error) {
+        if (error.status !== 409 && error.status !== 503) throw error;
+        return json({ ok: false, error: error.message }, error.status);
+      }
+      await runDrafter(env);
+      const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(entry.at).first();
+      if (!draft || JSON.parse(draft.entry).makerRequest !== fingerprint)
+        return json({ ok: false, error: "The immutable input has not reached its draft. Keep the original request for recovery." }, 503);
+      const response = { ok: true, queued: false, draft: entry.at, status: draft.status };
+      await makerRequestFinish(env.SALT_LEDGER, entry.at, fingerprint, response);
+      return json(response);
+    }
+    entry.makerRequest = fingerprint;
     const writesNameVault = operation === "amend-id" || operation === "add-id" && body.kind !== "bucket";
     if (writesNameVault && !isSealed(body.vault))
       return json({ ok: false, error: "File the encrypted vault on this device before adding the ID." }, 400);
     const proposed = draftRow(entry, book);
     if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
+    if (operation === "ledger-amend") {
+      const roomFault = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
+      if (roomFault) return json({ ok: false, error: roomFault }, 409);
+    }
     const stored = await env.SALT_LEDGER.prepare("SELECT entry,status FROM draft WHERE id=?1").bind(entry.at).first();
     const queuedEntries = (await (await handleQueueGet(env, true)).json()).queue;
     if (stored) queuedEntries.push(JSON.parse(stored.entry));
@@ -350,13 +461,35 @@ async function handleInternalMaker(request, env, ctx, p, m) {
       const checked = makerQueuedTradeCheck(entry, queuedEntries.concat((pending.results || []).map((row) => JSON.parse(row.entry))));
       if (checked.error) return json({ ok: false, ...checked }, 409);
     }
-    if (writesNameVault && (operation !== "amend-id" || body.to !== body.from)) {
+    const reservations = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+    const reservedFault = POSITION_ENGINE.entryReservationFault(entry,
+      queuedEntries.concat((reservations.results || []).map((row) => JSON.parse(row.entry))), book);
+    if (reservedFault) return json({ ok: false, error: reservedFault }, 409);
+    const admission = writesNameVault || body.addrVault
+      ? await admitInput(env.SALT_LEDGER, entry, book, "orders") : {};
+    if (admission.error) return json({ ok: false, error: admission.error }, admission.status);
+    if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint, writesNameVault || body.addrVault ? null : entry)) {
+      const raced = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
+      if (raced?.pending) return resumeMakerInput(env, raced.pending, fingerprint);
+      return json(raced?.response || { ok: false, error: raced?.error || "Retry the original request." }, raced?.response ? 200 : 409);
+    }
+    if (!writesNameVault && !body.addrVault) return resumeMakerInput(env, entry, fingerprint);
+    if (writesNameVault) {
       await env.SALT_QUEUE.put(VKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.vault, ids: null, locs: null }));
     }
-    const queued = await queueSale(env, entry);
+    if (body.addrVault) await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.addrVault }));
+    let queued;
+    try { queued = await queueSale(env, entry); }
+    catch (error) {
+      if (error.status !== 409 && error.status !== 503) throw error;
+      if (admission.newSource) await withdrawInputAdmission(env.SALT_LEDGER, entry.at, "orders");
+      return json({ ok: false, error: error.message }, error.status);
+    }
     await runDrafter(env);
     const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
-    return json({ ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" });
+    const response = { ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" };
+    await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
+    return json(response);
   }
   const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend)$/.exec(p);
   if (orderMatch) {
@@ -459,6 +592,11 @@ async function handleQueueGet(env, strict = false) {
 /* The encrypted vault. GET hands back the ciphertext so the phone can decrypt it with the
  * password; POST stores it, but only if it is the envelope shape (never plaintext). */
 async function handleVaultGet(env) {
+  if (env.VAULT_STORE === "pair") {
+    const pair = await readVaultPair(env.SALT_LEDGER);
+    return pair.ok ? json({ ok: true, vault: pair.names, revision: pair.revision, updated: pair.updated })
+      : json(pair, pair.status);
+  }
   if (!env.SALT_QUEUE) return json({ ok: true, vault: null });
   const raw = await env.SALT_QUEUE.get(VKEY);
   if (!raw) return json({ ok: true, vault: null });
@@ -473,6 +611,8 @@ async function handleVaultGet(env) {
   } catch (e) { return json({ ok: false, error: "the vault could not be read" }, 500); }   // F14 review: read as none, the desk's next Add ID would seal one name over them all
 }
 async function handleVaultPost(request, env) {
+  if (env.VAULT_STORE === "pair")
+    return json({ ok: false, error: "Upgrade this writer to the revisioned vault pair. Unversioned writes are refused." }, 409);
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (!writeOk(request, env)) return needsKey();
   let body;
@@ -495,6 +635,12 @@ async function handleVaultPost(request, env) {
 const B64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const isSealed = (v) => isEnvelope(v) && B64.test(v.salt) && B64.test(v.iv) && B64.test(v.ct);
 async function handleVaultAddr(request, env, m) {
+  if (env.VAULT_STORE === "pair") {
+    if (m !== "GET") return json({ ok: false, error: "Upgrade this writer to the revisioned vault pair. Unversioned writes are refused." }, 409);
+    const pair = await readVaultPair(env.SALT_LEDGER);
+    return pair.ok ? json({ ok: true, vault: pair.places, revision: pair.revision, updated: pair.updated })
+      : json(pair, pair.status);
+  }
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (m === "GET") {
     const raw = await env.SALT_QUEUE.get(AKEY);
@@ -502,6 +648,7 @@ async function handleVaultAddr(request, env, m) {
     try { const v = JSON.parse(raw); return json({ ok: true, vault: v.vault || null, updated: v.updated || null }); }
     catch (e) { return json({ ok: false, error: "the places vault could not be read" }, 500); }   // never read as none: the next save would seal one place over them all
   }
+
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
@@ -511,6 +658,103 @@ async function handleVaultAddr(request, env, m) {
   await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: at,
     vault: Object.assign({ v: 1, salt: v.salt, iv: v.iv, ct: v.ct }, Number.isInteger(v.it) && v.it > 0 ? { it: v.it } : {}) }));
   return json({ ok: true });
+}
+
+async function handleVaultPair(request, env, method) {
+  if (env.VAULT_STORE !== "pair")
+    return json({ ok: false, error: "The versioned vault is not enabled. Live vault authority is unchanged." }, 503);
+  if (method === "GET") {
+    const pair = await readVaultPair(env.SALT_LEDGER);
+    return json(pair, pair.ok ? 200 : pair.status);
+  }
+  if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const text = await request.text();
+  if (text.length > 1048576) return json({ ok: false, error: "The encrypted vault request is too large." }, 413);
+  let body;
+  try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Send a ciphertext pair as JSON." }, 400); }
+  const result = await commitVaultPair(env.SALT_LEDGER, body, "seed");
+  return json(result.status === 409 ? { ...result, code: "vaultConflict" } : result, result.ok ? 200 : result.status);
+}
+
+export async function recoverVaultInputs(env, id, gateHeld = false) {
+  if (!gateHeld) {
+    const result = await withVaultWrite(env, () => recoverVaultInputs(env, id, true), true);
+    if (typeof result === "number") return result;
+    if (id) throw new Error(result.error);
+    return 0;
+  }
+  const rows = id ? [{ id }] : (await env.SALT_LEDGER.prepare(
+    "SELECT id FROM vault_outbox WHERE state='pending' ORDER BY attempted_at,id LIMIT 25").all()).results || [];
+  for (const row of rows) {
+    try {
+      await env.SALT_LEDGER.prepare("UPDATE vault_outbox SET attempted_at=?2 WHERE id=?1")
+        .bind(row.id, new Date().toISOString()).run();
+      await consumeVaultOutbox(env.SALT_LEDGER, row.id, async (entry) => {
+      await queueSale(env, entry, true);
+      await runDrafter(env);
+      const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
+      if (!draft) throw new Error("The filed vault input has not reached its draft. It remains pending recovery.");
+      return { ok: true };
+      });
+    } catch (error) {
+      if (id) throw error;
+      console.error("vault recovery pending: " + (/^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(row.id) ? row.id : "invalid-id"));
+    }
+  }
+  return rows.length;
+}
+
+async function handleVaultInput(env, operation, body) {
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE)
+    return json({ ok: false, error: "The transactional mirror and queue are required." }, 503);
+  if (!body || typeof body !== "object" || Array.isArray(body) || !body.pair)
+    return json({ ok: false, error: "This ID/place client needs both ciphertext envelopes and the expected pair revision." }, 409);
+  const { pair, ...input } = body;
+  const fingerprint = await makerRequestFingerprint("vault-input:" + operation, body);
+  const receipt = await env.SALT_LEDGER.prepare(
+    "SELECT request_fingerprint,revision,operation FROM vault_receipt WHERE id=?1").bind(input.at).first();
+  if (receipt) {
+    if (receipt.request_fingerprint !== fingerprint || receipt.operation !== operation)
+      return json({ ok: false, error: "That vault input id already carries different content." }, 409);
+    await recoverVaultInputs(env, input.at);
+    const outbox = await env.SALT_LEDGER.prepare("SELECT id FROM vault_outbox WHERE id=?1").bind(input.at).first();
+    return json({ ok: true, replay: true, revision: receipt.revision, vaultOnly: !outbox,
+      ...(outbox ? { draft: input.at } : {}) });
+  }
+  if (Object.keys(pair).some((key) => !["expectedRevision", "names", "places"].includes(key))
+    || JSON.stringify(input.vault ?? null) !== JSON.stringify(operation === "place" ? null : pair.names)
+    || input.addrVault !== undefined && JSON.stringify(input.addrVault) !== JSON.stringify(pair.places))
+    return json({ ok: false, error: "The input envelopes must match its ciphertext pair." }, 400);
+  const book = await readBook(env.SALT_LEDGER);
+  const points = operation === "place" ? Object.values(input.places || {}) : input.geo ? [input.geo] : [];
+  for (const point of points)
+    if (!await officialVaultPoint(point))
+      return json({ ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." }, 400);
+  const checkedInput = { ...input };
+  if (input.geo) checkedInput.geo = input.geo.slice(0, 2);
+  if (operation === "place") checkedInput.places = Object.fromEntries(
+    Object.entries(input.places || {}).map(([code, point]) => [code, point.slice(0, 2)]));
+  const built = makerLedgerInput(operation, checkedInput, book);
+  if (built.error) return json({ ok: false, error: built.error }, 400);
+  const entry = built.entry || null;
+  if (entry && input.geo?.length === 3) {
+    if (entry.payload.mode === "place") entry.payload.places[input.from] = input.geo;
+    else entry.payload.geo = input.geo;
+  }
+  if (entry && operation === "place") entry.payload.places = input.places;
+  if (entry) {
+    const proposed = draftRow(entry, book);
+    if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
+    const queued = (await (await handleQueueGet(env, true)).json()).queue;
+    const draft = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(input.at).first();
+    if (queued.some((item) => item.at === input.at) || draft)
+      return json({ ok: false, error: "That request id already names a queued or drafted input." }, 409);
+  }
+  const committed = await commitVaultPair(env.SALT_LEDGER, { at: input.at, ...pair }, operation, entry, fingerprint);
+  if (!committed.ok) return json({ ...committed, code: "vaultConflict" }, committed.status);
+  await recoverVaultInputs(env, input.at);
+  return json({ ok: true, revision: committed.revision, vaultOnly: !entry,
+    ...(entry ? { draft: input.at, queued: true } : {}) });
 }
 
 /* F13 (29 Sep 2026): THE SLIP KEY, the vault's third envelope: {updated, vault: the sealed private half, pub: the public
@@ -834,9 +1078,13 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
     try { yes = await env.SALT_LEDGER.prepare("SELECT id FROM preapproval WHERE draft_id=?1").bind(id).first(); } catch (e) { yes = null; }
     if (!yes) return json({ ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" }, 409);
   }
-  const upd = await env.SALT_LEDGER.prepare(
+  const decide = env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
-  ).bind(decision, new Date().toISOString(), by, id).run();
+  ).bind(decision, new Date().toISOString(), by, id);
+  const releases = decision === "rejected" && await hasInputAdmission(env.SALT_LEDGER, id, JSON.parse(cur.entry || "{}"));
+  const upd = releases
+    ? (await env.SALT_LEDGER.batch([decide, admissionDecision(env.SALT_LEDGER, id, "rejected", true)]))[0]
+    : await decide.run();
   /* 08 Sep 2026: THE SELECT ABOVE IS NOT THE UPDATE. Two taps in the same instant both read
      `pending`; the second UPDATE changes no row, and used to answer 200 with the first tap's
      decision in the body, and ring the stage for an approval that was in fact a rejection. */
@@ -869,15 +1117,22 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
 async function handleDraftCommitted(request, env, id) {
   if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
   if (!writeOk(request, env)) return needsKey();
-  const cur = await env.SALT_LEDGER.prepare("SELECT status,committed_at FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT status,committed_at,entry FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return json({ ok: false, error: "no such draft" }, 404);
   if (cur.status !== "approved") return json({ ok: false, error: "only an approved draft may be committed; this one is " + cur.status }, 409);
-  if (cur.committed_at) return json({ ok: true, id, alreadyCommitted: true, committedAt: cur.committed_at });
+  if (cur.committed_at) {
+    if (cur.entry && await hasInputAdmission(env.SALT_LEDGER, id, JSON.parse(cur.entry)))
+      await finishInputAdmission(env.SALT_LEDGER, id, "committed");
+    return json({ ok: true, id, alreadyCommitted: true, committedAt: cur.committed_at });
+  }
   const at = new Date().toISOString();
   /* v519: liveAt is the deploy job's proof time, sent with the mark; absent on an older caller */
   let liveAt = null;
   try { const b = await request.json(); if (b && typeof b.liveAt === "string" && !Number.isNaN(Date.parse(b.liveAt))) liveAt = b.liveAt; } catch (e) { /* no body */ }
-  await env.SALT_LEDGER.prepare("UPDATE draft SET committed_at=?1, live_at=?2 WHERE id=?3 AND committed_at IS NULL").bind(at, liveAt, id).run();
+  const mark = env.SALT_LEDGER.prepare("UPDATE draft SET committed_at=?1, live_at=?2 WHERE id=?3 AND committed_at IS NULL").bind(at, liveAt, id);
+  if (cur.entry && await hasInputAdmission(env.SALT_LEDGER, id, JSON.parse(cur.entry)))
+    await env.SALT_LEDGER.batch([mark, admissionDecision(env.SALT_LEDGER, id, "committed", true)]);
+  else await mark.run();
   return json({ ok: true, id, committedAt: at, liveAt });
 }
 
@@ -916,6 +1171,10 @@ export default {
     const daily = String(event && event.cron || "").startsWith("0 1 ");
     ctx.waitUntil((async () => {
       try {
+        if (env.VAULT_STORE === "pair") {
+          try { await recoverVaultInputs(env); }
+          catch (error) { console.error("vault recovery batch unavailable; incumbent cron continues"); }
+        }
         if (daily) {
           let worth = false;
           try {
@@ -1025,7 +1284,7 @@ export default {
     if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
     if (!await accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
-        || p === "/vault/addr" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
+        || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
@@ -1052,7 +1311,8 @@ export default {
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
-      || p === "/vault/addr" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
+      || p === "/vault/addr" || p === "/vault/pair" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
+      || p === "/vault/maintenance"
       || p === "/vault/key"   /* F13: the slip key's envelope is his alone */
       || p.startsWith("/slips/")   /* F13: a slip is ciphertext, and still his alone to fetch */
       /* /push/key is the ONE push route left open, and only because the VAPID public
@@ -1069,6 +1329,10 @@ export default {
       // cloud:true tells the ported desk to skip the 3s heartbeat and the /bye beacon,
       // and to keep names device-local. writes:['queue'] mirrors serve_desk.py's shape.
       return json({ ok: true, cloud: true, writes: ["queue"] });
+    }
+    if (p === "/vault/maintenance") {
+      if (m !== "GET") return json({ ok: false, error: "Maintenance changes require the authorized account CLI, not a device key." }, 405);
+      return json({ ok: true, ...await vaultWriteStatus(env.SALT_LEDGER) });
     }
     if (p === "/queue") {
       if (m === "POST") return handleQueuePost(request, env, ctx);
@@ -1372,12 +1636,33 @@ export default {
         return json({ ok: false, error: String((e && e.message) || e) }, 500);
       }
     }
+    if (p === "/vault/pair") {
+      if (!env.SALT_WRITE_KEY) return json({ ok: false, error: "A configured write key is required for the vault pair." }, 503);
+      if (!writeOk(request, env)) return needsKey();
+      return m === "POST" ? vaultWriteResponse(env, () => handleVaultPair(request, env, m)) : handleVaultPair(request, env, m);
+    }
+    const vaultInput = /^\/vault\/inputs\/(add-id|amend-id|place)$/.exec(p);
+    if (vaultInput) {
+      if (!env.SALT_WRITE_KEY) return json({ ok: false, error: "A configured write key is required for vault inputs." }, 503);
+      if (!writeOk(request, env)) return needsKey();
+      if (env.VAULT_STORE !== "pair") return json({ ok: false, error: "The versioned vault is not enabled." }, 503);
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const text = await request.text();
+      if (text.length > 1048576) return json({ ok: false, error: "request is too large" }, 413);
+      let body;
+      try { body = JSON.parse(text); } catch { return json({ ok: false, error: "Send JSON." }, 400); }
+      return vaultWriteResponse(env, () => handleVaultInput(env, vaultInput[1], body));
+    }
     if (p === "/vault") {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only
-      if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext
+      if (m === "POST") {
+        if (!writeOk(request, env)) return needsKey();
+        return vaultWriteResponse(env, () => handleVaultPost(request, env));
+      }
       return json({ ok: false }, 405);
     }
-    if (p === "/vault/addr") return handleVaultAddr(request, env, m);   // F14: the places, ciphertext only, keyed both ways
+    if (p === "/vault/addr") return m === "POST" ? vaultWriteResponse(env, () => handleVaultAddr(request, env, m))
+      : handleVaultAddr(request, env, m);
     if (p === "/vault/key") return handleVaultKey(env, m);              // F13: the slip key, sealed, keyed, never written here
     /* F13: A PAYMENT SLIP, relayed as the site filed it: ciphertext the desk opens with the slip key its unlock holds */
     const sl = /^\/slips\/([^/]+)\/([^/]+)$/.exec(p);

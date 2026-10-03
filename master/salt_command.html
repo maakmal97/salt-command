@@ -4890,6 +4890,131 @@ function stockCountEntry({at,product,date,qty}){
     payload:{mode:'count',product,direction:null,party:null,date,qty,total:null,cash:null,kg:qty,
       assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}};
 }
+function rewardMargin({id,refs=[],sales=[],averageCost=0}){
+  const mine={margin:0,n:0},intro={margin:0,n:0};
+  sales.forEach(s=>{
+    const st=txStat(s).order;
+    if(st==='Default'||st==='Pending'||st==='Cancelled'||s.cancelled)return;
+    const owner=ownerCode(s.customer),part=owner===id?mine:refs.includes(owner)?intro:null;
+    if(!part)return;
+    if(s.goodwill){
+      if(!s.rebate)part.margin-=(s.qty||0)*txUnitCost(s,averageCost);
+      return;
+    }
+    let rm=s.total||0,q=s.qty||0;
+    if(s.rebate){
+      rm=Math.max(0,rm-(+s.settledRM||0));
+      q=Math.max(0,q-(s.rebateKg!=null?+s.rebateKg:(s.qty||0)));
+      if(rm<0.009&&q<1e-9)return;
+    }
+    part.margin+=rm-q*txUnitCost(s,averageCost);part.n++;
+  });
+  mine.margin=+mine.margin.toFixed(2);intro.margin=+intro.margin.toFixed(2);
+  return {mine,intro,total:+(mine.margin+intro.margin).toFixed(2)};
+}
+function rewardUnits(total,unit){
+  if(unit==null)return {earned:0,toNext:null};
+  const earned=Math.max(0,Math.floor(total/unit));
+  return {earned,toNext:+((earned+1)*unit-total).toFixed(2)};
+}
+function rewardAccount(book,id,product='salt'){
+  const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
+  if(!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)return {error:'This book has no configured reward.'};
+  const allSales=book.sales||[],sales=allSales.filter(s=>(s.product||'salt')===product);
+  const introductions=state.INTRODUCTIONS||[];
+  const associate=(state.associates||[]).includes(id)
+    ||allSales.some(s=>s.rev==='R2'&&ownerCode(s.customer)===id||s.ref===id)
+    ||introductions.some(e=>e&&e.by===id)
+    ||!!(state.R0_NETWORK&&state.R0_NETWORK.reseller===id);
+  const refs=new Set();
+  if(associate){
+    allSales.forEach(s=>{if(s.ref===id&&s.customer)refs.add(ownerCode(s.customer));});
+    introductions.forEach(e=>{if(e&&e.by===id&&e.customer)refs.add(ownerCode(e.customer));});
+  }
+  const opening=state.PROD_OPENING&&state.PROD_OPENING[product]||{qty:0,costPerKg:null};
+  const lots=(book.purchases||[]).filter(p=>(p.product||'salt')===product&&!p.defaulted&&poRecvUnits(p)>0.0001);
+  const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
+  const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
+  const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
+  const margin=rewardMargin({id,refs:[...refs],sales,averageCost});
+  const hurdle=associate?(+((scheme.associate||{}).margin)||+scheme.margin):+scheme.margin;
+  const pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
+  const {earned}=rewardUnits(pooled,hurdle);
+  const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
+    ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
+  if(((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id))
+    return {error:"A departed party's reward waits until they return."};
+  return {earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled};
+}
+function rewardReservation(entry,book){
+  const p=entry&&entry.payload;if(!p)return null;
+  if(p.mode==='redeem')return {party:ownerCode(p.party),product:p.product||'salt',units:+p.qty||0};
+  if(p.mode==='new'&&p.direction==='SELL'&&p.more&&+p.more.coverUnits>0)
+    return {party:ownerCode(p.party),product:p.product||'salt',units:+p.more.coverUnits};
+  if(p.mode==='amend'&&p.kind==='Correction'&&p.direction!=='BUY'&&p.fields){
+    const row=(book.sales||[]).find(s=>p.rid?s.rid===p.rid:ovKey(s)===p.orderKey);
+    if(!row)return null;
+    const f=p.fields;
+    const attribution=attributionOf(row);
+    const terms={party:attribution.stream==='R2'?(attribution.downstream||null):row.customer,
+      assoc:attribution.assoc,stream:attribution.stream,...f};
+    const customer=terms.stream==='R2'&&terms.assoc?bookR2({},'customer',terms.assoc,null).customer
+      :row.rev==='R2'&&!terms.assoc?terms.party||ownerCode(row.customer):terms.party||row.customer;
+    const after={...row,...f,customer};
+    const spent=s=>(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0);
+    const same=ownerCode(after.customer)===ownerCode(row.customer)&&(after.product||'salt')===(row.product||'salt');
+    const units=Math.max(0,spent(after)-(same?spent(row):0));
+    if(units>0.009)return {party:ownerCode(after.customer),product:after.product||'salt',units};
+  }
+  return null;
+}
+function entryReservationFault(entry,pending,book){
+  const p=entry&&entry.payload;if(!p)return '';
+  const entries=[...new Map((pending||[]).filter(e=>e&&e.at!==entry.at).map(e=>[e.at,e])).values()];
+  if(p.mode==='repay'){
+    const loan=((book.state||{}).loans||[]).find(l=>l&&l.rid===p.loan);
+    if(!loan)return 'The loan no longer exists.';
+    const cash=loan.form==='cash',field=cash?'rm':'kg';
+    const paid=(loan.repaid||[]).reduce((n,r)=>n+(+r[field]||0),0);
+    const reserved=entries.reduce((n,e)=>e.payload&&e.payload.mode==='repay'&&e.payload.loan===p.loan?n+(+e.payload[field]||0):n,0);
+    const room=(cash?+loan.valueRM:+loan.valueKg)-paid-reserved;
+    if(loan.status==='settled'||!(+p[field]>0)||+p[field]>room+0.005)
+      return 'This repays '+(+p[field]||0)+' against '+(+room.toFixed(2))+' still owing after payments already on their way.';
+  }
+  const spend=rewardReservation(entry,book);
+  if(spend){
+    const balance=rewardAccount(book,spend.party,spend.product);
+    if(balance.error)return balance.error;
+    const reserved=entries.reduce((n,e)=>{
+      const held=rewardReservation(e,book);
+      return held&&held.party===spend.party&&held.product===spend.product?n+held.units:n;
+    },0);
+    if(spend.units>balance.held-reserved+0.005)
+      return 'The reward is already spent or reserved by another input awaiting its fold.';
+  }
+  return '';
+}
+function inputConsumesResource(entry){
+  const p=entry&&entry.payload;
+  return !!p&&(p.mode==='repay'||p.mode==='redeem'
+    ||p.mode==='new'&&p.more&&+p.more.coverUnits>0
+    ||p.mode==='amend'&&p.kind==='Correction'&&p.fields
+      &&['rebate','rebateKg','coverUnits','qty','party','product','assoc','stream','downstream'].some(k=>Object.hasOwn(p.fields,k)));
+}
+function inputResource(entry,book){
+  const p=entry&&entry.payload;if(!p)return null;
+  if(p.mode==='repay'){
+    const loan=((book.state||{}).loans||[]).find(l=>l&&l.rid===p.loan);
+    if(!loan||loan.status==='settled')return {error:'Choose an open loan.'};
+    const cash=loan.form==='cash',field=cash?'rm':'kg';
+    const paid=(loan.repaid||[]).reduce((n,r)=>n+(+r[field]||0),0);
+    return {resource:'loan:'+loan.rid,amount:+p[field]||0,available:(cash?+loan.valueRM:+loan.valueKg)-paid};
+  }
+  const spend=rewardReservation(entry,book);
+  if(!spend)return null;
+  const reward=rewardAccount(book,spend.party,spend.product);
+  return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
+}
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
   handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,raw}){
   const booking={customer:party};
@@ -4917,53 +5042,69 @@ function tierSetEntry({at,tiers,raw}){
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
     payload:{mode:'tierset',tiers:copied}};
 }
-function loanEntry({at,product,direction,party,date,form,amount}){
+function loanEntry({at,product,direction,party,date,form,amount,note=null,raw}){
   const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
   return {at,type,party,qty:cash?null:amount,total:cash?amount:null,status:'open',
-    raw:cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
-    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date,
+    raw:raw===undefined?(cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
+    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date):raw,
     payload:{mode:'loan',form,product:cash?null:product,direction,party,date,qty:cash?null:amount,
-    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note:null}};
+    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note}};
 }
-function repaymentEntry({at,loan,party,date,form,product,amount}){
+function repaymentEntry({at,loan,party,date,form,product,amount,note=null,raw}){
   const cash=form==='cash';
   return {at,type:'REPAY',party,qty:cash?null:amount,total:cash?amount:null,status:'open',
-    raw:'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date,
+    raw:raw===undefined?'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date:raw,
     payload:{mode:'repay',loan:loan.rid,party:loan.party,date,kg:cash?null:amount,rm:cash?amount:null,
-    qty:null,total:null,cash:null,note:null}};
+    qty:null,total:null,cash:null,note}};
 }
-function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null}){
+function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null,note=null,raw}){
   return {at,type:'GIFT',party,qty,total:0,status:'inkind',
-    raw:'Give '+qty+' unit '+product+' free to '+party+' on '+date,
-    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note:null}};
+    raw:raw===undefined?'Give '+qty+' unit '+product+' free to '+party+' on '+date:raw,
+    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note}};
 }
 function redeemEntry({at,product,party,date,qty,earned,applied,balance}){
   return {at,type:'REDEEM',party,qty,total:0,status:'inkind',
     raw:'Redeem '+qty+' free unit '+product+' for '+party+' on '+date,
     payload:{mode:'redeem',product,party,qty,date,earned,applied,balance}};
 }
-function rebateOffsetEntry({at,party,date,sale,units,rm}){
+function rebateOffsetEntry({at,party,date,sale,units,rm,raw,auto=false}){
   return {at,type:'AMEND',party,qty:0,total:0,status:'inkind',
-    raw:'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind',
-    payload:{mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
+    raw:raw===undefined?'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind':raw,
+    payload:{...(auto?{auto:true}:{}),mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
     orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
       rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
 }
-function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null}){
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=null,raw}){
   return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''),
-    payload:{mode:'addid',code,kind,parent,rev,note:null,geo,tiers}};
+    raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
+    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers}};
 }
-function renameEntry({at,from,to,geo=null}){
+function renameEntry({at,from,to,geo=null,raw}){
   return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
-    raw:'Amend ID: re-key '+from+' to '+to+' wherever the book names it',
+    raw:raw===undefined?'Amend ID: re-key '+from+' to '+to+' wherever the book names it':raw,
     payload:{mode:'rename',from,to,geo}};
 }
-function placeEntry({at,places}){
+function placeEntry({at,places,party=null,raw}){
   const codes=Object.keys(places);
-  return {at,type:'PLACE',party:null,qty:null,total:null,status:'place',
-    raw:'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '),
+  return {at,type:'PLACE',party,qty:null,total:null,status:'place',
+    raw:raw===undefined?'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '):raw,
     payload:{mode:'place',places}};
+}
+function ledgerAmendmentEntry({at,row,direction,kind,date,cash=0,movedUnits=0,fields,
+  party=direction==='BUY'?row.supplier:row.customer,note=null,raw,status,orderCode=null,sameDay=date===row.date}){
+  if(!['Correction','Fulfilment','Cancellation','Modification','Default'].includes(kind)
+    && !(direction==='BUY'&&['Payment','Receipt'].includes(kind)))
+    throw new Error('This amendment kind is retired or unsupported.');
+  const correction=kind==='Correction',cancel=kind==='Cancellation',mod=kind==='Modification';
+  return {at,type:'AMEND',party,qty:cancel||mod?null:correction?0:movedUnits,total:cancel||mod?null:correction?0:cash,
+    status:status|| (cancel?'cancelled':correction?'corrected':mod?'modified':kind==='Default'?'defaulted':'partial'),
+    raw:raw===undefined?kind+' against '+row.rid+' for '+party+' on '+date:raw,
+    payload:{mode:'amend',direction,party,product:row.product||'salt',rid:row.rid||null,orderKey:ovKey(row),
+      date,kind,orderCode,linkTo:null,assoc:null,downstream:null,sameDay,note,
+      ...(correction?{fields:{...fields},qty:0,total:0,cash:0,kg:0}
+        :mod?{newTotal:cash,newQty:movedUnits,wasTotal:row.total,wasQty:row.qty,qty:null,total:null,cash:null,kg:null}
+        :cancel?{qty:null,total:null,cash:null,kg:null}
+        :{qty:movedUnits,total:cash,cash,kg:movedUnits})}};
 }
 /* ---- the row helpers, verbatim from the desk ---- */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: THE PRICE AND THE CARRIAGE ARE SEPARATE ============
@@ -5985,6 +6126,73 @@ function placeCandidates(s){
   for(let len=Math.min(4,w.length);len>=1;len--)for(let i=0;i+len<=w.length;i++){const run=w.slice(i,i+len).join(' ');if((len>1||run.length>=6)&&run.split(' ').some(x=>PLACE_GENERIC.indexOf(x)<0))add(run);}
   return out;
 }
+function vaultRekeyMap(map,from,to){
+  if(from===to)return map;
+  const next={...map};
+  Object.keys(map).filter(code=>code===from||code.startsWith(from+'-')).forEach(code=>{
+    const target=to+code.slice(from.length);
+    if(Object.hasOwn(map,target))throw new Error('The new code already holds a vault entry. Resolve it on Desk first.');
+    next[target]=map[code];delete next[code];
+  });
+  return next;
+}
+function vaultPendingOk(record,publicWord=()=>false){
+  const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  const envelope=v=>object(v)&&Object.keys(v).every(k=>['v','salt','iv','ct','it'].includes(k))
+    &&v.v===1&&['salt','iv','ct'].every(k=>typeof v[k]==='string'&&/^[A-Za-z0-9+/]+={0,2}$/.test(v[k]));
+  const pair=v=>object(v)&&Object.keys(v).every(k=>['names','places'].includes(k))
+    &&envelope(v.names)&&(v.places===null||envelope(v.places));
+  const fields=['at','expectedRevision','names','places','pair','code','kind','parent','geo','tiers','vault','addrVault',
+    'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
+    'stream','associate','assoc','downstream','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
+    'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
+    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
+  const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
+    'SELL','BUY','Correction','Fulfilment','Cancellation','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
+  const safe=(v,key)=>{
+    if(v===null||typeof v==='boolean')return true;
+    if(typeof v==='number')return Number.isFinite(v);
+    if(['vault','addrVault','names'].includes(key))return envelope(v);
+    if(key==='places'&&envelope(v))return true;
+    if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
+      ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
+      ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v);
+    if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
+      ||i===2&&typeof n==='string'&&publicWord(n));
+    return object(v)&&Object.entries(v).every(([k,n])=>
+      (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
+  };
+  if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
+  if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
+    ||!['add-id','amend-id','place'].includes(record.input.operation)||!safe(record.input.body,'body')))return false;
+  return true;
+}
+function vaultMapMerge(base,intended,latest,reviewed=[]){
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const stable=value=>{
+    if(Array.isArray(value))return value.map(stable);
+    if(value&&typeof value==='object')
+      return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])]));
+    return value;
+  };
+  const same=(left,right)=>JSON.stringify(stable(left))===JSON.stringify(stable(right));
+  const result=clone(latest),conflicts=[];
+  const changed=[...new Set([...Object.keys(base),...Object.keys(intended)])].filter(key=>
+    Object.hasOwn(base,key)!==Object.hasOwn(intended,key)||!same(base[key],intended[key]));
+  for(const key of changed){
+    const localGone=!Object.hasOwn(intended,key),latestGone=!Object.hasOwn(latest,key);
+    const remoteChanged=Object.hasOwn(base,key)!==Object.hasOwn(latest,key)||!same(base[key],latest[key]);
+    const alreadyDesired=localGone===latestGone&&same(intended[key],latest[key]);
+    if(remoteChanged&&!alreadyDesired&&!reviewed.includes(key)){conflicts.push(key);continue;}
+    if(localGone)delete result[key];
+    else Object.defineProperty(result,key,{value:clone(intended[key]),enumerable:true,writable:true,configurable:true});
+  }
+  return {map:result,conflicts,changed};
+}
 function renameInBook(book,pairs){
   const map=new Map(pairs);let n=0;
   const walk=v=>{
@@ -5997,7 +6205,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
@@ -6006,7 +6214,7 @@ return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierS
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
         ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
-        renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
+        vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -12473,8 +12681,14 @@ async function mapPlaceFromVault(){
     if(r.point)places[id]=geoWhere(r.point,pl);else missed.push(id);
   }
   const n=Object.keys(places).length;
-  if(n)queue.push({at:new Date().toISOString(),type:'PLACE',party:null,qty:null,total:null,status:'place',
-    raw:'Place '+n+(n===1?' party':' parties')+' on the map from their recorded places: '+Object.keys(places).join(', '),payload:{mode:'place',places:places}});
+  let filed=false;
+  if(n&&vaultPairVersion){
+    const outcome={},why=await wbVaultFile(null,null,{operation:'place',body:{places}},outcome);
+    if(why){MAP_MSG=why+' Nothing placed.';render();return;}
+    filed=outcome.queued;
+  }
+  if(n&&!filed)queue.push(POSITION_ENGINE.placeEntry({at:new Date().toISOString(),places,
+    raw:'Place '+n+(n===1?' party':' parties')+' on the map from their recorded places: '+Object.keys(places).join(', ')}));
   MAP_MSG=(n?n+(n===1?' party':' parties')+' queued for approval':'Nothing new to place')+(missed.length?'; not found, so tap each through Amend ID: '+missed.join(', '):'')+'.';
   render();
   if(n)Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -13622,7 +13836,9 @@ function updQueue(){
       raw:'Fulfilment on '+codeOf(who)+' '+edRid+': '+[c>0.009?fmt0(c)+' cash':'',k>0.009?units(k)+' moved':''].filter(Boolean).join(', ')+', recorded '+d,
       payload:Object.assign({},base,{kind:'Fulfilment',date:d,qty:k,total:c,cash:c,kg:k})};
   }
-  queue.push(Object.assign({at:new Date().toISOString(),type:'AMEND',party:codeOf(who)},entry));
+  queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row,direction:edType,
+    kind:entry.payload.kind,date:d,cash:entry.payload.cash,movedUnits:entry.payload.kg,
+    fields:entry.payload.fields,raw:entry.raw,status:entry.status,sameDay:false}));
   edClose();
   applyOverlay();saveQueue();render();
 }
@@ -13674,12 +13890,9 @@ function edSubmit(){
   if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
   const today=TODAY.toISOString().slice(0,10);
   const words=Object.keys(fields).map(k=>k+' to '+(fields[k]===null?'(cleared)':fields[k]));
-  queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(row[partyKey]),qty:0,total:0,
-    raw:'Correction on '+codeOf(row[partyKey])+' '+edRid+': '+words.join(', ')+', recorded '+today,
-    payload:{mode:'amend',direction:edType,party:row[partyKey],rid:edRid,orderKey:ovKey(row),
-      kind:'Correction',date:today,fields:fields,
-      assoc:null,downstream:null,orderCode:null,linkTo:null,sameDay:false,note:null,
-      qty:0,total:0,cash:0,kg:0}});
+  queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row,direction:edType,
+    kind:'Correction',date:today,fields,sameDay:false,
+    raw:'Correction on '+codeOf(row[partyKey])+' '+edRid+': '+words.join(', ')+', recorded '+today}));
   edClose();
   /* applyOverlay BEFORE render, exactly as updQueue and wbRecord do. render() only recomputes;
      it does not rebuild the rows from BASE and re-apply the queue, so a queued entry that
@@ -16206,7 +16419,8 @@ let vaultPlaces={};
 async function vaultPlacesRead(){
   try{const r=await fetch('vault/addr',{cache:'no-store',headers:qHeaders()});if(!r.ok)return null;const j=await r.json();return j&&j.ok?j:null;}catch(e){return null;}
 }
-async function vaultPlacesOpen(pass){
+async function vaultPlacesOpen(pass,paired){
+  if(paired){try{return paired.places?await vaultDecrypt(pass,paired.places):{};}catch(e){return null;}}
   const j=await vaultPlacesRead();if(!j)return null;if(!j.vault)return {};
   try{const m=await vaultDecrypt(pass,j.vault);return m&&typeof m==='object'?m:null;}catch(e){return null;}
 }
@@ -16254,12 +16468,18 @@ async function vaultReveal(pass){
   if(!pass){vaultRevealMsg='Enter the passphrase.';return false;}
   vaultRevealBusy=true;vaultRevealMsg='Opening\u2026';try{renderReveal();}catch(e){}
   try{
+    let paired=null;
+    if(vaultPairVersion){
+      const response=await fetch('vault/pair',{cache:'no-store',headers:qHeaders()});
+      paired=await response.json();if(!response.ok||!paired.ok)throw new Error('The pair could not be read.');
+      NAME_VAULT=paired.names;vaultPairVersion=paired.revision;
+    }
     const map=await vaultDecrypt(pass,NAME_VAULT);
     const n=map&&typeof map==='object'?Object.keys(map).length:0;
     if(!n){vaultRevealMsg='It opened, but the vault holds no names.';vaultRevealBusy=false;try{renderReveal();}catch(e){}return false;}
     /* F14 (28 Sep 2026): ONE UNLOCK OPENS EVERY ENVELOPE. The passphrase is not kept, so each envelope is opened here on
        the one given or not at all: the names, then the places and the slip key (F13, 29 Sep 2026). */
-    const [places,slip]=await Promise.all([vaultPlacesOpen(pass),vaultSlipKeyOpen(pass)]);
+    const [places,slip]=await Promise.all([vaultPlacesOpen(pass,paired),vaultSlipKeyOpen(pass)]);
     vaultNames={};Object.keys(map).forEach(k=>{if(map[k])vaultNames[k]=map[k];});
     vaultPlaces=places||{};
     vaultSlipKey=slip&&typeof slip==='object'?slip:null;
@@ -16375,9 +16595,8 @@ function addParty(){
     addedParties.push({code:bcode,kind:'bucket',parent:parent,at:new Date().toISOString()});
     const bWarn=apPersist(bcode);
     roster.push(bcode);
-    queue.push({at:new Date().toISOString(),type:'ADDID',party:bcode,qty:null,total:null,status:'addid',
-      raw:'Add the general downsell bucket '+bcode+' under '+parent,
-      payload:{mode:'addid',code:bcode,kind:'bucket',parent:parent,rev:null}});
+    queue.push(POSITION_ENGINE.addIdEntry({at:new Date().toISOString(),code:bcode,kind:'bucket',parent:parent,rev:null,
+      raw:'Add the general downsell bucket '+bcode+' under '+parent}));
     apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.'+bWarn,bWarn?'var(--amber)':'var(--grn)');
     apSaved();
     return;
@@ -16392,6 +16611,7 @@ function addParty(){
   const code=deriveFreeCode(name,tbc?'TBC':loc,kind,parent);   // v587: a clash takes more of the name
   if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
   if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
+  if(vaultPairVersion)return apFilePairId(code,kind,parent,name,loc,setM);
   addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
   const mWarn=apPersist(code);
   roster.push(code);
@@ -16407,12 +16627,22 @@ function addParty(){
   syncBioNames();                                    // vaultNames follows BIO, never the reverse
   /* only the CODE and its shape ride the queue. The name is deliberately absent: the queue
      file is plaintext and is the one place a name must never appear. */
-  queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind),
-    payload:{mode:'addid',code:code,kind:kind,parent:parent||null,
-             rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null)}});
+  queue.push(POSITION_ENGINE.addIdEntry({at:new Date().toISOString(),code:code,kind:kind,parent:parent||null,
+    rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null),
+    raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind)}));
   apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly: there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
   apSaved();
+}
+async function apFilePairId(code,kind,parent,name,loc,setM){
+  const geo=loc?geoWhere(wbGeoPoint(loc),loc):null,outcome={};
+  const why=await wbVaultFile(map=>{
+    const label=name+' ('+(loc||'to be confirmed')+')';
+    if(Object.hasOwn(map,code)&&map[code]!==label)throw new Error('That code already holds a different filed name. Keep this form and review its identity.');
+    map[code]=label;
+  },null,{operation:'add-id',body:{code,kind,parent:parent||null,geo,tiers:null}},outcome);
+  if(why){setM(esc(why),'var(--crim)');return;}
+  wbAddIdQueue(code,kind,parent,null,geo,null,outcome.queued);
+  apDone(kind,'<b>'+esc(code)+'</b> filed encrypted and queued for review. The name and place never ride the ledger queue.','var(--grn)');
 }
 /* THE CONFIRMATION USED TO BE DESTROYED BY ITS OWN SUCCESS (v199). addParty set the
    message and then called renderReveal(), which rebuilds the panel from scratch: the
@@ -17407,9 +17637,8 @@ function levelSay(v){return v==null?'not set':typeof v==='string'?v:(['small','m
 function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+levelSay(t[p])).join(', ');}
 function tierQueue(tiers){
   const codes=Object.keys(tiers);if(!codes.length)return;
-  queue.push({at:new Date().toISOString(),type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
-    raw:codes.length===1?'Set '+codes[0]+': '+tierSay(tiers[codes[0]]):'Set '+codes.length+' customers from their proposals: '+codes.map(c=>c+' '+tierSay(tiers[c])).join('; '),
-    payload:{mode:'tierset',tiers:tiers}});
+  queue.push(POSITION_ENGINE.tierSetEntry({at:new Date().toISOString(),tiers,
+    raw:codes.length===1?'Set '+codes[0]+': '+tierSay(tiers[codes[0]]):'Set '+codes.length+' customers from their proposals: '+codes.map(c=>c+' '+tierSay(tiers[c])).join('; ')}));
   render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
 }
@@ -18276,7 +18505,6 @@ function rewardUnitMargin(prod,who){const S=REWARD.stated[prod];if(!S||S.margin=
 function rewardR3Hurdle(prod){const S=REWARD.stated[prod];return (S&&S.associate&&S.associate.r3Hurdle)||1;}
 function rewardRuleTxt(prod,who){const m=rewardUnitMargin(prod,who);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
 function rewardMargin(id,refs){
-  const mine={margin:0,n:0},intro={margin:0,n:0};
   /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
      was skipped whole, so where one unit of an order came from the reward and the rest was paid for, the
      paid units earned nothing. The paid part is the goods the reward did not settle, total less settledRM,
@@ -18288,14 +18516,6 @@ function rewardMargin(id,refs){
      handed over unpaid and untaken is charged by the gift walk below; flooring it would let such a unit
      escape the charge. Each side is floored at nothing, so a rebateKg over the quantity or a settledRM
      over the goods cannot credit margin. A row with neither part left is a redemption, not an order. */
-  pricedSales.forEach(s=>{
-    if(txStat(s).order==='Default')return;
-    const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
-    if(!t)return;
-    let rm=s.total||0,q=s.qty||0;
-    if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-rebUnits(s));if(rm<0.009&&q<1e-9)return;}
-    t.margin+=rm-q*txUnitCost(s,wavgBuy);t.n++;
-  });
   /* v733, HIS DECISION OF 19 SEP 2026: THE REWARD SHRINKS WITH THE GIFT. A free unit handed over
      alongside an order cost the shelf real salt and was charged against the reward nowhere, so a
      customer earned on the full margin of what they paid for AND kept what they were given.
@@ -18314,20 +18534,11 @@ function rewardMargin(id,refs){
      and the charge routes through the same ownerOf, so it reaches an associate's pooled figure and a
      customer's card alike. The unit cost is the expression the loop above uses, so the two passes
      cannot disagree about what a unit of salt cost on a given day. */
-  pSales(PROD).forEach(s=>{
-    if(!s.goodwill||s.rebate||s.cancelled)return;
-    const st=txStat(s).order; if(st==='Pending'||st==='Cancelled'||st==='Default')return;
-    const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
-    if(t)t.margin-=(s.qty||0)*txUnitCost(s,wavgBuy);
-  });
-  mine.margin=+mine.margin.toFixed(2);intro.margin=+intro.margin.toFixed(2);
-  return {mine,intro,total:+(mine.margin+intro.margin).toFixed(2)};
+  return POSITION_ENGINE.rewardMargin({id,refs,sales:pSales(PROD),averageCost:wavgBuy});
 }
 /* units earned on a margin figure, and the margin still to go to the next one; null where the book has none */
 function rewardUnits(total,unit){
-  if(unit==null)return {earned:0,toNext:null};
-  const earned=Math.max(0,Math.floor(total/unit));
-  return {earned,toNext:+((earned+1)*unit-total).toFixed(2)};
+  return POSITION_ENGINE.rewardUnits(total,unit);
 }
 /* Every associate keeps the SAME three-stream ledger: Buy (R1/direct), Resell (R2/indirect),
    Refer (R3). R0 and R1 differ only in the numbers, not the structure. */
@@ -18916,13 +19127,9 @@ function redeemRebate(rid){if(!canRedeem(rid))return;const assoc=networkStats().
   const today=TODAY.toISOString().slice(0,10);
   const adv=sales.filter(s=>s.customer===rid&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   if(adv.length){const s=adv[0],{offUnits,offRM}=offsetFor(s,freeUnits,freeUnits);
-    queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(rid),qty:0,total:0,status:'inkind',
-      raw:'Rebate: offset '+units(offUnits)+' for '+codeOf(rid)+' against the '+(s.date||'undated')+' order, '+fmt(offRM)+' settled in kind',
-      payload:{mode:'amend',kind:'Correction',direction:'SELL',party:rid,rid:s.rid||null,orderKey:ovKey(s),date:today,
-        fields:{settledRM:+((+s.settledRM||0)+offRM).toFixed(2),rebate:true,rebateKg:+((+s.rebateKg||0)+offUnits).toFixed(2)}}});}
-  else{queue.push({at:new Date().toISOString(),type:'REDEEM',party:codeOf(rid),qty:freeUnits,total:0,status:'inkind',
-      raw:'Redeem '+units(freeUnits)+' free salt for '+codeOf(rid),
-      payload:{mode:'redeem',product:PROD,party:rid,qty:freeUnits,date:today,earned:rst.earned,applied:applied,balance:held}});}
+    queue.push(POSITION_ENGINE.rebateOffsetEntry({at:new Date().toISOString(),party:rid,date:today,sale:s,units:offUnits,rm:offRM}));}
+  else{queue.push(POSITION_ENGINE.redeemEntry({at:new Date().toISOString(),product:PROD,party:rid,date:today,
+      qty:freeUnits,earned:rst.earned,applied,balance:held}));}
   /* the draft is made on arrival, so the Approve part is read again once the post has landed */
   saveQueue();switchTab('approve');
   qPost().then(ok=>{if(ok)setTimeout(()=>{if(curAddr==='approve')apLoad(true);},3000);}).catch(()=>{});}
@@ -18948,10 +19155,9 @@ function autoOffsets(){try{
     const s=adv[0]; if(!s||!s.rid||offered(s))continue;
     const {offUnits,offRM}=offsetFor(s,free,1);   // v594: priced on the goods, never more than is owed
     if(!(offUnits>0.009))continue;
-    queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(r.id),qty:0,total:0,status:'inkind',
+    queue.push(POSITION_ENGINE.rebateOffsetEntry({at:new Date().toISOString(),party:codeOf(r.id),sale:s,date:today,units:offUnits,rm:offRM,auto:true,
       raw:'Automatic offset: '+codeOf(r.id)+' reward, '+units(offUnits)+', against the '+(s.date||'undated')+' order, '+fmt(offRM)+' settled in kind',
-      payload:{mode:'amend',kind:'Correction',direction:'SELL',party:r.id,rid:s.rid,orderKey:ovKey(s),date:today,auto:true,
-        fields:{settledRM:+((+s.settledRM||0)+offRM).toFixed(2),rebate:true,rebateKg:+((+s.rebateKg||0)+offUnits).toFixed(2)}}});
+    }));
     made.push(codeOf(r.id)+' '+units(offUnits));
   }
   if(made.length){saveQueue();qPost().catch(()=>{});apMsg='Offered an automatic offset for '+made.join(', ')+'. Each waits here for your tap once it is drafted.';}
@@ -21023,6 +21229,7 @@ function tabWorkbench(){
       <button class="vbtn salt-pill salt-pill--sm" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>`:''}
       <span id="wbOk"></span>
     </div>
+    ${wbVaultRetryMarkup()}
     <div class="note" style="margin-top:10px" id="wbSync">${qNote()}</div>
   </div>
   <div id="queueBox" style="margin-top:8px"></div>`;
@@ -23106,7 +23313,7 @@ function wbTierKind(kind,apl){return !(apl&&apl.elevate)&&(kind==='customer'||ki
 /* v646: the starting tier chosen for each product; a product left not set is left out, and none chosen is null */
 function wbTiersChosen(){const t={};PROD_IDS.forEach(p=>{const v=wbVal('wbApTier_'+p);if(TIER_NAMES.includes(v))t[p]=v;});return Object.keys(t).length?t:null;}
 /* v528: the registration itself, shared by the bucket road and the named road */
-function wbAddIdQueue(code,kind,parent,an,geo,tiers){
+function wbAddIdQueue(code,kind,parent,an,geo,tiers,alreadyQueued=false){
   /* v570: READ THE PLAN BEFORE THE OVERLAY MOVES, or the two pushes below flip `known` and
      `already` under it and the queue line would describe an appointment as a registration. */
   const apl=addIdPlan(code,kind);
@@ -23117,9 +23324,9 @@ function wbAddIdQueue(code,kind,parent,an,geo,tiers){
      once, exactly as a queued count or loss shows through the overlay before it is folded */
   if(apl.resell&&roster.indexOf(apl.resell)<0)roster.push(apl.resell);
   if(apl.stream&&associates.indexOf(code)<0)associates.push(code);
-  queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
+  if(!alreadyQueued)queue.push(POSITION_ENGINE.addIdEntry({at:new Date().toISOString(),code,kind,parent,rev:apl.stream,geo:geo||null,tiers:tiers||null,note:an||null,
     raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(tiers?', starting at '+tierSay(tiers):'')+(an?', '+an:''),
-    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null,tiers:tiers||null}});
+    }));
   ['wbApWho','wbApNote','wbApName','wbApPlace','wbApLink'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -23131,7 +23338,67 @@ function wbAddIdQueue(code,kind,parent,an,geo,tiers){
    read before anything is written, so a passphrase that opens the names and not the places files neither, and saved before
    the names, so a save that fails leaves at worst a place under a code nothing names yet, never a party whose place was
    lost. A places map left as it was is not written. With no `edit`, the names are opened only to prove the passphrase. */
-async function wbVaultFile(edit,editPlaces){
+let wbVaultPending=null;
+let wbVaultBusy=false;
+let wbVaultVerifiedWords=new Set();
+function wbVaultRetryMarkup(){
+  let held;
+  try{held=localStorage.getItem('saltVaultPending');}
+  catch(error){return '<p role="status">Device retry storage is unavailable. Do not send a vault input until storage works.</p>';}
+  return held?'<div class="salt-insight"><p>Encrypted input retained on this device. Unlock to retry unchanged or review the latest pair.</p><button class="salt-ghost" onclick="wbVaultRecover()">Unlock retained input</button> <button class="salt-ghost" onclick="wbVaultCancel()">Cancel retained input</button><p id="wbVaultRecoveryStatus" role="status"></p></div>':'';
+}
+async function wbVaultRecover(){
+  const why=await wbVaultFile(null,null),status=document.getElementById('wbVaultRecoveryStatus');
+  if(why){if(status)status.textContent=why;}else render();
+}
+function wbVaultCancel(){
+  if(confirm('Cancel this retained request on this device? An input already committed on the server is not withdrawn.')){
+    try{wbVaultPendingStore(null);render();}
+    catch(error){const status=document.getElementById('wbVaultRecoveryStatus');if(status)status.textContent=error.message;}
+  }
+}
+function wbVaultPublicWord(word){
+  return wbVaultVerifiedWords.has(word)||placePicks().has(word)||PLACE_LIST.some(place=>place.n===word)||AREAS.some(area=>area.short===word)
+    ||Object.values(PLACED).some(point=>point&&point[2]===word);
+}
+async function wbVaultPendingCheck(record){
+  const words=new Set(),walk=value=>{
+    if(Array.isArray(value)){if(value.length===3&&typeof value[2]==='string')words.add(value[2]);return;}
+    if(value&&typeof value==='object')Object.values(value).forEach(walk);
+  };
+  walk(record.body);walk(record.input?.body);
+  for(const word of words){
+    if(!wbVaultPublicWord(word)){
+      const official=await placeFromText(word);
+      if(official.point)wbVaultVerifiedWords.add(word);
+    }
+  }
+}
+function wbVaultPendingStore(record){
+  if(record)record=JSON.parse(JSON.stringify(record));
+  if(record&&!POSITION_ENGINE.vaultPendingOk(record,wbVaultPublicWord))
+    throw new Error('The retry record is not ciphertext and approved cloud-safe metadata. Nothing was sent.');
+  if(record)localStorage.setItem('saltVaultPending',JSON.stringify(record));
+  else localStorage.removeItem('saltVaultPending');
+  wbVaultPending=record;
+}
+async function wbVaultPendingRead(){
+  const text=localStorage.getItem('saltVaultPending');
+  if(text){
+    const record=JSON.parse(text);
+    await wbVaultPendingCheck(record);
+    if(!POSITION_ENGINE.vaultPendingOk(record,wbVaultPublicWord))
+      throw new Error('The retained vault request is invalid. Review and explicitly cancel it before another input.');
+    wbVaultPending=record;
+  }
+}
+async function wbVaultFile(edit,editPlaces,input=null,outcome={}){
+  if(wbVaultBusy)return 'A vault input is already sending. Wait for its answer before another tap.';
+  wbVaultBusy=true;
+  try{return await wbVaultFileWork(edit,editPlaces,input,outcome);}finally{wbVaultBusy=false;}
+}
+async function wbVaultFileWork(edit,editPlaces,input=null,outcome={}){
+  try{await wbVaultPendingRead();}catch(error){return error.message;}
   const pass=prompt('Vault passphrase, to file the name encrypted. It is used once and not kept.');
   if(!pass)return 'The name needs the passphrase to be filed.';
   /* v612: THE VAULT IS READ AGAIN HERE, NEVER TAKEN FROM MEMORY. NAME_VAULT is loaded once, when the
@@ -23141,6 +23408,8 @@ async function wbVaultFile(edit,editPlaces){
   let cloud=null;
   try{const r=await fetch('vault',{cache:'no-store'});if(r.ok)cloud=await r.json();}catch(e){}
   if(!cloud||!cloud.ok)return 'The vault could not be read (offline, or the server did not answer).';
+  vaultPairVersion=cloud.revision||null;
+  if(cloud.revision)return wbVaultPairFile(pass,edit,editPlaces,input,outcome);
   let map={};
   if(cloud.vault){try{map=await vaultDecrypt(pass,cloud.vault);}catch(e){return 'That passphrase did not open the vault.';}}
   let pmap=null;
@@ -23162,6 +23431,66 @@ async function wbVaultFile(edit,editPlaces){
     if(pmap)vaultPlaces=pmap;}   /* F14: the places on screen follow, only while the names are open */
   return null;
 }
+async function wbVaultPairFile(pass,edit,editPlaces,input,outcome){
+  const headers=qHeaders(),clone=value=>JSON.parse(JSON.stringify(value));
+  const send=async(path,body)=>{
+    const r=await fetch(path,{method:'POST',headers,body:JSON.stringify(body)});
+    const result=await r.json();
+    if(!r.ok||!result.ok)throw Object.assign(new Error(result.error||'The pair could not be saved.'),{status:r.status,detail:result});
+    return result;
+  };
+  try{
+    if(wbVaultPending){
+      if(JSON.stringify(wbVaultPending.input)!==JSON.stringify(input)&&input!==null)
+        return 'A different encrypted vault input is retained. Return to its form to retry or review it before another input.';
+      if(confirm('Retry the retained encrypted vault request unchanged? Cancel keeps it for review.')){
+        try{
+          const retained=wbVaultPending.body.pair||wbVaultPending.body;
+          const names=await vaultDecrypt(pass,retained.names),places=retained.places?await vaultDecrypt(pass,retained.places):{};
+          const result=await send(wbVaultPending.path,wbVaultPending.body);
+          outcome.queued=!!wbVaultPending.input;NAME_VAULT=retained.names;vaultPairVersion=result.revision;wbVaultPendingStore(null);
+          if(Object.keys(vaultNames||{}).length){vaultNames=names;vaultPlaces=places;fillNameLookup(vaultNames);}
+          return null;
+        }
+        catch(error){if(error.detail?.code!=='vaultConflict')return error.message+' The encrypted request is kept for retry.';}
+      }
+      if(!confirm('Read the latest pair and review this retained edit instead?')){
+        if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn by this cancellation.'))wbVaultPendingStore(null);
+        return 'The encrypted request was kept or explicitly cancelled. No new input was sent.';
+      }
+    }
+    const r=await fetch('vault/pair',{cache:'no-store',headers});
+    const pair=await r.json();if(!r.ok||!pair.ok)return pair.error||'The vault pair could not be read.';
+    const latest={names:await vaultDecrypt(pass,pair.names),places:pair.places?await vaultDecrypt(pass,pair.places):{}};
+    const previous=wbVaultPending;
+    const open=async envelopes=>({names:await vaultDecrypt(pass,envelopes.names),places:envelopes.places?await vaultDecrypt(pass,envelopes.places):{}});
+    const base=previous?await open(previous.base):clone(latest),desired=previous?await open(previous.desired):clone(latest);
+    if(!previous){if(edit)edit(desired.names);if(editPlaces)editPlaces(desired.places);}
+    let names=POSITION_ENGINE.vaultMapMerge(base.names,desired.names,latest.names),places=POSITION_ENGINE.vaultMapMerge(base.places,desired.places,latest.places);
+    const conflicts=[...new Set(names.conflicts.concat(places.conflicts))];
+    if(conflicts.length){
+      if(!confirm('The vault changed for '+conflicts.join(', ')+'. Apply your retained edit over those changes?'))
+        return 'Conflict not applied. The form and retained request are kept.';
+      names=POSITION_ENGINE.vaultMapMerge(base.names,desired.names,latest.names,conflicts);
+      places=POSITION_ENGINE.vaultMapMerge(base.places,desired.places,latest.places,conflicts);
+    }
+    const namesEnvelope=await vaultEncrypt(pass,names.map),placesEnvelope=pair.places===null&&!Object.keys(places.map).length?null:await vaultEncrypt(pass,places.map);
+    const at=new Date().toISOString(),typed=previous?previous.input:input;
+    const path=typed?'vault/inputs/'+typed.operation:'vault/pair';
+    const body=typed?{...typed.body,at,vault:typed.operation==='place'?undefined:namesEnvelope,
+      addrVault:placesEnvelope||undefined,pair:{expectedRevision:pair.revision,names:namesEnvelope,places:placesEnvelope}}
+      :{at,expectedRevision:pair.revision,names:namesEnvelope,places:placesEnvelope};
+    const intent=await Promise.all([vaultEncrypt(pass,base.names),vaultEncrypt(pass,base.places),
+      vaultEncrypt(pass,desired.names),vaultEncrypt(pass,desired.places)]);
+    const retryRecord={path,body,base:{names:intent[0],places:intent[1]},desired:{names:intent[2],places:intent[3]},input:typed};
+    await wbVaultPendingCheck(retryRecord);
+    wbVaultPendingStore(retryRecord);
+    const saved=await send(path,body);
+    wbVaultPendingStore(null);NAME_VAULT=namesEnvelope;vaultPairVersion=saved.revision;outcome.queued=!!typed;
+    if(Object.keys(vaultNames||{}).length){vaultNames=names.map;vaultPlaces=places.map;fillNameLookup(vaultNames);}
+    return null;
+  }catch(error){return error.message+' The form and encrypted request are kept; no second input was queued.';}
+}
 /* v628, AMEND ID: WHAT THE TAP WILL DO, one answer for the preview and the record. The code is derived again by
    the Add ID rule with the party's own code counting as free, so a spelling that keeps the code keeps it; what
    moves with a new code is the engine's renamePairs, the list the card and the fold read too. */
@@ -23177,26 +23506,32 @@ function amendIdPlan(){
 }
 const amendQueued=from=>queue.some(q=>q&&q.payload&&q.payload.mode==='rename'&&q.payload.from===from);
 async function wbAmendIdNamed(ap){
-  /* the new spelling goes under the code it derives; a rename leaves the old entry for the code still on the book
-     until the fold, and an end buyer's name is copied to their new code */
-  /* F14: THE PLACES FOLLOW THE NAMES. A link typed files its point under the code the amendment ends on; a new code takes
-     the old one's place, and each account that follows it its own, as the names are copied, the old entries staying until
-     the laptop takes them out. His base point files the place alone. */
+  /* KV copies keep old codes until the fold; the versioned pair moves names, places and descendants together.
+     His base point files its place alone, without a ledger input. */
   const link=wbLinkNow('wbAmLink');
   const places=(link||ap.pairs.length)?(pm=>{
+    if(vaultPairVersion&&ap.to!==ap.from){
+      const moved=POSITION_ENGINE.vaultRekeyMap(pm,ap.from,ap.to);
+      Object.keys(pm).forEach(key=>delete pm[key]);Object.assign(pm,moved);
+    }
     if(link)pm[ap.base?'_base':ap.to]=placeEntry(link);
     ap.pairs.forEach(x=>{if(pm[x[0]]&&!pm[x[1]])pm[x[1]]=pm[x[0]];});
   }):null;
+  const outcome={},input=ap.base?null:ap.to!==ap.from
+    ?{operation:'amend-id',body:{from:ap.from,to:ap.to,geo:ap.geo||null}}
+    :{operation:'amend-id',body:{from:ap.from,to:ap.to,geo:ap.move?ap.geo:null}};
   const why=await wbVaultFile(ap.base?null:(map=>{
+    if(vaultPairVersion&&ap.to!==ap.from){
+      const moved=POSITION_ENGINE.vaultRekeyMap(map,ap.from,ap.to);
+      Object.keys(map).forEach(key=>delete map[key]);Object.assign(map,moved);
+    }
     map[ap.to]=ap.nm+' ('+(ap.pl||'to be confirmed')+')';
     ap.pairs.slice(1).forEach(x=>{if(map[x[0]]&&!map[x[1]])map[x[1]]=map[x[0]];});
-  }),places);
+  }),places,input,outcome);
   if(why){const o=wbEl('wbOk');if(o){o.textContent=why+' Nothing amended.';o.style.color='var(--crim)';}return;}
-  if(ap.to!==ap.from)queue.push({at:new Date().toISOString(),type:'RENAME',party:ap.from,qty:null,total:null,status:'rename',
-    raw:'Amend ID: re-key '+ap.from+' to '+ap.to+' wherever the book names it',
-    payload:{mode:'rename',from:ap.from,to:ap.to,geo:ap.geo||null}});
-  else if(ap.move)queue.push({at:new Date().toISOString(),type:'PLACE',party:ap.from,qty:null,total:null,status:'place',
-    raw:'Place '+ap.from+' on the map at its recorded place',payload:{mode:'place',places:{[ap.from]:ap.geo}}});
+  if(!outcome.queued&&ap.to!==ap.from)queue.push(POSITION_ENGINE.renameEntry({at:new Date().toISOString(),from:ap.from,to:ap.to,geo:ap.geo||null}));
+  else if(!outcome.queued&&ap.move)queue.push(POSITION_ENGINE.placeEntry({at:new Date().toISOString(),party:ap.from,places:{[ap.from]:ap.geo},
+    raw:'Place '+ap.from+' on the map at its recorded place'}));
   ['wbAmName','wbAmPlace','wbAmLink'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -23206,10 +23541,13 @@ async function wbAmendIdNamed(ap){
 }
 async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tiers,link){
   const ok=wbEl('wbOk');
+  if(vaultPairVersion&&an){if(ok)ok.textContent='Notes stay on the incumbent Desk path until a cloud-safe note check exists. Clear the note before this versioned ID input.';return;}
   /* F14: a link's point and address go under the new code in the places envelope, on the one passphrase */
-  const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';},link?(pm=>{pm[code]=placeEntry(link);}):null);
+  const outcome={};
+  const why=await wbVaultFile(map=>{if(vaultPairVersion&&an)throw new Error('Notes stay on the incumbent Desk path until a cloud-safe note check exists. Clear the note before this versioned ID input.');const name=nm+' ('+pl+')';if(vaultPairVersion&&Object.hasOwn(map,code)&&map[code]!==name)throw new Error('That code already holds a different filed name. Keep this form and review its identity.');map[code]=name;},link?(pm=>{pm[code]=placeEntry(link);}):null,
+    {operation:'add-id',body:{code,kind,parent:parent||null,geo:geo||null,tiers:tiers||null}},outcome);
   if(why){if(ok){ok.textContent=why+' Nothing registered.';ok.style.color='var(--crim)';}return;}
-  wbAddIdQueue(code,kind,parent,an,geo,tiers);
+  wbAddIdQueue(code,kind,parent,an,geo,tiers,outcome.queued);
   const o2=wbEl('wbOk')||ok;   /* render() rebuilt the tab, so the status node captured above is detached */
   if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted'+(link?', and the place from the link beside it':'')+'; the ID is queued for approval.';o2.style.color='var(--grn)';}
 }
@@ -23300,9 +23638,9 @@ function wbRecord(){
        no delivery travel with it, because none of them is his to state: a gift is booked at what the
        salt cost, which is the one figure this desk never lets a person type over. */
     if(isGift){
-      queue.push({at:new Date().toISOString(),type:'GIFT',party:label,qty:qty,total:0,status:'inkind',
+      queue.push(POSITION_ENGINE.giftEntry({at:new Date().toISOString(),party:label,product:wbProdVal(),qty,date,movedUnits:unitsD||qty,handover:hand,note:note||null,
         raw:'Give '+units(qty)+' of '+wbProdName().toLowerCase()+' free to '+label+' on '+date+(hand?', '+hand:'')+(note?', '+note:''),
-        payload:{mode:'gift',product:wbProdVal(),party:party,qty:qty,date:date,kg:unitsD||qty,handover:hand,note:note||null}});
+        }));
       {const gc=wbEl('wbGift');if(gc)gc.checked=false;}
       ['wbQty','wbNote','wbHand'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
       ['wbCash','wbUnits','wbDelivery','wbFreight'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
@@ -23369,16 +23707,17 @@ function wbRecord(){
   }else if(wbMode==='amend'){
     const o=wbAmendList().find(x=>x.code===wbVal('wbOrder'));if(!o){ok.textContent='Pick an order.';ok.style.color='var(--crim)';return;}
     const t=o.t,kind=wbVal('wbKind'),date=wbVal('wbADate'),ac=wbNum('wbACash'),ak=wbNum('wbAUnits'),an=(wbVal('wbANote')||'').trim();
+    if(!['Fulfilment','Cancellation','Modification','Default'].includes(kind)
+      && !(wbASide==='BUY'&&['Payment','Receipt'].includes(kind))){
+      ok.textContent='This amendment kind is retired or unsupported. Nothing was queued.';ok.style.color='var(--crim)';return;}
     if(wbASide==='BUY'){
       const sf=wbSoFarBuy(t),lot=Object.assign({buy:true},t);
       const nxt=(kind==='Default')?wbState(t.total,t.qty,sf.cash,sf.kg,Object.assign({},lot,{defaulted:true})):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak,lot);
       const status=(kind==='Default')?'defaulted':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
       const raw=kind+' on '+o.code+' · lot from '+codeOf(t.who)+', '+fmt0(ac)+' paid and '+units(ak)+' received on '+date
         +(kind==='Default'?' → supplier default; cash already paid becomes a recoverable':' → '+nxt.state)+(an?', '+an:'');
-      queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:ak,total:ac,status:status,raw:raw,
-        /* V4a: the engine's key, never one spelt here: it names the product, and a sale's carriage since v694 */
-        payload:{mode:'amend',direction:'BUY',party:t.who,orderKey:ovKey(t._buy),date:date,qty:ak,total:ac,cash:ac,kg:ak,assoc:null,downstream:null,
-          kind:kind,orderCode:o.code,linkTo:null,sameDay:(date===t.date),note:an||null}});
+      queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row:t._buy,direction:'BUY',
+        party:t.who,kind,date,cash:ac,movedUnits:ak,status,raw,orderCode:o.code,note:an||null,sameDay:date===t.date}));
     }else{
       const linkTo=kind==='Linked'?wbVal('wbLinkTo'):null;
       if(kind==='Linked'&&!linkTo){ok.textContent='Choose which order this settles.';ok.style.color='var(--crim)';return;}
@@ -23408,17 +23747,8 @@ function wbRecord(){
         : kind+' on '+o.code+' · '+codeOf(t.who)+', '+fmt0(ac)+' and '+units(ak)+' moved on '+date+' → '+nxt.state
           +(sameDay?' (same day, folds into the opening)':'')
           +(linkTo?' (settles '+linkTo+')':'')+(an?', '+an:'');
-      queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:isCancel?null:ak,total:isCancel?null:ac,status:status,raw:raw,
-        payload:Object.assign({mode:'amend',direction:'SELL',party:t.who,orderKey:ovKey(t),date:date,
-          assoc:null,downstream:null,kind:kind,orderCode:o.code,linkTo:linkTo,sameDay:sameDay,note:an||null},
-          /* NAME THE NUMBERS. A Modification carries newTotal/newQty and NO cash or kg,
-             so nothing downstream can read a restatement as a movement; a Fulfilment
-             carries cash and kg as before. The old payload used the same two keys for
-             both and left the reader to infer it from `kind`, which is how 2 unit at
-             RM185 got booked as a part-delivery against a 5 unit order. */
-          isMod?{newTotal:ac,newQty:ak,wasTotal:t.total,wasQty:t.qty,qty:null,total:null,cash:null,kg:null}
-               :isCancel?{qty:null,total:null,cash:null,kg:null}   /* v457: a cancellation carries no figures */
-               :{qty:ak,total:ac,cash:ac,kg:ak})});
+      queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row:t,direction:'SELL',
+        party:t.who,kind,date,cash:ac,movedUnits:ak,status,raw,orderCode:o.code,note:an||null,sameDay}));
     }
     ['wbANote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     ['wbACash','wbAUnits'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
@@ -23428,19 +23758,19 @@ function wbRecord(){
       const lo=(typeof loans!=='undefined'?loans:[]).find(l=>l&&l.rid===wbVal('wbLoanWhich'))||null,cashR=!!(lo&&lo.form==='cash'),amt=cashR?wbNum('wbLoanRM'):w;
       const owed=lo?(cashR?cashLeft(lo):loanLeft(lo)):0;
       if(!lo||!(amt>0)||amt>owed+0.005||!date){ok.textContent='Choose the loan, what was repaid (no more than is owing) and the date first.';ok.style.color='var(--crim)';return;}
-      queue.push({at:new Date().toISOString(),type:'REPAY',party:codeOf(lo.party),qty:cashR?null:amt,total:cashR?amt:null,status:'open',
+      queue.push(POSITION_ENGINE.repaymentEntry({at:new Date().toISOString(),loan:lo,party:codeOf(lo.party),date,form:cashR?'cash':'salt',product:lo.product||'salt',amount:amt,note:noteL||null,
         raw:'Repaid '+(cashR?fmt(amt):units(amt)+' '+(lo.product||'salt'))+(lo.direction==='in'?' to ':' by ')+codeOf(lo.party)+' against the loan of '+lo.date+(noteL?', '+noteL:''),
-        payload:{mode:'repay',loan:lo.rid,party:lo.party,date:date,kg:cashR?null:amt,rm:cashR?amt:null,qty:null,total:null,cash:null,note:noteL||null}});
+        }));
       ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     }else{
     const cashL=wbVal('wbLoanForm')==='cash',rm=wbNum('wbLoanRM');   // v589
     if(!who||!(cashL?rm>0:w>0)||!date){ok.textContent='Choose the party, the '+(cashL?'ringgit':'units')+' and the date first.';ok.style.color='var(--crim)';return;}
-    if(cashL)queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:null,total:rm,status:'open',
+    if(cashL)queue.push(POSITION_ENGINE.loanEntry({at:new Date().toISOString(),party:codeOf(who),product:wbProdVal(),direction:dirL,date,form:'cash',amount:rm,note:noteL||null,
       raw:(dirL==='in'?'Borrowed ':'Lent ')+fmt(rm)+' in cash'+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in cash'+(noteL?', '+noteL:''),
-      payload:{mode:'loan',form:'cash',product:null,direction:dirL,party:who,date:date,qty:null,total:rm,cash:null,kg:null,rm:rm,note:noteL||null}});
-    else queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:w,total:null,status:'open',
+      }));
+    else queue.push(POSITION_ENGINE.loanEntry({at:new Date().toISOString(),party:codeOf(who),product:wbProdVal(),direction:dirL,date,form:'salt',amount:w,note:noteL||null,
       raw:(dirL==='in'?'Borrowed ':'Lent ')+units(w)+' '+wbProdName()+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in kind'+(noteL?', '+noteL:''),
-      payload:{mode:'loan',form:'salt',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
+      }));
     ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     }
   }else if(wbMode==='amendid'){
@@ -23959,10 +24289,12 @@ function qHeartbeat(){
    Only the ENCRYPTED envelope travels: the passphrase never leaves the browser
    and is never stored. Held in its own file so the desk itself carries no name
    data and can be shared or screenshotted freely. */
+let vaultPairVersion=null;
 async function vaultLoad(){
   if(qSyncState!=='server')return false;
   try{ const r=await fetch('vault',{cache:'no-store'}); if(!r.ok)return false;
     const j=await r.json(); if(!j.ok)return false;
+    vaultPairVersion=j.revision||null;
     /* v612: THE VAULT SERVED IS THE ONLY COPY. A browser copy under saltNameVault used to win over it,
        when the browser was where names were edited; nothing has written that key since the master came
        into this repo, so a device that still carried one kept an old vault in front of every newer one. */

@@ -135,17 +135,154 @@
   `/_internal/maker/drafts`, draft decisions, named order-stage actions, and typed
   `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/loan`,
   `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id` and
-  `inputs/place` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
+  `inputs/place` and `inputs/ledger-amend` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
   encrypts names on the device before sending the sealed envelope, and placement opens the encrypted
   places envelope on the device and sends only code-to-coordinate pairs rounded to 0.01 degrees.
   The Desk Worker checks the key and each exact method/path before any asset handling; an unknown
   path under `/_internal/maker/` is refused and never falls through to the desk page. It does not
   proxy arbitrary paths or expose D1. Counts, trades, tiers, loans, repayments, gifts, redemptions,
-  IDs and placement use existing Position Engine constructors, active-book and roster checks, the
+  IDs, placement and ledger amendments use existing Position Engine constructors, active-book and roster checks, the
   queue and the drafter; they wait for review. The Counter sends fixed fields only, never raw entries
   or unchecked notes. Name and place prose is absent from the queue; the trade and ledger-input note
   fields are disabled on Counter because those routes do not validate free text for name/place leaks.
-  Canonical request timestamps and content make a retry, not a second input.
+  Counter retains the complete failed request and disables its controls while sending. Durable
+  canonical operation/body receipts (`migrations/0013_maker_requests.sql`)
+  reject changed content under an existing timestamp and replay a completed input. Non-vault
+  receipts retain the immutable server-built entry before resource admission. A retry after
+  admission, queue or drafter interruption resumes that same fixed timestamp through the
+  shared admission and drafter; success requires the matching real draft, never just a queue
+  write. Concurrent retries share one admission and one primary-keyed draft. If the book no
+  longer permits the retained entry, recovery refuses explicitly rather than rebuilding it.
+  `0014_input_admission.sql` adds atomic resource receipts, claims and per-road ownership for
+  loan repayments and reward draws; both migrations were applied individually on 03 Oct 2026,
+  with readback preserving the existing draft indexes. The shared admission
+  helper runs on queue roads and drafting, and the fold rechecks the accepted batch. The follow-up's exact
+  remaining cutover gaps are listed in `docs/STATEMENTS.md`.
+- **Versioned vault pair, source-only protocol**: the approved direction is one D1 singleton
+  containing a revision, names envelope and places envelope. One no-store read returns a
+  consistent pair; any response containing places remains keyed, while the intended
+  names-only ciphertext read can remain public. `0015_vault_pair.sql` and `src/vault-pair.js`
+  implement the transaction kernel. Source-only `/vault/pair` GET/POST and the Counter's
+  exact owner/capability pair GET use it only when `VAULT_STORE=pair`; that setting is absent
+  from live configuration. Pair routes require a configured write key, remain behind human
+  Access when enabled, and never adopt legacy KV automatically.
+  Conditional update, whole-request fingerprint receipt and validated ID/place outbox
+  insert share one D1 batch. A stale revision writes none of them. An identical timestamp
+  replays its receipt; changed ciphertext or entry under that timestamp refuses. Envelopes
+  have canonical base64, 16-byte salt, 12-byte GCM nonce and at least a 16-byte tag.
+  Requests are bounded to 1 MiB and 1,000 retained receipts; capacity exhaustion refuses
+  explicitly until reviewed maintenance. The fixed-id outbox sender must confirm success
+  before completion and survive a crash after queue insertion without duplicating an input.
+  Public names-only compatibility and keyed places reads follow the D1 pair under that
+  setting; old unversioned POSTs and generic named ID/rekey/place queue writes explicitly
+  refuse with an upgrade state. Nameless buckets have no vault entry and keep their queue road.
+  Maker ID/place routes commit the server-constructed input with both envelopes. The exact
+  keyed Desk `POST /vault/inputs/add-id|amend-id|place` routes do the same. Recovery consumes
+  that outbox using its original timestamp, requires an actual draft, then marks completion;
+  failure leaves it pending. Identical request replay and the real scheduled Worker resume
+  it after commit-before-queue or queue-before-completion interruptions. Changed content
+  under that id refuses rather than overwriting or shifting its timestamp.
+  Scheduled recovery processes at most 25 pending rows, ordered by last attempted time and
+  id. Each attempt is marked before work, so failures rotate behind untouched rows rather
+  than starving them. Failures retain pending state and log only safe timestamps. A failed
+  row or unreadable recovery batch does not suppress incumbent minute/daily cron stages;
+  direct request failures remain explicit.
+  Counter forms, Desk Workbench Add/Amend ID, the legacy named Add ID path, Network placement
+  and base-point edits now use the versioned pair when discovered; normal seed/rekey and pull
+  use the same authority. Shared `vaultRekeyMap` moves names and exact places, descendants
+  included, while preserving `_base` and refusing target collisions. Legacy KV behavior stays
+  unchanged. ID notes are explicitly refused under pair authority until a cloud-safe note
+  check exists, never silently discarded.
+  `seed-vault` and `pull-vault` now discover the authority from the names-only read rather
+  than trust a laptop flag. Under versioned authority, pull opens names and places from one
+  keyed revision, writes both local files and saves ciphertext `salt_vault_pair.json` as the
+  local merge baseline. Seed decrypts the baseline and latest pair, merges only local intent
+  through shared `vaultMapMerge`, preserves unrelated remote edits and the paired envelope,
+  and sends one CAS. It requires `SALT_WRITE_KEY` (and `SALT_ACCESS_JWT` when human Access is
+  enabled); neither is filed. Ordinary names/places seeding no longer uses direct Wrangler
+  KV writes under versioned authority. Legacy authority keeps its existing paths. Slip-key
+  operations are unchanged.
+  A conflict keeps the local draft, reads/decrypts the latest pair, reapplies the intended
+  edit with collision checks and asks for explicit review on overlap; revised content gets
+  a new request id. Neither automatic stale whole-map replacement nor `--force` bypasses CAS.
+  Bootstrap requires writer maintenance, two matching legacy KV pair reads/digests,
+  revision-1 insertion and readback, followed by an explicitly authorized all-client cutover.
+  Old unversioned POSTs must refuse with an upgrade state after cutover. Rollback requires
+  a consistent D1 export and readback; stale recovery KV copies cannot become authority.
+  Laptop overlap review requires `--review-conflicts` in a terminal and explicit `APPLY`;
+  unattended overlap refuses. `--force` cannot bypass it. An encrypted request is saved with
+  exclusive creation in `salt_vault_pair_request.json` before sending; a lost response uses
+  `--retry` with the identical timestamp/ciphertext. `--rebase` keeps that old request aside
+  and reviews current authority under a new timestamp. Dry runs write neither baseline nor
+  request. These tools have actual Worker-path concurrency, overlap and replay checks;
+  Counter and Desk retain encrypted baseline/intent in device storage before transport, keep the form
+  after stale CAS, and require explicit Apply/Cancel for overlapping changes. Cancel writes
+  nothing; Apply merges unrelated remote entries and mints a fresh request. An unchanged
+  transport retry retains its timestamp and ciphertext. Desk binds retained input to its
+  original form, blocks concurrent submissions and updates unlocked names/places together
+  after replay; unlock itself rereads one consistent pair. Reload shows retained-input
+  recovery: unlock first for a vault retry or conflict review, Retry sends the identical
+  timestamp/ciphertext, Review merges intent under a new timestamp, and explicit local
+  Cancel removes the device request without withdrawing a server-committed input. The
+  records contain only ciphertext and allowlisted cloud-safe fixed metadata, never opened
+  names/places, a passphrase or a key. Malformed records refuse and remain for explicit
+  cancellation. Storage failure refuses transport. Counter's non-vault typed inputs also
+  retain their fixed request metadata across reload.
+  Laptop pull uses `tools/vault-local-files.mjs`: an exclusive process lock and fsynced
+  roll-forward journal cover names, places and their ciphertext baseline. Every seed/pull
+  CLI obtains the lock and recovers the journal before reading local files; the ledger's
+  leak-check reader refuses a lock, recovery guard or unfinished journal. Each replacement
+  is renamed separately, not a filesystem multi-file atomic rename. After interruption,
+  recovery completes every journaled file before a consumer runs. Active processes are
+  never displaced; a dead owner can be recovered. A recovery guard abandoned during lock
+  acquisition fails closed and needs reviewed `--writers-paused` recovery.
+  Seed completion reconciles both plaintext maps with the confirmed cloud pair before
+  advancing the baseline, in that same journal transaction. Its retained ciphertext
+  request includes the original encrypted merge baseline. Remote additions/amendments
+  are imported, while local changes (including unsent edits in the untouched partner)
+  remain local intent against the new baseline; a names-only seed never sends those
+  place edits. The request is removed only after the local transaction finishes.
+  Retried completion follows the identical reconciliation path. Older retained requests
+  without a reconciliation baseline refuse with an explicit recovery message rather
+  than guessing which absent local entries are deletions.
+  Preparatory maintenance uses standalone `0016_vault_write_gate.sql`, not the reseeded
+  book state. Its default is open. Draining excludes new names/places writes and named
+  ID/rekey/place queue ingress; accepted outbox consumers may finish. Paused is conditional
+  on no active writer and no pending outbox. KV, pair, Maker and legacy Desk routes use
+  durable per-operation claims, released only by their own completion. The laptop's legacy
+  names/places seed now uses those Worker routes with `SALT_WRITE_KEY` in the environment;
+  only the unchanged slip-key road uses a direct vault KV put. When Access is enabled the
+  laptop also needs its owner `SALT_ACCESS_JWT`. A paused refusal preserves device intent.
+  `GET /vault/maintenance` is keyed, no-store and read-only; no phone capability can open
+  the gate. Account-operator maintenance is `node tools/vault-maintenance.mjs gate
+  --phase draining|paused|open --apply-remote --writers-paused --output <local-report>`,
+  with separate `--read-remote` readback. No error automatically opens it. A crashed
+  active claim blocks pause until reviewed repair proves its writer cannot still run;
+  there is no expiry or force-release shortcut. Direct account API/KV/D1 superusers remain
+  out-of-band and must be explicitly paused during the maintenance window. Imports may
+  make D1 temporarily unavailable; that is an explicit write/recovery failure, never an
+  open-gate fallback.
+  `node tools/vault-local-files.mjs --recover --directory <local-data-folder>
+  [--writers-paused]` is local-only. Journals and replacement files stay in that private
+  data folder; no decrypted data is sent by recovery. Filesystem/power-loss damage, an
+  unreadable journal or permissions preventing rename require operator repair; they never
+  silently admit mixed revisions. External editors and out-of-repo utilities cannot be
+  forced to honor this lock and must be paused while a tool owns it.
+  `tools/vault-maintenance.mjs bootstrap --first <pair.json> --second <pair.json> --at <ISO>
+  --output <report.json>` creates a reviewed SQL plan from two identical legacy ciphertext
+  snapshots and refuses an existing singleton on application. It does not read or mutate
+  remote storage. `export --database <local.sqlite> --output <report.json>` reads one
+  consistent revisioned rollback pair with a digest. `prune --database <local.sqlite>
+  --before <ISO> --output <report.json>` is read-only unless `--apply-local --writers-paused`
+  is explicit; it retains at least thirty days, refuses pending recovery, and advances a
+  receipt floor so pruned timestamps never become fresh writes. Remote collection,
+  bootstrap/export readback and rollback deployment remain an authorized maintenance
+  procedure, not an automatically executable cutover. No utility switches live authority.
+  Normal seed must stop direct names/places KV puts at cutover; privileged Wrangler/API KV
+  puts then affect retired recovery copies only. Direct privileged D1 edits remain an
+  unavoidable out-of-band bypass, requiring maintenance and revision/receipt repair.
+  No remote migration, bootstrap, deployment or authority change is authorized by source
+  support. `vault-key` and its separate seed/restore procedure remain unchanged.
 - **Bridge secret provisioning**: create one high-entropy value of at least 32 characters and
   provision that same value as `COUNTER_MAKER_KEY` on both Workers, using the appropriate Wrangler
   config for each. Never put the value in either config or source. `STMT_DESK_KEY` is a different

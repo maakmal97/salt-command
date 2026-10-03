@@ -22,6 +22,7 @@
  *   --local                                    act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
@@ -75,6 +76,14 @@ function query(sql) {
 const q = (v) => v === null || v === undefined ? "NULL" : "'" + String(v).split("'").join("''") + "'";
 const num = (v) => (typeof v === "number" && Number.isFinite(v)) ? String(v) : "NULL";
 const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY", { maximumFractionDigits: 2 });
+
+export function draftAdmissionFault(draft) {
+  const row = draft.row || {};
+  return draft.collection === "repayment" || POSITION_ENGINE.inputConsumesResource(draft.entry)
+    || row.rebate && +row.qty > 0 || +row.coverUnits > 0
+    ? "Reward and repayment inputs need durable Worker admission. Send this input through Desk or Counter; it remains unbooked here."
+    : "";
+}
 
 /* ---- schema -------------------------------------------------------------------------- */
 /* Every migration from 0002 in order, read off the folder (0001 is tools/d1.mjs's). A list written here by hand stopped at
@@ -172,6 +181,8 @@ function draft() {
   /* v628: and repayment and rename (v633: and place), which the list had never named, so a hand-staged one was written as a sale */
   const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset", "loan", "repayment", "rename", "place", "tierset"].includes(d.collection) ? d.collection : "sales";
   const row = d.row;
+  const admissionFault = draftAdmissionFault(d);
+  if (admissionFault) { fail(admissionFault); return; }
   /* v478: amends and amend_kind travel with the draft, as they do from the Worker. Without them the
      fold reads an amendment as nameless and refuses it, which is what the laptop road had done to
      every Correction it staged. */
@@ -272,6 +283,8 @@ async function fromQueue() {
         continue;
       }
       const row = d.row;
+      const admissionFault = draftAdmissionFault({ ...d, entry });
+      if (admissionFault) { fail(entry.at + ": " + admissionFault); continue; }
       const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at) VALUES ("
         + [q(entry.at), "'pending'", q(d.collection), q(JSON.stringify(entry)), q(JSON.stringify(row)), q(d.reasoning),
            q(JSON.stringify(d.flags)), q(row.customer || row.supplier || null),
@@ -372,9 +385,15 @@ function committed() {
        26th. "There was no draft" is a valid answer to "mark the draft". */
     if (!cur.length) { ok(id + ": no draft behind it, which is what a fold stated directly looks like"); continue; }
     if (cur[0].status !== "approved") { fail(id + " is " + cur[0].status + ", not approved; refusing to mark it committed"); continue; }
-    if (cur[0].committed_at) { ok(id + " was already marked committed at " + cur[0].committed_at); continue; }
+    if (cur[0].committed_at) {
+      const repair = execFile("UPDATE input_admission SET state='committed' WHERE id=" + q(id) + " AND state='accepted'");
+      if (repair.code !== 0) { fail("could not reconcile input admission for " + id); continue; }
+      ok(id + " was already marked committed at " + cur[0].committed_at); continue;
+    }
     const at = new Date().toISOString();
-    const r = execFile("UPDATE draft SET committed_at=" + q(at) + ", live_at=" + (liveAt ? q(liveAt) : "NULL") + " WHERE id=" + q(id) + " AND committed_at IS NULL");
+    const r = execFile("UPDATE draft SET committed_at=" + q(at) + ", live_at=" + (liveAt ? q(liveAt) : "NULL") + " WHERE id=" + q(id) + " AND committed_at IS NULL;"
+      + " UPDATE input_admission SET state='committed' WHERE id=" + q(id) + " AND state='accepted'"
+      + " AND EXISTS (SELECT 1 FROM draft WHERE id=" + q(id) + " AND committed_at IS NOT NULL)");
     if (r.code !== 0) { fail("could not mark " + id + " committed"); continue; }
     ok(id + " marked committed");
     clock.push(clockLine(id, cur[0].decided_at, liveAt, at));

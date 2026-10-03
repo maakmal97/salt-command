@@ -16,7 +16,10 @@
  * list merged with the opens this Worker records, a row opening the account's card; Links; and More.
  * View as them opens the account the customer's own way, through the form. */
 
+import { MAKER_GEO_JS } from "./maker-geo.js";
+
 export const OWNER_JS = `
+  var makerGeo=${MAKER_GEO_JS};
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), oMore=document.getElementById('oMore'),
       oCards=document.getElementById('oCards'), oMaker=document.getElementById('oMaker'), aopen=document.getElementById('aopen'),
@@ -653,8 +656,128 @@ export const OWNER_JS = `
   }
   function makerButton(parent, label, action, primary){
     var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
-    b.type='button'; b.addEventListener('click',action); parent.appendChild(b); return b;
+    var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
+    cancel.type='button';cancel.hidden=true;
+    cancel.onclick=function(){
+      if(pending&&confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){
+        makerClear(pending.path);pending=null;cancel.hidden=true;
+      }
+    };
+    var message=function(){
+      var section=parent.closest('.maker-input');
+      return parent.querySelector(':scope > [role="status"]')
+        ||section&&section.querySelector(':scope > [role="status"]')||parent.querySelector('[role="status"]');
+    };
+    var changed=function(){if(!pending||!makerSaved(pending.path))pending=null;};
+    parent.addEventListener('input',changed); parent.addEventListener('change',changed);
+    var send=function(path,body,intent){
+      if(!pending) pending={path:path,body:JSON.parse(JSON.stringify(body))};
+      if(pending.path!==path) return Promise.reject(new Error('Finish the pending input before starting another.'));
+      if(path.indexOf('/all/maker/inputs/')===0){
+        var saved=makerSaved(path);
+        if(saved&&JSON.stringify(saved.body)!==JSON.stringify(pending.body)){
+          var metadata=function(value){var copy=Object.assign({},value);['at','vault','addrVault','pair'].forEach(function(key){delete copy[key];});return JSON.stringify(copy);};
+          if(!intent||!saved.body.pair||metadata(saved.body)!==metadata(pending.body))
+            return Promise.reject(new Error('A retained request needs Retry, Review or explicit Cancel before another input.'));
+        }
+        if(intent){pending.base=intent.base;pending.desired=intent.desired;}
+        makerSave(pending);
+        cancel.hidden=false;
+      }
+      return refs(pending.path,pending.body).then(function(result){
+        if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');
+        makerClear(pending.path);pending=null;cancel.hidden=true;return result;
+      },function(error){
+        if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
+          cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
+          pending=null;
+        }
+        throw error;
+      });
+    };
+    b.type='button'; b.addEventListener('click',async function(){
+      if(busy)return;
+      busy=true;b.disabled=true;
+      var controls=Array.from(parent.querySelectorAll('input,select,textarea,button')).filter(function(control){return control!==b;});
+      var disabled=controls.map(function(control){return control.disabled;});
+      controls.forEach(function(control){control.disabled=true;});
+      try{
+        if(pending){
+          await send(pending.path,pending.body);
+          var status=message();
+          if(status)status.textContent='Sent for review.';
+          await loadMaker();
+        }else await action(send);
+      }catch(error){
+        var failure=message();
+        if(failure)failure.textContent=error.message;
+        else throw error;
+      }
+      finally{
+        controls.forEach(function(control,index){control.disabled=disabled[index];});
+        busy=false;b.disabled=false;
+      }
+    }); parent.appendChild(b);parent.appendChild(cancel);return b;
   }
+      function makerSaved(path){
+        var text=localStorage.getItem('saltMakerPending:'+path);
+        if(!text)return null;
+        var saved=JSON.parse(text);
+        if(!makerGeo.pendingOk(saved))throw new Error('The retained request is invalid. Explicitly cancel it before another input.');
+        return saved;
+      }
+      function makerSave(record){
+        if(!makerGeo.pendingOk(record))throw new Error('The retry record contains unsupported metadata. Nothing was sent.');
+        localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
+      }
+      function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);}
+      function makerRecovery(parent){
+        var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;});
+        keys.forEach(function(key){
+          var path=key.slice('saltMakerPending:'.length),saved;
+          var section=el('section','maker-input');section.appendChild(el('h3',null,'Retained input'));
+          var status=makerStatus(section),pass=makerField(section,'Vault passphrase','password','');
+          parent.appendChild(section);
+          try{saved=makerSaved(path);status.textContent=path.split('/').pop()+' · retained on this device. Retry is unchanged; Review starts a new request.';}
+          catch(error){status.textContent=error.message;}
+          var run=async function(review){
+            try{
+              if(!saved)throw new Error('Only explicit cancellation is available for an invalid request.');
+              if(saved.body.pair||saved.body.vault||saved.body.addrVault){
+                if(!pass.value)throw new Error('Unlock the retained ciphertext before retry or review.');
+                await makerVaultOpen(pass.value,saved.body.pair?saved.body.pair.names:saved.body.vault||saved.body.addrVault);
+                if(review){
+                  if(!saved.body.pair)throw new Error('Legacy vault retries can only be sent unchanged or explicitly cancelled.');
+                  var prepared=await makerPairPrepare(pass.value,function(){},saved);
+                  saved={path:saved.path,body:Object.assign({},saved.body,{at:new Date().toISOString(),
+                    pair:{expectedRevision:prepared.revision,names:prepared.names,places:prepared.places}}),
+                    base:prepared.base,desired:prepared.desired};
+                  if(saved.body.vault)saved.body.vault=prepared.names;
+                  if(saved.body.addrVault)saved.body.addrVault=prepared.places;
+                  makerSave(saved);
+                }
+              }else if(review)throw new Error('This immutable input can only be retried unchanged or explicitly cancelled.');
+              pass.value='';
+              var answer=await refs(saved.path,saved.body);
+              if(!answer||answer.ok!==true)throw new Error('The input completion was not confirmed.');
+              makerClear(saved.path);section.remove();await loadMaker();
+            }catch(error){pass.value='';status.textContent=error.message;}
+          };
+          ['Retry unchanged','Review latest','Cancel retained input'].forEach(function(label,index){
+            var button=el('button','salt-ghost',label);button.type='button';
+            button.onclick=async function(){
+              if(index===2){
+                if(confirm('Cancel this retained request on this device? An input already committed on the server is not withdrawn.')){
+                  makerClear(path);section.remove();
+                }
+                return;
+              }
+              var controls=section.querySelectorAll('button');controls.forEach(function(control){control.disabled=true;});
+              try{await run(index===1);}finally{controls.forEach(function(control){control.disabled=false;});}
+            };section.appendChild(button);
+          });
+        });
+      }
   function makerField(parent, label, type, value, step){
     var wrap=el('label','maker-field'), title=el('span','lbl',label), input=el('input','fld salt-field__input');
     input.type=type; input.value=value==null?'':String(value);
@@ -680,6 +803,34 @@ export const OWNER_JS = `
     if(!value||typeof value!=='object'||Array.isArray(value)) throw new Error('The encrypted vault is not a code map.');
     return value;
   }
+  async function makerPairPrepare(pass,edit,previous){
+    var namesRead=await refs('/all/maker/vault'), pair=null, names,places;
+    if(namesRead.revision)pair=await refs('/all/maker/vault/pair');
+    var placesRead=pair?{vault:pair.places}:await refs('/all/maker/vault/addr');
+    names=await makerVaultOpen(pass,pair?pair.names:namesRead.vault);
+    places=await makerVaultOpen(pass,placesRead.vault);
+    var base=previous?{names:await makerVaultOpen(pass,previous.base.names),places:await makerVaultOpen(pass,previous.base.places)}
+      :{names:JSON.parse(JSON.stringify(names)),places:JSON.parse(JSON.stringify(places))};
+    var desired=previous?{names:await makerVaultOpen(pass,previous.desired.names),places:await makerVaultOpen(pass,previous.desired.places)}
+      :{names:JSON.parse(JSON.stringify(names)),places:JSON.parse(JSON.stringify(places))};
+    if(!previous)edit(desired);
+    var nextNames=makerGeo.merge(base.names,desired.names,names),nextPlaces=makerGeo.merge(base.places,desired.places,places);
+    var conflicts=Array.from(new Set(nextNames.conflicts.concat(nextPlaces.conflicts)));
+    if(conflicts.length){
+      if(!confirm('The vault changed for '+conflicts.join(', ')+'. Apply your retained edit over those changed entries? Cancel keeps this draft.'))
+        throw new Error('Conflict not applied. Your form is kept; review it before sending.');
+      nextNames=makerGeo.merge(base.names,desired.names,names,conflicts);
+      nextPlaces=makerGeo.merge(base.places,desired.places,places,conflicts);
+    }
+    var sealed=await Promise.all([makerVaultSeal(pass,nextNames.map),makerVaultSeal(pass,nextPlaces.map),
+      makerVaultSeal(pass,base.names),makerVaultSeal(pass,base.places),makerVaultSeal(pass,desired.names),makerVaultSeal(pass,desired.places)]);
+    return {base:{names:sealed[2],places:sealed[3]},desired:{names:sealed[4],places:sealed[5]},revision:pair&&pair.revision,names:sealed[0],
+      places:pair&&pair.places===null&&!Object.keys(nextPlaces.map).length?null:sealed[1],placeMap:nextPlaces.map};
+  }
+  function makerPairBody(body,prepared){
+    if(prepared.revision)body.pair={expectedRevision:prepared.revision,names:prepared.names,places:prepared.places};
+    return body;
+  }
   async function makerVaultSeal(pass, value){
     var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
     var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
@@ -687,6 +838,9 @@ export const OWNER_JS = `
       base,{name:'AES-GCM',length:256},false,['encrypt']);
     var cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(value)));
     return {v:1,salt:makerBytes64(salt),iv:makerBytes64(iv),ct:makerBytes64(new Uint8Array(cipher))};
+  }
+  function makerRekeyMap(map,from,to){
+    return makerGeo.rekey(map,from,to);
   }
   function makerDerivedCode(name, locality, kind, roster, except, parent){
     var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
@@ -708,7 +862,39 @@ export const OWNER_JS = `
     var status=el('p','msg'); status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
     parent.appendChild(status); return status;
   }
+  var makerPlaceListId=0;
+  function makerLocalityField(parent){
+    var input=makerField(parent,'Locality (device only)','text','');
+    var list=el('datalist'), key='makerPlaces'+(++makerPlaceListId);
+    list.id=key;input.setAttribute('list',key);
+    makerGeo.picks().forEach(function(point,label){
+      var option=el('option');option.value=label;list.appendChild(option);
+    });
+    parent.appendChild(list);return input;
+  }
+  async function makerLocalityPoint(value){
+    var picked=makerGeo.picks().get(value);
+    var result=picked?{point:picked}:await makerGeo.find(value);
+    if(!result.point)throw new Error(result.how==='ambiguous'
+      ?'That locality names more than one place. Choose its district from the list.'
+      :'That locality is not on the official list. Place it on Desk first.');
+    return result.point.map(function(number){return Math.round(number*100)/100;});
+  }
+  async function makerFiledLink(value){
+    if(!value.trim())return null;
+    var reading=makerGeo.link(value);
+    if(reading&&reading.short){
+      var expanded=await refs('/all/maker/geo/expand',{url:reading.short});
+      var full=makerGeo.link(expanded.location);
+      if(!full||full.short)throw new Error('The short link did not lead to a map. Paste the full link.');
+      reading=Object.assign({},full,{addr:reading.addr||full.addr});
+    }
+    if(!reading||reading.lat==null&&!reading.addr)
+      throw new Error('Paste a Maps or Waze link carrying a point or address, or clear the field.');
+    return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
+  }
   async function makerOtherInputs(parent,catalog){
+    makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
@@ -727,13 +913,13 @@ export const OWNER_JS = `
     var loanParty=addSelect(loan,'Party',partyItems), loanProduct=addSelect(loan,'Book',productItems);
     var loanDate=makerField(loan,'Date','date',today), loanAmount=makerField(loan,'Units or RM','number','1');
     var loanStatus=makerStatus(loan);
-    makerButton(loan,'Send loan for review',async function(){
+    makerButton(loan,'Send loan for review',async function(send){
       if(!loanStatus) return;
       loanStatus.textContent='Sending to the Desk…';
       var body={at:new Date().toISOString(),form:loanForm.value,direction:loanDirection.value,
         code:loanParty.value,date:loanDate.value,amount:Number(loanAmount.value)};
       if(loanForm.value==='salt') body.product=loanProduct.value;
-      try{await refs('/all/maker/inputs/loan',body);loanStatus.textContent='Sent for review. It changes the loan book only when approved and folded.';loadMaker();}
+      try{await send('/all/maker/inputs/loan',body);loanStatus.textContent='Sent for review. It changes the loan book only when approved and folded.';loadMaker();}
       catch(error){loanStatus.textContent=error.message;}
     },true);
     var gift=el('section','maker-input');gift.appendChild(el('h3',null,'Gift'));
@@ -743,11 +929,11 @@ export const OWNER_JS = `
     var giftDate=makerField(gift,'Date','date',today), giftQty=makerField(gift,'Units','number','1');
     var giftHandover=addSelect(gift,'Handover',[{value:'',label:'Not stated'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
     var giftStatus=makerStatus(gift);
-    makerButton(gift,'Send gift for review',async function(){
+    makerButton(gift,'Send gift for review',async function(send){
       var body={at:new Date().toISOString(),product:giftProduct.value,code:giftParty.value,date:giftDate.value,
         qty:Number(giftQty.value),movedUnits:Number(giftQty.value),handover:giftHandover.value||null};
       giftStatus.textContent='Sending to the Desk…';
-      try{await refs('/all/maker/inputs/gift',body);giftStatus.textContent='Sent for review. It changes nothing until approved and folded.';loadMaker();}
+      try{await send('/all/maker/inputs/gift',body);giftStatus.textContent='Sent for review. It changes nothing until approved and folded.';loadMaker();}
       catch(error){giftStatus.textContent=error.message;}
     },true);
     var repay=el('section','maker-input');repay.appendChild(el('h3',null,'Repayment'));
@@ -756,9 +942,9 @@ export const OWNER_JS = `
     var loanItems=(catalog.loans||[]).map(function(item){return {value:item.rid,label:item.party+' · '+item.rid+' · '+item.remaining+' '+(item.form==='cash'?'RM':'unit')};});
     var repayLoan=addSelect(repay,'Open loan',loanItems), repayDate=makerField(repay,'Date','date',today),
       repayAmount=makerField(repay,'Amount','number','1'), repayStatus=makerStatus(repay);
-    makerButton(repay,'Send repayment for review',async function(){
+    makerButton(repay,'Send repayment for review',async function(send){
       repayStatus.textContent='Sending to the Desk…';
-      try{await refs('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
+      try{await send('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
         date:repayDate.value,amount:Number(repayAmount.value)});
         repayStatus.textContent='Sent for review. It settles only when approved and folded.';loadMaker();}
       catch(error){repayStatus.textContent=error.message;}
@@ -768,12 +954,71 @@ export const OWNER_JS = `
     parent.appendChild(redeem);
     var redeemParty=addSelect(redeem,'Party',partyItems), redeemDate=makerField(redeem,'Date','date',today),
       redeemStatus=makerStatus(redeem);
-    makerButton(redeem,'Redeem or offset',async function(){
+    makerButton(redeem,'Redeem or offset',async function(send){
       redeemStatus.textContent='Checking the reward on the Desk…';
-      try{await refs('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:redeemParty.value,date:redeemDate.value});
+      try{await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:redeemParty.value,date:redeemDate.value});
         redeemStatus.textContent='Sent for review. The Desk chose the oldest advance or an in-kind redemption.';loadMaker();}
       catch(error){redeemStatus.textContent=error.message;}
     },true);
+    var editor=el('section','maker-input');editor.appendChild(el('h3',null,'Amend a ledger row'));
+    editor.appendChild(el('p','msg','Correction restates typed fields; Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. Notes, settlement prose, order-code edits and cancelled/defaulted-row editing stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
+    parent.appendChild(editor);
+    var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
+      label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total};});
+    var editRow=addSelect(editor,'Ledger row',rowItems),
+      editKind=addSelect(editor,'Amendment',[{value:'Correction',label:'Correction'},
+        {value:'Fulfilment',label:'Fulfilment'},{value:'Cancellation',label:'Cancellation'}]),
+      editDate=makerField(editor,'Recorded on','date',today);
+    var movement=el('div','maker-fields');editor.appendChild(movement);
+    var editCash=makerField(movement,'RM moved','number','0'), editUnits=makerField(movement,'Units moved','number','0');
+    var patch=el('div','maker-fields');editor.appendChild(patch);
+    var definitions=catalog.correctionFields||[];
+    var editField=addSelect(patch,'Field',definitions.map(function(item){return {value:item.field,label:item.field};}));
+    var valueBox=el('div','maker-fields');patch.appendChild(valueBox);
+    var editValue=null, changes={}, patchList=el('p','msg');patch.appendChild(patchList);
+    var editStatus=makerStatus(editor);
+    var drawValue=function(){
+      valueBox.replaceChildren();
+      var definition=definitions.find(function(item){return item.field===editField.value;});
+      if(!definition)return;
+      var choices=definition.kind==='boolean'?[{value:'true',label:'True'},{value:'false',label:'False'}]
+        :definition.kind==='code'?partyItems
+          :definition.kind==='product'?productItems
+            :definition.kind==='stream'?[{value:'R2',label:'R2'},{value:'R3',label:'R3'}]
+              :definition.kind==='handover'?[{value:'delivered',label:'Delivered'},{value:'collected',label:'Collected'}]:null;
+      if(choices)editValue=addSelect(valueBox,'Set to',choices);
+      else editValue=makerField(valueBox,'Set to',definition.kind==='date'?'date':'number','');
+    };
+    editField.addEventListener('change',drawValue);drawValue();
+    makerButton(patch,'Add field change',function(){
+      var definition=definitions.find(function(item){return item.field===editField.value;});
+      if(!definition||!editValue)return;
+      if(!editValue.value.trim())throw new Error('Choose a value. Use Clear field to remove an optional value.');
+      changes[definition.field]=definition.kind==='number'?Number(editValue.value)
+        :definition.kind==='boolean'?editValue.value==='true':editValue.value;
+      patchList.textContent=Object.keys(changes).join(', ')+' ready to send.';
+      editor.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    makerButton(patch,'Clear field',function(){
+      var definition=definitions.find(function(item){return item.field===editField.value;});
+      if(!definition||definition.required)throw new Error('This field is required; set a replacement value.');
+      changes[definition.field]=null;patchList.textContent=Object.keys(changes).join(', ')+' ready to send.';
+      editor.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    editRow.addEventListener('change',function(){changes={};patchList.textContent='';});
+    var drawKind=function(){movement.style.display=editKind.value==='Fulfilment'?'':'none';patch.style.display=editKind.value==='Correction'?'':'none';};
+    editKind.addEventListener('change',drawKind);drawKind();
+    var editorButton=makerButton(editor,'Send amendment for review',async function(send){
+      var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
+      if(body.kind==='Correction')body.fields=Object.assign({},changes);
+      if(body.kind==='Fulfilment'){body.cash=Number(editCash.value);body.movedUnits=Number(editUnits.value);}
+      editStatus.textContent='Checking the ledger row…';
+      await send('/all/maker/inputs/ledger-amend',body);
+      changes={};patchList.textContent='';editStatus.textContent='Sent for review. The row changes only after approval and the fold.';
+      await loadMaker();
+    },true);
+    editorButton.disabled=!rows.length;
+    if(!rows.length)editStatus.textContent='No ledger row is available.';
     var id=el('section','maker-input');id.appendChild(el('h3',null,'Add ID'));
     id.appendChild(el('p','msg','Name and locality stay in this device until encrypted. Only the derived code, role and sealed envelope leave it. A name/place note is never sent.'));
     parent.appendChild(id);
@@ -782,8 +1027,9 @@ export const OWNER_JS = `
       {value:'downstream',label:'Downstream buyer'},{value:'bucket',label:'Resale account'}]);
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,'Parent / associate',idParentItems);
-    var idName=makerField(id,'Name (device only)','text',''), idPlace=makerField(id,'Locality (device only)','text','');
+    var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
     var idPass=makerField(id,'Vault passphrase','password','');
+    var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
     var idTierProduct=addSelect(id,'Starting tier book',[{value:'',label:'No starting tier'}]
       .concat(tierBooks.map(function(item){return {value:item.product,label:pshape(item.product)};})));
@@ -792,55 +1038,75 @@ export const OWNER_JS = `
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
-      idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;
+      idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
     });
     idKind.dispatchEvent(new Event('change'));
-    makerButton(id,'Encrypt and send Add ID',async function(){
+    var idDraft=null;
+    id.addEventListener('input',function(event){if(event.target!==idPass)idDraft=null;});
+    id.addEventListener('change',function(event){if(event.target!==idPass)idDraft=null;});
+    makerButton(id,'Encrypt and send Add ID',async function(send){
       if(idBusy)return;idBusy=true;idStatus.textContent='Preparing the device-side vault…';
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
       if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
-      var envelope=null;
+      var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
           var pass=idPass.value;
           if(!pass) throw new Error('Enter the vault passphrase on this device.');
-          var current=await refs('/all/maker/vault');
-          var names=await makerVaultOpen(pass,current.vault);
-          names[code]=name+' ('+locality+')';
-          envelope=await makerVaultSeal(pass,names);
+          geo=await makerLocalityPoint(locality);
+          var filed=await makerFiledLink(idLink.value);
+          idDraft=await makerPairPrepare(pass,function(maps){
+            if(Object.hasOwn(maps.names,code))throw new Error('That code is already filed in the vault. Keep this form and review its identity.');
+            maps.names[code]=name+' ('+locality+')';if(filed)maps.places[code]=filed;
+          },idDraft);
+          envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
         }
         var tiers=idTier.value?{[idTierProduct.value]:idTier.value}:null;
         if(idTier.value&&!idTierProduct.value) throw new Error('Choose a tiered book for the starting tier.');
-        await refs('/all/maker/inputs/add-id',{at:new Date().toISOString(),code:code,kind:kind,
-          parent:parentCode,geo:null,tiers:tiers,vault:envelope});
-        idName.value='';idPlace.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
+        var idBody={at:new Date().toISOString(),code:code,kind:kind,
+          parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
+        if(addrEnvelope)idBody.addrVault=addrEnvelope;
+        if(idDraft)makerPairBody(idBody,idDraft);
+        await send('/all/maker/inputs/add-id',idBody,idDraft);
+        idDraft=null;
+        idName.value='';idPlace.value='';idLink.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
         loadMaker();
       }catch(error){idPass.value='';idStatus.textContent=error.message;}
       idBusy=false;
     },true);
     var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
-    amend.appendChild(el('p','msg','The name is encrypted here. If its derived code changes, only the old and new codes are queued for a Desk-approved re-key.'));
+    amend.appendChild(el('p','msg','Names and filed addresses are re-keyed and encrypted here. Choose the locality; an optional map link replaces the encrypted address. Only codes and the rounded locality point are queued.'));
     parent.appendChild(amend);
     var amendParty=addSelect(amend,'Party',partyItems), amendName=makerField(amend,'Name (device only)','text',''),
-      amendPlace=makerField(amend,'Locality (device only)','text',''), amendPass=makerField(amend,'Vault passphrase','password',''),
+      amendPlace=makerLocalityField(amend), amendPass=makerField(amend,'Vault passphrase','password',''),
       amendStatus=makerStatus(amend), amendBusy=false;
-    makerButton(amend,'Encrypt and send Amend ID',async function(){
+    var amendLink=makerField(amend,'Maps / Waze link (device only)','text','');
+    var amendDraft=null;
+    amend.addEventListener('input',function(event){if(event.target!==amendPass)amendDraft=null;});
+    amend.addEventListener('change',function(event){if(event.target!==amendPass)amendDraft=null;});
+    makerButton(amend,'Encrypt and send Amend ID',async function(send){
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
       if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
       try{
         var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
-        var current=await refs('/all/maker/vault'), names=await makerVaultOpen(pass,current.vault);
-        names[to]=name+' ('+locality+')';
-        var envelope=await makerVaultSeal(pass,names);amendPass.value='';pass='';
-        var result=await refs('/all/maker/inputs/amend-id',{at:new Date().toISOString(),from:from,to:to,geo:null,vault:envelope});
-        amendName.value='';amendPlace.value='';
+        var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
+        amendDraft=await makerPairPrepare(pass,function(maps){
+          maps.names=makerRekeyMap(maps.names,from,to);maps.places=makerRekeyMap(maps.places,from,to);
+          maps.names[to]=name+' ('+locality+')';if(filed)maps.places[to]=filed;
+        },amendDraft);
+        delete amendDraft.placeMap;
+        amendPass.value='';pass='';
+        var result=await send('/all/maker/inputs/amend-id',makerPairBody({at:new Date().toISOString(),from:from,to:to,geo:geo,
+          vault:amendDraft.names,addrVault:amendDraft.places||undefined},amendDraft),amendDraft);
+        amendDraft=null;
+        amendName.value='';amendPlace.value='';amendLink.value='';
         amendStatus.textContent=result.vaultOnly?'Encrypted vault updated; the code stays '+from+'.'
           :'Encrypted vault filed; re-key '+from+' to '+to+' is queued for Desk review.';
         loadMaker();
@@ -848,21 +1114,39 @@ export const OWNER_JS = `
       amendBusy=false;
     },true);
     var placement=el('section','maker-input');placement.appendChild(el('h3',null,'Map placement'));
-    placement.appendChild(el('p','msg','Reads coordinates from the encrypted places vault on this device. Only a point rounded to 0.01° and the party code is queued; no address or locality text is sent.'));
+    placement.appendChild(el('p','msg','Keep the filed point, or choose a locality and paste a new map link. Exact points and addresses stay encrypted; the queue receives only the rounded point and code.'));
     parent.appendChild(placement);
     var placeParty=addSelect(placement,'Party with a filed point',partyItems),
       placePass=makerField(placement,'Vault passphrase','password',''), placeStatus=makerStatus(placement), placeBusy=false;
-    makerButton(placement,'Queue map placement',async function(){
+    var placeLocality=makerLocalityField(placement), placeLink=makerField(placement,'New Maps / Waze link (device only)','text','');
+    var placeDraft=null;
+    placement.addEventListener('input',function(event){if(event.target!==placePass)placeDraft=null;});
+    placement.addEventListener('change',function(event){if(event.target!==placePass)placeDraft=null;});
+    makerButton(placement,'Queue map placement',async function(send){
       if(placeBusy)return;placeBusy=true;placeStatus.textContent='Opening the encrypted places vault on this device…';
       try{
         var pass=placePass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
-        var sealed=await refs('/all/maker/vault/addr'), places=await makerVaultOpen(pass,sealed.vault);
-        var point=places[placeParty.value];
-        if(!point||!Number.isFinite(+point.lat)||!Number.isFinite(+point.lng))
-          throw new Error('That party has no point in the encrypted places vault.');
-        var coords=[Math.round(+point.lat*100)/100,Math.round(+point.lng*100)/100];
+        var filed=await makerFiledLink(placeLink.value), coords, envelope;
+        placeDraft=await makerPairPrepare(pass,function(maps){if(filed)maps.places[placeParty.value]=filed;},placeDraft);
+        var places=placeDraft.placeMap;
+        if(filed){
+          coords=await makerLocalityPoint(placeLocality.value.trim());
+          envelope=placeDraft.places;
+        }else if(placeLocality.value.trim())coords=await makerLocalityPoint(placeLocality.value.trim());
+        else{
+          var point=places[placeParty.value];
+          if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lng))
+            throw new Error('That party has no point in the encrypted places vault. Choose a locality first.');
+          coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100];
+        }
+        delete placeDraft.placeMap;
         placePass.value='';pass='';
-        await refs('/all/maker/inputs/place',{at:new Date().toISOString(),places:{[placeParty.value]:coords}});
+        var body={at:new Date().toISOString(),places:{[placeParty.value]:coords}};
+        if(envelope)body.addrVault=envelope;
+        makerPairBody(body,placeDraft);
+        await send('/all/maker/inputs/place',body,placeDraft);
+        placeDraft=null;
+        placeLocality.value='';placeLink.value='';
         placeStatus.textContent='Approximate point queued for Desk review. The address remains encrypted.';
         loadMaker();
       }catch(error){placePass.value='';placeStatus.textContent=error.message;}
@@ -895,6 +1179,7 @@ export const OWNER_JS = `
     var note=el('p','msg','Reading available books…'); note.setAttribute('role','status'); box.appendChild(note);
     try{
       var context=await refs('/all/maker/inputs');
+      makerRecovery(box);
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('No active book is available.');
       note.textContent='Inputs are checked by the Desk and wait for review before they change the book.';
       var label=el('label','maker-field','Book'), product=el('select','fld salt-field__input');
@@ -902,12 +1187,12 @@ export const OWNER_JS = `
       label.appendChild(product); box.appendChild(label);
       var date=makerField(box,'Counted on','date',''), qty=makerField(box,'Stock count: units','number','', '0.01');
       var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
-      var button=makerButton(box,'Record count',async function(){
+      var button=makerButton(box,'Record count',async function(send){
         if(pending) return;
         var body={product:product.value,date:date.value,qty:qty.value===''?null:Number(qty.value)};
         var now=JSON.stringify(body); if(now!==signature){ signature=now; at=new Date().toISOString(); }
         body.at=at; pending=true; button.disabled=true; answer.textContent='Recording…';
-        try{ await refs('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. Review its row under Order review.'; loadMaker(); }
+        try{ await send('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. Review its row under Order review.'; loadMaker(); }
         catch(error){ answer.textContent=error.message; }
         pending=false; button.disabled=false;
       },true);
@@ -951,7 +1236,7 @@ export const OWNER_JS = `
       }
       direction.addEventListener('change',fillTradeChoices);
       fillTradeChoices();
-      async function submitTrade(confirmedTwin){
+      async function submitTrade(confirmedTwin,send){
         if(tradePending) return;
         var isSale=direction.value==='sale';
         var body={product:tradeProduct.value,party:tradeParty.value,date:tradeDate.value,
@@ -965,7 +1250,7 @@ export const OWNER_JS = `
         body.at=tradeAt;
         tradePending=true; tradeAnswer.textContent='Sending to the Desk…';
         try{
-          var result=await refs('/all/maker/inputs/'+direction.value,body);
+          var result=await send('/all/maker/inputs/'+direction.value,body);
           tradeAnswer.textContent=result.status==='pending'
             ?'Sent for review. It changes nothing until approved and folded.'
             :'Recorded for review.';
@@ -974,12 +1259,12 @@ export const OWNER_JS = `
           tradeAnswer.textContent=error.message;
           var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
           if(twin&&!confirmedTwin&&window.confirm('A matching row is already booked. Record this as a separate order?')){
-            tradeSignature=''; tradePending=false; await submitTrade(twin); return;
+            tradeSignature=''; tradePending=false; await submitTrade(twin,send); return;
           }
         }
         tradePending=false;
       }
-      makerButton(tradeSection,'Send trade for review',function(){ submitTrade(null); },true);
+      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true);
       var tierSection=el('section','maker-input');
       tierSection.appendChild(el('h3',null,'Customer tier'));
       tierSection.appendChild(el('p','msg','Tiered books only. Set a held level or clear it; proposals do not move held tiers.'));
@@ -999,12 +1284,12 @@ export const OWNER_JS = `
         });
         var tierAnswer=el('p','msg'); tierAnswer.setAttribute('role','status'); tierSection.appendChild(tierAnswer);
         var tierPending=false, tierAt=null, tierSignature='';
-        makerButton(tierSection,'Send tier for review',async function(){
+        makerButton(tierSection,'Send tier for review',async function(send){
           if(tierPending) return;
           var body={code:tierCode.value,product:tierProduct.value,tier:tierValue.value||null};
           var check=JSON.stringify(body); if(check!==tierSignature){ tierSignature=check; tierAt=new Date().toISOString(); }
           body.at=tierAt; tierPending=true;
-          try{ await refs('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }
           catch(error){ tierAnswer.textContent=error.message; }
           tierPending=false;
         },true);
