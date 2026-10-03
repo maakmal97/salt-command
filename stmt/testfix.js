@@ -17,9 +17,11 @@
  * EVERY TAP A CUSTOMER HAS WORKS ON IT: a move on an example order, a claim against the account, a link minted or
  * withdrawn, each by the order book's own decide and apply, written back into that account's fixture and nowhere else,
  * a retry answered once. Until the first publish seals one, a claim or a link is refused, never made for real. The next
- * publish seals the examples afresh. One KV value an account: a tap may take a minute to show on another phone.
+ * publish seals the examples afresh. Account threads alone use the book's isolated fixture_thread row when its
+ * binding exists, on either store road; no real events, marks or write-behind read that table. A new publication
+ * resets its generation. Binding-less legacy customer fixtures remain in KV; new owner replies refuse there.
  */
-import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf } from "./orders.js";
+import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove } from "./orders.js";
 import { refusal } from "./words.js";
 
 export const TEST_USER = "0000-0000";
@@ -128,12 +130,25 @@ export async function exampleClaim(env, u, body) {
 /** Step 7: the fixture's thread, or null: a test account's thread lives there alone, so the desk's Chat never lists it. */
 export async function exampleThread(env, u) {
   const fix = await fixNow(env, u);
+  if (fix && env.ORDERBOOK) {
+    const result = await fixtureThreadMove(env, fixtureThreadArgs(u, fix, "read"));
+    if (result.error) throw new Error(result.error);
+    return result.thread;
+  }
   return (fix && fix.thread) || null;
 }
+const fixtureThreadArgs = (u, fix, actor, body) => ({
+  u, actor, body: actor === "customer" ? { text: body && body.text }
+    : body && body.noReply === true ? { noReply: true, rid: ridOf(body) } : { message: body && body.message, rid: ridOf(body) },
+  rid: ridOf(body),
+  generation: JSON.stringify([fix.salt, fix.at || "", fix.env && fix.env.iv || ""]),
+  seed: fix.thread || null
+});
 /** A line of theirs on a test account's thread, into its fixture by the book's own rules; a retry once. */
 export async function exampleSay(env, u, body) {
   const fix = await fixNow(env, u);
   if (!fix) return soon();
+  if (env.ORDERBOOK) return fixtureThreadMove(env, fixtureThreadArgs(u, fix, "customer", body));
   const rid = ridOf(body), rids = fix.rids = fix.rids || {};
   if (rid && rids[rid] === "thread") return { thread: fix.thread };
   const d = decideThread(fix.thread || null, body, "customer", new Date().toISOString(), u);
@@ -142,6 +157,13 @@ export async function exampleSay(env, u, body) {
   if (rid) rids[rid] = "thread";
   await keep(env, u, fix);
   return { thread: fix.thread };
+}
+
+export async function exampleDeskSay(env, u, body) {
+  if (!env.ORDERBOOK) return Object.assign(refusal("threadOff"), { status: 503 });
+  const fix = await fixNow(env, u);
+  if (!fix) return soon();
+  return fixtureThreadMove(env, fixtureThreadArgs(u, fix, "desk", body));
 }
 
 /** The fixture's links beside their own, for /my/refs. */

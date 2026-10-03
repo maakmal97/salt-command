@@ -348,5 +348,5 @@ export async function sealFixture(fix, rec, pass) {
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest }, await seal(fix.prices)),
-    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin };
+    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread };
 }

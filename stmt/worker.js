@@ -53,7 +53,7 @@ import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb6
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { handleMaker, publicHours, customerAmend } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -950,14 +950,24 @@ async function handleDesk(request, env, p, m) {
      it comes), or his No reply needed. His line wakes their phones. */
   if (p === "/desk/threads") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, threads: await allThreads(env) });
+    const threads = await allThreads(env);
+    if (new URL(request.url).searchParams.get("examples") === "1") {
+      const examples = await Promise.all(TEST_USERS.map(async (u) => {
+        const thread = await exampleThread(env, u);
+        return thread ? Object.assign({}, thread, { u, test: true }) : null;
+      }));
+      threads.push(...examples.filter(Boolean));
+    }
+    return json({ ok: true, threads });
   }
   const tm = /^\/desk\/threads\/([^/]+)$/.exec(p);
   if (tm) {
     const u = normUser(tm[1]);
-    if (!u || isTest(u)) return notFound();   /* a test account's thread is its fixture's, never the book's */
+    if (!u) return notFound();
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    const r = await deskThread(env, u, await readJson(request));
+    const body = await readJson(request);
+    const r = isTest(u) ? await exampleDeskSay(env, u, body) : await deskThread(env, u, body);
+    if (r.wake) r.push = await wakeCustomer(env, u, r.wake);
     return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, thread: r.thread, push: r.push });
   }
   /* F13: A SLIP, AS IT WAS FILED: ciphertext, for the desk to open with the key only his vault holds */

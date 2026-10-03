@@ -161,8 +161,8 @@ export async function listClaims(env, all) {
 
 /** Step 7: every account's thread on the site, newest first, each with the desk code its username maps to. A test
  *  account's lives in its fixture, so it is never here. */
-export async function listThreads(env) {
-  const r = await site(env, "/desk/threads");
+export async function listThreads(env, examples = false) {
+  const r = await site(env, "/desk/threads" + (examples ? "?examples=1" : ""));
   if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
@@ -180,7 +180,9 @@ export async function threadRelay(env, u, body) {
     if (why) return { ok: false, status: 400, error: "that message says something " + why };
   }
   const r = await site(env, "/desk/threads/" + encodeURIComponent(u), {
-    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(noReply ? { noReply: true } : { message })
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(Object.assign(noReply ? { noReply: true } : { message },
+      body && body.rid !== undefined ? { rid: body.rid } : {}))
   });
   if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
   const b = await r.json().catch(() => ({}));

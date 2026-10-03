@@ -34,6 +34,7 @@ export const OWNER_JS = `
     oMore.hidden=(which!=='more');
     oCards.hidden=(which!=='cards');
     oMaker.hidden=(which!=='maker');
+    if(which!=='maker') stopMakerChat();
     var here=which?PLACE[which]:'needs';
     [].slice.call(document.querySelectorAll('.place[data-m]')).forEach(function(b){
       if(b.getAttribute('data-m')===here) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
@@ -42,7 +43,7 @@ export const OWNER_JS = `
     if(!which) drawNeeds();
     if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
-    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); }
+    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
@@ -641,6 +642,217 @@ export const OWNER_JS = `
     return j;
   }
   var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
+  var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
+  function stopMakerChat(){
+    if(makerThreadTimer!==null) clearInterval(makerThreadTimer);
+    makerThreadTimer=null;
+  }
+  function startMakerChat(){
+    stopMakerChat();
+    if(!makerThreadUser||oMaker.hidden||document.hidden) return;
+    makerThreadTimer=setInterval(function(){
+      if(!makerThreadUser||oMaker.hidden||document.hidden){ stopMakerChat(); return; }
+      loadMakerThreads(true);
+    },2000);
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden) stopMakerChat();
+    else if(makerThreadUser&&!oMaker.hidden){ loadMakerThreads(true); startMakerChat(); }
+  });
+  function makerThreadAsked(thread){
+    var lines=thread.msgs||[], last=lines[lines.length-1];
+    return !!(last&&last.by==='customer'&&thread.quiet!==last.at);
+  }
+  async function loadMakerThreads(quiet){
+    if(makerThreadsReading) return;
+    makerThreadsReading=true;
+    var status=document.getElementById('makerChatStatus');
+    try{
+      var result=await refs('/all/maker/threads');
+      makerThreads=result.threads||[];
+      var list=document.getElementById('makerChatList'); list.textContent='';
+      makerThreads.forEach(function(thread){
+        var button=el('button','salt-ghost',thread.u+(thread.test?' · Test account':'')+(makerThreadAsked(thread)?' · Asked':' · Chat'));
+        button.type='button';button.setAttribute('data-thread',thread.u);
+        button.onclick=function(){ openMakerThread(thread.u); };list.appendChild(button);
+      });
+      status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for a reply.':'No account conversations.';
+      if(makerThreadUser) drawMakerThreadLines();
+    }catch(error){ status.textContent=error.message; }
+    finally{ makerThreadsReading=false; }
+  }
+  function drawMakerThreadLines(){
+    var root=document.getElementById('makerChatLines');
+    if(!root) return;
+    root.textContent='';
+    var thread=makerThreads.filter(function(value){ return value.u===makerThreadUser; })[0];
+    (thread&&thread.msgs||[]).forEach(function(line){
+      root.appendChild(el('p','maker-facts',(line.by==='desk'?'You':'Customer')+' · '+stampDay(line.at)));
+      root.appendChild(el('p','maker-row',line.text));
+    });
+  }
+  function openMakerThread(user){
+    makerThreadUser=user;
+    var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
+    root.appendChild(el('h3','',user));
+    var lines=el('div','');lines.id='makerChatLines';root.appendChild(lines);
+    var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
+    if(!draft){
+      draft=makerChatDrafts[user]={text:'',pending:null,saved:null};
+      try{
+        var keys=Object.keys(localStorage).filter(function(key){return key.indexOf(savedPrefix)===0;}).sort();
+        if(keys.length){
+          draft.savedKey=keys[0];
+          var raw=localStorage.getItem(draft.savedKey);
+          draft.saved=JSON.parse(raw);
+          if(draft.saved.v!==1||draft.saved.u!==user||!draft.saved.envelope||typeof draft.saved.rid!=='string')
+            throw new Error('The retained reply needs review or explicit cancellation.');
+        }
+      }catch(error){draft.storageError=error.message;}
+    }
+    var label=el('label','maker-field');label.appendChild(el('span','lbl','Reply'));
+    var text=el('textarea','fld salt-field__input');text.maxLength=200;text.value=draft.text;
+    text.setAttribute('data-thread-reply',user);text.oninput=function(){draft.text=text.value;};
+    label.appendChild(text);root.appendChild(label);
+    var status=el('p','msg');status.setAttribute('role','status');root.appendChild(status);
+    var send=el('button','btn salt-pill salt-pill--md','Send reply'),
+      quiet=el('button','salt-ghost','No reply needed'),cancel=el('button','salt-ghost','Cancel reply retry'),
+      restore=el('button','salt-ghost','Open retained reply'),close=el('button','salt-ghost','Close chat');
+    [send,quiet,restore,cancel,close].forEach(function(button){button.type='button';root.appendChild(button);});
+    function makerChatState(){
+      var busy=!!draft.busy;
+      status.textContent=draft.note||(busy?'Sending reply...':'');
+      var unopened=!!draft.storageError||!!(draft.saved&&!draft.pending);
+      if(!draft.pending&&!unopened) text.value=draft.text;
+      text.disabled=busy||!!draft.pending||unopened;send.disabled=busy||unopened||(draft.pending&&draft.pending.noReply===true);
+      quiet.disabled=busy||unopened||(draft.pending&&draft.pending.message!==undefined);
+      restore.hidden=!draft.saved||!!draft.pending;restore.disabled=busy||!!draft.storageError;
+      cancel.hidden=!draft.pending&&!draft.saved&&!draft.storageError;cancel.disabled=busy;
+      send.textContent=draft.pending&&draft.pending.message!==undefined?'Retry reply':'Send reply';
+      quiet.textContent=draft.pending&&draft.pending.noReply?'Retry No reply needed':'No reply needed';
+    }
+    draft.redraw=makerChatState;
+    async function makerChatSubmit(noReply){
+      if(draft.busy||draft.storageError||(draft.saved&&!draft.pending)) return;
+      if(!draft.pending){
+        if(!noReply&&!text.value.trim()){status.textContent='Write a reply first.';return;}
+        draft.pending=noReply?{noReply:true,rid:mintRid()}:{message:text.value,rid:mintRid()};
+      }
+      draft.note='';draft.busy=true;makerChatState();
+      try{
+        if(!draft.saved){
+          if(!OWNER.master) throw new Error('Reopen Salt Account before retaining a reply.');
+          var envelope=await makerVaultSeal(OWNER.master,{u:user,body:draft.pending});
+          var retained={v:1,u:user,rid:draft.pending.rid,at:new Date().toISOString(),envelope:envelope};
+          draft.savedKey=savedPrefix+draft.pending.rid;
+          localStorage.setItem(draft.savedKey,JSON.stringify(retained));draft.saved=retained;
+        }
+        var result=await refs('/all/maker/threads/'+user,draft.pending);
+        localStorage.removeItem(draft.savedKey);draft.saved=null;
+        if(draft.pending.message!==undefined){draft.text='';text.value='';}
+        draft.pending=null;draft.note=noReply?'No reply needed recorded.':'Reply sent.'+makerPushResult(result.push);
+        await loadMakerThreads(true);
+      }catch(error){draft.note=makerCommunicationError(error)+' The original reply is kept for retry.';}
+      finally{draft.busy=false;draft.redraw();}
+    }
+    send.onclick=function(){makerChatSubmit(false);};quiet.onclick=function(){makerChatSubmit(true);};
+    restore.onclick=async function(){
+      if(draft.busy) return;
+      draft.busy=true;makerChatState();
+      try{
+        if(!OWNER.master) throw new Error('Reopen Salt Account to open the retained reply.');
+        var opened=await makerVaultOpen(OWNER.master,draft.saved.envelope);
+        if(opened.u!==user) throw new Error('The retained reply belongs to another account. It was not sent.');
+        var body=opened.body;
+        if(body.rid!==draft.saved.rid||Object.keys(body).some(function(key){return ['rid','message','noReply'].indexOf(key)<0;})
+          ||!(/^[A-Za-z0-9_-]{16,64}$/).test(body.rid)
+          ||!(body.noReply===true&&body.message===undefined||body.noReply===undefined&&typeof body.message==='string'&&body.message.trim()&&body.message.length<=200))
+          throw new Error('The retained reply is malformed. It remains saved until explicitly cancelled.');
+        draft.pending=body;draft.text=body.message||'';text.value=draft.text;
+        draft.note='Original reply opened. Retry sends the same request; cancellation removes only this device retry.';
+      }catch(error){draft.note=error.message;}
+      finally{draft.busy=false;draft.redraw();}
+    };
+    cancel.onclick=function(){
+      if(confirm('Cancel this retry? A reply already sent is not removed.')){
+        try{localStorage.removeItem(draft.savedKey);draft.pending=null;draft.saved=null;delete draft.storageError;draft.note='This device retry was cancelled.';makerChatState();}
+        catch(error){status.textContent='Retry not cancelled: '+error.message;}
+      }
+    };
+    close.onclick=function(){makerThreadUser=null;root.hidden=true;stopMakerChat();};
+    if(draft.storageError) draft.note=draft.storageError;
+    else if(draft.saved&&!draft.pending) draft.note='A retained reply is encrypted on this device. Open it before retry or cancel it explicitly.';
+    makerChatState();drawMakerThreadLines();startMakerChat();
+  }
+  async function loadMakerBulletin(){
+    var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');
+    if(!root) return;
+    var text=root.querySelector('textarea');
+    if(!text){
+      var label=el('label','maker-field');label.appendChild(el('span','lbl','Notice, one line per sentence'));
+      text=el('textarea','fld salt-field__input');text.rows=4;label.appendChild(text);root.appendChild(label);
+      var current=el('div','');current.id='makerBulletinCurrent';root.appendChild(current);
+      var retained=el('div','');retained.hidden=true;root.appendChild(retained);
+      var set=el('button','btn salt-pill salt-pill--md','Set notice'), clear=el('button','salt-ghost','Clear notice'),
+        refresh=el('button','salt-ghost','Read current notice'), busy=false, needsRead=false, intended=null;
+      [set,clear,refresh].forEach(function(button){button.type='button';root.appendChild(button);});
+      function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
+      root.addEventListener('maker-notice-read',function(event){
+        needsRead=false;
+        if(intended){
+          var normalized=function(lines){return lines.map(function(line){return line.replace(/[\\s]+/g,' ').trim();});};
+          var matches=JSON.stringify(normalized(event.detail.lines||[]))===JSON.stringify(normalized(intended.lines));
+          status.textContent=(matches?'Current notice matches the retained request.':'Current notice differs from the retained request.')
+            +' Intended text is kept. This read sends no notification; the previous notification outcome is unknown.';
+        }
+        state();
+      });
+      async function submit(lines){
+        if(busy||needsRead) return;
+        if(!confirm(lines.length?'Set this notice and notify every customer?':'Clear the notice? No notification is sent.')) return;
+        intended={lines:lines.slice()};
+        busy=true;state();
+        try{
+          var result=await refs('/all/maker/bulletin',{lines:lines,confirmed:true});
+          current.textContent=(result.lines||[]).join(' · ')||'No notice.';
+          intended=null;retained.hidden=true;
+          status.textContent=lines.length?'Notice set.'+makerPushResult(result.push):'Notice cleared. No notification sent.';
+        }catch(error){
+          needsRead=true;status.textContent=error.message+' Read the current notice before another change; the result may already be recorded.';
+          retained.hidden=false;retained.textContent='';
+          retained.appendChild(el('h3','','Retained request'));
+          retained.appendChild(el('p','maker-row',intended.lines.length?intended.lines.join(String.fromCharCode(10)):'Clear notice'));
+        }finally{busy=false;state();}
+      }
+      set.onclick=function(){
+        var lines=text.value.split(String.fromCharCode(10)).map(function(line){return line.trim();}).filter(Boolean);
+        if(!lines.length){status.textContent='Write a notice first, or use Clear notice.';return;}
+        submit(lines);
+      };
+      clear.onclick=function(){submit([]);};
+      refresh.onclick=async function(){
+        if(busy)return;busy=true;state();
+        try{await read();}catch(error){status.textContent=error.message;}finally{busy=false;state();}
+      };
+    }
+    async function read(){
+      var result=await refs('/all/maker/bulletin');
+      document.getElementById('makerBulletinCurrent').textContent=(result.lines||[]).join(' · ')||'No notice.';
+      status.textContent='Current notice read. Changes notify customers only after Set.';
+      root.dispatchEvent(new CustomEvent('maker-notice-read',{detail:result}));
+    }
+    try{await read();}catch(error){status.textContent=error.message;}
+  }
+  function makerPushResult(push){
+    if(!push) return ' Notification outcome not returned.';
+    if(!push.ok) return ' Notification not confirmed: '+(push.error||'read the account before retrying.');
+    if(push.failed) return ' '+push.failed+' notifications were not sent.';
+    return push.sent?' Notifications accepted by the delivery service.':' No subscribed devices.';
+  }
+  function makerCommunicationError(error){
+    return error.message.indexOf('Not sent.')===0
+      ?'Confirmation not received. Check the connection; the result may already be recorded.':error.message;
+  }
   function makerReading(parent, reading){
     if(reading.cost!=null){
       var cost=typeof reading.cost==='object'?reading.cost.total:reading.cost;
