@@ -25243,14 +25243,14 @@ await (async () => {
       "and an answer in a shape it does not read is not taken for eight empty links: it reads them one at a time: " + gets(cC));
 
     /* ---- the whole publish, driven through main against the stub ---- */
-    const run55 = async (argv, run, key) => {
+    const run55 = async (argv, run, key, sleep) => {
       const was = { SALT_STATEMENTS_DIR: process.env.SALT_STATEMENTS_DIR, STMT_KEY: process.env.STMT_KEY };
       const log = console.log, err = console.error, exit = process.exit, said = [];
       process.env.SALT_STATEMENTS_DIR = root55;
       if (key) process.env.STMT_KEY = key; else delete process.env.STMT_KEY;
       console.log = console.error = (...m) => said.push(m.join(" "));
       process.exit = (c) => { throw new Error("exit " + c); };
-      try { await P55.main(["node", "stmt-publish.mjs", ...argv], { run, out: out55 }); said.push("returned"); }
+      try { await P55.main(["node", "stmt-publish.mjs", ...argv], { run, out: out55, sleep }); said.push("returned"); }
       catch (e) { said.push("threw " + e.message); }
       finally {
         console.log = log; console.error = err; process.exit = exit;
@@ -25280,6 +25280,62 @@ await (async () => {
       + boards.join() + " " + saidP.slice(-1));
     ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
       "in eleven spawns: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+
+    /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
+       The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
+       with what `swap` makes of the value written, for good), as KV's edge does for up to a minute after a write. The
+       waits are counted, never slept. */
+    const lagged = (site, calls, lag, swap, only, sizes) => {
+      const inner = wr55(site, new Map(), calls), before = new Map();
+      let n = 0;
+      return (cmd, argv, o) => {
+        const a = argv.slice(argv[1] === "-c" ? 3 : 1), op = a.slice(0, 3).join(" ");
+        const file = op.startsWith("kv bulk") ? JSON.parse(readFileSync(bare(a)[0], "utf8")) : null;
+        if (op === "kv bulk put") for (const x of file) if (x.key.startsWith("u:")) before.set(x.key, site.has(x.key) ? site.get(x.key) : null);
+        const answer = inner(cmd, argv, o);
+        if (op !== "kv bulk get" || !file.every((k) => k.startsWith("u:"))) return answer;
+        n++;
+        if (sizes) sizes.push(file.length);
+        const got = JSON.parse(answer);
+        for (const k of file) got[k] = swap ? swap(site.get(k)) : n <= lag && (!only || k === only) ? before.get(k) : got[k];
+        return JSON.stringify(got);
+      };
+    };
+    const E55 = (await import("../engine/position.mjs")).default;
+    /* a live statement needs rows on the book, so for these cases the first account is one the book carries (its code only) */
+    const liveCode55 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).sales
+      .map((s) => s.customer).find((c) => c && !E55.isBucket(c));
+    writeFileSync(join(root55, "_users.json"), JSON.stringify({ [liveCode55]: "aaaa-bbbb", "CZ9-BBB": "cccc-dddd" }));
+    const restamp = (mins) => (v) => { const r = JSON.parse(v); if (!r.live) return v; r.live = Object.assign({}, r.live, { at: new Date(Date.parse(r.live.at) + mins * 6e4).toISOString() }); return JSON.stringify(r); };
+    const waitsOf = (w) => { const slept = []; return [slept, (ms) => { slept.push(ms); return Promise.resolve(); }]; };
+    const rbsL = site0(), rbcL = [], [rbslL, rbzL] = waitsOf(), rbsaidL = await run55(["--no-prices", "--no-retire"], lagged(rbsL, rbcL, 2), K55, rbzL);
+    ok(rbsaidL.includes("returned") && rbslL.join() === "5000,10000" && rbsaidL.some((l) => /read back 2 real account records from the store, in 3 reads$/.test(l))
+      && rbsaidL.filter((l) => /^::warning::\d+ account record\(s\) did not read back yet/.test(l)).length === 2,
+      "a read-back that answers the old records twice, as KV's edge does after a write, is read again after 5 s and 10 s and passes on the third: "
+      + rbslL.join() + " " + rbsaidL.filter((l) => /read back|did not read/.test(l)).join(" | "));
+    const rbsP = site0(), rbcP = [], rbsz = [], [rbslP, rbzP] = waitsOf();
+    const rbsaidP = await run55(["--no-prices", "--no-retire"], lagged(rbsP, rbcP, 1, null, "u:cccc-dddd", rbsz), K55, rbzP);
+    ok(rbsaidP.includes("returned") && rbslP.join() === "5000" && rbsz.join() === "2,1",
+      "and only the record still out is read again, not every record: " + rbsz.join() + " key(s) a read");
+    const rbsS = site0(), rbcS = [], [rbslS, rbzS] = waitsOf(), rbsaidS = await run55(["--no-prices", "--no-retire"], lagged(rbsS, rbcS, 99), K55, rbzS);
+    ok(rbsaidS.includes("threw exit 1") && rbslS.join() === "5000,10000,20000,30000"
+      && rbsaidS.some((l) => /^::error::the bulk publish did not read back every real account record: 1 missing, 1 mismatched, 2 checked, after 5 reads\.$/.test(l)),
+      "one that never reads back is still red, after four waits and five reads, naming what was missing and what differed: " + rbslS.join() + " " + rbsaidS.slice(-2).join(" | "));
+    const rbsN = site0(), rbcN = [], [rbslN, rbzN] = waitsOf(), rbsaidN = await run55(["--no-prices", "--no-retire"], lagged(rbsN, rbcN, 0, restamp(1)), K55, rbzN);
+    ok(rbsaidN.includes("returned") && rbslN.length === 0 && rbsaidN.some((l) => /read back 2 real account records from the store, 1 of them already replaced by a later publish$/.test(l)),
+      "a record a later publish wrote over ours, its live statement stamped a minute later, counts as written, with no wait: " + rbsaidN.filter((l) => /read back/.test(l)).join());
+    const rbsO = site0(), rbcO = [], [rbslO, rbzO] = waitsOf(), rbsaidO = await run55(["--no-prices", "--no-retire"], lagged(rbsO, rbcO, 0, restamp(-1)), K55, rbzO);
+    ok(rbsaidO.includes("threw exit 1") && rbslO.length === 4 && rbsaidO.some((l) => /0 missing, 1 mismatched, 2 checked, after 5 reads\.$/.test(l)),
+      "and one stamped EARLIER than ours, an older publish landing last, is red: " + rbsaidO.slice(-1));
+    const rec55 = JSON.stringify({ u: "aaaa-bbbb", issued: "2026-09-01", live: { at: "2026-10-03T00:00:00.000Z", buildId: "a" } });
+    const other = (o) => JSON.stringify(Object.assign(JSON.parse(rec55), o));
+    ok(P55.supersedes(rec55, other({ live: { at: "2026-10-03T00:01:00.000Z", buildId: "b" } }))
+      && !P55.supersedes(rec55, other({ live: { at: "2026-10-03T00:00:00.000Z", buildId: "b" } }))
+      && !P55.supersedes(rec55, other({ issued: "2026-10-01", live: { at: "2026-10-03T00:01:00.000Z" } }))
+      && !P55.supersedes(rec55, other({ u: "cccc-dddd", live: { at: "2026-10-03T00:01:00.000Z" } }))
+      && !P55.supersedes(rec55, other({ live: null })) && !P55.supersedes(rec55, "{not json"),
+      "a later stamp supersedes; the same stamp, another issue, another account, no live statement or an unreadable value does not");
+    writeFileSync(join(root55, "_users.json"), JSON.stringify(users55));
 
     /* ---- 29 Sep 2026: the test account's fixture, sealed beside its record and never in it ---- */
     const TK55 = crypto.getRandomValues(new Uint8Array(32)), trec55 = JSON.stringify({ u: "0000-0000", test: true, wrap: await C55.wrapKey("0000-0000-0000-0000", TK55) });

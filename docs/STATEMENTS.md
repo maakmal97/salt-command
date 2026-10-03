@@ -1145,8 +1145,13 @@ new set retires last month's**), and clears the attempt counters on a new issue 
 read of the store's `issue` is not a fresh store** (27 Sep 2026): only wrangler's 404 is absent, a
 lapsed login is tried once more, and any other failure publishes as usual, clears no counter or
 older tick, and says why in a warning in wrangler's words, his answer, since stopping would fail
-the chain job and skip its suite. After the bulk write, every intended real account record is read back and compared in full; a
-missing or changed record makes the publish fail before the Desk's account map is updated. The
+the chain job and skip its suite. After the bulk write, every intended real account record is read back and compared in full. KV is
+eventually consistent, so a record not yet read back is read again, alone, after 5, 10, 20 and 30
+seconds (`ACCOUNT_READBACK_WAITS_MS`). A record that a later publish wrote over ours counts as
+written (`supersedes`): the same username and issue, its live statement stamped strictly later.
+The build id is not compared because a hash has no order, and the Counter withholds any stamp
+the live Desk does not serve anyway. A record still missing or changed after the last read, or
+one stamped earlier than ours, makes the publish fail before the Desk's account map is updated. The
 Counter's `DESK` service binding and the Desk's `/stmt/rev` route use the existing `STMT_DESK_KEY`;
 either missing configuration, a failed read, or an invalid id withholds the live document. The Desk
 answers `GET /stmt/rev` before its human Access gate, since a service binding carries no owner JWT:
