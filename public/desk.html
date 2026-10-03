@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="315bc10f79889863";
+var SALT_BUILD_ID="6acb31efef1b98ef";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9048,7 +9048,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v997","d":"03 Oct 2026","t":"RM80 PAID BY QR ON CS6-PER'S RICE ORDER; NO GOODS MOVE","n":["<b>ONE AMENDMENT FOLDED.</b> A payment of RM80 on s230, CS6-PER's rice order of 10 units for RM80, dated 03 Oct. It was paid by QR via RYT on the statements site and preapproved by phone. Cash moves from RM0 to RM80 and no units move, so the order is paid but still uncollected.","<b>NOTHING UNUSUAL, STOCK UNTOUCHED.</b> The drafter raised no flags. The queue label reads cash 0, but the entry and the drafter's reasoning both give RM80 paid, and the note follows them. This is a rice row, so the salt inventory is unchanged and the cost basis stays as it is."]}];
+const evolution=[{"v":"v998","d":"03 Oct 2026","t":"COUNTER MAKER, CLAIMS AND SLIPS","n":["<b>ACCOUNT CLAIMS.</b> Received and Not found on an account claim go through the desk's own claim preview, the room left on each row and the reconcile, so the counter never books money by itself. A refusal from the desk keeps its status, an outage answers 503 and an unreadable answer is refused, never shown as done.","<b>SLIPS.</b> View slip reads the sealed slip key read-only, opens it on the same unlock and never lets it leave the device. A lock, a hidden page, closing or changing account clears the picture, and a read started before a lock never paints after it. The slip key is unchanged and no route writes it.","<b>ACCEPTANCE FIXTURES.</b> The example accounts decide their claims inside their own sealed fixture under one serialized revision, with receipts so a retry lands once. They never make a real claim, preapproval or draft.","<b>DESK RETAINED.</b> This is one maker slice, not the checker-only cutover. Further order and Network controls, supported ledger editing and genuine owner acceptance remain. No ledger row, inventory, pricing rule, held tier or Access setting changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9194,7 +9194,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Oct 2026, 20:35 KL';
+const LAST_UPDATED='03 Oct 2026, 20:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

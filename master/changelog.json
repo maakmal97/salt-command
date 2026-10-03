@@ -1,5 +1,16 @@
 [
  {
+  "v": "v998",
+  "d": "03 Oct 2026",
+  "t": "COUNTER MAKER, CLAIMS AND SLIPS",
+  "n": [
+   "<b>ACCOUNT CLAIMS.</b> Received and Not found on an account claim go through the desk's own claim preview, the room left on each row and the reconcile, so the counter never books money by itself. A refusal from the desk keeps its status, an outage answers 503 and an unreadable answer is refused, never shown as done.",
+   "<b>SLIPS.</b> View slip reads the sealed slip key read-only, opens it on the same unlock and never lets it leave the device. A lock, a hidden page, closing or changing account clears the picture, and a read started before a lock never paints after it. The slip key is unchanged and no route writes it.",
+   "<b>ACCEPTANCE FIXTURES.</b> The example accounts decide their claims inside their own sealed fixture under one serialized revision, with receipts so a retry lands once. They never make a real claim, preapproval or draft.",
+   "<b>DESK RETAINED.</b> This is one maker slice, not the checker-only cutover. Further order and Network controls, supported ledger editing and genuine owner acceptance remain. No ledger row, inventory, pricing rule, held tier or Access setting changed."
+  ]
+ },
+ {
   "v": "v997",
   "d": "03 Oct 2026",
   "t": "RM80 PAID BY QR ON CS6-PER'S RICE ORDER; NO GOODS MOVE",
