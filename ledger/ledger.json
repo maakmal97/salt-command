@@ -1,6 +1,6 @@
 {
- "v": "v989",
- "stamped": "03 Oct 2026, 00:26 KL",
+ "v": "v990",
+ "stamped": "03 Oct 2026, 09:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6313,6 +6313,16 @@
     "paidOn": "2026-10-02",
     "note": "<b>SALT SELL DATED 02 OCT: 3 UNITS FOR RM260, PAID AND COLLECTED IN FULL.</b> Booked to CA6-CYB, RM260 cash received and 3 units handed over on 02 Oct 2026, approved by the desk. The rate is RM86.67 a unit; for 3 units the desk's floor is RM205.87 and its ask RM390, so the order sits above the floor and under the ask. CA6-CYB: median RM100 a unit over 1 order, range RM100 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 1 unit. The row carries RM168, RM56 a unit, the inventory's own cost. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: nothing.",
     "rid": "s228"
+   },
+   {
+    "customer": "CH6-SET",
+    "qty": 2,
+    "total": 220,
+    "cash": 0,
+    "date": "2026-10-03",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 03 OCT: 2 UNITS FOR RM220, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CH6-SET from order 20261003013258-yitorw, acknowledged and to be delivered, preapproved by phone. The rate is RM110 a unit; for 2 units the desk's floor is RM137.25 and its ask RM270, so the order sits above the floor and under the ask. CH6-SET: median RM115 a unit over 3 orders, range RM100 to RM120, RM0 outstanding and 0 units on credit before this, against a cap of 1 unit. The row carries RM56 a unit, the inventory's own cost, a margin of 49.1%. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the full RM220 and 2 units to deliver.",
+    "rid": "s229"
    }
   ],
   "contacts": [
@@ -7053,9 +7063,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-02T16:25:41.895Z",
+  "QUEUE_COMMITTED": "2026-10-03T01:34:28.606Z",
   "PRICING": {
-   "takenAt": "2026-10-02T16:26:40.132Z",
+   "takenAt": "2026-10-03T01:35:09.577Z",
    "sizes": [
     0.5,
     1,
@@ -7153,14 +7163,14 @@
     "CY2-NIL": {
      "salt": "Titanium"
     },
+    "CH6-SET": {
+     "salt": "Platinum"
+    },
     "CA7-AMP": {
      "salt": "Gold"
     },
     "CA6-CYB": {
      "salt": "Titanium"
-    },
-    "CH6-SET": {
-     "salt": "Platinum"
     },
     "CA5-BAN": {
      "salt": "Platinum"
@@ -7704,6 +7714,22 @@
       "rare": false
      }
     },
+    "CH6-SET": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 3,
+      "tenureDays": 74,
+      "sinceLastDays": 22,
+      "perMonth": 1.23,
+      "smallShare": 0.67,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CA7-AMP": {
      "salt": {
       "name": "one-off",
@@ -7746,22 +7772,6 @@
       "frequent": true,
       "small": false,
       "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CH6-SET": {
-     "salt": {
-      "name": "small and rare",
-      "orders": 3,
-      "tenureDays": 74,
-      "sinceLastDays": 22,
-      "perMonth": 1.23,
-      "smallShare": 0.67,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
       "loyal": false,
       "rare": false
      }
@@ -9556,6 +9566,56 @@
         1060
        ]
       ],
+      "CH6-SET": [
+       [
+        0.5,
+        70
+       ],
+       [
+        1,
+        120
+       ],
+       [
+        1.5,
+        170
+       ],
+       [
+        2,
+        220
+       ],
+       [
+        2.5,
+        270
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        560
+       ],
+       [
+        12.5,
+        1070
+       ]
+      ],
       "CA7-AMP": [
        [
         0.5,
@@ -9654,56 +9714,6 @@
        [
         12.5,
         1060
-       ]
-      ],
-      "CH6-SET": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
        ]
       ],
       "CA5-BAN": [
@@ -11200,6 +11210,28 @@
         450
        ]
       ],
+      "CH6-SET": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CA7-AMP": [
        [
         10,
@@ -11223,28 +11255,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CH6-SET": [
        [
         10,
         130
@@ -12306,6 +12316,28 @@
         1500
        ]
       ],
+      "CH6-SET": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CA7-AMP": [
        [
         1,
@@ -12329,28 +12361,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CH6-SET": [
        [
         1,
         60
@@ -13187,6 +13197,20 @@
         64
        ]
       ],
+      "CH6-SET": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CA7-AMP": [
        [
         1,
@@ -13202,20 +13226,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CH6-SET": [
        [
         1,
         8
@@ -13588,12 +13598,26 @@
      "cards": {}
     }
    },
-   "v": "v989"
+   "v": "v990"
   },
   "OPEN": {
-   "at": "2026-10-02T16:26:40.716Z",
-   "count": 11,
+   "at": "2026-10-03T01:35:09.995Z",
+   "count": 12,
    "byKey": {
+    "CH6-SET|2026-10-03|220": {
+     "d": "2026-10-03",
+     "p": "CH6-SET",
+     "dir": "S",
+     "q": 2,
+     "t": 220,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 220,
+     "oweUnits": 2,
+     "rid": "s229",
+     "key": "CH6-SET|2026-10-03|220"
+    },
     "CM4-MK|2026-10-02|170": {
      "d": "2026-10-02",
      "p": "CM4-MK",
@@ -13780,10 +13804,10 @@
      "free": -7.25,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.7,
+     "rate": 5.8,
      "owedToYou": 680,
-     "promised": 10,
-     "short": 7.75
+     "promised": 12,
+     "short": 9.75
     },
     "oil": {
      "name": "Oil",
@@ -13837,13 +13861,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v989"
+   "v": "v990"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v989"
+   "v": "v990"
   }
  }
 }
