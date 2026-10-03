@@ -1494,16 +1494,17 @@ refused and directed to Desk. Amend ID preserves descendant place keys and `_bas
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
 
-Current live KV authority still has two non-atomic envelope writes. The source-only pair
-mode supplies all-writer CAS and a durable ID/place outbox, but has not been provisioned,
-bootstrapped or enabled. Source-only browser transport requests and encrypted conflict
+Current live KV authority still has two non-atomic envelope writes. The opt-in pair
+mode supplies all-writer CAS and a durable ID/place outbox. Its schema and code shipped in
+the v991 preparatory release. Revision-1 bootstrap was read back under paused maintenance on
+03 Oct 2026; live authority awaits the reviewed pair-flag deployment. Browser transport requests and encrypted conflict
 intent now survive reload, with explicit retained-input recovery and vault unlock before
 retry/review. No decrypted identity, address, passphrase or key is persisted. Non-vault
 Maker receipts retain immutable server-built intent before admission and resume to a real
 matching draft on the same request; changed content refuses and concurrent retries share
 one admission/draft. Default-KV legacy vault interruptions still fail closed rather than
 pretending two KV envelope writes are transactional.
-The source-only `0015_vault_pair.sql`/`src/vault-pair.js` kernel proves conditional names+places
+The `0015_vault_pair.sql`/`src/vault-pair.js` kernel proves conditional names+places
 CAS, whole-request receipts, transactional outbox insertion and fixed-id crash recovery
 against SQLite. Opt-in Worker pair read/write and Counter owner pair read are now wired,
 as are revision-aware seed/pull tools with shared three-way merge, explicit overlap review
@@ -1518,7 +1519,7 @@ Old unversioned named ID/rekey/place queue clients refuse with an upgrade state 
 behavior is unchanged. The Desk names/places unlock reads one revision; shared rekey moves
 descendant exact points and preserves `_base`.
 
-Before cutover, apply the source migrations and perform the reviewed all-client bootstrap,
+Before cutover, verify the applied migrations and perform the reviewed all-client bootstrap,
 rollback/readback rehearsal and live owner acceptance under authorization. Laptop pull now
 uses a recoverable roll-forward journal and exclusive lock across both files and their
 baseline; seed/pull startup recovers before reading, and the ledger reader refuses an

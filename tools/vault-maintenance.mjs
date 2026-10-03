@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync, mkdtempSync, unlinkSync, rmdirSync } from "node:fs";
+import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { readVaultPair, sealedVaultEnvelope } from "../src/vault-pair.js";
@@ -76,20 +77,33 @@ async function main(args) {
     if (rest.includes("--apply-remote") || rest.includes("--read-remote")) {
       if (rest.includes("--apply-remote") && (!rest.includes("--writers-paused") || !["open", "draining", "paused"].includes(phase)))
         throw new Error("Remote gate changes require an explicit phase and --writers-paused account-operator acknowledgement.");
-      const query = sql => {
-        const text = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json",
-          "--command", JSON.stringify(sql)], { encoding: "utf8", shell: process.platform === "win32" }));
+      const query = (sql, writing = false) => {
+        let directory, file;
+        if (writing) {
+          directory = mkdtempSync(join(tmpdir(), "salt-vault-gate-"));
+          file = join(directory, "phase.sql");
+          writeFileSync(file, sql + "\n", { mode: 0o600 });
+        }
+        let text;
+        try {
+          text = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json",
+            ...(writing ? ["--file", process.platform === "win32" ? '"' + file + '"' : file]
+              : ["--command", process.platform === "win32" ? JSON.stringify(sql) : sql])],
+            { encoding: "utf8", shell: process.platform === "win32" }));
+        } finally {
+          if (file) { unlinkSync(file); rmdirSync(directory); }
+        }
         const result = JSON.parse(text.slice(text.indexOf("[")));
         if (result.some(row => row.success !== true)) throw new Error("The remote gate operation was not confirmed.");
         return result.at(-1).results;
       };
       if (rest.includes("--apply-remote")) {
         const sql = phase === "paused"
-          ? `UPDATE vault_write_gate SET phase='paused',updated=${literal(at)} WHERE one=1 AND phase='draining'
-              AND NOT EXISTS (SELECT 1 FROM vault_write_active)
-              AND NOT EXISTS (SELECT 1 FROM vault_outbox WHERE state='pending');`
+          ? `UPDATE vault_write_gate SET phase='paused',updated=${literal(at)} WHERE one=1 AND phase='draining'`
+            + " AND NOT EXISTS (SELECT 1 FROM vault_write_active)"
+            + " AND NOT EXISTS (SELECT 1 FROM vault_outbox WHERE state='pending');"
           : `UPDATE vault_write_gate SET phase=${literal(phase)},updated=${literal(at)} WHERE one=1;`;
-        query(sql);
+        query(sql, true);
       }
       const state = query("SELECT phase,updated,(SELECT COUNT(*) FROM vault_write_active) AS active FROM vault_write_gate WHERE one=1;")[0];
       if (!state || rest.includes("--apply-remote") && state.phase !== phase)

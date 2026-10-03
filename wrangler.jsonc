@@ -90,6 +90,9 @@
 		"crons": ["* * * * *", "0 1 * * *"]
 	},
 	"vars": {
+		// Names and places were bootstrapped under the durable paused write gate.
+		// Pair revision/readback must match before that gate is explicitly reopened.
+		"VAULT_STORE": "pair",
 		"REQUIRE_ACCESS": "0",
 		"ACCESS_TEAM": "",
 		"ACCESS_AUD": "",
