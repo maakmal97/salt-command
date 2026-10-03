@@ -164,6 +164,19 @@ export async function run({ ok }) {
         "actual bootstrap SQL cannot install authority while the durable write gate is open");
       if (prematureBootstrap) bootstrapDb.exec("DELETE FROM vault_pair;");
       bootstrapDb.exec("UPDATE vault_write_gate SET phase='paused';");
+      bootstrapDb.exec("INSERT INTO vault_write_active(id,started) VALUES('fixture-active','2026-09-30T00:00:00.000Z');");
+      bootstrapDb.exec(plan.sql);
+      const activeBootstrap = bootstrapDb.prepare("SELECT revision FROM vault_pair").get();
+      ok(!activeBootstrap, "actual bootstrap SQL refuses a paused gate with an active writer");
+      if (activeBootstrap) bootstrapDb.exec("DELETE FROM vault_pair;");
+      bootstrapDb.exec("DELETE FROM vault_write_active;");
+      bootstrapDb.exec("INSERT INTO vault_receipt(id,fingerprint,revision,created_at,operation) VALUES('2026-09-30T00:00:00.000Z','fixture',1,'2026-09-30T00:00:00.000Z','place');");
+      bootstrapDb.exec("INSERT INTO vault_outbox(id,entry) VALUES('2026-09-30T00:00:00.000Z','{}');");
+      bootstrapDb.exec(plan.sql);
+      const pendingBootstrap = bootstrapDb.prepare("SELECT revision FROM vault_pair").get();
+      ok(!pendingBootstrap, "actual bootstrap SQL refuses a paused gate with pending accepted work");
+      if (pendingBootstrap) bootstrapDb.exec("DELETE FROM vault_pair;");
+      bootstrapDb.exec("DELETE FROM vault_outbox; DELETE FROM vault_receipt;");
       bootstrapDb.exec(plan.sql);
       let secondBootstrap = false;
       try { bootstrapDb.exec(plan.sql); } catch { secondBootstrap = true; }

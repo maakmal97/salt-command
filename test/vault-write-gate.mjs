@@ -1,5 +1,9 @@
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, unlinkSync, rmdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join, delimiter } from "node:path";
+import { fileURLToPath } from "node:url";
 import { sqliteAdapter } from "../tools/vault-maintenance.mjs";
 import { withVaultWrite, changeVaultWritePhase, vaultWriteStatus } from "../src/vault-write-gate.js";
 import worker, { recoverVaultInputs } from "../src/worker.js";
@@ -12,7 +16,60 @@ export function createGateFixture() {
   return { db: sqliteAdapter(sqlite), close: () => sqlite.close() };
 }
 
+function remoteGateCli({ ok }) {
+  const directory = mkdtempSync(join(tmpdir(), "salt-gate-cli-"));
+  const database = join(directory, "gate.sqlite"), driver = join(directory, "driver.mjs");
+  const shim = join(directory, process.platform === "win32" ? "npx.cmd" : "npx");
+  const report = join(directory, "report.json");
+  const fixture = new DatabaseSync(database);
+  try {
+    fixture.exec(readFileSync(new URL("../migrations/0016_vault_write_gate.sql", import.meta.url), "utf8"));
+    fixture.exec(readFileSync(new URL("../migrations/0015_vault_pair.sql", import.meta.url), "utf8"));
+    writeFileSync(driver, `import { DatabaseSync } from "node:sqlite";
+import { readFileSync } from "node:fs";
+const file = process.argv.indexOf("--file");
+const sql = file >= 0 ? readFileSync(process.argv[file + 1], "utf8") : process.argv[process.argv.indexOf("--command") + 1];
+const db = new DatabaseSync(process.env.GATE_FIXTURE_DATABASE);
+try { console.log(JSON.stringify([{ success: true, results: db.prepare(sql).all() }])); }
+catch { console.error("fixture SQL transport refused"); process.exitCode = 1; }
+finally { db.close(); }
+`);
+    writeFileSync(shim, process.platform === "win32"
+      ? '@echo off\r\n"%GATE_FIXTURE_NODE%" "%GATE_FIXTURE_DRIVER%" %*\r\n'
+      : '#!/bin/sh\nexec "$GATE_FIXTURE_NODE" "$GATE_FIXTURE_DRIVER" "$@"\n', { mode: 0o700 });
+    const env = { ...process.env, GATE_FIXTURE_NODE: process.execPath,
+      GATE_FIXTURE_DRIVER: driver, GATE_FIXTURE_DATABASE: database };
+    const pathKey = Object.keys(env).find(key => key.toLowerCase() === "path");
+    env[pathKey] = directory + delimiter + env[pathKey];
+    const pause = () => spawnSync(process.execPath, [
+      fileURLToPath(new URL("../tools/vault-maintenance.mjs", import.meta.url)),
+      "gate", "--phase", "paused", "--apply-remote", "--writers-paused", "--output", report
+    ], { env, encoding: "utf8", timeout: 20000 });
+    const phase = () => fixture.prepare("SELECT phase FROM vault_write_gate WHERE one=1").get().phase;
+    fixture.exec("UPDATE vault_write_gate SET phase='draining';");
+    const empty = pause();
+    ok(empty.status === 0 && phase() === "paused" && JSON.parse(readFileSync(report, "utf8")).active === 0,
+      "actual account gate CLI transports conditional pause through a shell into SQLite and confirms its readback");
+    fixture.exec("UPDATE vault_write_gate SET phase='open';");
+    ok(pause().status !== 0 && phase() === "open",
+      "actual account gate CLI cannot skip draining before its conditional pause");
+    fixture.exec("UPDATE vault_write_gate SET phase='draining'; INSERT INTO vault_write_active(id,started) VALUES('fixture','fixed');");
+    ok(pause().status !== 0 && phase() === "draining",
+      "actual account gate CLI keeps draining when a writer is active");
+    fixture.exec("UPDATE vault_write_gate SET phase='draining'; DELETE FROM vault_write_active; INSERT INTO vault_receipt(id,fingerprint,revision,created_at,operation) VALUES('fixture','fixed',1,'fixed','place'); INSERT INTO vault_outbox(id,entry) VALUES('fixture','{}');");
+    ok(pause().status !== 0 && phase() === "draining",
+      "actual account gate CLI keeps draining when accepted outbox work remains");
+  } finally {
+    fixture.close();
+    for (const path of [report, shim, driver, database]) {
+      try { unlinkSync(path); } catch (error) { if (error.code !== "ENOENT") throw error; }
+    }
+    rmdirSync(directory);
+  }
+}
+
 export async function run({ ok }) {
+  remoteGateCli({ ok });
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(readFileSync(new URL("../migrations/0016_vault_write_gate.sql", import.meta.url), "utf8"));
   sqlite.exec(readFileSync(new URL("../migrations/0015_vault_pair.sql", import.meta.url), "utf8"));

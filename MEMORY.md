@@ -10,7 +10,7 @@
 - Newest rebuild: `migrations/0010`.
 - `0011` adds `preapproval` (applied alone, the same way as 0010).
 - `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`.
-- `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair authority has no row; write gate is open, zero active writers at readback.
+- `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate is paused, zero active writers and pending outbox at readback.
 
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
@@ -37,8 +37,9 @@
 - `POST /orders/<id>/amend` is the customer-session amendment path; Admin inputs stay under `/all/maker/inputs/*`.
 - Desk maker operations use the separate `DESK_MAKER` binding and `COUNTER_MAKER_KEY`; name and places vault reads return ciphertext only.
 - The bridge bindings and matching capability secrets shipped with #30; live owner-JWT acceptance remains unverified.
-- `0013` retains immutable non-vault Maker entries for same-request recovery; `0015` records outbox attempt order for isolated, bounded cron retries. The migrations are applied; dependent follow-up source is not yet deployed.
-- Opt-in pair routes, reload-persistent encrypted device retries/conflict review, Maker/Desk ID/place outbox recovery, journaled local pair-file seed/pull access and maintenance tools await the preparatory source release. `VAULT_STORE=pair` is not configured. Live names/places authority remains KV; no bootstrap or authority switch has occurred.
-- Pair seed completion reconciles both local maps and its baseline under the journal, including retained-request replay, preserving unsent partner edits. Old retained requests without a merge baseline refuse explicitly; this fix remains source-only.
-- Preparatory `0016_vault_write_gate.sql` is applied: standalone default-open maintenance with active-writer drain, accepted outbox completion and keyed readback. Its Worker guards await source deployment; no maintenance pause or authority change has occurred.
+- Preparatory #31 merged at `8dc9852b`, v991 (`c7ff1c2adce46263`). Cloud commit `37096579205` deployed both Workers, proved Desk revision, marked/reseeded D1 and published/read back 51 account records. Its deployed-tree suite passed (6,605 assertions).
+- `0013` retains immutable non-vault Maker entries for same-request recovery; `0015` records outbox attempt order for isolated, bounded cron retries. Their dependent source is deployed.
+- Opt-in pair routes, reload-persistent encrypted device retries/conflict review, Maker/Desk ID/place outbox recovery and journaled local pair-file seed/pull access shipped in the preparatory release. Pair bootstrap completed on 03 Oct 2026 under paused maintenance. Two source snapshots and two independent revision-1 readbacks matched ciphertext digest `a534e4ccfa09e2d0093cade895a6fa9954add956f30df33f5c6a144090e326f5`. The pair flag awaits deployment; live names/places authority is still KV at this readback.
+- Pair seed completion reconciles both local maps and its baseline under the journal, including retained-request replay, preserving unsent partner edits. Old retained requests without a merge baseline refuse explicitly.
+- Preparatory `0016_vault_write_gate.sql` and its Worker guards are deployed. Draining began at 12:45 MYT; conditional pause was independently confirmed at 12:49 MYT with no active writers or pending outbox. Two failed shell-command pause attempts were separately read back as still draining. Account phase writes now use SQL-file transport, verified locally by actual CLI/SQLite and on the paused live gate. The gate must remain paused until deployed pair-authority readback matches; no automatic reopen.
 - Access provisioning/readback remains blocked by current account OAuth permissions; owner authentication has not been proved. Keep Desk Access and Desk input equivalents unchanged until those release gates pass.

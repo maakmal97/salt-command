@@ -158,11 +158,11 @@
   with readback preserving the existing draft indexes. The shared admission
   helper runs on queue roads and drafting, and the fold rechecks the accepted batch. The follow-up's exact
   remaining cutover gaps are listed in `docs/STATEMENTS.md`.
-- **Versioned vault pair, source-only protocol**: the approved direction is one D1 singleton
+- **Versioned vault pair, opt-in protocol**: the approved direction is one D1 singleton
   containing a revision, names envelope and places envelope. One no-store read returns a
   consistent pair; any response containing places remains keyed, while the intended
   names-only ciphertext read can remain public. `0015_vault_pair.sql` and `src/vault-pair.js`
-  implement the transaction kernel. Source-only `/vault/pair` GET/POST and the Counter's
+  implement the transaction kernel. `/vault/pair` GET/POST and the Counter's
   exact owner/capability pair GET use it only when `VAULT_STORE=pair`; that setting is absent
   from live configuration. Pair routes require a configured write key, remain behind human
   Access when enabled, and never adopt legacy KV automatically.
@@ -278,6 +278,8 @@
   receipt floor so pruned timestamps never become fresh writes. Remote collection,
   bootstrap/export readback and rollback deployment remain an authorized maintenance
   procedure, not an automatically executable cutover. No utility switches live authority.
+  Account phase writes use an explicit temporary SQL file, not an escaped multiline shell
+  argument; the operator reads the gate back independently after any ambiguous process failure.
   Normal seed must stop direct names/places KV puts at cutover; privileged Wrangler/API KV
   puts then affect retired recovery copies only. Direct privileged D1 edits remain an
   unavoidable out-of-band bypass, requiring maintenance and revision/receipt repair.
