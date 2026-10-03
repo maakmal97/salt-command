@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
@@ -334,6 +334,10 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
+    && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
+    && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
+    && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
+    && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
@@ -341,6 +345,52 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (p === "/_internal/maker/vault/key") return handleVaultKey(env, m);
+  if (p === "/_internal/maker/claims") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await listClaims(env, true);
+    return json(result, result.ok ? 200 : 503);
+  }
+  const slip = /^\/_internal\/maker\/slips\/([a-z0-9]{4}-[a-z0-9]{4})\/([0-9a-f]{32})$/.exec(p);
+  if (slip) {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await slipRelay(env, slip[1], slip[2]);
+    return json(result, result.ok ? 200 : (result.status || 502));
+  }
+  const example = /^\/_internal\/maker\/fixture-claims\/(0000-000[01])\/(a[0-9]{14}-[a-z0-9]{1,8})\/preview$/.exec(p);
+  const claim = /^\/_internal\/maker\/claims\/([a-z0-9]{4}-[a-z0-9]{4})\/(a[0-9]{14}-[a-z0-9]{1,8})\/(preview|received|notfound)$/.exec(p);
+  if (example || claim) {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    let body;
+    try {
+      const raw = await request.text();
+      if (raw.length > 1048576) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(raw);
+    } catch { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!body || typeof body !== "object" || Array.isArray(body))
+      return json({ ok: false, error: "send a JSON object" }, 400);
+    let result;
+    if (example) result = await fixtureClaimPreview(body, example[1], example[2], body.generation);
+    else {
+      if (claim[1] === "0000-0000" || claim[1] === "0000-0001")
+        return json({ ok: false, error: "Acceptance claims cannot use the real ledger." }, 409);
+      const found = await findClaim(env, claim[2]);
+      if (!found.ok) return json(found, found.status || 503);
+      if (found.claim.u !== claim[1]) return json({ ok: false, error: "no such claim" }, 404);
+      /* a Counter retry after a lost answer finds the verdict already given and books nothing */
+      if (claim[3] !== "preview" && found.claim.state === claim[3])
+        return json({ ok: true, again: true, claim: found.claim, rows: [], approved: [] });
+      if (claim[3] === "preview") {
+        result = await claimPreview(env, claim[2]);
+        delete result.own;
+      } else if (claim[3] === "notfound") result = await notFoundClaim(env, claim[2], body);
+      else {
+        result = await claimReceived(env, claim[2], body, "Counter Admin");
+        if (result.approved?.length) await afterApproval(env, ctx, result.approved);
+      }
+    }
+    return json(result, result.ok ? 200 : (result.status || 502));
+  }
   if (p === "/_internal/maker/threads") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const result = await listThreads(env, true);

@@ -438,6 +438,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .maker-day-name{font-size:var(--salt-text-sm)}
 .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
+.maker-slip{display:block;max-width:100%;height:auto}
 @media(max-width:440px){.maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.maker-day-name{grid-column:2 / 4}.maker-day input[type=time]{grid-row:2}.maker-day input[type=time]:nth-last-child(2){grid-column:2}.maker-day input[type=time]:last-child{grid-column:3}}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
 body.ended>*:not(#aEnded){display:none}
@@ -1123,6 +1124,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + '<section aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
         + '<p class="lead" id="makerReviewStatus">Reading orders and rows…</p>'
         + '<div id="makerReview"></div></section>'
+        + '<section aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'

@@ -49701,6 +49701,11 @@ await (async () => {
   await (await import("./maker-communications.mjs")).run({ ok });
 })();
 
+section("Counter maker account claims and sealed slips");
+await (async () => {
+  await (await import("./maker-claims.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

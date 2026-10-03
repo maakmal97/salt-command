@@ -175,6 +175,7 @@ async function bookMove(env, op, a) {
   return r;
 }
 export const fixtureThreadMove = (env, a) => bookMove(env, "fixture-thread", a);
+export const fixtureAccountMove = (env, a) => bookMove(env, "fixture-account", a);
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */
 async function bookRead(env, op, a, fromKv) {
   try { return await book(env, op, a); }

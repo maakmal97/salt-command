@@ -1,5 +1,5 @@
 import { allOrders, deskMove, placeOrder, customerView, RID_RE, onBook } from "./orders.js";
-import { accountRecord } from "./testfix.js";
+import { accountRecord, exampleAccount, isTest, TEST_USERS } from "./testfix.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours } from "./hours.js";
 
 const HOURS_KEY = "maker:hours";
@@ -34,6 +34,11 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/geo/expand" && method === "POST"
     || path === "/_internal/maker/threads" && method === "GET"
     || path === "/_internal/maker/bulletin" && ["GET", "POST"].includes(method)
+    || path === "/_internal/maker/claims" && method === "GET"
+    || path === "/_internal/maker/vault/key" && method === "GET"
+    || /^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(path) && method === "GET"
+    || /^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
@@ -132,6 +137,12 @@ function internalOperation(path) {
   if (path === "/all/maker/geo/expand") return { kind: "geo-expand" };
   if (path === "/all/maker/threads") return { kind: "threads" };
   if (path === "/all/maker/bulletin") return { kind: "bulletin" };
+  if (path === "/all/maker/claims") return { kind: "claims" };
+  if (path === "/all/maker/vault/key") return { kind: "slip-key" };
+  const slip = /^\/all\/maker\/slips\/([a-z0-9]{4}-[a-z0-9]{4})\/([0-9a-f]{32})$/.exec(path);
+  if (slip) return { kind: "slip", u: slip[1], id: slip[2] };
+  const claim = /^\/all\/maker\/claims\/([a-z0-9]{4}-[a-z0-9]{4})\/(a[0-9]{14}-[a-z0-9]{1,8})\/(preview|received|notfound)$/.exec(path);
+  if (claim) return { kind: "claim", u: claim[1], id: claim[2], action: claim[3] };
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
   if (thread) return { kind: "thread", u: thread[1] };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
@@ -157,6 +168,62 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   const method = request.method;
   try {
     if (op.kind === "hours") return await makerHours(request, env, method);
+    if (op.kind === "slip" || op.kind === "slip-key" || op.kind === "claims") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      if (op.kind === "slip-key") return json(await deskCall(env, "/_internal/maker/vault/key", "GET"));
+      if (op.kind === "slip") return json(await deskCall(env, "/_internal/maker/slips/" + op.u + "/" + op.id, "GET"));
+      const result = await deskCall(env, "/_internal/maker/claims", "GET");
+      if (!Array.isArray(result.claims)) return json({ ok: false, error: "The Desk claim list was unreadable." }, 502);
+      for (const u of TEST_USERS) {
+        const fixture = await exampleAccount(env, u);
+        if (!fixture.ok) {
+          if (fixture.status === 409) continue;
+          return json(fixture, fixture.status || 503);
+        }
+        result.claims.push(...fixture.account.claims.map((claim) => ({ ...claim, test: true })));
+      }
+      return json(result);
+    }
+    if (op.kind === "claim") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      const body = parsed.body;
+      const fields = op.action === "preview" ? [] : op.action === "received" ? ["hash", "covered", "rid"] : ["amount", "rid"];
+      if (Object.keys(body).some((key) => !fields.includes(key))
+        || op.action !== "preview" && (!RID_RE.test(String(body.rid || ""))
+          || op.action === "received" && (typeof body.hash !== "string"
+            || body.covered !== undefined && typeof body.covered !== "boolean")
+          || op.action === "notfound" && (typeof body.amount !== "number" || !Number.isFinite(body.amount))))
+        return json({ ok: false, error: "Send the claim preview and its immutable action id." }, 400);
+      if (!isTest(op.u)) return json(await deskCall(env,
+        "/_internal/maker/claims/" + op.u + "/" + op.id + "/" + op.action, "POST", body));
+      const intention = { id: op.id, action: op.action, body };
+      if (op.action !== "preview") {
+        const receipt = await exampleAccount(env, op.u, { actor: "receipt", rid: body.rid, request: intention });
+        if (!receipt.ok) return json(receipt, receipt.status || 503);
+        if (receipt.found) return json({ ok: true, claim: receipt.claim, again: true, test: true });
+      }
+      const snapshot = await exampleAccount(env, op.u);
+      if (!snapshot.ok) return json(snapshot, snapshot.status || 503);
+      const preview = await deskCall(env, "/_internal/maker/fixture-claims/" + op.u + "/" + op.id + "/preview",
+        "POST", snapshot);
+      if (!preview.claim || !Number.isFinite(preview.claim.amount) || !Number.isFinite(preview.left)
+        || typeof preview.hash !== "string" || !Array.isArray(preview.rows))
+        return json({ ok: false, error: "The Desk claim preview was unreadable." }, 502);
+      if (op.action === "preview") return json(preview);
+      if (op.action === "notfound" && Math.abs(body.amount - preview.claim.amount) > 0.004)
+        return json({ ok: false, error: "That claim amount has changed." }, 409);
+      if (op.action === "received" && body.hash !== preview.hash)
+        return json({ ok: false, error: "The acceptance rows changed. Preview them again.", differs: true }, 409);
+      if (op.action === "received" && (body.covered ? preview.left <= 0.004 : preview.left > 0.004))
+        return json({ ok: false, error: body.covered ? "Their rows owe all of it." : "Part of this claim exceeds what the rows owe." }, 409);
+      const result = await exampleAccount(env, op.u, { actor: "desk", id: op.id,
+        rid: body.rid, request: intention, revision: preview.revision, expectedGeneration: preview.generation, rows: preview.rows,
+        body: { verdict: { kind: op.action === "received" ? "received" : "notfound",
+          amount: preview.claim.amount, ...(body.covered ? { covered: true } : {}) } } });
+      return json(result.ok ? { ok: true, claim: result.claim, test: true } : result, result.ok ? 200 : result.status || 503);
+    }
     if (op.kind === "threads" || op.kind === "thread" || op.kind === "bulletin") {
       const read = method === "GET" && op.kind !== "thread";
       if (!read && !(method === "POST" && op.kind !== "threads"))

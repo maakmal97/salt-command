@@ -21,7 +21,7 @@
  * binding exists, on either store road; no real events, marks or write-behind read that table. A new publication
  * resets its generation. Binding-less legacy customer fixtures remain in KV; new owner replies refuse there.
  */
-import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove } from "./orders.js";
+import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove } from "./orders.js";
 import { refusal } from "./words.js";
 
 export const TEST_USER = "0000-0000";
@@ -60,7 +60,25 @@ export async function withExamples(env, u, orders, claims) {
   const fix = await fixNow(env, u);
   if (!fix) return { orders, claims };
   const newest = (a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
-  return { orders: orders.concat(fix.orders || []).sort(newest), claims: claims.concat((fix.claims || []).map(claimView)).sort(newest) };
+  const state = env.ORDERBOOK ? await exampleAccount(env, u) : null;
+  if (state && !state.ok) throw new Error(state.error);
+  return { orders: orders.concat((state ? state.account.orders : fix.orders || []).map(customerView)).sort(newest),
+    claims: claims.concat((state ? state.account.claims : fix.claims || []).map(claimView)).sort(newest) };
+}
+
+export async function exampleAccount(env, u, move = {}) {
+  const fix = await fixNow(env, u);
+  if (!fix) return Object.assign({ ok: false }, soon());
+  if (!env.ORDERBOOK) return { ok: false, error: "Acceptance claim storage is unavailable.", status: 503 };
+  const generation = JSON.stringify([fix.salt, fix.at || "", fix.env?.iv || ""]);
+  if (move.expectedGeneration !== undefined && move.expectedGeneration !== generation)
+    return { ok: false, error: "The acceptance publication changed. Preview it again.", status: 409 };
+  const result = await fixtureAccountMove(env, {
+    u, generation, seed: { claims: fix.claims || [], sales: fix.makerBook?.sales || [],
+      orders: fix.makerOrders || fix.orders || [] },
+    actor: "read", ...move
+  });
+  return { ...result, generation, orders: result.account?.orders || [], prepared: !!fix.makerBook };
 }
 
 /** An example order's id: shown by a test account alone. */
@@ -69,6 +87,11 @@ export const isExample = (u, id) => isTest(u) && EXAMPLE_ID.test(String(id || ""
 
 /** A move of theirs on an example order, by the order book's own rules, written back into the fixture; a retry once. */
 export async function exampleMove(env, u, id, action, body) {
+  if (env.ORDERBOOK) {
+    const result = await exampleAccount(env, u, { actor: "order", id, action, body,
+      request: { id, action, body }, rid: ridOf(body) || crypto.randomUUID() });
+    return result.ok ? { order: customerView(result.order) } : { error: result.error, status: result.status };
+  }
   const fix = await fixNow(env, u);
   const i = fix ? fix.orders.findIndex((o) => o.id === id) : -1;
   if (i < 0) return Object.assign(refusal("noOrder"), { status: 404 });
@@ -99,6 +122,11 @@ export async function exampleReplace(env, u, id, body) {
   const quote = product && product.sizes.find((size) => size.q === body.qty);
   if (!quote) return Object.assign(refusal("amendPrices"), { status: 409 });
   const priced = Object.assign({}, body, { total: quote.price, unit: +(quote.price / quote.q).toFixed(2) });
+  if (env.ORDERBOOK) {
+    const result = await exampleAccount(env, u, { actor: "replace", id, body: priced,
+      digest: fix.prices?.digest || "", request: { id, body }, rid: rid || crypto.randomUUID() });
+    return result.ok ? { order: customerView(result.order) } : { error: result.error, status: result.status };
+  }
   const d = decideReplace(fix.orders[i], priced, fix.orders, new Date().toISOString(), fix.prices && fix.prices.digest || "");
   if (d.error) return d;
   d.place.order.id = d.place.order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
@@ -115,6 +143,10 @@ export async function exampleReplace(env, u, id, body) {
 export async function exampleClaim(env, u, body) {
   const fix = await fixNow(env, u);
   if (!fix) return soon();
+  if (env.ORDERBOOK) {
+    const result = await exampleAccount(env, u, { actor: "customer", request: body, rid: ridOf(body) || crypto.randomUUID() });
+    return result.ok ? { claim: result.claim } : { error: result.error, status: result.status };
+  }
   const claims = fix.claims = fix.claims || [], rid = ridOf(body), rids = fix.rids = fix.rids || {};
   const again = rid && claims.find((c) => c.id === rids[rid]);
   if (again) return { claim: again };

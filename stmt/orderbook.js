@@ -65,7 +65,7 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -110,16 +110,17 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS acl (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS thr (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS fixture_thread (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
+    sql.exec("CREATE TABLE IF NOT EXISTS fixture_account (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
   }
 
   async fetch(request) {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    if (op !== "drop" && op !== "fixture-thread") await this.moveIn(true);
+    if (op !== "drop" && op !== "fixture-thread" && op !== "fixture-account") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     const out = this.run(op, a && typeof a === "object" ? a : {});
-    if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
+    if (op !== "fixture-account" && out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
     return Response.json(out);
   }
   /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
@@ -292,6 +293,87 @@ export class OrderBook {
   /* every answer is { ok, ... } or { ok: false, error, status }, and nothing here awaits */
   run(op, a) {
     const at = new Date().toISOString();
+    if (op === "fixture-account") {
+      if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
+        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace"].includes(a.actor))
+        return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
+      return this.state.storage.transactionSync(() => {
+        const sql = this.state.storage.sql;
+        const row = sql.exec("SELECT generation,doc,receipts FROM fixture_account WHERE u=?", a.u).toArray()[0];
+        if (row && row.generation !== a.generation && JSON.parse(row.generation)[1] >= JSON.parse(a.generation)[1])
+          return { ok: false, error: "The acceptance account changed. Read its latest publication.", status: 409 };
+        const doc = row && row.generation === a.generation ? JSON.parse(row.doc)
+          : { claims: a.seed?.claims || [], sales: a.seed?.sales || [], orders: a.seed?.orders || [], revision: 0 };
+        const receipts = row && row.generation === a.generation ? JSON.parse(row.receipts) : {};
+        if (a.actor !== "read") {
+          if (typeof a.rid !== "string" || !RID_RE.test(a.rid))
+            return { ok: false, error: "An acceptance move needs its immutable request id.", status: 400 };
+          const key = (a.actor === "receipt" ? "desk" : a.actor) + ":" + a.rid, request = JSON.stringify(a.request);
+          if (!request || request.length > 4096)
+            return { ok: false, error: "The acceptance request is too large.", status: 400 };
+          if (Object.hasOwn(receipts, key)) {
+            const receipt = receipts[key];
+            if (receipt.request !== request)
+              return { ok: false, error: "That request id already names different content.", status: 409 };
+            return { ok: true, account: doc, claim: doc.claims.find((c) => c.id === receipt.id),
+              order: doc.orders.find((o) => o.id === receipt.id), again: true, found: true };
+          }
+          if (a.actor === "receipt") return { ok: true, found: false, account: doc };
+          if (Object.keys(receipts).length >= 400)
+            return { ok: false, error: "Publish fresh acceptance cases before more claims.", status: 409 };
+          let claim;
+          let order;
+          if (a.actor === "order" || a.actor === "replace") {
+            const previous = doc.orders.find((o) => o.id === a.id);
+            if (!previous) return { ok: false, error: "No such acceptance order.", status: 404 };
+            const decision = a.actor === "replace" ? decideReplace(previous, a.body, doc.orders, at, a.digest)
+              : decideCustomer(previous, a.action, a.body, doc.orders, at);
+            if (decision.error) return no(decision, decision.status || 400);
+            if (a.actor === "replace") {
+              decision.place.order.id = decision.place.order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+              decision.cancel.replacement = decision.place.order.id;
+              applyEvent(previous, decision.cancel);
+              order = applyEvent(null, decision.place).order;
+              doc.orders.push(order);
+            } else order = decision.none ? previous : applyEvent(previous, decision.ev).order;
+            doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = previous;
+          } else if (a.actor === "customer") {
+            const decision = decideAccountClaim(a.u, a.request, doc.claims.filter((c) => c.state === "waiting"), at);
+            if (decision.error) return no(decision, decision.status || 400);
+            claim = applyEvent(null, decision.ev).order;
+            doc.claims.push(claim);
+          } else {
+            if (a.revision !== doc.revision)
+              return { ok: false, error: "The acceptance rows changed. Preview them again.", status: 409, differs: true };
+            claim = doc.claims.find((c) => c.id === a.id);
+            const decision = decideClaimDesk(claim, a.body, at);
+            if (decision.error) return no(decision, decision.status || 400);
+            if (a.body.verdict.kind === "received" && !a.body.verdict.covered) {
+              for (const allocated of a.rows || []) {
+                const sale = doc.sales.find((s) => s.rid === allocated.rid);
+                if (!sale || !(allocated.rm > 0) || !Number.isFinite(allocated.rm))
+                  return { ok: false, error: "The acceptance allocation cannot be applied.", status: 409 };
+              }
+              for (const allocated of a.rows || []) {
+                const sale = doc.sales.find((s) => s.rid === allocated.rid);
+                sale.cash = +((+sale.cash || 0) + allocated.rm).toFixed(2);
+              }
+            }
+            claim = applyEvent(claim, decision.ev).order;
+            doc.claims[doc.claims.findIndex((c) => c.id === a.id)] = claim;
+          }
+          doc.revision++;
+          receipts[key] = { request, id: claim ? claim.id : order.id };
+          sql.exec("INSERT OR REPLACE INTO fixture_account (u,generation,doc,receipts) VALUES (?,?,?,?)",
+            a.u, a.generation, JSON.stringify(doc), JSON.stringify(receipts));
+          return { ok: true, account: doc, claim, order };
+        }
+        if (!row || row.generation !== a.generation)
+          sql.exec("INSERT OR REPLACE INTO fixture_account (u,generation,doc,receipts) VALUES (?,?,?,?)",
+            a.u, a.generation, JSON.stringify(doc), JSON.stringify(receipts));
+        return { ok: true, account: doc };
+      });
+    }
     if (op === "fixture-thread") {
       if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
         || a.generation.length > 1024 || !["read", "customer", "desk"].includes(a.actor))
@@ -461,6 +543,7 @@ export class OrderBook {
         this.state.storage.sql.exec("DELETE FROM thr WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM behind WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM fixture_thread WHERE u = ?", u);
+        this.state.storage.sql.exec("DELETE FROM fixture_account WHERE u = ?", u);
       });
       return { ok: true, dropped: n };
     }
