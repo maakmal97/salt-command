@@ -20,6 +20,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncMakerGeo, checkMakerGeo } from "./maker-geosync.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
@@ -102,7 +103,8 @@ export function checkText(src) {
   const a = src.indexOf(OPEN), b = src.indexOf(SHUT);
   if (a < 0 || b < 0) return "the master has no GEO block";
   const have = src.slice(a, b + SHUT.length);
-  return have === block() ? null : "the master's GEO block is not the files in geo/";
+  return have !== block() ? "the master's GEO block is not the files in geo/"
+    : !checkMakerGeo(src) ? "the Counter geography differs from the incumbent Desk" : null;
 }
 
 const mode = process.argv[2] || "--check";
@@ -112,6 +114,7 @@ if (mode === "--sync") {
   if (a < 0 || b < 0) { console.error("  FAIL  the master has no GEO block; add the two markers first"); process.exit(1); }
   const next = src.slice(0, a) + block() + src.slice(b + SHUT.length);
   writeFileSync(MASTER, next);
+  syncMakerGeo(next);
   const bm = read("geo/basemap.json");
   const pts = bm.features.reduce((t, f) => t + f.rings.reduce((s, r) => s + r.length, 0), 0);
   console.log(`  ok    the geography is in the master: ${bm.features.length} outlines, ${pts} points, ${KEYS.length} gazetteer keys`);

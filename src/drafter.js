@@ -52,6 +52,7 @@ const rewardBook = (book, p) => {
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { admitInput, checkInputAdmission, finishInputAdmission } from "./input-admission.js";
 
 export async function readBook(db) {
   const rows = async (c) => {
@@ -1629,12 +1630,22 @@ export async function dryRunDrafter(env) {
   const mark = book.state && book.state.QUEUE_COMMITTED;
   const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
   const out = { ok: true, dry: true, mirror: book.version, pricingAt: book.pricing && book.pricing.v, would: [], skipped: [], already: 0, committed: 0 };
+  const reservations = [...byAt.values()].some(POSITION_ENGINE.inputConsumesResource) ? await env.SALT_LEDGER.prepare(
+    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')"
+  ).all() : { results: [] };
+  const reservedEntries = (reservations.results || []).map((row) => JSON.parse(row.entry));
   for (const at of [...byAt.keys()].sort()) {
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     if (already.has(at)) { out.already++; continue; }
-    const d = draftRow(byAt.get(at), book);
+    const entry = byAt.get(at);
+    const admission = await checkInputAdmission(env.SALT_LEDGER, entry, book);
+    const fault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
+    const d = fault ? { skip: fault } : draftRow(entry, book);
     if (d.skip) out.skipped.push({ at, why: d.skip });
-    else out.would.push({ at, collection: d.collection, row: d.row, reasoning: d.reasoning, flags: d.flags });
+    else {
+      out.would.push({ at, collection: d.collection, row: d.row, reasoning: d.reasoning, flags: d.flags });
+      reservedEntries.push(entry);
+    }
   }
   return out;
 }
@@ -1769,6 +1780,10 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   if (book.version == null) return { ok: false, transition: true, error: "the mirror carries no snapshot, so it is being seeded or was never seeded; nothing is drafted until it is" };
   const mark = book.state && book.state.QUEUE_COMMITTED;
   const already = await draftedOf(env.SALT_LEDGER, [...byAt.keys()]);
+  const reservations = [...byAt.values()].some(POSITION_ENGINE.inputConsumesResource) ? await env.SALT_LEDGER.prepare(
+    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')"
+  ).all() : { results: [] };
+  const reservedEntries = (reservations.results || []).map((row) => JSON.parse(row.entry));
 
   /* SELF-CLEANING, and it runs before anything else, so nobody has to tidy up and a stale refusal
      cannot accumulate into a list people learn to ignore. v586, HIS DECISION OF 11 SEP 2026: A
@@ -1800,7 +1815,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
-    const d = draftRow(entry, book);
+    const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
+    const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
+    const d = reservationFault ? { skip: reservationFault } : draftRow(entry, book);
     if (d.skip) {
       out.skipped.push({ at, why: d.skip });
       /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */
@@ -1809,6 +1826,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
          VALUES (?1,?2,?3,?4,?5,?6)`
       ).bind(at, JSON.stringify(entry), d.skip,
         (entry && entry.party) || null, "cloud-drafter", now()).run();
+      if (POSITION_ENGINE.inputConsumesResource(entry) && !admission.error)
+        await finishInputAdmission(env.SALT_LEDGER, at, "rejected");
       continue;
     }
     const made = await env.SALT_LEDGER.prepare(
@@ -1835,6 +1854,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
        with "1 row waiting" for a row his own tap had just made. It is `raced`, so the log shows it. */
     if (made && made.meta && made.meta.changes) out.drafted++;
     else out.raced++;
+    reservedEntries.push(entry);
     /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
        spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
        leaves the row pending, as every row was before. */

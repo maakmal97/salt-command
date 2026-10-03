@@ -325,6 +325,7 @@ await (async () => {
   ok(r.status === 200, "armed: assets are still open");
 
   /* The vault write is gated too, or the one door left open is the one holding names. */
+  const vaultGate = (await import("./vault-write-gate.mjs")).createGateFixture();
   const envelope = { v: 1, salt: "s", iv: "i", ct: "c" };
   r = await worker.fetch(req("/vault", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: envelope })
@@ -333,11 +334,12 @@ await (async () => {
 
   r = await worker.fetch(req("/vault", {
     method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": KEY }, body: JSON.stringify({ vault: envelope })
-  }), armed(kv));
+  }), { ...armed(kv), SALT_LEDGER: vaultGate.db });
   ok(r.status === 200, "armed: POST /vault with the key → accepted");
 
   r = await worker.fetch(req("/vault"), armed(kv));
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
+  vaultGate.close();
 })();
 
 /* ---- 1c. Worker: Cloudflare Access verifies the Desk identity --------------------- */
@@ -689,7 +691,8 @@ await (async () => {
 })();
 section("Worker — vault syncs ciphertext, plaintext never does");
 await (async () => {
-  const kv = new KV(), env = mkEnv(kv);
+  const vaultGate = (await import("./vault-write-gate.mjs")).createGateFixture();
+  const kv = new KV(), env = { ...mkEnv(kv), SALT_LEDGER: vaultGate.db };
   let r = await worker.fetch(req("/vault"), env); let j = await r.json();
   ok(j.ok && j.vault === null && !("ids" in j), "GET /vault empty → {vault:null}, no ids key");
 
@@ -707,6 +710,7 @@ await (async () => {
   ok(j.ok && JSON.stringify(j.bio) === "{}", "GET /bio → empty (plaintext directory never ships)");
   await worker.fetch(req("/bio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bio: { A26: { raw: "a real name" } } }) }), env);
   ok(!kv.m.has("bio") && ![...kv.m.values()].join("").includes("a real name"), "POST /bio drops the name; nothing in KV");
+  vaultGate.close();
 })();
 
 /* ---- 2b. Vault crypto — the seed tool round-trips with the desk ------------------ */
@@ -742,7 +746,7 @@ await (async () => {
      fails here rather than timing out on the laptop. The count stops the census going quiet. */
   const src = (f) => readFileSync(join(REPO, "tools", f), "utf8");
   const reach = readdirSync(join(REPO, "tools")).filter((f) => f.endsWith(".mjs") && f !== "cloudflare.mjs")
-    .filter((f) => /\["wrangler"|fetch\((SITE|BASE|base) \+/.test(src(f)));
+    .filter((f) => /\["wrangler"|fetch\((SITE|BASE|base) \+|transport\(new Request/.test(src(f)));
   const bare = reach.filter((f) => !/^import (\{ [\w, ]+ \} from )?"\.\/cloudflare\.mjs";$/m.test(src(f)));
   ok(reach.length >= 10 && !bare.length, "every tool that reaches Cloudflare imports tools/cloudflare.mjs (" + reach.length + " found; without it: " + (bare.join(", ") || "none") + ")");
 
@@ -1325,6 +1329,7 @@ await (async () => {
       const api = {
         bind(...a) { binds = a; return api; },
         async first() {
+          if (/^SELECT id FROM input_admission WHERE id=/.test(s)) return null;
           if (/^SELECT status FROM draft WHERE id=/.test(s) || /^SELECT status,committed_at FROM draft WHERE id=/.test(s)) {
             return self.rows.get(binds[0]) || null;
           }
@@ -1337,6 +1342,7 @@ await (async () => {
         },
         async all() {
           if (/^SELECT .* FROM refused/.test(s)) return { results: [...self.refusals.values()] };
+          if (/^SELECT id FROM input_admission_source WHERE source=/.test(s)) return { results: [] };
           if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
           let out = [...self.rows.values()];
           if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
@@ -3235,7 +3241,11 @@ await (async () => {
   ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>\{ordLoad\(\);/.test(m) && /orders:'Site orders'/.test(m),
     "and Orders (v499), reading and moving the customer orders the statements site holds");
   ok(/data-m="addid">Add ID/.test(m) && /id="wbPaneAddid"/.test(m) && /wbMode==='addid'/.test(m), "the cloud desk's Workbench can register a party by code");
-  ok(/mode:'addid',code:code,kind:kind,parent:parent/.test(m), "and queues it as the addid entry the drafter knows");
+  const idEngine = (await import("../engine/position.mjs")).default;
+  const idEntry = idEngine.addIdEntry({at:"2026-10-01T00:00:00.000Z",code:"CX1-ZED",kind:"customer",parent:null});
+  ok(idEntry.type === "ADDID" && idEntry.payload.mode === "addid" && idEntry.payload.code === "CX1-ZED"
+    && idEntry.payload.kind === "customer" && idEntry.payload.parent === null,
+    "and constructs the addid entry the drafter knows through the shared engine");
   ok(/class="warnpill" style="display:block;margin:8px 0 0/.test(m), "a draft's flags are pills the notes toggle cannot hide");
   /* every lead and every part has a question on the strip */
   const q = m.match(/const PART_Q=\{([\s\S]*?)\};/)[1];
@@ -5972,10 +5982,10 @@ await (async () => {
     ok(pay && pay.coming.rm === 485 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1 2026-09-26:30:1",
       "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, "
       + "one dated ahead because an agreed order is open whatever its date, and not an order paid ahead: " + cm);
-    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in,
+    /* the three add up to the statement's own owed: pending intentions and write-offs are left out,
        and nothing from a row dated after the statement's day, which neither owed nor the body carries yet */
-    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 385 + 240).toFixed(2) === doc.owed,
-      "and they reconcile to the statement's owed, less the agreed orders it counts nowhere and plus the write-off it still prints: "
+    ok(doc && doc.owed === 540 && +(pay.now.rm + pay.coming.rm - 385).toFixed(2) === doc.owed,
+      "and they reconcile to the statement's owed, less the pending intentions, with no written-off balance: "
       + JSON.stringify(doc && { owed: doc.owed, now: pay.now.rm, coming: pay.coming.rm }));
     ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
       "the live statement seals exactly the engine's reading, party by party");
@@ -6017,8 +6027,7 @@ await (async () => {
     /* the statement's window: an agreed order whatever its date, anything else up to the day */
     const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer) && (POS.txStat(s).order === "Pending" || !(new Date(s.date) > new Date("2026-09-24"))));
     const pend = own.filter((s) => !s.goodwill && !s.defaulted && POS.txStat(s).order === "Pending").reduce((a, s) => a + POS.txOwed(s), 0);
-    const lost = own.filter((s) => s.defaulted).reduce((a, s) => a + Math.max(0, POS.txOwed(s) - POS.txPaid(s)), 0);
-    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend + lost - d.owed) > 0.011) off.push(p);
+    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend - d.owed) > 0.011) off.push(p);
   }
   ok(n > 10 && !off.length, "on the book, every live statement's to pay now and coming up reconcile to its owed: " + n + " statements"
     + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
@@ -6101,6 +6110,12 @@ await (async () => {
     ["cancelled", row({ cancelled: true }), null],
     ["no day at all", row({ date: null, deliveredQty: 1 }), null]]);
   ok(none.length === 0, "and nothing where nothing handed over is unpaid, a write-off included, or where no day is known: " + JSON.stringify(none));
+})();
+
+section("Statements: written-off balances leave live owed, ready orders retain their balance");
+await (async () => {
+  const { statementWriteoffChecks } = await import("./statement-writeoffs.mjs");
+  statementWriteoffChecks(ok);
 })();
 
 section("v432: the money on a statement is the money on the book");
@@ -21511,7 +21526,8 @@ await (async () => {
     const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
     const del = sum(/^Delivery$/); if (del > 0) withDel++;
     const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
-    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
+    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) - sum(/^Written off$/)
+      - sum(/^Not handed over on written-off orders$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
     if (Math.abs(lhs - (bal === "nil" ? 0 : num(bal))) > 0.009) off.push(p + " " + lhs + " against " + bal);
   }
   ok(docs > 10 && withDel > 0 && !off.length, "every live footer adds up, the delivery its own line between the orders and Paid: " + docs + " statements, " + withDel + " with delivery; off: " + off.slice(0, 3).join(", "));
@@ -47519,7 +47535,8 @@ await (async () => {
      ciphertext is refused or dropped. Proved red by mutation. */
   const deskW = (await import("../src/worker.js")).default;
   const KEY = "k-vault-addr-fixture";
-  const kv = new KV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY };
+  const vaultGate = (await import("./vault-write-gate.mjs")).createGateFixture();
+  const kv = new KV(), env = { ...mkEnv(kv), SALT_WRITE_KEY: KEY, SALT_LEDGER: vaultGate.db };
   const H = { "content-type": "application/json", "X-Salt-Key": KEY };
   const call = async (r) => { try { const x = await deskW.fetch(r, env); let j = null; try { j = await x.json(); } catch (e) { j = null; } return { status: x.status, j }; } catch (e) { return { status: -1, j: null }; } };
   const post = (body, h = H) => call(req("/vault/addr", { method: "POST", headers: h, body: JSON.stringify(body) }));
@@ -47554,6 +47571,7 @@ await (async () => {
   const badPl = await get(), badNm = await call(req("/vault"));
   ok(badPl.status === 500 && !!badPl.j && badPl.j.ok === false && badNm.status === 500 && !!badNm.j && badNm.j.ok === false,
     "F14: an envelope that cannot be read answers not ok, the places' and the names', never none: " + JSON.stringify([badPl, badNm]));
+  vaultGate.close();
 })();
 
 section("F14: one unlock opens the names and the places on one passphrase, and every lock clears both");
@@ -49682,6 +49700,17 @@ section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
   await inputChecks.run({ ok });
+  const geographyChecks = await import("./maker-geography.mjs");
+  await geographyChecks.run({ ok });
+  const vaultPairChecks = await import("./vault-pair.mjs");
+  await vaultPairChecks.run({ ok });
+  const vaultWriterChecks = await import("./vault-writers.mjs");
+  await (await import("./vault-write-gate.mjs")).run({ ok });
+  await vaultWriterChecks.run({ ok });
+  const deskVaultChecks = await import("./desk-vault-pair.mjs");
+  await deskVaultChecks.run({ ok });
+  const incumbentChecks = await import("./desk-maker-constructors.mjs");
+  await incumbentChecks.run({ ok });
   const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
   const calls = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -49947,6 +49976,32 @@ await (async () => {
       "closed hours do not block the customer order POST");
   } finally { page.close(); }
   const countBody = { at: "2026-09-29T12:00:00.000Z", date: "2026-09-29", product: "salt", qty: 0 };
+  await (await import("./vault-local-files.mjs")).run({ ok });
+  const savedMapFetch = globalThis.fetch, mapFetches = [];
+  try {
+    globalThis.fetch = async (url, options) => {
+      mapFetches.push({ url: String(url), redirect: options.redirect });
+      return new Response(null, { status: 302, headers: { location: "https://waze.com/ul?ll=3.12,101.65" } });
+    };
+    const geoEnv = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, privateEnv, { waitUntil() {} }) } };
+    const mapCall = (body, identity = owner, method = "POST") => handleMaker(new Request("https://counter.test/all/maker/geo/expand", {
+      method, ...(method === "POST" ? { body: JSON.stringify(body) } : {})
+    }), geoEnv, "/all/maker/geo/expand", identity);
+    const mapResponse = await mapCall({ url: "https://maps.app.goo.gl/AbC123" });
+    const expanded = await mapResponse.json();
+    const badMap = await mapCall({ url: "https://evil.test/private" });
+    const extraMap = await mapCall({ url: "https://maps.app.goo.gl/AbC123", name: "Private word" });
+    const wrongOwner = await mapCall({ url: "https://maps.app.goo.gl/AbC123" }, { email: "wrong@example.test" });
+    const wrongMethod = await mapCall(null, owner, "GET");
+    const wrongCapability = await worker.fetch(new Request("https://desk.test/_internal/maker/geo/expand", {
+      method: "POST", body: JSON.stringify({ url: "https://maps.app.goo.gl/AbC123" })
+    }), privateEnv, { waitUntil() {} });
+    ok(mapResponse.status === 200 && expanded.location === "https://waze.com/ul?ll=3.12,101.65"
+      && mapFetches.length === 1 && mapFetches[0].redirect === "manual"
+      && badMap.status === 400 && extraMap.status === 400 && wrongOwner.status === 403
+      && wrongMethod.status === 405 && wrongCapability.status === 404,
+      "Counter short Maps expansion reaches only the exact owner/capability route and follows one allowed redirect without arbitrary URL fetches");
+  } finally { globalThis.fetch = savedMapFetch; }
   const builtCount = makerStockCount(countBody);
   ok(builtCount.entry && builtCount.entry.payload.mode === "count" && builtCount.entry.payload.kg === 0
     && !makerStockCount({ ...countBody, qty: "2" }).entry
@@ -49958,7 +50013,13 @@ await (async () => {
   try {
     for (const file of readdirSync(join(REPO, "migrations")).filter((file) => /^[0-9]+_.*[.]sql$/.test(file)).sort())
       countDb.exec(readFileSync(join(REPO, "migrations", file), "utf8"));
-    const countD1 = { prepare(sql) {
+    const countD1 = { batch(statements) {
+      countDb.exec("BEGIN IMMEDIATE");
+      try {
+        const results = statements.map((statement) => statement.run());
+        countDb.exec("COMMIT"); return results;
+      } catch (error) { countDb.exec("ROLLBACK"); throw error; }
+    }, prepare(sql) {
       const statement = countDb.prepare(sql);
       const bound = (args) => ({
         run() { const result = statement.run(...args); return { meta: { changes: Number(result.changes) } }; },
@@ -49980,25 +50041,634 @@ await (async () => {
       && persisted.collection === "count" && JSON.parse(persisted.row).qty === 0
       && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
       "Counter stock count goes through the real Desk queue and drafter once, pending a decision");
-    const retired = await countCall({ ...countBody, product: "spare" });
-    const unknown = await countCall({ ...countBody, product: "missing" });
+    const changed = await countCall({ ...countBody, qty: 1 });
+    ok(changed.status === 409 && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      "a maker timestamp cannot be retried with a changed input");
+    countDb.prepare("UPDATE draft SET status='approved',committed_at=? WHERE id=?").run(countBody.at, countBody.at);
+    countDb.prepare("UPDATE snapshot SET v='later-fixture'").run();
+    const committedRetry = await (await countCall(countBody)).json();
+    ok(committedRetry.ok && committedRetry.queued === false
+      && countDb.prepare("SELECT COUNT(*) AS n FROM maker_request").get().n === 1,
+      "the original maker input replays after approval and a moved mirror without making another row");
+    const retired = await countCall({ ...countBody, at: "2026-09-29T12:01:00.000Z", product: "spare" });
+    const unknown = await countCall({ ...countBody, at: "2026-09-29T12:02:00.000Z", product: "missing" });
     ok(retired.status === 400 && unknown.status === 400 && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
       "stock counts cannot enter retired or unknown books");
+    const immutableCount = { ...countBody, at: "2026-09-29T12:02:30.000Z", date:"2026-09-30", qty: 3 };
+    const interruptedQueue = { get: countQueue.get.bind(countQueue), list: countQueue.list.bind(countQueue),
+      delete: countQueue.delete.bind(countQueue), put: async (queueKey,value) => {
+        if(queueKey==="q:orders:"+immutableCount.at)throw new Error("fixture Maker queue interruption");
+        return countQueue.put(queueKey,value);
+      } };
+    const immutableCall = (body,queue=countQueue) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/stock-count",{
+      method:"POST",headers:{"X-Counter-Maker-Key":key},body:JSON.stringify(body)
+    }),{...countEnv,SALT_QUEUE:queue},{waitUntil(){}});
+    let interruptedMaker=false;
+    try{await immutableCall(immutableCount,interruptedQueue);}catch(error){interruptedMaker=error.message==="fixture Maker queue interruption";}
+    const retainedMaker=countDb.prepare("SELECT entry,response FROM maker_request WHERE id=?").get(immutableCount.at);
+    const changedImmutable=await immutableCall({...immutableCount,qty:4});
+    const immutableReplay=await Promise.all([immutableCall(immutableCount),immutableCall(immutableCount)]);
+    ok(interruptedMaker&&retainedMaker?.entry&&!retainedMaker.response&&changedImmutable.status===409
+      &&immutableReplay.every(response=>response.status===200)
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(immutableCount.at).n===1
+      &&JSON.parse(countDb.prepare("SELECT row FROM draft WHERE id=?").get(immutableCount.at).row).qty===3,
+      "an interrupted non-vault Maker receipt retains one immutable entry, rejects changed content and concurrent retries reach exactly one real draft: "
+      +JSON.stringify({interruptedMaker,retained:!!retainedMaker?.entry,statuses:immutableReplay.map(r=>r.status),changed:changedImmutable.status,
+        count:countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(immutableCount.at).n,
+        replies:await Promise.all(immutableReplay.map(r=>r.json()))}));
+    const afterDraft={...immutableCount,at:"2026-09-29T12:02:40.000Z",date:"2026-10-01",qty:4};
+    const finishCrash={...countD1,prepare(sql){
+      if(sql.startsWith("UPDATE maker_request SET response"))return {bind(){return {run(){throw new Error("fixture receipt finish interruption");}};}};
+      return countD1.prepare(sql);
+    }};
+    const afterCall=(db)=>worker.fetch(new Request("https://desk.test/_internal/maker/inputs/stock-count",{
+      method:"POST",headers:{"X-Counter-Maker-Key":key},body:JSON.stringify(afterDraft)
+    }),{...countEnv,SALT_LEDGER:db},{waitUntil(){}});
+    let stoppedAfterDraft=false;
+    try{await afterCall(finishCrash);}catch(error){stoppedAfterDraft=error.message==="fixture receipt finish interruption";}
+    const finishedReplay=await afterCall(countD1);
+    ok(stoppedAfterDraft&&finishedReplay.status===200
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(afterDraft.at).n===1
+      &&(await finishedReplay.json()).draft===afterDraft.at,
+      "Maker replay after draft-before-receipt-completion reads the matching real draft and never inserts a second row");
+    const unreadDraft={...immutableCount,at:"2026-09-29T12:02:50.000Z",date:"2026-10-02",qty:5};
+    const hiddenQueue={get:async()=>null,list:async()=>({keys:[],list_complete:true}),
+      delete:countQueue.delete.bind(countQueue),put:countQueue.put.bind(countQueue)};
+    const unreadCall=(queue)=>worker.fetch(new Request("https://desk.test/_internal/maker/inputs/stock-count",{
+      method:"POST",headers:{"X-Counter-Maker-Key":key},body:JSON.stringify(unreadDraft)
+    }),{...countEnv,SALT_QUEUE:queue},{waitUntil(){}});
+    const notDrafted=await unreadCall(hiddenQueue);
+    const notFinished=countDb.prepare("SELECT response FROM maker_request WHERE id=?").get(unreadDraft.at);
+    const recoveredDraft=await unreadCall(countQueue);
+    ok(notDrafted.status===503&&!notFinished?.response&&recoveredDraft.status===200
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(unreadDraft.at).n===1,
+      "Maker never confirms a receipt with only a queued entry: draft invisibility keeps recovery pending until a real matching draft exists");
     const ledgerRoutes = ["loan", "repay", "gift", "redeem", "add-id", "amend-id", "place"];
     const deskRouteResults = [];
     for (const operation of ledgerRoutes) {
       const response = await worker.fetch(new Request("https://desk.test/_internal/maker/inputs/" + operation, {
         method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
-        body: JSON.stringify({ at: countBody.at, note: "unchecked prose" })
+        body: JSON.stringify({ at: "2026-09-29T12:03:00.000Z", note: "unchecked prose" })
       }), countEnv, { waitUntil() {} });
       deskRouteResults.push({ operation, status: response.status });
     }
     ok(deskRouteResults.length === ledgerRoutes.length && deskRouteResults.every((result) => result.status === 400)
-      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1,
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 4,
       "each new Desk maker route reaches typed validation and rejects unchecked notes before queue or draft writes");
+    const loanFixture = { rid: "loan-reserve", party: "CX1-ZED", form: "cash", direction: "in",
+      valueRM: 5, status: "open", date: "2026-09-01", repaid: [] };
+    for (const [name, value] of Object.entries({ roster: ["CX1-ZED"], loans: [loanFixture] }))
+      countDb.prepare("INSERT OR REPLACE INTO state(key,doc) VALUES (?,?)").run(name, JSON.stringify(value));
+    const repayRoute = (at) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/repay", {
+      method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+      body: JSON.stringify({ at, loan: loanFixture.rid, date: "2026-09-29", amount: 3 })
+    }), countEnv, { waitUntil() {} });
+    const repayFirst = await repayRoute("2026-09-29T13:00:00.000Z");
+    const repaySecond = await repayRoute("2026-09-29T13:01:00.000Z");
+    ok(repayFirst.status === 200 && repaySecond.status === 409,
+      "Maker repayment reserves the loan balance while the first repayment waits for its fold");
+    const resourceAt="2026-09-29T13:01:30.000Z";
+    const resourceCrash={...countEnv,SALT_QUEUE:{get:countQueue.get.bind(countQueue),list:countQueue.list.bind(countQueue),
+      delete:countQueue.delete.bind(countQueue),put:async(queueKey,value)=>{
+        if(queueKey==="q:orders:"+resourceAt)throw new Error("fixture admitted repayment interruption");
+        return countQueue.put(queueKey,value);
+      }}};
+    const recoverRepay=(amount=1,env=countEnv)=>worker.fetch(new Request("https://desk.test/_internal/maker/inputs/repay",{
+      method:"POST",headers:{"X-Counter-Maker-Key":key},body:JSON.stringify({at:resourceAt,loan:loanFixture.rid,date:"2026-09-29",amount})
+    }),env,{waitUntil(){}});
+    let resourceInterrupted=false;
+    try{await recoverRepay(1,resourceCrash);}catch(error){resourceInterrupted=error.message==="fixture admitted repayment interruption";}
+    const resourceChanged=await recoverRepay(2);
+    const resourceRetries=await Promise.all([recoverRepay(),recoverRepay()]);
+    ok(resourceInterrupted&&resourceChanged.status===409&&resourceRetries.every(response=>response.status===200)
+      &&countDb.prepare("SELECT amount,state FROM input_admission WHERE id=?").get(resourceAt)?.amount===1
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM input_admission_source WHERE id=? AND source='orders'").get(resourceAt).n===1
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(resourceAt).n===1,
+      "interrupted resource Maker recovery keeps its original admission and source, rejects changed amounts and concurrent retries never double-book");
+    const beforeLoan={...loanFixture,rid:"loan-before-admission"};
+    countDb.prepare("UPDATE state SET doc=? WHERE key='loans'").run(JSON.stringify([loanFixture,beforeLoan]));
+    const beforeAt="2026-09-29T13:01:40.000Z",beforeBody={at:beforeAt,loan:beforeLoan.rid,date:"2026-09-29",amount:1};
+    const beforeCall=(env)=>worker.fetch(new Request("https://desk.test/_internal/maker/inputs/repay",{
+      method:"POST",headers:{"X-Counter-Maker-Key":key},body:JSON.stringify(beforeBody)
+    }),env,{waitUntil(){}});
+    const beforeDb={...countD1,batch(){throw new Error("fixture admission stopped");}};
+    let beforeStopped=false;
+    try{await beforeCall({...countEnv,SALT_LEDGER:beforeDb});}catch(error){beforeStopped=error.message==="fixture admission stopped";}
+    const beforeStored=countDb.prepare("SELECT entry FROM maker_request WHERE id=?").get(beforeAt);
+    const beforeRecovery=await beforeCall(countEnv);
+    ok(beforeStopped&&beforeStored?.entry&&beforeRecovery.status===200
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM input_admission WHERE id=?").get(beforeAt).n===1
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(beforeAt).n===1,
+      "Maker claims immutable intent before admission, so a crash during admission safely resumes the same request instead of stranding an orphan reservation");
+    const E = (await import("../engine/position.mjs")).default;
+    const pendingRepay = E.repaymentEntry({ at: "2026-09-29T13:02:00.000Z",
+      loan: loanFixture, party: loanFixture.party, date: "2026-09-29", form: "cash", product: "salt", amount: 3 });
+    const deskRepay = await worker.fetch(new Request("https://desk.test/queue", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "reservation-test", queue: [pendingRepay] })
+    }), { ...countEnv, REQUIRE_ACCESS: "0" }, { waitUntil() {} });
+    ok(deskRepay.status === 409 && !await countQueue.get("q:reservation-test"),
+      "the incumbent Desk queue refuses a repayment already reserved on the Maker road before it writes");
+    await countQueue.put("q:reservation-test", JSON.stringify({ queue: [pendingRepay], device: "reservation-test" }));
+    const drafter = await import("../src/drafter.js");
+    await drafter.runDrafter(countEnv);
+    ok(!countDb.prepare("SELECT id FROM draft WHERE id=?").get(pendingRepay.at)
+      && !!countDb.prepare("SELECT why FROM refused WHERE id=?").get(pendingRepay.at),
+      "a repayment bypassing the input guards is refused again by the drafter against pending reservations");
+    const rewardSale = { rid: "reward-source", customer: "CX1-ZED", date: "2026-09-01", product: "salt",
+      qty: 1, total: 600, cash: 600, cost: 50, deliveredQty: 1 };
+    const rewardBook = { sales: [rewardSale], purchases: [], PRODUCTS: { salt: {} },
+      loans: [], REWARD: { stated: { salt: { margin: 500 } } }, PROD_OPENING: {} };
+    const redemption = (at, date) => ({ id: at, collection: "sales",
+      entry: E.redeemEntry({ at, product: "salt", party: "CX1-ZED", date, qty: 1, earned: 1, applied: 0, balance: 1 }),
+      row: { customer: "CX1-ZED", product: "salt", date, qty: 1, total: 40, cash: 0, cost: 40,
+        goodwill: true, rebate: true, settledRM: 40, deliveredQty: 1 } });
+    const firstReward = redemption("2026-09-29T14:00:00.000Z", "2026-09-29");
+    const secondReward = redemption("2026-09-29T14:01:00.000Z", "2026-09-30");
+    const planned = (await import("../tools/fold.mjs")).plan(rewardBook, { approved: [firstReward, secondReward] });
+    ok(planned.items.length === 1 && planned.refused.some((row) => row.id === secondReward.id && /reserved/.test(row.why)),
+      "the fold last check refuses a second reward draw in the same batch even with two approved rows");
+    const marked = { ...rewardSale, rid: "reward-marker", qty: 1, total: 40, cash: 0, rebate: false };
+    const markerBook = { ...rewardBook, state: { REWARD: rewardBook.REWARD }, sales: [rewardSale, marked] };
+    const marker = { at: "2026-09-29T14:02:00.000Z", payload: { mode: "amend", kind: "Correction",
+      direction: "SELL", rid: marked.rid, fields: { rebate: true } } };
+    ok(E.inputConsumesResource(marker) && E.inputResource(marker, markerBook)?.amount === 1
+      && !!E.entryReservationFault(marker, [firstReward.entry], markerBook),
+      "a correction enabling a reward flag without explicit reward units still consumes and reserves the row's units");
+    const legacyReward = { ...marked, rebate: true };
+    ok(!E.inputResource({ ...marker, payload: { ...marker.payload, fields: { rebateKg: 1 } } },
+      { ...markerBook, sales: [rewardSale, legacyReward] }),
+      "stating the existing units on a legacy reward row does not reserve them a second time");
+    const transferred = E.inputResource({ ...marker, payload: { ...marker.payload, fields: { party: "CX2-ZED" } } },
+      { ...markerBook, state: { REWARD: { stated: { salt: { margin: 500 } } } }, sales: [rewardSale, legacyReward] });
+    ok(transferred?.resource === "reward:salt:CX2-ZED" && transferred.amount === 1,
+      "moving a reward row to another party reserves its whole reward against the destination account");
+    const partialReward = { ...legacyReward, qty: 2, rebateKg: 1 };
+    const clearRewardUnits = { ...marker, payload: { ...marker.payload, fields: { rebateKg: null } } };
+    ok(E.inputConsumesResource(clearRewardUnits) && E.inputResource(clearRewardUnits,
+      { ...markerBook, sales: [rewardSale, partialReward] })?.amount === 1,
+      "clearing partial reward units reserves the extra units implied by the existing reward flag");
+    const resaleReward = { ...legacyReward, customer: "CX1-ZED-R", rev: "R2" };
+    const resaleBook = { ...markerBook, sales: [rewardSale, resaleReward] };
+    const reassociate = { ...marker, payload: { ...marker.payload, fields: { assoc: "CX2-ZED" } } };
+    const newResaleOwner = E.inputResource(reassociate, resaleBook);
+    ok(E.inputConsumesResource(reassociate) && newResaleOwner?.resource === "reward:salt:CX2-ZED"
+      && newResaleOwner.amount === 1 && !E.inputResource({ ...marker,
+        payload: { ...marker.payload, fields: { downstream: "CX7-FIK" } } }, resaleBook),
+      "an R2 reward follows its associate's bucket, never the named downstream buyer");
+    const { draftAdmissionFault } = await import("../tools/drafts.mjs");
+    ok(!!draftAdmissionFault({ collection: "repayment", entry: {}, row: {} })
+      && !!draftAdmissionFault({ collection: "sales", entry: marker, row: {} })
+      && !!draftAdmissionFault({ collection: "sales", entry: {}, row: { rebate: true, qty: 1 } })
+      && !draftAdmissionFault({ collection: "sales", entry: {}, row: { goodwill: true, qty: 1 } }),
+      "direct laptop staging refuses repayment and reward-consuming inputs without durable Worker admission, but not gifts");
+    const sealedNames = { v: 1, salt: "YQ==", iv: "Yg==", ct: "Yw==" };
+    const sealedAddresses = { v: 1, salt: "ZA==", iv: "ZQ==", ct: "Zg==" };
+    const renameBody = { at: "2026-09-29T15:00:00.000Z", from: "CX1-ZED", to: "CX2-ZED",
+      geo: null, vault: sealedNames, addrVault: sealedAddresses };
+    const renameCall = (body) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/amend-id", {
+      method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+      body: JSON.stringify(body)
+    }), countEnv, { waitUntil() {} });
+    const renamed = await renameCall(renameBody);
+    ok(renamed.status === 200
+      && JSON.stringify(JSON.parse(await countQueue.get("vault-addr"))?.vault) === JSON.stringify(sealedAddresses),
+      "the Desk maker route files the migrated address ciphertext before queuing the ID re-key");
+    const changedAddresses = await renameCall({ ...renameBody, addrVault: { ...sealedAddresses, ct: "Zw==" } });
+    ok(changedAddresses.status === 409
+      && JSON.stringify(JSON.parse(await countQueue.get("vault-addr"))?.vault) === JSON.stringify(sealedAddresses),
+      "a request replay with changed address ciphertext is refused without overwriting the filed envelope");
+    const pairSeal = (label) => ({ v: 1, salt: Buffer.alloc(16).toString("base64"),
+      iv: Buffer.alloc(12).toString("base64"), ct: Buffer.from(label.padEnd(16, ".")).toString("base64") });
+    countDb.prepare("INSERT INTO vault_pair(one,revision,names,places,updated) VALUES (1,1,?,?,?)")
+      .run(JSON.stringify(pairSeal("names")), JSON.stringify(pairSeal("places")), "2026-09-29T15:10:00.000Z");
+    const pairEnv = { ...countEnv, VAULT_STORE: "pair" };
+    const pairInput = (operation, body, env = pairEnv) => worker.fetch(
+      new Request("https://desk.test/_internal/maker/inputs/" + operation, {
+        method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+        body: JSON.stringify(body)
+      }), env, { waitUntil() {} });
+    const addPairBody = { at: "2026-09-29T15:11:00.000Z", code: "CX6-ZED", kind: "customer",
+      parent: null, geo: [3.1, 101.7], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
+      pair: { expectedRevision: 1, names: pairSeal("add-names"), places: pairSeal("add-places") } };
+    const addedPair = await pairInput("add-id", addPairBody);
+    const addedReplay = await pairInput("add-id", addPairBody);
+    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7] });
+    ok(addedPair.status === 200 && (await addedReplay.json()).replay && changedPair.status === 409
+      && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 2
+      && countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(addPairBody.at)?.state === "complete"
+      && countDb.prepare("SELECT entry FROM draft WHERE id=?").get(addPairBody.at),
+      "actual Maker pair Add ID commits ciphertext with one outbox, drafts once and refuses changed input under its receipt");
+    const pairRename = { ...renameBody, at: "2026-09-29T15:12:00.000Z",
+      vault: pairSeal("rename-names"), addrVault: pairSeal("rename-places"),
+      pair: { expectedRevision: 2, names: pairSeal("rename-names"), places: pairSeal("rename-places") } };
+    const renamedPair = await pairInput("amend-id", pairRename);
+    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7] },
+      addrVault: pairSeal("file-place"), pair: { expectedRevision: 3, names: pairSeal("rename-names"), places: pairSeal("file-place") } };
+    const placedPair = await pairInput("place", pairPlace);
+    const stalePair = await pairInput("place", { ...pairPlace, at: "2026-09-29T15:14:00.000Z" });
+    ok(renamedPair.status === 200 && placedPair.status === 200 && stalePair.status === 409
+      && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 4
+      && JSON.parse(countDb.prepare("SELECT entry FROM draft WHERE id=?").get(pairRename.at).entry).payload.mode === "rename"
+      && JSON.parse(countDb.prepare("SELECT entry FROM draft WHERE id=?").get(pairPlace.at).entry).payload.mode === "place"
+      && !countDb.prepare("SELECT id FROM vault_outbox WHERE id=?").get("2026-09-29T15:14:00.000Z"),
+      "actual Maker pair rekey and new placement use their constructors while stale CAS queues no row");
+    const crashBody = { ...addPairBody, at: "2026-09-29T15:15:00.000Z", code: "CX7-ZED",
+      pair: { ...addPairBody.pair, expectedRevision: 4 } };
+    let beforeQueueCrash = false;
+    const crashQueue = { get: countQueue.get.bind(countQueue), list: countQueue.list.bind(countQueue),
+      delete: countQueue.delete.bind(countQueue), put: async (queueKey, value) => {
+      if (queueKey.startsWith("q:orders:")) throw new Error("fixture crash before queue");
+      return countQueue.put(queueKey, value);
+    } };
+    try { await pairInput("add-id", crashBody, { ...pairEnv, SALT_QUEUE: crashQueue }); }
+    catch (error) { beforeQueueCrash = error.message === "fixture crash before queue"; }
+    const pendingOutbox = countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(crashBody.at);
+    const recovered = await pairInput("add-id", crashBody);
+    ok(beforeQueueCrash && pendingOutbox?.state === "pending" && recovered.status === 200
+      && (await recovered.json()).replay && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 5
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(crashBody.at).n === 1
+      && countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(crashBody.at).state === "complete",
+      "actual pair crash after commit before queue resumes the original outbox on an identical transport retry");
+    const cronBody = { ...crashBody, at: "2026-09-29T15:16:00.000Z", code: "CX8-ZED",
+      pair: { ...crashBody.pair, expectedRevision: 5 } };
+    try { await pairInput("add-id", cronBody, { ...pairEnv, SALT_QUEUE: crashQueue }); }
+    catch (error) { if (error.message !== "fixture crash before queue") throw error; }
+    const waits = [];
+    await worker.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-09-29T15:17:00.000Z") },
+      pairEnv, { waitUntil: (promise) => waits.push(promise) });
+    await Promise.all(waits);
+    ok(countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(cronBody.at)?.state === "complete"
+      && countDb.prepare("SELECT COUNT(*) AS n FROM draft WHERE id=?").get(cronBody.at).n === 1
+      && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 6,
+      "the real scheduled Worker recovers pending vault input outboxes without another phone tap or pair revision");
+    const poisonedIds=[];
+    for(let index=0;index<26;index++){
+      const at=new Date(Date.parse("2026-09-29T15:17:01.000Z")+index).toISOString();
+      poisonedIds.push(at);
+      const entry=E.addIdEntry({at,code:index===25?"CX10-ZED":"CX11-ZED",kind:"customer",parent:null,rev:null,geo:null,tiers:null});
+      countDb.prepare("INSERT INTO vault_receipt(id,fingerprint,revision,created_at,operation) VALUES (?,'fixture',6,?,'add-id')").run(at,at);
+      countDb.prepare("INSERT INTO vault_outbox(id,entry) VALUES (?,?)").run(at,JSON.stringify(entry));
+    }
+    const poisonQueue={get:countQueue.get.bind(countQueue),list:countQueue.list.bind(countQueue),
+      delete:countQueue.delete.bind(countQueue),put:async(queueKey,value)=>{
+        if(poisonedIds.slice(0,25).some(id=>queueKey==="q:orders:"+id))throw new Error("private error text must not be logged");
+        return countQueue.put(queueKey,value);
+      }};
+    const savedConsoleError=console.error,savedConsoleLog=console.log,recoveryLogs=[];
+    console.error=(line)=>recoveryLogs.push(String(line));console.log=(line)=>recoveryLogs.push(String(line));
+    try{
+      for(let tick=0;tick<2;tick++){
+        const stages=[];
+        await worker.scheduled({cron:"* * * * *",scheduledTime:Date.parse("2026-09-29T15:17:00.000Z")},
+          {...pairEnv,SALT_QUEUE:poisonQueue},{waitUntil:promise=>stages.push(promise)});
+        await Promise.all(stages);
+      }
+    }finally{console.error=savedConsoleError;console.log=savedConsoleLog;}
+    ok(countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(poisonedIds[25])?.state==="complete"
+      &&countDb.prepare("SELECT COUNT(*) AS n FROM vault_outbox WHERE state='pending'").get().n===25
+      &&recoveryLogs.some(line=>line.startsWith("orders nudge:"))
+      &&recoveryLogs.some(line=>line.startsWith("vault recovery pending:"))
+      &&!recoveryLogs.some(line=>line.includes("private error text")),
+      "scheduled recovery logs safe failed IDs, continues incumbent cron stages and rotates its bounded batch so a healthy later row cannot starve behind 25 poison rows");
+    for(const id of poisonedIds)countDb.prepare("DELETE FROM vault_outbox WHERE id=?").run(id);
+    const deskPairBody = { ...addPairBody, at: "2026-09-29T15:18:00.000Z", code: "CX9-ZED", geo: [3.13, 101.72, "Pudu"],
+      pair: { ...addPairBody.pair, expectedRevision: 6 } };
+    const deskPairCall = (body, headers, env = pairEnv, method = "POST") => worker.fetch(
+      new Request("https://desk.test/vault/inputs/add-id", { method, headers,
+        ...(method === "POST" ? { body: JSON.stringify(body) } : {}) }), env, { waitUntil() {} });
+    const guardedPairEnv = { ...pairEnv, SALT_WRITE_KEY: "pair-desk-fixture-key" };
+    const deskMissing = await deskPairCall(deskPairBody, {}, guardedPairEnv);
+    const deskMethod = await deskPairCall(deskPairBody, { "X-Salt-Key": "pair-desk-fixture-key" }, guardedPairEnv, "GET");
+    const deskAccess = await deskPairCall(deskPairBody, { "X-Salt-Key": "pair-desk-fixture-key" },
+      { ...guardedPairEnv, REQUIRE_ACCESS: "1" });
+    const unsafeLocality = await deskPairCall({ ...deskPairBody, geo: [3.13, 101.72, "Private invented address"] },
+      { "X-Salt-Key": "pair-desk-fixture-key" }, guardedPairEnv);
+    const deskAdded = await deskPairCall(deskPairBody, { "X-Salt-Key": "pair-desk-fixture-key" }, guardedPairEnv);
+    const deskEntry = countDb.prepare("SELECT entry FROM draft WHERE id=?").get(deskPairBody.at);
+    ok(!deskMissing.ok && deskMethod.status === 405 && !deskAccess.ok && unsafeLocality.status === 400
+      && deskAdded.status === 200 && JSON.parse(deskEntry?.entry || "{}").payload?.geo?.[2] === "Pudu"
+      && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 7,
+      "actual Desk pair input route preserves official locality words but refuses private prose, wrong methods, missing keys and missing Access");
+    const beforeFixedKey = "q:orders:2026-09-29T15:19:00.000Z";
+    const fixedOriginal = E.placeEntry({ at: "2026-09-29T15:19:00.000Z", places: { "CX1-ZED": [3.13, 101.72] } });
+    await countQueue.put(beforeFixedKey, JSON.stringify({ queue: [fixedOriginal] }));
+    const fixedIncoming = { ...fixedOriginal, payload: { ...fixedOriginal.payload, places: { "CX1-ZED": [3.2, 101.72] } } };
+    let fixedRefused = false;
+    try { await (await import("../src/orders.js")).queueSale(pairEnv, fixedIncoming, true); }
+    catch (error) { fixedRefused = error.status === 409; }
+    ok(fixedRefused && fixedIncoming.at === fixedOriginal.at
+      && JSON.stringify(JSON.parse(await countQueue.get(beforeFixedKey)).queue[0]) === JSON.stringify(fixedOriginal),
+      "the fixed-id vault queue consumer refuses changed content instead of shifting its timestamp or overwriting another input");
+    await countQueue.delete(beforeFixedKey);
+    const legacyPairQueue = await worker.fetch(new Request("https://desk.test/queue", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ device: "unversioned-id", queue: [fixedOriginal] }) }),
+      pairEnv, { waitUntil() {} });
+    ok(legacyPairQueue.status === 409 && !await countQueue.get("q:unversioned-id"),
+      "pair authority closes the incumbent generic queue bypass for unversioned named ID and placement inputs");
+    const { openMaster: openPairDesk } = await import("../tools/payload.mjs");
+    const { vaultEncrypt: pairEncrypt, vaultDecrypt: pairDecrypt } = await import("../tools/seed-vault.mjs");
+    const devicePass = "invented-joined-device-pass";
+    const sourceNames = { "CX1-ZED": "Invented (Pudu)", "CX1-ZED-R": "Invented bucket" };
+    const sourcePlaces = { "CX1-ZED": { addr: "Invented address", lat: 3.123456, lng: 101.654321 },
+      "CX1-ZED-R": { addr: "Invented descendant", lat: 3.2, lng: 101.7 }, _base: { lat: 3.1, lng: 101.6 } };
+    countDb.prepare("UPDATE vault_pair SET names=?,places=? WHERE one=1").run(
+      JSON.stringify(await pairEncrypt(devicePass, sourceNames)), JSON.stringify(await pairEncrypt(devicePass, sourcePlaces)));
+    const { w: joinedDesk } = await openPairDesk();
+    try {
+      Object.defineProperty(joinedDesk, "crypto", { value: webcrypto, configurable: true });
+      joinedDesk.TextEncoder = TextEncoder;joinedDesk.TextDecoder = TextDecoder;
+      joinedDesk.prompt = () => devicePass;
+      joinedDesk.localStorage.setItem("saltWriteKey", "pair-desk-fixture-key");
+      joinedDesk.fetch = (path, options = {}) => worker.fetch(new Request("https://desk.test/" + path, options),
+        guardedPairEnv, { waitUntil() {} });
+      joinedDesk.eval("qSyncState='server';vaultPairVersion=null;queue=[];render=function(){};saveQueue=function(){return Promise.resolve(true);};"
+        + "var pairedStatus=document.createElement('div');pairedStatus.id='wbOk';document.body.appendChild(pairedStatus);");
+      await joinedDesk.wbAddIdNamed("CX5-ZED", "customer", null, "Unreviewed note", "Invented", "Pudu", [3.13, 101.72, "Pudu"], null, null);
+      ok(countDb.prepare("SELECT revision FROM vault_pair").get().revision === 7 && joinedDesk.eval("queue.length") === 0
+        && /Notes stay/.test(joinedDesk.document.getElementById("wbOk").textContent),
+        "Desk pair authority discovery refuses an unsupported ID note explicitly without discarding it or writing ciphertext");
+      await joinedDesk.wbAddIdNamed("CX5-ZED", "customer", null, null, "Invented", "Pudu", [3.13, 101.72, "Pudu"], null, null);
+      const addedFromDesk = countDb.prepare("SELECT entry FROM draft WHERE id=(SELECT id FROM vault_outbox ORDER BY id DESC LIMIT 1)").get();
+      ok(joinedDesk.eval("queue.length") === 0 && JSON.parse(addedFromDesk?.entry || "{}").payload?.code === "CX5-ZED"
+        && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 8,
+        "actual Desk Add ID files one pair transaction through the Worker and leaves no second local queue input");
+      await joinedDesk.wbAmendIdNamed({ from: "CX1-ZED", to: "CX4-ZED", nm: "Invented amended", pl: "Pudu",
+        base: false, move: true, geo: [3.13, 101.72, "Pudu"], pairs: [["CX1-ZED", "CX4-ZED"], ["CX1-ZED-R", "CX4-ZED-R"]] });
+      const pairedMaps = countDb.prepare("SELECT names,places,revision FROM vault_pair").get();
+      const pairedNames = await pairDecrypt(devicePass, JSON.parse(pairedMaps.names));
+      const pairedPlaces = await pairDecrypt(devicePass, JSON.parse(pairedMaps.places));
+      ok(pairedMaps.revision === 9 && joinedDesk.eval("queue.length") === 0
+        && pairedNames["CX4-ZED"] === "Invented amended (Pudu)" && !Object.hasOwn(pairedNames, "CX1-ZED")
+        && pairedPlaces["CX4-ZED"]?.lat === 3.123456 && pairedPlaces["CX4-ZED-R"]?.addr === "Invented descendant"
+        && pairedPlaces._base?.lat === 3.1 && !Object.hasOwn(pairedPlaces, "CX1-ZED"),
+        "actual Desk rekey migrates names, exact places, descendants and base through one pair/outbox without a second rename queue");
+      joinedDesk.eval("roster.splice(0,roster.length,'CX1-ZED');Object.keys(PLACED).forEach(function(k){delete PLACED[k];});"
+        + "vaultNames={'CX1-ZED':'Invented (Pudu)'};");
+      await joinedDesk.mapPlaceFromVault();
+      const lastPlaced = countDb.prepare("SELECT entry FROM draft WHERE id=(SELECT id FROM vault_outbox ORDER BY id DESC LIMIT 1)").get();
+      ok(countDb.prepare("SELECT revision FROM vault_pair").get().revision === 10
+        && joinedDesk.eval("queue.length") === 0
+        && JSON.parse(lastPlaced?.entry || "{}").payload?.places?.["CX1-ZED"]?.[2] === "Pudu",
+        "actual Desk Network placement uses the pair/outbox Worker path and preserves its public official locality: "+joinedDesk.eval("MAP_MSG"));
+      joinedDesk.eval("apDone=function(){};['apName','apLoc','apKind','apParent'].forEach(function(id){"
+        + "var field=document.createElement('input');field.id=id;document.body.appendChild(field);});"
+        + "document.getElementById('apName').value='Zeno';document.getElementById('apLoc').value='Pudu';"
+        + "document.getElementById('apKind').value='customer';");
+      await joinedDesk.addParty();
+      const legacyPair = countDb.prepare("SELECT names,revision FROM vault_pair").get();
+      const legacyNames = await pairDecrypt(devicePass, JSON.parse(legacyPair.names));
+      ok(legacyPair.revision === 11 && joinedDesk.eval("queue.length") === 0 && legacyNames["CZ4-PUD"] === "Zeno (Pudu)",
+        "legacy named Desk Add ID also files its encrypted name and validated input through the pair/outbox rather than the generic queue");
+    } finally { joinedDesk.close(); }
+    const raceLoan = { ...loanFixture, rid: "loan-race" };
+    countDb.prepare("UPDATE state SET doc=? WHERE key='loans'").run(JSON.stringify([loanFixture, raceLoan]));
+    let admissionsAtBarrier = 0, releaseAdmissions;
+    const admissionsReady = new Promise((resolve) => { releaseAdmissions = resolve; });
+    const raceD1 = { ...countD1, async batch(statements) {
+      if (admissionsAtBarrier < 2) {
+        admissionsAtBarrier++;
+        if (admissionsAtBarrier === 2) releaseAdmissions();
+        await admissionsReady;
+      }
+      return countD1.batch(statements);
+    } };
+    const raceCall = (at) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/repay", {
+      method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+      body: JSON.stringify({ at, loan: raceLoan.rid, date: "2026-09-29", amount: 3 })
+    }), { ...countEnv, SALT_LEDGER: raceD1 }, { waitUntil() {} });
+    const raced = await Promise.all([raceCall("2026-09-29T16:00:00.000Z"), raceCall("2026-09-29T16:00:00.001Z")]);
+    const raceAccepted = countDb.prepare("SELECT id,amount FROM input_admission WHERE resource=?").all("loan:" + raceLoan.rid);
+    ok(raced.map((response) => response.status).sort().join(",") === "200,409"
+      && raceAccepted.length === 1 && raceAccepted[0].amount === 3,
+      "concurrent actual Maker submissions atomically admit one repayment and reserve its amount, never both");
+    const legacyLoan = { ...loanFixture, rid: "loan-legacy-race" };
+    countDb.prepare("UPDATE state SET doc=? WHERE key='loans'").run(JSON.stringify([loanFixture, raceLoan, legacyLoan]));
+    const legacyEntry = E.repaymentEntry({ at: "2026-09-29T16:04:00.000Z", loan: legacyLoan,
+      party: legacyLoan.party, date: "2026-09-29", form: "cash", product: "salt", amount: 3 });
+    countDb.prepare("INSERT INTO draft(id,entry,collection,row,flags,status,drafted_at,reasoning,drafter) VALUES (?,?,?,?,?,'pending',?,'','orders')")
+      .run(legacyEntry.at, JSON.stringify(legacyEntry), "repayment", "{}", "[]", legacyEntry.at);
+    admissionsAtBarrier = 0;
+    const legacyReady = new Promise((resolve) => { releaseAdmissions = resolve; });
+    const legacyD1 = { ...countD1, async batch(statements) {
+      if (admissionsAtBarrier < 2) {
+        admissionsAtBarrier++;
+        if (admissionsAtBarrier === 2) releaseAdmissions();
+        await legacyReady;
+      }
+      return countD1.batch(statements);
+    } };
+    const legacyCall = (at) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/repay", {
+      method: "POST", headers: { "content-type": "application/json", "X-Counter-Maker-Key": key },
+      body: JSON.stringify({ at, loan: legacyLoan.rid, date: "2026-09-29", amount: 1.5 })
+    }), { ...countEnv, SALT_LEDGER: legacyD1 }, { waitUntil() {} });
+    const legacyRaced = await Promise.all([
+      legacyCall("2026-09-29T16:05:00.000Z"), legacyCall("2026-09-29T16:05:00.001Z")]);
+    ok(legacyRaced.map((response) => response.status).sort().join(",") === "200,409"
+      && countDb.prepare("SELECT SUM(amount) AS amount FROM input_admission WHERE resource=?")
+        .get("loan:" + legacyLoan.rid).amount === 1.5
+      && !countDb.prepare("SELECT id FROM input_admission WHERE id=?").get(legacyEntry.at),
+      "concurrent Maker repayments include an unreserved legacy draft in the atomic capacity guard");
+    const rejectRace = () => worker.fetch(new Request("https://desk.test/drafts/" + encodeURIComponent(raceAccepted[0].id) + "/reject", {
+      method: "POST", headers: { "content-type": "application/json" }, body: "{}"
+    }), { ...countEnv, REQUIRE_ACCESS: "0" }, { waitUntil() {} });
+    const rejects = await Promise.all([rejectRace(), rejectRace()]);
+    const afterReject = await raceCall("2026-09-29T16:01:00.000Z");
+    ok(rejects.map((response) => response.status).sort().join(",") === "200,409"
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(raceAccepted[0].id).state === "rejected"
+      && afterReject.status === 200,
+      "racing draft rejections release only that receipt once and leave room for one replacement input");
+    const remainingRace = "2026-09-29T16:01:00.000Z";
+    const brokenD1 = { ...countD1, batch(statements) {
+      return countD1.batch([statements[0], { run() { throw new Error("fixture admission write failed"); } }]);
+    } };
+    const decisionCall = (action, db) => worker.fetch(new Request("https://desk.test/drafts/" + encodeURIComponent(remainingRace) + "/" + action, {
+      method: "POST", headers: { "content-type": "application/json" }, body: "{}"
+    }), { ...countEnv, REQUIRE_ACCESS: "0", SALT_LEDGER: db }, { waitUntil() {} });
+    let decisionFailed = false;
+    try { await decisionCall("reject", brokenD1); } catch (error) { decisionFailed = error.message === "fixture admission write failed"; }
+    ok(decisionFailed && countDb.prepare("SELECT status FROM draft WHERE id=?").get(remainingRace)?.status === "pending"
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(remainingRace)?.state === "accepted",
+      "a failed admission release rolls back the draft rejection in the same real D1 transaction");
+    countDb.prepare("UPDATE draft SET status='approved' WHERE id=?").run(remainingRace);
+    decisionFailed = false;
+    try { await decisionCall("committed", brokenD1); } catch (error) { decisionFailed = error.message === "fixture admission write failed"; }
+    ok(decisionFailed && !countDb.prepare("SELECT committed_at FROM draft WHERE id=?").get(remainingRace)?.committed_at
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(remainingRace)?.state === "accepted",
+      "a failed admission commit leaves the draft unmarked in the same real D1 transaction");
+    const committedDecision = await decisionCall("committed", countD1);
+    ok(committedDecision.status === 200 && !!countDb.prepare("SELECT committed_at FROM draft WHERE id=?").get(remainingRace)?.committed_at
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(remainingRace)?.state === "committed",
+      "the real commit route marks its draft and admission together without releasing stale-mirror room");
+    const admission = await import("../src/input-admission.js");
+    const ordinaryRow = { rid: "plain-amend", customer: "CX1-ZED", date: "2026-09-29", qty: 1, total: 100 };
+    const ordinaryEntry = E.ledgerAmendmentEntry({ at: "2026-09-29T16:02:00.000Z", row: ordinaryRow,
+      direction: "SELL", kind: "Correction", date: "2026-09-29", fields: { qty: 2 } });
+    const ordinaryAdmission = await admission.admitInput({}, ordinaryEntry,
+      { version: "ordinary-fixture", state: {}, sales: [ordinaryRow], purchases: [] }, "orders");
+    ok(!ordinaryAdmission.error && !ordinaryAdmission.accepted,
+      "an ordinary size correction with no reward draw needs no resource admission or batch writer");
+    const { queueSale: resourceQueueSale } = await import("../src/orders.js");
+    const collisionEntry = E.repaymentEntry({ at: "2026-09-29T16:03:00.000Z", loan: loanFixture,
+      party: loanFixture.party, date: "2026-09-29", form: "cash", product: "salt", amount: 1 });
+    const collisionKey = "q:orders:" + collisionEntry.at;
+    const collisionBody = JSON.stringify({ queue: [{ ...collisionEntry,
+      payload: { ...collisionEntry.payload, rm: 2 } }] });
+    await countQueue.put(collisionKey, collisionBody);
+    let collisionError;
+    try { await resourceQueueSale(countEnv, collisionEntry); } catch (error) { collisionError = error; }
+    ok(collisionError?.status === 409 && /already names another input/.test(collisionError.message)
+      && collisionEntry.at === "2026-09-29T16:03:00.000Z"
+      && await countQueue.get(collisionKey) === collisionBody
+      && !countDb.prepare("SELECT id FROM input_admission WHERE id=?").get(collisionEntry.at),
+      "a resource input colliding with a different queued payload is refused without moving its timestamp or claiming room");
+    await countQueue.delete(collisionKey);
+    const withdrawLoan = { ...loanFixture, rid: "loan-withdraw" };
+    const admissionBook = { version: "later-fixture", state: { loans: [withdrawLoan] }, sales: [], purchases: [] };
+    const withdrawal = E.repaymentEntry({ at: "2026-09-29T17:00:00.000Z", loan: withdrawLoan,
+      party: withdrawLoan.party, date: "2026-09-29", form: "cash", product: "salt", amount: 3 });
+    await admission.admitInput(countD1, withdrawal, admissionBook, "device:A");
+    await admission.admitInput(countD1, withdrawal, admissionBook, "device:B");
+    await Promise.all([admission.withdrawInputAdmission(countD1, withdrawal.at, "device:A"),
+      admission.withdrawInputAdmission(countD1, withdrawal.at, "device:A")]);
+    const firstWithdraw = countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(withdrawal.at);
+    await admission.withdrawInputAdmission(countD1, withdrawal.at, "device:B");
+    const finalWithdraw = countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(withdrawal.at);
+    const terminalRetry = await admission.admitInput(countD1, withdrawal, admissionBook, "device:A");
+    ok(firstWithdraw.state === "accepted" && finalWithdraw.state === "withdrawn" && !!terminalRetry.error
+      && countDb.prepare("SELECT COUNT(*) AS n FROM input_admission_source WHERE id=?").get(withdrawal.at).n === 0,
+      "withdrawal removes only its device ownership; another road keeps the claim, and a released id never reopens");
+    const orphan = { ...withdrawal, at: "2026-09-29T17:00:30.000Z" };
+    await admission.admitInput(countD1, orphan, admissionBook, "device:orphan-phone");
+    const orphanWithdraw = await worker.fetch(new Request("https://desk.test/queue", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "orphan-phone", queue: [] })
+    }), { ...countEnv, REQUIRE_ACCESS: "0" }, { waitUntil() {} });
+    ok(orphanWithdraw.status === 200
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(orphan.at)?.state === "withdrawn",
+      "a queue withdrawal recovers its durable claim even when transport never saved the prior KV queue");
+    const committed = { ...withdrawal, at: "2026-09-29T17:01:00.000Z" };
+    await admission.admitInput(countD1, committed, admissionBook, "device:A");
+    await admission.finishInputAdmission(countD1, committed.at, "committed");
+    const stale = await admission.admitInput(countD1, { ...withdrawal, at: "2026-09-29T17:02:00.000Z" }, admissionBook, "device:A");
+    countDb.prepare("UPDATE snapshot SET v='newer-fixture'").run();
+    const newerBook = { ...admissionBook, version: "newer-fixture", state: { loans: [{ ...withdrawLoan, repaid: [{ rm: 3 }] }] } };
+    const smaller = E.repaymentEntry({ at: "2026-09-29T17:03:00.000Z", loan: withdrawLoan,
+      party: withdrawLoan.party, date: "2026-09-29", form: "cash", product: "salt", amount: 2 });
+    const newRoom = await admission.admitInput(countD1, smaller, newerBook, "device:A");
+    ok(!!stale.error && newRoom.accepted === true,
+      "a committed claim still consumes room on the old mirror; after reseeding only the authoritative remaining balance is admitted");
+    const movingLoan = { ...loanFixture, rid: "loan-moving" };
+    const movingBook = { version: "newer-fixture", state: { loans: [movingLoan] }, sales: [], purchases: [] };
+    const movingEntry = E.repaymentEntry({ at: "2026-09-29T18:00:00.000Z", loan: movingLoan,
+      party: movingLoan.party, date: "2026-09-29", form: "cash", product: "salt", amount: 3 });
+    const movingD1 = { ...countD1, batch(statements) {
+      countDb.prepare("UPDATE snapshot SET v='moving-fixture'").run();
+      return countD1.batch(statements);
+    } };
+    const moved = await admission.admitInput(movingD1, movingEntry, movingBook, "device:A");
+    ok(!!moved.error && !countDb.prepare("SELECT id FROM input_admission WHERE id=?").get(movingEntry.at),
+      "a snapshot change between the resource read and atomic insertion refuses admission without creating a receipt");
+    const afterInsertEntry = { ...movingEntry, at: "2026-09-29T18:01:00.000Z" };
+    const afterInsertBook = { ...movingBook, version: "moving-fixture" };
+    const afterInsertD1 = { ...countD1, batch(statements) {
+      const result = countD1.batch(statements);
+      countDb.prepare("UPDATE snapshot SET v='moved-after-fixture'").run();
+      return result;
+    } };
+    const movedAfterInsert = await admission.admitInput(afterInsertD1, afterInsertEntry, afterInsertBook, "device:A");
+    ok(!!movedAfterInsert.error
+      && countDb.prepare("SELECT state FROM input_admission WHERE id=?").get(afterInsertEntry.at)?.state === "withdrawn"
+      && countDb.prepare("SELECT COUNT(*) AS n FROM input_admission_source WHERE id=?").get(afterInsertEntry.at).n === 0,
+      "a book moving after claim insertion releases only this new ownership instead of stranding an unsent reservation");
+    const beforeDry = JSON.stringify(countDb.prepare("SELECT * FROM input_admission ORDER BY id").all());
+    const beforeSources = JSON.stringify(countDb.prepare("SELECT * FROM input_admission_source ORDER BY id,source").all());
+    await drafter.dryRunDrafter(countEnv);
+    ok(JSON.stringify(countDb.prepare("SELECT * FROM input_admission ORDER BY id").all()) === beforeDry
+      && JSON.stringify(countDb.prepare("SELECT * FROM input_admission_source ORDER BY id,source").all()) === beforeSources,
+      "the dry-run admission checks write no receipts, claims or ownership references");
+    countDb.prepare("INSERT OR REPLACE INTO state(key,doc) VALUES (?,?)").run("OPEN", JSON.stringify({ v: "moved-after-fixture", byKey: {} }));
+    const editSale = { rid: "editor-sale", customer: "CX1-ZED", product: "salt", date: "2026-09-01",
+      qty: 2, total: 200, cash: 0, deliveredQty: 0 };
+    const editBuy = { rid: "editor-buy", supplier: "CX1-ZED", product: "salt", date: "2026-09-01",
+      qty: 2, total: 100, cash: 0, receivedQty: 0, status: "unpaid" };
+    countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("sales", 1, JSON.stringify(editSale), editSale.rid);
+    countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("purchases", 1, JSON.stringify(editBuy), editBuy.rid);
+    const editCall = (body, verified = owner) => handleMaker(new Request("https://counter.test/all/maker/inputs/ledger-amend", {
+      method: "POST", body: JSON.stringify(body)
+    }), countCounter, "/all/maker/inputs/ledger-amend", verified);
+    const editBody = { at: "2026-09-29T19:00:00.000Z", rid: editSale.rid, kind: "Correction",
+      date: "2026-09-29", fields: { qty: 3, handover: "collected" } };
+    const edited = await editCall(editBody), editedAgain = await (await editCall(editBody)).json();
+    const editDraft = countDb.prepare("SELECT amends,amend_kind,entry,status FROM draft WHERE id=?").get(editBody.at);
+    ok(edited.status === 200 && editedAgain.ok && editedAgain.queued === false
+      && editDraft.amends === editSale.rid && editDraft.amend_kind === "Correction" && editDraft.status === "pending"
+      && JSON.parse(editDraft.entry).payload.fields.qty === 3,
+      "the Counter ledger correction route queues a typed shared-constructor amendment once and leaves the ledger unchanged");
+    const badEdits = await Promise.all([
+      editCall({ ...editBody, at: "2026-09-29T19:00:01.000Z", fields: { note: "Unchecked words" } }),
+      editCall({ ...editBody, at: "2026-09-29T19:00:02.000Z", fields: { party: "Private Name" } }),
+      editCall({ ...editBody, at: "2026-09-29T19:00:03.000Z", fields: { date: "2026-02-30" } }),
+      editCall({ ...editBody, at: "2026-09-29T19:00:04.000Z", fields: { qty: "3" } }),
+      editCall({ ...editBody, at: "2026-09-29T19:00:05.000Z", fields: { unknown: true } }),
+      editCall({ ...editBody, at: "2026-09-29T19:00:06.000Z", raw: "Unchecked words" }),
+      editCall(editBody, { email: "another@example.test" })
+    ]);
+    ok(badEdits.slice(0, 6).every((response) => response.status === 400) && badEdits[6].status === 403
+      && !countDb.prepare("SELECT id FROM draft WHERE id=?").get("2026-09-29T19:00:01.000Z"),
+      "ledger amendments refuse prose, unknown identities and fields, impossible dates and string figures before writes");
+    const fulfilBody = { at: "2026-09-29T19:01:00.000Z", rid: editSale.rid, kind: "Fulfilment",
+      date: "2026-09-29", cash: 150, movedUnits: 1 };
+    const fulfilled = await editCall(fulfilBody);
+    const overfill = await editCall({ ...fulfilBody, at: "2026-09-29T19:02:00.000Z", cash: 60, movedUnits: 0 });
+    ok(fulfilled.status === 200 && overfill.status === 409
+      && !countDb.prepare("SELECT id FROM draft WHERE id=?").get("2026-09-29T19:02:00.000Z"),
+      "Counter ledger fulfilment reads rowRoom and refuses money already reserved by a pending payment");
+    const buyBody = { ...fulfilBody, at: "2026-09-29T19:03:00.000Z", rid: editBuy.rid, cash: 80 };
+    const bought = await editCall(buyBody);
+    const buyOverfill = await editCall({ ...buyBody, at: "2026-09-29T19:04:00.000Z", cash: 30, movedUnits: 0 });
+    ok(bought.status === 200 && buyOverfill.status === 409,
+      "purchase fulfilments share rowRoom but reserve the supplier's money separately from sales");
+    const correctionMoney = await editCall({ ...editBody, at: "2026-09-29T19:05:00.000Z", fields: { cash: 60 } });
+    const cancellationWaiting = await editCall({ at: "2026-09-29T19:06:00.000Z", rid: editSale.rid,
+      kind: "Cancellation", date: "2026-09-29" });
+    ok(correctionMoney.status === 409 && cancellationWaiting.status === 409,
+      "a correction cannot book money already on its way and cancellation waits for pending money decisions");
+    const cancelRow = { ...editSale, rid: "editor-cancel", total: 100 };
+    const movedRow = { ...editSale, rid: "editor-moved", deliveredQty: 1 };
+    countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("sales", 2, JSON.stringify(cancelRow), cancelRow.rid);
+    countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("sales", 3, JSON.stringify(movedRow), movedRow.rid);
+    const cancelBody = { at: "2026-09-29T19:07:00.000Z", rid: cancelRow.rid, kind: "Cancellation", date: "2026-09-29" };
+    const cancelled = await editCall(cancelBody);
+    const movedCancel = await editCall({ ...cancelBody, at: "2026-09-29T19:08:00.000Z", rid: movedRow.rid });
+    const cancelEntry = JSON.parse(countDb.prepare("SELECT entry FROM draft WHERE id=?").get(cancelBody.at)?.entry || "{}");
+    ok(cancelled.status === 200 && movedCancel.status === 400 && cancelEntry.payload.cash === null
+      && cancelEntry.payload.kg === null && cancelEntry.payload.kind === "Cancellation",
+      "Counter cancellation moves no money or units and refuses a row whose goods have moved");
+    const twinPayment = await editCall({ ...fulfilBody, at: "2026-09-29T19:09:00.000Z",
+      rid: movedRow.rid, cash: 60, movedUnits: 0 });
+    ok(twinPayment.status === 200,
+      "a named ledger twin keeps its own money room instead of inheriting another rid's pending payment");
+    const correctedCashRow = { ...cancelRow, rid: "editor-cash", total: 120 };
+    countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)")
+      .run("sales", 4, JSON.stringify(correctedCashRow), correctedCashRow.rid);
+    const correctedCash = await editCall({ ...editBody, at: "2026-09-29T19:10:00.000Z", rid: correctedCashRow.rid,
+      fields: { cash: 90 } });
+    const behindCorrection = await editCall({ ...fulfilBody, at: "2026-09-29T19:11:00.000Z",
+      rid: correctedCashRow.rid, cash: 40, movedUnits: 0 });
+    ok(correctedCash.status === 200 && behindCorrection.status === 409,
+      "a pending cash correction reserves its positive change before another road books a payment to that rid");
+    const freshLedger = { sales: [{ ...editSale, cash: 100 }], purchases: [], PRODUCTS: { salt: {} } };
+    const paymentDraft = countDb.prepare("SELECT row,entry,collection,amends,amend_kind FROM draft WHERE id=?").get(fulfilBody.at);
+    const stalePaymentPlan = paymentDraft ? (await import("../tools/fold.mjs")).plan(freshLedger, { approved: [{
+      id: fulfilBody.at, entry: JSON.parse(paymentDraft.entry), row: JSON.parse(paymentDraft.row),
+      collection: paymentDraft.collection, amends: paymentDraft.amends, amendKind: paymentDraft.amend_kind
+    }] }) : { items: [], refused: [] };
+    ok(stalePaymentPlan.items.length === 0 && stalePaymentPlan.refused.some((item) => /reached this row|two roads/.test(item.why)),
+      "the fold payFault remains the last check when money reaches a Counter-editor target after it was measured");
   } finally { countDb.close(); }
   const adminCalls = [];
-  let previewRelease = null, holdPreview = false, adminWork = null;
+  let previewRelease = null, holdPreview = false, adminWork = null, holdLoan = false, rejectLoan = null;
   const sealFixture = async (value, pass) => {
     const salt = new Uint8Array(16).fill(7), iv = new Uint8Array(12).fill(9);
     const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
@@ -50009,7 +50679,17 @@ await (async () => {
       ct: Buffer.from(ct).toString("base64") };
   };
   let nameEnvelope = null;
-  const placeEnvelope = await sealFixture({ "CX1-AB": { addr: "Private Road", lat: 3.123, lng: 101.689 } }, "place-pass");
+  const filedPlaces = { "CX1-AB": { addr: "Private Road", lat: 3.123, lng: 101.689 },
+    "CX1-AB-R": { addr: "Private Lane", lat: 3.124, lng: 101.688 }, _base: { addr: "Home point", lat: 3.1, lng: 101.6 } };
+  let placeEnvelope = await sealFixture(filedPlaces, "name-pass");
+  let devicePairRevision = null, devicePairConflict = false, deviceConflictChoice = false, deviceConflictPrompts = 0;
+  const openFixture = async (envelope, pass) => {
+    const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from(envelope.salt, "base64"),
+      iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    return JSON.parse(new TextDecoder().decode(await webcrypto.subtle.decrypt(
+      { name: "AES-GCM", iv: Buffer.from(envelope.iv, "base64") }, key, Buffer.from(envelope.ct, "base64"))));
+  };
   const adminOpen = { ...body, byMaster: true, session: "", wrapMaster: await C.wrapKey("fixture-master", contentKey) };
   const admin = new JSDOM(landingPage("", "maker-admin-nonce", { master: "fixture-master", accounts: [] }), {
     url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true,
@@ -50017,18 +50697,39 @@ await (async () => {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
       win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder;
       win.scrollTo = () => {};
+      win.confirm = () => { deviceConflictPrompts++; return deviceConflictChoice; };
       win.fetch = async (path, init) => {
         const route = String(path);
         adminCalls.push({ route, body: init && init.body ? JSON.parse(init.body) : null });
+        if (route === "/all/maker/inputs/loan" && holdLoan)
+          return new Promise((resolve, reject) => { rejectLoan = () => reject(new Error("transport lost")); });
+        if (route === "/all/maker/inputs/add-id" && devicePairRevision && init?.method === "POST") {
+          const input = JSON.parse(init.body);
+          if (devicePairConflict) {
+            devicePairConflict = false; devicePairRevision++;
+            const remote = await openFixture(nameEnvelope, "name-pass");
+            remote[input.code] = "Invented conflict"; remote["CX9-FIK"] = "Invented remote";
+            nameEnvelope = await sealFixture(remote, "name-pass");
+            return new Response(JSON.stringify({ ok: false, code: "vaultConflict", error: "The vault changed. Keep this draft." }),
+              { status: 409, headers: { "content-type": "application/json" } });
+          }
+          if (input.pair?.expectedRevision !== devicePairRevision)
+            return new Response(JSON.stringify({ ok: false, code: "vaultConflict", error: "Stale pair" }), { status: 409 });
+          devicePairRevision++; nameEnvelope = input.pair.names; placeEnvelope = input.pair.places;
+          return new Response(JSON.stringify({ ok: true, revision: devicePairRevision, queued: true }), { headers: { "content-type": "application/json" } });
+        }
         const result = route === "/open" ? adminOpen
           : route === "/all/sheet" ? { ok: true, accounts: [{ username: user, code: "CX1-AB", account: true }] }
-          : route === "/all/maker/vault" ? { ok: true, vault: nameEnvelope }
+          : route === "/all/maker/vault" ? { ok: true, vault: nameEnvelope, ...(devicePairRevision ? { revision: devicePairRevision } : {}) }
+          : route === "/all/maker/vault/pair" ? { ok: true, revision: devicePairRevision, names: nameEnvelope, places: placeEnvelope }
           : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
           : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
             products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
             parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
-            loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }]
+            loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
+            rows: [{ rid: "editor-sale", party: "CX1-AB", product: "salt", date: "2026-09-01", qty: 2, total: 200, open: true }],
+            correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }]
           } }
           : route === "/all/maker/customers/abcd-efgh/orders" ? { ok: true, order: { id: "20260929120000-foru" } }
           : route === "/all/maker/review" ? { ok: true,
@@ -50090,10 +50791,24 @@ await (async () => {
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
     ok(sentSale && sentSale.body.party === "CX1-AB" && sentSale.body.qty === 1
       && sentSale.body.total === 100 && !Object.hasOwn(sentSale.body, "note"),
-      "the Maker trade form sends typed figures and no free-text note to the named Desk operation");
+      "the Maker trade form sends typed figures and no free-text note to the named Desk operation: "+tradeSection.textContent);
+    const editor = [...doc.querySelectorAll("#makerInputs .maker-input")]
+      .find((section) => section.querySelector("h3").textContent === "Amend a ledger row");
+    const valueField = [...editor.querySelectorAll('input[type="number"]')].at(-1);
+    valueField.value = "3";
+    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Add field change").click();
+    ok(await adminWork.quiet(), "the ledger field selection settles before its submit");
+    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Send amendment for review").click();
+    ok(await adminWork.quiet(), "the typed ledger editor's Counter write finishes");
+    const sentEdit = adminCalls.find((call) => call.route === "/all/maker/inputs/ledger-amend");
+    ok(sentEdit && sentEdit.body.rid === "editor-sale" && sentEdit.body.kind === "Correction"
+      && sentEdit.body.fields.qty === 3 && !Object.hasOwn(sentEdit.body, "party")
+      && !Object.hasOwn(sentEdit.body, "raw") && !Object.hasOwn(sentEdit.body.fields, "note"),
+      "the Admin ledger editor is usable and sends only the row id and selected typed changes, never prose or identity: "+editor.textContent);
     const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Add ID");
     const addFields = addId.querySelectorAll("input");
     addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addFields[3].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
     const sentAddId = adminCalls.find((call) => call.route === "/all/maker/inputs/add-id");
@@ -50112,6 +50827,15 @@ await (async () => {
       && !Object.hasOwn(sentAddId.body, "locality") && openedNames && openedNames["CA3-KL"] === "Amy (Kuala Lumpur)"
       && addFields[2].value === "",
       "Add ID derives and encrypts the name on-device before sending only a code and sealed envelope");
+    const newPlaces = sentAddId?.body.addrVault ? await openFixture(sentAddId.body.addrVault, "name-pass") : {};
+    ok(newPlaces["CA3-KL"]?.lat === 3.123456 && newPlaces["CA3-KL"]?.lng === 101.654321
+      && newPlaces["CA3-KL"]?.addr === "Secret Way" && newPlaces["CA3-KL"]?.src === "waze"
+      && JSON.stringify(newPlaces._base) === JSON.stringify(filedPlaces._base)
+      && sentAddId.body.geo?.length === 2 && !JSON.stringify(sentAddId.body).includes("Secret Way")
+      && !JSON.stringify(sentAddId.body).includes("3.123456"),
+      "a new Waze address and exact point are filed on-device inside ciphertext only, keeping the base and queueing the official rounded locality");
+    ok(addId.querySelector("datalist")?.options.length > 100,
+      "Counter Add ID provides the incumbent official locality choices rather than a free-text-only place field");
     const addKind = addId.querySelector("select");
     addKind.value = "downstream"; addKind.dispatchEvent(new admin.window.Event("change"));
     addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
@@ -50129,25 +50853,100 @@ await (async () => {
       "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Amend ID");
     const amendFields = amendId.querySelectorAll("input");
-    amendFields[0].value = "Ben"; amendFields[1].value = "Penang"; amendFields[2].value = "name-pass";
+    amendFields[0].value = "Ben"; amendFields[1].value = "Pudu"; amendFields[2].value = "name-pass";
     amendId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
     const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
-    ok(sentAmendId && sentAmendId.body.from === "CX1-AB" && sentAmendId.body.to === "CB3-PEN"
+    ok(sentAmendId && sentAmendId.body.from === "CX1-AB" && sentAmendId.body.to === "CB3-PUD"
       && !!sentAmendId.body.vault && !Object.hasOwn(sentAmendId.body, "name") && !Object.hasOwn(sentAmendId.body, "locality"),
       "Amend ID sends only its old/new codes and a device-sealed name map");
+    const movedPlaces = sentAmendId?.body.addrVault ? await openFixture(sentAmendId.body.addrVault, "name-pass") : {};
+    ok(JSON.stringify(movedPlaces["CB3-PUD"]) === JSON.stringify(filedPlaces["CX1-AB"])
+      && JSON.stringify(movedPlaces["CB3-PUD-R"]) === JSON.stringify(filedPlaces["CX1-AB-R"])
+      && JSON.stringify(movedPlaces._base) === JSON.stringify(filedPlaces._base)
+      && !Object.hasOwn(movedPlaces, "CX1-AB") && !Object.hasOwn(movedPlaces, "CX1-AB-R")
+      && !JSON.stringify(sentAmendId.body).includes("Private Road"),
+      "Amend ID preserves exact points, addresses and base only inside the re-keyed ciphertext, including descendant codes");
     const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Map placement");
-    placement.querySelector('input[type="password"]').value = "place-pass";
+    placement.querySelector('input[type="password"]').value = "name-pass";
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
     ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
+    placement.querySelector('input[type="password"]').value = "name-pass";
+    const placeTexts = placement.querySelectorAll('input[type="text"]');
+    placeTexts[0].value = "Pudu";
+    placeTexts[1].value = "https://www.google.com/maps/place/Invented+Road/data=!3d3.234567!4d101.765432";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the new device-side map filing settles");
+    const newPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
+    const mapFiled = newPlacement?.body.addrVault ? await openFixture(newPlacement.body.addrVault, "name-pass") : {};
+    ok(mapFiled["CX1-AB"]?.addr === "Invented Road" && mapFiled["CX1-AB"]?.lat === 3.234567
+      && mapFiled["CX1-AB"]?.lng === 101.765432
+      && JSON.stringify(mapFiled._base) === JSON.stringify(filedPlaces._base)
+      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72] })
+      && !JSON.stringify(newPlacement.body).includes("Invented Road")
+      && !JSON.stringify(newPlacement.body).includes("3.234567"),
+      "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
+    nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
+    devicePairRevision = 10; devicePairConflict = true;
+    addKind.value = "customer"; addKind.dispatchEvent(new admin.window.Event("change"));
+    addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "name-pass"; addFields[3].value = "";
+    addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "the device CAS conflict returns without losing the form");
+    const firstPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
+    const reloadRecord=JSON.parse(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/add-id")||"null");
+    ok(!!reloadRecord&&JSON.stringify(reloadRecord.body)===JSON.stringify(firstPairInput?.body),
+      "Counter records the immutable ciphertext request and encrypted conflict intent before sending a pair input");
+    if(reloadRecord)await (await import("./counter-reload.mjs")).run({ok,
+      html:landingPage("", "maker-reload-nonce", {master:"fixture-master",accounts:[]}),
+      record:reloadRecord,transport:admin.window.fetch,pageWork});
+    ok(firstPairInput?.body.pair.expectedRevision === 10 && addFields[0].value === "Zora"
+      && addFields[1].value === "Pudu" && devicePairRevision === 11,
+      "Counter device sends one consistent names/places revision and retains its form after a stale CAS");
+    const pairWritesBeforeReview = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length;
+    addFields[2].value = "name-pass";addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "declining the device overlap review settles");
+    ok(deviceConflictPrompts === 1 && devicePairRevision === 11
+      && adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length === pairWritesBeforeReview
+      && addFields[0].value === "Zora",
+      "Counter device overlap Cancel keeps its retained intent and submits no replacement pair or input: "
+      + JSON.stringify({prompts:deviceConflictPrompts,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,
+        calls:adminCalls.slice(-6).map(c=>({route:c.route,revision:c.body?.pair?.expectedRevision}))}));
+    deviceConflictChoice = true;addFields[2].value = "name-pass";addId.querySelector("button").click();
+    ok(await adminWork.quiet(), "explicit device overlap approval writes the rebased pair");
+    const reviewedPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
+    const reviewedNames = reviewedPairInput?.body?.pair?.names ? await openFixture(reviewedPairInput.body.pair.names, "name-pass") : {};
+    ok(deviceConflictPrompts === 2 && devicePairRevision === 12
+      && reviewedPairInput?.body.at !== firstPairInput?.body.at && reviewedPairInput?.body.pair.expectedRevision === 11
+      && reviewedNames["CZ4-PUD"] === "Zora (Pudu)" && reviewedNames["CX9-FIK"] === "Invented remote"
+      && !JSON.stringify(reviewedPairInput.body).includes("Zora"),
+      "Counter device overlap Apply uses a fresh request, preserves unrelated remote names and sends only the reviewed ciphertext intent: "
+      + JSON.stringify({prompts:deviceConflictPrompts,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
+    devicePairRevision = null;
     const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Borrow or lend");
     loanForm.querySelectorAll("select")[0].value = "cash";
-    loanForm.querySelector("button").click();
+    const loanButton = loanForm.querySelector("button");
+    holdLoan = true;
+    loanButton.click(); loanButton.click();
+    ok(loanButton.disabled && !!rejectLoan
+      && adminCalls.filter((call) => call.route === "/all/maker/inputs/loan").length === 1,
+      "an in-flight maker input disables its submit and does not issue a duplicate tap");
+    rejectLoan();
+    ok(await adminWork.quiet(), "the failed loan transport settles without clearing the input");
+    const firstLoanBody = adminCalls.find((call) => call.route === "/all/maker/inputs/loan").body;
+    const NativeDate = admin.window.Date;
+    admin.window.Date = class extends NativeDate {
+      constructor(...args) { super(...(args.length ? args : [NativeDate.now() + 60000])); }
+    };
+    holdLoan = false; loanButton.click();
     ok(await adminWork.quiet(), "the loan form write finishes");
+    admin.window.Date = NativeDate;
+    const loanRequests = adminCalls.filter((call) => call.route === "/all/maker/inputs/loan");
+    ok(loanRequests.length === 2 && JSON.stringify(loanRequests[1].body) === JSON.stringify(firstLoanBody),
+      "a transport retry retains the entire original maker request and timestamp despite a moved clock");
     const sentLoan = adminCalls.find((call) => call.route === "/all/maker/inputs/loan");
     const giftForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Gift");
     giftForm.querySelector("button").click();

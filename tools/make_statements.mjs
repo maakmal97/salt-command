@@ -151,7 +151,11 @@ function stmtRows(party,o){
     const st=txStat(s), d=txDates(s);
     const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
     const got=+(s.deliveredQty||0), inKindUnits=+(s.settledKg||0);
-    const owed=+(txOwed(s)-paidCash-inKind).toFixed(2);   /* v741: the delivery is owed too */
+    /* A write-off is no longer a balance, but the actual cash and in-kind stay on the row.
+       Other rows keep their full balance: txAdvance alone would drop a ready order's unpaid part. */
+    const balance=+(txOwed(s)-paidCash-inKind).toFixed(2);
+    const writtenOff=POSITION_ENGINE.txWrittenOff(s);
+    const owed=s.defaulted?0:balance;
     /* a cross-reference is included ONLY when it points at another of HIS OWN orders;
        anything pointing elsewhere is another party's business and is dropped */
     const links=[];
@@ -202,6 +206,8 @@ function stmtRows(party,o){
        the book's own convention (docs/PRODUCTS.md section 6). It travels as an id and is DRAWN as
        a mark, never written as a word: rule 2 of this site is that a product is a mark. */
     return {rid:s.rid||null,product:(s.product||"salt"),gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
+      writtenOff:gift?0:writtenOff,
+      defaultUncharged:s.defaulted&&!gift?Math.max(0,balance-writtenOff):0,
       unit:s.qty>0?+((s.total)/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
       cover:cover,
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
@@ -242,6 +248,7 @@ function stmtRows(party,o){
       toGet:+(s.qty-got-inKindUnits).toFixed(4),
       paidOn:d.pOn||null,gotOn:d.dOn||null,
       state:gift?'No charge'
+            :s.defaulted?'Written off'
             :st.order==='Pending'?'Agreed, nothing moved yet'
             :(owed>0.009?'Balance outstanding'
               :(+(s.qty-got-inKindUnits).toFixed(4)>0.009?'Paid in full'
@@ -391,7 +398,7 @@ function stmtDoc(party,rows,o){
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
      is the one arithmetic a reader would certainly catch. */
   T.pendQty=0;T.pendVal=0;T.pendN=0;
-  T.cxN=0;T.cxPaid=0;T.delivery=0;T.pendDel=0;
+  T.cxN=0;T.cxPaid=0;T.delivery=0;T.pendDel=0;T.writtenOff=0;T.defaultUncharged=0;
   /* 27 Sep 2026, amended (DROP THE RINGGIT): the reward's own share of an order is NAMED on the line, never valued, the cover
      never added in. C1 (29 Sep 2026): the order line's total is the goods, and the delivery is its own line under it, so the
      footer adds up as txOwed does; that note said the footer held the delivery, and nothing did. */
@@ -412,6 +419,7 @@ function stmtDoc(party,rows,o){
        and for every caller that already reads it. */
     T.qtyBy[r.product]=(T.qtyBy[r.product]||0)+r.qty;
     T.qty+=r.qty;T.total+=r.total;T.delivery+=r.gift?0:(+r.delivery||0);T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
+    T.writtenOff+=(r.writtenOff||0);T.defaultUncharged+=(r.defaultUncharged||0);
     const tg=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.toGet+=tg;T.toGetBy[r.product]=(T.toGetBy[r.product]||0)+tg;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
      against a separate arrangement rather than an unpaid earlier order, calling it an
@@ -458,6 +466,7 @@ function stmtDoc(party,rows,o){
     if(r.cancelled)stat='<span class="cx">cancelled</span>'
       +((r.cancelledOn&&!moved)?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'')
       +((r.paidCash+r.inKind)>0.009?'<div class="owedunits">'+money(r.paidCash+r.inKind)+' paid, see Refunds</div>':'');
+    else if(r.state==='Written off')stat='<span class="cx">written off</span>';
     else if(r.gift)stat='<span class="gift">no charge</span>';
     /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
        collected, so it is neither a debt nor a closed line. It still belongs on the
@@ -478,6 +487,7 @@ function stmtDoc(party,rows,o){
       const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';
       const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
           (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
+        :r.state==='Written off'?['written off','',[]]
         :r.gift?['no charge','',[]]
         :r.pendingOrder?['ordered','steel',['to be collected and paid']]
         :due?['RM '+money(r.owed)+' due','ember',[]]
@@ -599,6 +609,8 @@ function stmtDoc(party,rows,o){
    /* C1: the delivery charged, between the goods and what was paid, on the live document; an issue is as it was sent */
    (lines&&T.delivery>0.009?'<div class="tr"><span>Delivery</span><span>'+fig(T.delivery)+'</span></div>':''),
    '<div class="tr"><span>Paid</span><span>'+fig(T.paid)+'</span></div>',
+   (T.writtenOff>0.009?'<div class="tr"><span>Written off</span><span>'+fig(T.writtenOff)+'</span></div>':''),
+   (T.defaultUncharged>0.009?'<div class="tr"><span>Not handed over on written-off orders</span><span>'+fig(T.defaultUncharged)+'</span></div>':''),
    (T.cxPaid>0.009?'<div class="tr sub"><span>of which on cancelled orders</span><span>'+fig(T.cxPaid)+'</span></div>':''),
    /* say plainly which part of the total has not happened yet, so the ordered figure
       and the paid figure can be reconciled without him having to ask why they differ */

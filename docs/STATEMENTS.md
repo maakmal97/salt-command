@@ -3,6 +3,10 @@
 ## RETIRED, 21 Sep 2026, on his instruction
 
 **There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): each publish
+excludes a defaulted row's balance from Outstanding and sealed `owed`, while retaining its actual
+cash, in-kind, goods and delivery history and marking it written off. A pending intention still
+owes nothing; a part-paid ready order retains its full remaining balance, not merely `txAdvance`.
+Previously sealed issues are not rewritten. Each publish
 seals it into every real account record with the Desk build id both beside and inside the ciphertext.
 Before serving it, the Counter reads the Desk's authenticated `/stmt/rev` route and requires the
 published stamp to match. A mismatch says the statement is updating; an unavailable or invalid
@@ -1382,15 +1386,26 @@ through the existing queue and wait for review. Loans and repayments retain thei
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
 eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
 the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
-entries or unchecked notes; canonical timestamp/content makes a retry, including after a draft is
-committed. Counter notes are disabled because these specific paths cannot prove arbitrary prose is
+entries or unchecked notes. Each input button disables its controls while sending and persists the
+whole request (including timestamp and ciphertext) before transport. A retained input must be
+retried, reviewed or explicitly cancelled; editing the form does not replace that request.
+Migration `0013_maker_requests.sql` adds durable request receipts: the
+Desk compares a canonical operation/body digest, replays completed requests even after the mirror
+moves, and refuses changed content under an old timestamp. An incomplete non-vault receipt
+resumes its stored immutable entry to a matching real draft. Legacy KV vault receipts without
+their draft still fail closed; they do not claim the input succeeded.
+Counter notes are disabled because these specific paths cannot prove arbitrary prose is
 free of names and places. `GET inputs` returns the active-book and roster catalog, including open
 loans for repayment selection.
 
 The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
 envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
 derive codes and encrypt the name map on the device with the vault passphrase; the bridge receives
-only codes, role/parent metadata and `{v,salt,iv,ct}`. Map placement decrypts the places envelope
+only codes, role/parent metadata and `{v,salt,iv,ct}`. Amend ID opens both envelopes with the same
+passphrase and re-keys their matching code prefixes, including descendants, preserving exact
+points and `_base` only inside a newly sealed `addrVault`. Both envelopes are filed before the
+rename is queued. It does not change a filed address when locality text changes.
+Map placement decrypts the places envelope
 on the device and sends only code-to-point pairs rounded to 0.01 degrees. Addresses and plaintext
 names are never sent to Counter or Desk. There is no generic entry writer or arbitrary queue
 forwarding on this bridge.
@@ -1426,8 +1441,106 @@ map placement. Existing customer order amendments use the customer's session at
 identity/price fields, an acknowledged or reserved order, a stale sealed-list digest, replay, or a
 KV-only order store. Admin order review remains one flow for site orders and Desk drafts. Pricing is
 set only for one order at preview/Accept; no board price or `PRICE_SET` is written.
-The bridge binding/config is present in source, but live provisioning and deployment are still
-required before its Desk-backed actions work.
+The bridge and matching secrets shipped with #30. Live owner-JWT acceptance is still unverified.
+`0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and
+`0016_vault_write_gate.sql` were applied individually on 03 Oct 2026 under explicit release
+authorization, with schema readback after each. Neither admission migration rebuilds `draft`
+or drops an index. The pair is not bootstrapped, its setting remains absent, and live
+names/places authority is still KV; applied schema is not a storage cutover.
+
+Loan repayments and reward draws use `src/input-admission.js` on Maker, Desk queue, per-entry
+order-queue and drafter roads. The server derives each resource and amount from the Position
+Engine and current mirror, never a client-supplied resource key. A D1 conditional insertion
+atomically records the receipt and claim only against that snapshot and available capacity,
+netting accepted claims and legacy uncommitted drafts. Queue ownership references are inserted in
+the same D1 batch. Same-id/content retries reuse that claim; changed content is refused.
+Withdrawal removes only its road's reference and ends an undrafted claim only when no other road
+holds it. Draft rejection ends that claim; a commit keeps consuming capacity on the old snapshot
+until reseeding. Terminal receipts remain terminal. The dry run only reads; the fold checks its
+accepted batch again. Reward margin and earning units are shared Position Engine helpers, also
+read by Desk.
+
+Draft rejection and commit marking update the admission lifecycle in the same D1 batch as the
+draft decision. Withdrawal recovers its ownership from D1 even when the queue transport never
+saved a KV copy. A mirror change after insertion releases only newly acquired ownership.
+Resource-related direct laptop staging refuses rather than bypassing Worker admission; use
+Desk or Counter to submit those inputs. Laptop commit marking maintains the same lifecycle.
+
+The ledger editor posts typed inputs to `/all/maker/inputs/ledger-amend`, over the dedicated
+Desk bridge. It derives identity, direction and row key from the RID. Correction uses
+`checkCorrection` and the existing correctable fields; Fulfilment records cash or units;
+Cancellation carries neither and refuses goods already moved or money pending a decision.
+Sales and purchases use `rowRoom`, including positive cash corrections already on their way;
+the fold's `payFault` remains the final stale-payment check. A named twin uses its own RID's
+room, not another row sharing the order key. Every entry waits for review and fold.
+Notes, settlement prose, order-code edits and cancelled/defaulted-row editing remain Desk-only.
+Linked/Rewarded are explicitly refused on the shared cloud amendment builders; the drafter's
+restriction is unchanged. Historical rows and readers are untouched.
+
+The incumbent Desk's main trade/gift, loan/repayment, tier, redemption/automatic-offset,
+Add ID, Amend ID and map-placement paths now use shared constructors, preserving their
+existing notes and copy. Both legacy Add ID paths, the ledger update/editor and supported
+Workbench amendment builders also use those constructors. Purchase Payment and Receipt
+retain their incumbent semantics; Counter's ledger editor stays limited to Correction,
+Fulfilment and Cancellation.
+
+Counter Add/Amend ID and Network placement now select from official `placePicks` and the
+hashed gazetteer. `tools/maker-geosync.mjs` generates `stmt/maker-geo.js` from the incumbent
+master functions and data; `geosync` checks parity. Maps/Waze parsing happens on the device.
+Only a short Maps link uses the exact owner/capability `geo/expand` bridge to the existing
+one-redirect handler. Exact points and addresses remain encrypted; queued placement uses
+the official locality point rounded to 0.01 degrees. Ambiguous or unlisted localities are
+refused and directed to Desk. Amend ID preserves descendant place keys and `_base`, can file
+a new encrypted address, and queues a placement when the code stays the same but its
+official point changes.
+
+Current live KV authority still has two non-atomic envelope writes. The source-only pair
+mode supplies all-writer CAS and a durable ID/place outbox, but has not been provisioned,
+bootstrapped or enabled. Source-only browser transport requests and encrypted conflict
+intent now survive reload, with explicit retained-input recovery and vault unlock before
+retry/review. No decrypted identity, address, passphrase or key is persisted. Non-vault
+Maker receipts retain immutable server-built intent before admission and resume to a real
+matching draft on the same request; changed content refuses and concurrent retries share
+one admission/draft. Default-KV legacy vault interruptions still fail closed rather than
+pretending two KV envelope writes are transactional.
+The source-only `0015_vault_pair.sql`/`src/vault-pair.js` kernel proves conditional names+places
+CAS, whole-request receipts, transactional outbox insertion and fixed-id crash recovery
+against SQLite. Opt-in Worker pair read/write and Counter owner pair read are now wired,
+as are revision-aware seed/pull tools with shared three-way merge, explicit overlap review
+and ciphertext transport receipts. Local bootstrap planning, rollback export and bounded
+receipt pruning are available. Counter and Desk have explicit device overlap Apply/Cancel
+and retained encrypted retries. Maker ID/place routes, Desk Workbench and legacy named ID
+creation, rekey, Network placement and base edits now use the pair transaction. Nameless
+buckets need no vault. The fixed-id outbox consumer resumes on request replay and cron,
+requires a draft before completion, and refuses changed content. Scheduled recovery isolates
+failed rows, logs safe IDs, rotates its bounded batch and continues incumbent cron stages.
+Old unversioned named ID/rekey/place queue clients refuse with an upgrade state in pair mode, while default KV
+behavior is unchanged. The Desk names/places unlock reads one revision; shared rekey moves
+descendant exact points and preserves `_base`.
+
+Before cutover, apply the source migrations and perform the reviewed all-client bootstrap,
+rollback/readback rehearsal and live owner acceptance under authorization. Laptop pull now
+uses a recoverable roll-forward journal and exclusive lock across both files and their
+baseline; seed/pull startup recovers before reading, and the ledger reader refuses an
+unfinished transaction. Ordinary and retained seed completion journal both reconciled local
+maps with the confirmed baseline: remote changes are imported and unsent partner edits stay
+local until their own seed. Ciphertext retry records carry their original merge baseline;
+older retained records lacking it explicitly refuse pending reviewed recovery.
+This is not a filesystem multi-file atomic rename. External
+editors cannot be forced to honor the lock; storage corruption and stale recovery guards
+need explicit local repair. Removing browser storage loses that device's retry record,
+not an already-committed server receipt/outbox. A retained immutable input that is no longer
+valid against the book refuses explicitly. Counter's ledger
+editor retains only typed Correction/Fulfilment/Cancellation; notes, settlement prose,
+order-code and cancelled/defaulted editing stay on Desk, and Linked/Rewarded remain refused
+by the cloud drafter. Nothing changes current KV authority. Protocol, compatibility and
+privileged out-of-band writer requirements are in `docs/DESK.md`.
+Desk Enter and Network must remain available. No board repricing is part of this work.
+Preparatory migration `0016_vault_write_gate.sql` adds a durable, default-open maintenance
+gate across normal vault writers and named ID/place ingress. It drains accepted work before
+pause; it is not a vault authority switch. A maintenance refusal retains the browser request.
+Neither this release nor Access configuration alone proves owner acceptance or authorizes
+removing an incumbent Desk control.
 
 ## Before committing
 

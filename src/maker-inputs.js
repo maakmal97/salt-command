@@ -1,6 +1,7 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
-import { costFor, draftRow } from "./drafter.js";
+import { costFor, draftRow, findRow, checkCorrection } from "./drafter.js";
+import { rowRoom } from "./orders.js";
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -110,11 +111,29 @@ export function makerInputCatalog(book) {
   });
   return {
     version: book.version, products, parties: roster,
+    placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
+      .filter(([id, point]) => roster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
     associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
+    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !["note", "orderCode", "settle"].includes(field))
+      .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
+        kind: POSITION_ENGINE.CORRECT_BOOL.includes(field) ? "boolean"
+          : POSITION_ENGINE.CORRECT_DATE.includes(field) ? "date"
+            : POSITION_ENGINE.CORRECT_CODE.includes(field) ? "code"
+              : field === "product" ? "product" : field === "stream" ? "stream"
+                : field === "handover" ? "handover" : "number" })),
+    rows: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
+      .filter((row) => row && row.rid && !row.cancelled && !row.defaulted).map((row) => {
+        const sale = collection === "sales";
+        return { rid: row.rid, direction: sale ? "SELL" : "BUY", party: row[sale ? "customer" : "supplier"],
+          product: row.product || "salt", date: row.date || null, qty: row.qty, total: row.total,
+          cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
+          movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row),
+          open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")) };
+      })),
     loans: (book.state.loans || []).filter((row) => row && row.status !== "settled").map((row) => {
       const cash = row.form === "cash";
       const paid = (row.repaid || []).reduce((sum, part) => sum + (+((cash ? part.rm : part.kg)) || 0), 0);
@@ -156,70 +175,80 @@ const safeGeo = (value) => {
 const exact = (body, fields) => object(body) && !Object.keys(body).some((key) => !fields.includes(key));
 const realCode = (value, roster) => code(value, roster);
 
-function rewardState(book, id) {
-  const state = book.state || {}, scheme = state.REWARD && state.REWARD.stated && state.REWARD.stated.salt;
-  if (!scheme || !Number.isFinite(+scheme.margin) || +scheme.margin <= 0) return { error: "Salt has no configured reward." };
-  const sales = (book.sales || []).filter((row) => row && (row.product || "salt") === "salt");
-  const associates = new Set(state.associates || []);
-  const associate = associates.has(id) || sales.some((row) => row.rev === "R2" && POSITION_ENGINE.ownerCode(row.customer) === id)
-    || sales.some((row) => row.ref === id) || (state.INTRODUCTIONS || []).some((item) => item && item.by === id);
-  const refs = new Set();
-  if (associate) {
-    sales.forEach((row) => { if (row.ref === id && row.customer) refs.add(POSITION_ENGINE.ownerCode(row.customer)); });
-    (state.INTRODUCTIONS || []).forEach((item) => {
-      if (item && item.by === id && item.customer) refs.add(POSITION_ENGINE.ownerCode(item.customer));
-    });
-  }
-  const opening = state.PROD_OPENING && state.PROD_OPENING.salt || { qty: 0, costPerKg: null };
-  const lots = (book.purchases || []).filter((row) => (row.product || "salt") === "salt"
-    && !row.defaulted && !row.cancelled && !row.pending && !row.inTransit
-    && POSITION_ENGINE.poRecvUnits(row) > 0.0001);
-  const buyUnits = lots.reduce((sum, row) => sum + POSITION_ENGINE.poRecvUnits(row), 0);
-  const buyRM = lots.reduce((sum, row) => sum + POSITION_ENGINE.poRecvUnits(row) * POSITION_ENGINE.poRate(row), 0);
-  const openingUnits = opening.costPerKg != null ? (+opening.qty || 0) : 0;
-  const averageCost = buyUnits + openingUnits > 0
-    ? (buyRM + openingUnits * (+opening.costPerKg || 0)) / (buyUnits + openingUnits)
-    : 0;
-  const margin = { own: 0, referred: 0 };
-  const assigned = (row) => {
-    const owner = POSITION_ENGINE.ownerCode(row.customer);
-    return owner === id ? "own" : associate && refs.has(owner) ? "referred" : null;
-  };
-  for (const row of sales) {
-    const stateName = POSITION_ENGINE.txStat(row).order;
-    if (stateName === "Default" || stateName === "Pending" || stateName === "Cancelled" || row.goodwill) continue;
-    const bucket = assigned(row);
-    if (!bucket) continue;
-    let goods = +row.total || 0, qty = +row.qty || 0;
-    if (row.rebate) {
-      goods = Math.max(0, goods - (+row.settledRM || 0));
-      qty = Math.max(0, qty - (row.rebateKg != null ? +row.rebateKg : (+row.qty || 0)));
-      if (goods < 0.009 && qty < 1e-9) continue;
+export function makerLedgerAmendment(body, book) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields"])
+    || !timestamp(body.at) || !date(body.date) || typeof body.rid !== "string"
+    || !/^[A-Za-z0-9_-]{1,64}$/.test(body.rid)
+    || !["Correction", "Fulfilment", "Cancellation"].includes(body.kind))
+    return { error: "Choose a ledger row, amendment kind and real date; identity and raw prose are not input fields." };
+  const found = findRow(book, body.rid);
+  if (found.err) return { error: found.err };
+  const row = found.row, sale = found.collection === "sales";
+  if (row.cancelled || row.defaulted) return { error: "A cancelled or defaulted row needs a Desk judgement." };
+  if (body.kind === "Correction") {
+    if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
+      || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
+      || Object.keys(body.fields).some((field) => !POSITION_ENGINE.CORRECTABLE.includes(field)
+        || ["note", "orderCode", "settle"].includes(field)))
+      return { error: "Choose correctable typed fields; notes, order codes and settlement prose stay on Desk." };
+    for (const [field, value] of Object.entries(body.fields)) {
+      if (value == null) continue;
+      if (POSITION_ENGINE.CORRECT_DATE.includes(field) && !date(value))
+        return { error: "Correction dates must be real dates." };
+      if ((POSITION_ENGINE.CORRECT_NUM_POS.includes(field) || POSITION_ENGINE.CORRECT_NUM_NN.includes(field)) && !figure(value))
+        return { error: "Correction figures must be finite, non-negative numbers." };
+      if (POSITION_ENGINE.CORRECT_CODE.includes(field) && !code(value, book.state.roster || []))
+        return { error: "Choose a roster code; names and places are not correction values." };
+      if (field === "product" && !active(value, book))
+        return { error: "Choose an active book." };
+      if (POSITION_ENGINE.CORRECT_BOOL.includes(field) && typeof value !== "boolean")
+        return { error: "Correction flags are true or false." };
+      if (field === "stream" && !["R2", "R3"].includes(value)
+        || field === "handover" && !POSITION_ENGINE.HANDOVER.includes(value))
+        return { error: "Choose a listed stream or handover." };
     }
-    margin[bucket] += goods - qty * POSITION_ENGINE.txUnitCost(row, averageCost);
+    const checked = checkCorrection(body.fields, book, row, sale);
+    if (checked.errs.length) return { error: checked.errs.join("; ") };
+  } else {
+    if (body.fields !== undefined) return { error: "A movement or cancellation carries no row patch." };
+    if (!POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")))
+      return { error: "This row is no longer open." };
+    if (body.kind === "Cancellation") {
+      if (body.cash !== undefined || body.movedUnits !== undefined
+        || (sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row)) > 0.009)
+        return { error: "A cancellation moves nothing and cannot cancel goods already handed over." };
+    } else if (!figure(body.cash) || !figure(body.movedUnits)
+      || !(body.cash > 0.004 || body.movedUnits > 0.004))
+      return { error: "A fulfilment needs non-negative cash and units, with at least one movement." };
   }
-  for (const row of sales) {
-    if (!row.goodwill || row.rebate || row.cancelled) continue;
-    const stateName = POSITION_ENGINE.txStat(row).order;
-    if (stateName === "Pending" || stateName === "Cancelled" || stateName === "Default") continue;
-    const bucket = assigned(row);
-    if (bucket) margin[bucket] -= (+row.qty || 0) * POSITION_ENGINE.txUnitCost(row, averageCost);
-  }
-  const hurdle = associate ? (+scheme.associate?.margin || +scheme.margin) : +scheme.margin;
-  const pooled = associate
-    ? margin.own + margin.referred / (+scheme.associate?.r3Hurdle || 1)
-    : margin.own;
-  const earned = Math.max(0, Math.floor(+pooled.toFixed(2) / hurdle));
-  const applied = sales.reduce((sum, row) => {
-    if (POSITION_ENGINE.ownerCode(row.customer) !== id) return sum;
-    const rebate = row.rebate ? (row.rebateKg != null ? +row.rebateKg : (+row.qty || 0)) : 0;
-    return sum + rebate + Math.max(0, +row.coverUnits || 0);
-  }, 0);
-  const held = +(earned - applied).toFixed(2);
-  const people = state.PEOPLE || {};
-  if ((people.departed || []).some((person) => person && person.id === id))
-    return { error: "A departed party's reward waits until they return." };
-  return { earned, applied: +applied.toFixed(2), held, associate, margin: +pooled.toFixed(2) };
+  if (!book.state.OPEN) return { error: "The open-order snapshot is unavailable. Reseed the mirror before amending." };
+  return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
+    kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields }), book);
+}
+
+export async function makerAmendmentRoom(db, entry, book) {
+  const p = entry.payload;
+  const found = findRow(book, p.rid);
+  if (found.err) return found.err;
+  const sale = found.collection === "sales", row = found.row;
+  const after = p.kind === "Correction" ? { ...row, ...p.fields } : row;
+  const paid = (value) => sale ? POSITION_ENGINE.txPaid(value) : POSITION_ENGINE.poCash(value);
+  const cash = p.kind === "Fulfilment" ? +p.cash || 0
+    : p.kind === "Correction" ? Math.max(0, paid(after) - paid(row)) : 0;
+  if (!(cash > 0.004) && p.kind !== "Cancellation") return "";
+  const room = await rowRoom(db, sale ? "SELL" : "BUY");
+  if (!room.version || room.version !== book.version) return "The mirror changed or could not be read. Read the row again.";
+  const reading = room(POSITION_ENGINE.ovKey(row), entry);
+  if (!reading) return "The row's remaining money could not be confirmed.";
+  if (p.kind === "Cancellation" && reading.on > 0.004)
+    return "Money is already on its way to this row. Decide it before cancelling.";
+  const changedTotal = p.kind === "Correction" && p.fields.total != null ? p.fields.total - (+row.total || 0) : 0;
+  const changedDelivery = sale && p.kind === "Correction" && p.fields.delivery != null
+    ? p.fields.delivery - (+row.delivery || 0) : 0;
+  return cash > Math.max(0, reading.left + changedTotal + changedDelivery) + 0.004
+    ? "This row can still take RM " + reading.left.toFixed(2) + "; money already on its way is reserved."
+    : "";
 }
 
 export function makerLedgerInput(operation, body, book) {
@@ -263,7 +292,7 @@ export function makerLedgerInput(operation, body, book) {
   } else if (operation === "redeem") {
     if (!exact(body, ["at", "code", "date"]) || !realCode(body.code, roster) || POSITION_ENGINE.isBucket(body.code)
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
-    const state = rewardState(book, body.code);
+    const state = POSITION_ENGINE.rewardAccount(book, body.code);
     if (state.error) return state;
     const free = state.associate ? state.held : state.held >= 1 - 1e-9 ? 1 : 0;
     if (!(free > 0.009)) return { error: "There is no whole reward unit available to redeem." };
@@ -281,13 +310,15 @@ export function makerLedgerInput(operation, body, book) {
         qty: free, earned: state.earned, applied: state.applied, balance: state.held });
     }
   } else if (operation === "add-id") {
-    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "vault"])
+    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "vault", "addrVault"])
       || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.code) || !["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(body.kind))
       return { error: "An ID entry carries only codes, role, point, tiers and the encrypted vault envelope." };
     if (body.kind === "bucket") {
       if (!realCode(body.parent, roster) || body.vault !== null || body.geo != null || body.tiers != null)
         return { error: "A resale account has a parent code and no name vault." };
     } else if (!isSealedEnvelope(body.vault)) return { error: "File the encrypted vault on this device before adding the ID." };
+    if (body.addrVault !== undefined && (!isSealedEnvelope(body.addrVault) || body.kind === "bucket"))
+      return { error: "A filed address needs an encrypted envelope for a named party." };
     if (roster.includes(body.code)) return { error: "That code is already on the roster." };
     if (body.parent != null && !realCode(body.parent, roster)) return { error: "Choose a parent already on the roster." };
     if (body.geo != null && !safeGeo(body.geo)) return { error: "The map point is outside Malaysia or has invalid locality text." };
@@ -305,18 +336,25 @@ export function makerLedgerInput(operation, body, book) {
       parent: body.parent || null, rev: body.kind === "reseller" ? "R2" : body.kind === "referral" ? "R3" : null,
       geo: body.geo || null, tiers });
   } else if (operation === "amend-id") {
-    if (!exact(body, ["at", "from", "to", "geo", "vault"])
+    if (!exact(body, ["at", "from", "to", "geo", "vault", "addrVault"])
       || !realCode(body.from, roster) || POSITION_ENGINE.isBucket(body.from)
       || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.to)
       || body.to[0] !== body.from[0] || (body.to !== body.from && roster.includes(body.to))
-      || !isSealedEnvelope(body.vault) || (body.geo != null && !safeGeo(body.geo)))
+      || !isSealedEnvelope(body.vault) || (body.addrVault !== undefined && !isSealedEnvelope(body.addrVault))
+      || (body.geo != null && !safeGeo(body.geo)))
       return { error: "Amend ID needs its existing code, a free matching code, a point and the encrypted vault envelope." };
-    if (body.to === body.from) return { vaultOnly: true, vault: body.vault };
-    entry = POSITION_ENGINE.renameEntry({ at: body.at, from: body.from, to: body.to, geo: body.geo || null });
+    if (body.to === body.from) {
+      const current = (book.state.PLACED || {})[body.from];
+      if (!body.geo || JSON.stringify(current?.slice(0, 2)) === JSON.stringify(body.geo))
+        return { vaultOnly: true, vault: body.vault };
+      entry = POSITION_ENGINE.placeEntry({ at: body.at, party: body.from, places: { [body.from]: body.geo } });
+    } else entry = POSITION_ENGINE.renameEntry({ at: body.at, from: body.from, to: body.to, geo: body.geo || null });
   } else if (operation === "place") {
-    if (!exact(body, ["at", "places"]) || !object(body.places) || !Object.keys(body.places).length
+    if (!exact(body, ["at", "places", "addrVault"]) || !object(body.places) || !Object.keys(body.places).length
       || Object.keys(body.places).length > 100)
       return { error: "A placement carries a timestamp and a bounded map of code to point." };
+    if (body.addrVault !== undefined && !isSealedEnvelope(body.addrVault))
+      return { error: "File a new address only as the encrypted places envelope." };
     for (const [party, point] of Object.entries(body.places))
       if (!realCode(party, roster) || POSITION_ENGINE.isBucket(party) || !safeGeo(point))
         return { error: "Each map point must belong to a roster party and remain inside Malaysia." };

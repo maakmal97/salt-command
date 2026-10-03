@@ -16,6 +16,131 @@ function stockCountEntry({at,product,date,qty}){
     payload:{mode:'count',product,direction:null,party:null,date,qty,total:null,cash:null,kg:qty,
       assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}};
 }
+function rewardMargin({id,refs=[],sales=[],averageCost=0}){
+  const mine={margin:0,n:0},intro={margin:0,n:0};
+  sales.forEach(s=>{
+    const st=txStat(s).order;
+    if(st==='Default'||st==='Pending'||st==='Cancelled'||s.cancelled)return;
+    const owner=ownerCode(s.customer),part=owner===id?mine:refs.includes(owner)?intro:null;
+    if(!part)return;
+    if(s.goodwill){
+      if(!s.rebate)part.margin-=(s.qty||0)*txUnitCost(s,averageCost);
+      return;
+    }
+    let rm=s.total||0,q=s.qty||0;
+    if(s.rebate){
+      rm=Math.max(0,rm-(+s.settledRM||0));
+      q=Math.max(0,q-(s.rebateKg!=null?+s.rebateKg:(s.qty||0)));
+      if(rm<0.009&&q<1e-9)return;
+    }
+    part.margin+=rm-q*txUnitCost(s,averageCost);part.n++;
+  });
+  mine.margin=+mine.margin.toFixed(2);intro.margin=+intro.margin.toFixed(2);
+  return {mine,intro,total:+(mine.margin+intro.margin).toFixed(2)};
+}
+function rewardUnits(total,unit){
+  if(unit==null)return {earned:0,toNext:null};
+  const earned=Math.max(0,Math.floor(total/unit));
+  return {earned,toNext:+((earned+1)*unit-total).toFixed(2)};
+}
+function rewardAccount(book,id,product='salt'){
+  const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
+  if(!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)return {error:'This book has no configured reward.'};
+  const allSales=book.sales||[],sales=allSales.filter(s=>(s.product||'salt')===product);
+  const introductions=state.INTRODUCTIONS||[];
+  const associate=(state.associates||[]).includes(id)
+    ||allSales.some(s=>s.rev==='R2'&&ownerCode(s.customer)===id||s.ref===id)
+    ||introductions.some(e=>e&&e.by===id)
+    ||!!(state.R0_NETWORK&&state.R0_NETWORK.reseller===id);
+  const refs=new Set();
+  if(associate){
+    allSales.forEach(s=>{if(s.ref===id&&s.customer)refs.add(ownerCode(s.customer));});
+    introductions.forEach(e=>{if(e&&e.by===id&&e.customer)refs.add(ownerCode(e.customer));});
+  }
+  const opening=state.PROD_OPENING&&state.PROD_OPENING[product]||{qty:0,costPerKg:null};
+  const lots=(book.purchases||[]).filter(p=>(p.product||'salt')===product&&!p.defaulted&&poRecvUnits(p)>0.0001);
+  const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
+  const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
+  const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
+  const margin=rewardMargin({id,refs:[...refs],sales,averageCost});
+  const hurdle=associate?(+((scheme.associate||{}).margin)||+scheme.margin):+scheme.margin;
+  const pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
+  const {earned}=rewardUnits(pooled,hurdle);
+  const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
+    ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
+  if(((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id))
+    return {error:"A departed party's reward waits until they return."};
+  return {earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled};
+}
+function rewardReservation(entry,book){
+  const p=entry&&entry.payload;if(!p)return null;
+  if(p.mode==='redeem')return {party:ownerCode(p.party),product:p.product||'salt',units:+p.qty||0};
+  if(p.mode==='new'&&p.direction==='SELL'&&p.more&&+p.more.coverUnits>0)
+    return {party:ownerCode(p.party),product:p.product||'salt',units:+p.more.coverUnits};
+  if(p.mode==='amend'&&p.kind==='Correction'&&p.direction!=='BUY'&&p.fields){
+    const row=(book.sales||[]).find(s=>p.rid?s.rid===p.rid:ovKey(s)===p.orderKey);
+    if(!row)return null;
+    const f=p.fields;
+    const attribution=attributionOf(row);
+    const terms={party:attribution.stream==='R2'?(attribution.downstream||null):row.customer,
+      assoc:attribution.assoc,stream:attribution.stream,...f};
+    const customer=terms.stream==='R2'&&terms.assoc?bookR2({},'customer',terms.assoc,null).customer
+      :row.rev==='R2'&&!terms.assoc?terms.party||ownerCode(row.customer):terms.party||row.customer;
+    const after={...row,...f,customer};
+    const spent=s=>(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0);
+    const same=ownerCode(after.customer)===ownerCode(row.customer)&&(after.product||'salt')===(row.product||'salt');
+    const units=Math.max(0,spent(after)-(same?spent(row):0));
+    if(units>0.009)return {party:ownerCode(after.customer),product:after.product||'salt',units};
+  }
+  return null;
+}
+function entryReservationFault(entry,pending,book){
+  const p=entry&&entry.payload;if(!p)return '';
+  const entries=[...new Map((pending||[]).filter(e=>e&&e.at!==entry.at).map(e=>[e.at,e])).values()];
+  if(p.mode==='repay'){
+    const loan=((book.state||{}).loans||[]).find(l=>l&&l.rid===p.loan);
+    if(!loan)return 'The loan no longer exists.';
+    const cash=loan.form==='cash',field=cash?'rm':'kg';
+    const paid=(loan.repaid||[]).reduce((n,r)=>n+(+r[field]||0),0);
+    const reserved=entries.reduce((n,e)=>e.payload&&e.payload.mode==='repay'&&e.payload.loan===p.loan?n+(+e.payload[field]||0):n,0);
+    const room=(cash?+loan.valueRM:+loan.valueKg)-paid-reserved;
+    if(loan.status==='settled'||!(+p[field]>0)||+p[field]>room+0.005)
+      return 'This repays '+(+p[field]||0)+' against '+(+room.toFixed(2))+' still owing after payments already on their way.';
+  }
+  const spend=rewardReservation(entry,book);
+  if(spend){
+    const balance=rewardAccount(book,spend.party,spend.product);
+    if(balance.error)return balance.error;
+    const reserved=entries.reduce((n,e)=>{
+      const held=rewardReservation(e,book);
+      return held&&held.party===spend.party&&held.product===spend.product?n+held.units:n;
+    },0);
+    if(spend.units>balance.held-reserved+0.005)
+      return 'The reward is already spent or reserved by another input awaiting its fold.';
+  }
+  return '';
+}
+function inputConsumesResource(entry){
+  const p=entry&&entry.payload;
+  return !!p&&(p.mode==='repay'||p.mode==='redeem'
+    ||p.mode==='new'&&p.more&&+p.more.coverUnits>0
+    ||p.mode==='amend'&&p.kind==='Correction'&&p.fields
+      &&['rebate','rebateKg','coverUnits','qty','party','product','assoc','stream','downstream'].some(k=>Object.hasOwn(p.fields,k)));
+}
+function inputResource(entry,book){
+  const p=entry&&entry.payload;if(!p)return null;
+  if(p.mode==='repay'){
+    const loan=((book.state||{}).loans||[]).find(l=>l&&l.rid===p.loan);
+    if(!loan||loan.status==='settled')return {error:'Choose an open loan.'};
+    const cash=loan.form==='cash',field=cash?'rm':'kg';
+    const paid=(loan.repaid||[]).reduce((n,r)=>n+(+r[field]||0),0);
+    return {resource:'loan:'+loan.rid,amount:+p[field]||0,available:(cash?+loan.valueRM:+loan.valueKg)-paid};
+  }
+  const spend=rewardReservation(entry,book);
+  if(!spend)return null;
+  const reward=rewardAccount(book,spend.party,spend.product);
+  return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
+}
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
   handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,raw}){
   const booking={customer:party};
@@ -43,53 +168,69 @@ function tierSetEntry({at,tiers,raw}){
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
     payload:{mode:'tierset',tiers:copied}};
 }
-function loanEntry({at,product,direction,party,date,form,amount}){
+function loanEntry({at,product,direction,party,date,form,amount,note=null,raw}){
   const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
   return {at,type,party,qty:cash?null:amount,total:cash?amount:null,status:'open',
-    raw:cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
-    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date,
+    raw:raw===undefined?(cash?(direction==='in'?'Borrowed ':'Lent ')+'RM'+amount+' in cash '+(direction==='in'?'from ':'to ')+party+' on '+date
+    :(direction==='in'?'Borrowed ':'Lent ')+amount+' unit '+product+' '+(direction==='in'?'from ':'to ')+party+' on '+date):raw,
     payload:{mode:'loan',form,product:cash?null:product,direction,party,date,qty:cash?null:amount,
-    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note:null}};
+    total:cash?amount:null,cash:null,kg:cash?null:amount,rm:cash?amount:null,note}};
 }
-function repaymentEntry({at,loan,party,date,form,product,amount}){
+function repaymentEntry({at,loan,party,date,form,product,amount,note=null,raw}){
   const cash=form==='cash';
   return {at,type:'REPAY',party,qty:cash?null:amount,total:cash?amount:null,status:'open',
-    raw:'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date,
+    raw:raw===undefined?'Repaid '+(cash?'RM'+amount:amount+' unit '+product)+' '+(loan.direction==='in'?'to ':'by ')+party+' against loan '+loan.rid+' on '+date:raw,
     payload:{mode:'repay',loan:loan.rid,party:loan.party,date,kg:cash?null:amount,rm:cash?amount:null,
-    qty:null,total:null,cash:null,note:null}};
+    qty:null,total:null,cash:null,note}};
 }
-function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null}){
+function giftEntry({at,product,party,date,qty,movedUnits=qty,handover=null,note=null,raw}){
   return {at,type:'GIFT',party,qty,total:0,status:'inkind',
-    raw:'Give '+qty+' unit '+product+' free to '+party+' on '+date,
-    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note:null}};
+    raw:raw===undefined?'Give '+qty+' unit '+product+' free to '+party+' on '+date:raw,
+    payload:{mode:'gift',product,party,qty,date,kg:movedUnits,handover,note}};
 }
 function redeemEntry({at,product,party,date,qty,earned,applied,balance}){
   return {at,type:'REDEEM',party,qty,total:0,status:'inkind',
     raw:'Redeem '+qty+' free unit '+product+' for '+party+' on '+date,
     payload:{mode:'redeem',product,party,qty,date,earned,applied,balance}};
 }
-function rebateOffsetEntry({at,party,date,sale,units,rm}){
+function rebateOffsetEntry({at,party,date,sale,units,rm,raw,auto=false}){
   return {at,type:'AMEND',party,qty:0,total:0,status:'inkind',
-    raw:'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind',
-    payload:{mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
+    raw:raw===undefined?'Rebate offset '+units+' unit for '+party+' against '+(sale.date||'undated')+' order, RM'+rm+' settled in kind':raw,
+    payload:{...(auto?{auto:true}:{}),mode:'amend',kind:'Correction',direction:'SELL',party,rid:sale.rid||null,
     orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
       rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
 }
-function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null}){
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=null,raw}){
   return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''),
-    payload:{mode:'addid',code,kind,parent,rev,note:null,geo,tiers}};
+    raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
+    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers}};
 }
-function renameEntry({at,from,to,geo=null}){
+function renameEntry({at,from,to,geo=null,raw}){
   return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
-    raw:'Amend ID: re-key '+from+' to '+to+' wherever the book names it',
+    raw:raw===undefined?'Amend ID: re-key '+from+' to '+to+' wherever the book names it':raw,
     payload:{mode:'rename',from,to,geo}};
 }
-function placeEntry({at,places}){
+function placeEntry({at,places,party=null,raw}){
   const codes=Object.keys(places);
-  return {at,type:'PLACE',party:null,qty:null,total:null,status:'place',
-    raw:'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '),
+  return {at,type:'PLACE',party,qty:null,total:null,status:'place',
+    raw:raw===undefined?'Place '+codes.length+(codes.length===1?' party':' parties')+' on the map: '+codes.join(', '):raw,
     payload:{mode:'place',places}};
+}
+function ledgerAmendmentEntry({at,row,direction,kind,date,cash=0,movedUnits=0,fields,
+  party=direction==='BUY'?row.supplier:row.customer,note=null,raw,status,orderCode=null,sameDay=date===row.date}){
+  if(!['Correction','Fulfilment','Cancellation','Modification','Default'].includes(kind)
+    && !(direction==='BUY'&&['Payment','Receipt'].includes(kind)))
+    throw new Error('This amendment kind is retired or unsupported.');
+  const correction=kind==='Correction',cancel=kind==='Cancellation',mod=kind==='Modification';
+  return {at,type:'AMEND',party,qty:cancel||mod?null:correction?0:movedUnits,total:cancel||mod?null:correction?0:cash,
+    status:status|| (cancel?'cancelled':correction?'corrected':mod?'modified':kind==='Default'?'defaulted':'partial'),
+    raw:raw===undefined?kind+' against '+row.rid+' for '+party+' on '+date:raw,
+    payload:{mode:'amend',direction,party,product:row.product||'salt',rid:row.rid||null,orderKey:ovKey(row),
+      date,kind,orderCode,linkTo:null,assoc:null,downstream:null,sameDay,note,
+      ...(correction?{fields:{...fields},qty:0,total:0,cash:0,kg:0}
+        :mod?{newTotal:cash,newQty:movedUnits,wasTotal:row.total,wasQty:row.qty,qty:null,total:null,cash:null,kg:null}
+        :cancel?{qty:null,total:null,cash:null,kg:null}
+        :{qty:movedUnits,total:cash,cash,kg:movedUnits})}};
 }
 /* ---- the row helpers, verbatim from the desk ---- */
 /* ============ 19 SEP 2026, HIS INSTRUCTION: THE PRICE AND THE CARRIAGE ARE SEPARATE ============
@@ -1111,6 +1252,73 @@ function placeCandidates(s){
   for(let len=Math.min(4,w.length);len>=1;len--)for(let i=0;i+len<=w.length;i++){const run=w.slice(i,i+len).join(' ');if((len>1||run.length>=6)&&run.split(' ').some(x=>PLACE_GENERIC.indexOf(x)<0))add(run);}
   return out;
 }
+function vaultRekeyMap(map,from,to){
+  if(from===to)return map;
+  const next={...map};
+  Object.keys(map).filter(code=>code===from||code.startsWith(from+'-')).forEach(code=>{
+    const target=to+code.slice(from.length);
+    if(Object.hasOwn(map,target))throw new Error('The new code already holds a vault entry. Resolve it on Desk first.');
+    next[target]=map[code];delete next[code];
+  });
+  return next;
+}
+function vaultPendingOk(record,publicWord=()=>false){
+  const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  const envelope=v=>object(v)&&Object.keys(v).every(k=>['v','salt','iv','ct','it'].includes(k))
+    &&v.v===1&&['salt','iv','ct'].every(k=>typeof v[k]==='string'&&/^[A-Za-z0-9+/]+={0,2}$/.test(v[k]));
+  const pair=v=>object(v)&&Object.keys(v).every(k=>['names','places'].includes(k))
+    &&envelope(v.names)&&(v.places===null||envelope(v.places));
+  const fields=['at','expectedRevision','names','places','pair','code','kind','parent','geo','tiers','vault','addrVault',
+    'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
+    'stream','associate','assoc','downstream','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
+    'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
+    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
+  const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
+    'SELL','BUY','Correction','Fulfilment','Cancellation','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
+  const safe=(v,key)=>{
+    if(v===null||typeof v==='boolean')return true;
+    if(typeof v==='number')return Number.isFinite(v);
+    if(['vault','addrVault','names'].includes(key))return envelope(v);
+    if(key==='places'&&envelope(v))return true;
+    if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
+      ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
+      ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v);
+    if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
+      ||i===2&&typeof n==='string'&&publicWord(n));
+    return object(v)&&Object.entries(v).every(([k,n])=>
+      (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
+  };
+  if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
+  if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
+    ||!['add-id','amend-id','place'].includes(record.input.operation)||!safe(record.input.body,'body')))return false;
+  return true;
+}
+function vaultMapMerge(base,intended,latest,reviewed=[]){
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const stable=value=>{
+    if(Array.isArray(value))return value.map(stable);
+    if(value&&typeof value==='object')
+      return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])]));
+    return value;
+  };
+  const same=(left,right)=>JSON.stringify(stable(left))===JSON.stringify(stable(right));
+  const result=clone(latest),conflicts=[];
+  const changed=[...new Set([...Object.keys(base),...Object.keys(intended)])].filter(key=>
+    Object.hasOwn(base,key)!==Object.hasOwn(intended,key)||!same(base[key],intended[key]));
+  for(const key of changed){
+    const localGone=!Object.hasOwn(intended,key),latestGone=!Object.hasOwn(latest,key);
+    const remoteChanged=Object.hasOwn(base,key)!==Object.hasOwn(latest,key)||!same(base[key],latest[key]);
+    const alreadyDesired=localGone===latestGone&&same(intended[key],latest[key]);
+    if(remoteChanged&&!alreadyDesired&&!reviewed.includes(key)){conflicts.push(key);continue;}
+    if(localGone)delete result[key];
+    else Object.defineProperty(result,key,{value:clone(intended[key]),enumerable:true,writable:true,configurable:true});
+  }
+  return {map:result,conflicts,changed};
+}
 function renameInBook(book,pairs){
   const map=new Map(pairs);let n=0;
   const walk=v=>{
@@ -1123,7 +1331,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
@@ -1132,6 +1340,6 @@ return {stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierS
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
         ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
-        renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
+        vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

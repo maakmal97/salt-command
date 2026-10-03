@@ -1,5 +1,15 @@
 [
  {
+  "v": "v991",
+  "d": "03 Oct 2026",
+  "t": "DURABLE MAKER INPUTS, VAULT AUTHORITY UNCHANGED",
+  "n": [
+   "<b>FIXED REQUESTS.</b> Counter inputs retain one request through retries. Loan repayments and reward draws reserve their balance through every queue road, with the fold checking it again. Supported ledger amendments share the engine's constructors; restricted edits remain on the desk.",
+   "<b>ENCRYPTED RECOVERY.</b> Device retries keep ciphertext and fixed input metadata across reloads. The opt-in vault pair has revision checks, receipts and a recoverable outbox; laptop names, places and their baseline reconcile under a recoverable journal. A server write-maintenance gate precedes any storage move. The setting remains off: names and places still use KV, the slip key is unchanged, and Desk inputs remain.",
+   "<b>WRITTEN OFF.</b> The Counter's live balance excludes a written-off row while its goods, delivery and receipts remain in the record. Its footer names the deduction, separately from any part never handed over. No ledger row, pricing rule, inventory or held tier changed."
+  ]
+ },
+ {
   "v": "v990",
   "d": "03 Oct 2026",
   "t": "ONE PENDING SALT SELL TO CH6-SET, NOTHING MOVED",

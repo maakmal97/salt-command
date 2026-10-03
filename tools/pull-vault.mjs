@@ -30,6 +30,8 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { vaultDecrypt, wrGetAddr, addrEntry, wrGetKey, slipKeyOpen, keepAside } from "./seed-vault.mjs";
 import { DATA_DIR } from "./book.mjs";
+import { pairClient, readVaultAuthority } from "./vault-pair-client.mjs";
+import { withVaultFiles } from "./vault-local-files.mjs";
 
 const BASE = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
 const CTRL_C = String.fromCharCode(3), DEL = String.fromCharCode(127), BOM = String.fromCharCode(0xFEFF);
@@ -114,6 +116,35 @@ async function pullSlipKey(pass, dry) {
   console.log(`wrote ${file}${aside ? ", the old copy kept at " + aside : ""}. Ciphertext only.`);
 }
 
+export async function pullVaultPair(pass, { client, bio, addr, dry = false, persist }) {
+  const pair = await client.read();
+  const names = await vaultDecrypt(pass, pair.names);
+  const places = pair.places ? await vaultDecrypt(pass, pair.places) : {};
+  const mergedBio = mergeBio(bio, names), mergedAddr = mergeAddr(addr, places);
+  if (!dry) await persist({ bio: mergedBio.bio, addr: mergedAddr.file, pair });
+  return { revision: pair.revision, dry, names: mergedBio, places: mergedAddr };
+}
+
+export async function pullVaultPairFiles(pass, { client, dir = DATA_DIR, dry = false, transaction, afterWrite }) {
+  if (!transaction) return withVaultFiles(dir, lock => pullVaultPairFiles(pass, { client, dir, dry, transaction: lock, afterWrite }));
+  const namesFile = join(dir, "salt_bio.json"), placesFile = join(dir, "salt_addr.json");
+  const read = (file) => existsSync(file) ? JSON.parse(readFileSync(file, "utf8").replace(/^\uFEFF/, "")) : {};
+  const result = await pullVaultPair(pass, {
+    client,
+    bio: read(namesFile), addr: read(placesFile), dry,
+    persist: async ({ bio, addr, pair }) => {
+      transaction.commit({ bio, addr, pair }, afterWrite);
+    }
+  });
+  return result;
+}
+async function pullVersioned(pass, dry, transaction) {
+  const result = await pullVaultPairFiles(pass, { dry, transaction,
+    client: pairClient({ base: BASE, writeKey: process.env.SALT_WRITE_KEY, accessToken: process.env.SALT_ACCESS_JWT }) });
+  console.log(dry ? "DRY RUN: consistent pair opened at revision " + result.revision + "; nothing written."
+    : "PULLED: names, places and ciphertext merge baseline from one revision " + result.revision + ". No legacy KV reads were used.");
+}
+
 function promptHidden(question) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return Promise.resolve(null);
   return new Promise((res) => {
@@ -132,16 +163,17 @@ function promptHidden(question) {
   });
 }
 
-async function main() {
+async function main(transaction) {
   const dry = process.argv.includes("--dry-run");
   const file = join(DATA_DIR, "salt_bio.json");
   if (!existsSync(file)) { console.error("salt_bio.json not found at " + file + " (set SALT_DATA). This runs on the laptop only."); process.exit(2); }
   let pass = process.env.SALT_VAULT_PASS || await promptHidden("vault passphrase (hidden): ");
   if (!pass) { console.error("No passphrase. Set SALT_VAULT_PASS or run in a terminal."); process.exit(2); }
-  if (process.argv.includes("--addr")) return pullAddr(pass, dry);   // F14: the places, not the names
   if (process.argv.includes("--slip-key")) return pullSlipKey(pass, dry);   // F13: the slip key, not the names
-  const r = await fetch(BASE + "/vault", { cache: "no-store" });
-  const j = r.ok ? await r.json() : null;
+  const authority = await readVaultAuthority(BASE, globalThis.fetch, process.env.SALT_ACCESS_JWT);
+  if (authority.pair) return pullVersioned(pass, dry, transaction);
+  if (process.argv.includes("--addr")) return pullAddr(pass, dry);   // F14: the places, not the names
+  const j = authority.reading;
   if (!j || !j.vault) { console.error("The cloud holds no vault."); process.exit(1); }
   let map;
   try { map = await vaultDecrypt(pass, j.vault); } catch (e) { console.error("That passphrase did not open the vault. Nothing written."); process.exit(1); }
@@ -157,4 +189,5 @@ async function main() {
   console.log(`wrote ${file}: ${m.added.length} added, ${m.amended.length} amended, each old spelling kept as was. The names are on the laptop; codes only in the repo, as always.`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  withVaultFiles(DATA_DIR, main).catch(error => { console.error(error.message); process.exitCode = 1; });

@@ -288,6 +288,8 @@ for (const key of ["sales", "purchases", "loans", "contacts"]) {
    every run for three weeks. Hard rule 2 keeps salt_bio.json in the project folder deliberately,
    and DATA_DIR is the one place that knows where that is. */
 const BIO = resolve(DATA_DIR, "salt_bio.json");
+if (["salt_vault_files.lock","salt_vault_files.lock.recovery","salt_vault_files.journal"].some(file=>existsSync(resolve(DATA_DIR,file))))
+  throw new Error("The local vault pair is locked or needs recovery; run pull-vault before the leak check.");
 if (existsSync(BIO)) {
   let names = [], places = [], bioCodes = {};
   try {

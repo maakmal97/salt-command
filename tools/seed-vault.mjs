@@ -39,6 +39,9 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, renameSync 
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
+import { createInterface } from "node:readline/promises";
+import { pairClient, readVaultAuthority, vaultMapMerge } from "./vault-pair-client.mjs";
+import { withVaultFiles } from "./vault-local-files.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -89,8 +92,123 @@ function loadBio() {
 }
 
 function wrPut(jsonPath, key = VKEY) {
+  if (key !== KKEY) throw new Error("Names and places writes must use the maintenance-gated Worker, never direct KV.");
   return againIfLapsed(() => execFileSync("npx", ["wrangler", "kv", "key", "put", key, "--path", jsonPath, "--binding", BINDING, "--remote"],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" }));
+}
+
+export async function seedLegacyEnvelope(envelope, kind, { base, writeKey, accessToken, fetch: transport = globalThis.fetch }) {
+  if (!writeKey || !["names", "places"].includes(kind))
+    throw new Error("Set SALT_WRITE_KEY for the maintenance-gated names/places writer; it is never saved or printed.");
+  const response = await transport(new Request(base.replace(/\/+$/, "") + (kind === "names" ? "/vault" : "/vault/addr"), {
+    method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": writeKey,
+      ...(accessToken ? { "Cf-Access-Jwt-Assertion": accessToken } : {}) }, body: JSON.stringify(envelope)
+  }));
+  const result = await response.json();
+  if (!response.ok || result.ok !== true) throw new Error(result.error || "The gated vault write was not confirmed.");
+  return result;
+}
+const legacyClient = () => ({ base: process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev",
+  writeKey: process.env.SALT_WRITE_KEY, accessToken: process.env.SALT_ACCESS_JWT });
+
+export async function seedVaultPair(pass, { client, baseline, map, kind, review = async () => false,
+  dry = false, pending = null, saveRequest, finishRequest, at = new Date().toISOString() }) {
+  if (pending) {
+    const response = await client.write(pending.body);
+    await finishRequest({ ok: true, revision: response.revision, names: pending.body.names,
+      places: pending.body.places, updated: pending.body.at }, pending);
+    return response;
+  }
+  if (!baseline || !Number.isSafeInteger(baseline.revision) || !["names", "places"].includes(kind))
+    throw new Error("Pull the versioned pair before editing and seeding. A reviewed ciphertext baseline is required.");
+  const latest = await client.read();
+  const open = async (pair) => ({ names: await vaultDecrypt(pass, pair.names),
+    places: pair.places ? await vaultDecrypt(pass, pair.places) : {} });
+  const [was, current] = await Promise.all([open(baseline), open(latest)]);
+  let merged = vaultMapMerge(was[kind], map, current[kind]);
+  if (merged.conflicts.length) {
+    if (!await review(merged.conflicts))
+      throw new Error("The vault changed at " + merged.conflicts.join(", ") + ". Local edits are kept; review conflicts before sending.");
+    merged = vaultMapMerge(was[kind], map, current[kind], merged.conflicts);
+  }
+  current[kind] = merged.map;
+  const body = { at, expectedRevision: latest.revision, names: await vaultEncrypt(pass, current.names),
+    places: latest.places === null && kind !== "places" ? null : await vaultEncrypt(pass, current.places) };
+  if (dry) return { ok: true, dry: true, revision: latest.revision, changed: merged.changed };
+  const request = { kind, body, baseline };
+  await saveRequest(request);
+  const response = await client.write(body);
+  await finishRequest({ ok: true, revision: response.revision, names: body.names, places: body.places, updated: body.at }, request);
+  return response;
+}
+
+export async function seedVaultPairFiles(pass, { client, dir = DATA, kind = "names", dry = false,
+  retry = false, review, at, transaction, afterWrite }) {
+  if (!transaction) return withVaultFiles(dir, lock => seedVaultPairFiles(pass,
+    { client, dir, kind, dry, retry, review, at, transaction: lock, afterWrite }));
+  const baselineFile = join(dir, "salt_vault_pair.json"), requestFile = join(dir, "salt_vault_pair_request.json");
+  const read = file => existsSync(file) ? JSON.parse(readFileSync(file, "utf8").replace(/^\uFEFF/, "")) : {};
+  const pending = existsSync(requestFile) ? read(requestFile) : null;
+  if (pending && !retry) throw new Error("An encrypted request is retained. Use --retry unchanged, or --rebase to keep it aside and review the latest pair.");
+  if (pending && dry) throw new Error("A retained transport retry is a write; do not combine --retry and --dry-run.");
+  if (pending && !pending.baseline) throw new Error("This retained request lacks its reconciliation baseline. Keep it and recover with reviewed local reconciliation.");
+  const localMaps = (bio, addr) => {
+    const names = {}, places = {};
+    for (const [code, entry] of Object.entries(bio.bio || {})) {
+      const raw = String(entry?.raw || "").trim();
+      if (raw) names[code] = raw;
+    }
+    for (const [code, entry] of Object.entries(addr.addr || {})) {
+      const value = addrEntry(entry);
+      if (!value) throw new Error("Invalid local place entry: " + code);
+      places[code] = value;
+    }
+    return { names, places };
+  };
+  const bioFile = join(dir, "salt_bio.json"), addrFile = join(dir, "salt_addr.json");
+  return seedVaultPair(pass, { client, baseline: read(baselineFile),
+    map: pending ? null : localMaps(read(bioFile), read(addrFile))[kind], kind, dry, pending, review, at,
+    saveRequest: async request => writeFileSync(requestFile, JSON.stringify(request), { flag: "wx", mode: 0o600 }),
+    finishRequest: async (pair, request) => {
+      const bio = read(bioFile), addr = read(addrFile), local = localMaps(bio, addr);
+      for (const part of ["names", "places"]) {
+        const base = request.baseline[part] ? await vaultDecrypt(pass, request.baseline[part]) : {};
+        const cloud = pair[part] ? await vaultDecrypt(pass, pair[part]) : {};
+        const merged = vaultMapMerge(base, local[part], cloud);
+        const map = vaultMapMerge(base, local[part], cloud, merged.conflicts).map;
+        const file = part === "names" ? bio : addr, field = part === "names" ? "bio" : "addr";
+        file[field] ||= {};
+        for (const code of Object.keys(file[field])) if (!(code in map)) delete file[field][code];
+        for (const [code, value] of Object.entries(map))
+          file[field][code] = { ...file[field][code], ...(part === "names" ? { raw: value } : value) };
+      }
+      transaction.commit({ bio, addr, pair }, afterWrite);
+      rmSync(requestFile);
+    }
+  });
+}
+
+async function seedVersioned(pass, dry, transaction) {
+  if (process.argv.includes("--force"))
+    throw new Error("--force never bypasses the pair revision or conflict review.");
+  const requestFile = join(DATA, "salt_vault_pair_request.json");
+  const client = pairClient({ base: process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev",
+    writeKey: process.env.SALT_WRITE_KEY, accessToken: process.env.SALT_ACCESS_JWT });
+  if (process.argv.includes("--rebase") && existsSync(requestFile)) {
+    if (dry) throw new Error("A dry run never abandons a retained request.");
+    renameSync(requestFile, requestFile + ".conflict-" + Date.now());
+  }
+  const kind = process.argv.includes("--addr") ? "places" : "names";
+  const result = await seedVaultPairFiles(pass, { client, transaction, kind, dry, retry: process.argv.includes("--retry"),
+    review: async (codes) => {
+      if (!process.stdin.isTTY || !process.argv.includes("--review-conflicts")) return false;
+      const terminal = createInterface({ input: process.stdin, output: process.stdout });
+      try { return (await terminal.question("Apply the local edits over changed vault entries for " + codes.join(", ") + "? Type APPLY: ")).trim() === "APPLY"; }
+      finally { terminal.close(); }
+    }
+  });
+  console.log(result.dry ? "DRY RUN: versioned pair read and encrypted; nothing written."
+    : "SEEDED: versioned ciphertext pair confirmed at revision " + result.revision + ". No names/places KV put was used.");
 }
 /* THE READ TAKES THE PUT'S ROAD (27 Sep 2026): from the repo, through a shell on Windows, stderr
    kept, a lapsed login tried once more. Without the shell execFileSync("npx") throws ENOENT on the
@@ -225,11 +343,11 @@ async function seedAddr(pass, dry) {
   const tmp = join(REPO, "test", "tmp", "vault-addr-push.json");
   writeFileSync(tmp, JSON.stringify(envelope));
   try {
-    wrPut(tmp, AKEY);
+    await seedLegacyEnvelope(envelope, "places", legacyClient());
     console.log(`SEEDED: ${n} place(s) encrypted and pushed to KV "${AKEY}". The desk opens them with the names, on the one passphrase.`);
   } catch (e) {
-    console.error("PUSH FAILED: wrangler could not write the KV key.");
-    console.error("  wrangler said: " + wranglerSaid(e));
+    console.error("PUSH FAILED: the maintenance-gated places writer did not confirm.");
+    console.error("  " + e.message);
     process.exitCode = 1;
   } finally {
     try { rmSync(tmp, { force: true }); } catch (e) {}   // never leave the envelope on disk
@@ -399,7 +517,7 @@ function promptHidden(question) {
   });
 }
 
-async function main() {
+async function main(transaction) {
   const dry = process.argv.includes("--dry-run");
   if (process.argv.includes("--slip-pub")) return slipPub();   // F13: the public half alone, no passphrase
   let pass = process.env.SALT_VAULT_PASS;
@@ -418,8 +536,11 @@ async function main() {
     console.error('  PowerShell:  $env:SALT_VAULT_PASS="..."; node tools/seed-vault.mjs');
     process.exit(2);
   }
-  if (process.argv.includes("--addr")) return seedAddr(pass, dry);   // F14: the places, not the names
   if (process.argv.includes("--slip-key")) return seedSlipKey(pass, dry);   // F13: the slip key, not the names
+  const authority = await readVaultAuthority(process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev",
+    globalThis.fetch, process.env.SALT_ACCESS_JWT);
+  if (authority.pair) return seedVersioned(pass, dry, transaction);
+  if (process.argv.includes("--addr")) return seedAddr(pass, dry);   // F14: the places, not the names
   const { map, ids } = loadBio();
   const named = Object.keys(map).length;
   if (!named) { console.error("No names found in salt_bio.json; nothing to seed."); process.exit(1); }
@@ -447,16 +568,16 @@ async function main() {
   const tmp = join(REPO, "test", "tmp", "vault-push.json");
   writeFileSync(tmp, JSON.stringify(envelope));
   try {
-    wrPut(tmp);
+    await seedLegacyEnvelope(envelope, "names", legacyClient());
     console.log(`SEEDED: ${named} names encrypted and pushed to KV "${VKEY}". The phone can now decrypt them with the passphrase.`);
   } catch (e) {
-    console.error("PUSH FAILED: wrangler could not write the KV key.");
-    console.error("  wrangler said: " + wranglerSaid(e));
-    console.error("  Timed out: run it again. Anything else: check `npx wrangler whoami`, the KV id in wrangler.jsonc, and CLOUDFLARE_API_TOKEN for unattended runs.");
+    console.error("PUSH FAILED: the maintenance-gated names writer did not confirm.");
+    console.error("  " + e.message);
     process.exitCode = 1;
   } finally {
     try { rmSync(tmp, { force: true }); } catch (e) {}   // never leave names or the envelope on disk
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  withVaultFiles(DATA, main).catch(error => { console.error(error.message); process.exitCode = 1; });

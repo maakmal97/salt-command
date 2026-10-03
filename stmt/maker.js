@@ -16,7 +16,7 @@ const allowedOwner = (identity) =>
 
 async function bodyOf(request) {
   const text = await request.text();
-  if (text.length > 32768) return { error: "request is too large", status: 413 };
+  if (text.length > 1048576) return { error: "request is too large", status: 413 };
   try {
     const body = JSON.parse(text);
     return body && typeof body === "object" && !Array.isArray(body) ? { body } : { error: "send a JSON object", status: 400 };
@@ -30,8 +30,10 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/inputs" && method === "GET"
     || path === "/_internal/maker/vault" && method === "GET"
     || path === "/_internal/maker/vault/addr" && method === "GET"
+    || path === "/_internal/maker/vault/pair" && method === "GET"
+    || path === "/_internal/maker/geo/expand" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
-    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again)$/.test(path) && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
@@ -123,8 +125,10 @@ function internalOperation(path) {
   if (path === "/all/maker/inputs") return { kind: "inputs" };
   if (path === "/all/maker/vault") return { kind: "vault" };
   if (path === "/all/maker/vault/addr") return { kind: "vault-addr" };
+  if (path === "/all/maker/vault/pair") return { kind: "vault-pair" };
+  if (path === "/all/maker/geo/expand") return { kind: "geo-expand" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
-  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place)$/.exec(path);
+  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };
@@ -146,13 +150,21 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   const method = request.method;
   try {
     if (op.kind === "hours") return await makerHours(request, env, method);
+    if (op.kind === "geo-expand") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (Object.keys(parsed.body).length !== 1 || typeof parsed.body.url !== "string")
+        return json({ ok: false, error: "Send only the short map link." }, 400);
+      return json(await deskCall(env, "/_internal/maker/geo/expand", "POST", parsed.body));
+    }
     if (op.kind === "inputs") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/inputs", "GET"));
     }
-    if (op.kind === "vault" || op.kind === "vault-addr") {
+    if (op.kind === "vault" || op.kind === "vault-addr" || op.kind === "vault-pair") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      return json(await deskCall(env, "/_internal/maker/vault" + (op.kind === "vault-addr" ? "/addr" : ""), "GET"));
+      return json(await deskCall(env, "/_internal/maker/vault" + (op.kind === "vault-addr" ? "/addr" : op.kind === "vault-pair" ? "/pair" : ""), "GET"));
     }
     if (op.kind === "stock-count" || op.kind === "input") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
