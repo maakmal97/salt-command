@@ -151,7 +151,9 @@ function stmtRows(party,o){
     const st=txStat(s), d=txDates(s);
     const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
     const got=+(s.deliveredQty||0), inKindUnits=+(s.settledKg||0);
-    const owed=+(txOwed(s)-paidCash-inKind).toFixed(2);   /* v741: the delivery is owed too */
+    /* A write-off is no longer a balance, but the actual cash and in-kind stay on the row.
+       Other rows keep their full balance: txAdvance alone would drop a ready order's unpaid part. */
+    const owed=s.defaulted?0:+(txOwed(s)-paidCash-inKind).toFixed(2);
     /* a cross-reference is included ONLY when it points at another of HIS OWN orders;
        anything pointing elsewhere is another party's business and is dropped */
     const links=[];
@@ -242,6 +244,7 @@ function stmtRows(party,o){
       toGet:+(s.qty-got-inKindUnits).toFixed(4),
       paidOn:d.pOn||null,gotOn:d.dOn||null,
       state:gift?'No charge'
+            :s.defaulted?'Written off'
             :st.order==='Pending'?'Agreed, nothing moved yet'
             :(owed>0.009?'Balance outstanding'
               :(+(s.qty-got-inKindUnits).toFixed(4)>0.009?'Paid in full'
@@ -458,6 +461,7 @@ function stmtDoc(party,rows,o){
     if(r.cancelled)stat='<span class="cx">cancelled</span>'
       +((r.cancelledOn&&!moved)?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'')
       +((r.paidCash+r.inKind)>0.009?'<div class="owedunits">'+money(r.paidCash+r.inKind)+' paid, see Refunds</div>':'');
+    else if(r.state==='Written off')stat='<span class="cx">written off</span>';
     else if(r.gift)stat='<span class="gift">no charge</span>';
     /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
        collected, so it is neither a debt nor a closed line. It still belongs on the
@@ -478,6 +482,7 @@ function stmtDoc(party,rows,o){
       const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';
       const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
           (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
+        :r.state==='Written off'?['written off','',[]]
         :r.gift?['no charge','',[]]
         :r.pendingOrder?['ordered','steel',['to be collected and paid']]
         :due?['RM '+money(r.owed)+' due','ember',[]]

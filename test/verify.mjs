@@ -5972,10 +5972,10 @@ await (async () => {
     ok(pay && pay.coming.rm === 485 && cm === "2026-09-20:100:1 2026-09-22:265:2.5 2026-09-23:90:1 2026-09-26:30:1",
       "coming up is what is agreed and not handed over with money still to pay, delivery included, an undated one by the day it was agreed, "
       + "one dated ahead because an agreed order is open whatever its date, and not an order paid ahead: " + cm);
-    /* the three add up to the statement's own owed: the pending orders it leaves out, the write-off it keeps in,
+    /* the three add up to the statement's own owed: pending intentions and write-offs are left out,
        and nothing from a row dated after the statement's day, which neither owed nor the body carries yet */
-    ok(doc && doc.owed === 780 && +(pay.now.rm + pay.coming.rm - 385 + 240).toFixed(2) === doc.owed,
-      "and they reconcile to the statement's owed, less the agreed orders it counts nowhere and plus the write-off it still prints: "
+    ok(doc && doc.owed === 540 && +(pay.now.rm + pay.coming.rm - 385).toFixed(2) === doc.owed,
+      "and they reconcile to the statement's owed, less the pending intentions, with no written-off balance: "
       + JSON.stringify(doc && { owed: doc.owed, now: pay.now.rm, coming: pay.coming.rm }));
     ok(JSON.stringify(M.payDue(P, "2026-09-24")) === JSON.stringify(pay) && JSON.stringify(M.payDue("CX8-QZ", "2026-09-24").now.parts.map((x) => x.rm)) === "[60]",
       "the live statement seals exactly the engine's reading, party by party");
@@ -6017,8 +6017,7 @@ await (async () => {
     /* the statement's window: an agreed order whatever its date, anything else up to the day */
     const own = bk.sales.filter((s) => POS.ownsCode(p, s.customer) && (POS.txStat(s).order === "Pending" || !(new Date(s.date) > new Date("2026-09-24"))));
     const pend = own.filter((s) => !s.goodwill && !s.defaulted && POS.txStat(s).order === "Pending").reduce((a, s) => a + POS.txOwed(s), 0);
-    const lost = own.filter((s) => s.defaulted).reduce((a, s) => a + Math.max(0, POS.txOwed(s) - POS.txPaid(s)), 0);
-    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend + lost - d.owed) > 0.011) off.push(p);
+    if (!d.pay || Math.abs(d.pay.now.rm + d.pay.coming.rm - pend - d.owed) > 0.011) off.push(p);
   }
   ok(n > 10 && !off.length, "on the book, every live statement's to pay now and coming up reconcile to its owed: " + n + " statements"
     + (off.length ? "; differ: " + off.slice(0, 3).join(", ") : ""));
@@ -6101,6 +6100,12 @@ await (async () => {
     ["cancelled", row({ cancelled: true }), null],
     ["no day at all", row({ date: null, deliveredQty: 1 }), null]]);
   ok(none.length === 0, "and nothing where nothing handed over is unpaid, a write-off included, or where no day is known: " + JSON.stringify(none));
+})();
+
+section("Statements: written-off balances leave live owed, ready orders retain their balance");
+await (async () => {
+  const { statementWriteoffChecks } = await import("./statement-writeoffs.mjs");
+  statementWriteoffChecks(ok);
 })();
 
 section("v432: the money on a statement is the money on the book");

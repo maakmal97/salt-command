@@ -3,6 +3,10 @@
 ## RETIRED, 21 Sep 2026, on his instruction
 
 **There is no monthly statement any more.** The account is ONE LIVE DOCUMENT (v769): each publish
+excludes a defaulted row's balance from Outstanding and sealed `owed`, while retaining its actual
+cash, in-kind, goods and delivery history and marking it written off. A pending intention still
+owes nothing; a part-paid ready order retains its full remaining balance, not merely `txAdvance`.
+Previously sealed issues are not rewritten. Each publish
 seals it into every real account record with the Desk build id both beside and inside the ciphertext.
 Before serving it, the Counter reads the Desk's authenticated `/stmt/rev` route and requires the
 published stamp to match. A mismatch says the statement is updating; an unavailable or invalid
