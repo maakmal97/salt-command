@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c7ff1c2adce46263";
+var SALT_BUILD_ID="da38cd9bf77de23e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9044,7 +9044,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v991","d":"03 Oct 2026","t":"DURABLE MAKER INPUTS, VAULT AUTHORITY UNCHANGED","n":["<b>FIXED REQUESTS.</b> Counter inputs retain one request through retries. Loan repayments and reward draws reserve their balance through every queue road, with the fold checking it again. Supported ledger amendments share the engine's constructors; restricted edits remain on the desk.","<b>ENCRYPTED RECOVERY.</b> Device retries keep ciphertext and fixed input metadata across reloads. The opt-in vault pair has revision checks, receipts and a recoverable outbox; laptop names, places and their baseline reconcile under a recoverable journal. A server write-maintenance gate precedes any storage move. The setting remains off: names and places still use KV, the slip key is unchanged, and Desk inputs remain.","<b>WRITTEN OFF.</b> The Counter's live balance excludes a written-off row while its goods, delivery and receipts remain in the record. Its footer names the deduction, separately from any part never handed over. No ledger row, pricing rule, inventory or held tier changed."]}];
+const evolution=[{"v":"v992","d":"03 Oct 2026","t":"NAMES AND PLACES, ONE ENCRYPTED REVISION","n":["<b>ONE PAIR.</b> Names and places use the versioned encrypted pair. Under a paused server write gate, two matching ciphertext snapshots were bootstrapped and read back twice as revision 1 before the setting was changed. Conflicting edits retain their encrypted draft; fixed requests recover through the outbox. Old unversioned writes are refused, not replayed over newer content.","<b>MAINTENANCE.</b> The gate drains accepted writers and refuses new ones before pause. Account phase writes use a SQL file and independent readback after any ambiguous process failure. The gate reopens only after the deployed authority matches; the slip key is unchanged.","<b>DESK RETAINED.</b> This is the names-and-places storage move, not the checker-only cutover. Desk inputs remain until owner acceptance and complete Counter equivalents. No ledger row, inventory, pricing rule or held tier changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9190,7 +9190,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Oct 2026, 12:17 KL';
+const LAST_UPDATED='03 Oct 2026, 12:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

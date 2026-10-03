@@ -1,5 +1,15 @@
 [
  {
+  "v": "v992",
+  "d": "03 Oct 2026",
+  "t": "NAMES AND PLACES, ONE ENCRYPTED REVISION",
+  "n": [
+   "<b>ONE PAIR.</b> Names and places use the versioned encrypted pair. Under a paused server write gate, two matching ciphertext snapshots were bootstrapped and read back twice as revision 1 before the setting was changed. Conflicting edits retain their encrypted draft; fixed requests recover through the outbox. Old unversioned writes are refused, not replayed over newer content.",
+   "<b>MAINTENANCE.</b> The gate drains accepted writers and refuses new ones before pause. Account phase writes use a SQL file and independent readback after any ambiguous process failure. The gate reopens only after the deployed authority matches; the slip key is unchanged.",
+   "<b>DESK RETAINED.</b> This is the names-and-places storage move, not the checker-only cutover. Desk inputs remain until owner acceptance and complete Counter equivalents. No ledger row, inventory, pricing rule or held tier changed."
+  ]
+ },
+ {
   "v": "v991",
   "d": "03 Oct 2026",
   "t": "DURABLE MAKER INPUTS, VAULT AUTHORITY UNCHANGED",
