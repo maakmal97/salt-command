@@ -7,6 +7,9 @@ export function statementWriteoffChecks(ok) {
   const now = new Date("2026-10-03T00:00:00Z");
   const base = { rid: "fixture", customer: "AA1-AAA", date: "2026-10-01",
     qty: 2, total: 120, deliveredQty: 2, defaulted: true };
+  const footer = doc => Object.fromEntries([...doc.body.slice(doc.body.indexOf('<div class="tot">'))
+    .matchAll(/<div class="tr(?: [a-z ]+)?"><span>([^<]*)<\/span><span>([^<]*)<\/span><\/div>/g)]
+    .map(m => [m[1], m[2] === "nil" ? 0 : +m[2].replace(/RM |,/g, "")]));
   for (const [name, patch] of [
     ["unpaid", {}],
     ["partial cash", { cash: 30 }],
@@ -17,6 +20,8 @@ export function statementWriteoffChecks(ok) {
       base.customer, now, "fixture-user");
     ok(doc && doc.owed === 0 && doc.pay.now.rm === 0,
       "a written-off " + name + " row owes nothing in the live document or To pay now");
+    ok(footer(doc)["Written off"] === E.txWrittenOff({ ...base, ...patch }),
+      "the " + name + " footer names the engine's actual written-off deduction");
   }
   const pending = liveFor({ sales: [{ ...base, defaulted: false, pending: true,
     deliveredQty: 0, delivery: 20 }], customerRefunds: [] }, base.customer, now, "fixture-user");
@@ -35,10 +40,15 @@ export function statementWriteoffChecks(ok) {
     customerRefunds: [] }, base.customer, now, "fixture-user");
   ok(mixed && mixed.owed === 100,
     "the live aggregate counts the active balance once and no written-off balance");
+  ok(footer(mixed)["Written off"] === 100 && footer(mixed).Paid === 80,
+    "the aggregate footer deducts one write-off without erasing either row's cash or in-kind");
   const partial = liveFor({ sales: [{ ...base, deliveredQty: 1 }], customerRefunds: [] },
     base.customer, now, "fixture-user");
   ok(partial && /written off/.test(partial.body) && !/paid in full/.test(partial.body),
     "zeroing a write-off labels it written off, never paid in full");
+  ok(footer(partial)["Written off"] === 60
+    && footer(partial)["Not handed over on written-off orders"] === 60,
+    "a partial handover distinguishes the actual loss from the balance never handed over");
 
   const book = JSON.parse(readFileSync(resolve("ledger", "book.json"), "utf8"));
   const parties = [...new Set(book.sales.map(s => s.customer).filter(c => c && !E.isBucket(c)))];

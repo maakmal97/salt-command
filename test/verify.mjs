@@ -21516,7 +21516,8 @@ await (async () => {
     const sum = (re) => trs.filter((t) => re.test(t[0])).reduce((a, t) => a + num(t[1]), 0);
     const del = sum(/^Delivery$/); if (del > 0) withDel++;
     const bal = (trs.find((t) => /^(Outstanding|Balance)$/.test(t[0])) || [0, "x"])[1];
-    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
+    const lhs = +(num(trs[0][1]) + del - sum(/^Paid$/) - sum(/^Written off$/)
+      - sum(/^Not handed over on written-off orders$/) + sum(/cancelled orders/) - sum(/not yet collected/)).toFixed(2);
     if (Math.abs(lhs - (bal === "nil" ? 0 : num(bal))) > 0.009) off.push(p + " " + lhs + " against " + bal);
   }
   ok(docs > 10 && withDel > 0 && !off.length, "every live footer adds up, the delivery its own line between the orders and Paid: " + docs + " statements, " + withDel + " with delivery; off: " + off.slice(0, 3).join(", "));
