@@ -20,7 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived } from "./orders.js";
-import { makerKeyMatches, makerOrderFault, makerStockCount } from "./maker.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -333,12 +333,38 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
+    && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
+    && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (p === "/_internal/maker/threads") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await listThreads(env, true);
+    return json(result, result.ok ? 200 : 503);
+  }
+  const thread = /^\/_internal\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(p);
+  if (thread || p === "/_internal/maker/bulletin") {
+    if (!thread && m === "GET") {
+      const result = await bulletinRelay(env, "GET");
+      return json(result, result.ok ? 200 : (result.status || 502));
+    }
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 4096) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const fault = makerCommunicationFault(thread ? "thread" : "bulletin", body);
+    if (fault) return json({ ok: false, error: fault }, 400);
+    const result = thread ? await threadRelay(env, thread[1], body)
+      : await bulletinRelay(env, "POST", { lines: body.lines, mode: "run" });
+    return json(result, result.ok ? 200 : (result.status || 502));
+  }
   if (!gateHeld && m === "POST" && /^\/_internal\/maker\/inputs\/(add-id|amend-id|place)$/.test(p))
     return vaultWriteResponse(env, () => handleInternalMaker(request, env, ctx, p, m, true));
   if (p === "/_internal/maker/vault/pair") {

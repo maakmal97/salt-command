@@ -49696,6 +49696,11 @@ await (async () => {
   await run("pagehide");
 })();
 
+section("Counter maker communications: owner Chat and Notice");
+await (async () => {
+  await (await import("./maker-communications.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

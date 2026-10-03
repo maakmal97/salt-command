@@ -1,5 +1,16 @@
 [
  {
+  "v": "v993",
+  "d": "03 Oct 2026",
+  "t": "COUNTER MAKER, CHAT AND NOTICE",
+  "n": [
+   "<b>CHAT.</b> Account conversations and No reply needed use the existing checked relay. Fixed reply requests retry once; changed content is refused and an old quieting request cannot quiet a new question. Pending replies survive reload as encrypted, account-bound device records, opened explicitly before retry.",
+   "<b>NOTICE.</b> Set asks before waking customers; Clear wakes nobody. An uncertain result keeps its intended text and requires readback before another change. Matching content never proves that a notification was sent.",
+   "<b>ACCEPTANCE FIXTURES.</b> The example account thread is carried by its sealed fixture. Its customer and owner writers share isolated serialized state, with bounded receipts and publication reset, never entering real messages, counts or activity marks.",
+   "<b>DESK RETAINED.</b> This is one maker slice, not the checker-only cutover. Claims, slips, further order and Network controls, supported ledger editing and genuine owner acceptance remain. No ledger row, inventory, pricing rule, held tier or Access setting changed."
+  ]
+ },
+ {
   "v": "v992",
   "d": "03 Oct 2026",
   "t": "NAMES AND PLACES, ONE ENCRYPTED REVISION",

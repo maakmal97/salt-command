@@ -174,6 +174,7 @@ async function bookMove(env, op, a) {
   if (!r || !r.ok) return r && r.error ? coded(r, r.status || 503) : Object.assign(refusal("busy"), { status: 503 });
   return r;
 }
+export const fixtureThreadMove = (env, a) => bookMove(env, "fixture-thread", a);
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */
 async function bookRead(env, op, a, fromKv) {
   try { return await book(env, op, a); }
@@ -1385,7 +1386,8 @@ export async function sayThread(env, u, body) {
 /** POST /desk/threads/<u> {message} or {noReply}: his line, which wakes them, or his No reply needed. */
 export async function deskThread(env, u, body) {
   if (!onBook(env)) return threadOff();
-  const r = await bookMove(env, "tdesk", { u, body });
+  if (body && body.rid !== undefined && !ridOf(body)) return { error: "Invalid reply request id.", status: 400 };
+  const r = await bookMove(env, "tdesk", { u, body, rid: ridOf(body) });
   if (r.error) return r;
   return { thread: r.order, push: r.wake ? await wakeCustomer(env, u, r.wake) : null };
 }

@@ -1,5 +1,29 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 
+export function makerCommunicationFault(kind, body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
+  if (kind === "thread") {
+    if (Object.keys(body).some((key) => !["rid", "message", "noReply"].includes(key))
+      || typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid))
+      return "A reply needs its fixed request id and only message or noReply.";
+    if (body.noReply === true && body.message === undefined) return "";
+    if (body.noReply !== undefined || typeof body.message !== "string"
+      || !body.message.trim() || body.message.length > 200)
+      return "Send one nonempty message of at most 200 characters, or noReply.";
+    return "";
+  }
+  if (kind === "bulletin") {
+    if (Object.keys(body).some((key) => !["lines", "confirmed"].includes(key))
+      || !Array.isArray(body.lines) || body.lines.length > 8
+      || body.lines.some((line) => typeof line !== "string" || !line.trim() || line.length > 120))
+      return "A notice holds at most eight nonempty lines of 120 characters each.";
+    if (body.lines.length && body.confirmed !== true) return "Confirm before waking every customer.";
+    if (body.confirmed !== undefined && typeof body.confirmed !== "boolean") return "Confirmation must be a boolean.";
+    return "";
+  }
+  return "That communication action is not available.";
+}
+
 export function makerStockCount(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)
     || Object.keys(body).some((key) => !["at", "product", "date", "qty"].includes(key)))

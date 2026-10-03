@@ -1445,8 +1445,9 @@ The bridge and matching secrets shipped with #30. Live owner-JWT acceptance is s
 `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and
 `0016_vault_write_gate.sql` were applied individually on 03 Oct 2026 under explicit release
 authorization, with schema readback after each. Neither admission migration rebuilds `draft`
-or drops an index. The pair is not bootstrapped, its setting remains absent, and live
-names/places authority is still KV; applied schema is not a storage cutover.
+or drops an index. Reviewed #32 deployed v992 with `VAULT_STORE=pair` after paused bootstrap
+and matching ciphertext readback. D1 is now names/places authority; the gate reopened explicitly
+at 13:13:22 MYT. Applied schema alone was not the storage-cutover proof.
 
 Loan repayments and reward draws use `src/input-admission.js` on Maker, Desk queue, per-entry
 order-queue and drafter roads. The server derives each resource and amount from the Position
@@ -1494,10 +1495,11 @@ refused and directed to Desk. Amend ID preserves descendant place keys and `_bas
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
 
-Current live KV authority still has two non-atomic envelope writes. The opt-in pair
+Legacy KV mode has two non-atomic envelope writes. The pair
 mode supplies all-writer CAS and a durable ID/place outbox. Its schema and code shipped in
 the v991 preparatory release. Revision-1 bootstrap was read back under paused maintenance on
-03 Oct 2026; live authority awaits the reviewed pair-flag deployment. Browser transport requests and encrypted conflict
+03 Oct 2026; #32's active production version and public revision discovery proved the pair-flag deployment.
+Browser transport requests and encrypted conflict
 intent now survive reload, with explicit retained-input recovery and vault unlock before
 retry/review. No decrypted identity, address, passphrase or key is persisted. Non-vault
 Maker receipts retain immutable server-built intent before admission and resume to a real
@@ -1519,8 +1521,9 @@ Old unversioned named ID/rekey/place queue clients refuse with an upgrade state 
 behavior is unchanged. The Desk names/places unlock reads one revision; shared rekey moves
 descendant exact points and preserves `_base`.
 
-Before cutover, verify the applied migrations and perform the reviewed all-client bootstrap,
-rollback/readback rehearsal and live owner acceptance under authorization. Laptop pull now
+The maintained bootstrap and production readback are complete. Live owner-keyed acceptance
+remains unverified, and Desk controls remain available. Never roll back to stale KV after
+pair writes: export and reconcile the current pair under reviewed maintenance first. Laptop pull now
 uses a recoverable roll-forward journal and exclusive lock across both files and their
 baseline; seed/pull startup recovers before reading, and the ledger reader refuses an
 unfinished transaction. Ordinary and retained seed completion journal both reconciled local
@@ -1534,9 +1537,47 @@ not an already-committed server receipt/outbox. A retained immutable input that 
 valid against the book refuses explicitly. Counter's ledger
 editor retains only typed Correction/Fulfilment/Cancellation; notes, settlement prose,
 order-code and cancelled/defaulted editing stay on Desk, and Linked/Rewarded remain refused
-by the cloud drafter. Nothing changes current KV authority. Protocol, compatibility and
+by the cloud drafter. Protocol, compatibility and
 privileged out-of-band writer requirements are in `docs/DESK.md`.
 Desk Enter and Network must remain available. No board repricing is part of this work.
+The next source-only coverage stage adds Maker's Chat and Notice through narrowly allowed
+`/all/maker/threads`, `/all/maker/threads/<username>` and `/all/maker/bulletin` routes.
+They use the existing authenticated Desk-to-Counter handlers and `siteWords`, not a
+second message/bulletin writer. Replies and No reply needed retain immutable device
+request IDs; the order book refuses changed content and retries never wake twice or
+quiet a newer customer line. Typed replies remain in memory across reads/errors;
+an attempted reply is saved before transport as ciphertext under the existing owner
+master, with account/RID/original timestamp metadata only. Reload requires an explicit
+open in the authenticated owner context, followed by retry; the ciphertext is bound to
+its original account. Nothing saves the plaintext reply or key. Verified completion
+or explicit cancellation alone clears its account/RID record, never another pending
+record. Reopening an in-flight Chat keeps submits disabled. A lost confirmation says
+the result may already be recorded, not that the reply is known unsent.
+Polling runs only for an open, visible Chat.
+Test-account conversations are explicitly labelled and excluded from incumbent counts.
+With the existing OrderBook binding, all fixture-thread readers and customer/owner
+writers share an isolated `fixture_thread` SQLite table, on both object and KV roads.
+Initialization is additive in the existing object's constructor; no D1 or Wrangler
+class migration is needed. Restarts preserve state. Publication identity uses the
+original account-wrap salt, publication time and ciphertext IV; newer publications
+reset the fixture, delayed older writes refuse, and repeated reads never reset replies.
+It has no real order/thread events, activity/chase marks or write-behind. Receipts
+are capped at 400 per fixture and retained until publication reset or account unmaking;
+capacity refuses rather than forgetting replay identity. Binding-less legacy customer
+fixtures retain their old KV semantics, but new owner fixture writes fail closed.
+Notice Set asks before notification and the server requires confirmation; Clear wakes
+nobody. An ambiguous Notice result retains its original intended body and requires a
+read before another explicit change, never an automatic transport replay. Readback
+distinguishes matching content from another notice and keeps the prior notification
+outcome explicitly unknown. This source stage has not been deployed or
+accepted by the owner.
+
+**Remaining cutover inventory:** account claims preview/Received/Not found; slip viewing
+and private-key unlock; order messages, reasons and omitted moves; tier proposal
+Accept-all/Add-ID; remaining Network actions; safe notes, settlement prose, order-code
+and cancelled/defaulted ledger editing. Unsupported amendments stay refused, not
+simulated. Genuine owner authentication and keyed-vault acceptance remain release gates;
+Desk input/decision controls are retained until replacements pass that acceptance.
 Preparatory migration `0016_vault_write_gate.sql` adds a durable, default-open maintenance
 gate across normal vault writers and named ID/place ingress. It drains accepted work before
 pause; it is not a vault authority switch. A maintenance refusal retains the browser request.

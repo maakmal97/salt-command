@@ -280,6 +280,11 @@
   procedure, not an automatically executable cutover. No utility switches live authority.
   Account phase writes use an explicit temporary SQL file, not an escaped multiline shell
   argument; the operator reads the gate back independently after any ambiguous process failure.
+  Live flag readback follows the production deployment's traffic-serving version and inspects
+  that version's bindings through the Cloudflare API. Generic script settings can already show
+  a preview/latest-upload flag while production still serves the prior version. A sole 100%
+  active version, or an explicit check of every traffic version during a split rollout, must
+  agree with real `/vault` revision/ciphertext discovery before maintenance reopens.
   Normal seed must stop direct names/places KV puts at cutover; privileged Wrangler/API KV
   puts then affect retired recovery copies only. Direct privileged D1 edits remain an
   unavoidable out-of-band bypass, requiring maintenance and revision/receipt repair.

@@ -8922,7 +8922,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v992","d":"03 Oct 2026","t":"NAMES AND PLACES, ONE ENCRYPTED REVISION","n":["<b>ONE PAIR.</b> Names and places use the versioned encrypted pair. Under a paused server write gate, two matching ciphertext snapshots were bootstrapped and read back twice as revision 1 before the setting was changed. Conflicting edits retain their encrypted draft; fixed requests recover through the outbox. Old unversioned writes are refused, not replayed over newer content.","<b>MAINTENANCE.</b> The gate drains accepted writers and refuses new ones before pause. Account phase writes use a SQL file and independent readback after any ambiguous process failure. The gate reopens only after the deployed authority matches; the slip key is unchanged.","<b>DESK RETAINED.</b> This is the names-and-places storage move, not the checker-only cutover. Desk inputs remain until owner acceptance and complete Counter equivalents. No ledger row, inventory, pricing rule or held tier changed."]}];
+const evolution=[{"v":"v993","d":"03 Oct 2026","t":"COUNTER MAKER, CHAT AND NOTICE","n":["<b>CHAT.</b> Account conversations and No reply needed use the existing checked relay. Fixed reply requests retry once; changed content is refused and an old quieting request cannot quiet a new question. Pending replies survive reload as encrypted, account-bound device records, opened explicitly before retry.","<b>NOTICE.</b> Set asks before waking customers; Clear wakes nobody. An uncertain result keeps its intended text and requires readback before another change. Matching content never proves that a notification was sent.","<b>ACCEPTANCE FIXTURES.</b> The example account thread is carried by its sealed fixture. Its customer and owner writers share isolated serialized state, with bounded receipts and publication reset, never entering real messages, counts or activity marks.","<b>DESK RETAINED.</b> This is one maker slice, not the checker-only cutover. Claims, slips, further order and Network controls, supported ledger editing and genuine owner acceptance remain. No ledger row, inventory, pricing rule, held tier or Access setting changed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9068,7 +9068,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Oct 2026, 12:59 KL';
+const LAST_UPDATED='03 Oct 2026, 14:49 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

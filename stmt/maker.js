@@ -32,6 +32,9 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/vault/addr" && method === "GET"
     || path === "/_internal/maker/vault/pair" && method === "GET"
     || path === "/_internal/maker/geo/expand" && method === "POST"
+    || path === "/_internal/maker/threads" && method === "GET"
+    || path === "/_internal/maker/bulletin" && ["GET", "POST"].includes(method)
+    || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
@@ -127,6 +130,10 @@ function internalOperation(path) {
   if (path === "/all/maker/vault/addr") return { kind: "vault-addr" };
   if (path === "/all/maker/vault/pair") return { kind: "vault-pair" };
   if (path === "/all/maker/geo/expand") return { kind: "geo-expand" };
+  if (path === "/all/maker/threads") return { kind: "threads" };
+  if (path === "/all/maker/bulletin") return { kind: "bulletin" };
+  const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
+  if (thread) return { kind: "thread", u: thread[1] };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
   const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
@@ -150,6 +157,15 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   const method = request.method;
   try {
     if (op.kind === "hours") return await makerHours(request, env, method);
+    if (op.kind === "threads" || op.kind === "thread" || op.kind === "bulletin") {
+      const read = method === "GET" && op.kind !== "thread";
+      if (!read && !(method === "POST" && op.kind !== "threads"))
+        return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = read ? {} : await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      const route = op.kind === "bulletin" ? "/bulletin" : "/threads" + (op.u ? "/" + op.u : "");
+      return json(await deskCall(env, "/_internal/maker" + route, method, parsed.body));
+    }
     if (op.kind === "geo-expand") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);

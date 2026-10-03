@@ -109,13 +109,14 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS behind (u TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS acl (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS thr (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
+    sql.exec("CREATE TABLE IF NOT EXISTS fixture_thread (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
   }
 
   async fetch(request) {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    if (op !== "drop") await this.moveIn(true);
+    if (op !== "drop" && op !== "fixture-thread") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     if (out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
@@ -291,6 +292,47 @@ export class OrderBook {
   /* every answer is { ok, ... } or { ok: false, error, status }, and nothing here awaits */
   run(op, a) {
     const at = new Date().toISOString();
+    if (op === "fixture-thread") {
+      if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
+        || a.generation.length > 1024 || !["read", "customer", "desk"].includes(a.actor))
+        return { ok: false, error: "A fixture thread needs its account and publication.", status: 400 };
+      return this.state.storage.transactionSync(() => {
+        const sql = this.state.storage.sql;
+        const row = sql.exec("SELECT generation, doc, receipts FROM fixture_thread WHERE u=?", a.u).toArray()[0];
+        if (row && row.generation !== a.generation && JSON.parse(row.generation)[1] >= JSON.parse(a.generation)[1])
+          return { ok: false, error: "The acceptance fixture changed. Read its latest publication before retry.", status: 409 };
+        let thread = row && row.generation === a.generation ? JSON.parse(row.doc) : a.seed || null;
+        const receipts = row && row.generation === a.generation ? JSON.parse(row.receipts) : {};
+        const key = a.actor + ":" + a.rid, request = a.actor === "desk" ? JSON.stringify(a.body) : null;
+        if (a.actor !== "read") {
+          if (!a.rid) return { ok: false, error: "A fixture line needs its request id.", status: 400 };
+          if (request && request.length > 4096)
+            return { ok: false, error: "The fixture reply is too large.", status: 400 };
+          if (Object.hasOwn(receipts, key)) {
+            if (a.actor === "desk" && receipts[key] !== request)
+              return { ok: false, error: "That reply id already names different content.", status: 409 };
+            return { ok: true, thread, again: true };
+          }
+          if (Object.keys(receipts).length >= 400)
+            return { ok: false, error: "Refresh this acceptance fixture before more replies.", status: 409 };
+          const d = decideThread(thread, a.body, a.actor, at, a.u);
+          if (d.error) return no(d, d.status || 400);
+          let wake = null;
+          if (!d.none) {
+            const result = applyEvent(thread, d.ev);
+            thread = result.order; wake = wakes(d.ev, thread, result.done);
+          }
+          receipts[key] = request;
+          sql.exec("INSERT OR REPLACE INTO fixture_thread (u,generation,doc,receipts) VALUES (?,?,?,?)",
+            a.u, a.generation, JSON.stringify(thread), JSON.stringify(receipts));
+          return { ok: true, thread, wake };
+        }
+        if (!row || row.generation !== a.generation)
+          sql.exec("INSERT OR REPLACE INTO fixture_thread (u,generation,doc,receipts) VALUES (?,?,?,?)",
+            a.u, a.generation, JSON.stringify(thread), JSON.stringify(receipts));
+        return { ok: true, thread };
+      });
+    }
     if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, code: "frozen", status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
     if (op === "replacement") {
@@ -324,13 +366,23 @@ export class OrderBook {
       return { ok: true, threads: this.state.storage.sql.exec("SELECT doc FROM thr ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)) };
     }
     if (op === "tsay" || op === "tdesk") {
-      const u = String(a.u || ""), eid = op === "tsay" && a.rid ? "c:" + u + ":" + THREAD_ID + ":" + a.rid : null;
+      const u = String(a.u || ""), eid = a.rid ? (op === "tdesk" ? "d:" : "c:") + u + ":" + THREAD_ID + ":" + a.rid : null;
       if (!u) return { ok: false, error: "a line names an account", status: 400 };
       const thread = this.order(u, THREAD_ID);
-      if (eid && thread && this.event(eid)) return { ok: true, order: thread, again: true };
+      const seen = eid && this.event(eid), request = op === "tdesk" && a.rid ? JSON.stringify(a.body) : null;
+      if (seen) {
+        if (request && JSON.parse(seen.body).request !== request)
+          return { ok: false, error: "That reply id already names different content.", status: 409 };
+        return { ok: true, order: thread, again: true };
+      }
       const d = decideThread(thread, a.body, op === "tdesk" ? "desk" : "customer", at, u);
       if (d.error) return no(d, d.status || 400);
-      if (d.none) return { ok: true, order: thread, none: true };
+      if (d.none) {
+        if (request) this.state.storage.sql.exec("INSERT INTO ev (eid,u,oid,kind,at,body) VALUES (?,?,?,?,?,?)",
+          eid, u, THREAD_ID, "tnoop", at, JSON.stringify({ kind: "tnoop", at, request }));
+        return { ok: true, order: thread, none: true };
+      }
+      if (request) d.ev.request = request;
       return this.append(eid, u, THREAD_ID, d.ev, thread);
     }
     if (op === "last") {
@@ -408,6 +460,7 @@ export class OrderBook {
         this.state.storage.sql.exec("DELETE FROM acl WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM thr WHERE u = ?", u);
         this.state.storage.sql.exec("DELETE FROM behind WHERE u = ?", u);
+        this.state.storage.sql.exec("DELETE FROM fixture_thread WHERE u = ?", u);
       });
       return { ok: true, dropped: n };
     }
@@ -432,7 +485,7 @@ export class OrderBook {
     return out;
   }
 
-  event(eid) { return this.state.storage.sql.exec("SELECT u, oid FROM ev WHERE eid = ?", eid).toArray()[0] || null; }
+  event(eid) { return this.state.storage.sql.exec("SELECT u, oid, body FROM ev WHERE eid = ?", eid).toArray()[0] || null; }
   doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM " + TABLE(oid) + " WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
   order(u, oid) { const d = this.doc(u, oid); return d == null ? null : JSON.parse(d); }
   ordersOf(u) { return this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
