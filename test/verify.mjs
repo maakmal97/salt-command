@@ -2736,7 +2736,7 @@ await (async () => {
       "a price edit is planned and moves nothing physical");
     const PB = JSON.parse(JSON.stringify(book)); PB.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
     const beforeStock = PB.STATED_STOCK, beforeSales = PB.sales.length;
-    const pr = apply(PB, one, { version: "v998", date: "24 Aug 2026", title: "A TEST PRICE EDIT",
+    const pr = apply(PB, one, { version: "v9999", date: "24 Aug 2026", title: "A TEST PRICE EDIT",
       notes: ["<b>TEST.</b> Nothing real."], rows: { [ID("03:00")]: { note: "Sets the oil board." } }, stockNote: "" }, master);
     ok(pr.ok, "the price edit applies: " + (pr.ok ? "" : pr.problems.join("; ")));
     if (pr.ok) {
@@ -2896,7 +2896,7 @@ await (async () => {
       const corr2 = (at, rid, coll, dirn, fields) => ({ ok: true, count: 1, approved: [{
         id: ID(at), collection: coll, amends: rid, amendKind: "Correction",
         row: { rid }, entry: { at: ID(at), payload: { mode: "amend", direction: dirn, rid, kind: "Correction", date: "2026-08-25", fields } } }] });
-      const N2 = (at) => ({ version: "v999", date: "25 Aug 2026", title: "AUDIT", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "audit fixture." } }, stockNote: "" });
+      const N2 = (at) => ({ version: "v9999", date: "25 Aug 2026", title: "AUDIT", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "audit fixture." } }, stockNote: "" });
 
       /* F12: a date-only correction must not touch a status-carried payment. The old lot
          stores "paid" as a word with no cash field, and the unconditional recompute read
@@ -2963,7 +2963,7 @@ await (async () => {
       id: ID(at), collection: "sales", amends: "sX01", amendKind: "Correction",
       row: { rid: "sX01", customer: "CX9-TESTCOR", qty: 2, total: 200, cash: 200, date: "2026-08-20", product: "salt" },
       entry: { at: ID(at), payload: { mode: "amend", direction: "SELL", rid: "sX01", kind: "Correction", date: "2026-08-25", fields } } }] });
-    const CNOTES = (at) => ({ version: "v999", date: "25 Aug 2026", title: "A TEST CORRECTION",
+    const CNOTES = (at) => ({ version: "v9999", date: "25 Aug 2026", title: "A TEST CORRECTION",
       notes: ["<b>TEST.</b> Nothing real."], rows: { [ID(at)]: { note: "Corrected in the suite." } }, stockNote: "" });
 
     const cp = plan(JSON.parse(JSON.stringify(CB)), corr("04:00", { product: "oil" }), null);
@@ -3073,7 +3073,7 @@ await (async () => {
     ok(lot.items.length === 0 && /cannot be defaulted on/.test(why(lot)), "a default on a lot that has received its salt is refused, the v435 rule through the correction road");
     const A = JSON.parse(JSON.stringify(DB));
     const ar = apply(A, dcorr("05:05", "sX40", "sales", "SELL", { defaulted: true }),
-      { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:05")]: { note: "defaulted in the suite." } }, stockNote: "" }, master);
+      { version: "v9999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:05")]: { note: "defaulted in the suite." } }, stockNote: "" }, master);
     const r = A.sales.find((x) => x.rid === "sX40");
     ok(ar.ok && !!r && r.defaulted === true && X.txStat(r).order === "Default" && X.saleProvRate(r, 0) === 1,
       "applied, the row reads Default and provisions in full" + (ar.ok ? "" : ": " + ar.problems.join("; ")));
@@ -3081,7 +3081,7 @@ await (async () => {
        as a Fulfilment moving units does; s183 and s196 went live uncosted and blanked the gross margin. */
     const H = JSON.parse(JSON.stringify(DB));
     const hr = apply(H, dcorr("05:06", "sX41", "sales", "SELL", { deliveredQty: 2, deliveredOn: "2026-09-05", handover: "collected" }),
-      { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:06")]: { note: "handed over in the suite." } }, stockNote: "" }, master);
+      { version: "v9999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:06")]: { note: "handed over in the suite." } }, stockNote: "" }, master);
     /* 26 Sep 2026: the shelf's rate is derived from the lots, worked here from the book the fold was handed */
     const hRow = H.sales.find((x) => x.rid === "sX41"), hShelf = +suiteShelf(DB, "salt").rate.toFixed(4);
     ok(hr.ok && hRow && hRow.deliveredQty === 2 && hRow.cost === +(hShelf * 2).toFixed(2),
@@ -3100,7 +3100,7 @@ await (async () => {
   ok(p.moves.some((m) => m.kg === -0.5 && m.product === "salt") && p.moves.some((m) => m.kg === -6.25), "the plan sees what will leave the shelf");
   ok(p.moves.length === 2, "a pure Modification moves no stock: only the new row and the fulfilment do");
   /* a refusal folds nothing, and so does a missing note */
-  const notes = { version: "v999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
+  const notes = { version: "v9999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
     rows: { [ID("01:00")]: { note: "Half a unit at the RM100 anchor, paid and delivered." }, [ID("01:05")]: { note: "paid and delivered in full" },
             [ID("01:20")]: { note: "restated to 1 unit for RM130 once the price was agreed" } },
     stockNote: "Test roll." };
@@ -3132,7 +3132,7 @@ await (async () => {
     ok(B.PROD_OPENING.oil.stated === 3 && B.COUNT_ON.oil === "2026-08-23", "the oil count set the stated shelf and moved COUNT_ON");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);
-    ok(/^ROLLED AT v999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
+    ok(/^ROLLED AT v9999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
     const modded = B.sales.find((x) => x.customer === "CX9-TESTMOD" && !x.date && x.qty === 1 && x.total === 130);
     ok(!!modded, "the Modification REPLACED qty and total rather than adding to them");
     ok(modded && modded.cash === 0 && modded.deliveredQty === 0 && !modded.date, "and moved no cash, no stock and no date: a pure reprice");
@@ -3140,11 +3140,11 @@ await (async () => {
     ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && /RM130 once the price/.test(a.note || "")), "and the trail carries the Modification step with the agent's note");
     ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
     ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
-    ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
+    ok(/const evolution=\[\{"v":"v9999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
     /* v803: the master holds ONE entry, so the fold REPLACES the current one rather than prepending; read as the desk reads it */
     { const o = r.master.indexOf("const evolution=["), e = r.master.indexOf("}];", o);
       const evoF = o >= 0 && e > o ? new Function("return " + r.master.slice(o + "const evolution=".length, e + 2))() : [];
-      ok(evoF.length === 1 && evoF[0].v === "v999" && r.master.indexOf("const evolution=[", o + 1) < 0,
+      ok(evoF.length === 1 && evoF[0].v === "v9999" && r.master.indexOf("const evolution=[", o + 1) < 0,
         "and the fold leaves the master one version entry, its own, having replaced the one before it (" + evoF.map((x) => x.v).join(",") + ")"); }
     const { checkText } = await import("../tools/booksync.mjs");
     ok(checkText(r.master, B) === null, "and the master's book block is the folded book");
@@ -3172,7 +3172,7 @@ await (async () => {
     const lotBatch = { ok: true, count: 1, approved: [{ id: ID("04:00"), collection: "purchases", amends: null, amendKind: null,
       row: lotRow, entry: { at: ID("04:00"), payload: { mode: "new", direction: "BUY" } } }] };
     const was = suiteShelf(NB, "salt");
-    const rL = apply(NB, lotBatch, { version: "v999", date: "27 Sep 2026", title: "A LOT AT A RATE OF ITS OWN",
+    const rL = apply(NB, lotBatch, { version: "v9999", date: "27 Sep 2026", title: "A LOT AT A RATE OF ITS OWN",
       notes: ["<b>TEST.</b> A salt lot at RM 61.20 a unit, on a copy of the book."], rows: { [ID("04:00")]: { note: "a salt lot landed in the suite." } },
       stockNote: "", stockCost: 99, stockCostNote: "a figure the fold must not write" }, master);
     ok(rL.ok && Array.isArray(rL.ignored) && rL.ignored.length === 1 && /stockCost 99 ignored/.test(rL.ignored[0]),
@@ -3180,8 +3180,8 @@ await (async () => {
     if (rL.ok) {
       const lotRid = (NB.purchases.find((x) => x.date === when && x.total === 765) || {}).rid, now = suiteShelf(NB, "salt");
       ok(!/const STOCK_COST\s*=/.test(master) && !/const STOCK_COST\s*=/.test(rL.master) && !/\b99\b[^\n]*a figure the fold must not write/.test(rL.master)
-        && /const evolution=\[\{"v":"v999"/.test(rL.master) && now.stock === +(was.stock + 12.5).toFixed(2) && now.parts[0] && now.parts[0].rid === lotRid,
-        `and it bumps to v999 with no STOCK_COST line before or after, the shelf rolled ${was.stock} to ${now.stock} and the new lot ${lotRid} first on it`);
+        && /const evolution=\[\{"v":"v9999"/.test(rL.master) && now.stock === +(was.stock + 12.5).toFixed(2) && now.parts[0] && now.parts[0].rid === lotRid,
+        `and it bumps to v9999 with no STOCK_COST line before or after, the shelf rolled ${was.stock} to ${now.stock} and the new lot ${lotRid} first on it`);
       const tmpLot = join(REPO, "test", "tmp", "fold-lot-master.html");
       mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
       writeFileSync(tmpLot, rL.master);
@@ -3190,7 +3190,7 @@ await (async () => {
         const { w: wL } = await omL(tmpLot);
         wL.eval("setProd('salt');");
         const deskL = JSON.parse(wL.eval("JSON.stringify({rate:stockCostFor('salt'),stock:currentStock,v:evolution[0].v})"));
-        ok(deskL.v === "v999" && deskL.stock === now.stock && deskL.rate === +now.rate.toFixed(4) && Math.abs(deskL.rate - was.rate) > 0.005,
+        ok(deskL.v === "v9999" && deskL.stock === now.stock && deskL.rate === +now.rate.toFixed(4) && Math.abs(deskL.rate - was.rate) > 0.005,
           `the folded master builds and its salt rate takes the new lot: RM ${deskL.rate} on ${deskL.stock} unit, worked from the folded book as RM ${now.rate.toFixed(4)} (RM ${was.rate.toFixed(4)} before)`);
       } finally { try { rmSync(tmpLot); } catch (e) { } }
     }
@@ -3214,7 +3214,7 @@ await (async () => {
         const batch = { ok: true, count: 1, approved: [{ id: ID(at), collection: "sales", amends: "sX50", amendKind: "Correction", row: { rid: "sX50" },
           entry: { at: ID(at), payload: { mode: "amend", direction: "SELL", rid: "sX50", kind: "Correction", date: "2026-09-05", fields: { deliveredQty: 2, deliveredOn: "2026-09-05", handover: "collected" } } } }] };
         const want = suiteShelf(clone, "salt");
-        const res = apply(clone, batch, { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "handed over in the suite." } }, stockNote: "" }, master);
+        const res = apply(clone, batch, { version: "v9999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "handed over in the suite." } }, stockNote: "" }, master);
         const row = clone.sales.find((x) => x.rid === "sX50");
         return { res, want, cost: row && row.cost };
       };
@@ -6673,7 +6673,7 @@ await (async () => {
     const staged = { approved: [{ id: "x1", amends: "z9", amendKind: "Cancellation", collection: "sales",
       entry: { payload: { direction: "SELL", kind: "Cancellation", date: "2026-09-02" } },
       row: paid, pay: { kind: "Cancellation", date: "2026-09-02" } }] };
-    const notes = { version: "v999", title: "t", notes: ["n"], rows: { x1: { note: "cancelled" } } };
+    const notes = { version: "v9999", title: "t", notes: ["n"], rows: { x1: { note: "cancelled" } } };
     const res = foldApply(bookE, staged, notes, rfE(jE(REPO, "master", "salt_command.html"), "utf8"));
     ok(res && res.ok !== false, `the fold applies the cancellation (${res && res.problems ? res.problems.join("; ").slice(0, 120) : "ok"})`);
     const added = (bookE.customerRefunds || []).length - nRef;
@@ -11967,7 +11967,7 @@ await (async () => {
   {
     const A = B570();
     const st = stage570("2026-09-11T01:05:00.000Z", "CX1-OLD", "reseller");
-    const notes = { version: "v999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" };
+    const notes = { version: "v9999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" };
     const r1 = apply570(A, st, notes, master570);
     ok(r1.ok && A.associates.includes("CX1-OLD"), "applied, the appointment reaches book.associates" + (r1.ok ? "" : ": " + (r1.problems || []).join("; ")));
     ok(A.roster.includes("CX1-OLD-R"), "and the -R account joins the roster");
@@ -11990,7 +11990,7 @@ await (async () => {
     const twoTaps = { ok: true, count: 2, approved: [
       stage570("2026-09-11T01:06:00.000Z", "CX1-OLD", "reseller").approved[0],
       stage570("2026-09-11T01:07:00.000Z", "CX1-OLD", "reseller").approved[0]] };
-    const rTwo = apply570(A2, twoTaps, { version: "v999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master570);
+    const rTwo = apply570(A2, twoTaps, { version: "v9999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master570);
     ok(rTwo.ok, "two taps appointing one code in one batch fold" + (rTwo.ok ? "" : ": " + (rTwo.problems || []).join("; ")));
     ok(A2.associates.filter((x) => x === "CX1-OLD").length === 1,
       "and they appoint them ONCE, not twice: " + JSON.stringify(A2.associates));
