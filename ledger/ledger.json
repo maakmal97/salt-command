@@ -1,6 +1,6 @@
 {
- "v": "v995",
- "stamped": "03 Oct 2026, 19:25 KL",
+ "v": "v996",
+ "stamped": "03 Oct 2026, 20:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6338,6 +6338,28 @@
     "deliveredQty": 0,
     "note": "<b>SALT SELL DATED 03 OCT: 2 UNITS FOR RM220, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CH6-SET from order 20261003013258-yitorw, acknowledged and to be delivered, preapproved by phone. The rate is RM110 a unit; for 2 units the desk's floor is RM137.25 and its ask RM270, so the order sits above the floor and under the ask. CH6-SET: median RM115 a unit over 3 orders, range RM100 to RM120, RM0 outstanding and 0 units on credit before this, against a cap of 1 unit. The row carries RM56 a unit, the inventory's own cost, a margin of 49.1%. The drafter raised no flags, so there is nothing for the figures to answer. Outstanding: the full RM220 and 2 units to deliver.",
     "rid": "s229"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 10,
+    "total": 80,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-10-03",
+    "deliveredQty": 0,
+    "note": "<b>RICE SELL DATED 03 OCT: 10 UNITS FOR RM80, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-iffcoq, acknowledged and to collect, preapproved by phone. The rate is RM8 a unit; for 10 units the desk's floor is RM63.14 and its ask RM64, so the order sits above both, under the ceiling of RM102. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The row carries the desk's own rice cost of RM3.2 a unit. The drafter flagged that CS6-PER has no committed rice order, so no rate of theirs exists to compare; the figures cannot answer that. Outstanding: the full RM80 and 10 units to collect.",
+    "rid": "s230"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 1.5,
+    "total": 160,
+    "cash": 0,
+    "date": "2026-10-03",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 03 OCT: 1.5 UNITS FOR RM160, NOTHING PAID, NOTHING HANDED OVER.</b> Booked to CS6-PER from order 20261003121352-viyxlq, acknowledged and to collect, preapproved by phone. The rate is RM106.67 a unit; for 1.5 units the desk's floor is RM100.87 and its ask RM210, so the order sits above the floor and under the ask. CS6-PER: median RM85.52 a unit over 9 orders, range RM11 to RM100, RM0 outstanding and 0 units on credit before this, against a cap of 2 units. The draft carried RM76 on the goods, not the inventory's own RM56 a unit, so the cost is corrected. The drafter flagged the rate as 33.3% above their usual RM80; the figures confirm it, as it tops their range. Outstanding: the full RM160 and 1.5 units to collect.",
+    "cost": 84,
+    "rid": "s231"
    }
   ],
   "contacts": [
@@ -7078,9 +7100,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-03T11:25:19.325Z",
+  "QUEUE_COMMITTED": "2026-10-03T12:23:28.109Z",
   "PRICING": {
-   "takenAt": "2026-10-03T11:25:54.749Z",
+   "takenAt": "2026-10-03T12:24:11.565Z",
    "sizes": [
     0.5,
     1,
@@ -7112,14 +7134,14 @@
      "salt": "Titanium",
      "oil": "Platinum"
     },
+    "CS6-PER": {
+     "salt": "Titanium"
+    },
     "CM4-MK": {
      "salt": "Platinum"
     },
     "CJ4-BJ": {
      "salt": "Platinum"
-    },
-    "CS6-PER": {
-     "salt": "Titanium"
     },
     "CE4-CHE": {
      "salt": "Titanium"
@@ -7265,6 +7287,36 @@
       "rare": false
      }
     },
+    "CS6-PER": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 9,
+      "tenureDays": 87,
+      "sinceLastDays": 7,
+      "perMonth": 3.15,
+      "smallShare": 0.11,
+      "bigShare": 0.56,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false
+     },
+     "oil": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 57,
+      "sinceLastDays": 20,
+      "perMonth": 1.07,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CM4-MK": {
      "salt": {
       "name": "large and regular",
@@ -7294,36 +7346,6 @@
       "small": false,
       "bigger": true,
       "loyal": true,
-      "rare": false
-     }
-    },
-    "CS6-PER": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 9,
-      "tenureDays": 87,
-      "sinceLastDays": 7,
-      "perMonth": 3.15,
-      "smallShare": 0.11,
-      "bigShare": 0.56,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false
-     },
-     "oil": {
-      "name": "rare and large",
-      "orders": 2,
-      "tenureDays": 57,
-      "sinceLastDays": 20,
-      "perMonth": 1.07,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
       "rare": false
      }
     },
@@ -8481,6 +8503,56 @@
         1060
        ]
       ],
+      "CS6-PER": [
+       [
+        0.5,
+        60
+       ],
+       [
+        1,
+        110
+       ],
+       [
+        1.5,
+        160
+       ],
+       [
+        2,
+        210
+       ],
+       [
+        2.5,
+        260
+       ],
+       [
+        3,
+        310
+       ],
+       [
+        3.5,
+        350
+       ],
+       [
+        4,
+        390
+       ],
+       [
+        4.5,
+        430
+       ],
+       [
+        5,
+        470
+       ],
+       [
+        6.25,
+        550
+       ],
+       [
+        12.5,
+        1060
+       ]
+      ],
       "CM4-MK": [
        [
         0.5,
@@ -8579,56 +8651,6 @@
        [
         12.5,
         1070
-       ]
-      ],
-      "CS6-PER": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
        ]
       ],
       "CE4-CHE": [
@@ -10741,6 +10763,28 @@
         450
        ]
       ],
+      "CS6-PER": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CM4-MK": [
        [
         10,
@@ -10764,28 +10808,6 @@
        ]
       ],
       "CJ4-BJ": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CS6-PER": [
        [
         10,
         130
@@ -11847,6 +11869,28 @@
         1500
        ]
       ],
+      "CS6-PER": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CM4-MK": [
        [
         1,
@@ -11870,28 +11914,6 @@
        ]
       ],
       "CJ4-BJ": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CS6-PER": [
        [
         1,
         60
@@ -12904,6 +12926,20 @@
         64
        ]
       ],
+      "CS6-PER": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        64
+       ]
+      ],
       "CM4-MK": [
        [
         1,
@@ -12919,20 +12955,6 @@
        ]
       ],
       "CJ4-BJ": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        64
-       ]
-      ],
-      "CS6-PER": [
        [
         1,
         8
@@ -13613,11 +13635,11 @@
      "cards": {}
     }
    },
-   "v": "v995"
+   "v": "v996"
   },
   "OPEN": {
-   "at": "2026-10-03T11:25:55.083Z",
-   "count": 11,
+   "at": "2026-10-03T12:24:11.917Z",
+   "count": 13,
    "byKey": {
     "CH6-SET|2026-10-03|220": {
      "d": "2026-10-03",
@@ -13632,6 +13654,35 @@
      "oweUnits": 2,
      "rid": "s229",
      "key": "CH6-SET|2026-10-03|220"
+    },
+    "CS6-PER|2026-10-03|80|rice": {
+     "d": "2026-10-03",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 10,
+     "t": 80,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 80,
+     "oweUnits": 10,
+     "pr": "rice",
+     "rid": "s230",
+     "key": "CS6-PER|2026-10-03|80|rice"
+    },
+    "CS6-PER|2026-10-03|160": {
+     "d": "2026-10-03",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 1.5,
+     "t": 160,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 160,
+     "oweUnits": 1.5,
+     "rid": "s231",
+     "key": "CS6-PER|2026-10-03|160"
     },
     "CH5-KLC|2026-10-02|90": {
      "d": "2026-10-02",
@@ -13802,10 +13853,10 @@
      "free": -9.5,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.8,
+     "rate": 5.87,
      "owedToYou": 510,
-     "promised": 12,
-     "short": 12
+     "promised": 13.5,
+     "short": 13.5
     },
     "oil": {
      "name": "Oil",
@@ -13834,10 +13885,10 @@
      "onHand": 71,
      "free": 71,
      "owedOut": 0,
-     "coverDays": 98.6,
-     "rate": 0.72,
+     "coverDays": 52.2,
+     "rate": 1.36,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 10,
      "short": 0
     },
     "spare": {
@@ -13859,13 +13910,13 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v995"
+   "v": "v996"
   },
   "TERMS": {
    "ceiling": 250,
    "holdDays": 1,
    "lockDays": 4,
-   "v": "v995"
+   "v": "v996"
   }
  }
 }
