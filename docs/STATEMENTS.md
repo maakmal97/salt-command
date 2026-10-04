@@ -647,7 +647,7 @@ live `rid:` key in the book, and in the week of reading both a placement's and a
 when KV refuses it, so a stored move never answers as a failure. A lost mark costs a wake, not a stage.
 In the order book the event, the order and the marks are one transaction.
 
-**THE SWITCH AND THE MOVE-IN (S10 10.3).** `ORDER_STORE` in `wrangler.stmt.jsonc`: `object+kv` is the
+**THE SWITCH AND THE MOVE-IN (S10 10.3).** Since 04 Oct 2026 `wrangler.stmt.jsonc` ships `object` (10.5): the KV writes have stopped. `ORDER_STORE` in `wrangler.stmt.jsonc`: `object+kv` is the
 week of reading both (the book holds the orders and is the one writer of their KV keys: its alarm writes
 each order it changes a second later, moves inside a second as one write, and a write KV refuses again a
 second after; a read the book cannot answer is read from KV; a move it cannot take answers 503 and is

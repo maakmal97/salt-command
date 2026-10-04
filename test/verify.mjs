@@ -31695,8 +31695,8 @@ await (async () => {
     /* ---- the switch as it ships ---- */
     const cfgText = readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8").replace(/\r/g, "").split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
     let cfg = null; try { cfg = JSON.parse(cfgText); } catch (e) { cfg = null; }
-    ok(!!cfg && cfg.vars.ORDER_STORE === "object+kv" && cfg.vars.ORDER_MOVE_IN === "1",
-      "wrangler.stmt.jsonc ships the week of reading both: ORDER_STORE object+kv, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
+    ok(!!cfg && cfg.vars.ORDER_STORE === "object" && cfg.vars.ORDER_MOVE_IN === "1",
+      "wrangler.stmt.jsonc ships the object road (10.5, 04 Oct 2026): ORDER_STORE object, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
   } finally { clock.uninstall(); }
 })();
 
@@ -51426,6 +51426,46 @@ await (async () => {
       "the amendment sheet sends its chosen size and replay id, never a client price or identity");
   } finally { dom.window.close(); }
   for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close();
+})();
+
+section("Maintenance guard on both Workers");
+await (async () => {
+  const TEXT = "The store is currently under maintenance. We are open for business again at 00:01 midnight of October 5.";
+  const deskM = (await import("../src/worker.js")).default, stmtM = (await import("../stmt/worker.js")).default;
+  const future = new Date(Date.now() + 3600e3).toISOString(), past = new Date(Date.now() - 3600e3).toISOString();
+  const req = (p, h) => new Request("https://k7m3p2.example" + p, { headers: h || {} });
+  /* a pass-through is any answer that is not the guard's, a throw from a bare env included */
+  const held = async (w, env, p, h) => { try { const r = await w.fetch(req(p, h), env, {}); return r.status === 503 && r.headers.has("retry-after"); } catch (e) { return false; } };
+  for (const [name, w, machine] of [["desk", deskM, { path: "/queue", head: { "X-Salt-Key": "k" } }], ["counter", stmtM, { path: "/desk/orders/last", head: { "X-Stmt-Desk": "k" } }]]) {
+    const env = { MAINTENANCE_UNTIL: future };
+    const get = async (p, h) => { try { const r = await w.fetch(req(p, h), env, {}); return { status: r.status, headers: r.headers, body: await r.text() }; } catch (e) { return { status: 0, headers: new Headers(), body: "" }; } };
+    const page = await get("/", { accept: "text/html,application/xhtml+xml" }), body = page.body;
+    ok(page.status === 503 && page.headers.get("retry-after") > 0 && page.headers.get("cache-control") === "no-store"
+      && /^text\/html/.test(page.headers.get("content-type")), name + ": a page request before the window ends answers 503 with Retry-After and no-store");
+    ok(body.includes("<p>" + TEXT + "</p>") && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
+      && !/<script|https?:\/\//.test(body), name + ": the page carries the exact words, a title and language, no script and no external load");
+    ok(page.headers.get("content-security-policy") === "default-src 'none'; style-src 'unsafe-inline'", name + ": the page's CSP is the closed one");
+    const js = await get("/queue", { accept: "application/json" });
+    ok(js.status === 503 && /"error":"maintenance"/.test(js.body) && /^application\/json/.test(js.headers.get("content-type")), name + ": a non-HTML request gets JSON {ok:false,error:maintenance}");
+    ok(!await held(w, { MAINTENANCE_UNTIL: past }, "/", { accept: "text/html" }), name + ": after the window the guard lets the request through");
+    ok(!await held(w, { MAINTENANCE_UNTIL: "" }, "/", { accept: "text/html" }) && !await held(w, { MAINTENANCE_UNTIL: "soon" }, "/", { accept: "text/html" })
+      && !await held(w, {}, "/", { accept: "text/html" }), name + ": empty, unparseable and absent do nothing");
+    ok(!await held(w, env, machine.path, machine.head), name + ": a keyed machine route passes during the window");
+  }
+  ok(!await held(deskM, { MAINTENANCE_UNTIL: future }, "/rev") && !await held(deskM, { MAINTENANCE_UNTIL: future }, "/stmt/rev")
+    && !await held(deskM, { MAINTENANCE_UNTIL: future }, "/_internal/maker/drafts"), "desk: /rev, /stmt/rev and /_internal/ pass during the window");
+  const on = { MAINTENANCE_UNTIL: future };
+  ok(await held(deskM, on, "/queue") && await held(stmtM, on, "/account"),
+    "a keyless request to a non-machine route is held on both Workers");
+  ok(await held(stmtM, on, "/account", { "Cf-Access-Jwt-Assertion": "forged" }) && await held(stmtM, on, "/", { "Cf-Access-Jwt-Assertion": "forged", accept: "text/html" }),
+    "counter: a forged Cf-Access header on a customer route is still held");
+  ok(!await held(stmtM, on, "/all") && !await held(stmtM, on, "/all/maker/x") && await held(stmtM, on, "/allx"),
+    "counter: /all and its sub-paths pass for Access to verify, and /allx does not");
+  ok(!await held(deskM, on, "/push/send", { "X-Push-Key": "k" }), "desk: the push wake's X-Push-Key passes during the window");
+  for (const f of ["wrangler.jsonc", "wrangler.stmt.jsonc"]) {
+    const t = readFileSync(join(REPO, f), "utf8");
+    ok(/^\s*"MAINTENANCE_UNTIL": "2026-10-04T16:01:00Z",/m.test(t), f + " carries MAINTENANCE_UNTIL 2026-10-04T16:01:00Z (00:01 MYT, 05 Oct 2026)");
+  }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
