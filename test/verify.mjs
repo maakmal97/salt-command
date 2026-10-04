@@ -8150,11 +8150,11 @@ await (async () => {
    skip; it is not room for a section to fall out. */
 
 /* ---- QR: proved against an independent encoder ----------------------------------- *
-   The twelve hashes below were produced by the `qrcode` npm package, NOT by tools/qr.mjs,
+   The sixteen hashes below were produced by the `qrcode` npm package, NOT by tools/qr.mjs,
    and pasted in. That package is deliberately not a dependency of this repo (tools/qr.mjs
    says why), so this is how its verdict is kept: the encoder was checked against it over
-   1,736 symbols covering every length from 1 to 213 bytes at all eight masks plus UTF-8, and
-   these twelve stay behind as the evidence. A mask is FORCED in each case, because the two
+   1,736 symbols covering every length from 1 to 213 bytes at all eight masks plus UTF-8 (lengths 214 to 362, versions 11 to 14, against the independent Arase encoder vendored in Codeqr-command), and
+   these stay behind as the evidence. A mask is FORCED in each case, because the two
    implementations legitimately differ on rule 4 of the mask penalty: this one follows the
    specification (the smaller of the two neighbouring multiples of five), the package rounds
    one way only, and on about one symbol in a hundred they choose differently. Both are valid,
@@ -8177,6 +8177,10 @@ await (async () => {
     { t: "q".repeat(150), mask: 1, size: 49, sha: "a53f2dbaa0559886" },
     { t: "s".repeat(180), mask: 4, size: 53, sha: "abd5791ac6d8e716" },
     { t: "w".repeat(213), mask: 6, size: 57, sha: "737113d5b1cccf47" },
+    { t: "a".repeat(216), mask: 3, size: 61, sha: "d8e19a4a6a69e0c0" },
+    { t: "b".repeat(250), mask: 3, size: 61, sha: "3737d9697a963be1" },
+    { t: "c".repeat(300), mask: 2, size: 69, sha: "3725acdb17ae34da" },
+    { t: "d".repeat(362), mask: 3, size: 73, sha: "dd49a28da54001eb" },
     { t: "café ☕ RM12.50", mask: 3, size: 25, sha: "29650b02bfb80b35" }
   ];
   const bad = [];
@@ -8187,7 +8191,7 @@ await (async () => {
   }
   ok(bad.length === 0, bad.length
     ? "these symbols no longer match the reference encoder: " + bad.join(", ")
-    : "all twelve golden symbols match the reference encoder, versions 1 to 10");
+    : "all sixteen golden symbols match the reference encoder, versions 1 to 14");
 
   const m = qrMatrix("https://salt-command.example/s/CX0-AA");
   const n = m.length;
@@ -8199,8 +8203,8 @@ await (async () => {
   ok(m.every(r => r.every(v => v === 0 || v === 1)), "every module resolved, none left unplaced");
 
   let threw = null;
-  try { qrMatrix("z".repeat(214)); } catch (e) { threw = e; }
-  ok(threw && /exceeds version 10/.test(threw.message), "a payload past version 10 is refused rather than truncated");
+  try { qrMatrix("z".repeat(363)); } catch (e) { threw = e; }
+  ok(threw && /exceeds version 14/.test(threw.message), "a payload past version 14 is refused rather than truncated");
 
   const svg = qrSvg("https://salt-command.example/s/CX0-AA", { size: 120 });
   ok(/^<svg [^>]*viewBox="0 0 \d+ \d+"/.test(svg) && svg.includes('width="120"'),

@@ -19,8 +19,8 @@
  * specified format, it never changes, and it is proved against an independent encoder in
  * test/verify.mjs rather than trusted.
  *
- * SCOPE, deliberately narrow. Byte mode, error correction level M, versions 1 to 10, which is up to
- * 213 bytes. A statement URL is about sixty characters and lands at version 3 or 4, so there is a
+ * SCOPE, deliberately narrow. Byte mode, error correction level M, versions 1 to 14, which is up to
+ * 362 bytes (version 10 held 213; a DuitNow payload runs to 216). A statement URL is about sixty characters and lands at version 3 or 4, so there is a
  * wide margin and no reason to carry the tables for forty versions.
  *
  * PURE. Nothing here reads a global, the document or the clock, which is what lets the same text
@@ -48,7 +48,11 @@ const VERSIONS = {
   7: { total: 196, ec: 18, groups: [[4, 31]], align: [6, 22, 38] },
   8: { total: 242, ec: 22, groups: [[2, 38], [2, 39]], align: [6, 24, 42] },
   9: { total: 292, ec: 22, groups: [[3, 36], [2, 37]], align: [6, 26, 46] },
-  10: { total: 346, ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] }
+  10: { total: 346, ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] },
+  11: { total: 404, ec: 30, groups: [[1, 50], [4, 51]], align: [6, 30, 54] },
+  12: { total: 466, ec: 22, groups: [[6, 36], [2, 37]], align: [6, 32, 58] },
+  13: { total: 532, ec: 22, groups: [[8, 37], [1, 38]], align: [6, 34, 62] },
+  14: { total: 581, ec: 24, groups: [[4, 40], [5, 41]], align: [6, 26, 46, 66] }
 };
 
 /* ---- GF(256) arithmetic, the field QR's Reed-Solomon lives in ----------------------
@@ -301,14 +305,14 @@ function qrMatrix(text, opts) {
   const bytes = Array.from(new TextEncoder().encode(String(text)));
   let version = opts.version || 0;
   if (!version) {
-    for (let v = 1; v <= 10; v++) {
+    for (let v = 1; v <= 14; v++) {
       const V = VERSIONS[v];
       const dataCw = V.groups.reduce((a, [n, c]) => a + n * c, 0);
       const overheadBits = 4 + (v < 10 ? 8 : 16);
       if (bytes.length * 8 + overheadBits <= dataCw * 8) { version = v; break; }
     }
   }
-  if (!version) throw new Error('qr: ' + bytes.length + ' bytes exceeds version 10 at level M');
+  if (!version) throw new Error('qr: ' + bytes.length + ' bytes exceeds version 14 at level M');
   const codewords = encodeData(bytes, version);
   const base = makeMatrix(version);
   const free = placeData(base, codewords, version);

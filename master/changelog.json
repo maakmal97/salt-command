@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1006",
+  "d": "04 Oct 2026",
+  "t": "THE QR ENCODER TAKES UP TO 362 BYTES, VERSIONS 1 TO 14",
+  "n": [
+   "<b>VERSION 11 TO 14 ADDED AT LEVEL M.</b> The one encoder stopped at 213 bytes (version 10), under the 216 bytes of an AmBank DuitNow payload. It now reaches 362 bytes. Every length from 1 to 362 bytes matches an independent encoder, and four new golden symbols pin versions 11 to 14. Nothing the desk or the Counter draws today changes: their codes stay at version 3 or 4."
+  ]
+ },
+ {
   "v": "v1005",
   "d": "04 Oct 2026",
   "t": "CH6-SET'S S229 RESTATED TO 1.5 UNITS AT RM160, PAID; 3 UNITS BORROWED FROM CM4-TO",

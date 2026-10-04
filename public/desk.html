@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1072e8f89fb67bbe";
+var SALT_BUILD_ID="ad4f8845a37f8b75";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4603,8 +4603,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
  * specified format, it never changes, and it is proved against an independent encoder in
  * test/verify.mjs rather than trusted.
  *
- * SCOPE, deliberately narrow. Byte mode, error correction level M, versions 1 to 10, which is up to
- * 213 bytes. A statement URL is about sixty characters and lands at version 3 or 4, so there is a
+ * SCOPE, deliberately narrow. Byte mode, error correction level M, versions 1 to 14, which is up to
+ * 362 bytes (version 10 held 213; a DuitNow payload runs to 216). A statement URL is about sixty characters and lands at version 3 or 4, so there is a
  * wide margin and no reason to carry the tables for forty versions.
  *
  * PURE. Nothing here reads a global, the document or the clock, which is what lets the same text
@@ -4632,7 +4632,11 @@ const VERSIONS = {
   7: { total: 196, ec: 18, groups: [[4, 31]], align: [6, 22, 38] },
   8: { total: 242, ec: 22, groups: [[2, 38], [2, 39]], align: [6, 24, 42] },
   9: { total: 292, ec: 22, groups: [[3, 36], [2, 37]], align: [6, 26, 46] },
-  10: { total: 346, ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] }
+  10: { total: 346, ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] },
+  11: { total: 404, ec: 30, groups: [[1, 50], [4, 51]], align: [6, 30, 54] },
+  12: { total: 466, ec: 22, groups: [[6, 36], [2, 37]], align: [6, 32, 58] },
+  13: { total: 532, ec: 22, groups: [[8, 37], [1, 38]], align: [6, 34, 62] },
+  14: { total: 581, ec: 24, groups: [[4, 40], [5, 41]], align: [6, 26, 46, 66] }
 };
 
 /* ---- GF(256) arithmetic, the field QR's Reed-Solomon lives in ----------------------
@@ -4885,14 +4889,14 @@ function qrMatrix(text, opts) {
   const bytes = Array.from(new TextEncoder().encode(String(text)));
   let version = opts.version || 0;
   if (!version) {
-    for (let v = 1; v <= 10; v++) {
+    for (let v = 1; v <= 14; v++) {
       const V = VERSIONS[v];
       const dataCw = V.groups.reduce((a, [n, c]) => a + n * c, 0);
       const overheadBits = 4 + (v < 10 ? 8 : 16);
       if (bytes.length * 8 + overheadBits <= dataCw * 8) { version = v; break; }
     }
   }
-  if (!version) throw new Error('qr: ' + bytes.length + ' bytes exceeds version 10 at level M');
+  if (!version) throw new Error('qr: ' + bytes.length + ' bytes exceeds version 14 at level M');
   const codewords = encodeData(bytes, version);
   const base = makeMatrix(version);
   const free = placeData(base, codewords, version);
@@ -9053,7 +9057,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1005","d":"04 Oct 2026","t":"CH6-SET'S S229 RESTATED TO 1.5 UNITS AT RM160, PAID; 3 UNITS BORROWED FROM CM4-TO","n":["<b>S229 RESTATED BY HAND ON HIS WORD.</b> CH6-SET's order is now 1.5 units of salt at RM160, his one-order set price and above the floor, RM160 cash received and 1.5 units delivered on 04 Oct. The RM220 cash at the counter was a mis-tap; no refund is due. The order stands delivered and paid in full, nothing outstanding.","<b>LOAN.</b> 3 units of salt borrowed from CM4-TO on 04 Oct, open, owed back in kind. The shelf rolls back 0.5 unit from the restated order and up 3 units for the loan."]}];
+const evolution=[{"v":"v1006","d":"04 Oct 2026","t":"THE QR ENCODER TAKES UP TO 362 BYTES, VERSIONS 1 TO 14","n":["<b>VERSION 11 TO 14 ADDED AT LEVEL M.</b> The one encoder stopped at 213 bytes (version 10), under the 216 bytes of an AmBank DuitNow payload. It now reaches 362 bytes. Every length from 1 to 362 bytes matches an independent encoder, and four new golden symbols pin versions 11 to 14. Nothing the desk or the Counter draws today changes: their codes stay at version 3 or 4."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9199,7 +9203,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Oct 2026, 21:04 KL';
+const LAST_UPDATED='04 Oct 2026, 23:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
