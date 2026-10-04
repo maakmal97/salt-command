@@ -5202,7 +5202,7 @@ function payDelays(sales,party,today,rules){
   (sales||[]).forEach(s=>{
     if(!s||s.cancelled||s.goodwill||!ownsCode(party,s.customer)||!(txOwed(s)>0))return;
     const held=txHandSteps(s);
-    if(!held.length||held.some(x=>!x.dated||!x.d))return;
+    if(!held.length||held.some(x=>!x.dated||!x.d))return;   /* an undated handover is skipped, a defaulted one too: it counts in no walk */
     const first=held[0].d,base={date:s.date||null,d:first};
     if(s.defaulted){out.push(Object.assign(base,{on:dayIso(dayNo(first)+lock),days:lock,open:false}));return;}
     const t=txDates(s);
@@ -5233,16 +5233,18 @@ function payDelays(sales,party,today,rules){
    (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
    RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
    it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
-   nothing (his answer of 29 Sep 2026). */
+   nothing (his answer of 29 Sep 2026). `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
+   whether any delay is in the history, and how many payments on time follow the last. */
 function lateOffer(delays,rules){
   const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
     win=R.lateWindowDays!=null?+R.lateWindowDays:90,rep=R.lateResetRepeat!=null?+R.lateResetRepeat:3;
   const kind=x=>x.days<=term?'prompt':x.days>=lock?'long':'short';
   const ev=(delays||[]).map(x=>Object.assign({k:kind(x)},x))
     .sort((a,b)=>String(a.on).localeCompare(String(b.on))||(a.k==='prompt')-(b.k==='prompt')||String(a.d).localeCompare(String(b.d)));
-  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null;
+  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null,everLate=false,run=0;
   for(const e of ev){
     const n=dayNo(e.on);
+    if(e.k==='prompt')run++;else{everLate=true;run=0;}
     if(on){
       if(e.k==='prompt'){if(++streak>=need){on=false;resetOn=n;lastShort=null;streak=0;}}
       else{streak=0;last=e;}
@@ -5255,7 +5257,7 @@ function lateOffer(delays,rules){
     else{lastShort=n;continue;}
     last=e;streak=0;lastShort=null;
   }
-  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on}:{on:false};
+  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on,late:everLate,run}:{on:false,late:everLate,run};
 }
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
@@ -8980,7 +8982,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1011","d":"05 Oct 2026","t":"ONE TRIP TO CE5-SA-R: SALT ABOVE ITS FLOOR, RICE BELOW ITS FLOOR ON HIS WORD","n":["<b>TWO ROWS, ONE TRIP, BOTH PAID AND DELIVERED 05 OCT.</b> Both rows go to CE5-SA-R as R2 resale on trip t1791145053619, with the RM40 delivery held on the salt row alone. The salt clears its floor. The rice is sold under its floor on his word. The draft costed salt at RM64 a unit but the inventory's own rate is RM60, so the salt cost is corrected.","<b>INVENTORY.</b> Salt falls by 1 unit and rice by 2 units. No lot landed, so the cost basis does not move."]}];
+const evolution=[{"v":"v1012","d":"05 Oct 2026","t":"A CUSTOMER WHO HAS PAID LATE IS PAID IN ADVANCE ON ACCEPT UNTIL THREE ARE ON TIME","n":["<b>PREPAY AFTER LATENESS (V5b2c).</b> The desk Worker's paid-in-advance verdict at Accept now also holds for a customer with any delay in all history, until three payments in a row are on time. It reads the engine's lateOffer walk (late and run), the same one the Tiers card reads, so there is no second walk. On time is within the term; a paid-in-advance order counts once handed over; an amount open past the term is late today. One verdict a sheet. The card names the reason (paid late before, N of 3 on time since).","<b>TERMS.</b> The sealed terms now carry lateResetRepeat and lateWindowDays from RULES, so the Worker reads the desk's rule. A missing day is an error, never a silent credit. The Counter page does not forecast it; nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9126,7 +9128,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 05:46 KL';
+const LAST_UPDATED='05 Oct 2026, 06:02 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20229,7 +20231,7 @@ function ordPvBlock(o){
   const flags=Array.isArray(j.flags)?j.flags:[];
   /* V5b2: the Worker's verdict on paying in advance, which his yes covers (it is in the digest) */
   const owedW=num(j.owedWith),ceil=num(j.ceiling);
-  const preT=ceil==null||owedW==null?'':`<p class="salt-approve__reason ordprepay">${j.prepay?'In advance':'On credit'}: ${fmt(owedW)} owed with this order, ${j.prepay?'over':'within'} ${fmt(ceil)}.${j.prepay?' They are asked to pay before it is handed over, and cash on handover is not offered.':''}</p>`;
+  const preT=ceil==null||owedW==null?'':`<p class="salt-approve__reason ordprepay">${j.prepay?'In advance':'On credit'}: ${j.late?'paid late before, '+num(j.late.run)+' of '+num(j.late.need)+' on time since; ':''}${fmt(owedW)} owed with this order, ${owedW>ceil+0.004?'over':'within'} ${fmt(ceil)}.${j.prepay?' They are asked to pay before it is handed over, and cash on handover is not offered.':''}</p>`;
   return ordPriceBlock(o,pv)+`<div class="ordpv" data-pv="${esc(o.id)}"><div class="kpis k2">${cardT+marT+flT+usT}</div>${preT}
     <p class="salt-approve__reason" style="margin-top:8px">The pending row, drafted now and stored nowhere. ${flags.length?'The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':':'The drafter raises no flag.'}</p>
     ${flags.length?`<div class="salt-approve__flags">${flags.map(f=>`<span class="salt-status salt-status--ember">${esc(f)}</span>`).join('')}</div>`:''}</div>`;

@@ -230,7 +230,7 @@ export function openSnapshot(w) {
    what a customer owes at once, and the term and the lock. A state key of its own, NEVER inside PRICING, whose digest
    tells a waiting preapproval's terms apart (src/drafter.js pricingOf). A master stating no ceiling carries none. */
 export function termsSnapshot(w) {
-  const r = reader(w)("JSON.stringify({ceiling:typeof RULES.creditCeilingRM==='number'?RULES.creditCeilingRM:null,holdDays:RULES.holdDays,lockDays:typeof RULES.lockDays==='number'?RULES.lockDays:null})");
+  const r = reader(w)("JSON.stringify({ceiling:typeof RULES.creditCeilingRM==='number'?RULES.creditCeilingRM:null,holdDays:RULES.holdDays,lockDays:typeof RULES.lockDays==='number'?RULES.lockDays:null,lateResetRepeat:typeof RULES.lateResetRepeat==='number'?RULES.lateResetRepeat:null,lateWindowDays:typeof RULES.lateWindowDays==='number'?RULES.lateWindowDays:null})");
   if (!r.ok) throw new Error("the terms did not read: " + r.why);
   return JSON.parse(r.value);
 }

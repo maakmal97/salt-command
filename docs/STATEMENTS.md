@@ -862,12 +862,21 @@ again, an order keeps the verdict it was agreed on. `TERMS.ceiling` is the maste
 carries `prepay: true` and the ack digest includes it, so his yes covers it and `applyPre` matches only what he saw; the
 order is moved with `prepay` and `decideDesk` sets or clears it, the desk's verdict being the order's from then on. The
 card says "In advance" or "On credit" with the figure before Accept, and "Paid in advance: RM x is still to pay before
-it is handed over" on an agreed order while it is unpaid. The phone decides nothing. **V5b2b: the page forecasts it.** The publish seals `RULES.creditCeilingRM` into each list
+it is handed over" on an agreed order while it is unpaid. The phone decides nothing.
+**V5b2b: the page forecasts it.** The publish seals `RULES.creditCeilingRM` into each list
 as `ceiling` (`ceilingRM` in `tools/make_statements.mjs`), outside the stamp, so a moved ceiling is no re-quote. The
 sheet adds the sealed To pay now and Coming up, their agreed orders whose row no sealed part is yet (`onStatement`: a now part by day, side and whole, a coming part by
 day, side and product, so an order accepted since the last publish still counts), and the sheet's lines at their
 goods, and over the ceiling says once under the sizes "Over RM 250 owed with this order: likely paid in advance."; the
 check carries "Likely in advance" and that the desk confirms it when it accepts. Nothing is sent at Place.
+
+**V5b2c: lateness joins the verdict**
+(his decisions of 29 Sep and 05 Oct 2026). `advanceOf` also reads the engine's `lateOffer` over `payDelays` on the book's
+rows (the one walk, its `late` and `run`, never a second): a customer with any delay in all history is in advance until
+`RULES.lateResetRepeat` (3, sealed in `TERMS` with `lateWindowDays`) payments on time in a row follow the last. On time is within `holdDays`; a paid-in-advance order
+counts on time once handed over; an amount open past the term is late today. The verdict is the party's, so a sheet reads
+one; the card says "paid late before, N of 3 on time since". The Counter page does not forecast it (only the ceiling).
+
 **One sheet takes several products** (pay terms V4b, his point 5 of 28 Sep 2026, his Q3: one order a product, sent
 together). The form draws every product on their list, its sizes under its mark (the segment of marks went with the
 one-product sheet), a size of each they want; a size tapped again comes off, one product on the list always keeps its

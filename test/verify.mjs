@@ -16808,6 +16808,11 @@ await (async () => {
   ok(r3.on && r3.why === "repeat" && r3.need === 3 && r5.on && r5.streak === 2 && !r6.on && !far.on,
     "a delay within ninety days of turning off turns it on again, and then it takes three payments on time in a row; past the window a lone short delay is nothing: "
     + JSON.stringify([r3, r5, r6, far]));
+  const lr = (xs) => { const s = L(xs); return [s.late, s.run]; };
+  ok(JSON.stringify([lr([]), lr([d("2026-09-01", 1)]), lr([d("2026-09-01", 2)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 1)]),
+    lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 5), d("2026-09-04", 0)]), lr([d("2026-06-01", 4), d("2026-06-02", 0)])]) === '[[false,0],[false,1],[true,0],[true,2],[true,1],[true,1]]',
+    "V5b2c reads the one walk for prepay: any delay in all history, and the payments on time in a row since the last, whether or not the offer is on: "
+    + JSON.stringify([lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 1)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 5), d("2026-09-04", 0)])]));
   ok(!L([d("2026-09-01", 1), d("2026-09-01", 5)]).on,
     "a delay settled on the day of a payment on time is walked before it, so the payment turns it off");
 
@@ -35734,15 +35739,28 @@ await (async () => {
   const row = (doc) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(Object.assign({ rid: "s8" + seq, qty: 1 }, doc)));
   for (const c of [C1, C2]) for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) row({ customer: c, date: d, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
   /* C1 owes RM 140 on the book: RM 100 of its own and RM 40 on its bucket; a cancelled row and a write-off count nothing */
-  row({ customer: C1, date: "2026-09-01", total: 100, deliveredQty: 1, deliveredOn: "2026-09-01" });
-  row({ customer: C1 + "-R", date: "2026-09-02", total: 40, deliveredQty: 1, deliveredOn: "2026-09-02", rev: "R2" });
+  /* handed over yesterday, so nothing here is past its term whatever day the suite runs (V5b2c reads the clock) */
+  const KL = (n) => new Date(Date.now() + 8 * 36e5 - n * 864e5).toISOString().slice(0, 10);
+  row({ customer: C1, date: KL(1), total: 100, deliveredQty: 1, deliveredOn: KL(1) });
+  row({ customer: C1 + "-R", date: KL(1), total: 40, deliveredQty: 1, deliveredOn: KL(1), rev: "R2" });
   row({ customer: C1, date: "2026-09-03", total: 500, cancelled: true, cancelledOn: "2026-09-03" });
   row({ customer: C1, date: "2026-09-04", total: 300, deliveredQty: 1, defaulted: true });
-  setState("roster", [C1, C2]); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
+  /* V5b2c: payment histories, each RM 20 row handed over `h` days ago and paid `p` days ago (null: still owed) */
+  const hist = (c, h, p) => row({ customer: c, date: KL(h), total: 20, deliveredQty: 1, deliveredOn: KL(h), ...(p == null ? {} : { cash: 20, paidOn: KL(p) }) });
+  const CL = { once: "CQ4-EF", two: "CQ5-GH", three: "CQ6-IJ", day1: "CQ7-KL", ahead: "CQ8-MN", open: "CQ9-OP", twice: "CR2-QR" }, UL = {};
+  Object.keys(CL).forEach((k, i) => { UL[k] = "q" + "abcdefgh"[i] + "cd-mnpq"; });
+  hist(CL.once, 40, 37);                                                            /* paid 3 days after the handover: late */
+  hist(CL.two, 40, 37); hist(CL.two, 30, 30); hist(CL.two, 20, 20);                  /* late, then two on time */
+  hist(CL.three, 40, 37); hist(CL.three, 30, 30); hist(CL.three, 20, 20); hist(CL.three, 10, 10);   /* late, then three on time */
+  hist(CL.day1, 20, 19);                                                            /* paid the day after: within the term */
+  hist(CL.ahead, 40, 37); hist(CL.ahead, 30, 32); hist(CL.ahead, 20, 25); hist(CL.ahead, 10, 15);   /* late, then three paid before the handover */
+  hist(CL.open, 3, null);                                                           /* owed three days after the handover: late today */
+  hist(CL.twice, 80, 77); hist(CL.twice, 70, 70); hist(CL.twice, 60, 57); hist(CL.twice, 50, 50); hist(CL.twice, 40, 40);   /* late, one on time, late, two on time */
+  setState("roster", [C1, C2].concat(Object.values(CL))); setState("PRICING", PRICING); setState("OPEN", { byKey: {}, position: {} });
   setState("TERMS", { ceiling: 250, holdDays: 1, lockDays: 4, v: "v900" });
   db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
   const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
-  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2 }));
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1, [U2]: C2, ...Object.fromEntries(Object.keys(CL).map((k) => [UL[k], CL[k]])) }));
   const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
     STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
   const call = async (path, body) => {
@@ -35753,6 +35771,31 @@ await (async () => {
   const place = async (u, qty, total) => (await O.placeOrder(senv, u, { product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "" })).order;
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   const view = (pv) => ({ prepay: pv.j.prepay, owedWith: pv.j.owedWith, ceiling: pv.j.ceiling });
+  /* V5b2c: a RM 10 order from each history, far under RM 250: only lateness can put it in advance */
+  const pvOf = async (k) => { const o = await place(UL[k], 1, 10); return (await call("/orders/" + o.id + "/preview", {})).j; };
+  const PL = {}; for (const k of Object.keys(CL)) PL[k] = await pvOf(k);
+  ok(PL.once.prepay === true && PL.once.late && PL.once.late.run === 0 && PL.once.owedWith === 10,
+    "a customer who paid once 3 days after the handover pays in advance on landing though RM 10 is far under the ceiling (all history counts): " + JSON.stringify([PL.once.prepay, PL.once.late]));
+  ok(PL.two.prepay === true && PL.two.late.run === 2,
+    "late, then two on time: still in advance, two of three: " + JSON.stringify([PL.two.prepay, PL.two.late]));
+  ok(PL.three.prepay === false && PL.three.late === null,
+    "late, then three on time in a row: back on credit: " + JSON.stringify([PL.three.prepay, PL.three.late]));
+  ok(PL.day1.prepay === false, "paid the day after the handover is within the term, so on time and on credit: " + JSON.stringify(PL.day1.prepay));
+  ok(PL.ahead.prepay === false, "paid-in-advance orders count as on time once handed over: late, then three paid before their handover, back on credit: " + JSON.stringify([PL.ahead.prepay, PL.ahead.late]));
+  ok(PL.open.prepay === true && PL.open.late.run === 0, "owed three days past the handover is late today: " + JSON.stringify([PL.open.prepay, PL.open.late]));
+  ok(PL.twice.prepay === true && PL.twice.late.run === 2, "a payment on time between two late ones does not clear it: the run counts from the last late one: " + JSON.stringify([PL.twice.prepay, PL.twice.late]));
+  /* the rule is the desk's: the run that clears it is TERMS.lateResetRepeat, as the desk's lateOf reads RULES */
+  setState("TERMS", { ceiling: 250, holdDays: 1, lockDays: 4, lateResetRepeat: 2, v: "v900" });
+  const two2 = await pvOf("two");
+  setState("TERMS", { ceiling: 250, holdDays: 1, lockDays: 4, v: "v900" });
+  ok(two2.prepay === false && PL.two.prepay === true, "two on time clear it when the sealed rule says two, and not when it says three: " + JSON.stringify([two2.prepay, PL.two.prepay]));
+  /* one verdict a sheet: two small lines of a late customer both read in advance, and Accept moves the order with it */
+  const sh = [await place(UL.once, 1, 10), await place(UL.once, 1, 10)];
+  for (const o of sh) { const k = "order:" + UL.once + ":" + o.id, v = JSON.parse(await skv.get(k)); v.sheet = "SHQ2"; await skv.put(k, JSON.stringify(v)); }
+  const pvS = await Promise.all(sh.map(async (o) => (await call("/orders/" + o.id + "/preview", {})).j));
+  ok(pvS.every((p) => p.prepay === true && p.owedWith === pvS[0].owedWith), "a sheet is one verdict for lateness too: both lines read in advance at one figure: " + JSON.stringify(pvS.map((p) => [p.prepay, p.owedWith])));
+  const one = await place(UL.once, 1, 10), pvO = (await call("/orders/" + one.id + "/preview", {})).j, acL = await call("/orders/" + one.id + "/accept", { hash: pvO.hash });
+  ok(acL.j.approved === true && (await orderOf(one.id)).prepay === true, "his yes on a late customer's order carries paid in advance onto the order: " + JSON.stringify({ status: acL.status, j: acL.j }).slice(0, 300));
 
   /* A. RM 140 owed, RM 100 more is within RM 250: on credit, and the order carries no prepay */
   const a = await place(U1, 1, 100);
@@ -35807,6 +35850,9 @@ await (async () => {
   const bk = { sales: [{ customer: C1, total: 900 }], state: { TERMS: { ceiling: 250 } } };
   const ag = advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, { again: true, orders: [] });
   const un = advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, {});
+  const noDay = advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, { orders: [] });
+  ok(/day was not read/.test(noDay.error || "") && advanceOf(bk, { id: "q1", u: U1, total: 10 }, C1, 0, { orders: [], today: "2026-10-05" }).prepay === true,
+    "with no day the lateness cannot be read, so nothing is decided (an error, never a silent credit): " + JSON.stringify(noDay));
   ok(ag.prepay === false && ag.owedWith === null && /not read/.test(un.error || ""),
     "an order offered again keeps the verdict it was agreed on, and with the site's orders unread nothing is decided: " + JSON.stringify({ ag, un }));
 
@@ -35822,7 +35868,7 @@ await (async () => {
   const { termsSnapshot } = await import("../tools/book.mjs");
   const { w } = await openMaster();
   const terms = termsSnapshot(w);
-  ok(terms.ceiling === 250 && terms.holdDays === 1 && terms.lockDays === 4, "the desk Worker's terms are the master's RULES: " + JSON.stringify(terms));
+  ok(terms.ceiling === 250 && terms.holdDays === 1 && terms.lockDays === 4 && terms.lateResetRepeat === 3 && terms.lateWindowDays === 90, "the desk Worker's terms are the master's RULES: " + JSON.stringify(terms));
   const card = JSON.parse(w.eval(`(function(){const o={id:'oq1',u:'x',status:'placed',qty:1,total:20,product:'salt',mode:'collect'};
     ORD_PV[o.id]={st:'ok',j:{row:{qty:1,total:20},prepay:true,owedWith:260,ceiling:250,flags:[]}};const a=ordPvBlock(o);
     ORD_PV[o.id]={st:'ok',j:{row:{qty:1,total:20},prepay:false,owedWith:240,ceiling:250,flags:[]}};const b=ordPvBlock(o);
@@ -35831,6 +35877,11 @@ await (async () => {
   ok(/^In advance: RM ?260(\.00)? owed with this order, over RM ?250(\.00)?\. They are asked to pay before it is handed over, and cash on handover is not offered\.$/.test(card[0])
     && /^On credit: RM ?240(\.00)? owed with this order, within RM ?250(\.00)?\.$/.test(card[1]),
     "the card says before Accept whether it is paid in advance and on what figure: " + JSON.stringify(card));
+  const lateCard = w.eval(`(function(){const o={id:'oq3',u:'x',status:'placed',qty:1,total:10,product:'salt',mode:'collect'};
+    ORD_PV[o.id]={st:'ok',j:{row:{qty:1,total:10},prepay:true,owedWith:10,ceiling:250,late:{run:1,need:3},flags:[]}};const d=document.createElement('div');d.innerHTML=ordPvBlock(o);
+    const p=d.querySelector('.ordprepay');return p?p.textContent:'';})()`);
+  ok(/^In advance: paid late before, 1 of 3 on time since; RM ?10(\.00)? owed with this order, within RM ?250(\.00)?\. They are asked/.test(lateCard),
+    "the card names lateness as the reason for paid in advance, with the run since: " + JSON.stringify(lateCard));
   /* Fable's review: and on an agreed order's card, where Handed is the very thing the rule holds back, while it is unpaid */
   const held = JSON.parse(w.eval(`(function(){const mk=(x)=>Object.assign({id:'oq2',u:'abcd-efgh',code:'CQ2-AB',status:'acknowledged',qty:1,total:100,delivery:0,paid:0,moved:0,
     product:'salt',mode:'collect',history:[{at:'2026-09-29T01:00:00Z',status:'acknowledged'}],msgs:[],payments:[],ledgerKey:'CQ2-AB|2026-09-29|100'},x);

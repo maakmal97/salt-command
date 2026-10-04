@@ -325,7 +325,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   and only ever raises. Cash on handover is withheld while that customer holds an unpaid advance, and on an
   order paid in advance (`prepay`: decided at Accept by the desk Worker, `advanceOf` in `src/orders.js`, when what the
   customer owes at once across every book with this order, the engine's `partyOwedRM` plus their agreed site orders not
-  on the book, is over `RULES.creditCeilingRM` read from `TERMS`; the verdict rides on the entry and in the ack digest;
+  on the book, is over `RULES.creditCeilingRM` read from `TERMS`; the verdict rides on the entry and in the ack digest; V5b2c: a customer who ever paid late is in advance too, until three payments on time in a row;
   Place stamps nothing, V3's unit cap retired in V5b2b, and the page only forecasts it off the ceiling sealed with
   its list, outside the stamp). A
   delivery's location never reaches a ledger note. The customer reads a whitelisted view of an order,

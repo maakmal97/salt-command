@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1012",
+  "d": "05 Oct 2026",
+  "t": "A CUSTOMER WHO HAS PAID LATE IS PAID IN ADVANCE ON ACCEPT UNTIL THREE ARE ON TIME",
+  "n": [
+   "<b>PREPAY AFTER LATENESS (V5b2c).</b> The desk Worker's paid-in-advance verdict at Accept now also holds for a customer with any delay in all history, until three payments in a row are on time. It reads the engine's lateOffer walk (late and run), the same one the Tiers card reads, so there is no second walk. On time is within the term; a paid-in-advance order counts once handed over; an amount open past the term is late today. One verdict a sheet. The card names the reason (paid late before, N of 3 on time since).",
+   "<b>TERMS.</b> The sealed terms now carry lateResetRepeat and lateWindowDays from RULES, so the Worker reads the desk's rule. A missing day is an error, never a silent credit. The Counter page does not forecast it; nothing prices."
+  ]
+ },
+ {
   "v": "v1011",
   "d": "05 Oct 2026",
   "t": "ONE TRIP TO CE5-SA-R: SALT ABOVE ITS FLOOR, RICE BELOW ITS FLOOR ON HIS WORD",

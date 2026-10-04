@@ -292,7 +292,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
      The Worker decides, from the book and the site's own orders, never the phone; the verdict rides on the entry and in
      the digest, so his yes covers it and the order is moved with it (ackOnApproval). */
-  const adv = advanceOf(book, agreed, code, agreed.delivery, ctx || {});
+  const adv = advanceOf(book, agreed, code, agreed.delivery, Object.assign({ today: new Date(now.getTime() + 8 * 36e5).toISOString().slice(0, 10) }, ctx || {}));
   if (adv.error) return { ok: false, status: 503, error: adv.error };
   if (adv.prepay) entry.prepay = true;
   const pricing = await pricingOf(book);
@@ -302,7 +302,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
     quote: goods, asked: +(+o.total).toFixed(2), set: price != null, delivery: agreed.delivery, cost,
     margin: cost && goods > 0 ? { rm: +(goods - cost.total).toFixed(2), pct: +((goods - cost.total) / goods * 100).toFixed(1) } : null,
     floor: fl ? { rm: fl.floor, at: fl.at, exact: fl.exact } : null,
-    usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling,
+    usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
     hash: await stageDigest("ack", entry, d, pricing) },
     cardAt(book.pricing, code, product, qty));
 }
@@ -315,6 +315,12 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
    read different figures, each at the money it is agreed for. Offered again, an order keeps the verdict it was agreed on, as it
    keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing. */
 const AGREED_ON_SITE = ["acknowledged", "ready"];
+function lateHistory(book, owner, today, terms) {
+  if (!today) return { error: "the day was not read, so paid in advance after lateness cannot be decided: try again in a minute" };
+  const E = POSITION_ENGINE, st = E.lateOffer(E.payDelays(book.sales || [], owner, today, terms), terms);
+  const need = typeof terms.lateResetRepeat === "number" ? terms.lateResetRepeat : 3;
+  return st.late && st.run < need ? { prepay: true, run: st.run, need } : { prepay: false };
+}
 export function advanceOf(book, o, code, delivery, ctx) {
   if (ctx.again) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
   const terms = (book.state && book.state.TERMS) || {};
@@ -332,7 +338,12 @@ export function advanceOf(book, o, code, delivery, ctx) {
   const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0)), 0);
   const mine = (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0));
   const owedWith = +(E.partyOwedRM(book.sales, owner) + agreed + lines + mine).toFixed(2);
-  return { prepay: owedWith > ceiling + 0.004, owedWith, ceiling };
+  /* V5b2c (his decisions of 29 Sep and 05 Oct 2026): a customer who has EVER paid late pays in advance until three payments
+     in a row are on time. It reads the engine's lateOffer, the one state machine, over payDelays on the book's rows: on time is
+     within the term, a paid-in-advance order counts once handed over, an amount open past the term is late today. */
+  const late = lateHistory(book, owner, ctx.today, terms);
+  if (late.error) return late;
+  return { prepay: owedWith > ceiling + 0.004 || late.prepay, owedWith, ceiling, late: late.prepay ? late : null };
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
 export async function previewOrder(env, id, body, now) {

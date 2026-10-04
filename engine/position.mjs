@@ -324,7 +324,7 @@ function payDelays(sales,party,today,rules){
   (sales||[]).forEach(s=>{
     if(!s||s.cancelled||s.goodwill||!ownsCode(party,s.customer)||!(txOwed(s)>0))return;
     const held=txHandSteps(s);
-    if(!held.length||held.some(x=>!x.dated||!x.d))return;
+    if(!held.length||held.some(x=>!x.dated||!x.d))return;   /* an undated handover is skipped, a defaulted one too: it counts in no walk */
     const first=held[0].d,base={date:s.date||null,d:first};
     if(s.defaulted){out.push(Object.assign(base,{on:dayIso(dayNo(first)+lock),days:lock,open:false}));return;}
     const t=txDates(s);
@@ -355,16 +355,18 @@ function payDelays(sales,party,today,rules){
    (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
    RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
    it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
-   nothing (his answer of 29 Sep 2026). */
+   nothing (his answer of 29 Sep 2026). `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
+   whether any delay is in the history, and how many payments on time follow the last. */
 function lateOffer(delays,rules){
   const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
     win=R.lateWindowDays!=null?+R.lateWindowDays:90,rep=R.lateResetRepeat!=null?+R.lateResetRepeat:3;
   const kind=x=>x.days<=term?'prompt':x.days>=lock?'long':'short';
   const ev=(delays||[]).map(x=>Object.assign({k:kind(x)},x))
     .sort((a,b)=>String(a.on).localeCompare(String(b.on))||(a.k==='prompt')-(b.k==='prompt')||String(a.d).localeCompare(String(b.d)));
-  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null;
+  let on=false,need=0,streak=0,why=null,last=null,resetOn=null,lastShort=null,everLate=false,run=0;
   for(const e of ev){
     const n=dayNo(e.on);
+    if(e.k==='prompt')run++;else{everLate=true;run=0;}
     if(on){
       if(e.k==='prompt'){if(++streak>=need){on=false;resetOn=n;lastShort=null;streak=0;}}
       else{streak=0;last=e;}
@@ -377,7 +379,7 @@ function lateOffer(delays,rules){
     else{lastShort=n;continue;}
     last=e;streak=0;lastShort=null;
   }
-  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on}:{on:false};
+  return on?{on:true,need,streak,why,days:last.days,open:!!last.open,since:last.on,late:everLate,run}:{on:false,late:everLate,run};
 }
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and

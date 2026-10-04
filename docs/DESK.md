@@ -79,7 +79,7 @@
   within the window after that turns it on again, and then it takes `RULES.lateResetRepeat` (3) on time in a row. It
   OFFERS a level down on the Tiers card ("Late payer: offered ...", with why), which he Sets or not; it prices nothing,
   and a late payer takes no promotion (loyal and bigger, the slowdown). The Counter says it in words off the sealed
-  `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet.
+  `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet. Prepay also reads this walk (V5b2c): any delay in all history puts an order in advance until three payments on time in a row.
 - **A level per band** (v670, his decisions of 16 Sep 2026). A held tier is one level name, or a band set
   `{small, mid, big}`: small is an order up to and including `PROFILE_RULE.smallUpTo` (1 unit), big from
   `bigFrom` (3), mid between, the cuts being the book's own quartiles of size. `PRICING_ENGINE.levelAt(held, q,
