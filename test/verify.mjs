@@ -21090,7 +21090,10 @@ await (async () => {
     await kv89.put("testfix:0000-0000", JSON.stringify({ v: 3, salt: rec89.wrap.salt }));
     await kv89.put("testfix:0000-0001", JSON.stringify({ v: 3, salt: "b2xk" }));
     await kv89.put("order:0000-0001:20260918-cccc", JSON.stringify({ id: "20260918-cccc", u: "0000-0001" }));
+    await kv89.put("thr:0000-0000", JSON.stringify({ id: "thread", u: TU89 }));   /* Step 7: its account thread */
+    await kv89.put("thr:aaaa-bbbb", JSON.stringify({ id: "thread", u: "aaaa-bbbb" }));
     const gone = await (await post89("/all/test", { make: false })).json();
+    ok(!(await kv89.get("thr:0000-0000")) && !!(await kv89.get("thr:aaaa-bbbb")), "and its account thread thr:<username> goes with it, another account's staying");
     ok(gone.ok && gone.made === false && gone.removed >= 5 && !(await kv89.get("u:0000-0000"))
       && !(await kv89.get("order:0000-0000:20260918-aaaa")) && !(await kv89.get("push:0000-0000:abc"))
       && !(await kv89.get("seen:0000-0000")) && !(await kv89.get("sent:2026-09-01:0000-0000"))
@@ -51216,6 +51219,83 @@ await (async () => {
     const t = readFileSync(join(REPO, f), "utf8");
     ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(t), f + " carries MAINTENANCE_UNTIL empty (guard off)");
   }
+})();
+
+section("S10 10.5: under object the book writes no KV, the store-check route is keyed and read-only, and the retirement tool deletes only the order keys");
+await (async () => {
+  const H = await import("../test/orderbook-harness.mjs");
+  const SW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const T = await import("../tools/orders-kv.mjs");
+  const { clock } = await import("../test/kvsim.mjs");
+  const u = "p5q6-r7s8", T0 = Date.UTC(2026, 9, 5, 2, 0, 0);
+  const kv = new KV(); let puts = 0; const put0 = kv.put.bind(kv); kv.put = async (...a) => { puts++; return put0(...a); };
+  const bk = H.orderBook({ STMT: kv, ORDER_STORE: "object", ORDER_MOVE_IN: "1" });
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object", ORDER_MOVE_IN: "1" };
+  const call = async (path, tok, body, hdr) => {
+    const h = Object.assign(tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : tok ? { "X-Stmt-Session": tok } : {}, hdr || {});
+    const r = await SW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, b: await r.json() };
+  };
+  const realLog = console.log; clock.install(); console.log = (...x) => { if (!/^orders?(book)?[: ]/.test(x.join(" "))) realLog(...x); };
+  try {
+    clock.set(T0);
+    const tok = await O.mintSession(env, u);
+    const a = (await call("/orders", tok, { product: "salt", qty: 2, mode: "collect", unit: 110, total: 220, week: "" })).b.order.id;
+    clock.add(5000); await call("/desk/orders/" + u + "/" + a, "desk", { status: "acknowledged" });
+    clock.add(5000);
+    /* a row left in `behind` from the week of reading both, with an older KV copy of the order beside it */
+    bk.db.prepare("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)").run(u, a);
+    const old = JSON.parse(JSON.stringify(bk.book.doc(u, a) && JSON.parse(bk.book.doc(u, a)))); old.status = "pending";
+    await kv.put("order:" + u + ":" + a, JSON.stringify(old)); puts = 0;
+    await call("/orders/" + a + "/method", tok, { method: "tngbiz" });
+    await bk.fire();
+    const leftBehind = bk.db.prepare("SELECT COUNT(*) n FROM behind").get().n;
+    bk.db.prepare("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)").run(u, a);
+    const chk = await (await bk.ns.get().fetch("https://orderbook/check", { method: "POST", body: "{}" })).json();
+    ok(puts === 0 && bk.state.alarmAt() == null && chk.retired === true && leftBehind === 0 && bk.db.prepare("SELECT COUNT(*) n FROM behind").get().n === 0
+      && JSON.parse(kv.m.get("order:" + u + ":" + a)).status === "pending",
+      "under object a move, the alarm and the check write no KV, arm no alarm and clear a leftover behind row: " + JSON.stringify({ puts, alarm: bk.state.alarmAt(), chk, key: JSON.parse(kv.m.get("order:" + u + ":" + a)).status }));
+
+    /* ---- the store-check route ---- */
+    await kv.put("order:" + u + ":ghost", JSON.stringify({ id: "ghost", u }));
+    kv.m.set("order:" + u + ":" + a, bk.book.doc(u, a)); puts = 0;
+    const evs = () => bk.db.prepare("SELECT COUNT(*) n FROM ev").get().n, ev0 = evs(), keys0 = [...kv.m.keys()].sort().join();
+    const noKey = await call("/desk/orders/store-check", null), wrong = await call("/desk/orders/store-check", null, undefined, { "X-Stmt-Desk": "nope" });
+    const post = await call("/desk/orders/store-check", "desk", {});
+    const rs = await call("/desk/orders/store-check", "desk");
+    ok(noKey.status === 401 && wrong.status === 401 && post.status === 405 && rs.status === 200 && rs.b.ok === true && rs.b.same === 1
+      && JSON.stringify(rs.b.kvOnly) === JSON.stringify(["order:" + u + ":ghost"]) && rs.b.pending === 0,
+      "the store-check route needs the desk key, answers GET only, and names each KV record the book lacks: " + JSON.stringify(rs.b));
+    ok(puts === 0 && evs() === ev0 && [...kv.m.keys()].sort().join() === keys0 && !kv.m.has(O.CHECK_KEY),
+      "and it writes nothing: no KV put, no book event, no key added or removed, no orderbook:check");
+    await kv.delete("order:" + u + ":ghost"); old.total = 1; await kv.put("order:" + u + ":" + a, JSON.stringify(old));
+    const ahead = (await call("/desk/orders/store-check", "desk")).b;
+    ok(ahead.kvAhead.length === 1 && T.verdict(ahead) && T.verdict(rs.b) && !T.verdict(Object.assign({}, rs.b, { kvOnly: [] })),
+      "a KV record the book never held is kvAhead, and the tool refuses on kvAhead or kvOnly alone");
+    const clean = Object.assign({}, rs.b, { kvOnly: [] });
+    ok(rs.b.retired === true && /not object/.test(T.verdict(Object.assign({}, clean, { retired: false }))) && /not object/.test(T.verdict(Object.assign({}, clean, { retired: undefined }))),
+      "the compare says retired under object, and the tool refuses a clean compare from a store that is not object");
+    /* the same compare asked of a book on object+kv answers retired false */
+    const bk2 = H.orderBook({ STMT: kv, ORDER_STORE: "object+kv", ORDER_MOVE_IN: "1" });
+    ok((await (await bk2.ns.get().fetch("https://orderbook/compare", { method: "POST", body: "{}" })).json()).retired === false, "and a book on object+kv answers retired false");
+  } finally { clock.uninstall(); console.log = realLog; }
+
+  /* ---- the tool's allow-list ---- */
+  const yes = ["order:a-b:1", "aclaim:a-b:x", "thr:a-b", "last-placed", "last-touched", "last-said", "last-theirs", "orderbook:check"];
+  const no = ["u:a", "ot:a", "rem:a", "push:a", "dev:a", "seen:a", "sent:a", "g:a", "gboard:a", "board:a", "tboard:a", "slip:a", "slipkey", "sheet", "tiers", "roster", "issue", "assoc",
+    "desk-waiting", "testfix:a", "pk:a", "pkd:a", "maker:hours", "last-seen", "order:", "q:orders", "", null];
+  ok(yes.every(T.allowed) && no.every((k) => !T.allowed(k)), "the tool's allow-list names the order, claim and thread keys and the four marks, and no other prefix");
+  const pr = T.restorePairs({ values: { "order:a:1": "{\"x\":1}", "thr:a": { id: "thread" } } });
+  ok(T.restorePairs({ values: { "order:a:1": "{}", "order:a:2": null } }).length === 1, "a restore skips a key that was absent when the backup was taken (null)");
+  ok(pr.length === 2 && pr[0].value === "{\"x\":1}" && pr[1].value === "{\"id\":\"thread\"}" && (() => { try { T.restorePairs({ values: { "u:a": "{}" } }); return false; } catch (e) { return true; } })(),
+    "a restore puts back string values and refuses a key outside the allow-list");
+  const fs = await import("node:fs"), os = await import("node:os"), path = await import("node:path");
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "okv-")), "b.json");
+  fs.writeFileSync(f, JSON.stringify({ values: { "order:a:1": "{}" } }));
+  ok(T.backupFault(f, ["order:a:1"]) === null && /not in the backup/.test(T.backupFault(f, ["order:a:1", "thr:a"])) && /no backup/.test(T.backupFault(f + "x", []))
+    && /hour old/.test(T.backupFault(f, ["order:a:1"], Date.now() + 2 * 3600000)), "a delete needs a backup that is fresh and holds every key about to go");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

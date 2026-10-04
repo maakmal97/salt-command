@@ -333,7 +333,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (`stmt/orderbook.js`) under a device-minted id, so a retry lands once and no writer erases another's;
   `ORDER_STORE` is the switch (`object+kv` the week of reading both, `kv` the way back, `object` after a
   clean week of KV `orderbook:check`). **Coming back from `kv`, raise `ORDER_MOVE_IN`**; forgotten, the `kv`
-  road's mark (`orderbook:road`) moves the book in again on its first request.
+  road's mark (`orderbook:road`) moves the book in again on its first request. **After `tools/orders-kv.mjs --delete`
+  the `kv` road is a way back only through `--restore <backup>`, and the restored KV is the store as it stood at the
+  flip to `object`, so a return to `kv` loses the moves since. `ORDER_MOVE_IN` is raised on the return to `object`,
+  not on the flip to `kv`.**
   Rejecting a draft a site order made is asked first and written onto that order, and its move is
   offered again under a fresh entry (the stage's own tap, or `/again`; `again` on `GET /orders`).
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at

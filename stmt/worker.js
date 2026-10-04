@@ -58,7 +58,7 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -917,6 +917,10 @@ async function handleDesk(request, env, p, m) {
     const push = await wakeEveryone(env);
     return json(Object.assign({ ok: true }, rec, { push }));
   }
+  if (p === "/desk/orders/store-check") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json(await storeCompare(env));
+  }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const q = new URL(request.url).searchParams;
@@ -1312,6 +1316,7 @@ async function unmakeTest(env) {
 }
 async function unmakeOne(env, t) {
   const gone = ["u:" + t, "seen:" + t, fixKey(t)];
+  gone.push("thr:" + t);   /* Step 7: its account thread, which the KV road kept at thr:<username> */
   for (const pre of ["order:" + t + ":", "aclaim:" + t + ":", "push:" + t + ":", "sent:", devPrefix(t)]) {   /* S6: and its claims */
     let cursor;
     do {

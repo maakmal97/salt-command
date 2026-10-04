@@ -135,13 +135,15 @@ const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
 /* ---- THE ROAD (S10, D10) ----------------------------------------------------------------------
  * ORDER_STORE in wrangler.stmt.jsonc, with the ORDERBOOK binding present, is THE SWITCH:
  *   unset, or "kv"   the KV road: every order a record under order:, read and written back whole. Also
- *                    the way back: KV is kept current behind the object, so this is a rollback.
+ *                    the way back: KV is kept current behind the object, so this is a rollback, UNTIL the old keys are
+ *                    deleted (tools/orders-kv.mjs --delete): after that the way back is `--restore <backup>` (KV as it stood at the flip to object), then
+ *                    ORDER_MOVE_IN raised on the return to object, not on the flip to kv.
  *   "object+kv"      THE WEEK OF READING BOTH (10.3): every order in the one Durable Object, as appended
  *                    events; every order it changes written to its KV key behind it, by the object; a read
  *                    the object cannot answer read from KV; and the site's hourly cron compares the two
  *                    (checkStores).
- *   "object"         after a clean week (10.5): KV order keys no longer written or read. Flipping it is the
- *                    whole of what is built of 10.5; deleting the old keys is not.
+ *   "object"         after a clean week (10.5): KV order keys no longer written or read; tools/orders-kv.mjs
+ *                    checks, backs up, deletes and restores them.
  * The object is one name for the whole site, BOOK_NAME, so every request reaches the same one. */
 export const BOOK_NAME = "site";
 export const onBook = (env) => !!(env && env.ORDERBOOK) && /^object/.test(String(env.ORDER_STORE || ""));
@@ -254,6 +256,7 @@ export const CHECK_KEY = "orderbook:check";
 export async function checkStores(env) {
   const at = new Date().toISOString(), r = await book(env, "check", {});
   if (!r || !r.ok) return { at, stoodDown: (r && r.error) || "no answer", frozen: !!(r && r.frozen) };
+  if (r.retired) return { at, retired: true };   /* 10.5: the store writes no KV, so there is nothing to check and nothing kept */
   const out = { at, orders: r.orders, same: r.same, pending: r.pending, repaired: r.repaired, kvAhead: r.kvAhead, kvOnly: r.kvOnly, bookOnly: r.bookOnly };
   let was = null;
   try { was = await env.STMT.get(CHECK_KEY, "json"); } catch (e) { was = null; }
@@ -261,6 +264,14 @@ export async function checkStores(env) {
   out.cleanSince = dirty ? null : ((was && was.cleanSince) || out.at);
   await putSoft(env, CHECK_KEY, JSON.stringify(out));
   return out;
+}
+
+/* 10.5: GET /desk/orders/store-check. Every KV order, account claim and thread against the book, as the book compares
+   them (stmt/orderbook.js `compare`), and nothing written: not the book, not KV, and not CHECK_KEY, which checkStores
+   overwrites. tools/orders-kv.mjs reads it before the old keys are deleted. */
+export async function storeCompare(env) {
+  if (!env.ORDERBOOK) return { ok: false, error: "no order book" };
+  return book(env, "compare", {});
 }
 
 /* WHAT A CUSTOMER'S OWN PAGE IS HANDED (24 Sep 2026). The record also carries the desk's

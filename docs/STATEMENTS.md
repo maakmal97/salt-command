@@ -632,7 +632,9 @@ week of reading both (the book holds the orders and is the one writer of their K
 each order it changes a second later, moves inside a second as one write, and a write KV refuses again a
 second after; a read the book cannot answer is read from KV; a move it cannot take answers 503 and is
 written nowhere); `kv` is the old road and the way back, KV a second or so behind the book, and the alarm
-still writes what is pending after the flip; `object` stops the KV writes. The first request after the deploy that sets it **moves the book in, once**: every KV
+still writes what is pending after the flip (**after the old keys are deleted, `kv` is a way back only through
+`tools/orders-kv.mjs --restore <backup>`; the restored KV is the store as it stood at the flip to `object`, so a return to
+`kv` loses the moves since, and `ORDER_MOVE_IN` is raised on the return to `object`, not on the flip to `kv`**); `object` stops the KV writes. The first request after the deploy that sets it **moves the book in, once**: every KV
 order and the shared and chase marks copied in, then **a minute in which every move answers 503 "try
 again in a minute"** (reads from the copy), so a Worker still on the old code during the rollout is the
 only writer, then a second copy of whatever KV says differently, and moves are taken. KV is only read.
@@ -653,8 +655,19 @@ book never held is `kvAhead` and left as it is**, the write behind leaving it to
 somebody's move; `kvOnly` and `bookOnly` name an order one side lacks, and leave it. **While the book moves in
 the check stands down** and writes nothing, and a chase in that minute marks its slot on the KV road, which the end pass
 takes in. The result is kept at KV `orderbook:check` with `cleanSince`, the start of an unbroken run of hours
-with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5,
-whose deletion of the old keys is not built).
+with `repaired`, `kvAhead`, `kvOnly` and `bookOnly` all empty. **Seven days after `cleanSince` is a clean week**: then `ORDER_STORE` goes to `object` (10.5).
+**Retiring the old keys (10.5, built).** Under `object` the book writes no KV: `check` and `writeBehind` do nothing, arm no
+alarm, and clear any `behind` row left from the week of reading both, so nothing recreates a key (`retired()`; `kv` is not
+retired, its alarm still writes what was pending). The keyed, read-only `GET /desk/orders/store-check` (`X-Stmt-Desk`,
+`storeCompare`, the book's `compare`) puts every KV `order:`, `aclaim:` and `thr:` record to the book and writes nothing, not
+even `orderbook:check`: `same`, `pending` (the book has held it and moved past), `kvAhead` (a state the book never held),
+`kvOnly`, `bookOnly`, and `retired` (true only when the store is `object`). Like every request to the book it runs the
+move-in first, so a newer `orderbook:road` mark can start a move-in and its minute of 503s before it answers; it still
+writes no KV. **`tools/orders-kv.mjs`**, laptop only, needs `STMT_URL` and `STMT_DESK_KEY`: `--check` refuses unless
+`retired` is true and no record is `kvAhead` or `kvOnly`; `--restore <backup>` puts a backup's keys back (`kv bulk put`); `--backup` writes every value to `10_Data/orders_kv_backup_<date>.json` (gitignored);
+`--delete` runs the check and needs a backup under an hour old holding every key, then bulk-deletes ONLY `order:`,
+`aclaim:`, `thr:`, `last-placed`, `last-touched`, `last-said`, `last-theirs` and `orderbook:check`, through one allow-list (`allowed`)
+that every list and delete passes. No other prefix is touched. Not yet run against live.
 **The customer is handed a view, not the record**: their order list and every answer to a move of
 theirs carry `customerView` (`CUSTOMER_FIELDS`, a whitelist), never `ledgerKey`, `queued`, `sync` or `rateAsk`; `rowOn`, the day the
 key names, is read off it so the page can tell which part of To pay now is the order's; `rating` (F10) travels.
