@@ -142,7 +142,7 @@ function inputResource(entry,book){
   return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
 }
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
-  handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,raw}){
+  handover=null,assoc=null,stream=null,downstream=null,note=null,second=null,more=null,coverFree=null,trip=null,raw}){
   const booking={customer:party};
   if(direction==='SELL'&&assoc&&stream==='R2')bookR2(booking,'customer',assoc,downstream);
   const state=txStat({total,qty,cash,delivery,deliveredQty:movedUnits});
@@ -156,7 +156,7 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
       +(downstream?', end buyer '+downstream:''):raw,
     payload:{mode:'new',product,direction,party,newId:null,date,qty,total,delivery,freight,cash,
       kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
-      handover,second,more,coverFree}};
+      handover,second,more,coverFree,...(trip?{trip}:{})}};
 }
 function tierSetEntry({at,tiers,raw}){
   const codes=Object.keys(tiers),copied={};
@@ -1227,6 +1227,25 @@ function claimAlloc(sales,party,amount,ready){
     out.push({key:ovKey(s),rid:s.rid||null,party:s.customer,date:s.date||null,owed:owed,rm:take});left=+(left-take).toFixed(2);}
   return {rows:out,left:Math.max(0,left)};
 }
+/* 05 OCT 2026, HIS DESIGN: ONE DELIVERY FOR A TRIP OF SEVERAL BOOKS. The rows one trip carries to one customer on one day
+   share `trip`, an id the desk mints at entry; the delivery stays on ONE of them, so txOwed, every reading of what is owed
+   and every statement read the charge once, as they did when the four earlier trips were folded by hand. A trip refuses a
+   second delivery, a second customer, a second date and a book twice. A lone row of a trip is no fault: it is today's
+   convention, and its siblings may still be waiting. */
+const TRIP_RE=/^t[0-9]{6,16}$/;
+function tripRows(sales,s){return s&&s.trip?(sales||[]).filter(x=>x&&x.trip===s.trip&&!x.cancelled):[];}
+function tripFault(rows){
+  const R=(rows||[]).filter(x=>x&&x.trip&&!x.cancelled);if(!R.length)return null;
+  const id=R[0].trip;
+  if(R.some(x=>!TRIP_RE.test(String(x.trip))))return 'the trip id is not one the desk mints';
+  if(R.some(x=>x.trip!==id))return 'these rows name more than one trip';
+  if(new Set(R.map(x=>x.customer)).size>1)return 'trip '+id+' names more than one customer, and a trip is one customer\'s';
+  if(new Set(R.map(x=>x.date||null)).size>1)return 'trip '+id+' spans more than one date, and a trip is one day\'s';
+  if(new Set(R.map(x=>x.product||'salt')).size<R.length)return 'trip '+id+' names a book twice, and a trip carries one row a book';
+  const dv=R.filter(x=>+x.delivery>0.005).length;
+  if(dv>1)return 'trip '+id+' carries a delivery on '+dv+' rows: one trip, one delivery, on one row';
+  return null;
+}
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
@@ -1288,7 +1307,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     &&envelope(v.names)&&(v.places===null||envelope(v.places));
   const fields=['at','expectedRevision','names','places','pair','code','kind','parent','geo','tiers','vault','addrVault',
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
-    'stream','associate','assoc','downstream','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
+    'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
@@ -1357,7 +1376,7 @@ return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputCon
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
         vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

@@ -112,6 +112,8 @@ const codeOf = n => n; /* the desk's codeOf is newIds[n]||n and newIds is {} pos
 /* v609, HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON. An associate's -R account holds
    what they bought to sell on, so their statement reads their code AND their bucket, the bucket's
    rows marked as bought for resale, and a bucket never has a statement of its own. */
+/* 05 Oct 2026: one delivery for a trip of several orders, said so beside its figure; never a product word (rule 2 of the site) */
+const tripSaid=(r)=>r.tripN>1?' for one trip of '+r.tripN+' orders':'';
 function stmtRows(party,o){
   o=o||{};
   const from=o.from?new Date(o.from):null, to=o.to?new Date(o.to):null;
@@ -209,6 +211,8 @@ function stmtRows(party,o){
       writtenOff:gift?0:writtenOff,
       defaultUncharged:s.defaulted&&!gift?Math.max(0,balance-writtenOff):0,
       unit:s.qty>0?+((s.total)/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
+      /* 05 Oct 2026: the rows of one trip share its one delivery, said once on the row that carries it */
+      ...(POSITION_ENGINE.tripRows(sales,s).length>1?{tripN:POSITION_ENGINE.tripRows(sales,s).length}:{}),
       cover:cover,
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
@@ -499,7 +503,7 @@ function stmtDoc(party,rows,o){
         +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
           +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
         +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
-          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery):'')+'</div>'
+          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'')+'</div>'
         +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(sub).join('')+'</div></div>';
     }
     /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
@@ -522,7 +526,7 @@ function stmtDoc(party,rows,o){
         +'</td>'
       +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))
         +(r.cover?'<div class="sub2">'+coverSaid()+'</div>':'')
-        +(r.delivery>0.009?'<div class="sub2">plus delivery '+money(r.delivery)+'</div>':'')+'</td>'
+        +(r.delivery>0.009?'<div class="sub2">plus delivery '+money(r.delivery)+tripSaid(r)+'</div>':'')+'</td>'
       +'<td class="r">'+stat+'</td></tr>';
   }).join('');
   return ['<!DOCTYPE html>','<html lang="en"><head><meta charset="utf-8">',

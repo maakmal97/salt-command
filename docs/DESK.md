@@ -11,6 +11,15 @@
   those cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG`
   per book), all v504. One floor per size since v502; `delivery` and `freight` typed per row
   since v503.
+- **One delivery for a trip of several books** (his design of 05 Oct 2026): the rows one trip
+  carries to one customer on one day share `trip` (`t<ms>`, minted by the Workbench when a sale
+  of more than one book carries a delivery); the delivery stays on the active book's row alone,
+  so `txOwed` and every reader of what is owed count it once. The engine's `tripFault` refuses a
+  second delivery, customer or date, and a book twice; the drafter (`tripCheck`, against the
+  book, the uncommitted drafts and the pass) and the fold's `plan` both ask it. **One tap under
+  Approve decides every pending row of the trip** (`tripStmts`, in the tapped row's own batch), never a claim or a site order's
+  row. The statement says "plus delivery RM x for one trip of n orders" on the carrier row. A
+  lone trip row is no fault: it is the convention the four earlier hand-folded trips used.
 - **The ask IS the ladder's last level since v656** (his decision of 15 Sep 2026), so the line
   above describes the DERIVED figure, which is kept beside it as `priceLadder().derived`.
   `pxPolicy` carries `tierRule`; the override is the one line in `priceLadder`, and row zero of

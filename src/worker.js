@@ -1138,7 +1138,7 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
   try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
-  const cur = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT status,entry,row FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return json({ ok: false, error: "no such draft" }, 404);
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
@@ -1159,9 +1159,14 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
   ).bind(decision, new Date().toISOString(), by, id);
   const releases = decision === "rejected" && await hasInputAdmission(env.SALT_LEDGER, id, JSON.parse(cur.entry || "{}"));
-  const upd = releases
-    ? (await env.SALT_LEDGER.batch([decide, admissionDecision(env.SALT_LEDGER, id, "rejected", true)]))[0]
-    : await decide.run();
+  /* 05 Oct 2026, HIS WORD: ONE TAP FOR THE WHOLE TRIP. Every other row of this row's trip still pending is decided the
+     same way IN THE SAME BATCH as the tapped row, one transaction, so a trip is decided whole or not at all. A claim and a
+     row a site order made are never decided here (each has its own card), so neither is swept in. */
+  const ts = await tripStmts(env.SALT_LEDGER, id, cur.row, decision, by);
+  const head = [decide].concat(releases ? [admissionDecision(env.SALT_LEDGER, id, "rejected", true)] : []);
+  const res = head.length + ts.stmts.length > 1 ? await env.SALT_LEDGER.batch(head.concat(ts.stmts)) : [await decide.run()];
+  const upd = res[0];
+  const trip = ts.ids.filter((x) => { const r = res[head.length + x.i]; return r && r.meta && r.meta.changes > 0; }).map((x) => x.id);
   /* 08 Sep 2026: THE SELECT ABOVE IS NOT THE UPDATE. Two taps in the same instant both read
      `pending`; the second UPDATE changes no row, and used to answer 200 with the first tap's
      decision in the body, and ring the stage for an approval that was in fact a rejection. */
@@ -1171,10 +1176,10 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   }
   /* S11: an approval sets going what any approval does; a rejection spends any yes that was waiting on this row */
   let moved = [];
-  if (decision === "approved") moved = await afterApproval(env, ctx, [id]);
+  if (decision === "approved") moved = await afterApproval(env, ctx, [id].concat(trip));
   let dropped = 0;
   if (decision === "rejected") {
-    try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
+    try { dropped = await dropQueued(env, [id].concat(trip)); } catch (e) { /* the decision stands; the POST filter catches a re-post */ }
     try { await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE (entry_at=?2 OR draft_id=?2) AND status IN ('waiting','differs')").bind(new Date().toISOString(), id).run(); }
     catch (e) { /* a store before migrations/0011 has no yes to spend */ }
   }
@@ -1186,7 +1191,25 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (decision === "rejected" && d && d.entry && d.entry.orderId) {
     try { order = await rejectedOnOrder(env, d.entry, new Date().toISOString()); } catch (e) { order = false; }
   }
-  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }, moved.length ? { moved } : {}));
+  return json(Object.assign({ ok: true, draft: d, dropped }, order === undefined ? {} : { order }, moved.length ? { moved } : {}, trip.length ? { trip } : {}));
+}
+/* The rows of a trip decided with the one tapped: pending, uncommitted sales of the same trip, neither a claim nor made by
+   a site order. Returns the statements to run in the tapped row's batch, and where each row's UPDATE sits in them. */
+export async function tripStmts(db, id, rowText, decision, by) {
+  let tripId = null;
+  try { tripId = (JSON.parse(rowText || "{}") || {}).trip || null; } catch (e) { tripId = null; }
+  if (!tripId) return { stmts: [], ids: [] };
+  const sib = await db.prepare(
+    "SELECT id,entry FROM draft WHERE status='pending' AND committed_at IS NULL AND collection='sales' AND id<>?1 AND json_extract(row,'$.trip')=?2"
+  ).bind(id, tripId).all();
+  const rows = (sib.results || []).filter((r) => { try { const e = JSON.parse(r.entry || "{}"); return !e.claim && !e.orderId; } catch (e) { return false; } });
+  const at = new Date().toISOString(), stmts = [], ids = [];
+  for (const r of rows) {
+    ids.push({ id: r.id, i: stmts.length });
+    stmts.push(db.prepare("UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'").bind(decision, at, by, r.id));
+    if (decision === "rejected" && await hasInputAdmission(db, r.id, JSON.parse(r.entry || "{}"))) stmts.push(admissionDecision(db, r.id, "rejected", true));
+  }
+  return { stmts, ids };
 }
 
 /* Marked by the commit run once the row is actually in the master, so an approved row is not

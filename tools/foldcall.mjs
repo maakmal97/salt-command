@@ -110,7 +110,7 @@ export function dossier(book, staged, p, w) {
         try {
           const L = evalJSON(w, `priceLadder(${+row.qty})`);
           d.ladder = { size: +row.qty, floor: r2(L.floor && L.floor.total), ask: r2(L.ask && L.ask.total), ceiling: r2(L.ceiling && L.ceiling.total) };
-          d.goods = r2((+row.total || 0) - (+row.delivery || 0));
+          d.goods = r2(+row.total || 0);   /* 05 Oct 2026: the total IS the goods since v727; the delivery sits beside it */
           d.creditCap = evalJSON(w, `creditCapFor(${JSON.stringify(prod)}, ${d.party.associate ? "'associate'" : "'retail'"})`);
         } catch (e) { d.ladder = null; }
       }

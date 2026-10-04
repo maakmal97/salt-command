@@ -1450,6 +1450,13 @@ export function draftRow(entry, book) {
     return { skip: `this says the supplier delivered the lot and charges RM ${round(pay.freight)} of freight: their delivery is their cost, so clear the freight or say it was collected` };
   if (dir === "BUY" && pay.handover === "collected" && isNum(pay.freight) && !(pay.freight > 0.005))
     return { skip: "this says the lot was collected, so it cost a trip: enter the freight, or leave the handover unstated" };
+  /* 05 Oct 2026, HIS DESIGN: ONE DELIVERY FOR A TRIP OF SEVERAL BOOKS. The id travels onto the row; whether the trip
+     holds together is asked against its siblings by tripCheck, where the drafter can see them. */
+  if (pay.trip != null) {
+    if (dir !== "SELL") return { skip: "a trip carries a delivery to a customer, and this entry is a purchase" };
+    if (!POSITION_ENGINE.TRIP_RE.test(String(pay.trip))) return { skip: `the trip id is not one the desk mints: ${pay.trip}` };
+    row.trip = String(pay.trip);
+  }
   /* v377: THE REST OF THE ROW, when the sheet stated it. The Workbench names eleven fields in
      the queue contract; the order sheet renders the whole correctable table, so anything past
      those eleven arrives in `more` and is checked HERE, field by field, against the same
@@ -1587,6 +1594,8 @@ export function draftRow(entry, book) {
         : "")
       + `, RM ${round(rate)}/unit.`,
     dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(goodsTotal - priced.cost * qty)} on the goods at ${round(margin, 1)}%`}.` : "",
+    row.trip ? (carryRM > 0.005 ? `One row of trip ${row.trip}: it carries the trip's one delivery, and approving it approves every row of the trip.`
+      : `One row of trip ${row.trip}: the trip's delivery sits on another of its rows, so none is charged here, and approving it approves every row of the trip.`) : "",
     nothingMoved
       ? `Nothing was paid and nothing moved, so the row is PENDING, dated ${row.date} as the day it was agreed: it draws no stock and books no revenue until something moves.`
       : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(owed)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,
@@ -1663,6 +1672,23 @@ export async function draftedOf(db, ats) {
   return known;
 }
 
+/* 05 Oct 2026: A TRIP ROW IS CHECKED AGAINST ITS SIBLINGS wherever they stand: on the book, drafted and not yet
+ * committed (rows this pass made included, since each is inserted before the next is drafted), and, on a dry run that
+ * inserts nothing, the rows it would make. Read only when the row names a trip. A row with no delivery whose trip has no
+ * row carrying one yet is FLAGGED: the delivery's row may have been refused, and this one would land with no charge. */
+export async function tripCheck(db, book, row, extra, flags) {
+  if (!row || !row.trip) return null;
+  const rs = await db.prepare(
+    "SELECT row FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved') AND collection='sales' AND json_extract(row,'$.trip')=?1"
+  ).bind(row.trip).all();
+  const sibs = (book.sales || []).filter((s) => s && s.trip === row.trip)
+    .concat((rs.results || []).map((r) => JSON.parse(r.row)), (extra || []).filter((r) => r && r.trip === row.trip));
+  const fault = POSITION_ENGINE.tripFault(sibs.concat([row]));
+  if (!fault && flags && !sibs.concat([row]).some((s) => +s.delivery > 0.005))
+    flags.push(`No row of trip ${row.trip} carrying its delivery has been drafted, so this row would land with no delivery charged: if the delivery's row was refused, reject this one too and enter the trip again.`);
+  return fault;
+}
+
 /* ---- a dry run ----------------------------------------------------------------------- */
 /* The same decisions, stored nowhere. This is how the drafter is proved against the real book
  * without putting a row in front of anyone: it returns exactly what it WOULD write. */
@@ -1684,7 +1710,9 @@ export async function dryRunDrafter(env) {
     const entry = byAt.get(at);
     const admission = await checkInputAdmission(env.SALT_LEDGER, entry, book);
     const fault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    const d = fault ? { skip: fault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    let d = fault ? { skip: fault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, out.would.map((w) => w.row), d.flags) : null;
+    if (tf) d = { skip: tf };
     if (d.skip) out.skipped.push({ at, why: d.skip });
     else {
       out.would.push({ at, collection: d.collection, row: d.row, reasoning: d.reasoning, flags: d.flags });
@@ -1862,7 +1890,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     if (already.has(at)) { out.already++; continue; }
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    const d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    let d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
+    if (tf) d = { skip: tf };
     if (d.skip) {
       out.skipped.push({ at, why: d.skip });
       /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */

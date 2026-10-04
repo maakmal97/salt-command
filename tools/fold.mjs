@@ -344,10 +344,17 @@ export function plan(book, staged, notes) {
       const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
       if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book${dup.rid ? "" : " or in this batch"}, so this would be a replay` }); continue; }
       if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
+      /* 05 Oct 2026: A TRIP HOLDS TOGETHER on the book it folds into: its rows there and in this batch, with this one */
+      if (it.collection === "sales" && r.trip) {
+        const tf = E.tripFault((book.sales || []).filter((x) => x && x.trip === r.trip)
+          .concat(out.items.filter((e) => e.append === "sales" && e.row && e.row.trip === r.trip).map((e) => e.row), [r]));
+        if (tf) { out.refused.push({ id: it.id, why: tf }); continue; }
+        entry.does.push(`one row of trip ${r.trip}${+r.delivery > 0.005 ? ", carrying its one delivery" : ", its delivery on another row"}`);
+      }
       entry.append = it.collection; entry.row = r;   /* the row, so a later item in this batch can see it */
       entry.does.push(`append to ${it.collection} with its note`);
       const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));
-      if (moved > 0.009) out.moves.push({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" });
+      if (moved > 0.009) out.moves.push(Object.assign({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" }, it.collection === "sales" && r.trip ? { trip: r.trip } : {}));
     } else if (it.collection === "count") {
       entry.count = { product: r.product || "salt", qty: +r.qty, date: r.date || TODAY, was: r.was, drift: r.drift };
       entry.does.push(`set the stated ${entry.count.product} inventory to ${entry.count.qty} and move COUNT_ON.${entry.count.product} to ${entry.count.date}`);
@@ -462,6 +469,19 @@ export function plan(book, staged, notes) {
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
     if (resourceEntry) reservedEntries.push(resourceEntry);
+  }
+  /* 05 Oct 2026: A TRIP IS STAGED TOGETHER. A refused row of a trip holds back its siblings in this batch, so the row that
+     carries the delivery is never left behind while the others land with no charge. They stay staged with it. */
+  const tripOf = new Map(rows.map((it) => [it.id, it.collection === "sales" && it.row && it.row.trip]));
+  const held = new Set(out.refused.map((x) => tripOf.get(x.id)).filter(Boolean));
+  if (held.size) {
+    out.items = out.items.filter((e) => {
+      const tr = e.append === "sales" && e.row && e.row.trip;
+      if (!tr || !held.has(tr)) return true;
+      out.refused.push({ id: e.id, why: `another row of trip ${tr} was refused, so this one waits with it` });
+      return false;
+    });
+    out.moves = out.moves.filter((m) => !(m.trip && held.has(m.trip)));
   }
   return out;
 }

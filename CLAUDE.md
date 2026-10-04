@@ -45,7 +45,8 @@ a Cloudflare Access login, his decision of 05 Oct 2026; the Worker's own check s
      leakage**, one per size, with no delivery and no time in it. A sale carries `delivery`, typed per
      row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
      typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
-     delivery, the engine's `txOwed`**; nothing reads the total less the cash.
+     delivery, the engine's `txOwed`**; nothing reads the total less the cash. **A trip of several
+     books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
    - **THE BOARD IS THE LADDER.** A stranger is quoted the LAST level, Silver: `pxPolicy.tierRule`
      feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
      ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is

@@ -45678,6 +45678,156 @@ await (async () => {
   try { w.close(); } catch (e) { }
 })();
 
+section("05 Oct 2026: one delivery for a trip of several books, held once and decided in one tap");
+await (async () => {
+  /* HIS DESIGN OF 05 OCT 2026: the rows one trip carries to one customer on one day share `trip`, the delivery stays on ONE
+     of them, and one tap under Approve decides every row of the trip. What is owed reads the charge once because only one
+     row holds it. Invented codes only. Each assertion was proved red by mutation, one at a time. */
+  const E = (await import("../engine/position.mjs")).default;
+  const T = "t1759622400000", row = (product, extra) => Object.assign({ trip: T, customer: "CZ9-TRP", date: "2099-10-05", product, qty: 1, total: 100 }, extra || {});
+
+  /* ---- the engine: the one rule ---- */
+  ok(E.tripFault([row("salt", { delivery: 40 }), row("rice")]) === null, "a trip of two books with one delivery holds together");
+  ok(/delivery on 2 rows/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { delivery: 5 })]) || ""), "a second delivery on one trip is refused");
+  ok(/more than one customer/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { customer: "CZ9-OTH" })]) || ""), "a trip is one customer's");
+  ok(/more than one date/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { date: "2099-10-06" })]) || ""), "and one day's");
+  ok(/names a book twice/.test(E.tripFault([row("salt", { delivery: 40 }), row("salt", { qty: 2 })]) || ""), "and carries one row a book");
+  ok(/not one the desk mints/.test(E.tripFault([row("salt", { trip: "x9" })]) || ""), "and its id is one the desk mints");
+  ok(E.partyOwedRM([row("salt", { delivery: 40 }), row("rice", { total: 10 })], "CZ9-TRP") === 150, "and what is owed counts the delivery once: goods 110 plus 40");
+
+  /* ---- the Workbench (a second fill dated a day later, so the first, overlaid on the book, is not its twin): two books with a delivery are one trip, the charge on the active book alone ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
+  w.eval("qPost=function(){return Promise.resolve(true)};qDownload=function(){return true};qFlush=function(){return Promise.resolve(true)};");
+  w.eval("switchTab('add');wbMode='new';wbApply();");
+  w.eval("(function(){var t=document.querySelector('.ptile[data-p=\"oil\"]');t.click();var s=document.querySelector('.ptile[data-p=\"salt\"]');s.click();})()");
+  const fill = (deliv) => "(function(){queue.length=0;"
+    + "var s=function(id,v){var e=document.getElementById(id);if(!e)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};"
+    + "s('wbPartyTxt','CA2-SEN');s('wbDate','2026-09-2" + (deliv ? '2' : '3') + "');s('wbHand','delivered');"
+    + "s('wbQty','1');s('wbTotal','130');s('wbCash','" + (130 + deliv) + "');s('wbUnits','1');s('wbDelivery','" + deliv + "');"
+    + "s('wbQty_oil','2');s('wbTotal_oil','10');s('wbCash_oil','10');s('wbUnits_oil','2');return 1;})()";
+  const rec = "(function(){document.getElementById('wbRec').click();"
+    + "return queue.map(function(q){return {at:q.at,p:q.payload.product,trip:q.payload.trip||null,dv:q.payload.delivery};});})()";
+  w.eval(fill(40));
+  const tr = rd(rec), a0 = tr[0] || {}, a1 = tr[1] || {};
+  ok(tr.length === 2 && E.TRIP_RE.test(String(a0.trip)) && a0.trip === a1.trip, "two books with a delivery queue as one trip, one id on both: " + JSON.stringify(tr));
+  ok(a0.dv === 40 && a1.dv === 0, "and the delivery rides on the active book's entry alone: " + JSON.stringify(tr));
+  ok(a0.at && a1.at && a0.at !== a1.at, "and the two entries never share a moment: " + JSON.stringify(tr.map((x) => x.at)));
+  w.eval(fill(0));
+  const nt = rd(rec);
+  ok(nt.length === 2 && nt.every((x) => x.trip === null), "with no delivery there is no trip, as before: " + JSON.stringify(nt));
+  const card = String(w.eval("AP_DRAFTS=[{id:'a',collection:'sales',row:{customer:'CA2-SEN',product:'salt',qty:1,total:130,delivery:40,trip:'" + T + "'},flags:[]},{id:'b',collection:'sales',row:{customer:'CA2-SEN',product:'oil',qty:2,total:10,trip:'" + T + "'},flags:[]}];apCard(AP_DRAFTS[0])"));
+  ok(/Trip t1759622400000/.test(card) && /2 rows waiting \(salt, oil\)/.test(card) && /decides every row of the trip/.test(card), "the Approve card says the one tap decides the whole trip: " + card.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 200));
+  /* a resale carries its extras now, each booked through the same associate and stream, one trip for the friend's buyer */
+  const bkW = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const withR = (bkW.associates || []).find((a) => bkW.roster.includes(a + "-R"));
+  const rs2 = rd("(function(){queue.length=0;var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};"
+    + "wbMode='new';wbDir='SELL';wbStream='R2';wbApply();var a=document.getElementById('wbAssoc');a.checked=true;wbApply();"
+    + "set('wbAssocSel'," + JSON.stringify(withR) + ");set('wbDown','');set('wbDate','2026-09-24');set('wbHand','delivered');"
+    + "set('wbQty','1');set('wbTotal','130');set('wbCash','170');set('wbUnits','1');set('wbDelivery','40');"
+    + "set('wbQty_oil','2');set('wbTotal_oil','10');set('wbCash_oil','10');set('wbUnits_oil','2');"
+    + "wbPreview();try{wbRecord();}catch(e){}a.checked=false;"
+    + "return {msg:(document.getElementById('wbOk')||{}).textContent||'',q:queue.map(function(q){var p=q.payload;return {p:p.product,party:p.party,assoc:p.assoc,stream:p.stream,trip:p.trip||null,dv:p.delivery};})};})()");
+  ok(withR && rs2.q.length === 2 && rs2.q.every((x) => x.assoc === withR && x.stream === "R2" && x.trip && x.trip === rs2.q[0].trip) && rs2.q[0].dv === 40 && rs2.q[1].dv === 0,
+    "a resale with a second book queues both through the associate as R2, one trip, the delivery on the first: " + JSON.stringify(rs2));
+  try { w.close(); } catch (e) { }
+
+  /* ---- the drafter and the tap, on the real migrations ---- */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the trip was not driven against the real schema"); }
+  else {
+    const { runDrafter } = await import("../src/drafter.js");
+    const book = {
+      pricing: { v: "vT", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } }, rice: { stockCost: 5, replCost: 5, floors: {} } } },
+      purchases: [{ date: "2099-09-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2099-09-13", receivedQty: 12.5 },
+        { date: "2099-09-13", supplier: "SQ2-VOX", product: "rice", qty: 10, total: 50, receivedOn: "2099-09-13", receivedQty: 10 }],
+      sales: [],
+      state: { roster: ["CZ9-TRP", "SQ2-VOX"], QUEUE_COMMITTED: "2099-10-01T00:00:00.000Z" }
+    };
+    const sale = (at, product, total, delivery) => ({ at, payload: { mode: "new", direction: "SELL", party: "CZ9-TRP", qty: 1, total, cash: total + delivery, kg: 1,
+      date: "2099-10-05", product, delivery, handover: "delivered", trip: T } });
+    const batches = [];
+    const world = () => {
+      const db = new DatabaseSync(":memory:");
+      for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+      for (const c of ["sales", "purchases"]) book[c].forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run(c, i, c + i, JSON.stringify(r)));
+      for (const [k, v] of Object.entries(Object.assign({ PRICING: book.pricing }, book.state))) db.prepare("INSERT INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(v));
+      db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'vT',NULL)").run();
+      const D1 = { prepare(sql) { const st = db.prepare(sql);
+        const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+          first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+        const self = mk([]); self.bind = (...a) => mk(a); return self; },
+        async batch(list) { batches.push(list.length); const out = []; for (const s of list) out.push(s.run()); return out; } };
+      return { db, D1 };
+    };
+    const pass = async (entries) => { const wd = world(), kv = new KV();
+      await kv.put("q:phone", JSON.stringify({ device: "phone", queue: entries }));
+      return Object.assign(wd, { kv, r: await runDrafter({ SALT_QUEUE: kv, SALT_LEDGER: wd.D1 }) }); };
+    const twoDv = await pass([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 5)]);
+    const why2 = JSON.stringify(twoDv.r.skipped);
+    ok(twoDv.r.drafted === 1 && twoDv.r.skipped.length === 1 && /delivery on 2 rows/.test(why2), "the drafter refuses the second row of a trip that would carry a second delivery: " + JSON.stringify(twoDv.r));
+    const good = await pass([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+    const rows = good.db.prepare("SELECT id,row,flags FROM draft ORDER BY id").all().map((x) => Object.assign(JSON.parse(x.row), { _f: x.flags }));
+    ok(!/carrying its delivery has been drafted/.test(rows.map((x) => x._f).join(" ")), "a trip whose delivery row drafted flags neither row: " + rows.map((x) => x._f).join(" | "));
+    rows.forEach((x) => delete x._f);
+    ok(good.r.drafted === 2 && rows.length === 2 && rows.every((x) => x.trip === T) && rows[0].delivery === 40 && !rows[1].delivery, "a trip with one delivery drafts both rows, each carrying the id: " + JSON.stringify({ r: good.r, rows }));
+
+    /* the tap: one approval takes the trip, never a site order's row */
+    good.db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES (?,'pending','sales',?,?,'site','suite',?)")
+      .run("2099-10-05T01:00:00.002Z", JSON.stringify({ orderId: "o1" }), JSON.stringify({ customer: "CZ9-TRP", product: "oil", trip: T }), "2099-10-05T01:00:00.002Z");
+    const KEY = "suite-key", env = { SALT_LEDGER: good.D1, SALT_WRITE_KEY: KEY, REQUIRE_ACCESS: "0", SALT_QUEUE: good.kv };
+    const res = await worker.fetch(new Request("https://x.workers.dev/drafts/" + encodeURIComponent("2099-10-05T01:00:00.000Z") + "/approve", {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Salt-Key": KEY }, body: "{}" }), env, { waitUntil() {} });
+    let j = {}; try { j = JSON.parse(await res.text()); } catch (e) { /* not json */ }
+    const st = Object.fromEntries(good.db.prepare("SELECT id,status FROM draft").all().map((x) => [x.id, x.status]));
+    ok(res.status === 200 && st["2099-10-05T01:00:00.001Z"] === "approved" && JSON.stringify(j.trip) === '["2099-10-05T01:00:00.001Z"]',
+      "approving one row of a trip approves its other row in the same tap: " + JSON.stringify({ status: res.status, st, j }));
+    ok(st["2099-10-05T01:00:00.002Z"] === "pending", "and a row a site order made is never swept in: " + JSON.stringify(st));
+    ok(batches.length === 1 && batches[0] === 2, "the tapped row and its sibling are decided in ONE batch, one transaction: " + JSON.stringify(batches));
+    /* the delivery's row refused, its sibling drafts flagged, never silently charge-free */
+    const lone = await pass([sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+    const lf = lone.db.prepare("SELECT flags FROM draft").all().map((x) => x.flags).join(" ");
+    ok(lone.r.drafted === 1 && /No row of trip t1759622400000 carrying its delivery has been drafted/.test(lf), "a trip row drafted with no row carrying its delivery is flagged: " + lf);
+  }
+
+  /* ---- the fold: the last check ---- */
+  const F = await import("../tools/fold.mjs");
+  const fb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  fb.roster.push("CZ9-TRP");
+  const it = (n, r) => ({ id: "2099-10-05T02:00:00.00" + n + "Z", collection: "sales", row: Object.assign({ cost: 64, cash: 0, deliveredQty: 0 }, r), entry: { at: "2099-10-05T02:00:00.00" + n + "Z", payload: {} } });
+  const two = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10, delivery: 5 }))] }, null);
+  ok(two.items.length === 0 && two.refused.length === 2 && /delivery on 2 rows/.test((two.refused[0] || {}).why || ""), "the fold refuses a staged row that would give its trip a second delivery, and the trip waits whole: " + JSON.stringify(two.refused));
+  const one = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10 }))] }, null);
+  ok(one.items.length === 2 && one.refused.length === 0, "and folds a trip with one delivery whole: " + JSON.stringify(one.refused));
+  const half = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("nothing", { total: 130, delivery: 40, deliveredQty: 1 })), it(2, row("rice", { total: 10, deliveredQty: 2 }))] }, null);
+  ok(half.items.length === 0 && half.refused.length === 2 && /another row of trip/.test(half.refused.map((x) => x.why).join(" ")) && !half.moves.some((m) => m.trip),
+    "and a trip whose delivery row is refused holds its sibling back too, moves and all: " + JSON.stringify({ refused: half.refused, moves: half.moves }));
+
+  /* ---- the statement: the charge said once, for the trip ---- */
+  const sb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const lone = row("salt", { rid: "st3", date: "2099-10-01", total: 120, delivery: 20, cash: 140, deliveredQty: 1, cost: 64 });
+  delete lone.trip;
+  sb.sales = [row("salt", { rid: "st1", total: 130, delivery: 40, cash: 170, deliveredQty: 1, cost: 64 }), row("rice", { rid: "st2", total: 10, cash: 10, deliveredQty: 1, cost: 5 }), lone];
+  sb.customerRefunds = [];
+  const tmp = join(REPO, "test", "tmp", "trip-" + Date.now());
+  mkdirSync(tmp, { recursive: true });
+  writeFileSync(join(tmp, "book.json"), JSON.stringify(sb));
+  const keep = process.env.SALT_BOOK;
+  process.env.SALT_BOOK = join(tmp, "book.json");
+  let M;
+  try { M = await import((await import("node:url")).pathToFileURL(join(REPO, "tools", "make_statements.mjs")).href + "?trip" + Date.now()); }
+  finally { if (keep === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep; }
+  const sr = M.stmtRows("CZ9-TRP", { pending: true, completed: true, open: true });
+  const html = String(M.stmtDoc("CZ9-TRP", sr, {}));
+  ok(/plus delivery[^<]*40[^<]* for one trip of 2 orders/.test(html) && (html.match(/for one trip of/g) || []).length === 1,
+    "the statement says the trip's delivery once, beside its figure, and nowhere else: " + ((html.match(/plus delivery[^<]*/g) || []).join(" | ")));
+  const r2 = sr.find((x) => x.rid === "st2") || {}, r3 = sr.find((x) => x.rid === "st3") || {};
+  ok(!("tripN" in r3) && r2.tripN === 2, "and a row outside a trip carries nothing new: " + JSON.stringify(sr.map((x) => [x.rid, x.tripN])));
+  rmSync(tmp, { recursive: true, force: true });
+})();
+
 section("22 Sep 2026: the rail, the bar and the tags draw from the system's recipes");
 await (async () => {
   /* HIS INSTRUCTION OF 22 SEP 2026, one fold at a time: the rail, the bar and its orbs, and the tags follow

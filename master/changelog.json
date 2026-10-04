@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1010",
+  "d": "05 Oct 2026",
+  "t": "ONE DELIVERY FOR A TRIP OF SEVERAL BOOKS",
+  "n": [
+   "<b>A TRIP OF SEVERAL BOOKS CARRIES ONE DELIVERY.</b> A sale of more than one book with a delivery queues as one trip: every entry carries the same id, minted on the Workbench, and the delivery stays on the active book's row alone, so what the customer owes counts it once and no other book's row carries it.",
+   "<b>ONE TAP UNDER APPROVE DECIDES THE WHOLE TRIP,</b> his word of 05 Oct 2026: every pending row of the trip is approved or rejected with the one tapped, in one transaction; a claim and a site order's row are never swept in. The card names the trip and the books it serves.",
+   "<b>THE TRIP HOLDS TOGETHER.</b> The engine's tripFault refuses a second delivery, a second customer, a second date and a book twice; the drafter asks it against the book, the waiting drafts and the pass, and flags a trip row whose delivery row has not drafted; the fold asks it again and holds a refused row's siblings back with it.",
+   "<b>A RESALE CAN CARRY OTHER BOOKS.</b> Each extra books R2 to the same bucket; a gift and a reward cover stay one book's. Every extra is checked before anything is queued, and each entry takes its own moment.",
+   "<b>THE STATEMENT SAYS IT ONCE:</b> plus delivery RM x for one trip of n orders, on the row that carries it. Every existing account reads exactly as before (41 accounts compared, identical). The fold's dossier now reads the goods as the total, as they have been since v727."
+  ]
+ },
+ {
   "v": "v1009",
   "d": "05 Oct 2026",
   "t": "THE DRAFTER COSTS A SALE ON THE SETTLED BASIS",
