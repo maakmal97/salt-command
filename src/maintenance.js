@@ -2,7 +2,7 @@
  * every request answers 503 except the machine routes in MACHINE (their real check is downstream).
  * Absent, empty or unparseable does nothing. One copy in src/ and one in stmt/, the same body:
  * nothing under stmt/ imports from src/. */
-export const MACHINE = { paths: ["/rev", "/stmt/rev"], prefixes: ["/_internal/"], headers: ["x-salt-key", "x-stmt-desk", "x-counter-maker-key"] };
+export const MACHINE = { paths: ["/rev", "/stmt/rev"], prefixes: ["/_internal/"], headers: ["x-salt-key", "x-stmt-desk", "x-counter-maker-key", "x-push-key"] };
 const TEXT = "The store is currently under maintenance. We are open for business again at 00:01 midnight of October 5.";
 const PAGE = '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
   + "<title>Maintenance</title><style>body{margin:0;padding:24px;font:18px/1.5 system-ui,sans-serif;max-width:30em}</style></head><body><p>"

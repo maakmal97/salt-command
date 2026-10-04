@@ -51454,8 +51454,14 @@ await (async () => {
   }
   ok(!await held(deskM, { MAINTENANCE_UNTIL: future }, "/rev") && !await held(deskM, { MAINTENANCE_UNTIL: future }, "/stmt/rev")
     && !await held(deskM, { MAINTENANCE_UNTIL: future }, "/_internal/maker/drafts"), "desk: /rev, /stmt/rev and /_internal/ pass during the window");
-  ok(await held(deskM, { MAINTENANCE_UNTIL: future }, "/queue") && await held(stmtM, { MAINTENANCE_UNTIL: future }, "/all"),
+  const on = { MAINTENANCE_UNTIL: future };
+  ok(await held(deskM, on, "/queue") && await held(stmtM, on, "/account"),
     "a keyless request to a non-machine route is held on both Workers");
+  ok(await held(stmtM, on, "/account", { "Cf-Access-Jwt-Assertion": "forged" }) && await held(stmtM, on, "/", { "Cf-Access-Jwt-Assertion": "forged", accept: "text/html" }),
+    "counter: a forged Cf-Access header on a customer route is still held");
+  ok(!await held(stmtM, on, "/all") && !await held(stmtM, on, "/all/maker/x") && await held(stmtM, on, "/allx"),
+    "counter: /all and its sub-paths pass for Access to verify, and /allx does not");
+  ok(!await held(deskM, on, "/push/send", { "X-Push-Key": "k" }), "desk: the push wake's X-Push-Key passes during the window");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
