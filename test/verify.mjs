@@ -31695,8 +31695,8 @@ await (async () => {
     /* ---- the switch as it ships ---- */
     const cfgText = readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8").replace(/\r/g, "").split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
     let cfg = null; try { cfg = JSON.parse(cfgText); } catch (e) { cfg = null; }
-    ok(!!cfg && cfg.vars.ORDER_STORE === "object+kv" && cfg.vars.ORDER_MOVE_IN === "1",
-      "wrangler.stmt.jsonc ships the week of reading both: ORDER_STORE object+kv, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
+    ok(!!cfg && cfg.vars.ORDER_STORE === "object" && cfg.vars.ORDER_MOVE_IN === "1",
+      "wrangler.stmt.jsonc ships the object road (10.5, 04 Oct 2026): ORDER_STORE object, generation 1: " + JSON.stringify(cfg && { s: cfg.vars.ORDER_STORE, g: cfg.vars.ORDER_MOVE_IN }));
   } finally { clock.uninstall(); }
 })();
 
@@ -51462,6 +51462,10 @@ await (async () => {
   ok(!await held(stmtM, on, "/all") && !await held(stmtM, on, "/all/maker/x") && await held(stmtM, on, "/allx"),
     "counter: /all and its sub-paths pass for Access to verify, and /allx does not");
   ok(!await held(deskM, on, "/push/send", { "X-Push-Key": "k" }), "desk: the push wake's X-Push-Key passes during the window");
+  for (const f of ["wrangler.jsonc", "wrangler.stmt.jsonc"]) {
+    const t = readFileSync(join(REPO, f), "utf8");
+    ok(/^\s*"MAINTENANCE_UNTIL": "2026-10-04T16:01:00Z",/m.test(t), f + " carries MAINTENANCE_UNTIL 2026-10-04T16:01:00Z (00:01 MYT, 05 Oct 2026)");
+  }
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
