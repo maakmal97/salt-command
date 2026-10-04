@@ -12952,11 +12952,12 @@ await (async () => {
   const { w: wR } = await omR();
   const rdR = (e) => JSON.parse(String(wR.eval("JSON.stringify(" + e + ")")));
   try {
+    const liveIn = Number(String(wR.eval("(function(){setProd('salt');recompute();return loanInUnits();})()")));   /* the live book's own open borrowings, if any */
     wR.eval("(function(){setProd('salt');recompute();switchTab('add');queue=[];" + [salt, cash, done, outDone, outPart].map((l) => "BASE_LOANS.push(" + JSON.stringify(l) + ");").join("") + "applyOverlay();})()");
     ok(rdR("[loanLeft(loans.find(function(l){return l.rid==='l901';})),cashLeft(loans.find(function(l){return l.rid==='l902';})),loanLeft(loans.find(function(l){return l.rid==='l903';}))].join()") === "5,400,0",
       "what is owing reads the loan's size in its own form, and a settled loan owes nothing");
     ok(rdR("loanOutUnits()") === 3, `a settled loan out no longer reads as lent, and a part-repaid one counts what is left: ${rdR("loanOutUnits()")} unit, the 4 less 1 of l905 and none of l904`);
-    ok(rdR("loanInUnits()") === 5, "and a borrowed loan counts what is still owing");
+    ok(rdR("loanInUnits()") === 5 + liveIn, "and a borrowed loan counts what is still owing");
     const PANE = JSON.parse(String(wR.eval("(function(){try{wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};"
       + "set('wbLoanDir','repay');wbApply();var opts=Array.prototype.map.call(document.getElementById('wbLoanWhich').options,function(o){return o.value;});"
       + "set('wbLoanWhich','l902');wbApply();var rmForCash=document.getElementById('wbLoanRMCell').style.display!=='none';"

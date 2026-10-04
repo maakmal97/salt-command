@@ -1,6 +1,6 @@
 {
-  "v": "v1004",
-  "derivedFrom": "b32c430bfe199773",
+  "v": "v1005",
+  "derivedFrom": "fc8b4c2e2de32ab7",
   "tables": {
     "sales": {
       "rows": 230,
@@ -413,35 +413,43 @@
       }
     },
     "loans": {
-      "rows": 3,
+      "rows": 4,
       "fields": {
         "date": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "direction": {
-          "present": 2,
-          "of": 3,
+          "present": 3,
+          "of": 4,
+          "optional": true,
+          "types": [
+            "string"
+          ]
+        },
+        "form": {
+          "present": 1,
+          "of": 4,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "party": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "string"
@@ -449,15 +457,23 @@
         },
         "preOpening": {
           "present": 1,
-          "of": 3,
+          "of": 4,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "product": {
-          "present": 2,
-          "of": 3,
+          "present": 3,
+          "of": 4,
+          "optional": true,
+          "types": [
+            "string"
+          ]
+        },
+        "rid": {
+          "present": 1,
+          "of": 4,
           "optional": true,
           "types": [
             "string"
@@ -465,31 +481,31 @@
         },
         "settledOn": {
           "present": 3,
-          "of": 3,
-          "optional": false,
+          "of": 4,
+          "optional": true,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "valueKg": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "valueRM": {
-          "present": 3,
-          "of": 3,
+          "present": 4,
+          "of": 4,
           "optional": false,
           "types": [
             "null",
