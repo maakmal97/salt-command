@@ -45377,6 +45377,37 @@ await (async () => {
   rmSync(tmp, { recursive: true, force: true });
 })();
 
+section("05 Oct 2026: the fold keeps the drafter's COGS cost on a new sale and a cost a correction sets");
+await (async () => {
+  /* The drafter costs a sale at COGS off the latest purchase (v1009); the fold's notes moved the CE5-SA-R salt row of trip
+     t1791145053619 from RM64 back to the shelf's RM60. A notes cost now lands only where the draft carried none, or on a lot,
+     and never over a cost a correction sets. Invented codes only; each assertion proved red by mutation, one at a time. */
+  const F = await import("../tools/fold.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.roster.push("CZ9-CGS", "SZ9-CGS");
+  book.sales.push({ rid: "s9001", customer: "CZ9-CGS", date: "2099-10-01", qty: 1, total: 120, cost: 60, cash: 120, deliveredQty: 1, note: "fixture" });
+  const id = (n) => "2099-10-05T03:00:00.00" + n + "Z";
+  const it = (n, collection, row, entry) => ({ id: id(n), collection, row, entry: entry || { at: id(n), payload: {} } });
+  const corr = { at: id(3), payload: { mode: "amend", direction: "SELL", party: "CZ9-CGS", product: "salt", rid: "s9001", date: "2099-10-05", kind: "Correction", fields: { cost: 64 }, qty: 0, total: 0, cash: 0, kg: 0 } };
+  const staged = { ok: true, count: 4, approved: [
+    it(1, "sales", { customer: "CZ9-CGS", date: "2099-10-05", qty: 1, total: 130, cost: 64, cash: 130, deliveredQty: 1 }),
+    it(2, "purchases", { supplier: "SZ9-CGS", date: "2099-10-05", qty: 10, total: 500, cash: 500, receivedQty: 10 }),
+    Object.assign(it(3, "sales", { customer: "CZ9-CGS", rid: "s9001" }, corr), { amends: "s9001", amendKind: "Correction" }),
+    it(4, "sales", { customer: "CZ9-CGS", date: "2099-10-06", qty: 1, total: 140, cash: 140, deliveredQty: 1 }),
+  ] };
+  const rows = {};
+  for (let n = 1; n <= 4; n++) rows[id(n)] = { note: "fixture note", cost: "60" };
+  const res = F.apply(book, staged, { version: "v9998", date: "05 Oct 2099", title: "FIXTURE", notes: ["fixture"], rows }, master);
+  const sale = book.sales.find((r) => r.date === "2099-10-05" && r.customer === "CZ9-CGS" && r.total === 130) || {};
+  const lot = book.purchases.find((r) => r.supplier === "SZ9-CGS") || {};
+  const fixed = book.sales.find((r) => r.rid === "s9001") || {};
+  const bare = book.sales.find((r) => r.date === "2099-10-06" && r.customer === "CZ9-CGS") || {};
+  ok(res.ok && sale.cost === 64, "a new sale keeps the drafter's COGS cost over the notes' shelf figure: " + (res.ok ? sale.cost : JSON.stringify(res.problems)));
+  ok(res.ok && fixed.cost === 64, "and a cost a correction sets stands over the notes: " + fixed.cost);
+  ok(res.ok && lot.cost === 60 && bare.cost === 60, "while a lot, and a sale drafted with no cost, still take the notes' figure: " + JSON.stringify([lot.cost, bare.cost]));
+})();
+
 section("22 Sep 2026: the rail, the bar and the tags draw from the system's recipes");
 await (async () => {
   /* HIS INSTRUCTION OF 22 SEP 2026, one fold at a time: the rail, the bar and its orbs, and the tags follow
