@@ -10,8 +10,8 @@ and the `update-names-id` skill. Reorganise within a rule; grep `rule [0-9]` bef
 
 The Salt Command desk as a cloud app: the ledger and the pricing engine on the go, a transaction
 addable from the phone. **This repo holds the master**, deployed as a Cloudflare Worker (URL in
-MEMORY.md); `/desk` is the one surface, and "the dashboard" means `/desk` at desktop width. Public
-by his decision, no sign-in.
+MEMORY.md); `/desk` is the one surface, and "the dashboard" means `/desk` at desktop width. Behind
+a Cloudflare Access login, his decision of 05 Oct 2026; the Worker's own check stays off (below).
 
 ## Hard rules
 
@@ -114,7 +114,7 @@ built desk is seven destinations (`VIEWS`): Today, Order book, Stock, Pricing, N
 Enter. Old ids remain addresses (`/desk#book`, `/desk#network`). **The rail is two levels at
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
-Everything the desk shows, cost and margin included, is served at the public URL. **It installs as
+Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
 Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
 `<title>` stays Salt Command, the build's anchor.
 
@@ -276,7 +276,8 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
 
 ## Access, and why it is off; the write gate
 
-- **`REQUIRE_ACCESS` (current value in MEMORY.md).** It remains `"0"` until the Desk Access application is provisioned.
+- **`REQUIRE_ACCESS` (current value in MEMORY.md).** An Access login already gates the desk's address, set outside the repo's
+  config; the Worker's own JWT check is a second lock that remains `"0"` until the Desk Access application is provisioned.
   This workstream does not change Access configuration or deploy. Before setting it to `"1"`,
   create an application covering the Desk Worker, allow only `maakmal97@icloud.com`, set
   `ACCESS_TEAM` and `ACCESS_AUD` in `wrangler.jsonc`, then deploy by hand. The Worker verifies the
