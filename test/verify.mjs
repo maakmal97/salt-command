@@ -51653,7 +51653,7 @@ await (async () => {
   ok(!await held(deskM, on, "/push/send", { "X-Push-Key": "k" }), "desk: the push wake's X-Push-Key passes during the window");
   for (const f of ["wrangler.jsonc", "wrangler.stmt.jsonc"]) {
     const t = readFileSync(join(REPO, f), "utf8");
-    ok(/^\s*"MAINTENANCE_UNTIL": "2026-10-04T16:01:00Z",/m.test(t), f + " carries MAINTENANCE_UNTIL 2026-10-04T16:01:00Z (00:01 MYT, 05 Oct 2026)");
+    ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(t), f + " carries MAINTENANCE_UNTIL empty (guard off)");
   }
 })();
 

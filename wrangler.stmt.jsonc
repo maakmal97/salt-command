@@ -80,8 +80,8 @@
 	//                <this worker>.workers.dev/all. Paste it here and deploy; there is no secret
 	//                to set. The QR Command admin application is the working example of the shape.
 	"vars": {
-		// 00:01 MYT on 05 Oct 2026: until then every page request answers 503 (stmt/maintenance.js); it lifts itself.
-		"MAINTENANCE_UNTIL": "2026-10-04T16:01:00Z",
+		// Maintenance guard (stmt/maintenance.js): an ISO UTC time here turns it on and it lifts itself; empty is off.
+		"MAINTENANCE_UNTIL": "",
 		// application "Salt statements owner", 67280e0b-7a34-4789-ad63-697e292b7844,
 		// created 10 Sep 2026 on his instruction: self-hosted, one-time PIN, one Allow
 		// policy on his address, a week's session (168h since 25 Sep 2026, his D13). Deleting it does not open /all: with this
