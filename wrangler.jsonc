@@ -102,8 +102,9 @@
 		"ACCESS_TEAM": "",
 		"ACCESS_AUD": "",
 		// The Access service token's client id that may read GET /rev and send POST /push/send,
-		// and nothing else. Empty until the token exists: an empty id admits no service token.
-		"ACCESS_CI_CLIENT_ID": "",
+		// and nothing else. The token salt-desk-ci; its id is public (a header, the JWT's common_name),
+		// its secret only in the GitHub secret CF_ACCESS_CLIENT_SECRET. Inert while REQUIRE_ACCESS is "0".
+		"ACCESS_CI_CLIENT_ID": "3b0a6377905109d224fbe53b595b4574.access",
 		// The VAPID PUBLIC key. Public by definition: a browser cannot create a push
 		// subscription without it and it authorises nothing. The private half is the
 		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.

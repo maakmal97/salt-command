@@ -531,8 +531,8 @@ deployment is part of this workstream.
   header the edge accepts, and is never filed or printed.
 - **Wrangler tools** (`drafts.mjs`, `drain.mjs`, `stmt-publish.mjs`, `seed-vault --slip-key`) and the
   service bindings (`/stmt/rev`, `/_internal/maker/*`) do not pass the edge and are unaffected.
-- **`wrangler.jsonc`**: `ACCESS_CI_CLIENT_ID` is `""` until the service token exists, so no token is
-  admitted; its client id goes there on his go. `preview_urls` is `false`, because a version's own
+- **`wrangler.jsonc`**: `ACCESS_CI_CLIENT_ID` is the client id of the service token `salt-desk-ci` (set 4 Oct 2026,
+  on his go), public by design; it admits nothing while `REQUIRE_ACCESS` is `"0"`. `preview_urls` is `false`, because a version's own
   preview address would sit outside the app. Nothing used one (checked 3 Oct 2026: no reference in
   the repo or the workflows; the work-branch uploads Workers Builds makes were never read, and its
   PR check reports the upload, which still succeeds). Both ride the next desk deploy; a change here alone deploys by hand.
