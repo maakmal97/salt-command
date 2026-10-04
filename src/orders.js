@@ -21,7 +21,7 @@
  * means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook, draftRow, costFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued } from "./drafter.js";
+import { readBook, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
@@ -296,7 +296,7 @@ async function previewAck(env, o, code, delivery, now, ctx, price) {
   if (adv.error) return { ok: false, status: 503, error: adv.error };
   if (adv.prepay) entry.prepay = true;
   const pricing = await pricingOf(book);
-  const priced = costFor(book, product);
+  const priced = cogsFor(book, product, agreed.date || null);   /* 05 Oct 2026: a sale shows COGS off the latest purchase, the drafter's own basis */
   const cost = priced.cost == null ? null : { unit: priced.cost, total: +(priced.cost * qty).toFixed(2), source: priced.source };
   return Object.assign({ ok: true, stage: "ack", id: o.id, entry, row: d.row, flags: d.flags, reasoning: d.reasoning,
     quote: goods, asked: +(+o.total).toFixed(2), set: price != null, delivery: agreed.delivery, cost,

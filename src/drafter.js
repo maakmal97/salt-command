@@ -72,6 +72,22 @@ export async function readBook(db) {
     pricing: state.PRICING || null
   };
 }
+/* 05 OCT 2026: THE LOTS DRAFTED AND NOT YET FOLDED, pending or approved, each tagged with its draft id, so a sale
+   drafted after a purchase it follows (p035 and s232, one batch) is costed off that purchase, not the lot before it.
+   Read by the drafting passes alone, once, just before their first draft (readBook's callers are timed against its
+   reads); a store that cannot answer gives none, and the book stands as it was. */
+export async function withDraftLots(db, book) {
+  if (!book.draftLots) book.draftLots = await draftLotsOf(db);
+  return book;
+}
+async function draftLotsOf(db) {
+  try {
+    const rs = await db.prepare("SELECT id,row FROM draft WHERE collection='purchases' AND committed_at IS NULL AND status IN ('pending','approved') AND amends IS NULL ORDER BY id").all();
+    return ((rs && rs.results) || []).map((r) => {
+      try { const row = JSON.parse(r.row); return row && typeof row === "object" && r.id ? Object.assign(row, { _draft: String(r.id) }) : null; } catch (e) { return null; }
+    }).filter(Boolean);
+  } catch (e) { return []; }
+}
 
 /* ---- addressing a row, and correcting one ------------------------------------------- */
 /* A ROW IS NAMED BY ITS rid, NOT BY WHAT IT SAYS. ovKey is `party|date|total`, which is
@@ -310,6 +326,31 @@ export function costFor(book, product) {
     mayBlend: blend
   };
 }
+
+/* ---- what a SALE costs: COGS off the latest purchase (his settled rule, 05 Oct 2026) ------------------------ */
+/* A sale's cost is COGS a unit, the latest purchase entry's quote plus its freight over its units, read by the engine's
+ * latestCogs over this book's lots as the drafter has them: the mirror's, then the lots drafted and not yet folded
+ * (book.draftLots), then any lot drafted earlier in this pass. The latest dated on or before the sale wins, so a
+ * purchase and a sale of one batch are honoured in order. No leakage, no shrink, no delivery share, no trailing
+ * average. `basis` names the lot so the note can state it; a book with no landed lot falls back to costFor, said so.
+ * Gifts and a reward's cover stay on costFor, the desk's own shelf figure, which is what the desk values them at. */
+export function cogsFor(book, product, onOrBefore) {
+  const p = product || "salt";
+  const lots = (book.purchases || []).concat(book.draftLots || []).filter((x) => prodOf(x) === p);
+  const c = POSITION_ENGINE.latestCogs(lots, onOrBefore || null);
+  if (!c) return Object.assign({}, costFor(book, p), { basis: null });
+  const name = c.rid ? `purchase ${c.rid}` : (c.p._draft ? `drafted purchase ${c.p._draft} (not yet folded)` : "purchase, unnumbered,");
+  return {
+    cost: c.rate,
+    source: `COGS off the latest ${name} landed ${c.date || "undated"}: RM ${round(c.quote)} quote plus RM ${round(c.freight)} freight over ${round(c.units)} unit`,
+    latestRate: c.rate,
+    mayBlend: false,
+    basis: { rid: c.rid, draft: c.p._draft || null, date: c.date, quote: c.quote, freight: c.freight, units: c.units, rate: c.rate }
+  };
+}
+/* the one line every sale's flags carry when its basis is a lot not yet on the book */
+const basisFlags = (priced) => (priced && priced.basis && priced.basis.draft)
+  ? [`The cost reads the drafted purchase ${priced.basis.draft}, which is not on the book yet: reject that lot and this row's cost is wrong, so decide the lot first.`] : [];
 
 /* ---- what the desk would refuse ---------------------------------------------------- */
 export function floorFor(book, product, qty) {
@@ -621,7 +662,7 @@ export function draftRow(entry, book) {
       const flags = chk.flags.slice();
       const after = chk.after;
       const product = after.product || "salt";
-      const priced = isSale ? costFor(book, product) : { cost: null, mayBlend: false };
+      const priced = isSale ? cogsFor(book, product, after.date || target.date) : { cost: null, mayBlend: false };
 
       /* THE CORRECTED ROW GETS THE SAME COMPARISONS A NEW ONE DOES. A correction can change the
          product, the size and the price, which between them are every input the rate flags read.
@@ -673,7 +714,7 @@ export function draftRow(entry, book) {
         flags.push("This lot is marked pending, which means nothing has moved, and this records money or stock against it. Untick pending if it is no longer agreed-only.");
       }
       if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - POSITION_ENGINE.txUnitCost(target, priced.cost)) > 0.005) {
-        flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the inventory, so this row's margin moves when it is recosted.`);
+        flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit, ${priced.source}, so this row's margin moves when it is recosted.`);
       }
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
@@ -736,7 +777,7 @@ export function draftRow(entry, book) {
       }
       const isSale = dir2 === "SELL";
       const product = t.pr || "salt";
-      const priced = isSale ? costFor(book, product) : { cost: null, mayBlend: false };
+      const priced = isSale ? cogsFor(book, product, t.d) : { cost: null, mayBlend: false };
       /* THE SAME COMPARISONS A NEW ROW GETS, run on the RESTATED rate rather than a fresh one.
          This is the check that was missing on 17 Aug: nothing put the new RM10/unit beside the
          product's RM46-and-up range before it reached the fold. flagsFor is the one place those
@@ -1368,7 +1409,10 @@ export function draftRow(entry, book) {
 
   const cash = isNum(pay.cash) ? pay.cash : 0;
   const moved = isNum(pay.kg) ? pay.kg : 0;
-  const priced = costFor(book, product);
+  /* 05 Oct 2026: A SALE IS COSTED AT COGS OFF THE LATEST PURCHASE ON OR BEFORE ITS DATE (cogsFor); a lot, and a
+     reward's cover, still read the desk's shelf figure (costFor), which is what the desk values a cover at. */
+  const shelf = costFor(book, product);
+  const priced = dir === "SELL" ? cogsFor(book, product, pay.date) : shelf;
   if (priced.cost == null) return { skip: dir === "BUY"
     ? `the book has no cost for ${product} yet, so this first lot has nothing to be checked against: fold it by hand to establish the cost, then later lots go through this gate`
     : `nothing on the book says what ${product} costs, so the row cannot be priced` };
@@ -1441,8 +1485,8 @@ export function draftRow(entry, book) {
     if (!(row.coverUnits > 0) || !(row.coverRM > 0)) return { skip: "a cover carries both the units of reward and the ringgit they cover" };
     if (((book.state && book.state.associates) || []).includes(POSITION_ENGINE.ownerCode(party)))
       return { skip: `${party} is an associate, whose reward is redeemed or offset on their own card rather than spent covering a sale` };
-    if (Math.abs(row.coverRM - round(row.coverUnits * priced.cost)) > 0.05)
-      coverFlags.push(`The cover says RM ${round(row.coverRM)} for ${round(row.coverUnits)} unit, where the book's cost of RM ${round(priced.cost)}/unit makes it RM ${round(row.coverUnits * priced.cost)}.`);
+    if (shelf.cost != null && Math.abs(row.coverRM - round(row.coverUnits * shelf.cost)) > 0.05)
+      coverFlags.push(`The cover says RM ${round(row.coverRM)} for ${round(row.coverUnits)} unit, where the book's cost of RM ${round(shelf.cost)}/unit makes it RM ${round(row.coverUnits * shelf.cost)}.`);
     coverFlags.push(`${isNum(pay.coverFree) ? `The desk says ${party} held ${round(pay.coverFree)} unit of reward` : `The desk did not state what reward ${party} held`}, and ${round(row.coverUnits)} unit of it covers RM ${round(row.coverRM)} of this sale. Rewards are worked out on the desk, so that balance is its word.`);
   }
   if (dir === "BUY") {
@@ -1553,7 +1597,7 @@ export function draftRow(entry, book) {
     collection: dir === "BUY" ? "purchases" : "sales",
     row,
     reasoning: bits.join(" "),
-    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced))
+    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced), row.cost != null ? basisFlags(priced) : [])
   };
 }
 
@@ -1640,11 +1684,12 @@ export async function dryRunDrafter(env) {
     const entry = byAt.get(at);
     const admission = await checkInputAdmission(env.SALT_LEDGER, entry, book);
     const fault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    const d = fault ? { skip: fault } : draftRow(entry, book);
+    const d = fault ? { skip: fault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
     if (d.skip) out.skipped.push({ at, why: d.skip });
     else {
       out.would.push({ at, collection: d.collection, row: d.row, reasoning: d.reasoning, flags: d.flags });
       reservedEntries.push(entry);
+      if (d.collection === "purchases" && !d.amends) (book.draftLots = book.draftLots || []).push(Object.assign({}, d.row, { _draft: at }));
     }
   }
   return out;
@@ -1817,7 +1862,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     if (already.has(at)) { out.already++; continue; }
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    const d = reservationFault ? { skip: reservationFault } : draftRow(entry, book);
+    const d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
     if (d.skip) {
       out.skipped.push({ at, why: d.skip });
       /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */
@@ -1855,6 +1900,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     if (made && made.meta && made.meta.changes) out.drafted++;
     else out.raced++;
     reservedEntries.push(entry);
+    /* 05 Oct 2026: a lot drafted in this pass is the latest purchase for a sale after it in the same pass */
+    if (d.collection === "purchases" && !d.amends) (book.draftLots = book.draftLots || []).push(Object.assign({}, d.row, { _draft: at }));
     /* S11 (D6): A ROW A SITE ORDER MADE MAY ALREADY HAVE HIS YES, given on the order card before it existed. It is
        spent here, where the row is made, only by the pass that made it and only on an exact match; a fault
        leaves the row pending, as every row was before. */

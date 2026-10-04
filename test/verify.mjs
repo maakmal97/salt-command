@@ -1761,10 +1761,50 @@ await (async () => {
   ok(costFor(book, "salt").mayBlend === false, "shelf cost equal to the newest lot rate means one lot, so no blend flag");
   const blended = { ...book, pricing: { ...book.pricing, byProduct: { ...book.pricing.byProduct, salt: { ...book.pricing.byProduct.salt, stockCost: 47.47 } } } };
   ok(costFor(blended, "salt").mayBlend === true, "shelf cost differing from the newest lot rate means a blend, and is flagged");
+  /* 05 Oct 2026: a SALE is costed at COGS off the latest purchase, never the shelf average, so a blended shelf moves no
+     sale's cost and raises no blend flag on it; the shelf figure stays costFor's, for gifts and a cover */
   const blendRow = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), blended);
-  ok(blendRow.flags.some(f => /inventory average/.test(f)), "a blended shelf is named on the row");
+  ok(blendRow.row.cost === 56 && !blendRow.flags.some(f => /inventory average/.test(f)), "a blended shelf moves no sale's cost: the sale reads the latest lot");
   const singleRow = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), book);
   ok(!singleRow.flags.some(f => /inventory average/.test(f)), "a single-lot shelf does not raise it, so the flag stays worth reading");
+
+  /* ---- COGS OFF THE LATEST PURCHASE (his settled rule, 05 Oct 2026; s232 was drafted at the old RM56) ---- */
+  {
+    const { cogsFor, dryRunDrafter } = await import("../src/drafter.js");
+    const p035 = { rid: "p035", supplier: "SA5-BTR", qty: 12.5, total: 750, freight: 50, cash: 750, status: "paid", handover: "collected", date: "2026-08-15", receivedOn: "2026-08-15", receivedQty: 12.5 };
+    const withLot = { ...book, purchases: book.purchases.concat([p035]) };
+    const c = cogsFor(withLot, "salt", "2026-08-16");
+    ok(c.cost === 64 && c.basis && c.basis.rid === "p035" && c.basis.freight === 50, "a sale's COGS is the latest purchase's quote plus its freight over its units");
+    const sold = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 6.25, total: 500, cash: 500, kg: 6.25, date: "2026-08-16" }), withLot);
+    ok(sold.row.cost === 400 && /p035/.test(sold.reasoning) && /RM 750 quote plus RM 50 freight over 12\.5 unit/.test(sold.reasoning),
+      "the drafted sale carries that cost and its note names the lot, the quote, the freight and the units");
+    const before = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-14" }), withLot);
+    ok(before.row.cost === 56, "a lot landing after the sale's date is not yet its latest purchase");
+    const lot = { ...p035, rid: undefined, _draft: "2026-08-16T00:30:00.000Z" };
+    const batch = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 6.25, total: 500, cash: 500, kg: 6.25, date: "2026-08-16" }), { ...book, draftLots: [lot] });
+    ok(batch.row.cost === 400 && batch.flags.some(f => /drafted purchase 2026-08-16T00:30:00\.000Z/.test(f) && /not on the book yet/.test(f)),
+      "a purchase drafted before the sale and not yet folded is its latest, and the sale says it waits on that lot");
+    /* the pass itself: a lot and a sale queued together are drafted in order, the sale off the lot */
+    const pricingDoc = JSON.stringify({ v: "v302", byProduct: book.pricing.byProduct });
+    const rowsOf = { sales: book.sales, purchases: book.purchases };
+    const db = { prepare(sql) { let a = []; return { bind(...v) { a = v; return this; },
+      async all() { if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: pricingDoc }, { key: "roster", doc: JSON.stringify(book.state.roster) }] };
+        if (sql.includes("FROM entry")) return { results: (rowsOf[a[0]] || []).map((r) => ({ doc: JSON.stringify(r) })) };
+        return { results: [] }; },
+      async first() { return sql.includes("FROM snapshot") ? { v: "v302", stamped: "2026-08-16T00:00:00.000Z" } : null; } }; } };
+    const q = [{ at: "2026-08-16T01:00:00.000Z", payload: { mode: "new", direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 750, freight: 50, cash: 750, kg: 12.5, handover: "collected", date: "2026-08-16" } },
+      { at: "2026-08-16T01:05:00.000Z", payload: { mode: "new", direction: "SELL", party: "CC9-OKR", qty: 6.25, total: 500, cash: 500, kg: 6.25, date: "2026-08-16" } }];
+    const kv = { async list() { return { keys: [{ name: "q:dev" }], list_complete: true }; }, async get() { return JSON.stringify({ queue: q }); } };
+    const out = await dryRunDrafter({ SALT_QUEUE: kv, SALT_LEDGER: db });
+    const sale = out.would && out.would.find((w) => w.collection === "sales");
+    ok(sale && sale.row.cost === 400 && /drafted purchase 2026-08-16T01:00:00\.000Z/.test(sale.reasoning), "in one pass a sale after a lot is costed off that lot");
+    /* and a lot drafted on an earlier pass, pending or approved and not yet folded, is read with the book */
+    const held = { prepare(sql) { const s = db.prepare(sql); return { bind(...v) { s.bind(...v); return this; }, first: s.first,
+      async all() { return /collection='purchases'/.test(sql) && /committed_at IS NULL/.test(sql) ? { results: [{ id: "2026-08-15T09:00:00.000Z", row: JSON.stringify(p035) }] } : s.all(); } }; } };
+    const { readBook: rb, withDraftLots } = await import("../src/drafter.js");
+    const heldBook = await withDraftLots(held, await rb(held));
+    ok(heldBook.draftLots.length === 1 && heldBook.draftLots[0]._draft === "2026-08-15T09:00:00.000Z", "the book a pass drafts against carries the lots drafted and not yet folded");
+  }
 
   /* the floor lookup falls to the nearest carded size BELOW, never above */
   ok(floorFor(book, "salt", 1).exact === true, "an exact carded size is exact");
