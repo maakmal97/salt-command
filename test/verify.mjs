@@ -49599,6 +49599,11 @@ await (async () => {
   await (await import("./maker-communications.mjs")).run({ ok });
 })();
 
+section("Counter maker order moves: Ready, Decline, Cancel, replies and Not found");
+await (async () => {
+  await (await import("./maker-orders.mjs")).run({ ok });
+})();
+
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
@@ -50575,7 +50580,7 @@ await (async () => {
     ok(stalePaymentPlan.items.length === 0 && stalePaymentPlan.refused.some((item) => /reached this row|two roads/.test(item.why)),
       "the fold payFault remains the last check when money reaches a Counter-editor target after it was measured");
   } finally { countDb.close(); }
-  const adminCalls = [];
+  const adminCalls = [], extraReviewOrders = [];
   let previewRelease = null, holdPreview = false, adminWork = null, holdLoan = false, rejectLoan = null;
   const sealFixture = async (value, pass) => {
     const salt = new Uint8Array(16).fill(7), iv = new Uint8Array(12).fill(9);
@@ -50641,7 +50646,7 @@ await (async () => {
           } }
           : route === "/all/maker/customers/abcd-efgh/orders" ? { ok: true, order: { id: "20260929120000-foru" } }
           : route === "/all/maker/review" ? { ok: true,
-          orders: [{ id: "20260929120000-makr", u: "abcd-efgh", product: "salt", qty: 1, total: 100, status: "placed" }],
+          orders: [{ id: "20260929120000-makr", u: "abcd-efgh", product: "salt", qty: 1, total: 100, status: "placed" }, ...extraReviewOrders],
           drafts: [{ ...draftRow, status: "pending", entry: {}, row: { qty: 1, total: 100, cost: 56 }, flags: ["Check before deciding"] }] }
           : route.endsWith("/preview") ? { ok: true, hash: "a".repeat(64), cost: { total: 56 }, margin: { rm: 44, pct: 44 },
             row: { qty: 1, total: 100 }, flags: ["Review preview flag"] }
@@ -50659,9 +50664,25 @@ await (async () => {
     const doc = admin.window.document;
     doc.querySelector('button[data-m="maker"]').click();
     for (let i = 0; i < 100 && !doc.querySelector("#makerReview .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    const cards = doc.querySelectorAll("#makerReview .maker-card");
+    let cards = doc.querySelectorAll("#makerReview .maker-card");
     ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
       "the Admin review draws Desk row cost and frozen flags beside its decision");
+    const o0 = { u: "abcd-efgh", product: "salt", qty: 1, total: 100 };
+    extraReviewOrders.push({ ...o0, id: "20260929120000-ca01", status: "acknowledged" }, { ...o0, id: "20260929120000-ca02", status: "acknowledged", paid: 20 },
+      { ...o0, id: "20260929120000-ca03", status: "ready", closed: { qty: 1 } }, { ...o0, id: "20260929120000-ca04", status: "acknowledged", claimed: 30 },
+      { ...o0, id: "20260929120000-ca05", status: "ready", moved: 1 }, { ...o0, id: "20260929120000-ca06", status: "declined" },
+      { ...o0, id: "20260929120000-ca07", status: "cancelled" }, { ...o0, id: "20260929120000-ca08", status: "placed" });
+    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerReview h3")].some((h) => /ca01/.test(h.textContent)); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    const cancelOf = (suffix) => { const h = [...doc.querySelectorAll("#makerReview h3")].find((x) => x.textContent.endsWith(suffix));
+      return h ? [...h.parentElement.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
+    ok(cancelOf("ca01") === true && cancelOf("ca02") === false && cancelOf("ca03") === false && cancelOf("ca04") === false
+      && cancelOf("ca05") === false && cancelOf("ca06") === null && cancelOf("ca07") === null && cancelOf("ca08") === false,
+      "Maker offers Cancel only on an acknowledged or ready order with nothing paid, claimed, closed or handed over");
+    extraReviewOrders.length = 0;
+    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    cards = doc.querySelectorAll("#makerReview .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
       && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),

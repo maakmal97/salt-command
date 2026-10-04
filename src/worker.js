@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
@@ -342,7 +342,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
-    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend)$/.test(p))
+    && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
@@ -459,6 +460,27 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     return handleDraftsGet(env, new URL(request.url));
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  if (p === "/_internal/maker/order-again" || p === "/_internal/maker/words") {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 16384) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const list = body && Object.keys(body).length === 1 && (p.endsWith("/words") ? body.texts : body.ids);
+    if (!Array.isArray(list) || list.length > 200 || list.some((x) => typeof x !== "string" || x.length > 240)
+      || !p.endsWith("/words") && list.some((x) => !/^[0-9]{14}-[a-z0-9]{1,8}$/.test(x)))
+      return json({ ok: false, error: p.endsWith("/words") ? "Send only the texts to check." : "Send only order ids." }, 400);
+    if (p.endsWith("/words")) {
+      for (const text of list) {
+        const why = siteWords(text);
+        if (why) return json({ ok: false, error: "that text says something " + why }, 400);
+      }
+      return json({ ok: true });
+    }
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
+    return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
+  }
   if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
@@ -568,7 +590,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
     return json(response);
   }
-  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend)$/.exec(p);
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.exec(p);
   if (orderMatch) {
     let body;
     try {
@@ -584,6 +606,20 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     let result;
     try {
       if (action === "amend") result = await amendOrder(env, id, body);
+      else if (action === "notfound") result = await notFoundOrder(env, id, body);
+      else if (action === "move") {
+        /* his reply, No reply needed, Ready, Decline or Cancel: moveOrder checks every word through siteWords */
+        const found = await findOrder(env, id);
+        if (!found.ok) result = found;
+        else if (found.order.u === "0000-0000" || found.order.u === "0000-0001")
+          result = { ok: false, status: 409, error: "Acceptance orders cannot use the real order book." };
+        else {
+          /* `maker` makes the order book hold Ready to an acknowledged order and Cancel (his decision of 05 Oct 2026) to
+             one with nothing paid, in the same step as the move; a claim waiting and goods out refuse it as for the Desk */
+          result = await moveOrder(env, found.order.u, id, body.status ? { ...body, maker: true } : body);
+          if (result.ok && body.status) reconcileOnTap(env, ctx);
+        }
+      }
       else if (action === "preview") result = await previewOrder(env, id, body);
       else if (action === "accept") {
         result = await acceptOrder(env, id, body, "Counter Admin");
@@ -1609,6 +1645,8 @@ export default {
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
       /* S11: cash he took moves the ledger's mark with it, so only the cash route, which books its row, may send it */
+      /* `maker` is Counter Admin's alone, set by the Desk's own private route; a phone never carries it */
+      if (b && typeof b === "object") delete b.maker;
       if (b && b.cash) return json({ ok: false, error: "cash taken is recorded through orders/<id>/cash, which books its row" }, 400);
       /* S6: and a claim is answered only through orders/<id>/received, which books its row */
       if (b && b.verdict) return json({ ok: false, error: "a claim is answered through orders/<id>/received, which books its row" }, 400);

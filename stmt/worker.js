@@ -1017,7 +1017,7 @@ async function handleDesk(request, env, p, m) {
   if (!u || !OID_RE.test(mm[2])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const r = await deskMove(env, u, mm[2], await readJson(request));
-  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push });
+  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push, ...(r.again ? { again: true } : {}) });
 }
 
 /* ---- THE OWNER'S LIST (10 Sep 2026) ---------------------------------------------------------

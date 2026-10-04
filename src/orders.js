@@ -703,7 +703,9 @@ export async function notFoundOrder(env, id, body, now, covered) {
   if (at && !(await fileNotFound(env, at, Object.assign(claimEntry(o, p), { at }), now, covered ? "covered" : "notfound")))
     return { ok: false, status: 409, error: "its row is decided already, so it cannot be filed " + (covered ? "as on the book already" : "not found") };
   if (at) await dropQueued(env, [at]);
-  return moveOrder(env, o.u, id, { verdict: covered ? { kind: "received", covered: true, claim: p.at, amount: p.amount } : { kind: "notfound", claim: p.at, amount: p.amount } });
+  const verdict = covered ? { kind: "received", covered: true, claim: p.at, amount: p.amount } : { kind: "notfound", claim: p.at, amount: p.amount };
+  /* Counter Admin's tap carries an immutable id, which the order book keeps so a retry lands once */
+  return moveOrder(env, o.u, id, Object.assign({ verdict }, typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? { rid: body.rid } : {}));
 }
 /** POST /claims/<id>/notfound {amount}: a claim against the account has not arrived. Nothing was queued for it. */
 export async function notFoundClaim(env, id, body) {
@@ -1190,7 +1192,7 @@ export async function moveOrder(env, u, id, body) {
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
   const users = await usersMap(env);
-  return { ok: true, order: Object.assign({ code: users[b.order.u] || null }, b.order), push: b.push };
+  return Object.assign({ ok: true, order: Object.assign({ code: users[b.order.u] || null }, b.order), push: b.push }, b.again ? { again: true } : {});
 }
 
 /* ---- AN ORDER REACHES THE BOOK IN STAGES (v694, his instruction of 18 Sep 2026) ---------------

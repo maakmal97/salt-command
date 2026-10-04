@@ -295,7 +295,7 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (op === "fixture-account") {
       if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
-        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace"].includes(a.actor))
+        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder"].includes(a.actor))
         return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
         const sql = this.state.storage.sql;
@@ -337,6 +337,14 @@ export class OrderBook {
               doc.orders.push(order);
             } else order = decision.none ? previous : applyEvent(previous, decision.ev).order;
             doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = previous;
+          } else if (a.actor === "deskorder") {
+            /* Counter Admin's move on an example order: the order book's own decideDesk, in this fixture alone */
+            const previous = doc.orders.find((o) => o.id === a.id);
+            if (!previous) return { ok: false, error: "No such acceptance order.", status: 404 };
+            const decision = decideDesk(previous, a.body, at);
+            if (decision.error) return no(decision, decision.status || 400);
+            order = decision.none ? previous : applyEvent(previous, decision.ev).order;
+            doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = order;
           } else if (a.actor === "customer") {
             const decision = decideAccountClaim(a.u, a.request, doc.claims.filter((c) => c.state === "waiting"), at);
             if (decision.error) return no(decision, decision.status || 400);
@@ -501,16 +509,34 @@ export class OrderBook {
       if (d.error) return no(d, d.status || 400);
       return this.append(eid, u, id, d.ev, order);
     }
+    if (op === "deskseen") {
+      const u = String(a.u || ""), id = String(a.id || ""), rid = String(a.rid || "");
+      if (!RID_RE.test(rid)) return { ok: false, error: "name the request id", status: 400 };
+      const seen = this.event("d:" + u + ":" + id + ":rid:" + rid);
+      return { ok: true, seen: !!seen, request: seen ? JSON.parse(seen.body).request || null : null, order: this.order(u, id) };
+    }
     if (op === "desk") {
       const u = String(a.u || ""), id = String(a.id || "");
       const order = this.order(u, id);
       /* fix 4: a correction from the desk's committed list is one event under its own id: a repeat is answered, never applied */
       const fx = a.body && a.body.fix && typeof a.body.fix.id === "string" ? "d:" + u + ":" + id + ":fix:" + a.body.fix.id : null;
       if (fx && order && this.event(fx)) return { ok: true, order, again: true };
-      const d = decideDesk(order, a.body, at);
+      /* Counter Admin's move carries an immutable id: a retry is answered once, and the same id with other content refused */
+      const rid = a.body && typeof a.body.rid === "string" && RID_RE.test(a.body.rid) ? a.body.rid : null;
+      const rd = rid ? "d:" + u + ":" + id + ":rid:" + rid : null;
+      const body = rid ? Object.fromEntries(Object.entries(a.body).filter(([k]) => k !== "rid")) : a.body;
+      const request = rid ? JSON.stringify(body) : null;
+      const seen = rd ? this.event(rd) : null;
+      if (seen) {
+        if (JSON.parse(seen.body).request !== request)
+          return { ok: false, error: "That request id already names different content.", status: 409 };
+        return { ok: true, order, again: true };
+      }
+      const d = decideDesk(order, body, at);
       if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
       if (d.none) return { ok: true, order, none: true };
-      return this.append(d.ev.kind === "fix" ? fx : null, u, id, d.ev, order);
+      if (rd) d.ev.request = request;
+      return this.append(d.ev.kind === "fix" ? fx : rd, u, id, d.ev, order);
     }
     /* THE CHASE MARK lives here with the orders it follows: true when this slot's wake (S12 12.3) is still to be
        sent, and the mark is then written; a mark two hours old is dropped, as its KV lapse dropped it */

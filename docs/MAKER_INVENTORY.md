@@ -41,19 +41,20 @@ items. A roster registration's association is not permission to accept a Linked 
 |---|---|---|---|
 | Approve/reject proposed row | Maker: Order review, Approve row/Reject row | `/all/maker/drafts/<id>/approve` or `/reject`; native decisions | Claim rows cannot be approved generically; answer through their stage |
 | Preview/one-order price/Accept | Maker: Order review, Preview/Accept order | `/all/maker/orders/<id>/preview` or `/accept`; native preview and stage digest | Floor remains; no `PRICE_SET` or board price |
-| Ready | Maker: Mark ready | `/all/maker/orders/<id>/move`; native `deskMove` | Acknowledged orders only |
-| Decline | Maker: Decline | Same move route | Reason entry missing |
+| Ready | Maker: Mark ready | `/all/maker/orders/<id>/move` `{status, rid}`; native `deskMove`, the request id kept by the order book | Acknowledged orders only, held by the order book in the move's own step |
+| Decline | Maker: Decline | Same move route, `note` an optional reason through `siteWords` | A placed order; the reason is written onto the order's history |
+| Cancel | Maker: Cancel order | Same move route, `status: cancelled` (his decision of 05 Oct 2026) | Only while nothing is paid or claimed and no goods are out, as the Desk's own Cancel for the last two; a paid order is cancelled from the Desk, which carries the refund |
 | Handover | Maker: Record handover | `/all/maker/orders/<id>/handed`; native stage tap | Stage approval and row checks remain |
 | Cash | Maker: Record cash | `/all/maker/orders/<id>/cash`; native cash stage | Outstanding-advance and remaining-room restrictions |
 | Order claim Received | Maker: Receive claimed/Confirm received | `/all/maker/orders/<id>/received`; native Received | Covered-on-book and richer claim-stage controls missing |
-| Order Not found | None | Native `notFoundOrder` not bridged | Missing |
+| Order Not found | Maker: Not found beside a waiting claim | `/all/maker/orders/<id>/notfound` `{claim, amount, rid}`; native `notFoundOrder` | The claim must still wait, at its own amount; a retry is answered from the order book |
 | Stage retry | No visible control | Maker `again` route exists | A route alone is not UI coverage |
 | Close/cancel/delivery amendments | None | Native stage/move semantics not fully exposed | Missing; no invented refund booking |
 | Account claim preview/Received/Not found | None | Native `claimPreview`, `claimReceived`, `notFoundClaim` not bridged | Next bounded slice; preview rows/hash and approval effects must be shared |
 | Slip view | None | Native `slipRelay` and read-only `/vault/key` not bridged | Next bounded slice; device-only decryption, non-extractable key, lock cleanup |
 | Account Chat/No reply needed | Maker: Chat, Send reply/No reply needed | `/all/maker/threads[/<u>]`; checked relay and native thread receipt | Fixed ID/body; encrypted reload recovery; isolated serialized example threads |
 | Notice Set/Clear/Read | Maker: Notice | `/all/maker/bulletin`; checked native bulletin relay | Confirm before wake; ambiguous readback never proves notification delivery |
-| Order reply/No reply needed/quick reply | None | Native order message relay not exposed by Maker | Account Chat is not order-thread parity; reasons/messages stay out of ledger notes |
+| Order reply/No reply needed | Maker: Reply to the customer, Send reply, No reply needed (on an open order) | `/all/maker/orders/<id>/move` `{message}` or `{noReply: true}`, each with `rid`; `siteWords` | Quick replies missing; reasons and messages stay out of ledger notes |
 | Customer order/history | Customer Orders; Accounts: View account orders | Customer routes and existing `/all/orders/<u>` | Existing owner route is a read, including example claims; not a maker decision |
 | Place on behalf | Accounts: Place for them | `/all/maker/customers/<u>/orders`; native placement | Their sealed list and identity; no board override |
 | Weekly/manual hours | Maker: Save weekly hours/temporary override/clear override | `/all/maker/hours` | Closed does not block placement; delayed acknowledgement is shown |

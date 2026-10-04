@@ -1,5 +1,5 @@
-import { allOrders, deskMove, placeOrder, customerView, RID_RE, onBook } from "./orders.js";
-import { accountRecord, exampleAccount, isTest, TEST_USERS } from "./testfix.js";
+import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook } from "./orders.js";
+import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS } from "./testfix.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours } from "./hours.js";
 
 const HOURS_KEY = "maker:hours";
@@ -13,6 +13,37 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 
 const allowedOwner = (identity) =>
   !!identity && typeof identity.email === "string" && identity.email.trim().toLowerCase() === OWNER_EMAIL;
+
+/* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
+   reaches the Desk's route */
+function orderMoveFault(action, body) {
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : ["rid", "status", "note", "message", "noReply"];
+  if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
+  if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
+  if (action === "notfound")
+    return typeof body.claim === "string" && Number.isFinite(Date.parse(body.claim))
+      && typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0 ? "" : "Name the claim and its amount.";
+  const kinds = ["status", "message", "noReply"].filter((key) => body[key] !== undefined).length;
+  if (kinds !== 1) return "Send one move: a status, a reply, or No reply needed.";
+  if (body.status !== undefined && !["ready", "declined", "cancelled"].includes(body.status)) return "Choose Ready, Decline or Cancel.";
+  if (body.message !== undefined && (typeof body.message !== "string" || !body.message.trim() || body.message.length > 200))
+    return "A reply is 1 to 200 characters.";
+  if (body.noReply !== undefined && body.noReply !== true) return "No reply needed is true or absent.";
+  if (body.note !== undefined && (!["declined", "cancelled"].includes(body.status)
+    || typeof body.note !== "string" || !body.note.trim() || body.note.length > 140))
+    return "A reason goes only with Decline or Cancel, up to 140 characters.";
+  return "";
+}
+
+/* whether a request the order book kept under this id is the move now asked for */
+function sameMove(action, body, kept) {
+  if (!kept || typeof kept !== "object") return false;
+  if (action === "notfound") return !!kept.verdict && kept.verdict.kind === "notfound" && kept.verdict.claim === body.claim
+    && Math.abs(+kept.verdict.amount - body.amount) <= 0.004 && Object.keys(kept).length === 1;
+  const keys = ["status", "note", "message", "noReply"];
+  /* the Desk adds `maker` to a status move; it is the Desk's own, never the owner's content */
+  return Object.keys(kept).every((key) => keys.includes(key) || key === "maker") && keys.every((key) => kept[key] === body[key]);
+}
 
 async function bodyOf(request) {
   const text = await request.text();
@@ -43,7 +74,8 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
-    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again)$/.test(path) && method === "POST";
+    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move)$/.test(path) && method === "POST"
+    || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words") && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
   const response = await env.DESK_MAKER.fetch(new Request("https://desk" + path, {
     method,
@@ -155,8 +187,8 @@ function internalOperation(path) {
   if (dm) return { kind: "draft-decision", id: dm[1], decision: dm[2] };
   const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again)$/.exec(path);
   if (om) return { kind: "order-action", id: om[1], action: om[2] };
-  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/move$/.exec(path);
-  if (mm) return { kind: "order-move", id: mm[1] };
+  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound)$/.exec(path);
+  if (mm) return { kind: "order-move", id: mm[1], action: mm[2] };
   return null;
 }
 
@@ -275,6 +307,19 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const [orders, drafts] = await Promise.all([allOrders(env, true), deskCall(env, "/_internal/maker/drafts", "GET")]);
+      /* a move he rejected under Approve, offered again from here: the Desk's own againOf names the stages */
+      const ids = orders.filter((o) => !["declined", "cancelled"].includes(o.status)).map((o) => o.id).slice(0, 200);
+      const again = ids.length ? (await deskCall(env, "/_internal/maker/order-again", "POST", { ids })).again || {} : {};
+      for (const o of orders) if (Array.isArray(again[o.id]) && again[o.id].length) o.again = again[o.id];
+      /* the acceptance accounts' orders, from their serialized fixture alone, marked so no real road is offered */
+      for (const u of TEST_USERS) {
+        const fixture = await exampleAccount(env, u);
+        if (!fixture.ok) {
+          if (fixture.status === 409) continue;
+          return json(fixture, fixture.status || 503);
+        }
+        orders.push(...fixture.orders.map((o) => ({ ...o, u: o.u || u, test: true })));
+      }
       return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [] });
     }
     if (op.kind === "drafts") {
@@ -296,6 +341,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (EXAMPLE_ID.test(op.id))
+        return json({ ok: false, error: "Not available on an example order." }, 409);
       return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/" + op.action, "POST", parsed.body));
     }
     if (op.kind === "order-move") {
@@ -303,15 +350,49 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
       const body = parsed.body;
-      if (Object.keys(body).some((key) => key !== "status") || !["ready", "declined"].includes(body.status))
-        return json({ ok: false, error: "Choose Ready or Decline." }, 400);
+      const fault = orderMoveFault(op.action, body);
+      if (fault) return json({ ok: false, error: fault }, 400);
+      const { rid, ...rest } = body;
+      if (EXAMPLE_ID.test(op.id)) {
+        /* an example order moves in its account's serialized fixture alone, by the order book's own decideDesk */
+        let u = null, found = null;
+        for (const t of TEST_USERS) {
+          const fixture = await exampleAccount(env, t);
+          if (!fixture.ok) {
+            if (fixture.status === 409) continue;
+            return json(fixture, fixture.status || 503);
+          }
+          found = fixture.orders.find((o) => o.id === op.id);
+          if (found) { u = t; break; }
+        }
+        if (!found || !isExample(u, op.id)) return json({ ok: false, error: "order not found" }, 404);
+        const texts = [rest.message, rest.note].filter((text) => typeof text === "string");
+        if (texts.length) await deskCall(env, "/_internal/maker/words", "POST", { texts });
+        let move = rest;
+        if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
+        if (op.action === "notfound") {
+          const waiting = (found.payments || []).find((p) => p && p.claim === "waiting" && p.at === rest.claim);
+          if (!waiting) return json({ ok: false, error: "That claim is not waiting any more." }, 409);
+          if (Math.abs(waiting.amount - rest.amount) > 0.004) return json({ ok: false, error: "That claim amount has changed." }, 409);
+          move = { verdict: { kind: "notfound", claim: waiting.at, amount: waiting.amount } };
+        }
+        const result = await exampleAccount(env, u, { actor: "deskorder", id: op.id, rid,
+          request: { id: op.id, action: op.action, body: rest }, body: move });
+        return json(result.ok ? { ok: true, order: result.order, test: true, ...(result.again ? { again: true } : {}) } : result,
+          result.ok ? 200 : result.status || 503);
+      }
       const order = (await allOrders(env, true)).find((item) => item.id === op.id);
       if (!order) return json({ ok: false, error: "order not found" }, 404);
-      if (body.status === "ready" && order.status !== "acknowledged")
-        return json({ ok: false, error: "Only an acknowledged order can be marked ready." }, 409);
-      const result = await deskMove(env, order.u, order.id, { status: body.status });
-      if (!result.order) return json({ ok: false, error: result.error || "order could not be moved" }, result.status || 409);
-      return json({ ok: true, order: result.order });
+      /* the order book keeps the request id: a retry that already landed is answered from it, other content refused */
+      const seen = await deskSeen(env, order.u, op.id, rid);
+      if (!seen.ok) return json({ ok: false, error: seen.error || "The order book could not be read." }, seen.status || 503);
+      if (seen.seen) {
+        let same = false;
+        try { same = sameMove(op.action, rest, JSON.parse(seen.request)); } catch (e) { same = false; }
+        return same ? json({ ok: true, order: seen.order, again: true })
+          : json({ ok: false, error: "That request id already names different content." }, 409);
+      }
+      return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/" + op.action, "POST", body));
     }
   } catch (error) {
     const status = Number.isInteger(error && error.status) ? error.status : 503;

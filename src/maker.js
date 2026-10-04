@@ -58,6 +58,8 @@ export function makerOrderFault(action, body) {
     cash: ["amount"],
     received: ["amount", "claim", "covered"],
     again: ["stage"],
+    notfound: ["rid", "claim", "amount"],
+    move: ["rid", "status", "note", "message", "noReply"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"]
   };
   if (!Object.hasOwn(fields, action) || Object.keys(body).some((key) => !fields[action].includes(key)))
@@ -88,5 +90,22 @@ export function makerOrderFault(action, body) {
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
   if (action === "again" && !["pay", "cash", "move", "cancel"].includes(body.stage)) return "Choose a stage to offer again.";
+  if ((action === "notfound" || action === "move")
+    && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
+    return "Send the action's immutable request id.";
+  if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))
+    return "Name the claim and its amount.";
+  if (action === "move") {
+    const kinds = [body.status !== undefined, body.message !== undefined, body.noReply !== undefined].filter(Boolean).length;
+    if (kinds !== 1) return "Send one move: a status, a reply, or No reply needed.";
+    if (body.status !== undefined && !["ready", "declined", "cancelled"].includes(body.status))
+      return "Choose Ready, Decline or Cancel.";
+    if (body.message !== undefined && (typeof body.message !== "string" || !body.message.trim() || body.message.length > 200))
+      return "A reply is 1 to 200 characters.";
+    if (body.noReply !== undefined && body.noReply !== true) return "No reply needed is true or absent.";
+    if (body.note !== undefined && (!["declined", "cancelled"].includes(body.status)
+      || typeof body.note !== "string" || !body.note.trim() || body.note.length > 140))
+      return "A reason goes only with Decline or Cancel, up to 140 characters.";
+  }
   return "";
 }

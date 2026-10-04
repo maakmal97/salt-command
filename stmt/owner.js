@@ -1484,12 +1484,41 @@ export const OWNER_JS = `
         if(status) status.textContent=result.differs?'The row differs from the preview and waits for review.'
           :result.waiting?'The row is being drafted; acknowledgement is still waiting.'
           :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.';
+        return true;
       });
     },function(error){
       makerBusy=false;
       var status=document.getElementById('makerReviewStatus');
       if(status) status.textContent=error.message;
+      return false;
     });
+  }
+  /* one request id per move until it lands, so a retry after a lost answer is the same request */
+  var makerRids={};
+  function makerMove(order,body,message){
+    var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
+    return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
+      Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+  }
+  function makerOrderMoves(card,order){
+    var reason=makerField(card,'Reason to the customer (Decline or Cancel, optional)','text','');
+    var said=makerField(card,'Reply to the customer','text','');
+    makerButton(card,'Send reply',function(){
+      if(!said.value.trim()) return;
+      makerMove(order,{message:said.value.trim()},'Reply sent.');
+    },false);
+    makerButton(card,'No reply needed',function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
+    var note=function(){ var t=reason.value.trim(); return t?{note:t}:{}; };
+    if(order.status==='placed')
+      makerButton(card,'Decline',function(){
+        if(!window.confirm('Decline this order?')) return;
+        makerMove(order,Object.assign({status:'declined'},note()),'Order declined.');
+      },false);
+    else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.paid>0)&&!(+order.claimed>0)&&!(+order.moved>0))
+      makerButton(card,'Cancel order',function(){
+        if(!window.confirm('Cancel this order? Nothing is paid on it.')) return;
+        makerMove(order,Object.assign({status:'cancelled'},note()),'Order cancelled.');
+      },false);
   }
   async function loadMakerInputs(){
     var box=document.getElementById('makerInputs'); if(!box||box.childElementCount>1) return;
@@ -1710,13 +1739,9 @@ export const OWNER_JS = `
             }
           }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
         },true);
-        makerButton(card,'Decline',function(){
-          if(!window.confirm('Decline this order?')) return;
-          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/move',{status:'declined'},'Order declined.');
-        },false);
       }else if(order.status==='acknowledged'){
         makerButton(card,'Mark ready',function(){
-          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/move',{status:'ready'},'Order marked ready.');
+          makerMove(order,{status:'ready'},'Order marked ready.');
         },true);
       }else if(order.status==='ready'){
         var qty=makerField(card,'Units handed over','number',order.qty);
@@ -1734,12 +1759,16 @@ export const OWNER_JS = `
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',
               {amount:payment.amount,claim:payment.at},'Claim confirmation sent to the Desk.');
           },false);
+          makerButton(card,'Not found '+rm(payment.amount),function(){
+            makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.');
+          },false);
         });
         var received=makerField(card,'Other payment received (RM)','number','');
         makerButton(card,'Confirm received',function(){
           makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
         },false);
       }
+      makerOrderMoves(card,order);
     });
     (makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).forEach(function(draft){
       var card=makerCard(root), entry=draft.entry||{};

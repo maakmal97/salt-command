@@ -1371,7 +1371,16 @@ client-supplied identity header is read.
 
 The Maker place combines open site orders with pending Desk rows. Order Accept uses the Desk's
 existing preview-and-digest path; later handover, cash and Received actions use the existing
-order-stage functions. Ready and Decline use the Counter order book's `deskMove`. Desk draft
+order-stage functions. Ready, Decline, Cancel, a reply, No reply needed and Not found are
+`POST /all/maker/orders/<id>/move` (or `/notfound`) with an immutable `rid`: the Counter reads the
+order book's `deskseen` first and answers a retry from it, then the Desk's private
+`/_internal/maker/orders/<id>/move` runs `moveOrder` (every word through `siteWords`), and the order
+book keeps the request under `d:<u>:<id>:rid:<rid>`, so a retry lands once and the same id with other
+content is 409. A status move carries `maker: true` into `decideDesk`, which holds Ready to an
+acknowledged order and Cancel (his decision of 05 Oct 2026) to one with nothing paid, beside the
+Desk's own refusals for goods out or a claim waiting. An acceptance order moves in its fixture alone
+(actor `deskorder`, the same `decideDesk`), marked `test` in the review. The Desk's `/order-again`
+and `/words` private routes carry the Maker review's offered-again stages and the word check. Desk draft
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
 checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`

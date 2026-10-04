@@ -176,6 +176,9 @@ async function bookMove(env, op, a) {
 }
 export const fixtureThreadMove = (env, a) => bookMove(env, "fixture-thread", a);
 export const fixtureAccountMove = (env, a) => bookMove(env, "fixture-account", a);
+/** Whether Counter Admin's move under `rid` is on this order already, and the request it was made with. */
+export const deskSeen = (env, u, id, rid) => onBook(env) ? bookMove(env, "deskseen", { u, id, rid })
+  : Promise.resolve({ ok: false, error: "A move with a request id needs the order book.", status: 503 });
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */
 async function bookRead(env, op, a, fromKv) {
   try { return await book(env, op, a); }
@@ -846,6 +849,11 @@ export function decideDesk(order, body, at) {
   if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+  /* Counter Admin's moves (`maker`, his decision of 05 Oct 2026): Ready only on an acknowledged order, and Cancel only while
+     nothing is paid, which the Desk's own Cancel does not ask. Held here so a retry, answered earlier from its request id,
+     is never refused for the order having moved on */
+  if (body && body.maker === true && status === "ready" && order.status !== "acknowledged") return { error: "only an acknowledged order can be marked ready", status: 409 };
+  if (body && body.maker === true && status === "cancelled" && (+order.paid || 0) > 0.004) return { error: "money is paid on this order, so it is cancelled from the Desk, which carries the refund", status: 409 };
   /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER is sent at the acknowledgement alone, and at no
      other move: the desk checked it against the floor, and the site prices nothing, so it takes a positive figure to 2 dp */
   if (body && body.total !== undefined && status !== "acknowledged") return { error: "a price is set only when the order is acknowledged", status: 400 };
@@ -1213,10 +1221,12 @@ export async function deskMove(env, u, id, body) {
   if (onBook(env)) {
     const r = await bookMove(env, "desk", { u, id, body });
     if (r.error) return r;
-    if (!r.wake) return { order: r.order };
+    if (!r.wake) return Object.assign({ order: r.order }, r.again ? { again: true } : {});
     const push = await wakeCustomer(env, u, r.wake);
     return { order: r.order, push };
   }
+  /* Counter Admin's immutable request id is kept only by the order book, so the KV road cannot promise a retry lands once */
+  if (body && body.rid !== undefined) return { error: "A move with a request id needs the order book.", status: 503 };
   /* S6 fix: and Received, on the book already, which takes a claim and its entry's name off the order as Not found does */
   if (body && body.verdict && (body.verdict.kind === "notfound" || body.verdict.covered)) return { error: NOT_FOUND_ON_KV, status: 503 };
   /* fix 4: a correction is one event under its own id, which only the order book keeps */
