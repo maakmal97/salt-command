@@ -144,14 +144,11 @@ const putSince = (at) => idb("readwrite", (st) => st.put(String(at), "since"));
    replaces another. The summary hands over the lines newer than the mark sent as `?since=` (at most three); once
    they are shown the mark moves to the newest, so a line is shown once. */
 const n1 = (n, one, many) => (n === 1 ? "1 " + one : n + " " + many);
-const join = (a) => (a.length > 1 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a[0]);
 /* WHAT WAITS, BY DEADLINE, soonest first, a group a line: Now, then Today, then the orders acknowledged and still waiting on
    him, on a last line with no group word (a by-when comes later). Nothing here is a code, a name or an amount. */
 function tail(s) {
   const now = [], today = [], out = [];
   if (s.refunds) now.push("pay back " + n1(s.refunds, "refund", "refunds"));   /* v759: money he is holding that is somebody else's */
-  const cd = (s.countDue || []).filter((x) => typeof x === "string" && /^[A-Za-z0-9 _-]{1,20}$/.test(x));
-  if (cd.length) today.push("count " + join(cd));
   if (s.pending) today.push("approve " + n1(s.pending, "row", "rows"));
   if (s.refused) today.push("check " + n1(s.refused, "refused entry", "refused entries"));
   if (now.length) out.push("Now: " + now.join(", ") + ".");

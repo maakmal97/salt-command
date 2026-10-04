@@ -78,11 +78,6 @@ const VKEY = "vault";                 // the encrypted name vault, ciphertext on
 const AKEY = "vault-addr";            // F14: the places envelope, ciphertext only, read and written with the key
 const KKEY = "vault-key";             // F13: the slip key's sealed private half, read with the key, written only by seed-vault
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
-/* THE DAY IS KUALA LUMPUR'S (08 Sep 2026). COUNT_ON is written by the fold in MYT; "today" here
-   was the UTC day, so between midnight and 08:00 a morning count read as not taken and
-   yesterday's count read as today's. Same expression as src/orders.js. */
-const klDay = (at) => new Date(at || Date.now()).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
-
 // The only shape /vault will store: the desk's AES-GCM envelope. Anything else (a plain
 // name map, say) is refused, so plaintext can never reach the cloud through this door.
 const isEnvelope = (v) =>
@@ -1262,18 +1257,6 @@ export default {
           try {
             const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
             if ((d && d.n) > 0) worth = true;
-            const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
-            if (c && c.doc) {
-              /* THE CRON'S OWN DAY, NOT THE DAY THE PROCESS HAPPENS TO BE RUNNING (19 Sep 2026).
-                 This read the wall clock while everything else in scheduled() honours
-                 event.scheduledTime, so a tick that fired late, was retried, or was replayed
-                 compared the count against the wrong day and woke him over a count that was
-                 taken. It was found by the v708 assertion flipping at midnight: the fixture
-                 pinned a scheduled time and the code ignored it, so the test passed or failed
-                 by the date it was run on rather than by anything it asserted. */
-              const on = JSON.parse(c.doc), today = klDay(event && event.scheduledTime);
-              if (Object.keys(on).some((k) => on[k] !== today)) worth = true;
-            }
             /* v708, his instruction of 18 Sep 2026: "if paid, I will need to refund immediately".
                Money he is HOLDING that is somebody else's was the one open figure nothing chased
                him about. customerRefunds is a COLLECTION, so it is in `entry` and not in `state`,
@@ -1661,7 +1644,7 @@ export default {
        date. It is still keyed, because the rule set on 20 Aug is that a read carrying the book
        needs the key, and a rule with a convenient exception stops being a rule. */
     if (p === "/push/summary") {
-      const out = { ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], now: 0, lines: [] };
+      const out = { ok: true, pending: 0, refused: 0, refunds: 0, now: 0, lines: [] };
       try {
         if (env.SALT_LEDGER) {
           const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
@@ -1676,11 +1659,6 @@ export default {
             const rf = await env.SALT_LEDGER.prepare("SELECT doc FROM entry WHERE collection='customerRefunds'").all();
             out.refunds = (rf.results || []).filter((x) => { try { return !JSON.parse(x.doc).paidOn; } catch (e) { return false; } }).length;
           } catch (e) { out.refunds = 0; }
-          const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
-          if (c && c.doc) {
-            const on = JSON.parse(c.doc), today = klDay();
-            for (const k of Object.keys(on)) if (on[k] !== today) out.countDue.push(k);
-          }
         }
         /* 24 Sep 2026: `placed` apart, because only those are his to acknowledge; an acknowledged
            order is a row (v766) and the banner no longer asks him to acknowledge it */

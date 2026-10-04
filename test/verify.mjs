@@ -11443,15 +11443,9 @@ await (async () => {
     const r = await worker.fetch(req("/drafts/x1/approve", { method: "POST", headers: { "content-type": "application/json", "x-salt-key": "k" }, body: "{}" }), envD, { waitUntil() { } });
     ok(r.status === 409, `a decision whose UPDATE changed no row (another tap won) answers 409, not 200 (${r.status})`);
     const wsrc = readFileSync(join(REPO, "src", "worker.js"), "utf8");
-    /* BOTH READINGS ARE KUALA LUMPUR'S DAY, AND THEY TAKE THEIR DAY FROM DIFFERENT PLACES ON
-       PURPOSE (19 Sep 2026). The cron's reading must use event.scheduledTime, or a tick that fires
-       late compares a count against the wrong day; the request handler's has no scheduled time to
-       use and the wall clock is the right answer there. This counted two bare klDay() calls until
-       the cron's was given the instant, which is why it is stated as the rule rather than the text. */
-    ok((wsrc.match(/today = klDay\(/g) || []).length === 2 && /timeZone: "Asia\/Kuala_Lumpur"/.test(wsrc),
-      "both of the Worker's \"today\" readings against COUNT_ON are Kuala Lumpur's day");
-    ok(/today = klDay\(event && event\.scheduledTime\)/.test(wsrc) && (wsrc.match(/today = klDay\(\)/g) || []).length === 1,
-      "the cron's reading takes the tick's own time and the request handler's takes the clock, which is the one place the clock is right");
+    /* NO COUNT NOTIFICATION (05 Oct 2026, his instruction): a count due woke him every day and sat on every banner,
+       so neither the morning cron nor /push/summary reads COUNT_ON any more. */
+    ok(!/COUNT_ON|klDay|countDue/.test(wsrc), "the Worker raises no count notification: nothing in it reads COUNT_ON or a count due");
     const swA = readFileSync(join(REPO, "public", "sw.js"), "utf8"); const apiA = (swA.match(/const API = (\/.*\/);/) || [])[1];
     const rxA = new RegExp(apiA.slice(1, apiA.lastIndexOf("/")));
     ok(["/orders", "/orders/u/abc", "/stmt-users", "/draft-now"].every((p) => rxA.test(p)) && +((/salt-shell-v(\d+)/.exec(swA) || [])[1] || 0) >= 5, "the service worker never caches /orders, /stmt-users or /draft-now, and the shell cache name moved");
@@ -27097,8 +27091,8 @@ await (async () => {
   const dayAfter = await tick8(paidOnly, "2026-09-18", "2026-09-19T01:00:00Z");
   ok(onTheDay.logs.some((l) => /nothing worth saying/.test(l)),
     "a count taken on the morning the cron fires is not stale, whatever day the suite is run on");
-  ok(dayAfter.sent.length === 1,
-    "and the same count a day later IS stale, so the day being read is the cron's own and not the clock's");
+  ok(dayAfter.sent.length === 0 && dayAfter.logs.some((l) => /nothing worth saying/.test(l)),
+    "and the same count a day later wakes nobody either: a count due is no longer a notification (05 Oct 2026)");
 
   const quiet = await tick8(paidOnly);
   ok(quiet.sent.length === 0 && quiet.logs.some((l) => /nothing worth saying/.test(l)),
@@ -33639,7 +33633,7 @@ await (async () => {
   const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
   ok(bRefund && bRefund.opt.body === "Now: pay back 1 refund.",
     "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
-  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on the desk.\nNow: pay back 1 refund.\nToday: count salt, approve 2 rows.",
+  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on the desk.\nNow: pay back 1 refund.\nToday: approve 2 rows.",
     "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
   ok(bQuiet && bQuiet.opt.body === "Nothing waiting, and nothing owed a decision." && bQuiet.t === "All square",
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
@@ -49123,13 +49117,13 @@ await (async () => {
   /* WHAT WAITS, BY DEADLINE: a group a line, soonest first, the acknowledged orders last with no group word */
   const g = await push(Object.assign({}, quiet, { refunds: 1, countDue: ["oil", "rice"], pending: 2, refused: 1, orders: 1 }), {});
   ok(g.shown.length === 1 && g.shown[0].t === "Waiting on you" && g.shown[0].opt.data.url === "./desk#orders"
-    && g.shown[0].opt.body === "Now: pay back 1 refund.\nToday: count oil and rice, approve 2 rows, check 1 refused entry.\n1 order waiting on you.",
-    "the tail groups by deadline: a refund under Now, a count and a row under Today, and the acknowledged orders last: " + JSON.stringify(g.shown[0] && g.shown[0].opt.body));
+    && g.shown[0].opt.body === "Now: pay back 1 refund.\nToday: approve 2 rows, check 1 refused entry.\n1 order waiting on you.",
+    "the tail groups by deadline: a refund under Now, a row under Today (a count is no longer asked for, even from a summary that carries one), and the acknowledged orders last: " + JSON.stringify(g.shown[0] && g.shown[0].opt.body));
   const h = await push(Object.assign({}, quiet, { refunds: 2, countDue: ["salt", "oil", "rice"], pending: 1, refused: 3, orders: 2 }), {}),
     h1 = await push(Object.assign({}, quiet, { countDue: ["oil"] }), {});
-  ok(h.shown[0].opt.body === "Now: pay back 2 refunds.\nToday: count salt, oil and rice, approve 1 row, check 3 refused entries.\n2 orders waiting on you."
-    && h1.shown[0].opt.body === "Today: count oil.",
-    "and the phrasing follows the number: " + JSON.stringify([h.shown[0].opt.body, h1.shown[0].opt.body]));
+  ok(h.shown[0].opt.body === "Now: pay back 2 refunds.\nToday: approve 1 row, check 3 refused entries.\n2 orders waiting on you."
+    && !h1.shown.some((x) => /count/i.test(x.opt.body)),
+    "and the phrasing follows the number; a count due alone raises no count line: " + JSON.stringify([h.shown[0].opt.body, h1.shown.map((x) => x.opt.body)]));
   /* news and a new order carry the tail after their own sentence */
   const i = await push(Object.assign({}, quiet, { news: "A customer says they paid", refunds: 1, orders: 1 }), {}),
     j = await push(Object.assign({}, quiet, { news: "A customer cancelled" }), {}),

@@ -8939,7 +8939,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1007","d":"05 Oct 2026","t":"SA5-BTR LOT AT RM64 LANDED; CJ4-BJ SETTLES S137 AND BUYS 6.25 UNIT; 3 UNIT BACK TO CM4-TO","n":["<b>Four moves, the loan settled by hand.</b> A salt lot from SA5-BTR (12.5 unit, RM750 plus RM50 freight, collected, paid and received on 05 Oct, so RM64 a unit landed), CJ4-BJ's RM50 settling s137, a new sale s232 of 6.25 unit to CJ4-BJ for RM500, and loan l001 repaid in kind to CM4-TO.","<b>Inventory.</b> The stated salt shelf rolls +12.5 and -6.25, then down 3 for the loan repaid in kind, so 0 becomes 3.25. CM4-TO's paid order s194 is untouched and stays at 9.5 unit deferred. The CE5-SA-R order is deliberately not booked: he is holding it until delivery can be shared across an order."]}];
+const evolution=[{"v":"v1008","d":"05 Oct 2026","t":"NO COUNT NOTIFICATION","n":["<b>THE COUNT REMINDER IS GONE.</b> A shelf not counted today woke the phone every morning and added a Today: count line to every banner until a count was folded. Neither the morning round nor the banner summary reads the count date any more. A pending row, a refused entry, an open refund and a customer's act still wake the phone as before; counts and the drafter's count flags are unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9085,7 +9085,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 01:19 KL';
+const LAST_UPDATED='05 Oct 2026, 03:10 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
