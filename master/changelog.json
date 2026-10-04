@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1011",
+  "d": "05 Oct 2026",
+  "t": "ONE TRIP TO CE5-SA-R: SALT ABOVE ITS FLOOR, RICE BELOW ITS FLOOR ON HIS WORD",
+  "n": [
+   "<b>TWO ROWS, ONE TRIP, BOTH PAID AND DELIVERED 05 OCT.</b> Both rows go to CE5-SA-R as R2 resale on trip t1791145053619, with the RM40 delivery held on the salt row alone. The salt clears its floor. The rice is sold under its floor on his word. The draft costed salt at RM64 a unit but the inventory's own rate is RM60, so the salt cost is corrected.",
+   "<b>INVENTORY.</b> Salt falls by 1 unit and rice by 2 units. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1010",
   "d": "05 Oct 2026",
   "t": "ONE DELIVERY FOR A TRIP OF SEVERAL BOOKS",
