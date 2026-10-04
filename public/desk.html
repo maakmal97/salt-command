@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1b85da3b0fb99683";
+var SALT_BUILD_ID="47cd13f7aa344eb0";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -5606,6 +5606,24 @@ function stockBasis(purchases,stock,opening){
   return {rate:rate==null?null:+rate.toFixed(4),parts:parts,onOpening:A.beyond,openingRate:opRate,
     from:units>0.0001?'lots':(newest!=null?'newest lot':(opRate!=null?'opening':null))};
 }
+/* COGS A UNIT, HIS SETTLED RULE OF 05 OCT 2026 (salt first; oil, candy and rice to follow): the LATEST purchase entry's
+   quote total plus its trip freight, over its units. Not the shelf's weighted goods rate (stockBasis above, which is
+   what the inventory is CARRIED at and leaves freight out), not a trailing average, and no leakage. The caller passes one
+   book's lots. A lot counts once something of it has landed (poLive, poRecvUnits), on its receivedOn else its date; with
+   `onOrBefore`, a lot landing after that day is not yet the latest. On one day the lot later in the list wins, so a lot
+   appended after the book (a drafted one) is the newer. The row itself comes back as `p` for its caller to name. */
+function latestCogs(purchases,onOrBefore){
+  let best=null;
+  (purchases||[]).forEach(p=>{
+    if(!p||!poLive(p)||!(poRecvUnits(p)>0.0001)||!(+p.qty>0)||!Number.isFinite(+p.total))return;
+    const d=p.receivedOn||p.date||null;
+    if(onOrBefore&&d&&d>onOrBefore)return;
+    if(!best||(d||'')>=(best.date||''))best={p:p,date:d};
+  });
+  if(!best)return null;
+  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0;
+  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+p.qty,rate:+((+p.total+fr)/+p.qty).toFixed(4)};
+}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
    rows: what arrived, what left, what the shelf carries, what is owed each way, and what the
@@ -6334,7 +6352,7 @@ function renameInBook(book,pairs){
 return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
@@ -9061,7 +9079,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1008","d":"05 Oct 2026","t":"NO COUNT NOTIFICATION","n":["<b>THE COUNT REMINDER IS GONE.</b> A shelf not counted today woke the phone every morning and added a Today: count line to every banner until a count was folded. Neither the morning round nor the banner summary reads the count date any more. A pending row, a refused entry, an open refund and a customer's act still wake the phone as before; counts and the drafter's count flags are unchanged."]}];
+const evolution=[{"v":"v1009","d":"05 Oct 2026","t":"THE DRAFTER COSTS A SALE ON THE SETTLED BASIS","n":["<b>A DRAFTED SALE'S COST NOW FOLLOWS THE COGS RULE.</b> The cost is the latest landed purchase's quote plus its freight, over its units (p035: RM750 and RM50 over 12.5 unit, RM64 a unit). Before this the drafter took the shelf's average goods rate with freight left out, so s232 drafted at RM56 a unit and had to be overridden to RM400 in the fold notes. A purchase drafted earlier in the same batch is read in order, and a sale costed off a lot not yet folded carries a flag to decide that lot first. The cost note names the lot, quote, freight, units and rate. The order card's cost reads the same figure.","<b>NO PRICE, FLOOR OR BOARD MOVES.</b> The floor flag still carries leakage and the trailing average, and the fold's fallback for a cost-less amended sale still reads the shelf; both wait for the pricing build. Gifts, redemptions and the reward cover stay on the shelf figure."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9207,7 +9225,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 03:10 KL';
+const LAST_UPDATED='05 Oct 2026, 03:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

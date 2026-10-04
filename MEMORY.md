@@ -4,7 +4,8 @@
 - Deployed at `https://salt-command.qyts8mh72kyg.workers.dev`.
 
 ## Access
-- `REQUIRE_ACCESS` = `"0"` (the Cloudflare Access application is removed).
+- `REQUIRE_ACCESS` = `"0"` and `ACCESS_TEAM`, `ACCESS_AUD` are empty in `wrangler.jsonc` (the Worker does not verify a JWT yet).
+- A Cloudflare Access login nonetheless gates the Desk's public address and is intended, his word of 05 Oct 2026: `/rev` answers 302 to the Access login (read 05 Oct 2026). It is set outside the repo's config.
 
 ## Migrations
 - Newest rebuild: `migrations/0010`.
