@@ -211,6 +211,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .vbar,.lapse{padding:0 16px;margin-bottom:14px;background:var(--salt-veil);border:1px solid var(--salt-line);
   border-radius:var(--salt-radius-sm);backdrop-filter:blur(10px)}
 .vbar .lapse{padding:0;margin:0;background:none;border:0;backdrop-filter:none}
+/* 04 OCT 2026: HIS VIEW LINE SHARES ITS ROW WITH BACK TO ACCOUNTS. On a phone the line took the row's width, so the
+   button fell to a second row and the line sat a pixel under the veil's top edge; the line now wraps beside the button,
+   centred on its 44px, and a lapse still takes the next row */
+.vbar>span{flex:1 1 0;min-width:0;padding:10px 0;line-height:1.5}
+.vbar b{white-space:nowrap}
 .bar b{color:var(--salt-text);font-variant-numeric:tabular-nums}
 .lapse{flex-basis:100%;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .lapse[hidden]{display:none}
