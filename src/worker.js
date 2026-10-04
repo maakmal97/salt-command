@@ -27,6 +27,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
 import { queueSale } from "./orders.js";
 import { ciAccess, ownerAccess } from "./access.js";
+import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
 import { withVaultWrite, vaultWriteStatus } from "./vault-write-gate.js";
@@ -1345,6 +1346,8 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    const held = maintenance(request, env);
+    if (held) return held;
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;

@@ -41,6 +41,7 @@
 import { landingPage, boardPage, shutPage, MON3, mtileSvg } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
+import { maintenance } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
@@ -1569,6 +1570,8 @@ async function handleGuest(request, env, id) {
 
 export default {
   async fetch(request, env) {
+    const held = maintenance(request, env);
+    if (held) return held;
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;

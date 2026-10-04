@@ -95,6 +95,8 @@
 		"crons": ["* * * * *", "0 1 * * *"]
 	},
 	"vars": {
+		// ISO time: until then every page request answers 503 (src/maintenance.js); empty means off.
+		"MAINTENANCE_UNTIL": "",
 		// Names and places were bootstrapped under the durable paused write gate.
 		// Pair revision/readback must match before that gate is explicitly reopened.
 		"VAULT_STORE": "pair",
