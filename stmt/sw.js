@@ -2,8 +2,7 @@
  *
  * It exists for one thing: to show a banner when a push wakes it. It handles no fetch, so the page a
  * customer opens is still fetched from the Worker every time and nothing about a statement is ever
- * held in a cache on the phone. It holds no session. The one thing it reads from the Cache is /lang,
- * the language the page last recorded on this phone (S13 13.4), which no fetch is ever answered from.
+ * held in a cache on the phone. It holds no session and reads nothing from the Cache.
  *
  * THE BANNER IS A PLAIN SENTENCE OF ITS KIND (S12 12.2, his decision D4 of 24 Sep 2026; his sentences of
  * 28 Sep 2026, Step 1b). A wake for a phone whose keys are on file carries { k, o } and, where the kind
@@ -25,7 +24,7 @@
  * opens the page with it filled in, the way the QR does. A string rather than a file because the
  * site has no assets and every byte it serves is generated per request.
  */
-import { WORDS, LIVE } from "./words.js";
+import { WORDS } from "./words.js";
 
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
@@ -39,17 +38,14 @@ export const TEXT_KINDS = ["reply", "declined", "cancelled", "message"];
 export const LINE_KINDS = ["reply", "message"];
 export const TEXT_MAX = 200;
 export const NEWS = Object.fromEntries(KINDS.map((k) => [k, WORDS.en["news." + k]]));
-const SW_WORDS = Object.fromEntries(Object.keys(WORDS).map((L) => [L,
-  Object.fromEntries(Object.keys(WORDS[L]).filter((k) => k.startsWith("news.")).map((k) => [k.slice(5), WORDS[L][k]]))]));
+const SW_WORDS = { en: Object.fromEntries(Object.keys(WORDS.en).filter((k) => k.startsWith("news.")).map((k) => [k.slice(5), WORDS.en[k]])) };
 
-/* F7 (his instruction of 28 Sep 2026): the script for the languages live on the Counter, LIVE as served; the suite builds
-   it with Malay live too, to prove the kept words */
-export function swScript(langs) {
+export function swScript() {
   return `
-var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")}, LIVE = ${JSON.stringify(langs)}, LANG = 'en';
+var NEWS = ${JSON.stringify(NEWS)}, W = ${JSON.stringify(SW_WORDS).replace(/</g, "\\u003c")};
 var CASES = ${JSON.stringify(CASES)}, TEXT_KINDS = ${JSON.stringify(TEXT_KINDS)}, LINE_KINDS = ${JSON.stringify(LINE_KINDS)}, TEXT_MAX = ${TEXT_MAX};
-/* a word in the language this phone last chose, else English's */
-function nw(k){ var t = W[LANG] && W[LANG][k]; return t || W.en[k] || ''; }
+/* a banner word, in English */
+function nw(k){ return W.en[k] || ''; }
 /* Step 1b: THE BODY OF A KIND. His own text where the kind carries it (his line in quotation marks, his reason as it
    stands), else the case's sentence, else the kind's own, else Tap to open it */
 function bodyOf(n){
@@ -57,15 +53,6 @@ function bodyOf(n){
   if (t && TEXT_KINDS.indexOf(n.k) >= 0) return LINE_KINDS.indexOf(n.k) >= 0 ? '“' + t + '”' : t;
   var v = typeof n.v === 'string' && CASES.indexOf(n.v) >= 0 ? nw(n.k + '.' + n.v) : '';
   return v || nw(n.k + '.b') || (TEXT_KINDS.indexOf(n.k) >= 0 ? nw('update') : nw('tap'));
-}
-/* S13 13.4: the language the page last recorded on this phone, which it leaves in this origin's Cache as /lang (the
-   service worker cannot read the page); English where there is none, or one this script has no words for. F7: or one
-   that is not live, so a phone that kept Malay while Malay is off reads its banner in English */
-function langOf(){
-  try {
-    return self.caches.open('lang').then(function(c){ return c.match('/lang'); }).then(function(r){ return r ? r.text() : ''; })
-      .then(function(t){ return LIVE.indexOf(t) >= 0 && Object.prototype.hasOwnProperty.call(W, t) ? t : 'en'; }, function(){ return 'en'; });
-  } catch (x) { return Promise.resolve('en'); }
 }
 self.addEventListener('install', function(){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
@@ -77,8 +64,7 @@ self.addEventListener('push', function(e){
   /* Step 7: his line on the account's thread opens the thread (#thread), never an order */
   var th = !!(n && n.k === 'message');
   var to = { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') + (o ? '#o=' + o : th ? '#thread' : ''), order: o, thread: th };
-  e.waitUntil(langOf().then(function(L){
-    LANG = L;
+  e.waitUntil(Promise.resolve().then(function(){
     /* one banner a message of his (plan F1): his line takes its own tag, so a second line never replaces the first unseen */
     var m = n && LINE_KINDS.indexOf(n.k) >= 0 && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
     if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
@@ -116,4 +102,4 @@ self.addEventListener('notificationclick', function(e){
 });
 `;
 }
-export const SW_JS = swScript(LIVE);
+export const SW_JS = swScript();

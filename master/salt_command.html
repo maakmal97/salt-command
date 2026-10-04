@@ -8982,7 +8982,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1012","d":"05 Oct 2026","t":"A CUSTOMER WHO HAS PAID LATE IS PAID IN ADVANCE ON ACCEPT UNTIL THREE ARE ON TIME","n":["<b>PREPAY AFTER LATENESS (V5b2c).</b> The desk Worker's paid-in-advance verdict at Accept now also holds for a customer with any delay in all history, until three payments in a row are on time. It reads the engine's lateOffer walk (late and run), the same one the Tiers card reads, so there is no second walk. On time is within the term; a paid-in-advance order counts once handed over; an amount open past the term is late today. One verdict a sheet. The card names the reason (paid late before, N of 3 on time since).","<b>TERMS.</b> The sealed terms now carry lateResetRepeat and lateWindowDays from RULES, so the Worker reads the desk's rule. A missing day is an error, never a silent credit. The Counter page does not forecast it; nothing prices."]}];
+const evolution=[{"v":"v1013","d":"05 Oct 2026","t":"MALAY REMOVED EVERYWHERE: ENGLISH IS THE ONLY LANGUAGE","n":["<b>MALAY REMOVED (his decision of 05 Oct 2026).</b> The Counter has one table, English: no Malay table, no language switch, no kept choice, no language written to the Cache for the banner, and no Malay half on the sign-in message. Nothing a customer reads in English changes.","<b>THE LOCKS.</b> siteWords and the desk's siteSafe now read the English level and product words only; a bare emas or perak no longer warns. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -19944,21 +19944,15 @@ async function ordLoad(quiet){
    asks first. Clearing wakes nobody and asks nothing. The words are checked here first, and again on the Worker, the desk
    being the one place that may hold its own name: a customer's page never names the desk, a roster code or a
    level, and a product is a mark there rather than a word, so a product's name warns and is his to allow. ---- */
-/* S13 13.2 (his decision D12, 24 Sep 2026): the same words in Malay, mirroring siteWords in src/orders.js, whose
-   lists the suite pins against the book and TIER_NAMES. Emas, perak and gangsa are ordinary words (Perak is a state,
-   "peluang emas" a golden chance), so they are refused only after a word that says level, or member, customer, price,
-   reward, now or up to before emas or gangsa (pelanggan Perak is Perak's customers), a colon, dash or quote and a "your"
-   or "new" allowed between (Tahap: Emas, tahap anda: Perak), and warn anywhere else. Every book's name warns, and its Malay word with it. */
+/* English only (the second language was removed on 05 Oct 2026), mirroring siteWords in src/orders.js, whose lists the suite pins against
+   the book and TIER_NAMES. Every book's name warns. */
 function siteSafe(t){
   const s=String(t||'');
   if(/salt\s*command/i.test(s))return {refuse:'That names the desk, which a customer\'s page never does.',warn:''};
   if(/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(s))return {refuse:'That carries a roster code, which a customer\'s page never shows.',warn:''};
-  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s)
-    ||/\b(tahap|peringkat|taraf|pangkat|kategori|level|tier)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|perak|gangsa)\b/i.test(s)
-    ||/\b(ahli|keahlian|pelanggan|harga|kad|kelas|status|pakej|ganjaran|kini|naik ke)([^a-z0-9.,;!?]{1,4}(anda|awak|kamu|baru))?[^a-z0-9.,;!?]{1,4}(emas|gangsa)\b/i.test(s))
+  if(/\b(ambassador|titanium|platinum|gold|silver|bronze)\b/i.test(s))
     return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
-  if(/\b(emas|perak|gangsa)\b/i.test(s))return {refuse:'',warn:'That may name a level in Malay, which a customer\'s page never does; Perak the state is fine.'};
-  if(/\b(salt|oil|candy|rice|spare|garam|minyak|gula-gula|gula|beras)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
+  if(/\b(salt|oil|candy|rice|spare)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
   return {refuse:'',warn:''};
 }
 async function bullLoad(quiet){
@@ -20848,7 +20842,7 @@ async function ordAct(b){
     /* v753: HIS ANSWER, CHECKED HERE AND AGAIN ON THE WORKER. This page can refuse it before it
        leaves, which is the kinder place to be told; the Worker refuses it whatever asks, which is
        the place that has to hold. Same lock as the bulletin, and the same ask (S8, 25 Sep 2026): a line
-       it warns on, a product's name or a bare emas, perak or gangsa, goes only once he says so. */
+       it warns on, a product's name goes only once he says so. */
     const si=document.querySelector('input[data-say="'+id+'"]');
     const t=si?String(si.value||'').trim():'';
     if(!t)return refuse('Write something first; nothing was sent.');

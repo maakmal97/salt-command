@@ -111,7 +111,7 @@ export async function run({ ok }) {
     ok(noopEvent && JSON.stringify(preserved) === JSON.stringify(unchanged),
       "No reply needed on an already answered thread records an immutable no-op without changing its history.");
     const forbiddenWords = ["ambassador", "titanium", "platinum", "gold", "silver", "bronze",
-      "Salt Command", "CX1-ZED", "tahap emas", "tahap perak", "tahap gangsa", "ahli emas", "pelanggan gangsa"];
+      "Salt Command", "CX1-ZED"];
     for (const [index, word] of forbiddenWords.entries()) {
       const response = await owner("/all/maker/threads/" + user, "POST",
         { message: word, rid: "forbidden-owner-word-" + String(index).padStart(2, "0") });

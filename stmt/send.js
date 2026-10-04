@@ -5,9 +5,8 @@
  * and the Worker builds each card's message from it. A second copy is how the two would drift, and
  * the message is the one part of the send a customer keeps.
  *
- * NOTHING UNDER stmt/ IMPORTS OUT OF stmt/, so this file imports only LIVE from its neighbour
- * stmt/words.js (F7); the tool imports IN, which is allowed and is the direction that keeps the
- * Worker clean.
+ * NOTHING UNDER stmt/ IMPORTS OUT OF stmt/; the tool imports IN, which is allowed and is the
+ * direction that keeps the Worker clean.
  *
  * THE PASSWORD IS NEVER IN A MESSAGE. It went by its own channel while it lived only on the
  * laptop, and it still does: the card copies it on its own, to the clipboard.
@@ -17,7 +16,6 @@
  * claimed that link already existed from v688 until v710, three lines above a function that sent a
  * password by a second channel; it did not exist, and the claim is corrected here rather than
  * quietly dropped. */
-import { LIVE } from "./words.js";
 
 /** The month a date string belongs to, as a customer reads it. */
 export function monthNameOf(issue) {
@@ -65,28 +63,13 @@ export function linkMessage(row) {
  *  S3 3.4, HIS D1 OF 24 SEP 2026: THE LINK KEEPS THE PHONE SIGNED IN, and the message says so and names the
  *  username, so the customer knows what to type if they ever meet the door. It still carries no home screen
  *  steps: on an iPhone the saved app is carried across by a code the page shows, not by this message.
- *  F7: `opts.langs`, the live languages (LIVE unless given), decides whether the Malay half travels. Defaulted, so the
- *  function still takes one argument, and a month handed in by an old caller changes nothing (v769). */
-export function signInMessage(row, opts = null) {
-  const langs = (opts && Array.isArray(opts.langs)) ? opts.langs : LIVE;
+ *  A second argument from an old caller changes nothing (v769). */
+export function signInMessage(row) {
   return "Your Salt Counter account is ready. Tap to open it on this phone:\n" + row.url + "\n\n"
     + "Your username is " + row.user + ". The link works once and keeps this phone signed in.\n\n"
     + INSIDE + "\n\n"
     + "Open it yourself and do not pass it on: anybody holding it can open your account until you "
-    + "have used it. It stops working after three days; if it has, ask me for a new link."
-    + (langs.includes("ms") ? "\n\n" + signInMalay(row) : "");
-}
-/* S13 13.4, HIS D12 OF 24 SEP 2026: THE MESSAGE IS ENGLISH AND BAHASA MELAYU IN ONE (the plan's 13.4, from the design's
- * "the message, EN and BM in one"): it goes before the phone's language is known, so both halves travel, the English
- * first, which is where a paste into the door finds the username. The same words, the link above it, and no password.
- * F7, HIS INSTRUCTION OF 28 SEP 2026: ONLY WHILE MALAY IS LIVE. With Malay off the message is the English alone. */
-function signInMalay(row) {
-  return "Akaun Salt Counter anda sudah sedia. Ketik pautan di atas untuk membukanya di telefon ini.\n\n"
-    + "Nama pengguna anda ialah " + row.user + ". Pautan ini berfungsi sekali sahaja dan telefon ini kekal log masuk.\n\n"
-    + "Di dalamnya ada penyata akaun anda, yang dikemas kini mengikut pesanan anda, harga terkini, dan borang untuk "
-    + "membuat pesanan. Jika ada soalan, tulis pada pesanan itu dan saya akan jawab di situ.\n\n"
-    + "Buka sendiri dan jangan kongsikan: sesiapa yang ada pautan ini boleh membuka akaun anda sehingga anda "
-    + "menggunakannya. Pautan ini tamat selepas tiga hari; jika sudah tamat, minta pautan baharu daripada saya.";
+    + "have used it. It stops working after three days; if it has, ask me for a new link.";
 }
 
 /** The second message: the password, and nothing that says which account it opens. */

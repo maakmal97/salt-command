@@ -122,7 +122,7 @@ hues, and it is generated, so a new hue is added upstream and synced.
 - **`src/worker.js` and `src/orders.js`**: the reconcile, the nudge, `queueSale`, `ledgerKey`
   and `ovKey` (code, date, total and, off salt, the product, all through the engine's `ovKey`),
   the order thread and the bulletin all pass a product through opaquely. `siteWords` refuses
-  the desk's name, a roster code's shape and a level's name, in English and Malay, and
+  the desk's name, a roster code's shape and a level's name, in English, and
   deliberately does not refuse a product's name; the desk's `siteSafe` warns on one.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
   the morning round, not the product. No topic is per-product.
@@ -174,12 +174,11 @@ but a purchase defaults to null.
 9. A `PSYM` path standing 2.6 to 21.4 about the centre like the others (the suite measures it) and a
    `PSHAPE` word, or accept the Ring. A `PLET`
    letter only if he gives one, with a `PLET_ROOM` drawing if a line of the mark crosses it: never the book's
-   initial in English or Malay. The F8 section holds each book's words and
+   initial in English. The F8 section holds each book's words and
    goes red until the new book's are added there, lettered or not. The Ring carries no letter.
-10. Its name and its Malay word in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`.
+10. Its name in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`.
     The suite fails until both carry the book's name, and holds the desk to every word on the
-    list; the Malay word it cannot know, so add it by hand, to the list and to `MS_PRODUCTS` in
-    the suite's S13 13.2 section.
+    list.
 
 **Then** `booksync --sync`, build, and read the Whiteboard: see section 8.
 

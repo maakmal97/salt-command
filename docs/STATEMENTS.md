@@ -229,27 +229,7 @@ joined from translated halves. A refusal a customer can meet is `e.<code>` there
 code, the Worker's English standing for one it does not know. Salt Account stays English and unkeyed; a guest's board
 and a shut link are keyed but English only (no script); `stmt/send.js` is unkeyed.
 
-**The first Malay slice** (his D12, the plan's 13.4), as it reads while Malay is live (it is off: `LIVE` below): the `MS` table words the welcome, the door and its refusals,
-saving the app (the keep card and Sheets, One step to finish), Home, paying (To pay now, the pay Sheet, Did you send,
-a claim), an order's money and its messages, and This device. The page follows the phone (`navigator.languages`, the
-first of `ms`, `ms-MY`, `ms-BN`, `zsm` or `en`, else English); a switch, English or Bahasa Melayu, on the door, the
-welcome, One step to finish and This device overrides it and is kept on the phone as `salt-lang`, the page drawing the
-same without storage. Outside the slice (Prices, the statement, Rewards, the order sheet, the Orders list, and an
-order's head, steps, history and cancel) is drawn in English whatever is chosen (`inEn`) and says `lang="en"`
-(`enLang`, the slice inside it `rdLang`), a state, size or date the
-slice shares included, and so is a note a tap leaves there (`wErrE`), so an order's screen is mixed until its slice comes. The page leaves its language in the
-origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
-none. Salt Account is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
-since it goes before the phone's language is known. The suite reads the Malay table and a page drawn with Malay live
-(`{langs: ["en", "ms"]}`) for a product or level word.
-
-**Live languages are `LIVE`** (F7, `stmt/words.js`): Malay is kept and off since 28 Sep 2026, his instruction,
-superseding D12's slice and the two-language message while it is off. With `LIVE = ["en"]` the page draws no switch
-(the door, the welcome, One step to finish and This device's row all go), a Malay phone and a phone that kept `ms` open
-in English (`langOk` requires `LIVE`, so `langOfPhone` and `salt-lang` pass Malay over), `/lang` is written English,
-the banner reads English for a language not live (`swScript(LIVE)`), and the sign-in message is its English half
-alone. `MS` stays whole: turning Malay on again is `LIVE = ["en", "ms"]`, and the suite renders the slice's sections
-with `{langs: ["en", "ms"]}` (`landingPage`, `signInMessage`, `swScript`), so the kept table stays proved.
+**English only.** Malay was removed everywhere on 05 Oct 2026, the owner's decision, superseding D12, F7 and the kept `MS` table: `stmt/words.js` holds `EN` alone (`WORDS = { en: EN }`), the page draws no language switch and keeps nothing as `salt-lang`, writes no `/lang` to the Cache, and `stmt/sw.js` words the banner in English; the sign-in message (`stmt/send.js`) is English alone. Salt Account is English on any phone. The suite asserts that no Malay table, switch or word list returns. The superseded D12 and F7 narrative is in `docs/NOTES.md`.
 
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
@@ -433,7 +413,7 @@ never by its product, so a screen reader is told what is drawn rather than what 
 **A letter of his in every mark, 20 px and over; it names nothing** (F8, his answers of 28 Sep 2026: "everywhere",
 then "Yes everywhere", the statement and the guest board included; v913's letters on Prices alone are superseded).
 `PLET` in `stmt/page.js`: I in the cube, G in the droplet, E in the lozenge, V in the capsule, none its book's initial
-in English or Malay and together no product word. `psymSvg` and the page's `psym` draw it always (spliced to the page as
+in English and together no product word. `psymSvg` and the page's `psym` draw it always (spliced to the page as
 `__PLET__`); there is no switch. **No mark is drawn under 20 px**, where the letter, a third of the mark, is too small to
 read: every smaller mark was raised, the statement's 13 px ones among them.
 

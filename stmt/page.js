@@ -37,7 +37,7 @@ import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { TEST_USERS } from "./testfix.js";
-import { EN, WORDS, LIVE, fill, fillHtml, unitsIn } from "./words.js";
+import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
    phone left on a table; he asked for a page that stays signed in and a button that leaves. What
@@ -288,12 +288,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
    the earlier statements close the statement; This device follows it, and stands beside it from 1080px */
 .acct{max-width:620px;margin:0 auto}
-.mfil .salt-tabs__pill,.lang .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
-/* S13 13.4: the language switch is the same tab strip: at the head of the door, the welcome and one step to finish, and
-   under its label in This device; not inside the signed-out Sheet, which carries the door's form alone */
-.gate>.lang{justify-content:flex-end;margin:0 0 18px}
-#outForm .lang{display:none}
-.devcard .lang{margin:8px 0 2px}
+.mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+
 .stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
 .stmtback p{flex:1 1 220px;margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
@@ -619,7 +615,7 @@ const RING = 'M12 3.4 A8.6 8.6 0 1 1 11.99 3.4 Z';
 export const PSHAPE = { salt: "Cube", oil: "Droplet", candy: "Lozenge", rice: "Capsule", _: "Ring" };
 /* ---- F8, HIS ANSWERS OF 28 SEP 2026 ("everywhere", then "Yes everywhere", the statement and the guest board included):
    A LETTER OF HIS IN EVERY BOOK'S MARK, WHEREVER IT IS DRAWN ----
-   None is its product's initial, in English or in Malay, and together they spell no product word: a letter names nothing
+   None is its product's initial, in English, and together they spell no product word: a letter names nothing
    and the mark is still the thing. psymSvg and the page's psym draw it always (v913's `lettered` switch is retired), and no
    mark is drawn under 20 px, where the letter, a third of the mark, would be too small to read. The spare book and any
    product with no letter keep the Ring, bare, and the aria stays the shape. */
@@ -718,15 +714,6 @@ const wt = (tag, attrs, k, px) => "<" + tag + (attrs ? " " + attrs : "") + ' dat
 const wl = (k) => ' aria-label="' + esc(EN[k]) + '" data-wl="' + k + '"';
 /* whose account it is: the username is a slot, filled by the script (data-who) */
 const whoAs = () => '<span data-whoas data-w="who.as">' + fillHtml(EN["who.as"], Object.assign(slotsAt(22), { u: '<span class="mono" data-who></span>' }), "en") + "</span>";
-/* S13 13.4 (his D12): ENGLISH OR BAHASA MELAYU, each named in its own words and its own language, the system's tab strip;
-   the script presses the pill of the language in use and keeps a tap's choice on this phone.
-   F7 (his instruction of 28 Sep 2026): a pill a live language (LIVE, stmt/words.js), and with one live language no switch at all */
-function langSwitch(langs) {
-  if (langs.length < 2) return "";
-  return '<div class="salt-tabs lang" role="group"' + wl("lang.h") + ">" + langs.map((L) => wt("button",
-    'type="button" class="salt-tabs__pill' + (L === "en" ? " salt-tabs__pill--active" : "") + '" data-l="' + L + '" lang="' + L + '" aria-pressed="' + (L === "en") + '"',
-    "lang." + L)).join("") + "</div>";
-}
 
 /* S3 3.5: A REMEMBERED PHONE DRAWS THIS, NOT THE DOOR, while it opens; and when a session lapses with nothing
    remembered, a Sheet says so over whatever they were doing, and the door's own form moves into it. */
@@ -777,13 +764,10 @@ function keepPage() {
 /* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the
    optional Home Screen install guide, the account's phones and computers with Sign in another device and Sign out
    other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the customer's one Log out (#lock). */
-function thisDevice(langs) {
+function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
-    /* S13 13.4: the language, under its label, the door's own switch; F7: the row goes with the switch */
-    + (langs.length < 2 ? "" : '<div class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
-    + wt("span", 'class="salt-ledger__label"', "lang.h") + '</div><div class="salt-ledger__flag">' + langSwitch(langs) + "</div></div></div>")
     + '<div id="devSlot"></div>' + keepPage()
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
@@ -858,8 +842,8 @@ function devSheet() {
 
 /* S3 3.11: ONE STEP TO FINISH. The saved app starts at /app with storage of its own: a key carried by Paste, or the
    eight symbols typed, brings the sign-in across, and the help says the true way to get one. */
-function codeScreen(langs) {
-  return '<div id="codeBox" class="gate" hidden>' + langSwitch(langs)
+function codeScreen() {
+  return '<div id="codeBox" class="gate" hidden>'
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", 'id="codeH"', "code.h")
     + wt("p", 'class="lead" id="codeLead"', "code.lead")
@@ -876,10 +860,10 @@ function codeScreen(langs) {
 
 /* S3 3.3: THE LINK PAGE. A link opens here and spends nothing until Continue: it says which account it opens
    and what is inside, and an app's own browser is sent to Safari or Chrome first. */
-function linkScreen(langs) {
+function linkScreen() {
   const row = (g, k) => '<div class="salt-ledger__row"><div class="salt-ledger__line"><span class="salt-ledger__label">'
     + glyphSvg(g, 20) + wt("span", "", k) + "</span></div></div>";
-  return '<div id="link" class="gate" hidden>' + langSwitch(langs)
+  return '<div id="link" class="gate" hidden>'
     + '<span class="appmark">' + glyphSvg("ring", 40) + "</span>"
     + wt("h1", "", "link.h")
     + wt("p", 'class="lead" id="linkLead"', "link.lead")
@@ -933,7 +917,7 @@ export function shutPage(nonce) {
     + '<p class="lead">' + wd("shut.p") + "</p>", nonce, esc(EN["shut.title"]));
 }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
-   to Malay or Chinese, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
+   to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
    the customer's, a guest board, a shut link and Salt Account. */
 const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
@@ -1009,10 +993,8 @@ function placesBar() {
     + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
-/* F7: `opts.langs`, the languages live on this page, LIVE unless given; the suite passes ["en", "ms"] to prove the kept slice */
-export function landingPage(user, nonce, owner, bulletin, opts) {
+export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
-  const langs = (opts && Array.isArray(opts.langs) && opts.langs.length) ? opts.langs : LIVE;
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
@@ -1136,7 +1118,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
         + '<p class="lead">Sign in again to carry on.</p>'
         + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
       : "")
-    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">" + (owner ? "" : langSwitch(langs))
+    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
@@ -1167,7 +1149,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen(langs) + codeScreen(langs) + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -1198,7 +1180,7 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
     + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
-    + (owner ? "" : thisDevice(langs))
+    + (owner ? "" : thisDevice())
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -1220,8 +1202,6 @@ export function landingPage(user, nonce, owner, bulletin, opts) {
       /* S13 13.3: every word by key, both tables, and the functions that fill them, the page's own; the marks for a
          sentence the script words again. By function, so a $ in a word is kept as typed; "<" escaped, as the notice is */
       .replace("__WORDS__", () => JSON.stringify(WORDS).replace(/</g, "\\u003c"))
-      /* F7: the languages live on this page, the only ones a phone's or a kept choice can open it in */
-      .replace("__LIVE__", () => JSON.stringify(langs))
       .replace("/*__FILL__*/", () => [fill, fillHtml, unitsIn, glyphOf].map(String).join("\n"))
       .replace("__GLS__", () => JSON.stringify(GLYPH))
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
@@ -1302,7 +1282,7 @@ const CLIENT_JS = `
      tw(k,s) is a key's words with its slots filled, twh(k,s) the same as markup, and a key the reader's language lacks is
      English's, never the key's name. A slot may be a function of the language its words were found in, so a date or a
      size inside a sentence is in the sentence's language, and one standing alone in the reader's. setW(x,k,s) words an
-     element and keeps its key and slots on it (data-w), which is how rewd() words the page again; the markup's keyed
+     element and keeps its key and slots on it (data-w); the markup's keyed
      elements are the server's. A refusal is worded from its code (wErr), the Worker's English standing for one unknown. */
   var WORDS=__WORDS__, LANG='en';
   /*__FILL__*/
@@ -1325,12 +1305,6 @@ const CLIENT_JS = `
     var h=twh(k,s,+x.getAttribute('data-gs')||22); if(x.innerHTML!==h) x.innerHTML=h;
     return x;
   }
-  function rewd(){
-    [].forEach.call(document.querySelectorAll('[data-w]'),function(x){ setW(x,x.getAttribute('data-w'),x._ws); });
-    [].forEach.call(document.querySelectorAll('[data-wl]'),function(x){ x.setAttribute('aria-label',tw(x.getAttribute('data-wl'))); });
-    [].forEach.call(document.querySelectorAll('[data-wp]'),function(x){ x.setAttribute('placeholder',tw(x.getAttribute('data-wp'))); });
-    [].forEach.call(document.querySelectorAll('[data-wa]'),function(x){ x.setAttribute('alt',tw(x.getAttribute('data-wa'))); });
-  }
   /* a refusal stands alone beside its control, so it is said as a sentence: the Worker's words are a clause, lower case
      with no stop, in either language (MY12 of the stage 13 review) */
   function sentence(t){ t=String(t||''); if(!t) return t; t=t.charAt(0).toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; }
@@ -1345,60 +1319,8 @@ const CLIENT_JS = `
   function Wk(k){ return function(L){ return wordIn(L,k); }; }
   /* a note kept to be shown later (draft.pushNote) is kept unworded, so it is said in the language of the place it shows in */
   function noteSaid(x){ return typeof x==='function'?x(LANG):(x||''); }
-  /* ---- S13 13.4 (his D12 of 24 Sep 2026): THE FIRST MALAY SLICE FOLLOWS THE PHONE, WITH A SWITCH ----------------------
-     The reader's language is the one chosen on this phone (the switch on the door and in This device, kept as salt-lang),
-     else the first of the phone's languages the Counter speaks (ms, ms-MY, ms-BN or zsm; en), else English. The Malay
-     table is a slice (stmt/words.js), a key it lacks being English's, and what lies outside the slice is drawn in English
-     whatever was chosen (inEn), so a word it shares with the slice, a state, a size or a date, reads English there too.
-     html lang follows and translate="no" stays; the choice is left in this browser's Cache as /lang, where the service
-     worker reads it to word a banner (stmt/sw.js). His own page is English.
-     F7 (his instruction of 28 Sep 2026): ONLY A LIVE LANGUAGE IS A CHOICE (LIVE, stmt/words.js, spliced in as served). With
-     Malay off, a Malay phone and a phone that kept Malay both open in English, the kept choice left as it was for the day
-     Malay is on again, and the Cache is told English, so the banner is too. */
-  var LANG_KEY='salt-lang', READER='en', LIVE=__LIVE__;
-  function langOk(L){ return LIVE.indexOf(L)>=0&&Object.prototype.hasOwnProperty.call(WORDS,L); }
-  function langKept(){ try{ var v=localStorage.getItem(LANG_KEY); return langOk(v)?v:''; }catch(e){ return ''; } }
-  function langOfPhone(){
-    var l=[].concat(navigator.languages||[],navigator.language||[]);
-    for(var i=0;i<l.length;i++){ var p=String(l[i]||'').toLowerCase().split(/[-_]/)[0]; if((p==='ms'||p==='zsm')&&langOk('ms')) return 'ms'; if(p==='en') return 'en'; }
-    return 'en';
-  }
-  function inEn(f){ return function(){ var was=LANG; LANG='en'; try{ return f.apply(this,arguments); }finally{ LANG=was; } }; }
-  /* a note a tap leaves to be drawn in a part outside the slice (the order sheet, the order's cancel, the limit, Rewards' links)
-     is worded in English as it is made, since the tap runs after inEn has handed the reader's language back */
-  var twE=inEn(tw), wErrE=inEn(wErr);
-  /* LANGUAGE OF PARTS (S13-L1 of the review): a part drawn in English on a page in another language says lang="en", so a
-     screen reader voices it in English, and a part of the slice inside it says the reader's; both clear on English */
-  function enLang(x){ if(x){ if(READER!=='en') x.setAttribute('lang','en'); else x.removeAttribute('lang'); } return x; }
-  function rdLang(x){ if(x){ if(READER!=='en') x.setAttribute('lang',READER); else x.removeAttribute('lang'); } return x; }
-  function langSet(L){
-    READER=LANG=!OWNER&&langOk(L)?L:'en';
-    document.documentElement.lang=READER;
-    [].forEach.call(document.querySelectorAll('#pPrices,#pCard,.acct__main'),enLang);
-    [].forEach.call(document.querySelectorAll('[data-l]'),function(b){ var on=b.getAttribute('data-l')===READER;
-      b.classList.toggle('salt-tabs__pill--active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
-    try{ if(!OWNER&&window.caches) caches.open('lang').then(function(c){ return c.put('/lang',new Response(READER)); }).catch(function(){}); }
-    catch(e){ /* the banner stays in English */ }
-  }
-  langSet(langKept()||langOfPhone());
-  /* the markup is served in English: in Malay it is worded again, device words and all; in English only the device's word */
-  if(READER!=='en') rewd();
-  else [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=devIn(LANG); });
-  /* a tap on a switch: kept on this phone (or for this visit, where storage throws), the page worded again, and what is
-     drawn from the account drawn again */
-  document.addEventListener('click',function(ev){
-    var b=ev.target&&ev.target.closest?ev.target.closest('[data-l]'):null; if(!b||OWNER) return;
-    var L=b.getAttribute('data-l');
-    try{ localStorage.setItem(LANG_KEY,L); }catch(e){ /* this visit only */ }
-    if(L===READER) return;
-    langSet(L); rewd();
-    if(session){ drawOrder(); drawDevice(); drawDev(); placeTitle(); }
-  });
-  /* OUTSIDE THE FIRST SLICE, ENGLISH: Prices, the statement and its months, Rewards, the order sheet, the Orders list, and an
-     order's head, steps, where it stands, history and cancel (OPARTS); the lines Orders leads with are said through twE */
-  drawPrices=inEn(drawPrices); pickStmt=inEn(pickStmt); drawFoot=inEn(drawFoot); drawMonths=inEn(drawMonths); applyMonths=inEn(applyMonths);
-  drawCard=inEn(drawCard); drawMyLinks=inEn(drawMyLinks); sheetDraw=inEn(sheetDraw); noOrderLine=inEn(noOrderLine); limitLine=inEn(limitLine);
-  oList=inEn(oList); oHead=inEn(oHead); oSteps=inEn(oSteps); oWhen=inEn(oWhen); oHist=inEn(oHist); oFoot=inEn(oFoot);
+  /* the device's word, drawn into the markup as served */
+  [].forEach.call(document.querySelectorAll('.dev'), function(x){ x.textContent=devIn(LANG); });
   /* 24 Sep 2026 (M22): an account he opened under the master is READ ONLY. It has no session, so its
      orders and links come from his own gated route, and nothing on it places, pays, sends or withdraws. */
   var view=false;
@@ -2695,7 +2617,7 @@ const CLIENT_JS = `
         wd.addEventListener('click', async function(){
           if(!confirm(tw('lnk.withdrawAsk'))) return;
           var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          if(mine!==ticket) return; if(rv.status===0) myNote=wErrE(rv.body,'x.notSent'); await loadMyLinks();
+          if(mine!==ticket) return; if(rv.status===0) myNote=wErr(rv.body,'x.notSent'); await loadMyLinks();
         });
         acts.appendChild(wd);
       }
@@ -2712,7 +2634,7 @@ const CLIENT_JS = `
         mk.disabled=true; var mine=ticket;
         var r=await api('/my/refs',{});
         if(mine!==ticket) return;
-        myNote=r.body.ok?'':wErrE(r.body,'lnk.notMade');
+        myNote=r.body.ok?'':wErr(r.body,'lnk.notMade');
         await loadMyLinks();
       });
       box.appendChild(mk);
@@ -2739,7 +2661,6 @@ const CLIENT_JS = `
   /* S13: the greeting's key */
   function hail(){
     var h=new Date().getHours();
-    /* Malay says Selamat tengah hari until about two, Selamat petang after (MY8 of the stage 13 review); English says Good afternoon for both */
     return h<12?'home.morning':h<14?'home.noon':h<18?'home.afternoon':'home.evening';
   }
   /* S4 4.8: a moment as the Prices stamp says it, "24 Sep 2026, 11:59", in Kuala Lumpur (C17: no weekday, the year kept) */
@@ -2977,7 +2898,7 @@ const CLIENT_JS = `
   function sheetDraw(){
     if(!osh) return;
     var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
-    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent=''; enLang(osh.box);
+    osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
     if(draft.step==='limit'&&openN()<OMAX) draft.step='form';
     if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     osh.foot.hidden=!osh.foot.firstChild;
@@ -3152,7 +3073,7 @@ const CLIENT_JS = `
       if(Math.abs(z.price-l.total)>0.004){ l.total=z.price; l.rate=+(z.price/z.q).toFixed(2); l.rid=mintRid(); moved=true; }
       l.was=Math.abs(l.total-l.shown)>0.004?l.shown:null;
     });
-    if(!moved&&!gone) draft.snote=c.lines.length===1?twE('sh.stillAt',{rm:rm(c.lines[0].total)}):twE('sh.stillAtAll',{rm:rm(sheetSum(c))});
+    if(!moved&&!gone) draft.snote=c.lines.length===1?tw('sh.stillAt',{rm:rm(c.lines[0].total)}):tw('sh.stillAtAll',{rm:rm(sheetSum(c))});
   }
   /* S4 4.6: FIVE OPEN ORDERS ARE SAID BEFORE THE FORM, not after it. The Worker refuses a sixth (MAX_OPEN in
      stmt/orders.js, carried here), and the refusal used to come after the form was filled and checked. With five open the
@@ -3190,7 +3111,7 @@ const CLIENT_JS = `
     var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
     if(mine!==ticket) return;
     if(r.body.ok) ridDone(o.id+':cancel');
-    draft.limTap=r.body.ok?null:{id:o.id, t:wErrE(r.body,'ord.notCancelled')};
+    draft.limTap=r.body.ok?null:{id:o.id, t:wErr(r.body,'ord.notCancelled')};
     await loadOrders(); if(mine!==ticket) return;
     drawOrder(); sheetDraw();
   }
@@ -3202,7 +3123,7 @@ const CLIENT_JS = `
     sheetHead(tw(c.amend?'ord.amendReview':'sh.check'),toForm);
     if(c.amend) B.appendChild(el('p','salt-insight',tw('ord.amendAsk')));
     if(c.amend&&(hoursError||counterHours&&!counterHours.open))
-      B.appendChild(el('p','salt-insight',twE(hoursError?'hours.unavailable':'hours.closed')));
+      B.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
     /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
        place of a What line that set the mark beside its size; V4b: a card a line */
     var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
@@ -3266,7 +3187,7 @@ const CLIENT_JS = `
       if(!r.body.ok&&r.body.code==='sheetTwice'){ l.placed='placed'; continue; }
       if(!r.body.ok){
         draft.busy=false;
-        draft.snote=wErrE(r.body,'sh.notPlaced');
+        draft.snote=wErr(r.body,'sh.notPlaced');
         /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
         if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
           if(!c.amend&&openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
@@ -3315,11 +3236,11 @@ const CLIENT_JS = `
        order beside it starts at the top of the place, its money, Pay and messages in view */
     var top=el('div','otop'); top.id='oTop'; oTopEl=top;
     /* S7 7.1: the header names the place, Orders; over the line the page below it still says what it is */
-    if(hold) top.appendChild(rdLang(el('h2',null,tw('ord.due'))));
+    if(hold) top.appendChild(el('h2',null,tw('ord.due')));
     if(view) top.appendChild(el('p','lead',tw('ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=rdLang(el('div','pane')), od=odNow(), left=odLeft();
+      var dueBox=el('div','pane'), od=odNow(), left=odLeft();
       dueBox.appendChild(kpiTile('ember',tw('pay.overdue'),rm(left),odNote(od)));
       dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){
@@ -3346,14 +3267,14 @@ const CLIENT_JS = `
       top.appendChild(el('p','lead',noOrderLine()));
     } else {
       /* S4 4.3: the form is a sheet now, laid over the page from here */
-      top.appendChild(el('p','lead',twE('ord.lead')));
+      top.appendChild(el('p','lead',tw('ord.lead')));
       var full=openN()>=OMAX;
       if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openN())); lim.id='oLimit'; top.appendChild(lim); }
       else {
         if(hoursError||counterHours&&!counterHours.open){
-          top.appendChild(el('p','salt-insight',twE(hoursError?'hours.unavailable':'hours.closed')));
+          top.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
         }
-        var nb=el('button','btn salt-pill salt-pill--md',twE('sh.new')); nb.type='button'; nb.id='oNew';
+        var nb=el('button','btn salt-pill salt-pill--md',tw('sh.new')); nb.type='button'; nb.id='oNew';
         nb.addEventListener('click',function(){ sheetOpen(null,null,nb); });
         top.appendChild(nb);
       }
@@ -3801,7 +3722,7 @@ const CLIENT_JS = `
         var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
         if(mine!==ticket) return;
         if(r.body.ok) ridDone(o.id+':cancel');
-        tapSaid(o,'withdraw',r.body.ok?'':wErrE(r.body,'ord.notCancelled'));
+        tapSaid(o,'withdraw',r.body.ok?'':wErr(r.body,'ord.notCancelled'));
         await loadOrders(); if(mine!==ticket) return; oDraw();
       });
       f.appendChild(wb);
@@ -3855,12 +3776,11 @@ const CLIENT_JS = `
   var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, rate:oRate, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
-  var OSLICE={money:1, act:1, thread:1, say:1};
-  function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return OSLICE[k]?rdLang(n):n; }
+  function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
   function oScreen(o){
     var s=el('section','oscreen salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'); s.setAttribute('data-order',o.id);
-    s.setAttribute('aria-label',twE('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)})); enLang(s);
-    var back=el('button','salt-ghost salt-ghost--tight oback',twE('ord.yours')); back.type='button';
+    s.setAttribute('aria-label',tw('oh.aria',{a:Uq(o.qty,oUnit(o)), d:Dd(oDay,o.at)}));
+    var back=el('button','salt-ghost salt-ghost--tight oback',tw('ord.yours')); back.type='button';
     back.addEventListener('click',function(){ var id=draft.oOpen; draft.oOpen=''; oDraw(); scrollClear(pOrder.querySelector('[data-row="'+id+'"]')); });
     s.appendChild(back);
     Object.keys(OPARTS).forEach(function(k){ s.appendChild(oPartOf(k,o)); });
@@ -3877,8 +3797,8 @@ const CLIENT_JS = `
     draft.oStale='';
     if(o&&!(id in draft.oSince)) draft.oSince[id]=seenMark(o);
     if(o) seeIt(o);
-    var col=enLang(el('div','olistcol')); if(oTopEl) col.appendChild(oTopEl);
-    col.appendChild(el('h2',null,twE('ord.yours'))); col.appendChild(oList(id));
+    var col=el('div','olistcol'); if(oTopEl) col.appendChild(oTopEl);
+    col.appendChild(el('h2',null,tw('ord.yours'))); col.appendChild(oList(id));
     place.appendChild(col);
     if(o) place.appendChild(oScreen(o));
     return place;
@@ -4666,9 +4586,9 @@ const CLIENT_JS = `
     var before=JSON.stringify([counterHours,hoursError]);
     try{
       var response=await fetch('/hours',{cache:'no-store',redirect:'manual'});
-      if(response.type==='opaqueredirect'||!response.ok) throw new Error(twE('hours.unavailable'));
+      if(response.type==='opaqueredirect'||!response.ok) throw new Error(tw('hours.unavailable'));
       var result=await response.json();
-      if(!result||typeof result.open!=='boolean') throw new Error(twE('hours.unavailable'));
+      if(!result||typeof result.open!=='boolean') throw new Error(tw('hours.unavailable'));
       counterHours=result; hoursError=false;
     }catch(error){ hoursError=true; }
     if(before!==JSON.stringify([counterHours,hoursError])&&tab==='order'&&!view) drawOrder();

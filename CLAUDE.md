@@ -339,9 +339,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` reads
-  English and Malay off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
+  English off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
   the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
-  a new book or level goes on both, its Malay word by hand.
+  a new book or level goes on both. **Malay is removed everywhere** (his decision of 05 Oct 2026): no table, switch or
+  Malay list; the suite asserts none returns.
 - **And one thread an account** (Step 7, his Q5): Home's card and a row on Account open it in a Sheet; theirs 20 a
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
   `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
@@ -474,8 +475,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 |---|---|
 | `engine/qr.mjs` | The ONE QR encoder (byte mode, level M, versions 1 to 10), inlined into the master; `tools/qr.mjs` re-exports it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; never edit it |
-| `stmt/send.js` | The one copy of the words a customer is sent; the sign-in message carries its Bahasa Melayu half after the English only while Malay is live |
-| `stmt/words.js` | Every word the Counter shows, by key, a table a language; a customer's refusal is `e.<code>` there, answered `{error, code}` by `refusal()`. **Live languages are `LIVE`**: Malay is kept and off since 28 Sep 2026, his instruction, superseding D12's slice and the two-language message while it is off (no switch, English on a Malay phone and in the banner). Malay (`MS`), when live, is a slice: the page follows the phone, a switch kept as `salt-lang`, the rest drawn English (`inEn`), and `/lang` in the Cache words the banner |
+| `stmt/send.js` | The one copy of the words a customer is sent; the sign-in message is English only |
+| `stmt/words.js` | Every word the Counter shows, by key; a customer's refusal is `e.<code>` there, answered `{error, code}` by `refusal()`. English is the only table (`WORDS = { en: EN }`); no language switch, no `LIVE`, no `salt-lang`, no `/lang` Cache entry |
 | `stmt/signin.js` | The one-time link; the two limits it cannot promise away are in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |
 | `tools/stmt-account.mjs` | Laptop only: mints the account for a roster code with a username and no record, never touching an existing one; `--pool` tops up the spare accounts (`tools/stmt-pool.mjs`) |

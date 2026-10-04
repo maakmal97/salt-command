@@ -76,42 +76,21 @@ function site(env, path, init) {
  * The desk's name, a roster code and a level's name are never on Salt Counter. Nothing under stmt/ may
  * hold these literals, so the check lives here, on the one road his own words take to the site: the
  * bulletin. A product's name is his to spend there; the phone warns and lets him.
- *
- * S13 13.2, HIS DECISION D12 OF 24 SEP 2026: THE WORDS IN MALAY TOO, before any Malay ships. The lists
- * below are the ones the suite pins against the book's names and the master's TIER_NAMES, and the desk's
- * siteSafe mirrors them. PERAK, EMAS AND GANGSA ARE ORDINARY WORDS: Perak is the state a delivery goes to,
- * "peluang emas" is a golden chance, and each is also the metal. So they name a level only after a word
- * that says level (tahap emas, peringkat perak); anywhere else the desk warns and asks him, and this lock
- * lets them through. A word that says member, customer, price or reward, or "now" and "up to", names a
- * level before emas or gangsa (ahli emas, anda kini gangsa) but not before perak, because Malay puts the
- * place after the noun: pelanggan Perak is Perak's customers, harga Perak the Perak price, naik ke Perak
- * going up to Perak. Between the two may stand up to four characters that are no letter, digit or stop
- * (Tahap: Emas, tahap-emas, a quote) and one of "your" or "new" (tahap anda: Perak). Platinum and
- * titanium are the same word in both languages.
- * A word with no Latin letter (Chinese, when he names any) is found as a substring, \b being blind to it,
- * and is never one character: gold is in the word for an amount and silver in the word for a bank. */
+ * The lists below are the ones the suite pins against the book's names and the master's TIER_NAMES, and the desk's
+ * siteSafe mirrors them. English only (the second language was removed on 05 Oct 2026, the owner's decision).
+ * A word with no Latin letter is found as a substring, \b being blind to it, and is never one character. */
 export const LEVEL_WORDS = ["ambassador", "titanium", "platinum", "gold", "silver", "bronze"];
-export const LEVEL_WORDS_MS = ["emas", "perak", "gangsa"];
-export const LEVEL_CUES_MS = ["tahap", "peringkat", "taraf", "pangkat", "kategori", "level", "tier"];
-export const LEVEL_CUES_MS_NOT_PERAK = ["ahli", "keahlian", "pelanggan", "harga", "kad", "kelas", "status", "pakej", "ganjaran",
-  "kini", "naik ke"];
-export const LEVEL_BETWEEN_MS = ["anda", "awak", "kamu", "baru"];
-export const PRODUCT_WORDS = ["salt", "oil", "candy", "rice", "spare", "garam", "minyak", "gula-gula", "gula", "beras"];
+export const PRODUCT_WORDS = ["salt", "oil", "candy", "rice", "spare"];
 /** Which of `words` the text holds: whole words for Latin ones, a substring for any other script. */
 export function wordsIn(text, words) {
   const t = String(text || "").toLowerCase();
   return words.filter((w) => /[a-z]/.test(w) ? new RegExp("\\b" + w + "\\b").test(t) : t.includes(w));
 }
-const SEP = "[^a-z0-9.,;!?]{1,4}";
-const cued = (cues, words) => new RegExp("\\b(" + cues.join("|") + ")(" + SEP + "(" + LEVEL_BETWEEN_MS.join("|") + "))?"
-  + SEP + "(" + words.join("|") + ")\\b", "i");
-const LEVEL_CUED = cued(LEVEL_CUES_MS, LEVEL_WORDS_MS);
-const LEVEL_CUED_NOT_PERAK = cued(LEVEL_CUES_MS_NOT_PERAK, LEVEL_WORDS_MS.filter((w) => w !== "perak"));
 export function siteWords(text) {
   const t = String(text || "");
   if (/salt\s*command/i.test(t)) return "that names the desk, which a customer's page never does";
   if (/\b[A-Z]{2}\d{1,2}-[A-Z]{2,4}(-R)?\b/.test(t)) return "that carries a roster code, which a customer's page never shows";
-  if (wordsIn(t, LEVEL_WORDS).length || LEVEL_CUED.test(t) || LEVEL_CUED_NOT_PERAK.test(t)) return "that names a level, which a customer's page never does";
+  if (wordsIn(t, LEVEL_WORDS).length) return "that names a level, which a customer's page never does";
   return "";
 }
 

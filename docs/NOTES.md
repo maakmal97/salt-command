@@ -701,3 +701,29 @@ change is NEVER shipped by the auto-sync leg. It must be deployed by hand.
 `npm test` runs `test/verify.mjs`: 250 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.
+
+## Superseded: the Malay slice and the live languages (D12, F7), removed 05 Oct 2026
+
+Moved from `docs/STATEMENTS.md`. The owner removed Malay everywhere on 05 Oct 2026; this is the reasoning as it stood.
+
+**The first Malay slice** (his D12, the plan's 13.4), as it reads while Malay is live (it is off: `LIVE` below): the `MS` table words the welcome, the door and its refusals,
+saving the app (the keep card and Sheets, One step to finish), Home, paying (To pay now, the pay Sheet, Did you send,
+a claim), an order's money and its messages, and This device. The page follows the phone (`navigator.languages`, the
+first of `ms`, `ms-MY`, `ms-BN`, `zsm` or `en`, else English); a switch, English or Bahasa Melayu, on the door, the
+welcome, One step to finish and This device overrides it and is kept on the phone as `salt-lang`, the page drawing the
+same without storage. Outside the slice (Prices, the statement, Rewards, the order sheet, the Orders list, and an
+order's head, steps, history and cancel) is drawn in English whatever is chosen (`inEn`) and says `lang="en"`
+(`enLang`, the slice inside it `rdLang`), a state, size or date the
+slice shares included, and so is a note a tap leaves there (`wErrE`), so an order's screen is mixed until its slice comes. The page leaves its language in the
+origin's Cache as `/lang` on every open and switch, and `stmt/sw.js` reads it to word a banner, English where there is
+none. Salt Account is English on any phone, with no switch. The sign-in message is English then Bahasa Melayu in one,
+since it goes before the phone's language is known. The suite reads the Malay table and a page drawn with Malay live
+(`{langs: ["en", "ms"]}`) for a product or level word.
+
+**Live languages are `LIVE`** (F7, `stmt/words.js`): Malay is kept and off since 28 Sep 2026, his instruction,
+superseding D12's slice and the two-language message while it is off. With `LIVE = ["en"]` the page draws no switch
+(the door, the welcome, One step to finish and This device's row all go), a Malay phone and a phone that kept `ms` open
+in English (`langOk` requires `LIVE`, so `langOfPhone` and `salt-lang` pass Malay over), `/lang` is written English,
+the banner reads English for a language not live (`swScript(LIVE)`), and the sign-in message is its English half
+alone. `MS` stays whole: turning Malay on again is `LIVE = ["en", "ms"]`, and the suite renders the slice's sections
+with `{langs: ["en", "ms"]}` (`landingPage`, `signInMessage`, `swScript`), so the kept table stays proved.
