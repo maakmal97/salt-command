@@ -1,0 +1,124 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-04T09:36:58.984Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s229",
+    "qty": 2,
+    "total": 220,
+    "cash": 0,
+    "date": "2026-10-03",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-04"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     }
+    ],
+    "customer": "CH6-SET"
+   },
+   "reasoning": "Correction against CH6-SET's order of 2 unit for RM 220 dated 2026-10-03 (s229). Sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-10-04, handover from unset to delivered. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 2 unit goes out with RM 220 unpaid. Check it against CH6-SET's credit cap."
+   ],
+   "amends": "s229",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-04T09:36:58.984Z",
+    "type": "SELL",
+    "party": "CH6-SET",
+    "qty": 2,
+    "total": 0,
+    "status": "Handover",
+    "raw": "2 unit delivered to CH6-SET, order 20261003013258-yitorw, on 2026-10-04",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "rid": null,
+     "orderKey": "CH6-SET|2026-10-03|220",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-04",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 2,
+      "deliveredOn": "2026-10-04",
+      "handover": "delivered"
+     },
+     "note": "2 unit delivered for order 20261003013258-yitorw."
+    },
+    "orderId": "20261003013258-yitorw"
+   },
+   "decidedAt": "2026-10-04T09:37:01.681Z",
+   "decidedBy": "preapproved by phone"
+  },
+  {
+   "id": "2026-10-04T09:37:12.706Z",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 220,
+    "cash": 0,
+    "date": "2026-10-03",
+    "customer": "CH6-SET"
+   },
+   "reasoning": "Fulfilment against CH6-SET's order of 2 unit for RM 220 agreed 2026-10-03. RM 220 and 0 unit move on 2026-10-04, against RM 220 and 2 unit outstanding. Leaves RM 0 and 2 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s229",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-04T09:37:12.706Z",
+    "type": "SELL",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 220,
+    "status": "Payment",
+    "by": "desk",
+    "raw": "Payment of RM 220 on CH6-SET, order 20261003013258-yitorw, by cash at the counter",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "rid": null,
+     "orderKey": "CH6-SET|2026-10-03|220",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-04",
+     "qty": 0,
+     "total": 0,
+     "cash": 220,
+     "kg": 0,
+     "note": "Cash received at the handover, recorded on the desk, order 20261003013258-yitorw."
+    },
+    "orderId": "20261003013258-yitorw",
+    "counter": true
+   },
+   "decidedAt": "2026-10-04T09:37:14.525Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
