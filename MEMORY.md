@@ -5,7 +5,9 @@
 
 ## Access
 - `REQUIRE_ACCESS` = `"0"` and `ACCESS_TEAM`, `ACCESS_AUD` are empty in `wrangler.jsonc` (the Worker does not verify a JWT yet).
-- A Cloudflare Access login nonetheless gates the Desk's public address and is intended, his word of 05 Oct 2026: `/rev` answers 302 to the Access login (read 05 Oct 2026). It is set outside the repo's config.
+- Since 04 Oct 2026 a hostname Access policy, set outside the repo's config, fronts the Desk Worker: an unauthenticated `/rev` answers 302.
+- `ORDER_STORE` is `"object"` since 04 Oct 2026 (#40); the old `q:orders` blob was retired on 04 Oct 2026.
+- The maintenance guard exists in both Workers and QR Command (`MAINTENANCE_UNTIL`, an ISO UTC time; empty = off, the current value).
 
 ## Migrations
 - Newest rebuild: `migrations/0010`.

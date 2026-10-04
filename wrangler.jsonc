@@ -95,8 +95,8 @@
 		"crons": ["* * * * *", "0 1 * * *"]
 	},
 	"vars": {
-		// 00:01 MYT on 05 Oct 2026: until then every page request answers 503 (src/maintenance.js); it lifts itself.
-		"MAINTENANCE_UNTIL": "2026-10-04T16:01:00Z",
+		// Maintenance guard (src/maintenance.js): an ISO UTC time here turns it on and it lifts itself; empty is off.
+		"MAINTENANCE_UNTIL": "",
 		// Names and places were bootstrapped under the durable paused write gate.
 		// Pair revision/readback must match before that gate is explicitly reopened.
 		"VAULT_STORE": "pair",
