@@ -4,7 +4,7 @@
 - Deployed at `https://salt-command.qyts8mh72kyg.workers.dev`.
 
 ## Access
-- `REQUIRE_ACCESS` = `"0"` and `ACCESS_TEAM`, `ACCESS_AUD` are empty in `wrangler.jsonc` (the Worker does not verify a JWT yet).
+- `REQUIRE_ACCESS` = `"1"` since 06 Oct 2026, `ACCESS_TEAM` `maakmal`, `ACCESS_AUD` `14a921e2…60fecf`: one owner Access application covers the Desk host and the Counter's `/all`; the CI service token `salt-desk-ci` reads `/rev` and rings `/push/send` only.
 - Since 04 Oct 2026 a hostname Access policy, set outside the repo's config, fronts the Desk Worker: an unauthenticated `/rev` answers 302.
 - `ORDER_STORE` is `"object"` since 04 Oct 2026 (#40); the old `q:orders` blob was retired on 04 Oct 2026.
 - The maintenance guard exists in both Workers and QR Command (`MAINTENANCE_UNTIL`, an ISO UTC time; empty = off, the current value).

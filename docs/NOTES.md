@@ -625,6 +625,9 @@ First-time Cloudflare setup, in order:
 
 ## Access, and why it is off
 
+(Superseded on 6 Oct 2026: the owner's Access application covers the Desk and `REQUIRE_ACCESS` is `"1"`;
+current state in MEMORY.md. What follows is the August reasoning.)
+
 **DO NOT "FIX" `REQUIRE_ACCESS` BACK TO `"1"`.** Finding it at `"0"` is not the 10-11 Aug
 accident recurring. It is the owner's explicit instruction of 11 Aug 2026, "I want no zero
 trust requirements right now", and the Access application was removed to match. Re-enabling

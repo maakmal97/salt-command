@@ -68,13 +68,9 @@
 	// is never accepted. The Access application must cover this Worker and allow only
 	// maakmal97@icloud.com.
 	//
-	// The application is not currently provisioned. REQUIRE_ACCESS stays off until the
-	// owner-only Access policy, team and audience vars are configured and verified.
-	// While off, the Desk remains open; this code change does not make the live boundary
-	// effective.
-	//
-	// REQUIRE_ACCESS stays "0" until the Access application is provisioned and verified.
-	// Then set ACCESS_TEAM and ACCESS_AUD below, change it to "1", and deploy by hand.
+	// ON since 06 Oct 2026: the owner's Access application covers this host and the Counter's
+	// /all under one audience. Setting "0" again reopens the Desk to whoever passes the edge;
+	// a wrangler.jsonc change does not move rev.json, so deploy it by hand.
 	// THE CLOUD DRAFTER (v303). Every fifteen minutes it reads the queue from KV, reads the
 	// book from the D1 mirror, and writes a proposed ROW into `draft` for anything new. It
 	// drafts and stops: the phone approves, and only approved rows reach the master.
@@ -100,12 +96,12 @@
 		// Names and places were bootstrapped under the durable paused write gate.
 		// Pair revision/readback must match before that gate is explicitly reopened.
 		"VAULT_STORE": "pair",
-		"REQUIRE_ACCESS": "0",
-		"ACCESS_TEAM": "",
-		"ACCESS_AUD": "",
+		"REQUIRE_ACCESS": "1",
+		"ACCESS_TEAM": "maakmal",
+		"ACCESS_AUD": "14a921e2b5c1ba14ca75026b930208093644ef349993a4fc66015f689060fecf",
 		// The Access service token's client id that may read GET /rev and send POST /push/send,
 		// and nothing else. The token salt-desk-ci; its id is public (a header, the JWT's common_name),
-		// its secret only in the GitHub secret CF_ACCESS_CLIENT_SECRET. Inert while REQUIRE_ACCESS is "0".
+		// its secret only in the GitHub secret CF_ACCESS_CLIENT_SECRET.
 		"ACCESS_CI_CLIENT_ID": "3b0a6377905109d224fbe53b595b4574.access",
 		// The VAPID PUBLIC key. Public by definition: a browser cannot create a push
 		// subscription without it and it authorises nothing. The private half is the
