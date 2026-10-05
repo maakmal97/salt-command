@@ -52046,5 +52046,10 @@ await (async () => {
   await (await import("./pool-maker.mjs")).maker({ ok, KV, skipOff });
 })();
 
+section("Pool B4: Home's group order card, one row each, Join through the check, and a moved list redraws it");
+await (async () => {
+  await (await import("./pool-page.mjs")).page({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

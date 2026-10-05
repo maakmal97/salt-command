@@ -1187,7 +1187,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
     + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
-    + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
+    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
@@ -4469,7 +4469,7 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
     drawPayHead();
@@ -4505,6 +4505,32 @@ const CLIENT_JS = `
       box.appendChild(homeRow(o,tw('rt.row',{d:ymdDay(o.movedOn)})));
       box.appendChild(rateStrip(o));
       var tp=oTap(o); if(tp.k==='rate'&&tp.t) box.appendChild(statusLine(tp.t));
+    });
+    return box;
+  }
+  /* A GROUP ORDER (the pool): one row each, between Needs you and Coming up. Its mark and size, how many units are in of its target,
+     and the day it closes; Join is its one action while it is open, they are not in and their list sells the size; a row they are
+     in opens their order. A pool he has closed reads Closed, their order acknowledged next. Nothing wakes a phone to say one is open. */
+  function homePool(){
+    var box=el('div'); if(!session||view||!pools.length) return box;
+    box.appendChild(hHead(tw('hp.h'),pools.length>1?pools.length:0));
+    pools.forEach(function(p){
+      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q);
+      var r=el(inn?'button':'div','salt-inbox-row hpool'); if(inn) r.type='button';
+      r.setAttribute('data-pool',p.id);
+      r.appendChild(mtile(p.product,p.q,unitFor(p.product)));
+      var main=el('span','salt-inbox-row__main');
+      main.appendChild(el('span','salt-inbox-row__what',shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,unitFor(p.product))}):tw('hp.in',{n:p.unitsIn,t:p.target})));
+      if(inn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.in',{n:p.unitsIn,t:p.target})));
+      if(p.closesOn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.closes',{d:Dd(ymdDay,p.closesOn)})));
+      r.appendChild(main);
+      if(inn) r.addEventListener('click',function(){ if(oFind(p.joined)) oOpen(p.joined); else placeShow('order'); });
+      else if(!shut&&sold1){
+        var side=el('span','salt-inbox-row__side'), j=el('button','salt-pill salt-pill--md',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
+        j.addEventListener('click',function(){ poolOpen(p,j); });
+        side.appendChild(j); r.appendChild(side);
+      }
+      box.appendChild(r);
     });
     return box;
   }
@@ -4616,9 +4642,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), thWas=JSON.stringify(thread), failedWas=ordersFailed; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), thWas=JSON.stringify(thread), failedWas=ordersFailed, poolsWas=JSON.stringify(pools); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(JSON.stringify(pools)!==poolsWas) drawHome();   /* a group order filled, joined or closed: Home says so on the poll */
     /* C14: the line and its Try again come and go with the list, and what the read brought may lift or set the hold */
     if(ordersFailed!==failedWas){ setHold(); drawOrder(); if(osh&&draft.step==='limit') sheetDraw(); return; }
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
