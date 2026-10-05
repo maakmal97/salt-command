@@ -1394,15 +1394,18 @@ export const OWNER_JS = `
     var idPass=makerField(id,'Vault passphrase','password','');
     var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
-    var idTierProduct=addSelect(id,'Starting tier book',[{value:'',label:'No starting tier'}]
-      .concat(tierBooks.map(function(item){return {value:item.product,label:pshape(item.product)};})));
-    var idTier=addSelect(id,'Starting tier',[{value:'',label:'No starting tier'}]
-      .concat((catalog.tierNames||[]).map(function(name){return {value:name,label:name};})));
+    var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
+      var sel=addSelect(id,'Starting tier, '+pshape(item.product),[{value:'',label:'Not set'}]
+        .concat(tierNames.map(function(name){return {value:name,label:name};})));
+      sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
+      return {product:item.product,select:sel};
+    });
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
       idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
+      idTiers.forEach(function(item){item.select.disabled=!(idKind.value==='customer'||idKind.value==='reseller'||idKind.value==='referral');});
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
@@ -1429,8 +1432,9 @@ export const OWNER_JS = `
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
         }
-        var tiers=idTier.value?{[idTierProduct.value]:idTier.value}:null;
-        if(idTier.value&&!idTierProduct.value) throw new Error('Choose a tiered book for the starting tier.');
+        var tiers={};
+        if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
+        if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
           parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
         if(addrEnvelope)idBody.addrVault=addrEnvelope;

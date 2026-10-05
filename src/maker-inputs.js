@@ -487,6 +487,8 @@ export function makerLedgerInput(operation, body, book) {
     if (body.geo != null && !safeGeo(body.geo)) return { error: "The map point is outside Malaysia or has invalid locality text." };
     const tiers = body.tiers == null ? null : body.tiers;
     if (tiers != null) {
+      if (!["customer", "reseller", "referral"].includes(body.kind))
+        return { error: "Only a customer, reseller or referral holds a starting tier." };
       if (!object(tiers) || !Object.keys(tiers).length) return { error: "Starting tiers must name active tiered books." };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
