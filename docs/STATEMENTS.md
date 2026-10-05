@@ -1395,7 +1395,7 @@ Desk's own refusals for goods out or a claim waiting. An acceptance order moves 
 (actor `deskorder`, the same `decideDesk`), marked `test` in the review. The Desk's `/order-again`
 and `/words` private routes carry the Maker review's offered-again stages and the word check. Desk draft
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
-checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`,
+checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
 and `inputs/place`. They use the existing Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts

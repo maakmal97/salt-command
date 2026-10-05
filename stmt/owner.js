@@ -639,7 +639,7 @@ export const OWNER_JS = `
     try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
     if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
-    if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; throw failure; }
+    if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
     return j;
   }
   var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
@@ -1005,6 +1005,8 @@ export const OWNER_JS = `
         if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');
         makerClear(pending.path);pending=null;cancel.hidden=true;return result;
       },function(error){
+        /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
+        if(error.status===400&&path==='/all/maker/inputs/tier-accept-all'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
           pending=null;
@@ -1639,6 +1641,18 @@ export const OWNER_JS = `
           catch(error){ tierAnswer.textContent=error.message; }
           tierPending=false;
         },true);
+        /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone. */
+        var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
+        var allPending=false, allAt=null;
+        makerButton(tierSection,'Accept tier proposals',async function(send){
+          if(allPending) return;
+          if(!allAt) allAt=new Date().toISOString();
+          allPending=true;
+          try{ await send('/all/maker/inputs/tier-accept-all',{at:allAt}); allAt=null;
+            allAnswer.textContent='Proposals sent for review. Held tiers were not moved.'; loadMaker(); }
+          catch(error){ allAnswer.textContent=error.message; }
+          allPending=false;
+        },false);
       }
       makerOtherInputs(box,catalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';

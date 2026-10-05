@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="fc8c28e43da57cec";
+var SALT_BUILD_ID="b4efba856ff1e4b7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6332,7 +6332,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
@@ -9107,7 +9107,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1015","d":"05 Oct 2026","t":"S233 COST RESTATED TO RM64; NO CASH OR STOCK MOVES","n":["<b>ONE CORRECTION FOLDED.</b> The cost on s233, CE5-SA-R's salt sale of 05 Oct, moves from RM60 to RM64, decided by the desk at 00:31 KL. The drafter flagged RM40 of overpayment and a rate above the party's usual; the figures do not answer either flag. Cash and stock do not move, and the inventory is unchanged."]}];
+const evolution=[{"v":"v1016","d":"05 Oct 2026","t":"COUNTER MAKER ACCEPTS TIER PROPOSALS","n":["<b>A1.</b> Counter Admin gains Accept tier proposals, <code>inputs/tier-accept-all</code>: one tierset entry of the Desk's own proposals, built by the shared constructor over the snapshot's tierOf (as of the last seed). Held tiers, tiers already queued or waiting, fixed books and resale accounts are skipped; a retry under one request id makes one draft. The engine's retained-request check names the new path. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9253,7 +9253,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 08:41 KL';
+const LAST_UPDATED='05 Oct 2026, 08:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

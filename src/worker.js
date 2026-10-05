@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
@@ -340,7 +340,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.test(p))
@@ -481,7 +481,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
     return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
   }
-  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
+  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -506,7 +506,12 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     if (operation === "stock-count"
       && !makerInputCatalog(book).products.some((item) => item.product === body.product))
       return json({ ok: false, error: "Choose an active book for the stock count." }, 400);
+    /* the Desk's tierQueued: tiers already queued or waiting under Approve are not proposed again */
+    const waitingTiers = operation !== "tier-accept-all" ? [] : (await (await handleQueueGet(env, true)).json()).queue.concat(
+      ((await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all()).results || [])
+        .map((row) => JSON.parse(row.entry)));
     const built = operation === "stock-count" ? makerStockCount(body)
+      : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "tier-set" ? makerTierSet(body, book)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)

@@ -165,6 +165,48 @@ export function makerTierSet(body, book) {
   }), book);
 }
 
+/* What the Desk's tierQueued reads: tiers waiting in a queued tierset or an Add ID, code to product to level. */
+function waitingTiers(entries, at) {
+  const waiting = {};
+  for (const queued of entries || []) {
+    const q = queued && queued.payload;
+    if (!q || queued.at === at) continue;
+    const tiers = q.mode === "tierset" ? q.tiers : q.mode === "addid" && q.tiers ? { [q.code]: q.tiers } : null;
+    for (const [id, set] of Object.entries(object(tiers) ? tiers : {}))
+      waiting[id] = Object.assign(waiting[id] || {}, set);
+  }
+  return waiting;
+}
+const levelWords = (v) => v == null ? "not set" : typeof v === "string" ? v
+  : ["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ");
+
+/** The Desk's tierAcceptAll over the snapshot: the proposals its own ruleProposal drew (PRICING.tierOf, held or proposed),
+    less the tiers held and those already waiting. Nothing is priced here. */
+export function makerTierAcceptAll(body, book, queued) {
+  if (!exact(body, ["at"])) return { error: "Accepting proposals carries only its timestamp." };
+  if (!timestamp(body.at)) return { error: "A tier input needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const names = (book.pricing && book.pricing.tierNames) || [], proposals = (book.pricing && book.pricing.tierOf) || {};
+  const held = book.state.TIER_OF || {}, waiting = waitingTiers(queued, body.at), roster = book.state.roster || [];
+  const tiers = {};
+  for (const [id, set] of Object.entries(object(proposals) ? proposals : {})) {
+    if (!roster.includes(id) || POSITION_ENGINE.isBucket(id)) continue;
+    for (const [product, level] of Object.entries(object(set) ? set : {})) {
+      const rule = book.pricing.byProduct?.[product]?.inputs?.policy?.tierRule;
+      if (!active(product, book) || !rule || rule.fixed) continue;
+      if ((object(held[id]) ? held[id] : {})[product] || (waiting[id] && product in waiting[id])) continue;
+      if (!PRICING_ENGINE.levelShapeOk(level, names)) continue;
+      (tiers[id] = tiers[id] || {})[product] = level;
+    }
+  }
+  const codes = Object.keys(tiers);
+  if (!codes.length) return { error: "There is no tier proposal to accept." };
+  const say = (set) => Object.keys(set).map((product) => (book.state.PRODUCTS[product].name || product) + " " + levelWords(set[product])).join(", ");
+  return proposed(POSITION_ENGINE.tierSetEntry({ at: body.at, tiers,
+    raw: codes.length === 1 ? "Set " + codes[0] + ": " + say(tiers[codes[0]])
+      : "Set " + codes.length + " customers from their proposals: " + codes.map((c) => c + " " + say(tiers[c])).join("; ") }), book);
+}
+
 const safeGeo = (value) => {
   if (!Array.isArray(value) || value.length !== 2
     || !value.slice(0, 2).every((n) => typeof n === "number" && Number.isFinite(n))

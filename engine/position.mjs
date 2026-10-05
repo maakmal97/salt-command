@@ -1329,7 +1329,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))

@@ -72,7 +72,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
-    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move)$/.test(path) && method === "POST"
     || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words") && method === "POST";
@@ -178,7 +178,7 @@ function internalOperation(path) {
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
   if (thread) return { kind: "thread", u: thread[1] };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
-  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.exec(path);
+  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };

@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1016",
+  "d": "05 Oct 2026",
+  "t": "COUNTER MAKER ACCEPTS TIER PROPOSALS",
+  "n": [
+   "<b>A1.</b> Counter Admin gains Accept tier proposals, <code>inputs/tier-accept-all</code>: one tierset entry of the Desk's own proposals, built by the shared constructor over the snapshot's tierOf (as of the last seed). Held tiers, tiers already queued or waiting, fixed books and resale accounts are skipped; a retry under one request id makes one draft. The engine's retained-request check names the new path. Nothing prices."
+  ]
+ },
+ {
   "v": "v1015",
   "d": "05 Oct 2026",
   "t": "S233 COST RESTATED TO RM64; NO CASH OR STOCK MOVES",
