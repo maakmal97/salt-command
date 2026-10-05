@@ -59,7 +59,7 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
 import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
-  threadOf, threadView, sayThread, allThreads, deskThread } from "./orders.js";
+  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -920,6 +920,18 @@ async function handleDesk(request, env, p, m) {
   if (p === "/desk/orders/store-check") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json(await storeCompare(env));
+  }
+  /* F4: the restock date a book expects, one clear key, {<book>: "YYYY-MM-DD"}; the publish reads it and seals it with the light */
+  if (p === "/desk/expected") {
+    const cur = async () => (await env.STMT.get("expected", "json").catch(() => null)) || {};
+    if (m === "GET") return json({ ok: true, expected: await cur() });
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const body = await readJson(request);
+    if (!body) return json({ ok: false, error: "send JSON" }, 400);
+    const r = expectedSet(await cur(), body.product, Object.hasOwn(body, "on") ? body.on : undefined, new Date().toISOString());
+    if (r.error) return json({ ok: false, error: r.error }, 400);
+    await env.STMT.put("expected", JSON.stringify(r.expected));
+    return json({ ok: true, expected: r.expected });
   }
   if (p === "/desk/orders") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1855,7 +1867,7 @@ export default {
       || p === "/thread") return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {

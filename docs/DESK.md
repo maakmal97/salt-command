@@ -556,3 +556,10 @@ month's `provAR`, `cashFlow`'s `dueIn`, Receivables and its chart, the phone's a
 stays the credit term's, from the order date), the chase and Chase first's claims. The Credit age breach says the
 provision; the sale side of Boundaries' aged-receivable rule is gone, since its day 4 falls inside the hold. The desk
 charges today's ladder to each order's month, so a change of ladder restates the months that still hold unpaid rows.
+
+## The restock light and the restock date (F4, 05 Oct 2026)
+
+- `engine/position.mjs` `restockLight(shelf, commitUnits)`: red when the shelf is under half a hundredth, yellow the moment the commitments (owed out plus agreed, nothing moved) exceed the shelf, that is free stock below what is agreed (the engine's `coverable` false), else green. `restockSupply` adds the day, kept only while the light is not green and the day is not past.
+- Enter's Restock date card (and the Today row "Restock date: not set", Now on red, This week on yellow) sets one day a book through the keyed `/expected`, relayed to the Counter's KV `expected` (`{<book>: "YYYY-MM-DD"}`). The name is `expected` because `restock` is the engine's reorder plan.
+- The publish (`tools/book.mjs` `supplySnapshot`, `tools/pricelist.mjs` `supplyLights`) seals `{light, by}` on each product of every customer's list, outside the digest. A date set shows at the next publish, within the hour.
+- The Counter draws a coloured border on the book's mark (verdigris, amber, ember; amber is the design system's warning token, since brass is the mark's own colour and the focus colour) with Available, Limited or Out for now in its name, and "Expected by DD Mon" under it on yellow or red.

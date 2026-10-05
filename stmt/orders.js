@@ -1350,6 +1350,23 @@ export async function claimAccount(env, u, body) {
 
 const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
+/* ---- F4: THE RESTOCK DATE (his decision of 05 Oct 2026) ------------------------------------------------------------
+ * KV `expected`, {<book>: "YYYY-MM-DD"}: the day he expects each book's next lot, set from the desk's Enter. It holds no
+ * figure and no name; the publish reads it and seals it with the light. `on` null clears a book; a day in the past is
+ * refused, a real calendar day within a year is kept, and a day already passed is dropped from the map at every set. */
+export function expectedSet(cur, product, on, at) {
+  const today = klDay(at || new Date().toISOString());
+  if (typeof product !== "string" || !/^[a-z][a-z0-9]{0,15}$/.test(product)) return { error: "name a book" };
+  const next = {};
+  for (const [k, v] of Object.entries(cur && typeof cur === "object" ? cur : {})) if (typeof v === "string" && v >= today) next[k] = v;
+  if (on === null) { delete next[product]; return { expected: next }; }
+  if (typeof on !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(on) || klDay(on + "T04:00:00Z") !== on) return { error: "send the day as YYYY-MM-DD, or null to clear" };
+  if (on < today) return { error: "that day has passed" };
+  if (Date.parse(on) - Date.parse(today) > 366 * 864e5) return { error: "that is more than a year ahead" };
+  next[product] = on;
+  return { expected: next };
+}
+
 /* ---- STEP 7: THE ACCOUNT'S THREAD (his Q5 of 28 Sep 2026: one thread per account) -----------------------------------
  * A question that is about no one order has somewhere to go: one thread an account, beside the order threads, which it
  * copies. { id: "thread", u, kind: "thread", at, msgs[], quiet? }: each line { at, by, text }, 200 characters, the

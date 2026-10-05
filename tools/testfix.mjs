@@ -46,10 +46,10 @@ function priceList(now) {
   const monday = klDay(new Date(now.getTime() - ((new Date(now).getUTCDay() + 6) % 7) * 864e5));
   const list = { at: now.toISOString(), week: { monday, sunday: monday, label: "this week" }, since: klDay(new Date(now.getTime() - 60 * 864e5)),
     products: [
-      { product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: null,
+      { product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: null, supply: { light: "yellow", by: klDay(new Date(now.getTime() + 9 * 864e5)) },
         sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }] },
-      { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
-      { product: "candy", name: "Candy", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
+      { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "red", by: null }, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
+      { product: "candy", name: "Candy", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
       { product: "rice", name: "Rice", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
     soon: [{ product: "spare", name: "Spare" }] };
@@ -297,6 +297,8 @@ export const FEATURES = [
   ["the bulletin", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length)],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
+  ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
+    return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];

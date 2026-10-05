@@ -110,6 +110,17 @@ export async function bulletinRelay(env, method, body) {
   return b;
 }
 
+/** F4: the restock date of each book, relayed to the site's own store (KV `expected`); the site checks the day. A product is
+ *  named by its shape alone here, the book being the desk's to validate. */
+export async function expectedRelay(env, method, body) {
+  const r = await site(env, "/desk/expected", method === "POST"
+    ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ product: body && body.product, on: body && Object.hasOwn(body, "on") ? body.on : undefined }) } : undefined);
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status, error: b.error || ("the statements site answered http " + r.status) };
+  return b;
+}
+
 export async function usersMap(env) {
   try { return (await env.SALT_QUEUE.get("stmt-users", "json")) || {}; } catch { return {}; }
 }

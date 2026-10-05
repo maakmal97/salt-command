@@ -24870,8 +24870,8 @@ await (async () => {
       && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
       "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 11 && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in eleven spawns: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 12 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
+      "in twelve spawns, the restock dates among them: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -25558,7 +25558,7 @@ await (async () => {
     await w.eval("bullPost(false)");
     ok(held && sent.some((x) => x.method === "POST") && /Not posted|Posted/.test(w.document.getElementById("bullMsg").textContent),
       "a product's name asks first, and goes when he says so");
-    ok(/orders:\(\)=>\{ordLoad\(\);bullLoad\(\);bullWire\(\);\}/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+    ok(/orders:\(\)=>\{ordLoad\(\);bullLoad\(\);bullWire\(\);expLoad\(\);\}/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
       "opening Site orders reads the bulletin and wires the card");
   } finally { w.close(); }
 })();
@@ -51403,6 +51403,182 @@ await (async () => {
   fs.writeFileSync(f, JSON.stringify({ values: { "order:a:1": "{}" } }));
   ok(T.backupFault(f, ["order:a:1"]) === null && /not in the backup/.test(T.backupFault(f, ["order:a:1", "thr:a"])) && /no backup/.test(T.backupFault(f + "x", []))
     && /hour old/.test(T.backupFault(f, ["order:a:1"], Date.now() + 2 * 3600000)), "a delete needs a backup that is fresh and holds every key about to go");
+})();
+
+section("F4 (05 Oct 2026): the restock light, green while the shelf covers what is promised, yellow past it, red when out; a restock date; sealed with the list; a border on the mark");
+await (async () => {
+  const X = (await import("../engine/position.mjs")).default;
+  /* ---- 1. THE BANDS AND THEIR EDGES ---- */
+  ok(X.restockLight(10, 10) === "green" && X.restockLight(10, 0) === "green" && X.restockLight(10, 9.99) === "green",
+    "green while the shelf covers the commitments, the exact edge included");
+  ok(X.restockLight(10, 10.01) === "yellow" && X.restockLight(2.25, 1010) === "yellow",
+    "yellow the moment the commitments pass the shelf, by a hundredth");
+  ok(X.restockLight(0, 0) === "red" && X.restockLight(0, 5) === "red" && X.restockLight(-1, 0) === "red" && X.restockLight(0.004, 3) === "red" && X.restockLight(0.01, 3) === "yellow",
+    "red when the shelf is out, with or without a promise, and a negative shelf; a hundredth held is not out");
+  /* ---- 2. THE DATE: shown only on yellow or red, and never once past ---- */
+  const T = "2026-10-05";
+  ok(X.restockSupply(10, 1, "2026-10-12", T).by === null && X.restockSupply(10, 1, "2026-10-12", T).light === "green",
+    "a green book shows no date, though one is set");
+  ok(X.restockSupply(1, 5, "2026-10-12", T).by === "2026-10-12" && X.restockSupply(0, 0, T, T).by === T,
+    "yellow and red show the day set, today included");
+  ok(X.restockSupply(1, 5, "2026-10-04", T).by === null && X.restockSupply(1, 5, undefined, T).by === null && X.restockSupply(1, 5, "12 Oct", T).by === null,
+    "a day already past, none, or not a day, shows none");
+  /* ---- 3. THE STORE'S SETTER ---- */
+  const { expectedSet } = await import("../stmt/orders.js");
+  const at = "2026-10-05T04:00:00Z";
+  let r = expectedSet({}, "salt", "2026-10-12", at);
+  ok(r.expected && r.expected.salt === "2026-10-12", "a day is set under the book");
+  r = expectedSet({ salt: "2026-10-12", oil: "2026-10-01" }, "candy", "2026-10-20", at);
+  ok(r.expected.salt === "2026-10-12" && r.expected.candy === "2026-10-20" && !("oil" in r.expected), "a set keeps the others and drops a day already passed");
+  ok(expectedSet({ salt: "2026-10-12" }, "salt", null, at).expected.salt === undefined, "null clears a book");
+  ok(expectedSet({}, "salt", "2026-10-04", at).error === "that day has passed" && expectedSet({}, "salt", "2026-02-30", at).error
+    && expectedSet({}, "salt", "soon", at).error && expectedSet({}, "salt", "2028-01-01", at).error && expectedSet({}, "Salt X", "2026-10-12", at).error
+    && expectedSet({}, "salt", undefined, at).error, "a past day, an impossible one, a word, a year ahead, a bad book and a missing day are refused");
+  /* ---- 4. THE ROADS: the Counter's key, and the desk's relay to it ---- */
+  const stmtW = (await import("../stmt/worker.js")).default, deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" }, D = { "X-Stmt-Desk": "desk-key" };
+  const sreq = (p, m, b, h) => stmtW.fetch(new Request("https://site.test" + p, { method: m || "GET", headers: Object.assign(b ? { "content-type": "application/json" } : {}, h || {}), body: b ? JSON.stringify(b) : undefined }), senv);
+  ok((await sreq("/desk/expected", "GET")).status === 401 && (await sreq("/desk/expected", "POST", { product: "salt", on: "2099-01-01" })).status === 401, "the Counter's route refuses a caller without the desk key");
+  const day = new Date(Date.now() + 8 * 36e5 + 3 * 864e5).toISOString().slice(0, 10);
+  const set = await (await sreq("/desk/expected", "POST", { product: "salt", on: day }, D)).json();
+  const got = await (await sreq("/desk/expected", "GET", null, D)).json();
+  ok(set.ok && got.ok && got.expected.salt === day && JSON.parse(skv.m.get("expected")).salt === day, "a day set on the desk key is kept in KV expected and read back");
+  ok((await sreq("/desk/expected", "POST", { product: "salt", on: "2020-01-01" }, D)).status === 400 && JSON.parse(skv.m.get("expected")).salt === day, "a past day is refused and the kept one stands");
+  const pxDb = (ids) => ({ prepare() { const all = async () => ({ results: [{ key: "PRICING", doc: JSON.stringify({ byProduct: Object.fromEntries(ids.map((i) => [i, {}])) }) }] });
+    return { bind: () => ({ all, first: async () => null }), all, first: async () => null }; } });
+  const denv = { ...mkEnv(new KV()), SALT_LEDGER: pxDb(["salt", "oil", "candy", "rice"]), SALT_WRITE_KEY: "k-f4", STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
+  const dreq = (m, b, k) => deskW.fetch(new Request("https://salt-command.example/expected", { method: m, headers: Object.assign({ "content-type": "application/json" }, k ? { "X-Salt-Key": k } : {}), body: b ? JSON.stringify(b) : undefined }), denv);
+  ok((await dreq("GET")).status === 401 && (await dreq("POST", { product: "oil", on: day })).status === 401, "the desk's /expected is keyed");
+  const rel = await (await dreq("POST", { product: "oil", on: day }, "k-f4")).json();
+  ok(rel.ok && JSON.parse(skv.m.get("expected")).oil === day && (await (await dreq("GET", null, "k-f4")).json()).expected.salt === day, "the desk relays a set and a read to the site's store");
+  const bad = await dreq("POST", { product: "zzz", on: day }, "k-f4");
+  ok(bad.status === 400 && !("zzz" in JSON.parse(skv.m.get("expected"))), "the desk refuses a book the master does not hold, and relays nothing");
+  const noBook = await deskW.fetch(new Request("https://salt-command.example/expected", { method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": "k-f4" }, body: JSON.stringify({ product: "salt", on: day }) }), { ...denv, SALT_LEDGER: { prepare() { throw new Error("down"); } } });
+  ok(noBook.status === 503, "and with the live book unreadable it refuses rather than relays blind");
+  /* ---- 5. THE DESK: the row rises on yellow or red with no day, falls once one is set, and never on green ---- */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const read = (e) => JSON.parse(w.eval("JSON.stringify(" + e + ")"));
+    w.SALT_CLOUD = true;
+    w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
+    const rows = () => read("actions().filter(x=>x.kind==='plan')");
+    ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "orders", "a yellow light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
+    ok(read("expLights().salt.light") === "yellow" && read("expLights().oil.light") === "green", "the card reads each book's own light off the engine");
+    w.eval("EXPECTED={salt:'2099-01-01'};");
+    ok(rows().length === 0, "and the row falls once a day ahead is set");
+    w.eval("EXPECTED={salt:'2020-01-01'};");
+    ok(rows().length === 1 && /passed/.test(rows()[0].title), "a day that has passed asks again");
+    w.eval("EXPECTED={};currentStock=0;");
+    ok(rows().length === 1 && rows()[0].sev === "now" && /light red/.test(rows()[0].why), "a shelf that is out is Now");
+    w.eval("recompute();EXPECTED={};currentStock=1e6;");
+    ok(rows().length === 0, "a book whose shelf covers what is promised asks for nothing");
+    w.eval("recompute();");
+    w.SALT_CLOUD = false;
+    ok(rows().length === 0, "a laptop copy, with no relay, never asks");
+    w.SALT_CLOUD = true;
+    w.eval("EXPECTED_READ=false;");
+    ok(rows().length === 0, "and nothing is asked before the dates have been read");
+    /* the card and its calls */
+    w.eval("EXPECTED_READ=true;EXPECTED={};");
+    ok(/id="expFold"/.test(w.eval("tabOrders()")), "Enter carries the Restock date card");
+    w.document.body.insertAdjacentHTML("beforeend", '<details id="expFold"><summary><span id="expN"></span><span id="expHead"></span></summary><div id="expRows"></div><div id="expMsg"></div></details>');
+    const sent = [];
+    w.fetch = async (q, init) => { sent.push([String(q), (init && init.method) || "GET", init && init.body ? JSON.parse(init.body) : null]);
+      return { ok: true, status: 200, json: async () => ({ ok: true, expected: { salt: "2099-02-03" } }) }; };
+    await w.eval("expLoad(true)");
+    ok(w.eval("EXPECTED").salt === "2099-02-03" && w.document.getElementById("exp_salt") && w.document.getElementById("exp_salt").value === "2099-02-03"
+      && /^Restock date/.test(w.document.getElementById("expHead").textContent), "the card reads the dates and draws one control a book, holding the day");
+    w.document.getElementById("exp_salt").value = "2099-03-04";
+    await w.eval("expPost('salt',false)");
+    ok(sent.some((x) => x[0] === "expected" && x[1] === "POST" && x[2].product === "salt" && x[2].on === "2099-03-04"), "Set sends the book and the day");
+    await w.eval("expPost('salt',true)");
+    ok(sent.some((x) => x[1] === "POST" && x[2].product === "salt" && x[2].on === null), "Clear sends null");
+    const n0 = sent.filter((x) => x[1] === "POST").length;
+    w.document.getElementById("exp_salt").value = "2020-01-01";
+    await w.eval("expPost('salt',false)");
+    ok(sent.filter((x) => x[1] === "POST").length === n0 && /passed/.test(w.document.getElementById("expMsg").textContent), "a day that has passed is refused on the desk and sends nothing");
+    /* ---- 6. THE PUBLISH: the shelf and commitments read off the desk, the light the engine's, sealed outside the stamp ---- */
+    const { supplySnapshot } = await import("../tools/book.mjs");
+    const raw = supplySnapshot(w), prodBefore = w.eval("PROD");
+    w.eval("setProd('salt');");
+    ok(raw && raw.salt && raw.salt.shelf === w.eval("currentStock") && raw.salt.commit === w.eval("forecast().commitUnits") && w.eval("PROD") === "salt" && prodBefore === "salt",
+      "supplySnapshot carries each book's shelf and commitments, and puts the desk back");
+  } finally { w.close(); }
+  const PL = await import("../tools/pricelist.mjs");
+  const lights = PL.supplyLights({ salt: { shelf: 1, commit: 5 }, oil: { shelf: 0, commit: 0 }, candy: { shelf: 9, commit: 1 } }, { salt: "2026-10-12", candy: "2026-10-12" }, T);
+  ok(lights.salt.light === "yellow" && lights.salt.by === "2026-10-12" && lights.oil.light === "red" && lights.oil.by === null && lights.candy.light === "green" && lights.candy.by === null,
+    "supplyLights is the engine's light and day per book: " + JSON.stringify(lights));
+  const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {}, costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
+  const pricing = { sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"], tierOf: { "CX0-NC": { salt: "Silver" } },
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, 190] }] } } };
+  const bookR = { PRODUCTS: { salt: { name: "Salt", unit: "unit" } }, PROD_ORDER: ["salt"], sales: [] };
+  const now = new Date("2026-10-05T06:00:00Z");
+  const withS = PL.priceList("CX0-NC", bookR, pricing, now, lights), without = PL.priceList("CX0-NC", bookR, pricing, now);
+  ok(withS.products[0].supply && withS.products[0].supply.light === "yellow" && withS.products[0].supply.by === "2026-10-12" && !("supply" in without.products[0]),
+    "the list carries each book's light and day, and none without a snapshot");
+  ok(PL.priceDigest(withS, "k", "abcd-efgh") === PL.priceDigest(without, "k", "abcd-efgh"), "the light is outside the list's stamp, so a moved light re-quotes nothing");
+  const { liveRecords } = await import("../tools/make_statements.mjs");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const tmp = join(REPO, "test", "tmp", "f4-" + Date.now());
+  mkdirSync(join(tmp, "2026-09", "_kv"), { recursive: true });
+  const users = JSON.parse(readFileSync(join(REPO, "statements", "_users.json"), "utf8"));
+  const code = Object.keys(users)[0], uu = users[code], ck = await C.contentKey("test-secret", uu);
+  pricing.tierOf = { [code]: { salt: "Silver" } };
+  writeFileSync(join(tmp, "_users.json"), JSON.stringify({ [code]: uu }));
+  writeFileSync(join(tmp, "2026-09", "_kv", uu + ".json"), JSON.stringify({ u: uu, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier("pw-f4"), wrap: await C.wrapKey("pw-f4", ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", body: "x" }] })) }));
+  try {
+    const lr = await liveRecords(tmp, "test-secret", now, pricing, null, null, lights);
+    const opened = JSON.parse(await C.decryptWith(ck, lr.records[0].prices));
+    const sealedOnly = !JSON.stringify(lr.records[0]).includes("yellow");
+    ok(opened.products[0].supply && opened.products[0].supply.light === "yellow" && opened.products[0].supply.by === "2026-10-12" && sealedOnly,
+      "liveRecords seals the light inside the list: it opens under the content key and is nowhere in the clear");
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+  const { readExpected } = await import("../tools/stmt-publish.mjs");
+  ok(JSON.stringify(readExpected(() => '{"salt":"2026-10-12"}')) === '{"salt":"2026-10-12"}'
+    && JSON.stringify(readExpected(() => { throw new Error("x - 404: not found"); })) === "{}", "the publish reads KV expected, and a store with none is {}");
+  /* ---- 7. THE COUNTER: a coloured border on the mark, its words in the name, the day under it, no figure ---- */
+  const { landingPage: lpF } = await import("../stmt/page.js");
+  const { webcrypto: wcF } = await import("node:crypto");
+  const { JSDOM: JDF } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-f4", ck2 = await C.contentKey("test-secret", u);
+  const sz = [{ q: 1, price: 50 }];
+  const prices = { week: { label: "5 to 11 Oct 2026", monday: "2026-10-05" }, soon: [], products: [
+    { product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: sz, supply: { light: "yellow", by: "2026-10-14" } },
+    { product: "oil", unit: "unit", basis: "board", tier: null, sizes: sz, supply: { light: "red", by: null } },
+    { product: "candy", unit: "unit", basis: "board", tier: null, sizes: sz, supply: { light: "green", by: "2026-10-14" } },
+    { product: "rice", unit: "unit", basis: "board", tier: null, sizes: sz }] };
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck2), session: "sess-f4",
+    env: await C.encryptWith(ck2, JSON.stringify({ statements: [{ issued: "2026-10-01", label: "October", body: "<p>Statement</p>" }] })),
+    ...await sealCurrentLive(C, ck2, { at: "2026-10-05T01:00:00Z", body: "<p>Live</p>", owed: 0 }), prices: await C.encryptWith(ck2, JSON.stringify(prices)) };
+  const dom = new JDF(lpF(u, "nf4", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: wcF, configurable: true }); } catch (e) { win.crypto = wcF; }
+    if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+    if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+    win.scrollTo = () => {};
+    win.fetch = async (path, init) => { const p = String(path), m = (init && init.method) || "GET";
+      const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [] } : null;
+      return { ok: !!j, status: j ? 200 : 404, json: async () => j || { ok: false } }; };
+  } });
+  const wd = dom.window, d = wd.document;
+  try {
+    d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new wd.Event("submit", { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 80 && !d.querySelector("#pPrices .pmark"); i++) await new Promise((r) => setTimeout(r, 50));
+    const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent }));
+    ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /Expected by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, Expected by 14 Oct under it: " + JSON.stringify(panes[0]));
+    ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/Expected by/.test(panes[1].text), "red with no day: a red border and no Expected by");
+    ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/Expected by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
+    ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/Expected|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
+    ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
+  } finally { wd.close(); }
+  const css = lpF("abcd-efgh", "nf4", null), tokens = /:root\s*{[\s\S]*?\n}/.exec(css);
+  ok(/\.sup-yellow{--sup:var\(--salt-amber\)}/.test(css) && /\.sup-green{--sup:var\(--salt-verdigris\)}/.test(css) && /\.sup-red{--sup:var\(--salt-ember\)}/.test(css)
+    && tokens && /--salt-amber:\s*#[0-9a-f]{6}/i.test(tokens[0]) && !/--salt-amber:\s*#c5a059/i.test(tokens[0]), "yellow is the design system's amber token, defined in the page, and never brass");
+  /* ---- 8. THE TEST ACCOUNTS hold a case of each light ---- */
+  const TF = await import("../tools/testfix.mjs");
+  ok(TF.FEATURES.some(([n]) => /restock light/.test(n)) && TF.missing(TF.buildAll(new Date())).length === 0, "the test accounts' fixtures hold a case of green, yellow with its day and red, and nothing else is missing");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

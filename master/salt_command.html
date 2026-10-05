@@ -1562,6 +1562,10 @@ details.obs>summary{min-height:var(--tap);}
      warning drawn in ember read as one more heading. This is a true alarm: breached, refused, a
      figure that must not be missed. dE 32.5 from ember, 52.6 from copper, 5.6:1 on obsidian. */
   --salt-alarm: #fa3c5a;
+  /* THE WARNING, added 05 Oct 2026 for the Counter's restock light (yellow, between verdigris and ember). Brass is the
+     mark's own colour and the focus colour, so it cannot say "watch this"; amber is a bright yellow, 12.0:1 on obsidian and
+     11.3:1 on the panel, far more saturated than brass and clear of ember and alarm. */
+  --salt-amber: #f2c230;
 
   /* The books. Each is its own hue, and none of them is a SEMANTIC one: ember, verdigris,
      steel and copper each mean something on the desk, so a product dot drawn in one would
@@ -5780,6 +5784,19 @@ function commitments(sales,currentStock){
   return {defRows,pendRows,owedUnits,promUnits,promRM,commitUnits,
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
+/* ============ THE RESTOCK LIGHT (F4, his decision of 05 Oct 2026) ============ one colour a book, from the shelf and what is
+   committed against it (commitments().commitUnits: owed out plus agreed, nothing moved). GREEN while the shelf covers the
+   commitments, YELLOW the moment they exceed the shelf (free stock below what is agreed, `coverable` false), RED when the shelf is out. Half a hundredth is no unit, as everywhere.
+   `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
+function restockLight(shelf,commitUnits){
+  const s=+shelf||0,c=+commitUnits||0;
+  return s<0.005?'red':c-s>0.005?'yellow':'green';
+}
+function restockSupply(shelf,commitUnits,by,today){
+  const light=restockLight(shelf,commitUnits);
+  const ok=light!=='green'&&/^\d{4}-\d{2}-\d{2}$/.test(String(by||''))&&String(by)>=String(today||'');
+  return {light:light,by:ok?String(by):null};
+}
 /* ============ A ROW AS THE PHONE SEES IT ============ the ledger and open-order shape of the
    payload: what was traded, what moved, what is still to be handed over each way, and a state
    word. No cost and no margin, because the phone is public. */
@@ -6254,7 +6271,7 @@ function renameInBook(book,pairs){
 return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
@@ -8985,7 +9002,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1016","d":"05 Oct 2026","t":"COUNTER MAKER ACCEPTS TIER PROPOSALS","n":["<b>A1.</b> Counter Admin gains Accept tier proposals, <code>inputs/tier-accept-all</code>: one tierset entry of the Desk's own proposals, built by the shared constructor over the snapshot's tierOf (as of the last seed). Held tiers, tiers already queued or waiting, fixed books and resale accounts are skipped; a retry under one request id makes one draft. The engine's retained-request check names the new path. Nothing prices."]}];
+const evolution=[{"v":"v1017","d":"05 Oct 2026","t":"THE RESTOCK LIGHT AND THE RESTOCK DATE","n":["<b>F4.</b> A light for each book on the Counter: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf, red when the shelf is out. It is drawn as a coloured border on the book's mark (verdigris, the design system's new amber, ember), never a figure, a product word or a brand, and yellow or red carry Expected by DD Mon once he sets a date. Enter gains a Restock date card, and Today asks for one when a book is yellow or red with no date ahead of it, Now on red. The date is kept in the Counter's KV <code>expected</code> through the keyed <code>/expected</code>, which refuses a book the master does not hold; the light and the date are sealed in each list at publish, outside its stamp. Ordering is never refused. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9083,6 +9100,9 @@ const byName=ids=>ids.slice().sort((x,y)=>String(ID(x)).localeCompare(String(ID(
    booked to the previous UTC day; the day is then parsed back as YYYY-MM-DD, which lands
    on UTC midnight, keeping every day difference in dbet() a whole number. */
 const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
+/* F4 (his decision of 05 Oct 2026): the day he expects each book's next lot, {<book>: 'YYYY-MM-DD'}, read from the Counter's KV
+   `expected` through the keyed /expected. Named expected, not restock: restock is the engine's own reorder plan. */
+let EXPECTED={},EXPECTED_READ=false;
 /* HIS COMMENT OF 12 SEP 2026: "if there is an input for date, make sure today is clickable while
    other dates are via the opened calendar dialog box". Every date field on the desk is drawn here,
    so a field added later carries both roads: a Today button inside the field's right edge, the
@@ -9131,7 +9151,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 08:46 KL';
+const LAST_UPDATED='05 Oct 2026, 09:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18096,6 +18116,14 @@ function actions(){
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'inventory');   /* v823: to the page whose card sized the lot */
   }
+  /* F4: A YELLOW OR RED LIGHT WITH NO DAY AHEAD OF IT asks him for the restock date. The engine's restockSupply says the light
+     and drops a day already past; cloud only, and only once the date has been read, so a laptop copy never asks. */
+  if(cloudMode()&&EXPECTED_READ){
+    const sp=POSITION_ENGINE.restockSupply(currentStock,f.commitUnits,EXPECTED[PROD],TODAY.toISOString().slice(0,10));
+    if(sp.light!=='green'&&!sp.by){const was=EXPECTED[PROD];
+      add(sp.light==='red'?'now':'soon','plan',`Restock date: ${was?'passed, '+was:'not set'}`,0,
+        `${units(currentStock)} held, ${units(f.commitUnits)} committed, light ${sp.light}. Customers read Expected by once it is set.`,'orders');}
+  }
   /* 2b. v766: WHAT IS WAITING ON THE SITE. A customer who has ordered and not been answered is the
      one item on this list with somebody standing at the other end of it, so a placement is Now and
      the money is what was ordered, goods and carriage together, which is what the pending row will
@@ -19907,6 +19935,9 @@ function tabOrders(){
     <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
     <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
+  <details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
+  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as Expected by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
+    <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
@@ -19957,6 +19988,44 @@ function siteSafe(t){
     return {refuse:'That names a level, which a customer\'s page never does.',warn:''};
   if(/\b(salt|oil|candy|rice|spare)\b/i.test(s))return {refuse:'',warn:'That names a product in words; the customer\'s page draws a mark instead.'};
   return {refuse:'',warn:''};
+}
+/* ---- F4: THE RESTOCK DATE (his decision of 05 Oct 2026). One day a book, set here and relayed through the desk's keyed
+   /expected to the site's own store (KV `expected`); the publish reads it and seals it with the light, so a customer reads
+   Expected by DD Mon while the light is yellow or red and the day is not past. ---- */
+function expLights(){return eachBook(()=>{const c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);
+  return {light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});}
+function expDraw(){
+  const box=document.getElementById('expRows');if(!box)return;
+  const L=expLights(),ids=Object.keys(L),today=TODAY.toISOString().slice(0,10);
+  const ask=ids.filter(p=>L[p].light!=='green'&&!(EXPECTED[p]&&EXPECTED[p]>=today)).length;
+  const head=document.getElementById('expHead'),n=document.getElementById('expN'),fold=document.getElementById('expFold');
+  if(head)head.textContent=ask?'Restock date: '+ask+(ask===1?' book asks':' books ask'):'Restock date';
+  if(n)n.textContent=String(ask);if(fold&&ask&&!fold.dataset.shown){fold.open=true;fold.dataset.shown='1';}
+  box.innerHTML=ids.map(p=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><b>${esc((PRODUCTS[p]&&PRODUCTS[p].name)||p)}</b><span class="dsc">${L[p].light}, ${units(L[p].shelf)} held, ${units(L[p].commit)} committed</span>`
+    +dateIn('exp_'+p,EXPECTED[p]||'')+`<button type="button" class="salt-ghost salt-ghost--lit" data-expset="${esc(p)}">Set</button><button type="button" class="salt-ghost" data-expclr="${esc(p)}">Clear</button></div>`).join('');
+  box.querySelectorAll('button[data-expset]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expset,false);});
+  box.querySelectorAll('button[data-expclr]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expclr,true);});
+}
+async function expLoad(quiet){
+  if(!cloudMode())return;
+  const go=()=>fetch('expected',{cache:'no-store',headers:qHeaders()});
+  let j=null;
+  try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
+  if(!j||!j.ok||!j.expected||typeof j.expected!=='object'){const m=document.getElementById('expMsg');if(m&&!quiet)m.textContent='The restock dates could not be read.';return;}
+  const was=JSON.stringify(EXPECTED),first=!EXPECTED_READ;EXPECTED=j.expected;EXPECTED_READ=true;
+  expDraw();
+  if((first||was!==JSON.stringify(EXPECTED))&&curAddr==='today')render();
+}
+async function expPost(p,clear){
+  const msg=document.getElementById('expMsg'),say=t=>{if(msg)msg.textContent=t;};
+  const el=document.getElementById('exp_'+p),on=clear?null:(el&&el.value)||'';
+  if(!clear&&!/^\d{4}-\d{2}-\d{2}$/.test(on))return say('Pick a day first. Nothing was set.');
+  if(!clear&&on<TODAY.toISOString().slice(0,10))return say('That day has passed. Nothing was set.');
+  const go=()=>fetch('expected',{method:'POST',headers:qHeaders(),body:JSON.stringify({product:p,on})});
+  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
+    say(r.status===401?'That write key was refused. Nothing was set.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. Customers see it gone at the next publish, within the hour.':'Set. Customers see it at the next publish, within the hour.');
+  }catch(e){ say('No connection, so nothing was set.'); }
+  await expLoad(true);
 }
 async function bullLoad(quiet){
   const now=document.getElementById('bullNow'),ta=document.getElementById('bullText');if(!now)return;
@@ -24711,7 +24780,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();}};
+  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();expLoad();}};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
@@ -25176,7 +25245,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask t
   if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
   /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
      write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
-  if(saltWriteKey()){apLoad(true);ordLoad(true);}});}catch(e){}
+  if(saltWriteKey()){apLoad(true);ordLoad(true);expLoad(true);}});}catch(e){}
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */

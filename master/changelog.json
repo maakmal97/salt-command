@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1017",
+  "d": "05 Oct 2026",
+  "t": "THE RESTOCK LIGHT AND THE RESTOCK DATE",
+  "n": [
+   "<b>F4.</b> A light for each book on the Counter: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf, red when the shelf is out. It is drawn as a coloured border on the book's mark (verdigris, the design system's new amber, ember), never a figure, a product word or a brand, and yellow or red carry Expected by DD Mon once he sets a date. Enter gains a Restock date card, and Today asks for one when a book is yellow or red with no date ahead of it, Now on red. The date is kept in the Counter's KV <code>expected</code> through the keyed <code>/expected</code>, which refuses a book the master does not hold; the light and the date are sealed in each list at publish, outside its stamp. Ordering is never refused. Nothing prices."
+  ]
+ },
+ {
   "v": "v1016",
   "d": "05 Oct 2026",
   "t": "COUNTER MAKER ACCEPTS TIER PROPOSALS",

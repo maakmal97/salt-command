@@ -105,6 +105,11 @@ select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
 .psym .plet{font-family:var(--salt-font-mono);font-weight:500;letter-spacing:0}
 h3.pmark,.pmark{margin:0 0 4px;line-height:1}
+/* F4: the light is a coloured border round the mark; the three colours are the system's own tokens (yellow is --salt-amber, the warning; brass is the mark's own colour and the focus ring) */
+.pmark.sup{display:inline-block;padding:5px;border:2px solid var(--sup);border-radius:8px}
+.sup-green{--sup:var(--salt-verdigris)}
+.sup-yellow{--sup:var(--salt-amber)}
+.sup-red{--sup:var(--salt-ember)}
 .pwith{display:inline-flex;align-items:center;gap:7px}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS FIGURE UNDER IT AND ALONE. The pressed ghost's edge and
    glass, the mark at 28px, the figure in the mono face; nothing sits beside the mark. The statement's lines take it too. */
@@ -2677,6 +2682,15 @@ const CLIENT_JS = `
     var m=/^(\\d{4})-(\\d{2})/.exec(String(d||'')); if(!m) return '';
     return monthsIn(L)[+m[2]-1]+' '+m[1];
   }
+  /* F4: THE LIGHT, a coloured border round the book's mark, its words in the heading's name and, on yellow or red with a day
+     set, "Expected by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
+  function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
+  function supplyMark(h,pane,p){
+    var s=p.supply; if(!s||!(s.light==='green'||s.light==='yellow'||s.light==='red')) return;
+    h.className+=' sup sup-'+s.light;
+    h.setAttribute('aria-label',pshape(p.product)+', '+tw('sup.'+s.light));
+    if(s.light!=='green'&&dmShort(s.by,'en')) pane.appendChild(el('p','sub2',tw('sup.by',{d:Dd(dmShort,s.by)})));
+  }
   function drawPrices(){
     pPrices.textContent='';
     /* V5: from pay.hide after the handover the prices are hidden until the overdue amount is paid */
@@ -2702,7 +2716,7 @@ const CLIENT_JS = `
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
-      pane.appendChild(h3);
+      pane.appendChild(h3); supplyMark(h3,pane,p);
       /* S4 4.8: a size is a row of the plain ledger, and each row is one tap that opens the order sheet at that size */
       var L=el('div','salt-ledger salt-ledger--plain');
       p.sizes.forEach(function(r){

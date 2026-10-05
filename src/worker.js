@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
@@ -1439,7 +1439,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
-      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin"
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
       || p === "/vault/addr" || p === "/vault/pair" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
@@ -1540,6 +1540,21 @@ export default {
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
       const r = await bulletinRelay(env, "POST", b);
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* F4 (05 Oct 2026): the restock date, set from Enter and relayed to the site's store the bulletin's way */
+    if (p === "/expected") {
+      if (m === "GET") { const r = await expectedRelay(env, "GET"); return json(r, r.ok ? 200 : (r.status || 502)); }
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      /* a book the master does not hold is refused here, before the relay: its ids are the PRICING snapshot's byProduct, which
+         the desk derives from PROD_IDS */
+      let ids = null;
+      try { const bk = await readBook(env.SALT_LEDGER); ids = bk.pricing && bk.pricing.byProduct ? Object.keys(bk.pricing.byProduct) : null; } catch { ids = null; }
+      if (!ids || !ids.length) return json({ ok: false, error: "the live book's products could not be read" }, 503);
+      if (typeof b.product !== "string" || !ids.includes(b.product)) return json({ ok: false, error: "that is not one of the book's products" }, 400);
+      const r = await expectedRelay(env, "POST", b);
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     if (p === "/orders") {

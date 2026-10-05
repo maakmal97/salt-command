@@ -55,6 +55,16 @@ export function usersMap(root) {
 }
 
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
+/** F4: the restock dates he set, KV `expected`; none set is {}, and an unreadable store says so and shows lights with no date. */
+export function readExpected(run = execFileSync) {
+  try { const t = String(againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "expected"], { stdio: ["ignore", "pipe", "pipe"] }, run)));
+    const j = JSON.parse(t.slice(t.indexOf("{"))); return j && typeof j === "object" ? j : {}; }
+  catch (e) {
+    if (!/ - 404:/.test(wranglerSaid(e))) console.log("::warning::the restock dates did not read, so lights go up with no date this run: " + wranglerSaid(e));
+    return {};
+  }
+}
+
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
   /* S14: ONE USERNAME, ONE CODE (tools/stmt-pool.mjs), refused before anything is sealed or put, or the
      account would carry whichever code sorts last and the other would drop off every list in silence */
@@ -62,7 +72,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   oneCodeEach(existsSync(usersFile) ? JSON.parse(readFileSync(usersFile, "utf8")) : {});
   const buildId = key ? (opts && opts.buildId || readDeskBuildId()) : null;
   if (key && !BUILD_ID_RE.test(buildId)) throw new Error("the Desk build id is invalid; live statements were not sealed");
-  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, buildId);
+  const r = await liveRecords(root, key, now, pricing, (opts && opts.cards) || null, buildId, (opts && opts.supply) || null);
   /* v688: THE SEALED PASSWORD IS NOT IN THE RECORD A CUSTOMER FETCHES. It is sealed under the
      master, so a customer could not open it, but /open hands the whole record's fields to whoever
      answers the door and there is no reason for it to be there at all. It travels in `sheet`,
@@ -359,13 +369,22 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
      pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
-  let pricing = null, assoc = null; const cards = {};
+  /* a failed read of the restock dates (readExpected) drops every date from the lists for this hour; the lights still go up */
+  let pricing = null, assoc = null, supply = null; const cards = {};
   if (!dry && !argv.includes("--no-prices") && key) {
     const { readBook, associateSnapshot } = await import("./book.mjs");
     /* v691: one window, two readings. The associates' report card comes off the same desk the
        prices do, so a card and a price can never be from different states of the book. */
     const rb = await readBook();
     pricing = rb.ledger.PRICING;
+    /* F4: the restock light of each book, sealed with each customer's list: the shelf and the commitments off this window, the
+       restock date from the store */
+    try {
+      const { supplySnapshot } = await import("./book.mjs"), { supplyLights } = await import("./pricelist.mjs");
+      const raw = supplySnapshot(rb.w);
+      supply = raw ? supplyLights(raw, readExpected(run), klToday(new Date())) : null;
+      if (!supply) console.log("::warning::the restock light did not read, so no list carries one this run");
+    } catch (e) { console.log("::warning::no restock light: " + e.message); }
     try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
     /* v706: and one card per associate, off the SAME window, so a card and a price can never be
        struck from different states of the book. One per associate, not one per account: only an
@@ -382,7 +401,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     } catch (e) { console.log("::warning::no associate cards: " + e.message); }
   }
   const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing, assoc,
-    { noRetire, cards, issueUnread, buildId: key ? readDeskBuildId() : null });
+    { noRetire, cards, supply, issueUnread, buildId: key ? readDeskBuildId() : null });
   if (noRetire) console.log("--no-retire: every list, board and roster is refreshed; no account is retired");
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 

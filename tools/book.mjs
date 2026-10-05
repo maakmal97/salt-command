@@ -235,6 +235,15 @@ export function termsSnapshot(w) {
   return JSON.parse(r.value);
 }
 
+/* F4 (his decision of 05 Oct 2026): THE SHELF AND WHAT IS COMMITTED AGAINST IT, per book, off the desk's own window: the
+   units held and the engine's commitments (owed out plus agreed, nothing moved). The light is the engine's
+   restockSupply over these two figures (tools/pricelist.mjs supplyLights), never worked out here. Set, read, put back,
+   as pricingSnapshot does, because both figures are the active book's. Null where the desk will not read. */
+export function supplySnapshot(w) {
+  const r = reader(w)("(function(){var o={},keep=PROD;try{PROD_IDS.forEach(function(p){PROD=p;recompute();o[p]={shelf:currentStock,commit:POSITION_ENGINE.commitments(pSales(p),currentStock).commitUnits};});}finally{PROD=keep;recompute();}return JSON.stringify(o);})()");
+  return r.ok && typeof r.value === "string" ? JSON.parse(r.value) : null;
+}
+
 export function pricingSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };

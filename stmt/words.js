@@ -380,6 +380,13 @@ export const EN = {
   "pr.goods": "The price is for the goods. {deliv}",
   "pr.since": "Buying with us since {m}.",
   "pr.soon": "Price coming soon.",
+  /* F4, HIS DECISION OF 05 OCT 2026: THE LIGHT ON A BOOK'S MARK, a coloured border, said aloud by these and never a figure or
+     the word for what is held. Green while what is on the shelf covers what is promised, yellow when it does not, red when
+     the shelf is out; yellow and red carry the day he expects the next lot, once he sets one. Ordering is never refused. */
+  "sup.green": "Available",
+  "sup.yellow": "Limited",
+  "sup.red": "Out for now",
+  "sup.by": "Expected by {d}",
   "ord.opensSet": "Ordering opens once your prices are set.",
   "ord.opensList": "Ordering opens once your price list is written, with the next update.",
   /* ---- THE ORDER SHEET ---- */

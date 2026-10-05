@@ -963,7 +963,7 @@ export function liveFor(invented, party, now, user) {
    the records go up as issued and no live document is written, and the caller says so.
    `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
    customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
-export async function liveRecords(root, key, now, pricing, cards, buildId) {
+export async function liveRecords(root, key, now, pricing, cards, buildId, supply) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -1010,7 +1010,7 @@ export async function liveRecords(root, key, now, pricing, cards, buildId) {
         live++;
       }
       if (pricing) {
-        const list = priceList(code, book, pricing, now);
+        const list = priceList(code, book, pricing, now, supply);
         /* S4 4.1: its stamp, a digest of its figures, sealed inside and in the clear beside it for Place to be checked against */
         list.digest = priceDigest(list, key, rec.u);
         /* V5b2: the ceiling on what is owed at once, sealed with the list and outside its stamp (the desk decides at

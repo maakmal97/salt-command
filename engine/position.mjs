@@ -899,6 +899,19 @@ function commitments(sales,currentStock){
   return {defRows,pendRows,owedUnits,promUnits,promRM,commitUnits,
     shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
+/* ============ THE RESTOCK LIGHT (F4, his decision of 05 Oct 2026) ============ one colour a book, from the shelf and what is
+   committed against it (commitments().commitUnits: owed out plus agreed, nothing moved). GREEN while the shelf covers the
+   commitments, YELLOW the moment they exceed the shelf (free stock below what is agreed, `coverable` false), RED when the shelf is out. Half a hundredth is no unit, as everywhere.
+   `by` is the day he expects the next lot (YYYY-MM-DD), shown only while the light is not green and the day is not past. */
+function restockLight(shelf,commitUnits){
+  const s=+shelf||0,c=+commitUnits||0;
+  return s<0.005?'red':c-s>0.005?'yellow':'green';
+}
+function restockSupply(shelf,commitUnits,by,today){
+  const light=restockLight(shelf,commitUnits);
+  const ok=light!=='green'&&/^\d{4}-\d{2}-\d{2}$/.test(String(by||''))&&String(by)>=String(today||'');
+  return {light:light,by:ok?String(by):null};
+}
 /* ============ A ROW AS THE PHONE SEES IT ============ the ledger and open-order shape of the
    payload: what was traded, what moved, what is still to be handed over each way, and a state
    word. No cost and no margin, because the phone is public. */
@@ -1373,7 +1386,7 @@ function renameInBook(book,pairs){
 return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
-        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,

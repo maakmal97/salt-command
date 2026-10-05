@@ -94,7 +94,16 @@ export function since(sales, code) {
   return first;
 }
 
-export function priceList(code, book, pricing, now) {
+/* F4: THE LIGHT A BOOK SHOWS, red, yellow or green, from tools/book.mjs supplySnapshot's two figures and the restock date he
+   set (KV `expected`); the engine's restockSupply says the colour and drops a day already past. {<book>: {light, by}} */
+export function supplyLights(raw, expected, today) {
+  const out = {};
+  for (const [p, v] of Object.entries(raw || {}))
+    out[p] = POSITION_ENGINE.restockSupply(v.shelf, v.commit, expected && expected[p], today);
+  return out;
+}
+
+export function priceList(code, book, pricing, now, supply) {
   const week = weekOf(now);
   const sizes = (pricing && pricing.sizes) || [];
   const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
@@ -161,7 +170,7 @@ export function priceList(code, book, pricing, now) {
       tier: fixedBoard ? null : names[t],
       levels: (!fixedBoard && held && typeof held === "object") ? held : null,
       sizes: rows
-    }));
+    }, (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
   }
   return out;
 }
