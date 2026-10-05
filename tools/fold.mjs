@@ -924,7 +924,8 @@ export function apply(book, staged, notes, masterText) {
       /* 24 Sep 2026: A PENDING ORDER ALSO GOES OUT BY A CORRECTION, which raises deliveredQty and moves no kg,
          and s183 and s196 went live that way with no cost, blanking the gross margin. Goods out is the test. */
       if (it.dir !== "BUY" && (it.pay.kg > 0.009 || (+it.target.deliveredQty || 0) > 0.009) && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
-      if (n.cost != null) it.target.cost = +n.cost;
+      /* 05 Oct 2026: A COST THE CORRECTION SETS STANDS: the notes may not move it back to the shelf rate */
+      if (n.cost != null && !(it.pay && it.pay.fields && it.pay.fields.cost != null)) it.target.cost = +n.cost;
       /* v496: the step was written inside applyAmend before either fill above, so a movement on a row the
          shelf costs, or one the notes recost, takes its cost here, from the order's unit cost as it now stands. */
       { const last = it.target.amend && it.target.amend[it.target.amend.length - 1];
@@ -932,7 +933,10 @@ export function apply(book, staged, notes, masterText) {
       if (n.rowNote) it.target.note = String(n.rowNote) + " " + (it.target.note || "");
     } else if (it.append === "sales" || it.append === "purchases") {
       const row = { ...src.row };
-      if (n.cost != null) row.cost = +n.cost;
+      /* 05 OCT 2026: A NEW SALE KEEPS THE DRAFTER'S COST. The drafter costs a sale at COGS off the latest purchase on or
+         before its date (v1009, cogsFor); the notes' cost moved the CE5-SA-R salt row of trip t1791145053619 back to the
+         shelf's RM60 a unit from p035's RM64. A notes cost is taken only where the draft carried none, or on a lot. */
+      if (n.cost != null && !(it.append === "sales" && src.row.cost != null)) row.cost = +n.cost;
       row.note = String(n.note).trim();
       /* EVERY ROW GETS AN ID ON THE WAY IN (25 Aug 2026). A row with no rid cannot be named by
          the editor, so a fold that appended one without would put a row on the book that could

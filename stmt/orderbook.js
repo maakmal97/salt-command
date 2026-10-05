@@ -119,6 +119,7 @@ export class OrderBook {
     try { a = await request.json(); } catch (e) { a = null; }
     if (op !== "drop" && op !== "fixture-thread" && op !== "fixture-account") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
+    if (op === "compare") return Response.json(await this.compare());
     const out = this.run(op, a && typeof a === "object" ? a : {});
     if (op !== "fixture-account" && out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
     return Response.json(out);
@@ -140,8 +141,13 @@ export class OrderBook {
     const t = Date.now() + BEHIND_MS, cur = await this.state.storage.getAlarm();
     if (cur == null || cur <= Date.now() || cur > t) await this.state.storage.setAlarm(t);
   }
+  /* "object" is the store that has stopped writing KV (10.5): nothing is written behind and nothing is armed, and a
+     row left in `behind` from the week of reading both is cleared so no later pass recreates an old key. "kv" is not
+     retired: its alarm still writes what was pending after the flip. */
+  retired() { return !!(this.env && this.env.ORDER_STORE === "object"); }
   async writeBehind() {
     const kv = this.env && this.env.STMT;
+    if (this.retired()) { this.state.storage.sql.exec("DELETE FROM behind"); return; }
     if (!kv) return;
     let left = 0;
     for (const { u, oid } of this.state.storage.sql.exec("SELECT u, oid FROM behind").toArray()) {
@@ -178,6 +184,7 @@ export class OrderBook {
 
   /* ---- the hourly check (S10 10.3; fixes DS1, R2, P2, DS2, P1) ---- */
   async check() {
+    if (this.retired()) { this.state.storage.sql.exec("DELETE FROM behind"); return { ok: true, retired: true }; }
     if (this.frozen()) return { ok: false, frozen: true, error: FROZEN, code: "frozen", status: 503 };
     const kv = this.env && this.env.STMT;
     if (!kv) return { ok: false, error: "no KV", status: 500 };
@@ -202,6 +209,43 @@ export class OrderBook {
     for (const r of all) if (!seen.has(r.u + ":" + r.oid)) { if (this.isBehind(r.u, r.oid)) pending++; else bookOnly.push(r.oid); }
     if (repaired.length) await this.arm();
     return { ok: true, orders: all.length, same, pending, repaired, kvAhead, kvOnly, bookOnly };
+  }
+
+  /* ---- the retirement compare (10.5): every KV order, claim and thread against the book, and NOTHING written ----
+     Read by `tools/orders-kv.mjs --check` before the old keys are deleted. A KV record the book holds, or has held and
+     moved past, is `same` or `pending` (the book has all of it; under a store that writes no KV nothing is on its way,
+     so every record the book has moved past is `pending`); `kvAhead` is a state the book never held and `kvOnly` a record
+     the book lacks: either is the only copy of something, and either stops a deletion. `bookOnly` is a book record with no
+     KV key, which a deletion cannot lose. `retired` says the store is object: only then is a compare final. NOTE: like every
+     request to the book it first runs `moveIn`, so a newer `orderbook:road` mark (a kv-road write after a flip back) can
+     start a move-in and its minute of 503s before this answers; it never writes KV. */
+  async compare() {
+    const kv = this.env && this.env.STMT;
+    if (!kv) return { ok: false, error: "no KV", status: 500 };
+    if (this.frozen()) return { ok: false, frozen: true, error: FROZEN, code: "frozen", status: 503 };
+    const seen = new Set(), kvAhead = [], kvOnly = [], bookOnly = [];
+    let same = 0, pending = 0, cursor;
+    for (const prefix of ["order:", "aclaim:", "thr:"]) {
+      cursor = undefined;
+      do {
+        const page = await kv.list({ prefix, cursor });
+        for (const k of page.keys) {
+          const raw = norm(await kv.get(k.name)), o = raw && JSON.parse(raw);
+          if (!o || !o.id || !o.u) { kvOnly.push(k.name); continue; }
+          seen.add(o.u + ":" + o.id);
+          const doc = this.doc(o.u, o.id);
+          if (doc == null) kvOnly.push(k.name);
+          else if (raw === doc) same++;
+          else if (!this.held(o.u, o.id, raw)) kvAhead.push(k.name);
+          else pending++;
+        }
+        cursor = page.list_complete ? null : page.cursor;
+      } while (cursor);
+    }
+    let orders = 0;
+    for (const t of ["ord", "acl", "thr"])
+      for (const r of this.state.storage.sql.exec("SELECT u, oid FROM " + t).toArray()) { orders++; if (!seen.has(r.u + ":" + r.oid)) bookOnly.push(r.oid); }
+    return { ok: true, retired: this.retired(), orders, same, pending, kvAhead, kvOnly, bookOnly };
   }
 
   /* ---- moving in (S10 10.3) ---- */

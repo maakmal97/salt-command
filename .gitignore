@@ -107,3 +107,6 @@ test/.suite-times.json
 # writes it, so a tracked copy went stale at every cloud deploy (it read v789 while the phone served
 # v890), and writing it on an idle run would have been a commit with nothing shipped.
 .deployed.json
+
+# The Counter's old KV order keys, backed up before they are deleted (tools/orders-kv.mjs): orders, not names, but kept on the laptop.
+10_Data/orders_kv_backup_*.json
