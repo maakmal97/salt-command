@@ -10646,8 +10646,11 @@ await (async () => {
      and left standing for whatever came next. The retire split is unchanged: writing is every run,
      retiring an account is a judgement about a deploy he made. */
   ok(/^- name: Deploy the statements site\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+env:/.test(stmtDeploy)
-     && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.publish == '1'\n\s+env:/.test(stmtPub),
+     && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.publish == '1'\n(?:\s+#.*\n)*(?:\s+timeout-minutes: \d+\n)?\s+env:/.test(stmtPub),
      "the Counter's code deploys on every run that deploys the desk (v797), and its content publishes on every run that publishes");
+  /* 05 Oct 2026, his word: v1022's publish hung after it had published, for the job's whole 30 minutes; the step is bounded at 10. */
+  ok(/^- name: Publish the statements, live\n\s+if: [^\n]*\n(?:\s+#.*\n)*\s+timeout-minutes: 10\n/.test(stmtPub),
+     "the statements publish is bounded at 10 minutes, so a hang after publishing no longer holds the chain's lock for 30");
   /* v797: and the two roads off the laptop take it too, the deploy script and the update chain, the latter only once the
      desk is seen live, so a desk deploy that failed does not ship the Counter alone */
   const pkg797 = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8")).scripts.deploy;
