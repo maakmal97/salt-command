@@ -1550,9 +1550,52 @@ export const OWNER_JS = `
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
   }
+  /* a handover, a close or a move offered again, under one request id until it lands, as a move is */
+  function makerTap(order,action,body,message){
+    var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
+    return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
+      Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+  }
+  /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
+  var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  function makerAgain(card,order){
+    (order.again||[]).filter(function(stage){ return MAKER_AGAIN[stage]; }).forEach(function(stage){
+      makerButton(card,'Offer the '+MAKER_AGAIN[stage]+' again',function(){
+        if(!window.confirm('Offer the rejected '+MAKER_AGAIN[stage]+' on this order again?')) return;
+        makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is offered again to the Desk.');
+      },false).setAttribute('data-again',stage);
+    });
+  }
+  /* his quick replies, six at most, kept on this device under the Desk's own key; each is checked when it is sent */
+  var MAKER_QUICK='saltQuickReplies';
+  function makerQuick(){ try{ var a=JSON.parse(localStorage.getItem(MAKER_QUICK)||'[]'); return Array.isArray(a)?a.filter(function(x){ return typeof x==='string'&&x; }).slice(0,6):[]; }catch(e){ return []; } }
+  function makerQuickKeep(text){
+    var t=String(text||'').trim().replace(/[ ]+/g,' ').slice(0,200), cur=makerQuick();
+    if(!t) return 'Type the line first, then keep it.';
+    try{
+      if(cur.indexOf(t)>=0){ localStorage.setItem(MAKER_QUICK,JSON.stringify(cur.filter(function(x){ return x!==t; }))); return 'Forgotten: it is no longer a quick reply.'; }
+      localStorage.setItem(MAKER_QUICK,JSON.stringify([t].concat(cur).slice(0,6))); return 'Kept as a quick reply on this device.';
+    }catch(e){ return 'This browser would not keep it.'; }
+  }
+  /* the Desk's reasons for Decline and Cancel; delivery only on an order to be delivered */
+  var MAKER_WHY=[['stock','We do not have enough in hand this week.'],['place','We cannot deliver there.'],['price','Our prices have changed.']];
   function makerOrderMoves(card,order){
     var reason=makerField(card,'Reason to the customer (Decline or Cancel, optional)','text','');
+    MAKER_WHY.filter(function(w){ return w[0]!=='place'||order.mode==='deliver'; }).forEach(function(w){
+      makerButton(card,w[1],function(){ reason.value=w[1]; },false).setAttribute('data-why',w[0]);
+    });
     var said=makerField(card,'Reply to the customer','text','');
+    makerQuick().forEach(function(line){
+      makerButton(card,line,function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
+    });
+    var keep=makerButton(card,'Keep as a quick reply',function(){
+      var note=makerQuickKeep(said.value), status=document.getElementById('makerReviewStatus');
+      if(status) status.textContent=note;
+      keepWord();
+    },false);
+    keep.setAttribute('data-keep','');
+    function keepWord(){ var t=said.value.trim().replace(/[ ]+/g,' '); keep.textContent=t&&makerQuick().indexOf(t)>=0?'Forget this quick reply':'Keep as a quick reply'; }
+    said.addEventListener('input',keepWord);
     makerButton(card,'Send reply',function(){
       if(!said.value.trim()) return;
       makerMove(order,{message:said.value.trim()},'Reply sent.');
@@ -1837,14 +1880,24 @@ export const OWNER_JS = `
           }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
         },true);
       }else if(order.status==='acknowledged'){
-        makerButton(card,'Mark ready',function(){
-          makerMove(order,{status:'ready'},'Order marked ready.');
-        },true);
+        /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
+        [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
+          makerButton(card,m[1],function(){
+            makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
+          },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
+        });
       }else if(order.status==='ready'){
         var qty=makerField(card,'Units handed over','number',order.qty);
         makerButton(card,'Record handover',function(){
-          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
+          makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
         },true);
+        /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
+        if(!order.test) makerButton(card,'Close at these units',function(){
+          var n=Number(qty.value), status=document.getElementById('makerReviewStatus');
+          if(!(n>0&&n<Number(order.qty))){ if(status) status.textContent='A close is above 0 and under the '+order.qty+' units ordered.'; return; }
+          if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
+          makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
+        },false).setAttribute('data-close','');
         var cash=makerField(card,'Cash received (RM)','number','');
         makerButton(card,'Record cash',function(){
           makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
@@ -1865,7 +1918,14 @@ export const OWNER_JS = `
           makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
         },false);
       }
+      makerAgain(card,order);
       makerOrderMoves(card,order);
+    });
+    /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
+    (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){
+      var card=makerCard(root); card.appendChild(el('h3','',order.id));
+      card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
+      makerAgain(card,order);
     });
     (makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).forEach(function(draft){
       var card=makerCard(root), entry=draft.entry||{};

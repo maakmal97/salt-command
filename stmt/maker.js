@@ -17,7 +17,7 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : ["rid", "status", "note", "message", "noReply"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : ["rid", "status", "note", "message", "noReply", "mode"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "notfound")
@@ -32,6 +32,8 @@ function orderMoveFault(action, body) {
   if (body.note !== undefined && (!["declined", "cancelled"].includes(body.status)
     || typeof body.note !== "string" || !body.note.trim() || body.note.length > 140))
     return "A reason goes only with Decline or Cancel, up to 140 characters.";
+  if (body.mode !== undefined && (body.status !== "ready" || !["collect", "deliver"].includes(body.mode)))
+    return "Collected or delivered goes only with Ready.";
   return "";
 }
 
@@ -40,7 +42,7 @@ function sameMove(action, body, kept) {
   if (!kept || typeof kept !== "object") return false;
   if (action === "notfound") return !!kept.verdict && kept.verdict.kind === "notfound" && kept.verdict.claim === body.claim
     && Math.abs(+kept.verdict.amount - body.amount) <= 0.004 && Object.keys(kept).length === 1;
-  const keys = ["status", "note", "message", "noReply"];
+  const keys = ["status", "note", "message", "noReply", "mode"];
   /* the Desk adds `maker` to a status move; it is the Desk's own, never the owner's content */
   return Object.keys(kept).every((key) => keys.includes(key) || key === "maker") && keys.every((key) => kept[key] === body[key]);
 }
@@ -316,7 +318,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const [orders, drafts] = await Promise.all([allOrders(env, true), deskCall(env, "/_internal/maker/drafts", "GET")]);
       /* a move he rejected under Approve, offered again from here: the Desk's own againOf names the stages */
-      const ids = orders.filter((o) => !["declined", "cancelled"].includes(o.status)).map((o) => o.id).slice(0, 200);
+      /* open orders first, then the rest: a cancellation he rejected leaves the order cancelled, still offered again */
+      const open = (o) => !["declined", "cancelled", "done"].includes(o.status);
+      const ids = [...orders.filter(open), ...orders.filter((o) => !open(o))].map((o) => o.id).slice(0, 200);
       const again = ids.length ? (await deskCall(env, "/_internal/maker/order-again", "POST", { ids })).again || {} : {};
       for (const o of orders) if (Array.isArray(again[o.id]) && again[o.id].length) o.again = again[o.id];
       /* the acceptance accounts' orders, from their serialized fixture alone, marked so no real road is offered */

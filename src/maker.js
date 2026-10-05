@@ -54,12 +54,12 @@ export function makerOrderFault(action, body) {
   const fields = {
     preview: ["delivery", "total"],
     accept: ["delivery", "total", "hash"],
-    handed: ["qty", "close"],
+    handed: ["qty", "close", "rid"],
     cash: ["amount"],
     received: ["amount", "claim", "covered"],
-    again: ["stage"],
+    again: ["stage", "rid"],
     notfound: ["rid", "claim", "amount"],
-    move: ["rid", "status", "note", "message", "noReply"],
+    move: ["rid", "status", "note", "message", "noReply", "mode"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"]
   };
   if (!Object.hasOwn(fields, action) || Object.keys(body).some((key) => !fields[action].includes(key)))
@@ -90,7 +90,7 @@ export function makerOrderFault(action, body) {
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
   if (action === "again" && !["pay", "cash", "move", "cancel"].includes(body.stage)) return "Choose a stage to offer again.";
-  if ((action === "notfound" || action === "move")
+  if (["notfound", "move", "handed", "again"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
     return "Send the action's immutable request id.";
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))
@@ -106,6 +106,8 @@ export function makerOrderFault(action, body) {
     if (body.note !== undefined && (!["declined", "cancelled"].includes(body.status)
       || typeof body.note !== "string" || !body.note.trim() || body.note.length > 140))
       return "A reason goes only with Decline or Cancel, up to 140 characters.";
+    if (body.mode !== undefined && (body.status !== "ready" || !["collect", "deliver"].includes(body.mode)))
+      return "Collected or delivered goes only with Ready.";
   }
   return "";
 }
