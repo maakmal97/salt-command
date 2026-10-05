@@ -535,23 +535,22 @@ The build adds only a PWA head, a service worker, a device id and cloud-mode cop
 
 ## Desk Access boundary
 
-The Desk Worker has a fail-closed Access verifier, but the committed `REQUIRE_ACCESS` value remains
-`"0"` until its Cloudflare application is provisioned. The verifier accepts only an RS256 JWT whose
+The Desk Worker has a fail-closed Access verifier, ON since 6 Oct 2026 (`REQUIRE_ACCESS` `"1"`,
+`ACCESS_TEAM` `maakmal`, `ACCESS_AUD` the owner application's tag, shared with the Counter's `/all`:
+one application covers both hosts). The verifier accepts only an RS256 JWT whose
 signature matches the configured Access team's published key and whose issuer, audience and expiry
 are valid; it reads the Access assertion header or the `CF_Authorization` cookie, then requires the
 verified email to match `maakmal97@icloud.com` (case-insensitive). It does not trust a header by
 presence or a caller-supplied email. Invalid tokens and missing `ACCESS_TEAM` or `ACCESS_AUD` fail
 closed when `REQUIRE_ACCESS` is enabled.
 
-Before enabling it, create a Cloudflare Access application for the Desk Worker covering its Desk
-and API paths, with an Allow policy for that email only (not an IP allowlist). Put the Access team
-name and application's audience tag in `wrangler.jsonc`, set `REQUIRE_ACCESS` to `"1"`, and deploy
-the Wrangler config change by hand. Until those steps are completed and verified, protection is not
-live. The Counter's independent `/all` boundary applies the same verified-email check; customer
-routes outside `/all` remain on their existing sign-in paths. No live Access configuration or
-deployment is part of this workstream.
+The application covers the Desk Worker's whole host, with an Allow policy for that email only and
+the CI service token as its `non_identity` policy. Setting `REQUIRE_ACCESS` back to `"0"`, or
+moving the application to a new audience without changing `ACCESS_AUD`, is a Wrangler config
+change deployed by hand. The Counter's independent `/all` boundary applies the same verified-email
+check; customer routes outside `/all` remain on their existing sign-in paths.
 
-### Who passes the Desk's Access, and with what (drafted 3 Oct 2026; not live until the app exists)
+### Who passes the Desk's Access, and with what (drafted 3 Oct 2026; live 6 Oct 2026)
 
 - **CI and `tools/update.mjs`'s `/rev` read**: an Access service token, sent as `CF-Access-Client-Id`
   and `CF-Access-Client-Secret` from `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` (GitHub
@@ -573,7 +572,7 @@ deployment is part of this workstream.
 - **Wrangler tools** (`drafts.mjs`, `drain.mjs`, `stmt-publish.mjs`, `seed-vault --slip-key`) and the
   service bindings (`/stmt/rev`, `/_internal/maker/*`) do not pass the edge and are unaffected.
 - **`wrangler.jsonc`**: `ACCESS_CI_CLIENT_ID` is the client id of the service token `salt-desk-ci` (set 4 Oct 2026,
-  on his go), public by design; it admits nothing while `REQUIRE_ACCESS` is `"0"`. `preview_urls` is `false`, because a version's own
+  on his go), public by design. `preview_urls` is `false`, because a version's own
   preview address would sit outside the app. Nothing used one (checked 3 Oct 2026: no reference in
   the repo or the workflows; the work-branch uploads Workers Builds makes were never read, and its
   PR check reports the upload, which still succeeds). Both ride the next desk deploy; a change here alone deploys by hand.

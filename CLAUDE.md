@@ -11,7 +11,7 @@ and the `update-names-id` skill. Reorganise within a rule; grep `rule [0-9]` bef
 The Salt Command desk as a cloud app: the ledger and the pricing engine on the go, a transaction
 addable from the phone. **This repo holds the master**, deployed as a Cloudflare Worker (URL in
 MEMORY.md); `/desk` is the one surface, and "the dashboard" means `/desk` at desktop width. Behind
-a Cloudflare Access login, his decision of 05 Oct 2026; the Worker's own check stays off (below).
+a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own check (below).
 
 ## Hard rules
 
@@ -281,17 +281,15 @@ until bound. **With none free, the ID has a username but no account and cannot s
 and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. His own route is the
 `update-names-id` skill, laptop only.
 
-## Access, and why it is off; the write gate
+## Access, two locks; the write gate
 
-- **`REQUIRE_ACCESS` (current value in MEMORY.md).** An Access login already gates the desk's address, set outside the repo's
-  config; the Worker's own JWT check is a second lock that remains `"0"` until the Desk Access application is provisioned.
-  This workstream does not change Access configuration or deploy. Before setting it to `"1"`,
-  create an application covering the Desk Worker, allow only `maakmal97@icloud.com`, set
-  `ACCESS_TEAM` and `ACCESS_AUD` in `wrangler.jsonc`, then deploy by hand. The Worker verifies the
+- **`REQUIRE_ACCESS` (current value in MEMORY.md).** One owner Access application gates the Desk's
+  host and the Counter's `/all`, set outside the repo's config; the Worker's own JWT check is the
+  second lock, its team and audience in `wrangler.jsonc`, a change deployed by hand. The Worker verifies the
   JWT signature, issuer, audience, expiry and exact email from the Access header or cookie; a header
-  alone is not identity. The Counter's `/all` applies the same verified-email rule, while customer
-  sign-in routes outside `/all` remain unchanged. Do not treat either boundary as live until its
-  Access application and deployment have been verified.
+  alone is not identity. The CI service token passes only `GET /rev` and `POST /push/send`; the vault
+  tools send his own token. The Counter's `/all` applies the same verified-email rule, while customer
+  sign-in routes outside `/all` remain unchanged.
 - **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
   `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`, and the places' `/vault/addr` and
   `/geo/expand`.** This is the separate write key; when enabled, the Desk's Access gate also covers
