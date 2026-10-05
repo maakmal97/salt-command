@@ -27,9 +27,9 @@ jobs:
     outputs:
       covered: ${{ steps.chain.outputs.covered }}
     steps:
-      - uses: actions/checkout@v5      # v5 runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09      # v5, which runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
@@ -162,8 +162,8 @@ jobs:
     # BOUNDED: a checkout, npm ci and a third of the suite; 20 is a hang guard.
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm

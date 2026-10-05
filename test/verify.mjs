@@ -1588,7 +1588,7 @@ await (async () => {
        "while the mirror re-seed and the marks run whoever deployed, because a stale mirror is the silent fault this job exists to end");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
        "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
-    ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@v5[^\n]*\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
+    ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@[0-9a-f]{40}[^\n]*\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
     ok(!/actions\/(checkout|setup-node)@v4/.test(wf), "the actions run on Node 24 (v5); v4 targeted Node 20, which the runners retired");
   }
 
@@ -10605,6 +10605,11 @@ await (async () => {
   const bad = lint(join(dirL, "bad")), good = lint(join(dirL, "good")), real = lint(null);
   ok(bad.status === 1 && /job `open` has no `timeout-minutes`/.test(bad.stdout) && !/job `bounded`/.test(bad.stdout) && good.status === 0 && real.status === 0,
     "the lint fails a job with no timeout-minutes, a step's own not counting, and passes the bounded fixture and the real workflows: " + (bad.stdout.split("\n").find((l) => /FAIL/.test(l)) || "").trim());
+  /* 05 Oct 2026: the repository requires every action pinned to a full commit sha; a tag made every run a startup_failure */
+  const pin = (uses) => { const d = join(dirL, "pin" + uses.length); mkdirSync(d, { recursive: true }); writeFileSync(join(d, "f.yml"), head + "      - uses: " + uses + "\n"); return lint(d); };
+  const tag = pin("actions/checkout@v5"), sha = pin("actions/checkout@" + "a".repeat(40) + " # v5"), local = pin("./.github/actions/x");
+  ok(tag.status === 1 && /actions\/checkout@v5` is not pinned to a full commit sha/.test(tag.stdout) && sha.status === 0 && local.status === 0,
+    "the lint fails an action named by tag, and passes one pinned to a full commit sha and a local action: " + [tag.status, sha.status, local.status].join(" "));
   rmSync(dirL, { recursive: true, force: true });
 })();
 
@@ -10787,13 +10792,13 @@ await (async () => {
   ok(chain !== "" && !/^concurrency:/m.test(wf) && /^    concurrency:\n      group: cloud-commit\n      cancel-in-progress: false$/m.test(chain),
     "the lock is job chain's, group cloud-commit, never cancelling a chain in progress, and the workflow holds none");
   ok(suite !== "" && /^    needs: chain$/m.test(suite) && /^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(suite)
-     && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
+     && /^      - uses: actions\/checkout@[0-9a-f]{40} # v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
     "job suite needs chain, runs only when chain succeeded and deployed, checks out the sha chain proved, and takes no lock");
   /* 05 Oct 2026: a third of the suite a runner, and the notice once after all three */
   ok(/^    strategy:\n      fail-fast: false\n      matrix:\n        part: \[1, 2, 3\]$/m.test(suite)
      && notice !== "" && /^    needs: \[chain, suite\]$/m.test(notice)
      && /^    if: always\(\) && needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(notice)
-     && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(notice) && !/^\s+concurrency:/m.test(notice),
+     && /^      - uses: actions\/checkout@[0-9a-f]{40} # v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(notice) && !/^\s+concurrency:/m.test(notice),
     "job suite runs as three parts that never cancel each other, and job suite-notice follows all three on the same tree, after a red part too, with no lock");
 
   /* WHAT CHAIN HANDS ON, TAKEN WHERE IT IS TRUE: after the proof, before the clear's pull can bring in another push.

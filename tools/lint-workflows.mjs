@@ -83,6 +83,13 @@ if (isMain) {
       if (!(j.minutes > 0)) { console.log(`  FAIL  ${path}:${j.line}  job \`${j.job}\` has no \`timeout-minutes\` in whole minutes; GitHub's default is six hours`); bad++; }
     }
 
+    /* 5. Every action is pinned to a full commit sha (05 Oct 2026). The repository requires it, and a tag alone made
+          every run of every workflow a startup_failure, with no job and no log to say why. */
+    lines.forEach((l, i) => {
+      const m = /^\s*-?\s*uses:\s*([^\s#]+)/.exec(l);
+      if (m && !/^\.\//.test(m[1]) && !/@[0-9a-f]{40}$/.test(m[1])) { console.log(`  FAIL  ${path}:${i + 1}  \`${m[1]}\` is not pinned to a full commit sha; the repository requires one`); bad++; }
+    });
+
     if (!bad) console.log(`  ok    ${path}`);
   }
 

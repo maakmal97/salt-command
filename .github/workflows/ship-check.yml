@@ -28,7 +28,7 @@ jobs:
     # BOUNDED (26 Sep 2026): it runs in seconds; GitHub's default is six hours.
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5      # v5 runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09      # v5, which runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
 
       - name: The live Worker serves what this repo committed
         env:
