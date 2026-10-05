@@ -1,6 +1,6 @@
 {
- "v": "v1020",
- "stamped": "05 Oct 2026, 10:07 KL",
+ "v": "v1023",
+ "stamped": "05 Oct 2026, 18:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 59
+    "stated": 57
    },
    "spare": {
     "qty": 0,
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 2.25,
+  "STATED_STOCK": 1.25,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-09-27",
@@ -6546,6 +6546,44 @@
     "rev": "R2",
     "note": "<b>RICE SELL DATED 05 OCT: 2 UNIT FOR RM10, DELIVERED AND PAID IN FULL, BELOW THE FLOOR ON HIS WORD.</b> Booked to CE5-SA-R as R2 at RM5 a unit, RM10 cash in, delivered on the salt trip t1791145053619, which carries the delivery. The floor for 2 unit is RM12.63 and the ask RM16, so the sale is RM2.63 under the floor, as the drafter flagged. The figures do not answer that flag; he decided it. Cost stays at the drafted RM3.4 a unit, from lot p028. CE5-SA-R has outstanding RM0 and 0 units on credit against a cap of 1. Outstanding: nothing.",
     "rid": "s234"
+   },
+   {
+    "customer": "CN3-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 64,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-10-05",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-05",
+    "note": "<b>SALT SELL DATED 05 OCT: 1 UNIT FOR RM130, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM, RM130 a unit, RM0 cash in, 1 unit delivered the same day. The floor for 1 unit is RM64 and the ask RM160, so the rate clears the floor and sits under the ask. CN3-WM's median is RM100 across 9 orders, range RM75 to RM110, so this is above its usual top. It owed RM210 and 2.1 units on credit against a cap of 2 before this row, and the advance adds to that. The figures do not answer the credit flag; the desk decided it. Cost stays at the drafted RM64 a unit, off the latest purchase p035, not the inventory's own RM60. Outstanding: RM130.",
+    "rid": "s235"
+   },
+   {
+    "customer": "CN3-WM",
+    "qty": 2,
+    "total": 15,
+    "cost": 6.8,
+    "cash": 0,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-10-05",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-10-05",
+    "note": "<b>RICE SELL DATED 05 OCT: 2 UNIT FOR RM15, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM as RM7.50 a unit, RM0 cash in, 2 unit delivered the same day. The floor for 2 unit is RM6.8 and the ask RM16, so the sale clears the floor and sits just under the ask. CN3-WM has no rice history, so no rate of its own to compare. It stood at RM210 outstanding and 2.1 units on credit against a cap of 2 before this row, so the advance goes further past the cap. The figures do not answer that flag; the desk decided it. Cost stays at the drafted RM3.4 a unit, from lot p028. Outstanding: RM15.",
+    "rid": "s236"
+   },
+   {
+    "customer": "CJ2-KUC",
+    "qty": 10,
+    "total": 60,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-10-05",
+    "deliveredQty": 0,
+    "note": "<b>RICE SELL DATED 05 OCT: 10 UNIT FOR RM60, PENDING, NOTHING PAID OR MOVED.</b> Booked to CJ2-KUC as RM6 a unit, from order 20261005094428-k5m27a, acknowledged and to collect, preapproved by phone. The floor for 10 unit is RM34 and the ask RM60, so the total sits exactly at the ask. CJ2-KUC has no rice history; its one earlier order was candy at RM47.50 a unit. It has RM0 outstanding and 0 units on credit against a cap of 1. The drafter's flag, no rate to compare, stands unanswered. Cost stays at the drafted RM3.4 a unit, from lot p028. Outstanding: RM60 and 10 unit to collect.",
+    "rid": "s237"
    }
   ],
   "contacts": [
@@ -7180,9 +7218,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-04T23:58:40.348Z",
+  "QUEUE_COMMITTED": "2026-10-05T09:45:14.300Z",
   "PRICING": {
-   "takenAt": "2026-10-05T02:07:52.142Z",
+   "takenAt": "2026-10-05T10:08:45.214Z",
    "sizes": [
     0.5,
     1,
@@ -7363,6 +7401,38 @@
       "rare": false
      }
     },
+    "CN3-WM": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 12,
+      "tenureDays": 63,
+      "sinceLastDays": 0,
+      "perMonth": 5.8,
+      "unitsPerMonth": 10.39,
+      "smallShare": 0.58,
+      "bigShare": 0.08,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CM4-TO": {
      "salt": {
       "name": "large and regular",
@@ -7392,23 +7462,6 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false
-     }
-    },
-    "CN3-WM": {
-     "salt": {
-      "name": "consistent mid",
-      "orders": 11,
-      "tenureDays": 63,
-      "sinceLastDays": 16,
-      "perMonth": 5.31,
-      "unitsPerMonth": 9.91,
-      "smallShare": 0.55,
-      "bigShare": 0.09,
-      "frequent": true,
-      "small": false,
-      "bigger": false,
-      "loyal": true,
       "rare": false
      }
     },
@@ -8247,15 +8300,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32926829268292684
+         "v": 0.3253012048192771
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08497824788876568,
        "avgDel": {
-        "n": 194,
-        "kg": 495.45,
-        "mean": 2.5539
+        "n": 195,
+        "kg": 496.45,
+        "mean": 2.5459
        }
       },
       "policy": {
@@ -8354,6 +8407,20 @@
       }
      },
      "sizes": [
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3,
+      3.5,
+      4,
+      4.5,
+      5,
+      6.25,
+      12.5
+     ],
+     "rungs": [
       0.5,
       1,
       1.5,
@@ -8728,56 +8795,6 @@
         1010
        ]
       ],
-      "CM4-TO": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        150
-       ],
-       [
-        1.5,
-        210
-       ],
-       [
-        2,
-        270
-       ],
-       [
-        2.5,
-        310
-       ],
-       [
-        3,
-        360
-       ],
-       [
-        3.5,
-        410
-       ],
-       [
-        4,
-        460
-       ],
-       [
-        4.5,
-        490
-       ],
-       [
-        5,
-        530
-       ],
-       [
-        6.25,
-        630
-       ],
-       [
-        12.5,
-        1020
-       ]
-      ],
       "CN3-WM": [
        [
         0.5,
@@ -8826,6 +8843,56 @@
        [
         12.5,
         1210
+       ]
+      ],
+      "CM4-TO": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        460
+       ],
+       [
+        4.5,
+        490
+       ],
+       [
+        5,
+        530
+       ],
+       [
+        6.25,
+        630
+       ],
+       [
+        12.5,
+        1020
        ]
       ],
       "CR3-DAM": [
@@ -10732,6 +10799,13 @@
       40,
       50
      ],
+     "rungs": [
+      10,
+      20,
+      30,
+      40,
+      50
+     ],
      "ladder": [
       {
        "q": 10,
@@ -10885,7 +10959,7 @@
         450
        ]
       ],
-      "CM4-TO": [
+      "CN3-WM": [
        [
         10,
         130
@@ -10907,7 +10981,7 @@
         450
        ]
       ],
-      "CN3-WM": [
+      "CM4-TO": [
        [
         10,
         130
@@ -11847,6 +11921,13 @@
       20,
       30
      ],
+     "rungs": [
+      1,
+      5,
+      10,
+      20,
+      30
+     ],
      "ladder": [
       {
        "q": 1,
@@ -12000,7 +12081,7 @@
         1500
        ]
       ],
-      "CM4-TO": [
+      "CN3-WM": [
        [
         1,
         60
@@ -12022,7 +12103,7 @@
         1500
        ]
       ],
-      "CN3-WM": [
+      "CM4-TO": [
        [
         1,
         60
@@ -12867,15 +12948,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.16666666666666666
+         "v": 0.14285714285714285
         }
        },
        "attrib": 1,
        "shrinkRate": 0.12,
        "avgDel": {
-        "n": 6,
-        "kg": 29,
-        "mean": 4.8333
+        "n": 7,
+        "kg": 31,
+        "mean": 4.4286
        }
       },
       "policy": {
@@ -12933,6 +13014,11 @@
       }
      },
      "sizes": [
+      1,
+      5,
+      10
+     ],
+     "rungs": [
       1,
       5,
       10
@@ -13034,7 +13120,7 @@
         60
        ]
       ],
-      "CM4-TO": [
+      "CN3-WM": [
        [
         1,
         8
@@ -13048,7 +13134,7 @@
         60
        ]
       ],
-      "CN3-WM": [
+      "CM4-TO": [
        [
         1,
         8
@@ -13684,16 +13770,78 @@
       6.25,
       12.5
      ],
+     "rungs": [
+      0.5,
+      1,
+      1.5,
+      2,
+      2.5,
+      3,
+      4,
+      5,
+      6.25,
+      12.5
+     ],
      "ladder": [],
      "cards": {}
     }
    },
-   "v": "v1020"
+   "v": "v1023"
   },
   "OPEN": {
-   "at": "2026-10-05T02:07:52.435Z",
-   "count": 9,
+   "at": "2026-10-05T10:08:45.611Z",
+   "count": 12,
    "byKey": {
+    "CN3-WM|2026-10-05|130": {
+     "d": "2026-10-05",
+     "p": "CN3-WM",
+     "dir": "S",
+     "q": 1,
+     "t": 130,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 130,
+     "rid": "s235",
+     "deliveredOn": "2026-10-05",
+     "handover": "collected",
+     "key": "CN3-WM|2026-10-05|130",
+     "age": 0,
+     "exp": 130
+    },
+    "CN3-WM|2026-10-05|15|rice": {
+     "d": "2026-10-05",
+     "p": "CN3-WM",
+     "dir": "S",
+     "q": 2,
+     "t": 15,
+     "cash": 0,
+     "mv": 2,
+     "st": "dueMoney",
+     "oweRM": 15,
+     "pr": "rice",
+     "rid": "s236",
+     "deliveredOn": "2026-10-05",
+     "handover": "collected",
+     "key": "CN3-WM|2026-10-05|15|rice",
+     "age": 0,
+     "exp": 15
+    },
+    "CJ2-KUC|2026-10-05|60|rice": {
+     "d": "2026-10-05",
+     "p": "CJ2-KUC",
+     "dir": "S",
+     "q": 10,
+     "t": 60,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 60,
+     "oweUnits": 10,
+     "pr": "rice",
+     "rid": "s237",
+     "key": "CJ2-KUC|2026-10-05|60|rice"
+    },
     "CH5-KLC|2026-10-02|90": {
      "d": "2026-10-02",
      "p": "CH5-KLC",
@@ -13842,14 +13990,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 2.25,
-     "free": -7.25,
+     "onHand": 1.25,
+     "free": -8.25,
      "owedOut": 9.5,
      "coverDays": 0,
-     "rate": 5.64,
-     "owedToYou": 350,
+     "rate": 5.69,
+     "owedToYou": 480,
      "promised": 10,
-     "short": 7.75
+     "short": 8.75
     },
     "oil": {
      "name": "Oil",
@@ -13875,13 +14023,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 59,
-     "free": 59,
+     "onHand": 57,
+     "free": 57,
      "owedOut": 0,
-     "coverDays": 43.4,
-     "rate": 1.36,
-     "owedToYou": 0,
-     "promised": 0,
+     "coverDays": 25.4,
+     "rate": 2.14,
+     "owedToYou": 15,
+     "promised": 10,
      "short": 0
     },
     "spare": {
@@ -13903,7 +14051,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v1020"
+   "v": "v1023"
   },
   "TERMS": {
    "ceiling": 250,
@@ -13911,7 +14059,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1020"
+   "v": "v1023"
   },
   "REWARD": {
    "stated": {
@@ -13923,7 +14071,7 @@
      }
     }
    },
-   "v": "v1020"
+   "v": "v1023"
   }
  }
 }
