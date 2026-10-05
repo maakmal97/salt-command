@@ -10607,7 +10607,7 @@ await (async () => {
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
      asks who deployed. Since 26 Sep 2026 it is its own job, on the chain's deploy (the section below). */
-  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --part \$\{\{ matrix\.part \}\}\/3\n/.test(wf.replace(/\r\n/g, "\n"))
+  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --part \$\{\{ matrix\.part \}\}\/3 --jobs 2\n/.test(wf.replace(/\r\n/g, "\n"))
      && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'\n/.test(wf.replace(/\r\n/g, "\n")),
      "the full suite comes after the statements, in its own job on the chain's deploy, and runs whoever deployed");
   /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
@@ -11006,7 +11006,7 @@ await (async () => {
   const testsJob = ci.slice(Math.max(0, ci.search(/^  tests:$/m)));
   ok(/^    outputs:\n      covered: \$\{\{ steps\.chain\.outputs\.covered \}\}$/m.test(ci.slice(0, ci.search(/^  tests:$/m)))
      && /^  tests:\n    needs: verify\n    if: "!cancelled\(\) && needs\.verify\.outputs\.covered != '1'"$/m.test(testsJob)
-     && /^      - name: Tests\n        run: npm test -- --part \$\{\{ matrix\.part \}\}\/3$/m.test(testsJob) && (ci.match(/needs\.verify\.outputs\.covered/g) || []).length === 1,
+     && /^      - name: Tests\n        run: npm test -- --part \$\{\{ matrix\.part \}\}\/3 --jobs 2$/m.test(testsJob) && (ci.match(/needs\.verify\.outputs\.covered/g) || []).length === 1,
      "CI's tests, three parts in their own job, stand down only when the guard says cloud-commit is testing the push, and run after a red check");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
@@ -11059,7 +11059,7 @@ await (async () => {
   /* both suite steps ask for three, and the file reaches the runner */
   const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());
   const ignored = spawnSync("git", ["check-ignore", "-q", "test/suite-costs.json"], { cwd: REPO }).status;
-  const PART = '["run: npm test -- --part ${{ matrix.part }}/3"]';
+  const PART = '["run: npm test -- --part ${{ matrix.part }}/3 --jobs 2"]';
   ok(JSON.stringify(runs("ci.yml")) === PART && JSON.stringify(runs("cloud-commit.yml")) === PART && ignored === 1,
     "ci.yml and cloud-commit.yml each run the suite once, as three parts, and git does not ignore the cost file: " + JSON.stringify([runs("ci.yml"), runs("cloud-commit.yml"), ignored]));
 
@@ -11076,6 +11076,13 @@ await (async () => {
   ok(p1 && rest.length > 0 && rest.every((b) => seen.get(b.k) === 1) && seen.size === rest.length
      && JSON.stringify(p1.shards.map((x) => x.blocks.map((b) => b.k))) === JSON.stringify(p2.shards.map((x) => x.blocks.map((b) => b.k))),
     "three parts cut by the committed costs cover every section outside the build phase exactly once, and cut alike every time: " + rest.length + " sections");
+  /* and a part with --jobs beside it is cut again across the runner's two cores, every section of the part once */
+  const sub = p1 ? S.partShards(p1.shards[0], ["--part", "1/3", "--jobs", "2"], 2, p1.cost) : [];
+  const alone = p1 ? S.partShards(p1.shards[0], ["--part", "1/3"], 2, p1.cost) : [];
+  const keys = (bl) => bl.map((b) => b.k).sort((a, b) => a - b).join(",");
+  ok(p1 && sub.length === 2 && sub.every((x) => x.blocks.length > 0) && keys(sub.flatMap((x) => x.blocks)) === keys(p1.shards[0].blocks)
+     && alone.length === 1 && alone[0] === p1.shards[0],
+    "a part given --jobs 2 runs as two processes holding every section of the part once, and without --jobs as one: " + sub.map((x) => x.blocks.length).join(" + ") + " sections");
   const refused = spawnSync(process.execPath, [join(REPO, "tools", "suite-split.mjs"), "--part", "4/3"], { cwd: REPO, encoding: "utf8", timeout: 30000 });
   ok(refused.status === 1 && /FAIL  --part takes i\/n/.test(refused.stdout) && !/packing/.test(refused.stdout),
     "a malformed --part is refused before anything is packed or run: exit " + refused.status + " " + String(refused.stdout).trim().slice(0, 120));

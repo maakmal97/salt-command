@@ -147,6 +147,12 @@ export function partFor(argv) {
   return m && +m[1] >= 1 && +m[1] <= +m[2] && +m[2] <= 10 ? { i: +m[1], n: +m[2] } : { bad: String(argv[pi + 1]) };
 }
 
+/* a part's shard, cut again across this machine's cores when --jobs is given beside --part, fixed folders kept together */
+export function partShards(shard, argv, cores, cost) {
+  if (argv.indexOf("--jobs") < 0) return [shard];
+  return pack(unitsOf(shard.blocks).units, jobsFor(argv, cores), cost);
+}
+
 /* what test/suite-costs.json holds: the sections verify.mjs has now, in its order, each in whole tens of milliseconds */
 export function costsFrom(blocks, times) {
   const out = {};
@@ -178,8 +184,8 @@ if (isMain) {
   const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs });
   if (!p) { console.log("  FAIL  cannot find the sections or the footer in test/verify.mjs"); process.exit(1); }
   const { prelude, footer, blocks, serial, cost } = p;
-  const shards = part ? [p.shards[part.i - 1]] : p.shards;
-  const want = part ? serial.length + shards[0].blocks.length : blocks.length;
+  const shards = part ? partShards(p.shards[part.i - 1], process.argv.slice(2), cpus().length, cost) : p.shards;
+  const want = part ? serial.length + p.shards[part.i - 1].blocks.length : blocks.length;
   const by = { run: 0, file: 0, length: 0 };
   for (const b of blocks) by[cost.from(b)]++;
   console.log(`packing ${blocks.length} sections into ${JOBS} shards (${by.run} by this machine's last run, ${by.file} by test/suite-costs.json, ${by.length} by length):`

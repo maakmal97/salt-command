@@ -587,7 +587,7 @@ jobs:
       # A third of the suite, packed by test/suite-costs.json, as ci.yml's Tests (05 Oct 2026).
       - name: The full suite, after the phone is live
         id: suite
-        run: npm test -- --part ${{ matrix.part }}/3
+        run: npm test -- --part ${{ matrix.part }}/3 --jobs 2
 
   # ---- THE NOTICE, ONCE FOR THE THREE PARTS (05 Oct 2026) -----------------------------------
   # Each part runs on its own runner, so a part that passed could clear a notice another part

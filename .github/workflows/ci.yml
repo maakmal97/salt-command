@@ -169,4 +169,4 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Tests
-        run: npm test -- --part ${{ matrix.part }}/3
+        run: npm test -- --part ${{ matrix.part }}/3 --jobs 2
