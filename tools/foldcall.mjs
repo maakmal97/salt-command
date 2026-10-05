@@ -234,7 +234,19 @@ ${JSON.stringify(d, null, 1)}
 Reply with the notes JSON only: version "${d.version.next}", the title, the notes array, rows for exactly these ids ${JSON.stringify(ids)}, stockNote, stockCost, stockCostNote.`;
   /* 16000, not 4000 (26 Sep 2026): the model's thinking counts against max_tokens, so 4000 could
      cut a large batch's JSON short. The LENGTH rule keeps the notes short; the ceiling is for thinking. */
-  return { model: MODEL, max_tokens: 16000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor() } } };
+  /* PROMPT CACHING (05 Oct 2026). Two breakpoints, five minutes each: the house rules, the same
+     every fold, and the dossier, which the one retry sends again word for word, so the retry reads
+     both at a tenth of the price. Folds are hours apart, so nothing crosses folds; the hour TTL
+     would double every write for no read. */
+  const cache = { type: "ephemeral" };
+  return { model: MODEL, max_tokens: 16000, system: [{ type: "text", text: SYSTEM, cache_control: cache }],
+    messages: [{ role: "user", content: [{ type: "text", text: user, cache_control: cache }] }],
+    output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor() } } };
+}
+
+/* What a call cost against the cache, for the log: written, read and uncached input tokens. */
+export function cacheLine(u) {
+  return u ? `cache ${u.cache_creation_input_tokens || 0} written, ${u.cache_read_input_tokens || 0} read, ${u.input_tokens || 0} uncached` : "cache not reported";
 }
 
 /* THE CALL IS BOUNDED, SO THE FOLD NEVER WAITS ON IT (26 Sep 2026). The client used to keep the
@@ -319,7 +331,7 @@ if (isMain) {
   const d = dossier(book, staged, p, rb.w);
   try { rb.w.close(); } catch (e) { /* jsdom */ }
   const req = requestFor(d, ids);
-  if (dry) { console.log(JSON.stringify({ model: req.model, system: req.system, user: req.messages[0].content, schema: req.output_config.format.schema }, null, 1)); process.exit(0); }
+  if (dry) { console.log(JSON.stringify({ model: req.model, system: req.system[0].text, user: req.messages[0].content[0].text, schema: req.output_config.format.schema }, null, 1)); process.exit(0); }
   let notes, problems = [], why = null;
   /* WHY, AND NOT A BOOLEAN. Every road to the tool's own notes ends here carrying the reason in
      words, because that reason is what the version entry and the run's log have to say: a fold
@@ -354,13 +366,13 @@ if (isMain) {
       await said(phoneLine(why, d.version.next));   /* v809: plain words on the phone; the raw error stays in `why` */
     }
     if (got) {
-      console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+      console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s, ${cacheLine(got.usage)}`);
       notes = got.notes; problems = checkNotes(notes, d.version.next, ids);
       if (problems.length) {
         /* ONE RETRY, with the problems named. A second failure takes the tool's own notes. */
         console.log("  retry " + problems.join("; "));
         const again = { ...req, messages: req.messages.concat([{ role: "assistant", content: got.raw },{ role: "user", content: "That reply was refused for these reasons; send the corrected notes JSON:\n- " + problems.join("\n- ") }]) };
-        try { got = await callClaude(again); notes = got.notes; problems = checkNotes(notes, d.version.next, ids); }
+        try { got = await callClaude(again); console.log("  call  retry: " + cacheLine(got.usage)); notes = got.notes; problems = checkNotes(notes, d.version.next, ids); }
         catch (e) { problems = ["the retry could not be sent: " + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 120)]; }
         if (problems.length) { why = "The model answered twice against the house rules: " + problems.join("; ") + ". The tool wrote these notes instead."; console.log("  WARN  " + why); problems = []; }
       }
