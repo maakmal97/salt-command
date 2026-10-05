@@ -16108,15 +16108,19 @@ function parityScan(){
     PROD_IDS.forEach(pr=>{PROD=pr;recompute();
       per[pr]={inventory:currentStock,counted:stockCounted,rev:revTotal,ar:ar,defUnits:defUnits,
                sold:pSales(pr).length,bought:pPurch(pr).length,
-               fc:(function(){try{const f=forecast();return {commit:f.commitUnits,short:f.shortUnits};}catch(e){return null;}})()};
+               fc:(function(){try{const f=forecast();return {commit:f.commitUnits,short:f.shortUnits,
+                 rows:[].concat(f.defRows||[],f.pendRows||[]).map(r=>r.id+':'+(+r.kg).toFixed(2)).sort().join('|')};}catch(e){return null;}})()};
     });
   }finally{PROD=keep;recompute();}
 
   /* 1. A COMMITMENT THAT IS IDENTICAL ACROSS TWO BOOKS IS THE SIGNATURE OF AN UNSCOPED READ.
         Two products cannot owe the same quantity to the same people by coincidence; when
-        they do, something is reading the whole book and calling it one. */
-  const commits=PROD_IDS.map(pr=>(per[pr].fc||{}).commit).filter(v=>v!=null&&v>0.009);
-  if(commits.length>1&&new Set(commits.map(v=>+v.toFixed(2))).size===1){
+        they do, something is reading the whole book and calling it one. The same TOTAL can
+        (05 Oct 2026: salt 9.5 to CM4-TO and 0.5 to CH5-KLC, rice 10 to CJ2-KUC), so the rows
+        behind it, party and units, must match too. */
+  const owing=PROD_IDS.map(pr=>per[pr].fc).filter(f=>f&&f.commit!=null&&f.commit>0.009);
+  const commits=owing.map(f=>f.commit);
+  if(owing.length>1&&new Set(owing.map(f=>(+f.commit).toFixed(2)+'#'+f.rows)).size===1){
     out.push({k:'commit',pr:null,what:'Every book reports the same '+units(commits[0])+' promised out',
       why:'Two products do not owe the same quantity by coincidence. Something behind Today and Forward is reading every order and presenting it as one book\u2019s.'});
   }

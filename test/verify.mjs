@@ -41515,6 +41515,16 @@ await (async () => {
       "a book opened for the scan by the one road is empty and on the desk, so rule 2 always has a book to read: " + JSON.stringify({ status: add80.status, empties }));
     ok(!kinds.includes("commit"),
       "the parity scan reports no identical commitment across books, so nothing behind Today and Forward reads every order and calls it one book's");
+    /* 05 Oct 2026: v1023 put 10 units on rice (CJ2-KUC) beside salt's 10 (CM4-TO 9.5, CH5-KLC 0.5), and rule 1 read the
+       equal totals as an unscoped read. It now asks the rows behind them: the same total on other rows is a coincidence,
+       the same rows on every book is the fault. forecast() is stood in for, per book, so both cases exist whatever the book holds. */
+    const ruleOne = (rowsOf) => JSON.parse(w80.eval(`(function(){var real=forecast,ids=${JSON.stringify(ids80)},ro=${JSON.stringify(rowsOf)};
+      forecast=function(){var f=real(),r=ro[PROD]||[];f.commitUnits=r.reduce(function(a,x){return a+x.kg;},0);f.defRows=r;f.pendRows=[];return f;};
+      try{return JSON.stringify(parityScan().rows.map(function(x){return x.k;}));}finally{forecast=real;}})()`));
+    const same = [{ id: "AA1-X", kg: 9.5 }, { id: "AB2-Y", kg: 0.5 }];
+    const coincidence = ruleOne({ salt: same, rice: [{ id: "AC3-Z", kg: 10 }] }), unscoped = ruleOne({ salt: same, rice: same });
+    ok(!coincidence.includes("commit") && unscoped.includes("commit"),
+      "an equal total owed to other parties is not an unscoped read, and the same rows on two books still is: " + JSON.stringify({ coincidence, unscoped }));
     ok(!kinds.includes("empty"),
       "and no book with nothing sold reports a commitment or a receivable of its own: rule 2 fires for the first time since v275 and finds the product split clean");
     ok(empties.every((id) => { const d = ps.per[id]; return d && d.rev === 0 && d.ar === 0 && d.inventory === 0 && (!d.fc || d.fc.commit === 0); }),
