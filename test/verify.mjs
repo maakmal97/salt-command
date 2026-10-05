@@ -52056,5 +52056,10 @@ await (async () => {
   await (await import("./pool-wake.mjs")).wake({ ok, KV, skipOff });
 })();
 
+section("Pool B6: the test accounts show a group order open and joined, and one closed with its order acknowledged, sealed for the account alone");
+await (async () => {
+  await (await import("./pool-fixture.mjs")).fixture({ ok, KV, skipOff });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
