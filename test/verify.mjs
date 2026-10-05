@@ -9742,6 +9742,79 @@ await (async () => {
   }
 })();
 
+section("05 Oct 2026: a batch the fold refuses is held for a person, not folded again on every run");
+await (async () => {
+  /* His instruction of 05 Oct 2026. A refusal by fold.mjs left the batch staged, and every tap and tick after folded it
+     again and went red on the same refusal: 10 runs on 30 Sep and 5 on 01 Oct 2026. fold.mjs --held answers whether the
+     staged batch is refused; the guard then holds it, and the plan deploys nothing. The guard's and the plan's own shell
+     run in a fixture repository with fold.mjs stubbed. Each assertion was proved red by its own mutation, one at a time. */
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  /* the real planner on fixture batches: a replay row is refused, a fresh one folds */
+  const bookR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const dupRow = bookR.sales.find((x) => x.date && x.customer && +x.total > 0 && +x.qty > 0 && !x.cancelled);
+  const root = mkdtempSync(join(tmpdir(), "held-"));
+  const stagedF = (rows) => { const f = join(root, "staged-" + rows.length + ".json"); writeFileSync(f, JSON.stringify({ ok: true, count: rows.length, approved: rows })); return f; };
+  const held = (f) => spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--held", "--staged", f], { cwd: REPO, encoding: "utf8" });
+  const dup = { id: "2099-01-01T00:00:00.000Z", collection: "sales", row: { customer: dupRow.customer, date: dupRow.date, total: dupRow.total, qty: dupRow.qty } };
+  const fresh = { id: "2099-01-01T00:00:01.000Z", collection: "sales", row: { customer: dupRow.customer, date: "2099-01-01", total: 1, qty: 1 } };
+  const mixed = held(stagedF([dup, fresh])), clean = held(stagedF([fresh])), none = held(stagedF([]));
+  ok(mixed.status === 0 && new RegExp("^" + dup.id + ": .*replay", "m").test(mixed.stdout) && clean.status === 1 && /not held: 1 row\(s\) would fold/.test(clean.stdout) && none.status === 1,
+    "fold.mjs --held answers 0 and names each refusal when any row is refused, and 1 for a batch that folds or an empty one: " + JSON.stringify([mixed.status, clean.status, none.status]));
+
+  /* the guard and the plan, as GitHub runs them */
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const stepRun = (name) => {
+    const at = wf.indexOf("      - name: " + name + "\n");
+    const next = wf.indexOf("\n      - name: ", at + 1);
+    const lines = (at < 0 ? "" : wf.slice(at, next < 0 ? undefined : next)).split("\n");
+    const r = lines.findIndex((l) => /^\s+run: \|$/.test(l));
+    return r < 0 ? "" : lines.slice(r + 1).join("\n");
+  };
+  const bash = workflowBash();
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(GIT_|GITHUB_|LIVE_AT$)/.test(k)));
+  const log = join(root, "log.txt").replace(/\\/g, "/");
+  const git = (cwd, ...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t.invalid", ...a], { cwd, env, encoding: "utf8", stdio: "pipe" });
+  const w = join(root, "w");
+  mkdirSync(join(w, "master"), { recursive: true }); mkdirSync(join(w, "tools"), { recursive: true });
+  /* the stub: never a replay batch; held while HELD=1 */
+  writeFileSync(join(w, "tools", "fold.mjs"), "import { appendFileSync } from 'node:fs';\n"
+    + "appendFileSync(" + JSON.stringify(log) + ", 'fold ' + process.argv.slice(2).join(' ') + '\\n');\n"
+    + "if (process.argv[2] === '--held' && process.env.HELD === '1') { console.log('A: refused'); process.exit(0); }\nprocess.exit(1);\n");
+  writeFileSync(join(w, "tools", "drafts.mjs"), "import { appendFileSync } from 'node:fs';\n"
+    + "appendFileSync(" + JSON.stringify(log) + ", 'drafts ' + process.argv.slice(2).join(' ') + '\\n');\n");
+  writeFileSync(join(w, "master", "_to_fold.json"), JSON.stringify({ ok: true, count: 1, approved: [{ id: "A", collection: "sales" }] }));
+  git(w, "init", "-q", "-b", "master"); git(w, "add", "-A"); git(w, "commit", "-q", "-m", "fixture");
+  const head = git(w, "rev-parse", "HEAD").trim();
+  const step = (name, ctx, more = {}) => {
+    const out = join(root, "out-" + name.replace(/\W+/g, "") + ".txt");
+    writeFileSync(out, "");
+    const script = stepRun(name).replace(/\$\{\{\s*([^}]*?)\s*\}\}/g, (_, k) => (k in ctx ? ctx[k] : ""));
+    const r = spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", "-c", script], { cwd: w, env: { ...env, ...more, GITHUB_OUTPUT: out.replace(/\\/g, "/") }, encoding: "utf8" });
+    const o = {};
+    for (const l of readFileSync(out, "utf8").split("\n")) { const i = l.indexOf("="); if (i > 0) o[l.slice(0, i)] = l.slice(i + 1).trim(); }
+    return { code: r.status, o, text: String(r.stdout || "") + String(r.stderr || "") };
+  };
+  const plan = (g, event) => step("What this run does", { "github.event_name": event, "inputs.stage_only": "false", "inputs.probe_key": event === "schedule" ? "" : "false",
+    "steps.guard.outputs.staged": g.o.staged || "", "steps.guard.outputs.folded": g.o.folded || "", "steps.guard.outputs.held": g.o.held || "", "steps.commit.outputs.staged": "" }).o;
+  try {
+    writeFileSync(log, "");
+    const g = step("Stand down if the last batch is still unfolded", {}, { HELD: "1" });
+    ok(g.code === 0 && g.o.held === "1" && g.o.skip === "1" && g.o.staged === "0" && /::warning::.*held for a person.*A: refused/.test(g.text)
+       && !/^drafts /m.test(readFileSync(log, "utf8")) && git(w, "rev-parse", "HEAD").trim() === head,
+      "a refused batch is held: nothing staged, folded, marked or committed, and the run says why: " + JSON.stringify(g.o) + " " + g.text.slice(-200));
+    const ps = plan(g, "schedule"), pd = plan(g, "workflow_dispatch");
+    ok(ps.fold === "0" && ps.deploy === "0" && pd.fold === "0" && pd.deploy === "0" && ps.publish === "1",
+      "and the plan neither folds nor deploys it on the tick or a tap, while the statements still publish: " + JSON.stringify({ ps, pd }));
+    const f = step("Stand down if the last batch is still unfolded", {}, { HELD: "0" });
+    const pf = plan(f, "schedule");
+    ok(f.code === 0 && f.o.held === "0" && f.o.staged === "1" && pf.fold === "1" && pf.deploy === "1",
+      "once the refusal is resolved the same batch folds and deploys: " + JSON.stringify({ guard: f.o, plan: pf }));
+  } finally {
+    try { rmSync(root, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
+})();
+
 section("Statements: the pay link opens QR Command at the account, the rail and the amount (S6)");
 await (async () => {
   /* THE ONE LINK INTO THE PAY PAGE (the owner's D8, 24 Sep 2026): stmt/pay.js builds QR Command's
