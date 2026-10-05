@@ -10607,7 +10607,7 @@ await (async () => {
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
      asks who deployed. Since 26 Sep 2026 it is its own job, on the chain's deploy (the section below). */
-  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --jobs 3\n/.test(wf.replace(/\r\n/g, "\n"))
+  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --part \$\{\{ matrix\.part \}\}\/3 --jobs 2\n/.test(wf.replace(/\r\n/g, "\n"))
      && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'\n/.test(wf.replace(/\r\n/g, "\n")),
      "the full suite comes after the statements, in its own job on the chain's deploy, and runs whoever deployed");
   /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
@@ -10675,7 +10675,7 @@ await (async () => {
   const pubMain = pubSrc.slice(pubSrc.indexOf("async function main("));
   ok(!/deskWrangler\(\["kv", "key", "put"/.test(pubMain) && (pubMain.match(/\bdeskPut\(/g) || []).length === 2
      && /deskWrangler\(\["kv", "key", "get"/.test(pubSrc), "both desk-store writes in the publish go through deskPut, which reads the key back");
-  ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
+  ok(/if: always\(\) && needs\.suite\.result == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 })();
 
@@ -10696,7 +10696,7 @@ await (async () => {
     const heads = [...jobsBody.matchAll(/^  ([A-Za-z0-9_-]+):[^\n]*$/gm)], k = heads.findIndex((h) => h[1] === name);
     return k < 0 ? "" : jobsBody.slice(heads[k].index, k + 1 < heads.length ? heads[k + 1].index : undefined);
   };
-  const chain = job("chain"), suite = job("suite");
+  const chain = job("chain"), suite = job("suite"), notice = job("suite-notice");
   const stepsOf = (block) => [...block.matchAll(/^      - name: ([^\n]+)$/gm)].map((m) => m[1]);
   const stepIn = (block, name) => {
     const at = block.indexOf("      - name: " + name + "\n");
@@ -10716,6 +10716,12 @@ await (async () => {
   ok(suite !== "" && /^    needs: chain$/m.test(suite) && /^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(suite)
      && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
     "job suite needs chain, runs only when chain succeeded and deployed, checks out the sha chain proved, and takes no lock");
+  /* 05 Oct 2026: a third of the suite a runner, and the notice once after all three */
+  ok(/^    strategy:\n      fail-fast: false\n      matrix:\n        part: \[1, 2, 3\]$/m.test(suite)
+     && notice !== "" && /^    needs: \[chain, suite\]$/m.test(notice)
+     && /^    if: always\(\) && needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(notice)
+     && /^      - uses: actions\/checkout@v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(notice) && !/^\s+concurrency:/m.test(notice),
+    "job suite runs as three parts that never cancel each other, and job suite-notice follows all three on the same tree, after a red part too, with no lock");
 
   /* WHAT CHAIN HANDS ON, TAKEN WHERE IT IS TRUE: after the proof, before the clear's pull can bring in another push.
      Since fold 3.4 the banner stands between, and it moves no commit. */
@@ -10768,7 +10774,7 @@ await (async () => {
     /* curl is a shell function here, so nothing leaves the machine: it logs its arguments and answers /rev as told */
     const curlLog = join(root, "curl.txt").replace(/\\/g, "/");
     const stub = "curl() { echo \"$*\" >> " + JSON.stringify(curlLog) + "; if [ \"$STUB\" = down ]; then return 22; fi; printf '{\"id\":\"%s\"}' \"$STUB\"; }\n";
-    const live = (answer) => run(suite, "Is the phone still on this build?", { "needs.chain.outputs.rev": REV }, stub, { STUB: answer });
+    const live = (answer) => run(notice, "Is the phone still on this build?", { "needs.chain.outputs.rev": REV }, stub, { STUB: answer });
     writeFileSync(curlLog, "");
     const onIt = live(REV), moved2 = live(OTHER), down = live("down");
     ok(onIt.ran && onIt.code === 0 && onIt.o.same === "1" && moved2.code === 0 && moved2.o.same === "0" && down.code === 0 && down.o.same === "0"
@@ -10793,21 +10799,23 @@ await (async () => {
     };
     const LIVE = "Is the phone still on this build?", FAIL = "Say so on the phone if the suite failed", CLEAR = "Clear a test notice once the suite passes";
     const fires = (suiteOut, phoneSame) => {
-      const ctx = { status: suiteOut, "steps.suite.outcome": suiteOut };
-      ctx["steps.live.outputs.same"] = cond(ifOf(suite, LIVE), ctx) === true ? phoneSame : "";
-      return [FAIL, CLEAR].filter((n) => cond(ifOf(suite, n), ctx) === true).map((n) => (n === FAIL ? "note" : "clear"));
+      const ctx = { status: "success", "needs.suite.result": suiteOut };
+      ctx["steps.live.outputs.same"] = cond(ifOf(notice, LIVE), ctx) === true ? phoneSame : "";
+      return [FAIL, CLEAR].filter((n) => cond(ifOf(notice, n), ctx) === true).map((n) => (n === FAIL ? "note" : "clear"));
     };
+    const ns = stepsOf(notice);
     const table = { failSame: fires("failure", "1"), failMoved: fires("failure", "0"), passSame: fires("success", "1"), passMoved: fires("success", "0") };
     ok(JSON.stringify(table) === JSON.stringify({ failSame: ["note"], failMoved: [], passSame: ["clear"], passMoved: [] })
-       && ss.indexOf(LIVE) > ss.indexOf("The full suite, after the phone is live") && ss.indexOf(FAIL) > ss.indexOf(LIVE) && ss.indexOf(CLEAR) > ss.indexOf(LIVE)
-       && /--refused-note "suite:\$v"/.test(stepIn(suite, FAIL)) && /--clear-suite-notices/.test(stepIn(suite, CLEAR)),
-      "a failed suite notes the phone and a passing one clears, each only while the phone serves the build it tested: " + JSON.stringify(table));
+       && ns.indexOf(LIVE) >= 0 && ns.indexOf(FAIL) > ns.indexOf(LIVE) && ns.indexOf(CLEAR) > ns.indexOf(LIVE) && [LIVE, FAIL, CLEAR].every((n) => ss.indexOf(n) < 0)
+       && /--refused-note "suite:\$v"/.test(stepIn(notice, FAIL)) && /--clear-suite-notices/.test(stepIn(notice, CLEAR)),
+      "a failed suite notes the phone and a passing one clears, once for the three parts, each only while the phone serves the build it tested: " + JSON.stringify(table));
   } finally {
     try { rmSync(root, { recursive: true, force: true }); } catch (e) { /* best effort */ }
   }
 
   /* WHAT EACH JOB MAY DO */
-  ok(/^    permissions:\n      contents: read$/m.test(suite) && !/contents: write|id-token|git push|wrangler deploy|d1\.mjs --seed|stmt-publish|--committed/.test(suite)
+  ok([suite, notice].every((j) => /^    permissions:\n      contents: read$/m.test(j) && !/contents: write|id-token|git push|wrangler deploy|d1\.mjs --seed|stmt-publish|--committed/.test(j))
+     && !/--refused-note "suite:|--clear-suite-notices/.test(suite) && !/npm test/.test(notice)
      && /node tools\/d1\.mjs --seed/.test(chain) && /npx wrangler deploy -c wrangler\.stmt\.jsonc/.test(chain) && /node tools\/stmt-publish\.mjs/.test(chain)
      && !/npm test|--refused-note "suite:|--clear-suite-notices/.test(chain),
     "job suite reads the repository and writes only its notice, while the re-seed, the Counter and the publish stay in chain, which runs no suite");
@@ -10979,7 +10987,7 @@ await (async () => {
   /* GitHub's filter: `**` is anything, `*` anything but a slash, the rest literal, the whole path */
   const globRe = (g) => g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*|\*/g, (s) => (s === "**" ? ".*" : "[^/]*"));
   const guardAt = ci.indexOf("- name: Is cloud-commit testing this push?"), testsAt = ci.indexOf("- name: Tests\n");
-  const guard = guardAt > 0 && testsAt > guardAt ? ci.slice(guardAt, testsAt) : "";
+  const guard = guardAt > 0 && testsAt > guardAt ? ci.slice(guardAt, ci.indexOf("\n\n", guardAt)) : "";
   const pat = (guard.match(/grep -Eq '([^']+)' <<< "\$files"/) || [])[1] || "";
   const alts = ((pat.match(/^\^\((.+)\)\$$/) || [])[1] || "").split("|").filter(Boolean);
   const want = globs.map(globRe).sort(), have = [...alts].sort();
@@ -10995,17 +11003,19 @@ await (async () => {
   const disagree = ciRe && pat ? corpus.filter((f) => ghTakes(f) !== ciRe.test(f)) : corpus;
   ok(pat !== "" && samples.every((s) => ghTakes(s)) && disagree.length === 0,
      "and the guard decides " + corpus.length + " paths as GitHub decides them for cloud-commit" + (disagree.length ? "; it differs on " + disagree.join(", ") : ""));
-  const tests = testsAt > 0 ? ci.slice(testsAt, ci.indexOf("\n\n", testsAt)) : "";
-  ok(/^- name: Tests\n\s+if: steps\.chain\.outputs\.covered != '1'\n\s+run: npm test -- --jobs 3$/.test(tests),
-     "CI's Tests stand down only when the guard says cloud-commit is testing the push");
+  const testsJob = ci.slice(Math.max(0, ci.search(/^  tests:$/m)));
+  ok(/^    outputs:\n      covered: \$\{\{ steps\.chain\.outputs\.covered \}\}$/m.test(ci.slice(0, ci.search(/^  tests:$/m)))
+     && /^  tests:\n    needs: verify\n    if: "!cancelled\(\) && needs\.verify\.outputs\.covered != '1'"$/m.test(testsJob)
+     && /^      - name: Tests\n        run: npm test -- --part \$\{\{ matrix\.part \}\}\/3 --jobs 2$/m.test(testsJob) && (ci.match(/needs\.verify\.outputs\.covered/g) || []).length === 1,
+     "CI's tests, three parts in their own job, stand down only when the guard says cloud-commit is testing the push, and run after a red check");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
      && guard.includes('[ "$BEFORE" != "0000000000000000000000000000000000000000" ]')
      && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
-     "the guard asks on a push alone, starts from not covered, never compares from a zero base, and Tests is the one step it stands down");
+     "the guard asks on a push alone, starts from not covered, never compares from a zero base, and job tests is the one thing it stands down");
 })();
 
-section("26 Sep 2026: a runner packs the suite by the committed costs, three shards, never more than its cores less one");
+section("26 Sep 2026: a runner packs the suite by the committed costs, three shards, never more than its cores less one; since 05 Oct, one part a runner");
 await (async () => {
   /* Fold 5.8 of the streamlining plan. tools/suite-split.mjs packed by last run's timings, which are the laptop's and
      gitignored, so a runner packed by text length. test/suite-costs.json is the laptop's timings by section title,
@@ -11049,8 +11059,33 @@ await (async () => {
   /* both suite steps ask for three, and the file reaches the runner */
   const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());
   const ignored = spawnSync("git", ["check-ignore", "-q", "test/suite-costs.json"], { cwd: REPO }).status;
-  ok(JSON.stringify(runs("ci.yml")) === '["run: npm test -- --jobs 3"]' && JSON.stringify(runs("cloud-commit.yml")) === '["run: npm test -- --jobs 3"]' && ignored === 1,
-    "ci.yml and cloud-commit.yml each run the suite once, as three shards, and git does not ignore the cost file: " + JSON.stringify([runs("ci.yml"), runs("cloud-commit.yml"), ignored]));
+  const PART = '["run: npm test -- --part ${{ matrix.part }}/3 --jobs 2"]';
+  ok(JSON.stringify(runs("ci.yml")) === PART && JSON.stringify(runs("cloud-commit.yml")) === PART && ignored === 1,
+    "ci.yml and cloud-commit.yml each run the suite once, as three parts, and git does not ignore the cost file: " + JSON.stringify([runs("ci.yml"), runs("cloud-commit.yml"), ignored]));
+
+  /* 05 Oct 2026, his instruction: --part i/n, one runner a part. Three parts cover every section once between them, the build
+     phase in each, cut alike by the committed costs; a malformed part is refused before anything runs. */
+  const parse = { two: S.partFor(["--part", "2/3"]), none: S.partFor(["--jobs", "3"]), zero: S.partFor(["--part", "0/3"]), over: S.partFor(["--part", "4/3"]), many: S.partFor(["--part", "1/11"]), word: S.partFor(["--part", "x"]) };
+  ok(JSON.stringify(parse) === JSON.stringify({ two: { i: 2, n: 3 }, none: null, zero: { bad: "0/3" }, over: { bad: "4/3" }, many: { bad: "1/11" }, word: { bad: "x" } }),
+    "--part reads i/n with 1 <= i <= n <= 10 and names anything else as bad: " + JSON.stringify(parse));
+  const cut = () => S.plan(inp.text, { jobs: 3, past: {}, costs: inp.costs });
+  const p1 = cut(), p2 = cut();
+  const seen = new Map();
+  for (const sh of p1 ? p1.shards : []) for (const b of sh.blocks) seen.set(b.k, (seen.get(b.k) || 0) + 1);
+  const rest = blocks.filter((b) => !(p1 ? p1.serial : []).some((x) => x.k === b.k));
+  ok(p1 && rest.length > 0 && rest.every((b) => seen.get(b.k) === 1) && seen.size === rest.length
+     && JSON.stringify(p1.shards.map((x) => x.blocks.map((b) => b.k))) === JSON.stringify(p2.shards.map((x) => x.blocks.map((b) => b.k))),
+    "three parts cut by the committed costs cover every section outside the build phase exactly once, and cut alike every time: " + rest.length + " sections");
+  /* and a part with --jobs beside it is cut again across the runner's two cores, every section of the part once */
+  const sub = p1 ? S.partShards(p1.shards[0], ["--part", "1/3", "--jobs", "2"], 2, p1.cost) : [];
+  const alone = p1 ? S.partShards(p1.shards[0], ["--part", "1/3"], 2, p1.cost) : [];
+  const keys = (bl) => bl.map((b) => b.k).sort((a, b) => a - b).join(",");
+  ok(p1 && sub.length === 2 && sub.every((x) => x.blocks.length > 0) && keys(sub.flatMap((x) => x.blocks)) === keys(p1.shards[0].blocks)
+     && alone.length === 1 && alone[0] === p1.shards[0],
+    "a part given --jobs 2 runs as two processes holding every section of the part once, and without --jobs as one: " + sub.map((x) => x.blocks.length).join(" + ") + " sections");
+  const refused = spawnSync(process.execPath, [join(REPO, "tools", "suite-split.mjs"), "--part", "4/3"], { cwd: REPO, encoding: "utf8", timeout: 30000 });
+  ok(refused.status === 1 && /FAIL  --part takes i\/n/.test(refused.stdout) && !/packing/.test(refused.stdout),
+    "a malformed --part is refused before anything is packed or run: exit " + refused.status + " " + String(refused.stdout).trim().slice(0, 120));
 })();
 
 section("27 Sep 2026: tools/section.mjs runs one section as a shard does and names the checks each mutation turns red");
@@ -46026,7 +46061,7 @@ await (async () => {
     "and it says in words that nothing is needed from him, and what clears it: " + note);
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const clear = wf.slice(wf.indexOf("- name: Clear a test notice once the suite passes"));
-  ok(/if: steps\.suite\.outcome == 'success'/.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 600))
+  ok(/if: needs\.suite\.result == 'success'/.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 600))
      && /DELETE FROM refused WHERE id LIKE 'suite:%'/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")),
     "a run whose suite passes clears every test notice, rather than waiting for the next fold");
   try { w.close(); } catch (e) { /* best effort */ }

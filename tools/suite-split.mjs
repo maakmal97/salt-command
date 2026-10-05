@@ -18,12 +18,18 @@
  *
  * The totals are the sum of the shards', and a section count short of the headings in verify.mjs fails the run, which is what
  * the suite's own floor check does in one process; that check stands down in a shard (SUITE_SHARD) because a shard runs part.
- * It is `npm test` (his instruction of 24 Sep 2026), here and in CI, where the workflows ask for three shards. No machine
- * runs more shards than its cores less one (never fewer than two): a hosted runner's memory comes with its cores, 16 GB
- * with four, and each shard may take a 4 GB heap. `npm run test:serial` is the one-process road.
+ * It is `npm test` (his instruction of 24 Sep 2026), here and in CI. No machine runs more shards than its cores less one
+ * (never fewer than two): a hosted runner's memory comes with its cores, and each shard may take a 4 GB heap.
+ * `npm run test:serial` is the one-process road.
+ *
+ * ONE PART A RUNNER IN CI (05 Oct 2026, his instruction). Once the repo went private on 01 Oct its runners had two cores, so
+ * three shards asked ran as two fighting over them, and the suite went from about 5 min to 6 to 11. CI now runs three
+ * runners, each with --part i/3: the build phase, then shard i of the same three-way packing, in one process. A part packs
+ * by the committed costs alone, never a machine's own times, so all three cut the suite alike and the parts cover it once.
  *
  *   node tools/suite-split.mjs                 shards = half the cores, at most 10
  *   node tools/suite-split.mjs --jobs 12
+ *   node tools/suite-split.mjs --part 2/3      the build phase and the second of three shards (CI, one runner a part)
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
  */
 import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
@@ -133,6 +139,20 @@ export function jobsFor(argv, cores) {
   return Math.max(1, Math.min(+argv[ji + 1], Math.max(2, cores - 1)));
 }
 
+/* --part i/n: the build phase, then the i-th of n shards in one process; null when absent, { bad } when malformed */
+export function partFor(argv) {
+  const pi = argv.indexOf("--part");
+  if (pi < 0) return null;
+  const m = /^(\d+)\/(\d+)$/.exec(argv[pi + 1] || "");
+  return m && +m[1] >= 1 && +m[1] <= +m[2] && +m[2] <= 10 ? { i: +m[1], n: +m[2] } : { bad: String(argv[pi + 1]) };
+}
+
+/* a part's shard, cut again across this machine's cores when --jobs is given beside --part, fixed folders kept together */
+export function partShards(shard, argv, cores, cost) {
+  if (argv.indexOf("--jobs") < 0) return [shard];
+  return pack(unitsOf(shard.blocks).units, jobsFor(argv, cores), cost);
+}
+
 /* what test/suite-costs.json holds: the sections verify.mjs has now, in its order, each in whole tens of milliseconds */
 export function costsFrom(blocks, times) {
   const out = {};
@@ -157,14 +177,19 @@ if (isMain) {
     process.exit(0);
   }
 
-  const JOBS = jobsFor(process.argv.slice(2), cpus().length);
-  const p = plan(text, { jobs: JOBS, past, costs });
+  const part = partFor(process.argv.slice(2));
+  if (part && part.bad !== undefined) { console.log(`  FAIL  --part takes i/n, 1 <= i <= n <= 10: ${part.bad}`); process.exit(1); }
+  /* a part packs by the committed costs alone, so every runner cuts the suite the same way */
+  const JOBS = part ? part.n : jobsFor(process.argv.slice(2), cpus().length);
+  const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs });
   if (!p) { console.log("  FAIL  cannot find the sections or the footer in test/verify.mjs"); process.exit(1); }
-  const { prelude, footer, blocks, serial, shards, cost } = p;
+  const { prelude, footer, blocks, serial, cost } = p;
+  const shards = part ? partShards(p.shards[part.i - 1], process.argv.slice(2), cpus().length, cost) : p.shards;
+  const want = part ? serial.length + p.shards[part.i - 1].blocks.length : blocks.length;
   const by = { run: 0, file: 0, length: 0 };
   for (const b of blocks) by[cost.from(b)]++;
   console.log(`packing ${blocks.length} sections into ${JOBS} shards (${by.run} by this machine's last run, ${by.file} by test/suite-costs.json, ${by.length} by length):`
-    + ` ${shards.map((s) => (s.load / 1000).toFixed(0)).join(", ")} s estimated`);
+    + ` ${p.shards.map((s) => (s.load / 1000).toFixed(0)).join(", ")} s estimated` + (part ? `; this is part ${part.i}, ${want} sections` : ""));
 
   const times = {};
   const run = (name, bl) => {
@@ -190,7 +215,7 @@ if (isMain) {
     if (!r.res) { broken.push(r.name); continue; }
     pass += r.res.pass; fail += r.res.fail; sections += r.res.sections;
   }
-  if (sections < blocks.length) broken.push(`${blocks.length - sections} section(s) never ran`);
+  if (sections < want) broken.push(`${want - sections} section(s) never ran`);
   try { writeFileSync(TIMES, JSON.stringify({ ...past, ...times }, null, 1)); } catch (e) { /* timings are a convenience */ }
   console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`
     + ` (${results.length} processes: ${((t1 - t0) / 1000).toFixed(1)} s alone, then ${((t2 - t1) / 1000).toFixed(1)} s side by side)`);
