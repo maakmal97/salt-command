@@ -43,7 +43,7 @@ export const OWNER_JS = `
     if(!which) drawNeeds();
     if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
-    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); loadMakerClaims(); }
+    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); loadMakerPools(); loadMakerClaims(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
@@ -888,6 +888,54 @@ export const OWNER_JS = `
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='A retained reply is encrypted on this device. Open it before retry or cancel it explicitly.';
     makerChatState();drawMakerThreadLines();startMakerChat();
+  }
+  /* A GROUP ORDER (the pool): open one, see who is in by units, and Close. Close closes it, tells each joiner once and sends
+     each joined order for acknowledgement; one the Desk would not accept is listed under the pool with its reason, and Close
+     again retries those alone. Reaching the target closes nothing: only this does. */
+  async function loadMakerPools(){
+    var root=document.getElementById('makerPools'); if(!root||oMaker.hidden) return;
+    var result;
+    try{ result=await refs('/all/maker/pools'); }catch(error){ root.textContent=error.message; return; }
+    if(!root.isConnected||oMaker.hidden) return;
+    root.textContent='';
+    var note=el('p','msg',''); note.setAttribute('role','status');
+    function field(label,type,attrs){
+      var l=el('label','maker-field'); l.appendChild(el('span','lbl',label));
+      var i=el('input','fld salt-field__input'); i.type=type; Object.keys(attrs||{}).forEach(function(k){ i.setAttribute(k,attrs[k]); });
+      l.appendChild(i); root.appendChild(l); return i;
+    }
+    var product=field('Product','text',{maxlength:'20',autocomplete:'off'}), size=field('Size each, in units','number',{min:'0',step:'any'}),
+        target=field('Target, in units','number',{min:'0',step:'any'}), closes=field('Closes on, optional','date',{});
+    var open=el('button','btn salt-pill salt-pill--md','Open group order'); open.type='button';
+    open.onclick=async function(){
+      open.disabled=true;
+      try{
+        var body={product:product.value.trim().toLowerCase(),q:Number(size.value),target:Number(target.value)};
+        if(closes.value) body.closesOn=closes.value;
+        await refs('/all/maker/pools',body); await loadMakerPools();
+      }catch(error){ note.textContent=error.message; open.disabled=false; }
+    };
+    root.appendChild(open); root.appendChild(note);
+    (result.pools||[]).forEach(function(p){
+      var card=el('article','salt-glass-card maker-card');
+      card.appendChild(el('p','maker-row',p.product+' '+p.q+' each, '+p.unitsIn+' of '+p.target+' units in, '+(p.joins||[]).length+' joined'
+        +(p.closesOn?', closes '+p.closesOn:'')+', '+p.state));
+      (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','Not acknowledged: '+x.id+' ('+x.why+')')); });
+      if(p.state==='open'||(p.closeLeft||[]).length){
+        var close=el('button','salt-ghost',p.state==='open'?'Close':'Close again'); close.type='button';
+        close.onclick=async function(){
+          if(p.state==='open'&&!confirm('Close this group order and send each joined order for acknowledgement? Every joiner is told once.')) return;
+          close.disabled=true;
+          try{
+            var r=await refs('/all/maker/pools/'+encodeURIComponent(p.id)+'/close',{});
+            await loadMakerPools();
+            var again=document.getElementById('makerPools'); if(again){ var m=el('p','msg',r.accepted.length+' sent for acknowledgement'+(r.left.length?', '+r.left.length+' left':'')+'.'); m.setAttribute('role','status'); again.insertBefore(m,again.firstChild); }
+          }catch(error){ note.textContent=error.message; close.disabled=false; }
+        };
+        card.appendChild(close);
+      }
+      root.appendChild(card);
+    });
   }
   async function loadMakerBulletin(){
     var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');

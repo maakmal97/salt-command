@@ -52041,5 +52041,10 @@ await (async () => {
   await (await import("./pool-join.mjs")).join({ ok, KV, skipOff });
 })();
 
+section("Pool B3: only the owner opens and closes a group order; Close closes in the book, then previews and accepts each joined order");
+await (async () => {
+  await (await import("./pool-maker.mjs")).maker({ ok, KV, skipOff });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
