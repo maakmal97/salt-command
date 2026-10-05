@@ -1072,9 +1072,13 @@ await (async () => {
     ok(!html.includes("__SALT_BUILD_ID__"), "no unreplaced build-id placeholder shipped");
     ok(html.includes("var SALT_REV_MS=10000"), "the poll interval is ten seconds");
     ok(html.includes("fetch('rev',{cache:'no-store'})"), "the poll bypasses the HTTP cache");
+    /* 05 Oct 2026: sw.js answers an open from the cache, so a reload the page asks for must reach the network */
+    ok(html.includes("if(idle())saltFresh(); else offer(j.v);") && html.includes("chip.onclick=saltFresh;")
+      && html.includes("location.replace(location.pathname+'?fresh=1'+location.hash)") && !/location\.reload\(\)/.test(html.split("<!-- END cloud/PWA -->")[0].split("<title>Salt Command</title>")[1] || "x"),
+      "a new build id, the chip and a new service worker all load the desk fresh, never a plain reload the cache would answer");
     ok(html.includes("if(!window.SALT_CLOUD||document.visibilityState!=='visible')return"),
       "the poll is cloud-only and pauses when the app is not on screen");
-    ok(html.includes("if(idle())location.reload(); else offer(j.v)"),
+    ok(html.includes("if(idle())saltFresh(); else offer(j.v)"),
       "a reload only happens when the desk is idle, otherwise it offers");
 
     /* IDLE IS RUN, NOT READ (v482). The rule counted a queued entry as unsent work, and in
@@ -1381,6 +1385,41 @@ await (async () => {
     const bull = answered("/bulletin"), icon = answered("/icon-192.png");
     ok(bull === 0 && icon === 1,
       "a GET /bulletin passes the service worker by to the network, while an icon is still answered from the cache: " + JSON.stringify({ bull, icon }));
+  }
+
+  /* The desk opens from the cache without waiting on the network; ?fresh=1, a cold open and a redirected refresh
+     each behave as the page relies on. Run as it ships, caches and clients stubbed. */
+  {
+    const vm = await import("node:vm");
+    const run = async (paths, { cached, net }) => {
+      const L = {}, told = [], waits = [], fetched = [];
+      const ctx = { URL, console, Promise,
+        caches: { match: async () => cached, open: async () => ({ put() {} }) },
+        clients: { matchAll: async () => [{ postMessage: (m) => told.push(m.salt) }] },
+        self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" } },
+        fetch: (r) => { fetched.push(r.url); return net(); } };
+      vm.createContext(ctx); vm.runInContext(sw, ctx);
+      const answers = [];
+      for (const path of paths) {
+        let p; L.fetch({ request: { method: "GET", url: "https://salt-command.example" + path, mode: "navigate" },
+          respondWith: (x) => { p = x; }, waitUntil: (x) => waits.push(x) });
+        answers.push(await Promise.race([p, new Promise((r) => setTimeout(() => r("waiting"), 50))]));
+      }
+      await Promise.race([Promise.all(waits), new Promise((r) => setTimeout(r, 50))]);
+      return { answers, told, fetched: fetched.length };
+    };
+    const CACHED = { tag: "cached" };
+    const desk = () => ({ tag: "net", status: 200, type: "basic", redirected: false, clone() { return this; } });
+    const hang = await run(["/"], { cached: CACHED, net: () => new Promise(() => {}) });
+    const pair = await run(["/", "/?fresh=1"], { cached: CACHED, net: async () => desk() });
+    const cold = await run(["/"], { cached: undefined, net: async () => desk() });
+    const lapsed = await run(["/"], { cached: CACHED, net: async () => ({ status: 0, type: "opaqueredirect", redirected: false, clone() { return this; } }) });
+    const nosig = await run(["/"], { cached: CACHED, net: async () => { throw new TypeError("offline"); } });
+    const got = { hang: hang.answers[0]?.tag, pair: pair.answers.map((a) => a?.tag), pairFetched: pair.fetched,
+      cold: cold.answers[0]?.tag, lapsed: lapsed.told, nosig: nosig.told, nosigAns: nosig.answers[0]?.tag };
+    ok(got.hang === "cached" && got.pair[0] === "cached" && got.pair[1] === "net" && got.pairFetched === 1
+      && got.cold === "net" && got.lapsed.join() === "signin" && got.nosig.length === 0 && got.nosigAns === "cached",
+      "an open of the desk is answered from the cache at once, ?fresh=1 takes the refresh already on its way, a cold open is the network's, and only a redirected refresh asks the desk to sign in: " + JSON.stringify(got));
   }
 })();
 

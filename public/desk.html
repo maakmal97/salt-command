@@ -135,6 +135,10 @@
 function saltDeviceId(){try{var d=localStorage.getItem('saltDevice');if(!d){d=(self.crypto&&crypto.randomUUID)?crypto.randomUUID():('d'+Date.now()+Math.random().toString(36).slice(2));localStorage.setItem('saltDevice',d);}return d;}catch(e){return 'anon';}}
 /* Register the service worker so the desk installs to the home screen and opens
    offline. When a fresh build lands, reload once so the phone gets the new ledger. */
+/* sw.js answers a plain open from the cache, so every reload this page asks for carries ?fresh=1 to reach the
+   network; the mark leaves the address once loaded, so no bookmark keeps it. */
+function saltFresh(){location.replace(location.pathname+'?fresh=1'+location.hash);}
+try{if(/[?&]fresh=/.test(location.search))history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('sw.js').then(function(reg){try{reg.update&&reg.update();}catch(e){}}).catch(function(){});
@@ -142,7 +146,7 @@ if('serviceWorker' in navigator){
   var _swFirst=true;
   navigator.serviceWorker.addEventListener('controllerchange',function(){
     if(_swFirst){_swFirst=false;return;}   // first claim after install is not an update
-    location.reload();
+    saltFresh();
   });
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible'&&navigator.serviceWorker.controller){
@@ -180,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="44c64b6c260b66b1";
+var SALT_BUILD_ID="db3303f91db7a74e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -194,12 +198,12 @@ var SALT_WAKE_MS=3000;
     if(document.querySelector('dialog[open]'))return false;
     return true;
   }catch(e){return false;}}
-  function offer(v){
+  function offer(v,words){
     if(chip||!document.body)return;
     chip=document.createElement('button');chip.type='button';
-    chip.textContent='New ledger '+(v||'')+' \u00b7 tap to load';
+    chip.textContent=(words||('New ledger '+(v||'')))+' \u00b7 tap to load';
     chip.setAttribute('style','position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:99999;font:600 13px/1.2 inherit;padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(24,15,44,.94);color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.45)');
-    chip.onclick=function(){location.reload();};
+    chip.onclick=saltFresh;
     document.body.appendChild(chip);
   }
   function unsent(){
@@ -212,7 +216,7 @@ var SALT_WAKE_MS=3000;
     try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function'&&unsent())qPost();}catch(e){}
     fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){
       if(!j||!j.id||j.id===SALT_BUILD_ID)return;
-      if(idle())location.reload(); else offer(j.v);
+      if(idle())saltFresh(); else offer(j.v);
     }).catch(function(){});
   }
   window.addEventListener('load',function(){if(!timer){timer=setInterval(tick,SALT_REV_MS);tick();}});
@@ -235,6 +239,7 @@ var SALT_WAKE_MS=3000;
     }catch(e){}
   }
   try{if(navigator.serviceWorker&&navigator.serviceWorker.addEventListener)navigator.serviceWorker.addEventListener('message',function(e){
+    if(e&&e.data&&e.data.salt==='signin'){if(idle())saltFresh(); else offer(null,'Sign in again');return;}
     if(!e||!e.data||e.data.salt!=='wake'||wakeT)return;
     wakeT=setTimeout(wake,SALT_WAKE_MS);
   });}catch(e){}

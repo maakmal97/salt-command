@@ -51,6 +51,16 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+/* The desk as the network serves it, kept as the shell when it is the desk; the refresh still on its way. */
+const shellOk = (res) => !!res && res.status === 200 && res.type === "basic" && !res.redirected;
+const shellFetch = (req) => fetch(req).then((res) => {
+  if (shellOk(res)) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put("./", copy)); }
+  return res;
+});
+let inflight = null;
+const tellDesks = (msg) => clients.matchAll({ type: "window" })
+  .then((list) => { for (const c of list) { try { c.postMessage(msg); } catch (x) { /* the next desk */ } } });
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;                  // POSTs (the queue push) pass straight through
@@ -58,8 +68,6 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== self.location.origin) return;   // never touch third-party requests
   if (API.test(url.pathname)) return;                // the queue API is live, never cached
 
-  /* The shell is network first, so a fresh build reaches the phone without a CACHE
-     bump. Falls back to the cached shell with no signal, which is the whole point. */
   if (req.mode === "navigate") {
     /* ONLY THE ROOT IS THE SHELL (v290). It used to cache EVERY navigation under "./", which
        was harmless while the root was the only page there was, and became a hazard at v290
@@ -67,17 +75,26 @@ self.addEventListener("fetch", (e) => {
        one surface again and the desk IS the root, so the two can no longer disagree; the
        check stays narrow because /desk is still a live route to the same page. */
     const isRoot = url.pathname === "/";
+    const offline = () => caches.match(isRoot ? "./" : req, { ignoreSearch: true })
+      .then((hit) => hit || caches.match("./", { ignoreSearch: true }));
+    /* Cache first: the desk is 800 KB on the wire, so an open draws the cached copy and refreshes it behind; the page's
+       reload on a new build asks ?fresh=1 (network first), and a redirected refresh (Access sign-in) asks the page to load fresh. */
+    if (isRoot && !url.searchParams.has("fresh")) {
+      e.respondWith(caches.match("./", { ignoreSearch: true }).then((hit) => {
+        const net = shellFetch(req);
+        if (!hit) return net.catch(offline);
+        inflight = net.catch(() => null);
+        e.waitUntil(inflight.then((res) => { if (res && (res.type === "opaqueredirect" || res.redirected)) tellDesks({ salt: "signin" }); }));
+        return hit;
+      }));
+      return;
+    }
+    const taken = isRoot ? inflight : null;
+    if (isRoot) inflight = null;
     e.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (isRoot && res && res.status === 200 && res.type === "basic" && !res.redirected) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put("./", copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match(isRoot ? "./" : req, { ignoreSearch: true })
-          .then((hit) => hit || caches.match("./", { ignoreSearch: true })))
+      Promise.resolve(taken)
+        .then((res) => (shellOk(res) ? res : isRoot ? shellFetch(req) : fetch(req)))
+        .catch(offline)
     );
     return;
   }
