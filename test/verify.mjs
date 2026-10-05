@@ -14095,6 +14095,32 @@ await (async () => {
   } finally { try { w22.close(); } catch (e) { /* best effort */ } }
 })();
 
+
+section("D10: a pill and a heading never say the same word twice");
+await (async () => {
+  /* D10 of the fix list of 29 Sep 2026: every part under a parts strip drew its pill, then an h1 saying the same word,
+     and the Ledger a third heading. renderPart now hands that h1 to a screen reader alone (the one .sr-only), so the
+     page keeps one h1 and the eye reads the word once; a destination with one page (Pricing) keeps its h1 in view, and
+     the Ledger's second heading is gone. Read on the running desk, every part of every destination. */
+  const { openMaster: omD10 } = await import("../tools/payload.mjs");
+  const { w: wD10 } = await omD10();
+  const rdD10 = (e) => JSON.parse(String(wD10.eval("JSON.stringify(" + e + ")")));
+  try {
+    const seen = rdD10("(function(){var out=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){switchTab(p);"
+      + "var sec=document.getElementById('sec-'+V.id),hs=sec?sec.querySelectorAll('.vpart h1'):[],h=hs[0],pill=sec&&sec.querySelector('.vnav .vpill.on');"
+      + "out.push({v:V.id,p:p,pill:pill?pill.textContent.trim():null,n:hs.length,h1:h?h.textContent.trim():null,hidden:!!h&&h.classList.contains('sr-only'),"
+      + "h2:sec?[].map.call(sec.querySelectorAll('.vpart h2'),function(x){return x.textContent.trim();}):[]});});});return out;})()");
+    const dup = seen.filter((s) => s.pill && s.h1 && s.pill.toLowerCase() === s.h1.toLowerCase());
+    ok(dup.length >= 8 && dup.every((s) => s.hidden && s.n === 1),
+      "every part whose h1 says its pill's word keeps that one h1 for a screen reader alone: " + JSON.stringify(dup.filter((s) => !s.hidden || s.n !== 1).map((s) => s.p)) + " of " + dup.length);
+    const shown = seen.filter((s) => s.h1 && !s.hidden);
+    ok(shown.every((s) => !s.pill || s.pill.toLowerCase() !== s.h1.toLowerCase()) && shown.some((s) => s.v === "price" && s.h1 === "Pricing"),
+      "an h1 no pill names stays in view, Pricing's among them: " + JSON.stringify(shown.map((s) => s.p + ":" + s.h1)));
+    const led = seen.find((s) => s.p === "ledger");
+    ok(led && led.hidden && !led.h2.some((t) => /^transactions ledger/i.test(t)), "the Ledger says Ledger once, in its pill: " + JSON.stringify(led));
+  } finally { try { wD10.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("v626: the drafter's ADVANCE is the engine's, and a correction is measured as the row will stand");
 await (async () => {
   /* HIS REPORT OF 14 SEP 2026: CS6-BS and CN3-WM each showed a unit on advance. CS6-BS held none and CN3-WM one, on
