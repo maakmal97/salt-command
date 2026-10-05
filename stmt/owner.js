@@ -1280,7 +1280,7 @@ export const OWNER_JS = `
       catch(error){redeemStatus.textContent=error.message;}
     },true);
     var editor=el('section','maker-input');editor.appendChild(el('h3',null,'Amend a ledger row'));
-    editor.appendChild(el('p','msg','Correction restates typed fields; Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. Notes, settlement prose, order-code edits and cancelled/defaulted-row editing stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
+    editor.appendChild(el('p','msg','Correction restates typed fields; Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose, order-code edits and cancelled/defaulted-row editing stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total};});
@@ -1325,12 +1325,24 @@ export const OWNER_JS = `
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
     editRow.addEventListener('change',function(){changes={};patchList.textContent='';});
-    var drawKind=function(){movement.style.display=editKind.value==='Fulfilment'?'':'none';patch.style.display=editKind.value==='Correction'?'':'none';};
-    editKind.addEventListener('change',drawKind);drawKind();
+    var kindsFor=function(){
+      var row=rows.find(function(item){return item.rid===editRow.value;}), kept=editKind.value;
+      var names=row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
+      editKind.replaceChildren();
+      names.forEach(function(name){var option=el('option',null,name);option.value=name;editKind.appendChild(option);});
+      editKind.value=names.indexOf(kept)>=0?kept:'Correction';
+    };
+    var drawKind=function(){var k=editKind.value;
+      movement.style.display=(k==='Fulfilment'||k==='Payment'||k==='Receipt')?'':'none';
+      editCash.parentNode.style.display=k==='Receipt'?'none':'';editUnits.parentNode.style.display=k==='Payment'?'none':'';
+      patch.style.display=k==='Correction'?'':'none';};
+    editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     var editorButton=makerButton(editor,'Send amendment for review',async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
       if(body.kind==='Fulfilment'){body.cash=Number(editCash.value);body.movedUnits=Number(editUnits.value);}
+      if(body.kind==='Payment')body.cash=Number(editCash.value);
+      if(body.kind==='Receipt')body.movedUnits=Number(editUnits.value);
       editStatus.textContent='Checking the ledger row…';
       await send('/all/maker/inputs/ledger-amend',body);
       changes={};patchList.textContent='';editStatus.textContent='Sent for review. The row changes only after approval and the fold.';

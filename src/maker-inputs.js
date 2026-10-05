@@ -222,12 +222,14 @@ export function makerLedgerAmendment(body, book) {
   if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields"])
     || !timestamp(body.at) || !date(body.date) || typeof body.rid !== "string"
     || !/^[A-Za-z0-9_-]{1,64}$/.test(body.rid)
-    || !["Correction", "Fulfilment", "Cancellation"].includes(body.kind))
+    || !["Correction", "Fulfilment", "Cancellation", "Payment", "Receipt", "Default"].includes(body.kind))
     return { error: "Choose a ledger row, amendment kind and real date; identity and raw prose are not input fields." };
   const found = findRow(book, body.rid);
   if (found.err) return { error: found.err };
   const row = found.row, sale = found.collection === "sales";
   if (row.cancelled || row.defaulted) return { error: "A cancelled or defaulted row needs a Desk judgement." };
+  const lotKind = ["Payment", "Receipt", "Default"].includes(body.kind);
+  if (lotKind && sale) return { error: "Payment, Receipt and Default are purchase-lot movements." };
   if (body.kind === "Correction") {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
@@ -256,7 +258,21 @@ export function makerLedgerAmendment(body, book) {
     if (body.fields !== undefined) return { error: "A movement or cancellation carries no row patch." };
     if (!POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")))
       return { error: "This row is no longer open." };
-    if (body.kind === "Cancellation") {
+    if (lotKind) {
+      const paid = POSITION_ENGINE.poCash(row), got = POSITION_ENGINE.poRecvUnits(row);
+      if (body.kind === "Payment") {
+        if (body.movedUnits !== undefined || !figure(body.cash) || !(body.cash > 0.004))
+          return { error: "A payment is cash only, and above zero." };
+        if (body.cash > (+row.total || 0) - paid + 0.009)
+          return { error: "Only RM " + Math.max(0, (+row.total || 0) - paid).toFixed(2) + " is outstanding on this lot." };
+      } else if (body.kind === "Receipt") {
+        if (body.cash !== undefined || !figure(body.movedUnits) || !(body.movedUnits > 0.004))
+          return { error: "A receipt is units only, and above zero." };
+        if (body.movedUnits > (+row.qty || 0) - got + 0.009)
+          return { error: "Only " + Math.max(0, (+row.qty || 0) - got).toFixed(2) + " unit is still to arrive on this lot." };
+      } else if (body.cash !== undefined || body.movedUnits !== undefined || got > 0.009)
+        return { error: "A default moves nothing, and a lot that has received units cannot default." };
+    } else if (body.kind === "Cancellation") {
       if (body.cash !== undefined || body.movedUnits !== undefined
         || (sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row)) > 0.009)
         return { error: "A cancellation moves nothing and cannot cancel goods already handed over." };
@@ -265,6 +281,19 @@ export function makerLedgerAmendment(body, book) {
       return { error: "A fulfilment needs non-negative cash and units, with at least one movement." };
   }
   if (!book.state.OPEN) return { error: "The open-order snapshot is unavailable. Reseed the mirror before amending." };
+  if (lotKind) {
+    /* the Workbench's own status and line for a lot, read through the engine's poStat */
+    const cash = body.cash || 0, units = body.movedUnits || 0;
+    const next = POSITION_ENGINE.poStat({ ...row, total: row.total, qty: row.qty, status: undefined, settledRM: 0, settledKg: 0,
+      ...(body.kind === "Default" ? { defaulted: true } : {}),
+      cash: POSITION_ENGINE.poCash(row) + cash, receivedQty: POSITION_ENGINE.poRecvUnits(row) + units });
+    const status = body.kind === "Default" ? "defaulted" : next.pay === "Paid" ? "paid" : next.pay === "Unpaid" ? "unpaid" : "partial";
+    const raw = body.kind + " on " + row.rid + " · lot from " + row.supplier + ", RM " + cash + " paid and " + units
+      + " unit received on " + body.date + (body.kind === "Default"
+        ? " → supplier default; cash already paid becomes a recoverable" : " → " + next.order);
+    return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: "BUY", party: row.supplier,
+      kind: body.kind, date: body.date, cash, movedUnits: units, status, raw }), book);
+  }
   return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
     kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields }), book);
 }
@@ -276,15 +305,16 @@ export async function makerAmendmentRoom(db, entry, book) {
   const sale = found.collection === "sales", row = found.row;
   const after = p.kind === "Correction" ? { ...row, ...p.fields } : row;
   const paid = (value) => sale ? POSITION_ENGINE.txPaid(value) : POSITION_ENGINE.poCash(value);
-  const cash = p.kind === "Fulfilment" ? +p.cash || 0
+  const cash = p.kind === "Fulfilment" || p.kind === "Payment" ? +p.cash || 0
     : p.kind === "Correction" ? Math.max(0, paid(after) - paid(row)) : 0;
-  if (!(cash > 0.004) && p.kind !== "Cancellation") return "";
+  const stops = p.kind === "Cancellation" || p.kind === "Default";
+  if (!(cash > 0.004) && !stops) return "";
   const room = await rowRoom(db, sale ? "SELL" : "BUY");
   if (!room.version || room.version !== book.version) return "The mirror changed or could not be read. Read the row again.";
   const reading = room(POSITION_ENGINE.ovKey(row), entry);
   if (!reading) return "The row's remaining money could not be confirmed.";
-  if (p.kind === "Cancellation" && reading.on > 0.004)
-    return "Money is already on its way to this row. Decide it before cancelling.";
+  if (stops && reading.on > 0.004)
+    return "Money is already on its way to this row. Decide it before " + (p.kind === "Default" ? "defaulting it." : "cancelling.");
   const changedTotal = p.kind === "Correction" && p.fields.total != null ? p.fields.total - (+row.total || 0) : 0;
   const changedDelivery = sale && p.kind === "Correction" && p.fields.delivery != null
     ? p.fields.delivery - (+row.delivery || 0) : 0;

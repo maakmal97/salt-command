@@ -749,14 +749,14 @@ const hex = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256"
 const ON_ITS_WAY = "(status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1))))";
 /* every payment on its way to a sale's row: a Fulfilment carrying cash, pending, or approved and not yet on the mirror */
 async function paysOnWay(db, direction = "SELL") {
-  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND (entry LIKE ?1 OR entry LIKE ?2)")
-    .bind('%"kind":"Fulfilment"%', '%"kind":"Correction"%').all();
+  const rs = await db.prepare("SELECT entry FROM draft WHERE " + ON_ITS_WAY + " AND (entry LIKE ?1 OR entry LIKE ?2 OR entry LIKE ?3)")
+    .bind('%"kind":"Fulfilment"%', '%"kind":"Correction"%', '%"kind":"Payment"%').all();
   const out = [];
   for (const r of rs.results || []) {
     let e = null; try { e = JSON.parse(r.entry); } catch (x) { e = null; }
     const p = e && e.payload;
     if (p && p.mode === "amend" && (direction === "BUY" ? p.direction === "BUY" : p.direction !== "BUY")
-      && (p.kind === "Fulfilment" && +p.cash > 0.004
+      && ((p.kind === "Fulfilment" || p.kind === "Payment" && direction === "BUY") && +p.cash > 0.004
         || p.kind === "Correction" && p.fields && (+p.fields.cash > 0.004 || +p.fields.settledRM > 0.004)))
       out.push(e);
   }

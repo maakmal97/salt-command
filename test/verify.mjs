@@ -5565,6 +5565,41 @@ await (async () => {
   ok(f16.status === q1.status, `and the fold says the same word (${f16.status} against ${q1.status}), which is the whole reason ovAmend exists`);
 })();
 
+section("A4: a lot Default is dated and trailed, and a defaulted lot takes no money or units, in the fold and on the desk");
+await (async () => {
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const { openMaster: omA4 } = await import("../tools/payload.mjs");
+  const { w: wA4 } = await omA4();
+  try {
+    const lotOf = (rid) => ({ rid, date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", cash: 100, receivedQty: 0, inTransit: true, status: "partial" });
+    const fold = lotOf("a4d");
+    applyAmend(fold, { kind: "Default", date: "2026-09-02", cash: 0, kg: 0 }, "BUY", null);
+    wA4.eval("purchases.push(" + JSON.stringify(lotOf("a4d")) + ");");
+    wA4.eval("ovAmend({kind:'Default',date:'2026-09-02',direction:'BUY',rid:'a4d'},{at:'a4'})");
+    const desk = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
+    const trail = (r) => (r.amend || []).filter((x) => x.kind === "Default").map((x) => x.date + "/" + x.cash + "/" + x.kg).join();
+    ok(fold.defaulted === true && fold.defaultedOn === "2026-09-02" && trail(fold) === "2026-09-02/0/0",
+      "A4: the fold dates a lot's default and leaves its step in the trail");
+    ok(desk.defaulted === true && desk.defaultedOn === fold.defaultedOn && trail(desk) === trail(fold),
+      "A4: and the desk's ovAmend writes the same date and step");
+    let foldRefused = 0;
+    for (const pay of [{ kind: "Payment", cash: 10, kg: 0 }, { kind: "Receipt", cash: 0, kg: 1 }])
+      try { applyAmend(Object.assign({}, fold), Object.assign({ date: "2026-09-03" }, pay), "BUY", null); } catch (e) { if (/already a supplier default/.test(e.message)) foldRefused++; }
+    wA4.eval("ovAmend({kind:'Payment',date:'2026-09-03',direction:'BUY',rid:'a4d',cash:10,kg:0},{at:'a5'})");
+    const after = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
+    ok(foldRefused === 2 && after.cash === 100 && trail(after) === trail(desk) && (after.amend || []).length === (desk.amend || []).length,
+      "A4: a defaulted lot refuses a payment and a receipt in the fold, and the desk declines them without moving it");
+    /* a Correction that reverts the default clears its date, in the fold and on the desk */
+    const revive = { kind: "Correction", date: "2026-09-04", fields: { defaulted: false } };
+    const foldRev = Object.assign({}, fold, { amend: (fold.amend || []).slice() });
+    applyAmend(foldRev, revive, "BUY", null);
+    wA4.eval("ovAmend({kind:'Correction',date:'2026-09-04',direction:'BUY',rid:'a4d',fields:{defaulted:false}},{at:'a6'})");
+    const deskRev = JSON.parse(wA4.eval("JSON.stringify(purchases.find(function(p){return p.rid==='a4d';}))"));
+    ok(foldRev.defaulted === undefined && foldRev.defaultedOn === undefined && deskRev.defaulted === undefined && deskRev.defaultedOn === undefined,
+      "A4: a Correction that reverts a default clears its date, in the fold and on the desk");
+  } finally { wA4.close(); }
+})();
+
 
 section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
 await (async () => {
@@ -50689,6 +50724,71 @@ await (async () => {
     }] }) : { items: [], refused: [] };
     ok(stalePaymentPlan.items.length === 0 && stalePaymentPlan.refused.some((item) => /reached this row|two roads/.test(item.why)),
       "the fold payFault remains the last check when money reaches a Counter-editor target after it was measured");
+    /* A4 (05 Oct 2026): a lot's Payment, Receipt and Default, each the entry the Workbench builds */
+    const EA = (await import("../engine/position.mjs")).default;
+    const lotRow = (rid, extra = {}) => ({ rid, supplier: "CX1-ZED", product: "salt", date: "2026-09-01", qty: 2, total: 100,
+      cash: 0, receivedQty: 0, status: "unpaid", ...extra });
+    let seq = 10;
+    const addLot = (row) => countDb.prepare("INSERT INTO entry(collection,seq,doc,hash) VALUES (?,?,?,?)").run("purchases", seq++, JSON.stringify(row), row.rid);
+    const lotA = lotRow("a4-lot-a"), lotB = lotRow("a4-lot-b"), lotC = lotRow("a4-lot-c", { receivedQty: 1, inTransit: true });
+    [lotA, lotB, lotC].forEach(addLot);
+    const stored = (id) => { const d = countDb.prepare("SELECT entry,amend_kind,status FROM draft WHERE id=?").get(id); return d && { ...d, entry: JSON.parse(d.entry) }; };
+    const same = (entry, expected) => JSON.stringify([entry.type, entry.party, entry.qty, entry.total, entry.status, entry.payload])
+      === JSON.stringify([expected.type, expected.party, expected.qty, expected.total, expected.status, expected.payload]);
+    const payBody = { at: "2026-09-29T20:00:00.000Z", rid: lotA.rid, kind: "Payment", date: "2026-09-29", cash: 40 };
+    const paid1 = await editCall(payBody), paid1Again = await (await editCall(payBody)).json();
+    const payDraft = stored(payBody.at);
+    ok(paid1.status === 200 && paid1Again.ok && paid1Again.queued === false && payDraft?.amend_kind === "Payment" && payDraft.status === "pending"
+      && same(payDraft.entry, EA.ledgerAmendmentEntry({ at: payBody.at, row: lotA, direction: "BUY", party: lotA.supplier, kind: "Payment",
+        date: payBody.date, cash: 40, movedUnits: 0, status: "partial", orderCode: null, note: null, sameDay: false, raw: payDraft.entry.raw }))
+      && countDb.prepare("SELECT COUNT(*) n FROM draft WHERE id=?").get(payBody.at).n === 1,
+      "A4: a lot Payment queues the entry the Workbench builds, once, and a retry lands on the same draft");
+    const payOver = await editCall({ ...payBody, at: "2026-09-29T20:01:00.000Z", cash: 70 });
+    const payPast = await editCall({ ...payBody, at: "2026-09-29T20:01:30.000Z", rid: lotB.rid, cash: 101 });
+    ok(payOver.status === 409 && payPast.status === 400 && !stored("2026-09-29T20:01:00.000Z") && !stored("2026-09-29T20:01:30.000Z"),
+      "A4: a Payment over what the lot can still take, counting money already on its way, is refused (rowRoom and the outstanding check)");
+    const recBody = { at: "2026-09-29T20:02:00.000Z", rid: lotB.rid, kind: "Receipt", date: "2026-09-29", movedUnits: 1 };
+    const received = await editCall(recBody), recDraft = stored(recBody.at);
+    ok(received.status === 200 && recDraft?.amend_kind === "Receipt"
+      && same(recDraft.entry, EA.ledgerAmendmentEntry({ at: recBody.at, row: lotB, direction: "BUY", party: lotB.supplier, kind: "Receipt",
+        date: recBody.date, cash: 0, movedUnits: 1, status: "unpaid", raw: recDraft.entry.raw })),
+      "A4: a lot Receipt queues the Workbench's entry");
+    const defBody = { at: "2026-09-29T20:03:00.000Z", rid: lotA.rid, kind: "Default", date: "2026-09-29" };
+    const defWaiting = await editCall(defBody);
+    const lotD = lotRow("a4-lot-d"); addLot(lotD);
+    const defDId = "2026-09-29T20:04:00.000Z";
+    const defD = await editCall({ ...defBody, at: defDId, rid: lotD.rid }), defDraft = stored(defDId);
+    const defArrivedRes = await editCall({ ...defBody, at: "2026-09-29T20:05:00.000Z", rid: lotC.rid });
+    const defArrived = { status: defArrivedRes.status, said: (await defArrivedRes.json()).error || "" };
+    ok(defWaiting.status === 409 && defD.status === 200 && defDraft?.amend_kind === "Default"
+      && same(defDraft.entry, EA.ledgerAmendmentEntry({ at: defDId, row: lotD, direction: "BUY", party: lotD.supplier,
+        kind: "Default", date: defBody.date, cash: 0, movedUnits: 0, status: "defaulted", raw: defDraft.entry.raw })) && defArrived.status === 400 && /cannot default/.test(defArrived.said),
+      "A4: a lot Default queues the Workbench's entry, waits behind money on its way, and is refused once units arrived");
+    const said = async (res) => ({ status: res.status, said: (await res.json()).error || "" });
+    const linked = await said(await editCall({ ...payBody, at: "2026-09-29T20:06:00.000Z", rid: lotD.rid, kind: "Linked" }));
+    const rewarded = await said(await editCall({ ...payBody, at: "2026-09-29T20:07:00.000Z", rid: lotD.rid, kind: "Rewarded" }));
+    const saleKind = await editCall({ ...payBody, at: "2026-09-29T20:08:00.000Z", rid: editSale.rid });
+    const mixed = await said(await editCall({ ...payBody, at: "2026-09-29T20:09:00.000Z", rid: lotD.rid, movedUnits: 1 }));
+    const stranger = await editCall({ ...payBody, at: "2026-09-29T20:10:00.000Z", rid: lotD.rid }, { email: "another@example.test" });
+    ok(linked.status === 400 && rewarded.status === 400 && /Choose a ledger row/.test(linked.said) && /Choose a ledger row/.test(rewarded.said)
+      && saleKind.status === 400 && mixed.status === 400 && /cash only/.test(mixed.said) && stranger.status === 403
+      && !stored("2026-09-29T20:06:00.000Z") && !stored("2026-09-29T20:10:00.000Z"),
+      "A4: Linked and Rewarded stay refused, a Payment is purchase-only and cash-only, and only the verified owner reaches it");
+    const folded = payDraft ? (await import("../tools/fold.mjs")).plan({ sales: [], purchases: [{ ...lotA }], PRODUCTS: { salt: {} } }, { approved: [{
+      id: payBody.at, entry: payDraft.entry, row: JSON.parse(countDb.prepare("SELECT row FROM draft WHERE id=?").get(payBody.at).row),
+      collection: "purchases", amends: lotA.rid, amendKind: "Payment" }] }) : { items: [], refused: [] };
+    ok(folded.items.length === 1 && folded.refused.length === 0, "A4: the fold takes an approved lot Payment");
+    /* a Desk lot entry the drafter refused before A4 stays refused while it is queued; the same entry arriving fresh drafts */
+    const lotE = lotRow("a4-lot-e"), lotF = lotRow("a4-lot-f"); addLot(lotE); addLot(lotF);
+    const deskLot = (at, row) => EA.ledgerAmendmentEntry({ at, row, direction: "BUY", party: row.supplier, kind: "Payment",
+      date: "2026-09-29", cash: 10, movedUnits: 0, status: "partial", raw: "Payment on " + row.rid });
+    const staleAt = "2026-09-29T21:00:00.000Z", freshAt = "2026-09-29T21:01:00.000Z";
+    await countQueue.put("q:a4-stale", JSON.stringify({ queue: [deskLot(staleAt, lotE), deskLot(freshAt, lotF)] }));
+    countDb.prepare("INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (?,?,?,?,?,?)")
+      .run(staleAt, JSON.stringify(deskLot(staleAt, lotE)), "this is a Payment amendment, and what changed is a judgement", lotE.supplier, "cloud-drafter", "2026-09-28T00:00:00.000Z");
+    await drafter.runDrafter(countEnv);
+    ok(!stored(staleAt) && countDb.prepare("SELECT COUNT(*) n FROM refused WHERE id=?").get(staleAt).n === 1 && !!stored(freshAt),
+      "A4: a Desk lot entry refused before the change stays refused and is not redrafted by the cron, while the same kind arriving fresh drafts");
   } finally { countDb.close(); }
   const adminCalls = [], extraReviewOrders = [];
   let previewRelease = null, holdPreview = false, adminWork = null, holdLoan = false, rejectLoan = null;
