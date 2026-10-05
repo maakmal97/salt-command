@@ -78,7 +78,12 @@ function costStack(I){
   /* 1. WHAT THE GOODS COST. Round 5: the trailing average where the desk supplies one
      (I.repl), else the rate on the latest lot, else the highest live quote. */
   const L=I.lot;
-  const lot=pxOver.cost!=null?+pxOver.cost:(I.repl!=null?+I.repl:(L?L.rate:I.quoteRate));
+  /* 05 OCT 2026, HIS SETTLED RULE: COGS IS THE LATEST PURCHASE, on every book (COST_RULE kind `latestCogs`). I.latest is
+     the position engine's latestCogs over the book's lots: the latest landed lot's quote plus its trip freight, over its
+     units. It replaces the trailing rate and the averaged freight below, and the leak and the delivery share come out of
+     the pricing basis (step 6). A book with no landed lot falls through to the roads below, with no leak either way. */
+  const LC=(I.costRule&&I.costRule.kind==='latestCogs'&&I.latest&&+I.latest.units>0)?I.latest:null;
+  const lot=pxOver.cost!=null?+pxOver.cost:(LC?+LC.quote/+LC.units:(I.repl!=null?+I.repl:(L?L.rate:I.quoteRate)));
   /* 2. GETTING THEM HERE. Spread over the AVERAGE lot received, not the latest one (v381).
      lotQty stays the latest lot because the rest of the stack reports on the lot in hand;
      only the freight divisor moves to the mean. A product with no averaged history falls
@@ -94,7 +99,7 @@ function costStack(I){
   /* v503, his instruction of 07 Sep 2026: freight is TYPED ON EACH LOT. I.freightRate is the desk's
      reading of those figures per unit over the same window as the replacement rate, and it wins;
      the stated trip cost over the average lot is the fallback for a book with no typed freight. */
-  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
+  const freight=LC?(+LC.freight||0)/+LC.units:(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -134,12 +139,18 @@ function costStack(I){
                     to stop counting.
        buyPlusPct   a flat markup on the buy rate, which is what oil had as a PLACEHOLDER from
                     09 Sep. Kept because the mechanism is sound and a book may want it again. */
+  /* 05 Oct 2026: `latestCogs`, his settled basis for every book: purchase plus freight off the latest lot (step 1 and 2
+     above) and NOTHING else, so it prices exactly as `landed` does from there. The leak is still measured and reported,
+     and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
+     off it. */
   const CR=I.costRule||null;
   const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
-  const landedRule=!!(CR&&CR.kind==='landed');
+  const landedRule=!!(CR&&(CR.kind==='landed'||CR.kind==='latestCogs'));
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
   return {rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+          latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
+          afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
           shrink:sh,shrinkRaw:raw,attrib:SHRINK_ATTRIB,
@@ -548,7 +559,23 @@ function fiveTiers(sizes,C,P){
       let p=(exact!=null&&+exact>0)?+exact:((base!=null&&+base>0&&rungs[rung]>0)?down(+base*q/rungs[rung]):null);
       if(p==null)return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[],prices:[up(fl)],fixed:true};
       if(p<fl-0.009)p=up(fl);
-      return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[p],prices:[up(fl),p],fixed:true};
+      /* 05 OCT 2026, HIS DECISION: AND A CEILING CAPS IT. A typed price over `ceilingX` times the floor comes down to the
+         book's grid at or under that line, never under the floor's own lift; a typed price inside the band does not move. */
+      const capX=+R.ceilingX>0?+R.ceilingX:null, cap=capX!=null?Math.max(down(capX*fl),up(fl)):null;
+      const capped=cap!=null&&p>cap+0.009;
+      if(capped)p=cap;
+      return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[p],prices:[up(fl),p],fixed:true,ceiling:cap,capped:capped};
+    });
+  }
+  /* 05 OCT 2026, HIS DECISION: A BOOK WITH A `drift` RULE IS A SET PRICE, NOT A LADDER OF LEVELS (salt's Model B). Each
+     size reads its floor, `up(floor)` in the first column as a stated board's does, and the Set Price, the last, which
+     is what a stranger is quoted; a named customer is quoted the Set Price moved by their drift (driftAt below). */
+  if(R&&R.drift&&Array.isArray(R.rungs)&&R.rungs.length){
+    const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+    return driftWalk(sizes,C,P,0).map(x=>{
+      let rung=0; rungs.forEach((r,i)=>{if(r<=x.q+0.009)rung=i;});
+      return {q:x.q,rung:rung,cogs:Math.round(ladderCogs(x.q,C)),floor:x.floor,cols:[x.set],prices:[up(x.floor),x.set],
+              set:x.set,ceiling:x.ceiling,drift:true};
     });
   }
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
@@ -583,6 +610,67 @@ function fiveTiers(sizes,C,P){
     });
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
+}
+/* ============ 05 OCT 2026, HIS DECISION: THE SET PRICE AND THE DRIFT (Model B, salt) ============
+   Per size three figures: the Floor (floorTotal, COGS times the size), the Ceiling (R.ceilingX times the floor) and the
+   SET PRICE between them, which the board quotes a stranger. The Set Price is the floor times a multiple sliding in the log
+   of size from R.mS at R.qS to R.mB at R.qB, clamped outside them, rounded DOWN to the grid, lifted to the first ten at or
+   above the floor, capped at the ten at or below the ceiling, and walked smallest to largest under the rate law (v328): a
+   rate rising with size steps down to the ten that holds it flat, never through the floor.
+   A NAMED CUSTOMER HOLDS A DRIFT d in [-1, +1]. Up: the Set Price plus d times the lesser of the room to the ceiling and
+   R.drift.up times the floor; down: less |d| times the lesser of the room to the floor and R.drift.down times the floor.
+   Then the same grid, lift, cap and walk, so a drifted price stays inside [floor, ceiling] and never rises in rate with
+   size. One walk answers both, the Set Price being the drift of nought. */
+function setMultiple(q,R){
+  const lo=+R.qS, hi=+R.qB, g=Math.min(1,Math.max(0,Math.log(hi/q)/Math.log(hi/lo)));
+  return +R.mB+(+R.mS-+R.mB)*g;
+}
+/* a drift is a number from -1 to +1; anything else is not one */
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1-1e-9&&v<=1+1e-9;}
+function driftWalk(sizes,C,P,d){
+  const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
+  const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
+  const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
+  const walk=(q,raw,lift,prev)=>{
+    let p=raw;
+    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;if(st>=lift-0.009)p=st;}
+    return p;
+  };
+  let prevS=Infinity, prevP=Infinity;
+  return sizes.map(q=>{
+    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lift=up(fl), cap=Math.max(down(ceil),lift);
+    const box=v=>Math.min(Math.max(v,lift),cap);
+    const s=walk(q,box(down(fl*setMultiple(q,R))),lift,prevS);
+    const raw=dd>0?s+dd*Math.min(ceil-s,upC*fl):dd<0?s-(-dd)*Math.min(s-fl,dnC*fl):s;
+    const p=dd===0?s:walk(q,box(down(raw)),lift,prevP);
+    if(q>0){prevS=Math.min(prevS,s/q);prevP=Math.min(prevP,p/q);}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
+  });
+}
+/* the drift price at ANY size, walked against the rungs beneath it, as fiveTierAt walks a level */
+function driftAt(q,C,P,d){
+  const R=P.tierRule;if(!R||!R.drift||!(q>0))return null;
+  const sizes=R.rungs.map(Number).filter(r=>r<q-0.009).concat([q]);
+  const w=driftWalk(sizes,C,P,d);return w[w.length-1];
+}
+/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
+   the desk's own readers (buyerProfile, payDelays, lateOffer, txWrittenOff) and hands the signals in; A is the rule's
+   weights. Good, 0 to 1: paid on time (a share of settlements within the term, read only from A.minSettled of them), how
+   often, how much, and how many orders, nought when the last is over A.staleDays old. Bad, 0 to 1: the late flag (a half,
+   or all of it when the late is a long one), anything written off, and the oldest open overdue over A.overdueDays. The
+   drift is A.U times bad less A.D times good times what bad leaves, held within A.cap either way: a late payer is priced up,
+   a good record down. */
+function autoDrift(s,A){
+  const a=A||{}, c1=v=>Math.min(1,Math.max(0,+v||0)), n=(k,v)=>a[k]!=null?+a[k]:v;
+  const x=s||{};
+  const P=(+x.settled||0)>=n('minSettled',3)?c1((+x.onTime||0)/(+x.settled)):0;
+  const Fq=c1((+x.perMonth||0)/n('perMonth',4)), V=c1((+x.unitsPerMonth||0)/n('unitsPerMonth',10));
+  const T=(x.sinceLastDays!=null&&+x.sinceLastDays>n('staleDays',60))?0:c1((+x.orders||0)/n('orders',12));
+  const G=n('wP',0.35)*P+n('wF',0.25)*Fq+n('wV',0.2)*V+n('wT',0.2)*T;
+  const B=Math.max(x.late?(x.lateLong?1:0.5):0,(+x.writtenOff||0)>0.009?1:0,c1((+x.overdueDays||0)/n('overdueDays',14)));
+  const cap=n('cap',0.5), d=Math.min(cap,Math.max(-cap,n('U',0.5)*B-n('D',0.5)*G*(1-B)));
+  const r4=v=>+v.toFixed(4);
+  return {d:r4(d),G:r4(G),B:r4(B),P:r4(P),Fq:r4(Fq),V:r4(V),T:r4(T)};
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
    (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
@@ -677,6 +765,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift};
 })();
 export default PRICING_ENGINE;

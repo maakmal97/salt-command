@@ -90,7 +90,7 @@ function add(b, id, name, note, since) {
   b.PROD_OPENING[id] = { qty: 0, costPerKg: null, stated: null };
   b.COUNT_ON[id] = null;
   b.PRICE_SET[id] = { prices: {}, hide: [] };
-  b.COST_RULE[id] = { kind: "stack", note: "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known." };
+  b.COST_RULE[id] = { kind: "latestCogs", note: "His settled rule of 05 Oct 2026, every book alike: COGS off the latest purchase, quote plus trip freight over its units; the floor is that times the size and nothing else." };
   b.QUOTES[id] = null;
   console.log(`added ${id} (${name}): registered in ${MAPS.length} maps and PROD_ORDER.`);
   /* Say what is actually missing, not what usually is: a hue and a mark may already have been

@@ -106,7 +106,7 @@ export function makerInputCatalog(book) {
     const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
     const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
     const cost = costFor(book, product).cost;
-    return { product, tiered: !!rule && !rule.fixed, fixed: !!(rule && rule.fixed),
+    return { product, tiered: !!rule && !rule.fixed && !rule.drift, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
       saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
@@ -157,6 +157,7 @@ export function makerTierSet(body, book) {
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
   if (!rule || rule.fixed) return { error: "This product has no customer tiers." };
+  if (rule.drift) return { error: "This product prices by each customer's drift, set on the desk." };
   const names = (book.pricing && book.pricing.tierNames) || [];
   if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
     return { error: "Choose a tier or a set of small, mid and big tiers." };
@@ -193,7 +194,7 @@ export function makerTierAcceptAll(body, book, queued) {
     if (!roster.includes(id) || POSITION_ENGINE.isBucket(id)) continue;
     for (const [product, level] of Object.entries(object(set) ? set : {})) {
       const rule = book.pricing.byProduct?.[product]?.inputs?.policy?.tierRule;
-      if (!active(product, book) || !rule || rule.fixed) continue;
+      if (!active(product, book) || !rule || rule.fixed || rule.drift) continue;
       if ((object(held[id]) ? held[id] : {})[product] || (waiting[id] && product in waiting[id])) continue;
       if (!PRICING_ENGINE.levelShapeOk(level, names)) continue;
       (tiers[id] = tiers[id] || {})[product] = level;
@@ -399,8 +400,10 @@ export function makerLedgerInput(operation, body, book) {
       if (!object(tiers) || !Object.keys(tiers).length) return { error: "Starting tiers must name active tiered books." };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
+        if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
+          return { error: "A starting drift is a number from -1 to +1, never a level." };
         if (!active(product, book) || !rule || rule.fixed
-          || !PRICING_ENGINE.levelShapeOk(tier, book.pricing.tierNames || []))
+          || (!rule.drift && !PRICING_ENGINE.levelShapeOk(tier, book.pricing.tierNames || [])))
           return { error: "Starting tiers must use active tiered books and current level names." };
       }
     }

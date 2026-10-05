@@ -5508,8 +5508,10 @@ function latestCogs(purchases,onOrBefore){
     if(!best||(d||'')>=(best.date||''))best={p:p,date:d};
   });
   if(!best)return null;
-  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0;
-  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+p.qty,rate:+((+p.total+fr)/+p.qty).toFixed(4)};
+  /* 05 Oct 2026 (review): a lot partly landed is costed over the units RECEIVED, the whole quote and freight on what is on the
+     shelf, so the floor never rests on goods still on the road; a lot with nothing received is not landed and is passed over */
+  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0, u=Math.min(+p.qty,poRecvUnits(p));
+  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};
 }
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
@@ -6361,7 +6363,12 @@ function costStack(I){
   /* 1. WHAT THE GOODS COST. Round 5: the trailing average where the desk supplies one
      (I.repl), else the rate on the latest lot, else the highest live quote. */
   const L=I.lot;
-  const lot=pxOver.cost!=null?+pxOver.cost:(I.repl!=null?+I.repl:(L?L.rate:I.quoteRate));
+  /* 05 OCT 2026, HIS SETTLED RULE: COGS IS THE LATEST PURCHASE, on every book (COST_RULE kind `latestCogs`). I.latest is
+     the position engine's latestCogs over the book's lots: the latest landed lot's quote plus its trip freight, over its
+     units. It replaces the trailing rate and the averaged freight below, and the leak and the delivery share come out of
+     the pricing basis (step 6). A book with no landed lot falls through to the roads below, with no leak either way. */
+  const LC=(I.costRule&&I.costRule.kind==='latestCogs'&&I.latest&&+I.latest.units>0)?I.latest:null;
+  const lot=pxOver.cost!=null?+pxOver.cost:(LC?+LC.quote/+LC.units:(I.repl!=null?+I.repl:(L?L.rate:I.quoteRate)));
   /* 2. GETTING THEM HERE. Spread over the AVERAGE lot received, not the latest one (v381).
      lotQty stays the latest lot because the rest of the stack reports on the lot in hand;
      only the freight divisor moves to the mean. A product with no averaged history falls
@@ -6377,7 +6384,7 @@ function costStack(I){
   /* v503, his instruction of 07 Sep 2026: freight is TYPED ON EACH LOT. I.freightRate is the desk's
      reading of those figures per unit over the same window as the replacement rate, and it wins;
      the stated trip cost over the average lot is the fallback for a book with no typed freight. */
-  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
+  const freight=LC?(+LC.freight||0)/+LC.units:(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -6417,12 +6424,18 @@ function costStack(I){
                     to stop counting.
        buyPlusPct   a flat markup on the buy rate, which is what oil had as a PLACEHOLDER from
                     09 Sep. Kept because the mechanism is sound and a book may want it again. */
+  /* 05 Oct 2026: `latestCogs`, his settled basis for every book: purchase plus freight off the latest lot (step 1 and 2
+     above) and NOTHING else, so it prices exactly as `landed` does from there. The leak is still measured and reported,
+     and `afterLeak` below carries the stack's after-leak figure for a surface to print as information; nothing prices
+     off it. */
   const CR=I.costRule||null;
   const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
-  const landedRule=!!(CR&&CR.kind==='landed');
+  const landedRule=!!(CR&&(CR.kind==='landed'||CR.kind==='latestCogs'));
   if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
   else if(landedRule)eff=+landed.toFixed(6);
   return {rule:(CR&&CR.kind)?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+          latest:LC?{rid:LC.rid||null,date:LC.date||null,quote:+LC.quote,freight:+LC.freight||0,units:+LC.units}:null,
+          afterLeak:+yielded.toFixed(4),
           repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
           shrink:sh,shrinkRaw:raw,attrib:SHRINK_ATTRIB,
@@ -6831,7 +6844,23 @@ function fiveTiers(sizes,C,P){
       let p=(exact!=null&&+exact>0)?+exact:((base!=null&&+base>0&&rungs[rung]>0)?down(+base*q/rungs[rung]):null);
       if(p==null)return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[],prices:[up(fl)],fixed:true};
       if(p<fl-0.009)p=up(fl);
-      return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[p],prices:[up(fl),p],fixed:true};
+      /* 05 OCT 2026, HIS DECISION: AND A CEILING CAPS IT. A typed price over `ceilingX` times the floor comes down to the
+         book's grid at or under that line, never under the floor's own lift; a typed price inside the band does not move. */
+      const capX=+R.ceilingX>0?+R.ceilingX:null, cap=capX!=null?Math.max(down(capX*fl),up(fl)):null;
+      const capped=cap!=null&&p>cap+0.009;
+      if(capped)p=cap;
+      return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:[p],prices:[up(fl),p],fixed:true,ceiling:cap,capped:capped};
+    });
+  }
+  /* 05 OCT 2026, HIS DECISION: A BOOK WITH A `drift` RULE IS A SET PRICE, NOT A LADDER OF LEVELS (salt's Model B). Each
+     size reads its floor, `up(floor)` in the first column as a stated board's does, and the Set Price, the last, which
+     is what a stranger is quoted; a named customer is quoted the Set Price moved by their drift (driftAt below). */
+  if(R&&R.drift&&Array.isArray(R.rungs)&&R.rungs.length){
+    const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+    return driftWalk(sizes,C,P,0).map(x=>{
+      let rung=0; rungs.forEach((r,i)=>{if(r<=x.q+0.009)rung=i;});
+      return {q:x.q,rung:rung,cogs:Math.round(ladderCogs(x.q,C)),floor:x.floor,cols:[x.set],prices:[up(x.floor),x.set],
+              set:x.set,ceiling:x.ceiling,drift:true};
     });
   }
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
@@ -6866,6 +6895,67 @@ function fiveTiers(sizes,C,P){
     });
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
+}
+/* ============ 05 OCT 2026, HIS DECISION: THE SET PRICE AND THE DRIFT (Model B, salt) ============
+   Per size three figures: the Floor (floorTotal, COGS times the size), the Ceiling (R.ceilingX times the floor) and the
+   SET PRICE between them, which the board quotes a stranger. The Set Price is the floor times a multiple sliding in the log
+   of size from R.mS at R.qS to R.mB at R.qB, clamped outside them, rounded DOWN to the grid, lifted to the first ten at or
+   above the floor, capped at the ten at or below the ceiling, and walked smallest to largest under the rate law (v328): a
+   rate rising with size steps down to the ten that holds it flat, never through the floor.
+   A NAMED CUSTOMER HOLDS A DRIFT d in [-1, +1]. Up: the Set Price plus d times the lesser of the room to the ceiling and
+   R.drift.up times the floor; down: less |d| times the lesser of the room to the floor and R.drift.down times the floor.
+   Then the same grid, lift, cap and walk, so a drifted price stays inside [floor, ceiling] and never rises in rate with
+   size. One walk answers both, the Set Price being the drift of nought. */
+function setMultiple(q,R){
+  const lo=+R.qS, hi=+R.qB, g=Math.min(1,Math.max(0,Math.log(hi/q)/Math.log(hi/lo)));
+  return +R.mB+(+R.mS-+R.mB)*g;
+}
+/* a drift is a number from -1 to +1; anything else is not one */
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1-1e-9&&v<=1+1e-9;}
+function driftWalk(sizes,C,P,d){
+  const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
+  const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
+  const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
+  const walk=(q,raw,lift,prev)=>{
+    let p=raw;
+    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;if(st>=lift-0.009)p=st;}
+    return p;
+  };
+  let prevS=Infinity, prevP=Infinity;
+  return sizes.map(q=>{
+    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lift=up(fl), cap=Math.max(down(ceil),lift);
+    const box=v=>Math.min(Math.max(v,lift),cap);
+    const s=walk(q,box(down(fl*setMultiple(q,R))),lift,prevS);
+    const raw=dd>0?s+dd*Math.min(ceil-s,upC*fl):dd<0?s-(-dd)*Math.min(s-fl,dnC*fl):s;
+    const p=dd===0?s:walk(q,box(down(raw)),lift,prevP);
+    if(q>0){prevS=Math.min(prevS,s/q);prevP=Math.min(prevP,p/q);}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
+  });
+}
+/* the drift price at ANY size, walked against the rungs beneath it, as fiveTierAt walks a level */
+function driftAt(q,C,P,d){
+  const R=P.tierRule;if(!R||!R.drift||!(q>0))return null;
+  const sizes=R.rungs.map(Number).filter(r=>r<q-0.009).concat([q]);
+  const w=driftWalk(sizes,C,P,d);return w[w.length-1];
+}
+/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
+   the desk's own readers (buyerProfile, payDelays, lateOffer, txWrittenOff) and hands the signals in; A is the rule's
+   weights. Good, 0 to 1: paid on time (a share of settlements within the term, read only from A.minSettled of them), how
+   often, how much, and how many orders, nought when the last is over A.staleDays old. Bad, 0 to 1: the late flag (a half,
+   or all of it when the late is a long one), anything written off, and the oldest open overdue over A.overdueDays. The
+   drift is A.U times bad less A.D times good times what bad leaves, held within A.cap either way: a late payer is priced up,
+   a good record down. */
+function autoDrift(s,A){
+  const a=A||{}, c1=v=>Math.min(1,Math.max(0,+v||0)), n=(k,v)=>a[k]!=null?+a[k]:v;
+  const x=s||{};
+  const P=(+x.settled||0)>=n('minSettled',3)?c1((+x.onTime||0)/(+x.settled)):0;
+  const Fq=c1((+x.perMonth||0)/n('perMonth',4)), V=c1((+x.unitsPerMonth||0)/n('unitsPerMonth',10));
+  const T=(x.sinceLastDays!=null&&+x.sinceLastDays>n('staleDays',60))?0:c1((+x.orders||0)/n('orders',12));
+  const G=n('wP',0.35)*P+n('wF',0.25)*Fq+n('wV',0.2)*V+n('wT',0.2)*T;
+  const B=Math.max(x.late?(x.lateLong?1:0.5):0,(+x.writtenOff||0)>0.009?1:0,c1((+x.overdueDays||0)/n('overdueDays',14)));
+  const cap=n('cap',0.5), d=Math.min(cap,Math.max(-cap,n('U',0.5)*B-n('D',0.5)*G*(1-B)));
+  const r4=v=>+v.toFixed(4);
+  return {d:r4(d),G:r4(G),B:r4(B),P:r4(P),Fq:r4(Fq),V:r4(V),T:r4(T)};
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
    (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
@@ -6960,7 +7050,8 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift};
 })();
 /* ==== END ENGINE pricing ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
@@ -7749,129 +7840,10 @@ const PLACED={
 };
 const TIER_OF={
   "CS6-BS": {
-    "salt": "Titanium",
     "oil": "Platinum"
   },
-  "CK4-SEN": {
-    "salt": "Ambassador"
-  },
   "CZ5-TM": {
-    "salt": "Ambassador",
     "oil": "Titanium"
-  },
-  "CA6-CYB": {
-    "salt": "Ambassador"
-  },
-  "CJ2-KUC": {
-    "salt": "Gold"
-  },
-  "CJ4-BJ": {
-    "salt": "Platinum"
-  },
-  "CM4-MK": {
-    "salt": "Platinum"
-  },
-  "CS6-PER": {
-    "salt": "Titanium"
-  },
-  "CE4-CHE": {
-    "salt": "Titanium"
-  },
-  "CM4-TO": {
-    "salt": "Ambassador"
-  },
-  "CZ4-MK": {
-    "salt": "Titanium"
-  },
-  "CR3-DAM": {
-    "salt": "Titanium"
-  },
-  "CM6-HCM": {
-    "salt": "Silver"
-  },
-  "CA4-DAM": {
-    "salt": "Silver"
-  },
-  "CE4-AD": {
-    "salt": "Titanium"
-  },
-  "CR4-PJ": {
-    "salt": "Platinum"
-  },
-  "CM4-SK": {
-    "salt": "Platinum"
-  },
-  "CG5-SB": {
-    "salt": "Platinum"
-  },
-  "CY2-NIL": {
-    "salt": "Titanium"
-  },
-  "CI4-OKR": {
-    "salt": "Titanium"
-  },
-  "CA7-AMP": {
-    "salt": "Gold"
-  },
-  "CH4-KS": {
-    "salt": "Titanium"
-  },
-  "CH6-SET": {
-    "salt": "Platinum"
-  },
-  "CA5-BAN": {
-    "salt": "Platinum"
-  },
-  "CM6-PJ": {
-    "salt": "Titanium"
-  },
-  "CF5-WM": {
-    "salt": "Titanium"
-  },
-  "CZ6-WM": {
-    "salt": "Platinum"
-  },
-  "CA5-SEN": {
-    "salt": "Silver"
-  },
-  "CH4-MAL": {
-    "salt": "Platinum"
-  },
-  "CN5-TAI": {
-    "salt": "Titanium"
-  },
-  "CH5-KLC": {
-    "salt": "Silver"
-  },
-  "CA2-SEN": {
-    "salt": "Ambassador"
-  },
-  "CD4-CS": {
-    "salt": "Silver"
-  },
-  "CR3-PUD": {
-    "salt": "Platinum"
-  },
-  "CE5-SA": {
-    "salt": "Titanium"
-  },
-  "CD7-SEG": {
-    "salt": "Titanium"
-  },
-  "CB7-BJ": {
-    "salt": "Titanium"
-  },
-  "CS6-DAM": {
-    "salt": "Platinum"
-  },
-  "CC9-OKR": {
-    "salt": "Ambassador"
-  },
-  "CN3-WM": {
-    "salt": "Platinum"
-  },
-  "CJ4-OKR": {
-    "salt": "Ambassador"
   }
 };
 const PEOPLE={
@@ -8024,24 +7996,24 @@ const PRICE_SET={
 };
 const COST_RULE={
   "oil": {
-    "kind": "landed",
-    "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
   "salt": {
-    "kind": "stack",
-    "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
   "candy": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
   "rice": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   },
   "spare": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   }
 };
 /* ==== END BOOK ==== */
@@ -9002,7 +8974,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1018","d":"05 Oct 2026","t":"A LOT'S PAYMENT, RECEIPT AND DEFAULT FROM THE COUNTER","n":["<b>A4.</b> Counter Maker amends a purchase lot with Payment (cash only), Receipt (units only) or Default, each the entry the Workbench builds, through the same ledger-amend route; a payment is held to what the lot can still take, money already on its way counted, and a default waits behind it and is refused once units have arrived. The drafter and the fold now take the three on a lot; Linked and Rewarded stay refused, and a Desk entry the drafter refused before stays refused. A default is dated (<code>defaultedOn</code>) and leaves its step in the lot's trail, a defaulted lot takes no payment or receipt, and a Correction that reverts a default clears its date, in the fold and in ovAmend. Nothing prices."]}];
+const evolution=[{"v":"v1019","d":"05 Oct 2026","t":"COGS OFF THE LATEST PURCHASE; SALT IS THE SET PRICE MOVED BY EACH CUSTOMER'S DRIFT","n":["<b>EVERY BOOK PRICES ON ONE BASIS, HIS SETTLED RULE OF 05 OCT 2026.</b> COGS a unit is the latest landed purchase's quote plus its trip freight, over its units (the engine's latestCogs; no freight typed counts as nought). COST_RULE is kind latestCogs on salt, oil, candy, rice and spare. The floor is COGS times the size and nothing else: no leak, no delivery, no time. Salt's floor at 1 unit moves from RM 69.09 to RM 64.00 (p035: RM 750 and RM 50 over 12.5 unit), oil's from RM 7.86 to RM 8.00, candy's from RM 40.64 to RM 42.00, rice's from RM 6.31 to RM 3.40.","<b>THE LEAK IS OUT OF EVERY PRICE AND STILL MEASURED.</b> The stack carries it as afterLeak, printed beside the floor on Pricing as information only on a book losing a quarter or more of what it buys (RULES.leakInfoFrom): oil and rice today. The drafter's floor and below-cost flags read the new floor; the fold costs a sale moving goods with no cost of its own at latestCogs over that book's lots landed by the movement's day, a gift or reward keeping the shelf's figure.","<b>A CEILING ON EACH STATED BOARD.</b> Oil, candy and rice keep his typed prices, the same for everybody, lifted to the floor where under it and capped at ceilingX times it, down to the book's grid: twice the floor on oil and candy, two and a half on rice (an assumption: at twice the floor rice's 1 unit board would cap from RM 8 to RM 6). Every typed price sits inside its band today; rice's 10 unit returns from the floor-lifted RM 64 to his typed RM 60.","<b>SALT IS THE SET PRICE, MOVED BY EACH CUSTOMER'S DRIFT (Model B).</b> Per size the floor, the ceiling at three times it, and the Set Price between them: the floor times a multiple sliding in the log of size from 2.813 at half a unit to 1.363 at 12.5, rounded down to the ten, lifted to the floor, capped and walked under the rate law. On RM 64 it reads 90, 160, 220, 280, 330, 380, 430, 480, 520, 560, 670 and 1,090 from half a unit to 12.5, and the Set Price is what a stranger, a guest link and a standing link are quoted. A drift d from -1 to +1 moves a customer's price up by d times the lesser of the room to the ceiling and 0.3 of the floor, or down by |d| times the lesser of the room to the floor and 0.2 of it.","<b>THE DRIFT IS READ OFF THE RECORD UNLESS HE SETS ONE.</b> Good is paid on time 0.35, frequency 0.25, volume 0.20 and tenure 0.20; bad is the late flag (a half, all of it when long), a write-off, or the oldest open overdue over 14 days past the term; the drift is half of bad less half of good times what bad leaves, held within plus or minus 0.5. So a late payer is now priced up. A drift he sets on the new Drift card (Customers) wins until he clears it; Add ID starts a customer on the automatic drift, or on Better -0.3, Standard 0, Higher +0.3 or a typed figure (the presets and the automatic default are assumptions). NRV on the salt shelf is the lowest automatic drift, -0.5 (an assumption).","<b>THE HELD SALT LEVELS ARE RETIRED.</b> The 41 salt levels in TIER_OF are taken out, so every customer starts on the drift their record reads (33 below the Set Price, 6 above, 2 at it); oil's two held entries stay. Their price lists move: at 1 unit all 41 up, by RM 10 to RM 70; at 12.5 unit 18 up and 21 down, from RM 50 down to RM 140 up. What any customer owes is unchanged on all 44 accounts: no booked row is touched.","<b>THE ROADS FOLLOW.</b> The snapshot carries each customer's quotes as cards and the price list reads them (basis card, no level). The drafter, the fold and the maker's Add ID refuse by book: salt takes a drift from -1 to +1 and no level, oil, candy and rice a level and no drift; the maker's tier input refuses salt, a drift being his to set on the desk. The level machinery stays in the engine and the desk for a book that names levels, and the suite proves it on salt's last level rule.","<b>A LOT PARTLY LANDED IS COSTED OVER THE UNITS RECEIVED.</b> latestCogs puts the lot's whole quote and freight on the units on the shelf, so no floor rests on goods still on the road; a lot with nothing received is passed over as before. No live lot is partly landed, so no figure moves. His guest-links page says the prices follow the introducer, never past the board every stranger sees."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9151,7 +9123,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 09:30 KL';
+const LAST_UPDATED='05 Oct 2026, 09:35 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9694,6 +9666,9 @@ const RULES={
      within this many days, or one of lockDays or more, turn the offer on, one payment on time turns it off, and a delay
      within this many days of that takes lateResetRepeat payments on time in a row. The engine's lateOffer reads them. */
   lateWindowDays:90,
+  /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
+     information only, the floor being COGS and nothing pricing off the leak */
+  leakInfoFrom:0.25,
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -10942,8 +10917,18 @@ function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDE
    guards over the sheet, on his word of 23 Sep: a better level pays at least a ten less, and the rate never
    rises with size. So 1 unit reads RM90, 110, 120, 130 and 140. fiveTiers in the ENGINE block reads it; since
    v656 the board's ask is its last level, and since v651 a customer's own price list is the level they hold. */
+/* ============ 05 OCT 2026, HIS DECISION: SALT IS A SET PRICE AND A DRIFT (Model B) ============
+   Ambassador and the four tiers are retired for salt. Per size: the Floor (COGS times the size), the Ceiling (ceilingX
+   times the floor) and the Set Price, the floor times a multiple sliding in the log of size from mS at qS to mB at qB, down
+   to the ten, lifted to the floor, capped at the ceiling and walked under the rate law: at COGS RM64 it reads RM90, 160,
+   220, 280, 330, 380, 430, 480, 520, 560, 670 and 1,090 on the rungs. A stranger is quoted the Set Price. Each customer
+   holds a drift from -1 to +1, hand-set (TIER_OF, folded as `tierset`) or read off their record (`auto`, the engine's
+   autoDrift), which moves the Set Price by up to `drift.up` of the floor towards the ceiling or `drift.down` of it towards
+   the floor (driftAt in the ENGINE block). */
 const TIER_RULE={
-  salt:{cogs:'quote', overhead:0.5, multiples:[2.1,2.1,2.5,2.5], round:['down','up','down','up'], decay:0.09, from:0.5,
+  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
+        auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
+        presets:{Better:-0.3, Standard:0, Higher:0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
   /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
      customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
@@ -10951,13 +10936,16 @@ const TIER_RULE={
      RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
      board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
      price there is nothing for them to say. */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50]},
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30]},
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10]}
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2},
+  /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
+     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
+     changelog states. A typed price inside the band does not move. */
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5}
 };
 /* the levels' names, cheapest first: Ambassador, on his word alone and earning no free units; Titanium to
    Silver are the tiers, and a new customer starts at Silver, the last. Bronze went on 23 Sep 2026, his choice
@@ -12156,7 +12144,7 @@ function tabSourcing(){
     <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Effective cost</div><div class="v salt-kpi__value">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n salt-kpi__note">${c.rule==='buyPlusPct'
       ? `${fmt(c.repl)} to buy plus ${c.rulePct}%${c.rulePlaceholder?', a placeholder':''}; freight and the ${(c.shrink*100).toFixed(1)}% leak are inside it, not added`
       : `${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak`}</div></div>
-    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${ml?`typed on the lots, per unit over the replacement window`:'no lot received to average'}</div></div>
+    <div class="kpi salt-kpi"><div class="l salt-kpi__label">Freight per unit</div><div class="v salt-kpi__value">${fmt(c.freight)}</div><div class="n salt-kpi__note">${c.latest?`the latest purchase's trip over its units`:ml?`typed on the lots, per unit over the replacement window`:'no lot received to average'}</div></div>
     <div class="kpi salt-kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l salt-kpi__label">Lost to defaults</div><div class="v salt-kpi__value">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n salt-kpi__note">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
@@ -14928,7 +14916,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, at ${TIER_NAMES[1]}, the lowest level any customer is quoted`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the lowest automatic drift, the least a customer is quoted without his word':'at '+TIER_NAMES[1]+', the lowest level any customer is quoted'}`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -17044,6 +17032,10 @@ function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
    earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
    the inventory cost, the all-time weighted average. */
 function replCost(){
+  /* 05 Oct 2026, his settled rule: on a `latestCogs` book what it costs to replace is COGS off the latest landed lot, quote
+     plus freight over its units, the figure the floor is struck on; read from the engine's latestCogs, not from pxCost,
+     which reads this through pxQuoteRate */
+  if(((typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||{}).kind==='latestCogs'){const lc=POSITION_ENGINE.latestCogs(pPurch(PROD));if(lc)return +lc.rate.toFixed(2);}
   const r=(typeof pxReplRate==='function')?pxReplRate():null;
   if(r!=null)return +r.toFixed(2);
   const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);
@@ -17075,7 +17067,7 @@ function priceCoach(party,price,qty){
   if(price<rc-0.009)
     out.push({sev:'err',msg:`<b>${fmt(price)}/unit is below the ${fmt(rc)}/unit it costs to replace this ${PRODUCTS[PROD].name.toLowerCase()}.</b> Every unit loses ${fmt(rc-price)}. The floor for ${units(bandQ)} is ${fmt(fpu)}/unit.`});
   else if(price<fpu-0.009)
-    out.push({sev:'warn',msg:`<b>${fmt(price)}/unit is under the floor for ${units(bandQ)}</b>, ${fmt(fpu)}/unit (${fmt(flT)} for the order: the goods after the leak). Margin ${m.toFixed(0)}% on replacement cost.`});
+    out.push({sev:'warn',msg:`<b>${fmt(price)}/unit is under the floor for ${units(bandQ)}</b>, ${fmt(fpu)}/unit (${fmt(flT)} for the order: the goods at COGS). Margin ${m.toFixed(0)}% on replacement cost.`});
   if(best>0&&price>best+0.009)
     out.push({sev:'good',msg:`<b>Best rate the desk has ever taken</b>, ahead of ${fmt(best)}/unit. Margin ${m.toFixed(0)}% on replacement cost.`});
   const h=custPrices(party);
@@ -17514,6 +17506,8 @@ function ifrsPL(p){
   const nrvRate=hasBoard?(function(){try{
     const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
     const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
+    /* 05 Oct 2026: on a drift book the prudent end of the ordinary course is the lowest price an automatic drift quotes */
+    if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),-((TIER_RULE[P].auto||{}).cap||0.5));return lo?+(lo.p/q-toSell).toFixed(4):null;}
     if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
     const x=pxQuote(q,pxSignals().net,0);
     return x&&x.perUnit?+(x.perUnit-toSell).toFixed(4):null;}catch(e){return null;}})():null;
@@ -17540,6 +17534,7 @@ function pxInputs(){
     freightRate:pxFreightRate(),   /* v503: freight typed on the lots, per unit; v504: the same three lots */
     leak:pxLeakCharge(),   /* v504: the last three count cycles */
     costRule:(typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||null,   /* v553: a per-book pricing basis, from the book */
+    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(PROD))),   /* 05 Oct 2026: COGS off the latest landed lot, the `latestCogs` basis */
     costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(PROD).v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
@@ -17622,6 +17617,7 @@ function buyerProfile(code,prod){
   const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
   const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
   const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
+  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
   const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
   const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
   const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
@@ -17633,7 +17629,7 @@ function buyerProfile(code,prod){
     :bigger?(frequent?'large and regular':'rare and large')
     :frequent?'consistent mid':'occasional mid';
   return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
-    perMonth:+perMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
+    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
     frequent,small,bigger,loyal,rare};
 }
 /* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
@@ -17641,6 +17637,7 @@ function buyerProfile(code,prod){
    adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
 function tierProposal(code,prod,boards){
   if(!tieredBooks().includes(prod))return null;   /* 23 Sep 2026: a stated board is one price for all; no level is proposed on it */
+  if(driftBook(prod))return null;   /* 05 Oct 2026: a drift book holds no level; its customers hold a drift (driftOf) */
   const B=(boards[prod]||[]).filter(r=>sizesFor(prod).some(s=>Math.abs(s-r.q)<0.009)),own=pbOwnRate(code,prod);
   if(!B.length||own.rate==null)return null;
   const mine=pbOrders(code,prod).map(s=>B.reduce((best,r)=>Math.abs(r.q-s.qty)<Math.abs(best.q-s.qty)?r:best,B[0]));
@@ -17686,6 +17683,30 @@ function slowdown(prod){
 }
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
 function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(sales,ownerOf(code)||code,TODAY.toISOString().slice(0,10),RULES),RULES);}
+/* ============ 05 OCT 2026, HIS DECISION: EACH CUSTOMER'S DRIFT ON A DRIFT BOOK ============
+   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their drift, d from -1 to +1.
+   HAND-SET WINS: a number held in TIER_OF[code][book], set on the Drift card or at Add ID, queued and folded as `tierset`,
+   a null clearing it. Otherwise AUTOMATIC, the engine's autoDrift over the record the desk's own readers make: buyerProfile on
+   that book for how often, how much and how many; payDelays, across every book, for the settlements paid within the term
+   (RULES.holdDays) and the oldest open overdue; lateOf for the late flag; txWrittenOff for anything written off. A late payer
+   is priced up, his decision of 05 Oct 2026, superseding the offer-only rule of 29 Sep. */
+function driftBook(p){const R=TIER_RULE[p||PROD];return !!(R&&R.drift);}
+function driftSignals(code,prod){
+  const who=ownerOf(code)||code,p=prod||PROD,pf=buyerProfile(who,p),today=TODAY.toISOString().slice(0,10);
+  const dl=POSITION_ENGINE.payDelays(sales,who,today,RULES),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
+  const lt=lateOf(who);
+  const wo=sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
+  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RULES.holdDays).length,
+    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
+    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
+    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RULES.holdDays),0)};
+}
+function driftOf(code,prod){
+  const p=prod||PROD,R=TIER_RULE[p];if(!R||!R.drift)return null;
+  const who=ownerOf(code)||code,h=(TIER_OF[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  const sig=driftSignals(who,p),a=PRICING_ENGINE.autoDrift(sig,R.auto);
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+}
 /* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
 function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
 function lateWhy(l){
@@ -17720,7 +17741,7 @@ function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
   return o;}
 /* v670: a band set is spelled out band by band, so a queued entry never reads [object Object] */
-function levelSay(v){return v==null?'not set':typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
+function levelSay(v){return v==null?'not set':typeof v==='number'?'drift '+driftSay(v):typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
 function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+levelSay(t[p])).join(', ');}
 function tierQueue(tiers){
   const codes=Object.keys(tiers);if(!codes.length)return;
@@ -17747,7 +17768,44 @@ function tierAcceptAll(){
     const pr=ruleProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));   /* v671: the rules' proposal, band set or level */
   tierQueue(t);
 }
+/* ============ 05 OCT 2026: THE DRIFT CARD ============
+   One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
+   has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
+   number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
+   a row drifting up says the signal there is terms or prepayment. */
+function driftSay(d){return (d>0?'+':d<0?'\u2212':'')+Math.abs(d).toFixed(2);}
+function driftSet(code,p){
+  const el=document.getElementById('driftIn_'+code+'_'+p);if(!el)return;
+  const v=parseFloat(String(el.value).replace('\u2212','-'));
+  if(!PRICING_ENGINE.driftOk(v)){el.setCustomValidity('A drift runs from -1 to +1');el.reportValidity&&el.reportValidity();return;}
+  el.setCustomValidity('');
+  const wait=tierQueued()[code]||{},now=p in wait?wait[p]:((TIER_OF[code]||{})[p]);
+  if(typeof now==='number'&&Math.abs(now-v)<1e-9)return;
+  tierQueue({[code]:{[p]:+v.toFixed(2)}});
+}
+function driftClear(code,p){tierQueue({[code]:{[p]:null}});}
+function driftCard(){
+  const ids=tierCustomers(),books=tieredBooks().filter(driftBook);if(!ids.length||!books.length)return '';
+  const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
+  try{books.forEach(p=>{PROD=p;recompute();
+    ids.forEach(id=>{
+      const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
+      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;else if(dr.d<-0.0001)down++;
+      const at=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
+      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand)+', auto '+driftSay(dr.auto):'auto '+driftSay(dr.auto));
+      const why='good '+dr.G.toFixed(2)+', bad '+dr.B.toFixed(2)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
+      const terms=dr.d>0.0001?'<br><span class="iref">Up barely moves half a unit or one: there the signal is terms or prepayment.</span>':'';
+      rows.push(`<tr><td class="l mono">${ID(id)}</td><td class="l"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px"><input id="driftIn_${id}_${p}" type="number" step="0.05" min="-1" max="1" inputmode="decimal" aria-label="${PRODUCTS[p].name} drift for ${codeOf(id)}" value="${dr.hand!=null?dr.hand:''}" placeholder="-1 to 1" style="min-height:var(--tap);min-width:44px;width:6em">
+        <button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px" onclick="driftSet('${id}','${p}')">Set</button>${dr.hand!=null&&!(w&&wv==null)?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px;background:transparent;color:var(--gold)" onclick="driftClear('${id}','${p}')">Clear</button>`:''}</div></td></tr>`);
+    });});}
+  finally{PROD=keep;recompute();}
+  return `<div class="card"><div class="cardh">Drift <span class="sub">each customer's price against the Set Price; read off their record unless you set one</span></div>
+    <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Drift, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <div class="insight salt-insight">${hand} of ${rows.length} drifts are set by you, ${up} customers sit above the Set Price and ${down} below; a drift runs from \u22121 to +1, read off the record within \u00b10.5, and moves a price at most ${Math.round(((TIER_RULE[books[0]].drift||{}).up||0.3)*100)}% of the floor up and ${Math.round(((TIER_RULE[books[0]].drift||{}).down||0.2)*100)}% down, never past the floor or the ceiling.</div></div>`;
+}
 function tierCard(){
+  if(tieredBooks().length&&tieredBooks().every(driftBook))return driftCard();   /* 05 Oct 2026: no book holds a level now */
   const ids=tierCustomers();if(!ids.length)return '';
   const boards=tierBoards(),waiting=tierQueued();let open=0,held=0;
   const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:ruleProposal(id,p,boards);
@@ -21320,7 +21378,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
         <div class="qfield" id="wbApLinkCell"><label>Maps or Waze link <span style="color:var(--dim)">optional</span></label><input id="wbApLink" type="text" inputmode="url" placeholder="paste the link; it stays in the vault" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${/* v780: THE LAST LEVEL IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${tieredBooks().map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n===TIER_NAMES[TIER_NAMES.length-1])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
+        <div class="qfield" id="wbApTierCell"><label>${tieredBooks().length&&tieredBooks().every(driftBook)?'Starting drift':'Starting tiers'}</label>${/* v780: THE LAST LEVEL IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${tieredBooks().map(p=>driftBook(p)?driftPick(p):`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n===TIER_NAMES[TIER_NAMES.length-1])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue. A Maps or Waze link is read on this device: its point and address go into the places vault beside the name, and the queue and the map keep only the place, to about a kilometre.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
@@ -21543,9 +21601,9 @@ function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total)/s.
    v670: what is HELD may be a band set, a level for each size of order, so the held value is read in one place and a size
    is turned into a level by the engine's levelAt at the size being quoted. cardTier keeps its meaning, "is this product
    priced for them at all", and reads their NORMAL level, a mid-sized order's, which any held value or proposal answers. */
-function heldLevel(code){const who=ownerOf(code);return (TIER_OF[who]||{})[PROD]||ruleProposal(who,PROD,{[PROD]:fiveTiersNow()});}
+function heldLevel(code){const who=ownerOf(code);if(driftBook(PROD))return null;return (TIER_OF[who]||{})[PROD]||ruleProposal(who,PROD,{[PROD]:fiveTiersNow()});}
 function cardTierAt(code,q){return TIER_NAMES.indexOf(PRICING_ENGINE.levelAt(heldLevel(code),q,PROFILE_RULE));}
-function cardTier(code){return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* their normal level: a mid-sized order's */
+function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* 05 Oct 2026: every customer on a drift book is priced, at their drift */   /* their normal level: a mid-sized order's */
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
    product in view, off the ladder walked through that size, never under the floor, through the engine's one cardPrice, as
@@ -21561,6 +21619,10 @@ function cardQuote(code,q,t){
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
   const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
   if(row&&row.fixed)return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[row.prices.length-1],true).toFixed(2);
+  /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through the size;
+     a size beyond the rungs is walked the same way. Never under the floor, through the one cardPrice. */
+  if(row&&row.drift){const dr=driftOf(code,PROD),x=PRICING_ENGINE.driftAt(q,pxCost(),P,dr?dr.d:0);
+    return x?+PRICING_ENGINE.cardPrice(null,floorTotal(q),x.p).toFixed(2):null;}
   if(t==null)t=cardTierAt(code,q);if(t<0)return null;
   if(!row||row.prices[t]==null)return null;
   return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[t]).toFixed(2);}
@@ -21584,7 +21646,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Clients or proposed from what they pay, lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price moved by their drift, set on Clients or read off their record; on the other books the board; never under the floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
@@ -21898,6 +21960,7 @@ function tabPricing(){
 
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${(()=>{let t1=null;try{t1=priceLadder(shownSizes(PROD)[0]).tier1;}catch(e){}
     if(t1)return 'two tiers: Tier 1 stated at its ends, Tier 2 derived from cost';
+    if(driftBook(PROD))return 'the Set Price, what a stranger is quoted; a customer&rsquo;s drift moves it between the floor and the ceiling';
     return TIER_RULE[PROD]?`the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}, what a stranger is quoted`:'one ladder, tapered at the rate the supplier tapers';})()}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
@@ -21952,7 +22015,7 @@ function tabPricing(){
        over oil's two cells, ragged, from v641 until now: a head asserted against TIER_NAMES and a body read
        off the engine agree with each other on salt and were never compared to each other on oil. */
     const lvlN=(five&&five.length)?Math.max.apply(null,five.map(g=>(g.prices||[]).length)):0;
-    const levels=lvlN?[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1))):null;
+    const levels=lvlN?(driftBook(PROD)?['Floor','Set price']:[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)))):null;   /* 05 Oct 2026: a drift book's two columns are its floor and its Set Price */
     /* AND A SIZE OFF THE BOARD IS STILL PRICED HERE, which is what the card folded in said in its own words at
        v657: it drew every rung and marked the ones the board does not print, while this table has only ever
        drawn the board's own. Every rung, in the ladder's order, marked; the under-floor census below still
@@ -22059,7 +22122,8 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     <!-- v749: the sentence the five-tier card carried, moved with the levels. ONE SENTENCE, because stripMethod
          keeps an .insight only as far as its first full stop. -->
-    ${levels?`<div class="insight salt-insight">${levels[0]} pays the floor, each level sits at least ${fmt0(10)} over the one below, and ${levels[levels.length-1]} is the board: it is what a stranger is quoted and where a new customer starts.</div>`:''}
+    ${levels&&driftBook(PROD)?`<div class="insight salt-insight">The Set Price is the board a stranger is quoted; each customer's drift moves it towards the floor or towards ${(TIER_RULE[PROD].ceilingX||3)} times it, never past either.</div>`:''}
+    ${levels&&!driftBook(PROD)?`<div class="insight salt-insight">${levels[0]} pays the floor, each level sits at least ${fmt0(10)} over the one below, and ${levels[levels.length-1]} is the board: it is what a stranger is quoted and where a new customer starts.</div>`:''}
     ${flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
     ${inverted.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>Tier 1 costs more than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board falls to the right where it should rise: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
     ${!flagged.length&&!inverted.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even${T1on?', and Tier 1 is under Tier 2 at every size':''}.</div>`:''}
@@ -22077,7 +22141,9 @@ function tabPricing(){
       ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
+      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}; no leak, delivery or time in it`)
+        :sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
+      ${sC.rule==='latestCogs'&&sC.shrink>=RULES.leakInfoFrom?sR('After the leak',fmt(sC.afterLeak),`information only: ${(sC.shrink*100).toFixed(0)}% of what is bought never sells; nothing prices off it`):''}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
            0.62x to 0.12x on oil while the stated board actually runs 0.62x to 0.15x. -->
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
@@ -22101,12 +22167,12 @@ function tabPricing(){
          stated prices and an interpolation between them, which the row in the table above states in
          full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
          believe the wrong one was derived. -->
-    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">COGS, then the leak, is the floor; ${TIER_RULE[PROD]?`the ask is the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}`:'the floor at the size&rsquo;s margin is the ask'}${T1on?'. Tier 1 is stated, not derived':''}</span></div>
+    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)?'the ask is the Set Price':TIER_RULE[PROD]?`the ask is the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}`:'the floor at the size&rsquo;s margin is the ask'}${T1on?'. Tier 1 is stated, not derived':''}</span></div>
     <div class="tblw"><table class="fintab istmt"><thead><tr><th class="l">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. ${TIER_RULE[PROD]?`The ask is ${TIER_NAMES[TIER_NAMES.length-1]}, the level a new customer starts at: COGS times the level's multiple, less a step a rung, rounded up to the ten, each level at least a ten over the one below and never rising in rate with size.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the floor is that times the size, earns nothing and carries no leak.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?`The ask is the Set Price: the floor times a multiple sliding in the log of size from ${TIER_RULE[PROD].mS} at ${units(TIER_RULE[PROD].qS)} to ${TIER_RULE[PROD].mB} at ${units(TIER_RULE[PROD].qB)}, down to the ten, lifted to the floor, capped at ${TIER_RULE[PROD].ceilingX} times it, and never rising in rate with size. The margin columns are the old derived ask, for reference.`:TIER_RULE[PROD]?`The ask is ${TIER_NAMES[TIER_NAMES.length-1]}, the level a new customer starts at: COGS times the level's multiple, less a step a rung, rounded up to the ten, each level at least a ten over the one below and never rising in rate with size.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -22189,7 +22255,7 @@ function tabPricing(){
            lot on the book the old chain took the LOT's rate; the quote was the no-lot fallback).
            RM 48.50 under a caption naming a RM 56 tier is the kind of line that teaches the
            reader to ignore captions. The row says what the figure is on each branch instead. -->
-      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:pxRecentBuyRate(30)==null?`no lot inside 30 days, so this is the latest lot's own rate: ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate||'not dated'}`)}
+      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.latest?`the latest purchase${c.latest.rid?' '+esc(c.latest.rid):''}, ${units(c.latest.units)} landed ${c.latest.date||'not dated'}: its quote over its units`:c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:pxRecentBuyRate(30)==null?`no lot inside 30 days, so this is the latest lot's own rate: ${units(c.lotQty)} on ${c.lotDate||'not dated'}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate||'not dated'}`)}
       ${r('Collection',c.freight,'inventory',(()=>{
         /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
            sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
@@ -22197,11 +22263,12 @@ function tabPricing(){
            rather than recomputed here, the same discipline the floor markup follows, so it cannot
            drift from the engine and it stays right under a lock, where the freight is frozen. */
         const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.freight!=null);
+        if(c.latest)return c.latest.freight>0?`the latest purchase's trip, ${fmt(c.latest.freight)} over its ${units(c.latest.units)}`:'no freight typed on the latest purchase, so nought';
         return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag salt-status paid">Inventory</span></td></tr>
-      ${r('Non-revenue '+PRODUCTS[PROD].name.toLowerCase(),c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
-      ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order`;})())}
-      <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
+      ${r('Non-revenue '+PRODUCTS[PROD].name.toLowerCase(),c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:c.rule==='latestCogs'?`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells; measured, and not in the price`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
+      ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order${c.rule==='latestCogs'?'; not in the price, delivery is typed on the order':''}`;})())}
+      <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">${c.rule==='latestCogs'?'COGS, the floor a unit: landed off the latest purchase':'what a price has to return'}</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
     ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
     ${(()=>{
@@ -23448,7 +23515,15 @@ function wbLinkPreview(text,errs,goods,warns,filed){
    associate hold a tier; an end buyer, a bucket, a supplier and an appointment of a party already registered do not. */
 function wbTierKind(kind,apl){return !(apl&&apl.elevate)&&(kind==='customer'||kind==='reseller'||kind==='referral');}
 /* v646: the starting tier chosen for each product; a product left not set is left out, and none chosen is null */
-function wbTiersChosen(){const t={};PROD_IDS.forEach(p=>{const v=wbVal('wbApTier_'+p);if(TIER_NAMES.includes(v))t[p]=v;});return Object.keys(t).length?t:null;}
+/* 05 Oct 2026, his decision: a new customer on a drift book starts on the drift he picks, Better, Standard or Higher (TIER_RULE
+   presets) or a typed one, held as his hand-set drift until he clears it; Automatic holds none and reads their record */
+/* 05 Oct 2026: a new customer starts on the automatic drift, read off their record as it grows (nought with none); a preset
+   or a typed figure is his hand on it, held until he clears it */
+function driftPick(p){const P=(TIER_RULE[p]||{}).presets||{},n=PRODUCTS[p].name;
+  return `<select id="wbApTier_${p}" aria-label="Starting drift for ${n}" style="min-height:var(--tap)" onchange="var i=document.getElementById('wbApDrift_${p}');if(i)i.style.display=this.value==='typed'?'':'none'"><option value="">${n}: automatic</option>${Object.keys(P).map(k=>`<option value="${P[k]}">${n}: ${k}, ${driftSay(P[k])}</option>`).join('')}<option value="typed">${n}: typed</option></select> <input id="wbApDrift_${p}" type="number" step="0.05" min="-1" max="1" inputmode="decimal" aria-label="Typed starting drift for ${n}" placeholder="-1 to 1" style="min-height:var(--tap);min-width:44px;width:6em;display:none">`;}
+function wbTiersChosen(){const t={};PROD_IDS.forEach(p=>{const v=wbVal('wbApTier_'+p);
+  if(driftBook(p)){const d=v==='typed'?parseFloat(wbVal('wbApDrift_'+p)):(v===''||v==null?NaN:parseFloat(v));if(PRICING_ENGINE.driftOk(d))t[p]=+d;return;}
+  if(TIER_NAMES.includes(v))t[p]=v;});return Object.keys(t).length?t:null;}
 /* v528: the registration itself, shared by the bucket road and the named road */
 function wbAddIdQueue(code,kind,parent,an,geo,tiers,alreadyQueued=false){
   /* v570: READ THE PLAN BEFORE THE OVERLAY MOVES, or the two pushes below flip `known` and

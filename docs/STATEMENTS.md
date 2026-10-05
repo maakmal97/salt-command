@@ -355,6 +355,9 @@ thing a curious customer could still notice. A custom domain on the statements W
 fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
 of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
+**On a drift book (salt since 05 Oct 2026) every link quotes the Set Price**: no level exists there
+for a standing link or an introducer to pick, so `boardList` falls back to `ladderRow`'s ask.
+
 **THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026: "for the
 guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
 quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.

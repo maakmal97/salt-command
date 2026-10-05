@@ -20,18 +20,12 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     const bookOf = () => ({ version: "fixture", sales: [], purchases: [], pricing: pricingSnapshot(w),
       state: { PRODUCTS: JSON.parse(w.eval("JSON.stringify(PRODUCTS)")), roster: JSON.parse(w.eval("JSON.stringify(roster)")),
         TIER_OF: JSON.parse(w.eval("JSON.stringify(TIER_OF)")) } });
+    /* salt prices by each customer's drift since v1017 and the other books are stated boards, so the real book draws no tier proposal:
+       the Desk's tierAcceptAll queues nothing and Maker answers the same, with no entry */
     const everything = deskTiers();
     const madeAll = makerTierAcceptAll({ at: AT }, bookOf(), []);
-    ok(Object.keys(everything).length > 0 && madeAll.entry && norm(madeAll.entry.payload.tiers) === norm(everything)
-      && madeAll.entry.payload.mode === "tierset" && madeAll.entry.type === "TIER",
-      "Maker's Accept all queues the proposed tiers the Desk's own tierAcceptAll queues, as one tierset entry");
-    const victimId = Object.keys(everything)[0], victimProduct = Object.keys(everything[victimId])[0];
-    w.eval("TIER_OF[" + JSON.stringify(victimId) + "]={" + JSON.stringify(victimProduct) + ":'Gold'};");
-    const rest = deskTiers(), madeRest = makerTierAcceptAll({ at: AT }, bookOf(), []);
-    const victimLeft = (t) => t[victimId] && victimProduct in t[victimId];
-    ok(victimLeft(everything) && !victimLeft(rest) && !victimLeft(madeRest.entry.payload.tiers)
-      && norm(madeRest.entry.payload.tiers) === norm(rest),
-      "a held tier is never moved by Accept all, and what remains still equals the Desk's");
+    ok(Object.keys(everything).length === 0 && !madeAll.entry && /no tier proposal/i.test(madeAll.error || ""),
+      "on the live book no book takes a level, so Accept all queues nothing at the Desk and none at Maker");
   } finally { w.close(); }
 
   /* the control: a retained request survives a reload only if the engine's record check names the path */
@@ -64,6 +58,9 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
   ok(made.entry && norm(made.entry.payload.tiers) === norm({ "CX2-ZED": { salt: "Platinum" }, "CX3-ZED": { salt: band }, "CX5-ZED": { salt: "Titanium" } })
     && made.entry.raw.startsWith("Set 3 customers from their proposals: CX2-ZED salt Platinum;"),
     "Accept all proposes tiered, active books to roster customers only: not held, fixed, retired, resale or off-roster");
+  const driftBook = makerTierAcceptAll({ at: AT }, { ...book(), pricing: { ...pricing, byProduct: { ...pricing.byProduct,
+    salt: { inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } } } } }, []);
+  ok(!driftBook.entry && /no tier proposal/i.test(driftBook.error || ""), "a book priced by drift takes no level from Accept all");
   const allHeld = makerTierAcceptAll({ at: AT }, book({ state: { TIER_OF: { "CX1-ZED": { salt: "Gold" }, "CX2-ZED": { salt: "Gold" },
     "CX3-ZED": { salt: "Gold" }, "CX5-ZED": { salt: "Gold" } } } }), []);
   ok(!allHeld.entry && /no tier proposal/i.test(allHeld.error), "when every tier is held there is nothing to accept");
