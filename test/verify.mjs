@@ -52031,5 +52031,10 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("Pool B1: a group order is one record in the order book, a join is one step, and the units in are read live");
+await (async () => {
+  await (await import("./pool.mjs")).store({ ok, KV, skipOff });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

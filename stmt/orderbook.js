@@ -65,7 +65,8 @@
  * suite drive it in Node, over node:sqlite, whose statements run synchronously exactly as the object's do.
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
-  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE } from "./orders.js";
+  applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
+  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -91,10 +92,10 @@ const norm = (raw) => { try { const o = JSON.parse(raw); return o && typeof o ==
 /* what writes: refused while the book is moving in. Not "drop": his test account unmade is gone from KV first,
    so no pass brings it back, and it reaches the book from the kv road too (S10 fix P3), where it must neither
    wait on a move-in nor start one */
-const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk"];
+const WRITES = ["place", "replace", "customer", "desk", "chase", "aclaim", "adesk", "rateask", "tsay", "tdesk", "popen", "pjoin", "pclose"];
 /* S6 6.6: an account claim lives beside the orders, in its own table and under its own KV prefix; Step 7: so does an
-   account's thread, one a username */
-const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : "ord");
+   account's thread, one a username; and a group order (the pool), one the site, whose u is empty and which KV never holds */
+const TABLE = (oid) => (isThreadId(oid) ? "thr" : isClaimId(oid) ? "acl" : isPoolId(oid) ? "pool" : "ord");
 const KVKEY = (u, oid) => (isThreadId(oid) ? "thr:" + u : (isClaimId(oid) ? "aclaim:" : "order:") + u + ":" + oid);
 
 export class OrderBook {
@@ -109,7 +110,8 @@ export class OrderBook {
     sql.exec("CREATE TABLE IF NOT EXISTS behind (u TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS acl (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
     sql.exec("CREATE TABLE IF NOT EXISTS thr (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
-    sql.exec("CREATE TABLE IF NOT EXISTS fixture_thread (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
+    sql.exec("CREATE TABLE IF NOT EXISTS pool (u TEXT NOT NULL, oid TEXT NOT NULL, at TEXT NOT NULL, doc TEXT NOT NULL, PRIMARY KEY (u, oid))");
+    sql.exec("CREATE TABLE IF NOT EXISTS fixture_thread(u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS fixture_account (u TEXT PRIMARY KEY, generation TEXT NOT NULL, doc TEXT NOT NULL, receipts TEXT NOT NULL)");
   }
 
@@ -121,7 +123,7 @@ export class OrderBook {
     if (op === "check") return Response.json(await this.check());
     if (op === "compare") return Response.json(await this.compare());
     const out = this.run(op, a && typeof a === "object" ? a : {});
-    if (op !== "fixture-account" && out.ok && out.order && !out.again && !out.none && this.writesKv()) await this.arm();
+    if (op !== "fixture-account" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
     return Response.json(out);
   }
   /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
@@ -519,6 +521,37 @@ export class OrderBook {
       if (request) d.ev.request = request;
       return this.append(eid, u, THREAD_ID, d.ev, thread);
     }
+    /* THE POOL, A GROUP ORDER: every pool newest first with its units in read live off the orders (never stored); with a
+       customer named, the open ones and a closed one they joined in the last POOL_SHOWN_DAYS, each carrying their own
+       standing join as `mine`. The join is ONE transaction: the order and the join are appended together, or neither is. */
+    if (op === "pools") return { ok: true, pools: this.pools(a.u ? String(a.u) : null) };
+    if (op === "popen") {
+      const d = decidePoolOpen(a.body, at);
+      if (d.error) return no(d, d.status || 400);
+      return this.append(null, "", d.ev.pool.id, d.ev, null);
+    }
+    if (op === "pjoin") {
+      const u = String(a.u || ""), pid = String(a.pool || ""), eid = a.rid ? "c:" + u + ":place:" + a.rid : null;
+      const seen = eid ? this.event(eid) : null;
+      if (seen) return { ok: true, order: this.order(seen.u, seen.oid), pool: this.order("", pid), again: true };
+      const pool = isPoolId(pid) ? this.order("", pid) : null;
+      const d = decidePoolJoin(u, pool, a.body, this.ordersOf(u), at, a.digest, "customer");
+      if (d.error) return no(d, d.status || 400);
+      return this.state.storage.transactionSync(() => {
+        const placed = this.append(eid, u, d.place.order.id, d.place, null, true);
+        const joined = this.append(null, "", pid, { kind: "pjoin", at, u, oid: d.place.order.id }, pool, true);
+        return { ok: true, order: placed.order, pool: joined.order };
+      });
+    }
+    if (op === "pclose") {
+      const pid = String(a.pool || ""), pool = isPoolId(pid) ? this.order("", pid) : null;
+      const d = decidePoolClose(pool, a.body, at);
+      if (d.error) return no(d, d.status || 400);
+      const out = d.none ? { ok: true, order: pool, none: true } : Object.assign(this.append(null, "", pid, d.ev, pool), d.ev.again ? { again: true } : {});
+      /* the orders to acknowledge: every joiner's that still stands, by id, with its state */
+      out.joined = pool.joins.map((j) => ({ j, o: this.order(j.u, j.oid) })).filter((x) => joinLive(x.o)).map((x) => ({ u: x.j.u, id: x.j.oid, status: x.o.status }));
+      return out;
+    }
     if (op === "last") {
       const out = { ok: true };
       for (const [k, key] of Object.entries(MARKS)) out[k] = this.meta(key);
@@ -630,7 +663,7 @@ export class OrderBook {
         eid || "s:" + crypto.randomUUID(), u, oid, ev.kind, ev.at, JSON.stringify(ev));
       sql.exec("INSERT OR REPLACE INTO " + TABLE(oid) + " (u, oid, at, doc) VALUES (?, ?, ?, ?)", u, oid, String(r.order.at || ev.at), JSON.stringify(r.order));
       for (const [k, v] of marksOf(ev, r.order)) this.setMeta(k, v);
-      if (ev.kind !== "copy" && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
+      if (ev.kind !== "copy" && !isPoolId(oid) && this.writesKv()) sql.exec("INSERT OR IGNORE INTO behind (u, oid) VALUES (?, ?)", u, oid);
       out = { ok: true, order: r.order, wake: wakes(ev, r.order, r.done) };   /* the wake and its S12 kind, or null */
     };
     if (withinTransaction) write();
@@ -642,6 +675,16 @@ export class OrderBook {
   doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM " + TABLE(oid) + " WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
   order(u, oid) { const d = this.doc(u, oid); return d == null ? null : JSON.parse(d); }
   ordersOf(u) { return this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
+  /* the pools, each with its units in read live, and with a customer named only what they may see, carrying their own join */
+  pools(u) {
+    const list = this.state.storage.sql.exec("SELECT doc FROM pool ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc));
+    const since = Date.now() - POOL_SHOWN_DAYS * 86400000;
+    for (const p of list) {
+      p.unitsIn = poolUnits(p, (uu, oid) => this.order(uu, oid));
+      if (u) { const j = p.joins.find((x) => x.u === u && joinLive(this.order(x.u, x.oid))); p.mine = j ? j.oid : null; }
+    }
+    return u ? list.filter((p) => p.state === "open" || (p.mine && Date.parse(p.closedAt || p.at) >= since)) : list;
+  }
   all() { return this.state.storage.sql.exec("SELECT doc FROM ord ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)); }
   meta(k) { const r = this.state.storage.sql.exec("SELECT v FROM meta WHERE k = ?", k).toArray()[0]; return r ? r.v : null; }
   setMeta(k, v) { this.state.storage.sql.exec("INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)", k, String(v)); }
