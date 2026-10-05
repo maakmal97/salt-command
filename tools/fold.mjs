@@ -189,8 +189,10 @@ export function plan(book, staged, notes) {
       if (!((book.PRODUCTS || {})[pr])) { out.refused.push({ id: it.id, why: `${pr} is not a product on this book: register it in PRODUCTS and PROD_ORDER (and give it a quote) before its rows fold` }); continue; }
     }
     if (it.amends) {
-      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification" && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
       const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
+      /* 05 Oct 2026 (A4): a lot's Payment, Receipt and Default fold; Linked and Rewarded stay a person's. */
+      const buyKind = ["Payment", "Receipt", "Default"].includes(it.amendKind) && dir === "BUY";
+      if (!buyKind && it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification" && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
       const arr = dir === "BUY" ? book.purchases : book.sales;
       /* BY rid FIRST (25 Aug 2026). ovKey is party|date|total, which names a row only for as
          long as none of those three changes. A correction changes exactly those, and two
@@ -643,6 +645,8 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       if (!asked(k)) continue;
       if (f[k] === true) row[k] = true; else delete row[k];
     }
+    /* 05 Oct 2026 (A4): a lot revived from a default loses the date of the default with it */
+    if (asked("defaulted") && f.defaulted !== true) delete row.defaultedOn;
     /* A ROW WITH AN AGREED FIGURE IS PRICED BY DEFINITION. Same behaviour as a Modification,
        which has cleared the flag since v358; a correction that sets the total should not need
        a second tap to say so, and the trail records that it happened. */
@@ -788,6 +792,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      the same as moving goods against it. */
   if (row.cancelled && ((+pay.cash || 0) > 0.009 || (+pay.kg || 0) > 0.009))
     throw new Error(`this row is already cancelled, so ${(+pay.cash || 0) > 0.009 ? "RM " + (+pay.cash) + " " : ""}${(+pay.kg || 0) > 0.009 ? (+pay.kg) + " unit " : ""}cannot be recorded against it: revive it by Correction first, or record the movement on the row that actually carries it`);
+  /* 05 Oct 2026 (A4): a defaulted lot takes no money and no units, as a cancelled row takes none. */
+  if (row.defaulted && ((+pay.cash || 0) > 0.009 || (+pay.kg || 0) > 0.009))
+    throw new Error("this lot is already a supplier default, so it cannot take a payment or a receipt: restate it by Correction first if it was marked in error");
   /* 28 Sep 2026, s210: the writer refuses it too, before it touches the row, rather than trusting plan() to have looked
      (the v436 reason): a payment measured before other money reached the row, which would take it past what it owes */
   { const pf = E.payFault(row, pay.cash, dir !== "BUY", pay.drafted); if (pf) throw new Error(pf); }
@@ -800,7 +807,10 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     if (pay.kind === "Default") {
       const arrived = E.poRecvUnits(row);
       if (arrived > 0.009) throw new Error(`this lot has received ${arrived} unit, so it cannot be recorded as a supplier default: a default means nothing arrived. Restate the quantity by Modification for what did arrive, then default the remainder`);
-      row.defaulted = true; delete row.receivedOn; delete row.pending; return;
+      /* 05 Oct 2026 (A4): a default is dated and leaves its step in the lot's trail, as a cancellation does. */
+      if (!row.amend || !row.amend.length) row.amend = [seedStep(row, dir)];
+      { const step = { date: pay.date, kind: "Default", cash: 0, kg: 0 }; if (note) step.note = note; row.amend = row.amend.concat([step]); }
+      row.defaulted = true; if (pay.date) row.defaultedOn = pay.date; delete row.receivedOn; delete row.pending; return;
     }
     /* v413, ROUND EIGHT, MATERIAL: this branch RETURNED before the Cancellation handler below, so
        cancelling a lot set nothing, fell through to the status recompute, and rewrote a lot stored

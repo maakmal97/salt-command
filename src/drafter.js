@@ -602,6 +602,8 @@ export function flagsFor(entry, row, book, priced) {
  * dated row with nothing paid and nothing moved is Pending and counts nowhere. Since v487 no
  * undated row may stand on the ledger, and the first two pending orders approved after it
  * failed the gate on exactly that. The agreed date is what the phone typed. */
+/* 05 Oct 2026 (A4): a lot's Payment, Receipt and Default, the Workbench's purchase kinds. Linked and Rewarded stay refused. */
+const BUY_KINDS = ["Payment", "Receipt", "Default"];
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
@@ -637,7 +639,8 @@ export function draftRow(entry, book) {
    * The fold applies it where the desk is. */
   if (pay.mode === "amend") {
     const kind = String(pay.kind || "");
-    if (kind !== "Fulfilment" && kind !== "Cancellation" && kind !== "Modification" && kind !== "Correction") {
+    if (kind !== "Fulfilment" && kind !== "Cancellation" && kind !== "Modification" && kind !== "Correction"
+      && !BUY_KINDS.includes(kind)) {
       return { skip: `this is a ${kind || "nameless"} amendment, and what changed is a judgement rather than which row, so it is left for a person` };
     }
 
@@ -768,6 +771,7 @@ export function draftRow(entry, book) {
       }
     }
     const dir2 = t.dir === "B" ? "BUY" : "SELL";
+    if (BUY_KINDS.includes(kind) && dir2 !== "BUY") return { skip: `a ${kind.toLowerCase()} is a purchase movement, and this row is a sale` };
 
     /* A MODIFICATION IS A DIFFERENT SHAPE FROM A FULFILMENT: it carries newQty/newTotal rather
        than cash/kg, and nothing moves, so it takes its own branch rather than forcing the
@@ -823,12 +827,19 @@ export function draftRow(entry, book) {
     const cash = isNum(pay.cash) ? +pay.cash : 0;
     const moved = isNum(pay.kg) ? +pay.kg : 0;
     const when = pay.date || null;
-    if (kind === "Fulfilment") {
+    const isMove = kind === "Fulfilment" || kind === "Payment" || kind === "Receipt";
+    if (isMove) {
       if (cash < 0.005 && moved < 0.005) {
-        return { skip: "this fulfilment moves neither cash nor stock, so there is nothing to apply" };
+        return { skip: `this ${kind.toLowerCase()} moves neither cash nor stock, so there is nothing to apply` };
       }
-      if (!when) return { skip: "something moved on this amendment but it carries no date, and dating it is a judgement" };
+      if (kind === "Payment" && moved > 0.005) return { skip: "a payment moves no units: a receipt books an arrival" };
+      if (kind === "Receipt" && cash > 0.005) return { skip: "a receipt moves no cash: a payment books money out" };
     }
+    if (kind === "Default" && (cash > 0.005 || moved > 0.005)) return { skip: "a default moves neither cash nor stock" };
+    if (kind === "Default" && (+t.mv || 0) > 0.009) {
+      return { skip: `this lot has received ${round(+t.mv)} unit, so it cannot be recorded as a supplier default: a default means nothing arrived` };
+    }
+    if ((isMove || kind === "Default") && !when) return { skip: "something moved on this amendment but it carries no date, and dating it is a judgement" };
 
     /* Shaped like a row so the Approve panel needs no special case: it is the TARGET as it
        stands today, which is what has to be recognised before the change is agreed to. */
@@ -840,7 +851,9 @@ export function draftRow(entry, book) {
     const flags = [];
     /* THE COMPARISONS AN AMENDMENT CANNOT MAKE AGAINST ITSELF, which is the same idea as the
        flags on a new row: everything here is the entry measured against the order it targets. */
-    if (kind === "Fulfilment") {
+    if (kind === "Default") {
+      flags.push(`Marks the lot as never delivered: the RM ${round(t.cash || 0)} already paid becomes a recoverable, not inventory, and the lot leaves the cost basis.`);
+    } else if (isMove) {
       if (cash > oweRM + 0.005) {
         flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
       }
@@ -862,13 +875,13 @@ export function draftRow(entry, book) {
       flags.push(`The open-order snapshot was taken at ${open.v} but the mirror is at ${book.version}, so what is outstanding here may be stale.`);
     }
 
-    const left = kind === "Fulfilment"
+    const left = isMove
       ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweUnits - moved))} unit outstanding.`
-      : "The order is withdrawn and counts nowhere.";
+      : kind === "Default" ? "The lot is marked as never delivered and leaves the cost basis." : "The order is withdrawn and counts nowhere.";
     const reasoning = [
       `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}${+t.dv > 0 ? " with RM " + round(t.dv) + " delivery, RM " + round(+t.t + +t.dv) + " owed" : ""}`,
       t.d ? `agreed ${t.d}.` : "which is pending and undated.",
-      kind === "Fulfilment"
+      isMove
         ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweUnits)} unit outstanding. ${left}`
         : left,
       "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
@@ -1871,6 +1884,15 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
      leaving is a withdrawal or a re-entry, and at the watermark as before if the laptop's queue or the
      fold wrote it, since their entries need never have been on this queue. */
   const held = await env.SALT_LEDGER.prepare("SELECT id,source FROM refused").all();
+  /* 05 Oct 2026 (A4): A DESK LOT PAYMENT, RECEIPT OR DEFAULT REFUSED BEFORE THIS CHANGE STAYS REFUSED. The drafter now takes the
+     three, so a refusal still held for an entry still queued would draft on the next pass, a decision nobody made. An entry
+     refused already is left to the person who reads the refusal; one that arrives from now on drafts. A Maker input is
+     never refused into the queue, so it carries no such mark. */
+  const staleLot = new Set();
+  for (const r of held.results || []) {
+    const e = byAt.get(r.id), p = e && e.payload;
+    if (p && p.mode === "amend" && BUY_KINDS.includes(p.kind) && !e.makerRequest) staleLot.add(r.id);
+  }
   for (const r of held.results || []) {
     if (byAt.has(r.id)) continue;
     if (r.source === "cloud-drafter" || (mark && r.id <= mark))
@@ -1891,6 +1913,7 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
+    if (staleLot.has(at)) continue;
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
     let d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));

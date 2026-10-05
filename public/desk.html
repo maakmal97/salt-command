@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2d79532232cfee2a";
+var SALT_BUILD_ID="2dfa53bdee4e886c";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9124,7 +9124,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1017","d":"05 Oct 2026","t":"THE RESTOCK LIGHT AND THE RESTOCK DATE","n":["<b>F4.</b> A light for each book on the Counter: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf, red when the shelf is out. It is drawn as a coloured border on the book's mark (verdigris, the design system's new amber, ember), never a figure, a product word or a brand, and yellow or red carry Expected by DD Mon once he sets a date. Enter gains a Restock date card, and Today asks for one when a book is yellow or red with no date ahead of it, Now on red. The date is kept in the Counter's KV <code>expected</code> through the keyed <code>/expected</code>, which refuses a book the master does not hold; the light and the date are sealed in each list at publish, outside its stamp. Ordering is never refused. Nothing prices."]}];
+const evolution=[{"v":"v1018","d":"05 Oct 2026","t":"A LOT'S PAYMENT, RECEIPT AND DEFAULT FROM THE COUNTER","n":["<b>A4.</b> Counter Maker amends a purchase lot with Payment (cash only), Receipt (units only) or Default, each the entry the Workbench builds, through the same ledger-amend route; a payment is held to what the lot can still take, money already on its way counted, and a default waits behind it and is refused once units have arrived. The drafter and the fold now take the three on a lot; Linked and Rewarded stay refused, and a Desk entry the drafter refused before stays refused. A default is dated (<code>defaultedOn</code>) and leaves its step in the lot's trail, a defaulted lot takes no payment or receipt, and a Correction that reverts a default clears its date, in the fold and in ovAmend. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9273,7 +9273,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 09:00 KL';
+const LAST_UPDATED='05 Oct 2026, 09:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9598,6 +9598,7 @@ function ovAmend(p,q){
     /* A FALSE FLAG IS AN ABSENT FLAG on this book: an uncancelled row simply has no
        `cancelled` key, so writing false would shape this row unlike every one of its peers. */
     PE.CORRECT_BOOL.forEach(k=>{if(!asked(k))return;if(f[k]===true)row[k]=true;else delete row[k];});
+    if(asked('defaulted')&&f.defaulted!==true)delete row.defaultedOn;   /* A4: a lot revived from a default loses its date */
     /* A row with an agreed figure is priced by definition, as a Modification already treats it. */
     if(!asked('unpriced')&&asked('total')&&f.total>0.005&&row.unpriced){delete row.unpriced;said.push('unpriced true to (cleared), a real total was set');}   /* v440: the SHAPE is a contract. The strip at modClaims parses field-was-to-now with an optional reason after a comma, so the old free-text form rendered on the desk own Ledger as an unreadable claim, and it disagreed with the fold word for word. */
     /* The v146 guard on the correction road: an ABSENT receivedQty reads as fully received, so
@@ -9676,12 +9677,16 @@ function ovAmend(p,q){
      for every other refusal in this function, because it is drawing a preview. */
   if(row.cancelled&&((+p.cash||0)>0.009||(+p.kg||0)>0.009)){
     provNotes.push('a movement on '+(row.rid||'a row')+' was not applied: the row is already cancelled');return;}
+  if(row.defaulted&&((+p.cash||0)>0.009||(+p.kg||0)>0.009)){
+    provNotes.push('a movement on '+(row.rid||'a lot')+' was not applied: the lot is already a supplier default');return;}
   if(p.direction==='BUY'){
     /* v435: the same guard the fold gained, declining rather than throwing as this function does. */
     if(p.kind==='Default'){
       const arrivedD=poRecvUnits(row);
       if(arrivedD>0.009){provNotes.push('a default on '+(row.rid||'a lot')+' was not applied: '+units(arrivedD)+' has already arrived');return;}
-      row.defaulted=true;delete row.receivedOn;delete row.pending;return;}
+      if(!row.amend||!row.amend.length)row.amend=[ovSeed(row,p.direction)];
+      row.amend=row.amend.concat([{date:p.date,kind:'Default',cash:0,kg:0,note:p.note||undefined}]);
+      row.defaulted=true;if(p.date)row.defaultedOn=p.date;delete row.receivedOn;delete row.pending;return;}
     /* An agreed-only lot STOPS being agreed only the moment real money or real salt
        moves against it. Without this, poCash and poRecvUnits keep returning zero for it by
        design, so the payment you just recorded and the units you just received would
