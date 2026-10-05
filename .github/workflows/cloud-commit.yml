@@ -514,6 +514,9 @@ jobs:
       # retire accounts twenty-four times a day instead of once. Writing is hourly; retiring is not.
       - name: Publish the statements, live
         if: steps.plan.outputs.publish == '1'
+        # BOUNDED (05 Oct 2026, his word): the publish takes under a minute; v1022's run hung here
+        # for the whole job's 30 minutes after it had published, so a hang now dies at 10.
+        timeout-minutes: 10
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
