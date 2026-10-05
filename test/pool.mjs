@@ -69,6 +69,10 @@ export async function store({ ok, KV, skipOff }) {
   const late2 = await O.poolJoin(env, "wxyz-2345", pid, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid("w1") });
   ok(late.error && late2.error && late2.status === 409 && late2.code === "poolClosed" && count("ord") === before,
     "a join after the close is refused and makes no order: " + JSON.stringify(late2));
+  /* the closing day is the card's promise alone: only his Close shuts a pool, so an open one past its day still takes a join */
+  const pastDay = O.decidePoolJoin(U2, { id: pid, kind: "pool", product: "salt", q: 2, target: 10, state: "open", closesOn: "2020-01-01", joins: [] },
+    { q: 2, total: 90, unit: 45, digest: "d1", rid: rid("pd") }, [], new Date().toISOString(), "d1");
+  ok(!!pastDay.place && !pastDay.error, "an open pool past its closing day still takes a join: only Close shuts it: " + JSON.stringify(pastDay));
   const none = await O.poolJoin(env, U2, "p20260101000000-aaaa", { q: 2, total: 90, unit: 45, digest: "d1", rid: rid("n1") });
   ok(none.status === 404 && none.code === "poolNone", "and one with no such pool is refused in its own words");
 

@@ -1474,7 +1474,7 @@ export function decidePoolOpen(body, at) {
  *  close, and one with no such pool. Returns { place } for the order the join makes, or { error, status }. */
 export function decidePoolJoin(u, pool, body, mine, at, digest, by = "customer") {
   if (!pool) return Object.assign(refusal("poolNone"), { status: 404 });
-  if (pool.state !== "open" || (pool.closesOn && klDay(at) > pool.closesOn)) return Object.assign(refusal("poolClosed"), { status: 409 });
+  if (pool.state !== "open") return Object.assign(refusal("poolClosed"), { status: 409 });
   if ((mine || []).some((o) => o.pool === pool.id && joinLive(o))) return Object.assign(refusal("poolTwice"), { status: 409 });
   if (!body || typeof body !== "object" || body.q !== pool.q) return { error: "the size is not this group order's", status: 400 };
   const placed = decidePlace(u, { product: pool.product, qty: pool.q, mode: "collect", total: body.total, unit: body.unit,

@@ -714,7 +714,7 @@ export const EN = {
   "hn.ready": "Ready to collect, since {d}",
   /* a group order (the pool): a card on Home, one row each, joined from the sheet */
   "hp.h": "Group order",
-  "hp.in": "{n} of {t} units in",
+  "hp.in": "{n} of {t} in",
   "hp.closes": "Closes {d}",
   "hp.join": "Join",
   "hp.ask": "Join with {q}?",

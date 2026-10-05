@@ -58,9 +58,10 @@ export async function page({ ok }) {
       && text(d.querySelector("#hPool .hlab")).startsWith(W.fill(W.EN["hp.h"])),
       "Home draws a row for each group order, under its heading, after Needs you and before Coming up: " + JSON.stringify([rows.length, hc]));
     const t1 = text(row(P1.id).querySelector(".salt-inbox-row__main")), t2 = text(row(P2.id).querySelector(".salt-inbox-row__main")), t3 = text(row(P3.id).querySelector(".salt-inbox-row__main"));
-    ok(t1 === W.fill(W.EN["hp.in"], { n: 4, t: 10 }) + W.fill(W.EN["hp.closes"], { d: "12 Oct 2026" })
-      && t2 === W.fill(W.EN["hp.joined"], { q: "2 units" }) + W.fill(W.EN["hp.in"], { n: 6, t: 10 }) && t3 === W.EN["hp.closed"],
+    ok(t1 === W.fill(W.EN["hp.in"], { n: 4, t: "10 units" }) + W.fill(W.EN["hp.closes"], { d: "12 Oct 2026" })
+      && t2 === W.fill(W.EN["hp.joined"], { q: "2 units" }) + W.fill(W.EN["hp.in"], { n: 6, t: "10 units" }) && t3 === W.EN["hp.closed"],
       "the card's text is the table's words filled, nothing else: " + JSON.stringify([t1, t2, t3]));
+    ok(t1.startsWith("4 of 10 units in") && t2.endsWith("6 of 10 units in"), "the target carries the product's own unit word, once: " + JSON.stringify([t1, t2]));
     const joins = [...d.querySelectorAll("#hPool [data-pool-join]")].map((b) => b.getAttribute("data-pool-join"));
     ok(joins.join() === P1.id && text(d.querySelector('[data-pool-join]')) === W.EN["hp.join"] && !row(P2.id).querySelector("button") && !row(P3.id).querySelector("button") && !row(P4.id).querySelector("button"),
       "Join is the open pool's one action: a pool they are in, a closed one, and one they are not in that has closed draw none: " + JSON.stringify(joins));

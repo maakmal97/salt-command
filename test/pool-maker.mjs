@@ -11,12 +11,14 @@ export async function maker({ ok, KV, skipOff }) {
   /* the Desk, as a stub that records what it is asked: a preview gives a hash, an accept answers as the Desk does */
   const calls = [], hashOf = (id) => id.replace(/[^0-9]/g, "").padEnd(64, "c").slice(0, 64);   /* a preview's digest is its order's own */
   let differs = new Set(), down = new Set();
+  const ownerOf = {};   /* order id to its customer, so an accept can move the order as the Desk does */
   env.DESK_MAKER = { fetch: async (request) => {
     const path = new URL(request.url).pathname, id = (/orders\/([^/]+)\//.exec(path) || [])[1], body = request.method === "POST" ? await request.json() : null;
     calls.push({ path, body });
     if (down.has(id)) return new Response(JSON.stringify({ ok: false, error: "the Desk is not answering" }), { status: 503 });
     if (/\/preview$/.test(path)) return new Response(JSON.stringify({ ok: true, hash: hashOf(id) }), { status: 200 });
     if (differs.has(id)) return new Response(JSON.stringify({ ok: false, differs: true, error: "the row has changed since the card drew it: look at it again before you accept" }), { status: 409 });
+    await O.deskMove(env, ownerOf[id], id, { status: "acknowledged", mode: "collect" });
     return new Response(JSON.stringify({ ok: true, approved: true }), { status: 200 });
   } };
   const call = async (path, body, identity = owner, method) => {
@@ -42,7 +44,7 @@ export async function maker({ ok, KV, skipOff }) {
 
   /* three join, short of the target of 6 by nothing: 2+2+2 is the target; then one fewer elsewhere for the under-target close */
   const ids = [];
-  for (const u of [U1, U2, "wxyz-2345"]) ids.push((await O.poolJoin(env, u, pid, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid(u[0] + "j") })).order.id);
+  for (const u of [U1, U2, "wxyz-2345"]) { const id = (await O.poolJoin(env, u, pid, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid(u[0] + "j") })).order.id; ids.push(id); ownerOf[id] = u; }
   const bad = await call("/all/maker/pools/" + pid + "/close", { force: true });
   ok(bad.status === 400 && calls.length === 0 && (await O.allPools(env))[0].state === "open", "Close takes an empty object and nothing else: " + JSON.stringify(bad.b));
 
@@ -72,7 +74,7 @@ export async function maker({ ok, KV, skipOff }) {
 
   /* a Desk that is down names the order and carries on; under the target it still closes and accepts */
   const p2 = (await call("/all/maker/pools", { product: "salt", q: 2, target: 40 })).b.pool.id, j2 = [];
-  for (const u of [U1, U2]) j2.push((await O.poolJoin(env, u, p2, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid(u[0] + "k") })).order.id);
+  for (const u of [U1, U2]) { const id = (await O.poolJoin(env, u, p2, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid(u[0] + "k") })).order.id; j2.push(id); ownerOf[id] = u; }
   calls.length = 0; down = new Set([j2[0]]);
   const short = await call("/all/maker/pools/" + p2 + "/close", {});
   ok(short.status === 200 && short.b.pool.state === "closed" && (await O.allPools(env)).find((p) => p.id === p2).unitsIn === 4 && short.b.accepted.join() === j2[1]
@@ -80,4 +82,14 @@ export async function maker({ ok, KV, skipOff }) {
     "closed at 4 of 40 units it still closes and accepts, a Desk that is down for one order names it and carries on: " + JSON.stringify([short.b.accepted, short.b.left]));
   const noPool = await call("/all/maker/pools/p20260101000000-aaaa/close", {});
   ok(noPool.status === 404 && noPool.b.code === "poolNone", "and a pool that is not there is refused in its own words");
+
+  /* a crash between the book's close and the note of what was left: the pool is closed with no closeLeft, and Close again takes every
+     joined order still at placed, not none */
+  const p3 = (await call("/all/maker/pools", { product: "salt", q: 2, target: 40 })).b.pool.id, j3 = [];
+  for (const u of [U1, U2]) { const id = (await O.poolJoin(env, u, p3, { q: 2, total: 90, unit: 45, digest: "d1", rid: rid(u[0] + "m") })).order.id; j3.push(id); ownerOf[id] = u; }
+  await O.poolClose(env, p3, {});
+  calls.length = 0; down = new Set(); differs = new Set();
+  const crashed = await call("/all/maker/pools/" + p3 + "/close", {});
+  ok(crashed.status === 200 && crashed.b.accepted.length === 2 && j3.every((id) => crashed.b.accepted.includes(id)) && calls.filter((c) => /accept$/.test(c.path)).length === 2,
+    "a Close after a crash between the close and the note, with nothing written as left, still accepts every joined order at placed: " + JSON.stringify([crashed.b.accepted, calls.length]));
 }

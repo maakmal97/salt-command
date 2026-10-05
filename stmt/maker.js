@@ -228,7 +228,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (first.error) return json({ ok: false, error: first.error, ...(first.code ? { code: first.code } : {}) }, first.status || 400);
       /* the first close answers every order still to acknowledge; a Close again only the ones it could not */
       const left = new Set(((first.pool && first.pool.closeLeft) || []).map((x) => x.id));
-      const todo = first.joined.filter((j) => j.status === "placed" && (first.closed || left.has(j.id)));
+      const todo = first.joined.filter((j) => j.status === "placed" && (first.closed || !left.size || left.has(j.id)));
       const accepted = [], failed = [];
       for (const j of todo) {
         try {
