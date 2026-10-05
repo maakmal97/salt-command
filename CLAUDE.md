@@ -41,41 +41,44 @@ a Cloudflare Access login, his decision of 05 Oct 2026; the Worker's own check s
      destination, `Stock cover` and the `Stock count:` line. New identifiers say `Units`, never
      kg. Copy is terse: noun-phrase headings, the number first. Dated records (the Journal,
      sealed issues) are never corrected in place.
-   - **COGS, purchase plus freight, is the line no price goes under; the floor is COGS plus
-     leakage**, one per size, with no delivery and no time in it. A sale carries `delivery`, typed per
+   - **COGS is the latest purchase: its quote plus its trip freight, over its units** (the
+     engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
+     **The floor is COGS times the size and nothing else**, one per size: no leak, no delivery, no
+     time. The leak is measured and printed beside the floor as information only (`afterLeak`, on a
+     book losing `RULES.leakInfoFrom` or more). A stated board is held between its floor and
+     `ceilingX` times it. A sale carries `delivery`, typed per
      row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
      typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
      delivery, the engine's `txOwed`**; nothing reads the total less the cash. **A trip of several
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
-   - **THE BOARD IS THE LADDER.** A stranger is quoted the LAST level, Silver: `pxPolicy.tierRule`
-     feeds `priceLadder`, which keeps the old figure as `derived`. **Row zero of `ladderRow` is the
-     ask and is load bearing** (phone, mirror and suite read `[0]`; the code stays `T2`, the name is
-     the level's); choose a row by code, never by index. Tier 1's stated ends and typed prices are
-     retired; `PRICE_SET` is cleared and the drafter refuses a new one; the one figure he sets at Accept,
-     on one order, is that row's total, which `PRICE_SET` never records.
-   - **Salt is Ambassador and four tiers** (Titanium, Platinum, Gold, Silver) from his
-     `salt-command pricing_v2.xlsx` (OneDrive, read-only; copy first): `TIER_RULE` and `TIER_NAMES`
-     in the master, `fiveTiers` in the engine. COGS is the supplier's QUOTE, not the landed cost.
-     **The engine's two guards stay over the sheet.** **A tier is salt's alone**: oil, candy and
-     rice are `fixed` boards, one price for everybody, and `tieredBooks` keeps the Tiers card,
-     Accept all and Add ID off them. **NRV is Titanium**, never the ask. A cheap book put on a
-     derived ladder inverts under the ten-rounding: check the rate law first.
-   - **Each customer holds a tier per product** (`TIER_OF`, folded as `tierset`, a null clearing
-     one), or a band set `{small, mid, big}` cut at 1 and 3 units. **The engine's `levelAt` is the
-     one place a size becomes a level**; `levelShapeOk` is the one shape check; a band left out
-     takes mid.
-   - **The profile prices only through the proposal's four rules** (`buyerProfile` against
-     `PROFILE_RULE`, then `ruleProposal` over `tierProposal`): a late payer (`lateOf`, the engine's
-     `payDelays` and `lateOffer`, from the handover across every book) takes no promotion and is only
-     OFFERED a level down on the Tiers card, never priced one; frequent and small, down from 3 units with nothing better below; loyal and buying bigger, up
-     from 3 units, never past Platinum; `slowdown`, every band up, never past Platinum, until the
-     next lot. **A HELD tier is never moved by a rule**, only offered one.
-   - **A customer's price is their tier, or the price he sets on one order when he acknowledges it, never
-     under the floor; the board is never repriced by it** (`total` on the preview and Accept, the site keeping
-     `asked`). What they paid before never lowers it (the cap retired
-     on his decision of 27 Sep 2026); only the floor lifts a card, to the first ten above. **A
-     product with no tier, held or proposed, is not priced.** One rule, the engine's `cardPrice`:
-     the price list, and the desk's `cardQuote`, which every quote to a named customer reads.
+   - **SALT IS THE SET PRICE AND EACH CUSTOMER'S DRIFT** (Model B, his decision of 05 Oct 2026). Per
+     size the floor, the ceiling (`ceilingX`, 3, times it) and the Set Price, the floor times
+     `setMultiple` (2.813 at half a unit to 1.363 at 12.5, in the log of size), down to the ten,
+     lifted, capped and walked under the rate law: the engine's `driftWalk` and `driftAt`. The Set
+     Price is what a stranger is quoted. **Row zero of `ladderRow` is the ask and is load bearing**
+     (phone, mirror and suite read `[0]`; the code stays `T2`); choose a row by code, never by index.
+     `PRICE_SET` is cleared and the drafter refuses a new one; the one figure he sets at Accept, on one
+     order, is that row's total, which `PRICE_SET` never records.
+   - **A customer's drift runs from -1 to +1**: up by d times the lesser of the room to the ceiling and
+     `drift.up` (0.3) of the floor, down by |d| times the lesser of the room to the floor and
+     `drift.down` (0.2) of it. **It is read off the record** (`driftOf`, the engine's `autoDrift` over
+     `driftSignals`: good from paying on time, frequency, volume and tenure; bad from `lateOf`, a
+     write-off and the oldest overdue), held within `auto.cap`, **so a late payer is priced up.** A drift
+     he sets on the Drift card or at Add ID wins; it is held in `TIER_OF` and folded as `tierset`, a
+     null handing them back to the record. No salt level is held or proposed.
+   - **The level machinery stays for a book that names one** (`fiveTiers` multiples, `TIER_NAMES`,
+     `levelAt`, `levelShapeOk`, `ruleProposal` over `tierProposal`, the guest and standing boards);
+     no live book does today, and the suite proves it on salt's last level rule (`levelWindow`,
+     `levelSnap`). **A tier or drift is salt's alone**: oil, candy and rice are `fixed` boards, one
+     price for everybody, and `tieredBooks` keeps the Drift card, Accept all and Add ID off them.
+     **NRV on a drift book is the lowest automatic drift**, never the ask. A cheap book put on a derived
+     ladder inverts under the ten-rounding: check the rate law first.
+   - **A customer's price is their drift's, or the price he sets on one order when he acknowledges it,
+     never under the floor; the board is never repriced by it** (`total` on the preview and Accept, the
+     site keeping `asked`). What they paid before never lowers it (the cap retired on his decision of
+     27 Sep 2026). **A product with no tier or drift is not priced.** One rule, the engine's `cardPrice`:
+     the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
+     reads the snapshot's `cards` on a drift book.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes

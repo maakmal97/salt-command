@@ -134,6 +134,18 @@ export function priceList(code, book, pricing, now, supply) {
        still coming. A fixed ladder says so on its own rows, so the signal travels with the data
        rather than being looked up a second time here. */
     const fixedBoard = (snap.ladder || []).some((r) => r && r.fixed);
+    /* 05 OCT 2026, HIS DECISION: A DRIFT BOOK (salt's Set Price and drift) IS PRICED FROM THE DESK'S OWN CARDS, the snapshot's
+       cardQuote for this customer at every size the board shows, which already carries their drift, the walk and the floor.
+       Nothing is worked out here, and no level travels: the list says card. A customer with no card on it is coming soon. */
+    if ((snap.ladder || []).some((r) => r && r.drift)) {
+      const mine = (snap.cards && snap.cards[code]) || [];
+      const rowsD = sizesHere.slice().sort((a, b) => a - b).map((q) => { const hit = mine.find((x) => Math.abs(x[0] - q) < 0.009);
+        return hit && isFinite(hit[1]) && hit[1] > 0 ? { q, price: +(+hit[1]).toFixed(2) } : null; }).filter(Boolean);
+      if (!rowsD.length) { out.soon.push({ product: p, name }); continue; }
+      out.products.push({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
+        basis: "card", tier: null, levels: null, sizes: rowsD });
+      continue;
+    }
     const t = fixedBoard ? 0 : names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
     if (t < 0) { out.soon.push({ product: p, name }); continue; }
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {

@@ -1,6 +1,6 @@
 {
- "v": "v1015",
- "stamped": "05 Oct 2026, 08:41 KL",
+ "v": "v1019",
+ "stamped": "05 Oct 2026, 09:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7040,129 +7040,10 @@
   },
   "TIER_OF": {
    "CS6-BS": {
-    "salt": "Titanium",
     "oil": "Platinum"
    },
-   "CK4-SEN": {
-    "salt": "Ambassador"
-   },
    "CZ5-TM": {
-    "salt": "Ambassador",
     "oil": "Titanium"
-   },
-   "CA6-CYB": {
-    "salt": "Ambassador"
-   },
-   "CJ2-KUC": {
-    "salt": "Gold"
-   },
-   "CJ4-BJ": {
-    "salt": "Platinum"
-   },
-   "CM4-MK": {
-    "salt": "Platinum"
-   },
-   "CS6-PER": {
-    "salt": "Titanium"
-   },
-   "CE4-CHE": {
-    "salt": "Titanium"
-   },
-   "CM4-TO": {
-    "salt": "Ambassador"
-   },
-   "CZ4-MK": {
-    "salt": "Titanium"
-   },
-   "CR3-DAM": {
-    "salt": "Titanium"
-   },
-   "CM6-HCM": {
-    "salt": "Silver"
-   },
-   "CA4-DAM": {
-    "salt": "Silver"
-   },
-   "CE4-AD": {
-    "salt": "Titanium"
-   },
-   "CR4-PJ": {
-    "salt": "Platinum"
-   },
-   "CM4-SK": {
-    "salt": "Platinum"
-   },
-   "CG5-SB": {
-    "salt": "Platinum"
-   },
-   "CY2-NIL": {
-    "salt": "Titanium"
-   },
-   "CI4-OKR": {
-    "salt": "Titanium"
-   },
-   "CA7-AMP": {
-    "salt": "Gold"
-   },
-   "CH4-KS": {
-    "salt": "Titanium"
-   },
-   "CH6-SET": {
-    "salt": "Platinum"
-   },
-   "CA5-BAN": {
-    "salt": "Platinum"
-   },
-   "CM6-PJ": {
-    "salt": "Titanium"
-   },
-   "CF5-WM": {
-    "salt": "Titanium"
-   },
-   "CZ6-WM": {
-    "salt": "Platinum"
-   },
-   "CA5-SEN": {
-    "salt": "Silver"
-   },
-   "CH4-MAL": {
-    "salt": "Platinum"
-   },
-   "CN5-TAI": {
-    "salt": "Titanium"
-   },
-   "CH5-KLC": {
-    "salt": "Silver"
-   },
-   "CA2-SEN": {
-    "salt": "Ambassador"
-   },
-   "CD4-CS": {
-    "salt": "Silver"
-   },
-   "CR3-PUD": {
-    "salt": "Platinum"
-   },
-   "CE5-SA": {
-    "salt": "Titanium"
-   },
-   "CD7-SEG": {
-    "salt": "Titanium"
-   },
-   "CB7-BJ": {
-    "salt": "Titanium"
-   },
-   "CS6-DAM": {
-    "salt": "Platinum"
-   },
-   "CC9-OKR": {
-    "salt": "Ambassador"
-   },
-   "CN3-WM": {
-    "salt": "Platinum"
-   },
-   "CJ4-OKR": {
-    "salt": "Ambassador"
    }
   },
   "AWARDS": {
@@ -7245,24 +7126,24 @@
   },
   "COST_RULE": {
    "oil": {
-    "kind": "landed",
-    "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
    "salt": {
-    "kind": "stack",
-    "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
    "candy": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
    "rice": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    },
    "spare": {
-    "kind": "stack",
-    "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+    "kind": "latestCogs",
+    "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
    }
   },
   "PRICE_SET": {
@@ -7301,7 +7182,7 @@
   ],
   "QUEUE_COMMITTED": "2026-10-04T23:58:40.348Z",
   "PRICING": {
-   "takenAt": "2026-10-05T00:41:54.176Z",
+   "takenAt": "2026-10-05T01:35:40.412Z",
    "sizes": [
     0.5,
     1,
@@ -7330,129 +7211,10 @@
    ],
    "tierOf": {
     "CS6-BS": {
-     "salt": "Titanium",
      "oil": "Platinum"
     },
-    "CJ4-BJ": {
-     "salt": "Platinum"
-    },
-    "CS6-PER": {
-     "salt": "Titanium"
-    },
-    "CM4-MK": {
-     "salt": "Platinum"
-    },
-    "CE4-CHE": {
-     "salt": "Titanium"
-    },
-    "CM4-TO": {
-     "salt": "Ambassador"
-    },
-    "CN3-WM": {
-     "salt": "Platinum"
-    },
-    "CR3-DAM": {
-     "salt": "Titanium"
-    },
-    "CZ4-MK": {
-     "salt": "Titanium"
-    },
-    "CK4-SEN": {
-     "salt": "Ambassador"
-    },
-    "CE4-AD": {
-     "salt": "Titanium"
-    },
-    "CM6-HCM": {
-     "salt": "Silver"
-    },
-    "CA4-DAM": {
-     "salt": "Silver"
-    },
-    "CC9-OKR": {
-     "salt": "Ambassador"
-    },
-    "CA2-SEN": {
-     "salt": "Ambassador"
-    },
-    "CH4-KS": {
-     "salt": "Titanium"
-    },
-    "CI4-OKR": {
-     "salt": "Titanium"
-    },
-    "CR4-PJ": {
-     "salt": "Platinum"
-    },
-    "CM4-SK": {
-     "salt": "Platinum"
-    },
-    "CJ2-KUC": {
-     "salt": "Gold"
-    },
-    "CM6-PJ": {
-     "salt": "Titanium"
-    },
-    "CG5-SB": {
-     "salt": "Platinum"
-    },
-    "CY2-NIL": {
-     "salt": "Titanium"
-    },
-    "CA7-AMP": {
-     "salt": "Gold"
-    },
-    "CH6-SET": {
-     "salt": "Platinum"
-    },
-    "CE5-SA": {
-     "salt": "Titanium"
-    },
-    "CA6-CYB": {
-     "salt": "Ambassador"
-    },
-    "CA5-BAN": {
-     "salt": "Platinum"
-    },
-    "CF5-WM": {
-     "salt": "Titanium"
-    },
     "CZ5-TM": {
-     "salt": "Ambassador",
      "oil": "Titanium"
-    },
-    "CZ6-WM": {
-     "salt": "Platinum"
-    },
-    "CH5-KLC": {
-     "salt": "Silver"
-    },
-    "CA5-SEN": {
-     "salt": "Silver"
-    },
-    "CJ4-OKR": {
-     "salt": "Ambassador"
-    },
-    "CH4-MAL": {
-     "salt": "Platinum"
-    },
-    "CN5-TAI": {
-     "salt": "Titanium"
-    },
-    "CD4-CS": {
-     "salt": "Silver"
-    },
-    "CR3-PUD": {
-     "salt": "Platinum"
-    },
-    "CD7-SEG": {
-     "salt": "Titanium"
-    },
-    "CB7-BJ": {
-     "salt": "Titanium"
-    },
-    "CS6-DAM": {
-     "salt": "Platinum"
     }
    },
    "profileOf": {
@@ -7463,6 +7225,7 @@
       "tenureDays": 85,
       "sinceLastDays": 9,
       "perMonth": 6.8,
+      "unitsPerMonth": 17.01,
       "smallShare": 0.47,
       "bigShare": 0.37,
       "frequent": true,
@@ -7477,6 +7240,7 @@
       "tenureDays": 60,
       "sinceLastDays": 19,
       "perMonth": 2.03,
+      "unitsPerMonth": 35.51,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7493,6 +7257,7 @@
       "tenureDays": 99,
       "sinceLastDays": 0,
       "perMonth": 2.15,
+      "unitsPerMonth": 14.97,
       "smallShare": 0.14,
       "bigShare": 0.86,
       "frequent": true,
@@ -7509,6 +7274,7 @@
       "tenureDays": 89,
       "sinceLastDays": 2,
       "perMonth": 3.42,
+      "unitsPerMonth": 13.68,
       "smallShare": 0.1,
       "bigShare": 0.5,
       "frequent": true,
@@ -7523,6 +7289,7 @@
       "tenureDays": 59,
       "sinceLastDays": 22,
       "perMonth": 1.03,
+      "unitsPerMonth": 10.32,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7537,6 +7304,7 @@
       "tenureDays": 2,
       "sinceLastDays": 2,
       "perMonth": 1.01,
+      "unitsPerMonth": 10.15,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7553,6 +7321,7 @@
       "tenureDays": 74,
       "sinceLastDays": 3,
       "perMonth": 4.94,
+      "unitsPerMonth": 13.45,
       "smallShare": 0,
       "bigShare": 0.42,
       "frequent": true,
@@ -7569,6 +7338,7 @@
       "tenureDays": 77,
       "sinceLastDays": 7,
       "perMonth": 4.35,
+      "unitsPerMonth": 12.16,
       "smallShare": 0,
       "bigShare": 0.18,
       "frequent": true,
@@ -7583,6 +7353,7 @@
       "tenureDays": 23,
       "sinceLastDays": 16,
       "perMonth": 2.03,
+      "unitsPerMonth": 15.22,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7599,6 +7370,7 @@
       "tenureDays": 51,
       "sinceLastDays": 12,
       "perMonth": 2.39,
+      "unitsPerMonth": 24.77,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7613,6 +7385,7 @@
       "tenureDays": 12,
       "sinceLastDays": 12,
       "perMonth": 1.01,
+      "unitsPerMonth": 10.15,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7629,6 +7402,7 @@
       "tenureDays": 63,
       "sinceLastDays": 16,
       "perMonth": 5.31,
+      "unitsPerMonth": 9.91,
       "smallShare": 0.55,
       "bigShare": 0.09,
       "frequent": true,
@@ -7645,6 +7419,7 @@
       "tenureDays": 98,
       "sinceLastDays": 5,
       "perMonth": 5.9,
+      "unitsPerMonth": 7.92,
       "smallShare": 0.79,
       "bigShare": 0.05,
       "frequent": true,
@@ -7661,6 +7436,7 @@
       "tenureDays": 67,
       "sinceLastDays": 14,
       "perMonth": 1.36,
+      "unitsPerMonth": 6.81,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7675,6 +7451,7 @@
       "tenureDays": 40,
       "sinceLastDays": 40,
       "perMonth": 0.76,
+      "unitsPerMonth": 7.61,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7689,6 +7466,7 @@
       "tenureDays": 14,
       "sinceLastDays": 11,
       "perMonth": 2.03,
+      "unitsPerMonth": 14.21,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7705,6 +7483,7 @@
       "tenureDays": 35,
       "sinceLastDays": 6,
       "perMonth": 3.48,
+      "unitsPerMonth": 21.53,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7719,6 +7498,7 @@
       "tenureDays": 5,
       "sinceLastDays": 5,
       "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -7735,6 +7515,7 @@
       "tenureDays": 69,
       "sinceLastDays": 8,
       "perMonth": 1.32,
+      "unitsPerMonth": 6.62,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7751,6 +7532,7 @@
       "tenureDays": 83,
       "sinceLastDays": 83,
       "perMonth": 0.37,
+      "unitsPerMonth": 4.58,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7767,6 +7549,7 @@
       "tenureDays": 85,
       "sinceLastDays": 42,
       "perMonth": 4.3,
+      "unitsPerMonth": 3.22,
       "smallShare": 0.92,
       "bigShare": 0,
       "frequent": true,
@@ -7783,6 +7566,7 @@
       "tenureDays": 88,
       "sinceLastDays": 4,
       "perMonth": 2.77,
+      "unitsPerMonth": 2.77,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -7797,6 +7581,7 @@
       "tenureDays": 11,
       "sinceLastDays": 4,
       "perMonth": 2.03,
+      "unitsPerMonth": 20.29,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": true,
@@ -7811,6 +7596,7 @@
       "tenureDays": 11,
       "sinceLastDays": 11,
       "perMonth": 1.01,
+      "unitsPerMonth": 4.06,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7827,6 +7613,7 @@
       "tenureDays": 49,
       "sinceLastDays": 10,
       "perMonth": 1.24,
+      "unitsPerMonth": 9.63,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7843,6 +7630,7 @@
       "tenureDays": 59,
       "sinceLastDays": 7,
       "perMonth": 1.55,
+      "unitsPerMonth": 4.64,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7859,6 +7647,7 @@
       "tenureDays": 76,
       "sinceLastDays": 3,
       "perMonth": 1.6,
+      "unitsPerMonth": 3.2,
       "smallShare": 0.25,
       "bigShare": 0.25,
       "frequent": false,
@@ -7875,6 +7664,7 @@
       "tenureDays": 75,
       "sinceLastDays": 75,
       "perMonth": 0.41,
+      "unitsPerMonth": 5.07,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7891,6 +7681,7 @@
       "tenureDays": 83,
       "sinceLastDays": 83,
       "perMonth": 0.37,
+      "unitsPerMonth": 4.58,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7907,6 +7698,7 @@
       "tenureDays": 13,
       "sinceLastDays": 13,
       "perMonth": 1.01,
+      "unitsPerMonth": 16.23,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -7923,6 +7715,7 @@
       "tenureDays": 45,
       "sinceLastDays": 4,
       "perMonth": 2.71,
+      "unitsPerMonth": 5.41,
       "smallShare": 0.5,
       "bigShare": 0.5,
       "frequent": true,
@@ -7939,6 +7732,7 @@
       "tenureDays": 101,
       "sinceLastDays": 96,
       "perMonth": 0.9,
+      "unitsPerMonth": 2.11,
       "smallShare": 0.33,
       "bigShare": 0.67,
       "frequent": false,
@@ -7955,6 +7749,7 @@
       "tenureDays": 55,
       "sinceLastDays": 40,
       "perMonth": 1.66,
+      "unitsPerMonth": 4.15,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -7971,6 +7766,7 @@
       "tenureDays": 35,
       "sinceLastDays": 35,
       "perMonth": 0.87,
+      "unitsPerMonth": 0.87,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -7985,6 +7781,7 @@
       "tenureDays": 35,
       "sinceLastDays": 27,
       "perMonth": 1.74,
+      "unitsPerMonth": 47.83,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -8001,6 +7798,7 @@
       "tenureDays": 76,
       "sinceLastDays": 2,
       "perMonth": 1.6,
+      "unitsPerMonth": 2.2,
       "smallShare": 0.5,
       "bigShare": 0,
       "frequent": false,
@@ -8017,6 +7815,7 @@
       "tenureDays": 29,
       "sinceLastDays": 0,
       "perMonth": 4.06,
+      "unitsPerMonth": 5.07,
       "smallShare": 0.75,
       "bigShare": 0,
       "frequent": true,
@@ -8031,6 +7830,7 @@
       "tenureDays": 7,
       "sinceLastDays": 0,
       "perMonth": 2.03,
+      "unitsPerMonth": 3.04,
       "smallShare": 0.5,
       "bigShare": 0,
       "frequent": true,
@@ -8047,6 +7847,7 @@
       "tenureDays": 12,
       "sinceLastDays": 3,
       "perMonth": 2.03,
+      "unitsPerMonth": 5.58,
       "smallShare": 0,
       "bigShare": 0.5,
       "frequent": true,
@@ -8063,6 +7864,7 @@
       "tenureDays": 69,
       "sinceLastDays": 23,
       "perMonth": 1.32,
+      "unitsPerMonth": 1.76,
       "smallShare": 0.67,
       "bigShare": 0,
       "frequent": false,
@@ -8079,6 +7881,7 @@
       "tenureDays": 33,
       "sinceLastDays": 16,
       "perMonth": 1.84,
+      "unitsPerMonth": 2.77,
       "smallShare": 0.5,
       "bigShare": 0,
       "frequent": false,
@@ -8095,6 +7898,7 @@
       "tenureDays": 16,
       "sinceLastDays": 3,
       "perMonth": 3.04,
+      "unitsPerMonth": 3.04,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": true,
@@ -8111,6 +7915,7 @@
       "tenureDays": 76,
       "sinceLastDays": 20,
       "perMonth": 1.2,
+      "unitsPerMonth": 1.2,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8127,6 +7932,7 @@
       "tenureDays": 80,
       "sinceLastDays": 30,
       "perMonth": 0.76,
+      "unitsPerMonth": 0.38,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8143,6 +7949,7 @@
       "tenureDays": 66,
       "sinceLastDays": 66,
       "perMonth": 0.46,
+      "unitsPerMonth": 1.15,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -8159,6 +7966,7 @@
       "tenureDays": 52,
       "sinceLastDays": 52,
       "perMonth": 0.59,
+      "unitsPerMonth": 0.59,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8173,6 +7981,7 @@
       "tenureDays": 52,
       "sinceLastDays": 17,
       "perMonth": 1.17,
+      "unitsPerMonth": 6.44,
       "smallShare": 0.5,
       "bigShare": 0.5,
       "frequent": false,
@@ -8189,6 +7998,7 @@
       "tenureDays": 95,
       "sinceLastDays": 95,
       "perMonth": 0.32,
+      "unitsPerMonth": 0.64,
       "smallShare": 0,
       "bigShare": 0,
       "frequent": false,
@@ -8205,6 +8015,7 @@
       "tenureDays": 72,
       "sinceLastDays": 72,
       "perMonth": 0.42,
+      "unitsPerMonth": 0.42,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8221,6 +8032,7 @@
       "tenureDays": 54,
       "sinceLastDays": 54,
       "perMonth": 0.56,
+      "unitsPerMonth": 0.56,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8237,6 +8049,7 @@
       "tenureDays": 39,
       "sinceLastDays": 39,
       "perMonth": 0.78,
+      "unitsPerMonth": 0.78,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8253,6 +8066,7 @@
       "tenureDays": 25,
       "sinceLastDays": 25,
       "perMonth": 1.01,
+      "unitsPerMonth": 1.01,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8269,6 +8083,7 @@
       "tenureDays": 17,
       "sinceLastDays": 17,
       "perMonth": 1.01,
+      "unitsPerMonth": 0.51,
       "smallShare": 1,
       "bigShare": 0,
       "frequent": false,
@@ -8294,43 +8109,43 @@
    "byProduct": {
     "salt": {
      "stockCost": 60,
-     "replCost": 57,
+     "replCost": 64,
      "floors": {
       "1": {
-       "floor": 69.09
+       "floor": 64
       },
       "2": {
-       "floor": 138.19
+       "floor": 128
       },
       "3": {
-       "floor": 207.28
+       "floor": 192
       },
       "4": {
-       "floor": 276.37
+       "floor": 256
       },
       "5": {
-       "floor": 345.47
+       "floor": 320
       },
       "0.5": {
-       "floor": 34.55
+       "floor": 32
       },
       "1.5": {
-       "floor": 103.64
+       "floor": 96
       },
       "2.5": {
-       "floor": 172.73
+       "floor": 160
       },
       "3.5": {
-       "floor": 241.83
+       "floor": 224
       },
       "4.5": {
-       "floor": 310.92
+       "floor": 288
       },
       "6.25": {
-       "floor": 431.84
+       "floor": 400
       },
       "12.5": {
-       "floor": 863.67
+       "floor": 800
       }
      },
      "inputs": {
@@ -8413,8 +8228,16 @@
         "to": "2026-10-03"
        },
        "costRule": {
-        "kind": "stack",
-        "note": "His instruction of 19 Sep 2026, stated so the two products differ deliberately rather than by one of them being absent. Salt takes the measured stack: replacement, freight, the leak and the delivery share. Nothing changes for salt; what changes is that the difference is now written down."
+        "kind": "latestCogs",
+        "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+       },
+       "latest": {
+        "rid": "p035",
+        "date": "2026-10-05",
+        "quote": 750,
+        "freight": 50,
+        "units": 12.5,
+        "rate": 64
        },
        "costBasis": {
         "freightPerTrip": {
@@ -8462,22 +8285,35 @@
        "stated": {},
        "tier1": null,
        "tierRule": {
-        "cogs": "quote",
-        "overhead": 0.5,
-        "multiples": [
-         2.1,
-         2.1,
-         2.5,
-         2.5
-        ],
-        "round": [
-         "down",
-         "up",
-         "down",
-         "up"
-        ],
-        "decay": 0.09,
-        "from": 0.5,
+        "drift": {
+         "up": 0.3,
+         "down": 0.2
+        },
+        "mS": 2.813,
+        "qS": 0.5,
+        "mB": 1.363,
+        "qB": 12.5,
+        "ceilingX": 3,
+        "auto": {
+         "wP": 0.35,
+         "wF": 0.25,
+         "wV": 0.2,
+         "wT": 0.2,
+         "minSettled": 3,
+         "perMonth": 4,
+         "unitsPerMonth": 10,
+         "orders": 12,
+         "staleDays": 60,
+         "overdueDays": 14,
+         "U": 0.5,
+         "D": 0.5,
+         "cap": 0.5
+        },
+        "presets": {
+         "Better": -0.3,
+         "Standard": 0,
+         "Higher": 0.3
+        },
         "rungs": [
          0.5,
          1,
@@ -8535,703 +8371,179 @@
       {
        "q": 0.5,
        "prices": [
-        50,
-        60,
-        70,
-        80,
+        40,
         90
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 1,
        "prices": [
-        90,
-        110,
-        120,
-        130,
-        140
+        70,
+        160
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 1.5,
        "prices": [
-        130,
-        160,
-        170,
-        190,
-        210
+        100,
+        220
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 2,
        "prices": [
-        170,
-        210,
-        220,
-        250,
-        270
+        130,
+        280
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 2.5,
        "prices": [
-        210,
-        260,
-        270,
-        310,
+        160,
         330
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 3,
        "prices": [
-        260,
-        310,
-        320,
-        370,
-        390
+        200,
+        380
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 3.5,
        "prices": [
-        300,
-        350,
-        360,
-        430,
-        440
+        230,
+        430
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 4,
        "prices": [
-        340,
-        390,
-        400,
-        480,
-        490
+        260,
+        480
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 4.5,
        "prices": [
-        380,
-        430,
-        440,
-        530,
-        540
+        290,
+        520
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 5,
        "prices": [
-        420,
-        470,
-        480,
-        580,
-        590
+        320,
+        560
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 6.25,
        "prices": [
-        530,
-        550,
-        560,
-        690,
-        700
+        400,
+        670
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       },
       {
        "q": 12.5,
        "prices": [
-        1050,
-        1060,
-        1070,
-        1080,
+        800,
         1090
        ],
-       "fixed": false
+       "fixed": false,
+       "drift": true
       }
      ],
      "cards": {
       "CS6-BS": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
-        2.5,
+        2,
         260
        ],
        [
-        3,
+        2.5,
         310
        ],
        [
+        3,
+        360
+       ],
+       [
         3.5,
-        350
+        400
        ],
        [
         4,
-        390
+        450
        ],
        [
         4.5,
-        430
+        490
        ],
        [
         5,
-        470
+        520
        ],
        [
         6.25,
-        550
+        630
        ],
        [
         12.5,
-        1060
+        1010
        ]
       ],
       "CJ4-BJ": [
        [
         0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
-      "CS6-PER": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CM4-MK": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
-      "CE4-CHE": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CM4-TO": [
-       [
-        0.5,
-        50
-       ],
-       [
-        1,
-        90
-       ],
-       [
-        1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
-        210
-       ],
-       [
-        3,
-        260
-       ],
-       [
-        3.5,
-        300
-       ],
-       [
-        4,
-        340
-       ],
-       [
-        4.5,
-        380
-       ],
-       [
-        5,
-        420
-       ],
-       [
-        6.25,
-        530
-       ],
-       [
-        12.5,
-        1050
-       ]
-      ],
-      "CN3-WM": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
-      "CR3-DAM": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CZ4-MK": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CK4-SEN": [
-       [
-        0.5,
-        50
-       ],
-       [
-        1,
-        90
-       ],
-       [
-        1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
-        210
-       ],
-       [
-        3,
-        260
-       ],
-       [
-        3.5,
-        300
-       ],
-       [
-        4,
-        340
-       ],
-       [
-        4.5,
-        380
-       ],
-       [
-        5,
-        420
-       ],
-       [
-        6.25,
-        530
-       ],
-       [
-        12.5,
-        1050
-       ]
-      ],
-      "CE4-AD": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
-      "CM6-HCM": [
-       [
-        0.5,
         90
        ],
        [
         1,
-        140
+        160
        ],
        [
         1.5,
-        210
+        220
        ],
        [
         2,
-        270
+        280
        ],
        [
         2.5,
@@ -9239,31 +8551,531 @@
        ],
        [
         3,
-        390
+        380
        ],
        [
         3.5,
-        440
+        430
        ],
        [
         4,
-        490
+        480
        ],
        [
         4.5,
-        540
+        520
        ],
        [
         5,
-        590
+        560
        ],
        [
         6.25,
-        700
+        680
+       ],
+       [
+        12.5,
+        1110
+       ]
+      ],
+      "CS6-PER": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        260
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        400
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        4.5,
+        490
+       ],
+       [
+        5,
+        530
+       ],
+       [
+        6.25,
+        630
+       ],
+       [
+        12.5,
+        1010
+       ]
+      ],
+      "CM4-MK": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        160
+       ],
+       [
+        1.5,
+        220
+       ],
+       [
+        2,
+        280
+       ],
+       [
+        2.5,
+        330
+       ],
+       [
+        3,
+        380
+       ],
+       [
+        3.5,
+        430
+       ],
+       [
+        4,
+        480
+       ],
+       [
+        4.5,
+        520
+       ],
+       [
+        5,
+        560
+       ],
+       [
+        6.25,
+        670
        ],
        [
         12.5,
         1090
+       ]
+      ],
+      "CE4-CHE": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        260
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        400
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        4.5,
+        490
+       ],
+       [
+        5,
+        520
+       ],
+       [
+        6.25,
+        630
+       ],
+       [
+        12.5,
+        1010
+       ]
+      ],
+      "CM4-TO": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        460
+       ],
+       [
+        4.5,
+        490
+       ],
+       [
+        5,
+        530
+       ],
+       [
+        6.25,
+        630
+       ],
+       [
+        12.5,
+        1020
+       ]
+      ],
+      "CN3-WM": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        160
+       ],
+       [
+        1.5,
+        230
+       ],
+       [
+        2,
+        290
+       ],
+       [
+        2.5,
+        350
+       ],
+       [
+        3,
+        400
+       ],
+       [
+        3.5,
+        460
+       ],
+       [
+        4,
+        510
+       ],
+       [
+        4.5,
+        560
+       ],
+       [
+        5,
+        600
+       ],
+       [
+        6.25,
+        730
+       ],
+       [
+        12.5,
+        1210
+       ]
+      ],
+      "CR3-DAM": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        160
+       ],
+       [
+        1.5,
+        220
+       ],
+       [
+        2,
+        280
+       ],
+       [
+        2.5,
+        330
+       ],
+       [
+        3,
+        380
+       ],
+       [
+        3.5,
+        430
+       ],
+       [
+        4,
+        480
+       ],
+       [
+        4.5,
+        530
+       ],
+       [
+        5,
+        570
+       ],
+       [
+        6.25,
+        680
+       ],
+       [
+        12.5,
+        1120
+       ]
+      ],
+      "CZ4-MK": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        460
+       ],
+       [
+        4.5,
+        500
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        640
+       ],
+       [
+        12.5,
+        1040
+       ]
+      ],
+      "CK4-SEN": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        260
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        450
+       ],
+       [
+        4.5,
+        490
+       ],
+       [
+        5,
+        530
+       ],
+       [
+        6.25,
+        630
+       ],
+       [
+        12.5,
+        1020
+       ]
+      ],
+      "CE4-AD": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        460
+       ],
+       [
+        4.5,
+        500
+       ],
+       [
+        5,
+        540
+       ],
+       [
+        6.25,
+        640
+       ],
+       [
+        12.5,
+        1040
+       ]
+      ],
+      "CM6-HCM": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        370
+       ],
+       [
+        3.5,
+        420
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        4.5,
+        510
+       ],
+       [
+        5,
+        550
+       ],
+       [
+        6.25,
+        660
+       ],
+       [
+        12.5,
+        1080
        ]
       ],
       "CA4-DAM": [
@@ -9273,293 +9085,293 @@
        ],
        [
         1,
-        140
+        160
        ],
        [
         1.5,
-        210
+        230
        ],
        [
         2,
-        270
+        290
        ],
        [
         2.5,
-        330
+        350
        ],
        [
         3,
-        390
+        400
        ],
        [
         3.5,
-        440
+        460
        ],
        [
         4,
-        490
+        510
        ],
        [
         4.5,
-        540
+        560
        ],
        [
         5,
-        590
+        600
        ],
        [
         6.25,
-        700
+        730
        ],
        [
         12.5,
-        1090
+        1210
        ]
       ],
       "CC9-OKR": [
        [
         0.5,
-        50
+        80
        ],
        [
         1,
-        90
+        150
        ],
        [
         1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
         3,
-        260
+        360
        ],
        [
         3.5,
-        300
+        410
        ],
        [
         4,
-        340
+        460
        ],
        [
         4.5,
-        380
+        500
        ],
        [
         5,
-        420
-       ],
-       [
-        6.25,
         530
        ],
        [
+        6.25,
+        640
+       ],
+       [
         12.5,
-        1050
+        1030
        ]
       ],
       "CA2-SEN": [
        [
         0.5,
-        50
+        80
        ],
        [
         1,
-        90
+        150
        ],
        [
         1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
         3,
-        260
+        370
        ],
        [
         3.5,
-        300
-       ],
-       [
-        4,
-        340
-       ],
-       [
-        4.5,
-        380
-       ],
-       [
-        5,
         420
        ],
        [
+        4,
+        470
+       ],
+       [
+        4.5,
+        510
+       ],
+       [
+        5,
+        550
+       ],
+       [
         6.25,
-        530
+        650
        ],
        [
         12.5,
-        1050
+        1060
        ]
       ],
       "CH4-KS": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        360
        ],
        [
         3.5,
-        350
+        410
        ],
        [
         4,
-        390
+        460
        ],
        [
         4.5,
-        430
+        500
        ],
        [
         5,
-        470
+        540
        ],
        [
         6.25,
-        550
+        640
        ],
        [
         12.5,
-        1060
+        1040
        ]
       ],
       "CI4-OKR": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        360
        ],
        [
         3.5,
-        350
+        410
        ],
        [
         4,
-        390
+        460
        ],
        [
         4.5,
-        430
+        500
        ],
        [
         5,
-        470
+        540
        ],
        [
         6.25,
-        550
+        640
        ],
        [
         12.5,
-        1060
+        1040
        ]
       ],
       "CR4-PJ": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        420
        ],
        [
         4,
-        400
+        470
        ],
        [
         4.5,
-        440
+        510
        ],
        [
         5,
-        480
+        550
        ],
        [
         6.25,
-        560
+        660
        ],
        [
         12.5,
@@ -9569,73 +9381,23 @@
       "CM4-SK": [
        [
         0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
-      "CJ2-KUC": [
-       [
-        0.5,
         80
        ],
        [
         1,
-        130
+        150
        ],
        [
         1.5,
-        190
+        210
        ],
        [
         2,
-        250
+        270
        ],
        [
         2.5,
-        310
+        320
        ],
        [
         3,
@@ -9643,177 +9405,227 @@
        ],
        [
         3.5,
-        430
+        420
        ],
        [
         4,
-        480
+        470
        ],
        [
         4.5,
-        530
+        510
        ],
        [
         5,
-        580
+        550
        ],
        [
         6.25,
-        690
+        660
        ],
        [
         12.5,
         1080
        ]
       ],
-      "CM6-PJ": [
+      "CJ2-KUC": [
        [
         0.5,
-        60
+        90
        ],
        [
         1,
-        110
-       ],
-       [
-        1.5,
         160
        ],
        [
+        1.5,
+        220
+       ],
+       [
         2,
-        210
+        280
        ],
        [
         2.5,
-        260
+        330
        ],
        [
         3,
-        310
+        380
        ],
        [
         3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
         430
        ],
        [
+        4,
+        480
+       ],
+       [
+        4.5,
+        520
+       ],
+       [
         5,
-        470
+        560
        ],
        [
         6.25,
-        550
+        670
        ],
        [
         12.5,
-        1060
+        1090
+       ]
+      ],
+      "CM6-PJ": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
+        3,
+        360
+       ],
+       [
+        3.5,
+        410
+       ],
+       [
+        4,
+        460
+       ],
+       [
+        4.5,
+        500
+       ],
+       [
+        5,
+        530
+       ],
+       [
+        6.25,
+        640
+       ],
+       [
+        12.5,
+        1030
        ]
       ],
       "CG5-SB": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        420
        ],
        [
         4,
-        400
+        470
        ],
        [
         4.5,
-        440
+        510
        ],
        [
         5,
-        480
+        550
        ],
        [
         6.25,
-        560
+        660
        ],
        [
         12.5,
-        1070
+        1080
        ]
       ],
       "CY2-NIL": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        360
        ],
        [
         3.5,
-        350
+        410
        ],
        [
         4,
-        390
+        460
        ],
        [
         4.5,
-        430
+        500
        ],
        [
         5,
-        470
+        540
        ],
        [
         6.25,
-        550
+        640
        ],
        [
         12.5,
-        1060
+        1040
        ]
       ],
       "CA7-AMP": [
@@ -9823,19 +9635,19 @@
        ],
        [
         1,
-        130
+        150
        ],
        [
         1.5,
-        190
+        210
        ],
        [
         2,
-        250
+        270
        ],
        [
         2.5,
-        310
+        320
        ],
        [
         3,
@@ -9843,373 +9655,373 @@
        ],
        [
         3.5,
-        430
+        420
        ],
        [
         4,
-        480
+        460
        ],
        [
         4.5,
-        530
+        500
        ],
        [
         5,
-        580
+        540
        ],
        [
         6.25,
-        690
+        650
        ],
        [
         12.5,
-        1080
+        1050
        ]
       ],
       "CH6-SET": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
-        3.5,
+        3,
         360
        ],
        [
+        3.5,
+        410
+       ],
+       [
         4,
-        400
+        460
        ],
        [
         4.5,
-        440
+        500
        ],
        [
         5,
-        480
+        540
        ],
        [
         6.25,
-        560
+        640
        ],
        [
         12.5,
-        1070
+        1040
        ]
       ],
       "CE5-SA": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
-        2.5,
-        260
+        2,
+        270
        ],
        [
-        3,
+        2.5,
         310
        ],
        [
+        3,
+        360
+       ],
+       [
         3.5,
-        350
+        410
        ],
        [
         4,
-        390
+        460
        ],
        [
         4.5,
-        430
+        490
        ],
        [
         5,
-        470
+        530
        ],
        [
         6.25,
+        640
+       ],
+       [
+        12.5,
+        1030
+       ]
+      ],
+      "CA6-CYB": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        370
+       ],
+       [
+        3.5,
+        420
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        4.5,
+        510
+       ],
+       [
+        5,
         550
+       ],
+       [
+        6.25,
+        650
        ],
        [
         12.5,
         1060
        ]
       ],
-      "CA6-CYB": [
-       [
-        0.5,
-        50
-       ],
-       [
-        1,
-        90
-       ],
-       [
-        1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
-        210
-       ],
-       [
-        3,
-        260
-       ],
-       [
-        3.5,
-        300
-       ],
-       [
-        4,
-        340
-       ],
-       [
-        4.5,
-        380
-       ],
-       [
-        5,
-        420
-       ],
-       [
-        6.25,
-        530
-       ],
-       [
-        12.5,
-        1050
-       ]
-      ],
       "CA5-BAN": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        410
        ],
        [
         4,
-        400
+        460
        ],
        [
         4.5,
-        440
+        500
        ],
        [
         5,
-        480
+        540
        ],
        [
         6.25,
-        560
+        640
+       ],
+       [
+        12.5,
+        1040
+       ]
+      ],
+      "CF5-WM": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        150
+       ],
+       [
+        1.5,
+        210
+       ],
+       [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
+        3,
+        370
+       ],
+       [
+        3.5,
+        420
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        4.5,
+        510
+       ],
+       [
+        5,
+        550
+       ],
+       [
+        6.25,
+        660
        ],
        [
         12.5,
         1070
        ]
       ],
-      "CF5-WM": [
-       [
-        0.5,
-        60
-       ],
-       [
-        1,
-        110
-       ],
-       [
-        1.5,
-        160
-       ],
-       [
-        2,
-        210
-       ],
-       [
-        2.5,
-        260
-       ],
-       [
-        3,
-        310
-       ],
-       [
-        3.5,
-        350
-       ],
-       [
-        4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
-        470
-       ],
-       [
-        6.25,
-        550
-       ],
-       [
-        12.5,
-        1060
-       ]
-      ],
       "CZ5-TM": [
        [
         0.5,
-        50
+        80
        ],
        [
         1,
-        90
+        150
        ],
        [
         1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
+        2.5,
+        310
+       ],
+       [
         3,
-        260
+        360
        ],
        [
         3.5,
-        300
+        410
        ],
        [
         4,
-        340
+        460
        ],
        [
         4.5,
-        380
+        500
        ],
        [
         5,
-        420
-       ],
-       [
-        6.25,
         530
        ],
        [
+        6.25,
+        640
+       ],
+       [
         12.5,
-        1050
+        1030
        ]
       ],
       "CZ6-WM": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        420
        ],
        [
         4,
-        400
+        470
        ],
        [
         4.5,
-        440
+        510
        ],
        [
         5,
-        480
+        550
        ],
        [
         6.25,
-        560
+        660
        ],
        [
         12.5,
@@ -10219,11 +10031,11 @@
       "CH5-KLC": [
        [
         0.5,
-        90
+        80
        ],
        [
         1,
-        140
+        150
        ],
        [
         1.5,
@@ -10235,45 +10047,45 @@
        ],
        [
         2.5,
-        330
+        320
        ],
        [
         3,
-        390
+        370
        ],
        [
         3.5,
-        440
+        420
        ],
        [
         4,
-        490
+        470
        ],
        [
         4.5,
-        540
+        510
        ],
        [
         5,
-        590
+        550
        ],
        [
         6.25,
-        700
+        660
        ],
        [
         12.5,
-        1090
+        1080
        ]
       ],
       "CA5-SEN": [
        [
         0.5,
-        90
+        80
        ],
        [
         1,
-        140
+        150
        ],
        [
         1.5,
@@ -10285,185 +10097,185 @@
        ],
        [
         2.5,
+        320
+       ],
+       [
+        3,
+        370
+       ],
+       [
+        3.5,
+        420
+       ],
+       [
+        4,
+        470
+       ],
+       [
+        4.5,
+        510
+       ],
+       [
+        5,
+        550
+       ],
+       [
+        6.25,
+        660
+       ],
+       [
+        12.5,
+        1080
+       ]
+      ],
+      "CJ4-OKR": [
+       [
+        0.5,
+        90
+       ],
+       [
+        1,
+        160
+       ],
+       [
+        1.5,
+        220
+       ],
+       [
+        2,
+        280
+       ],
+       [
+        2.5,
         330
        ],
        [
         3,
-        390
+        380
        ],
        [
         3.5,
-        440
+        430
        ],
        [
         4,
-        490
+        480
        ],
        [
         4.5,
-        540
+        520
        ],
        [
         5,
-        590
+        560
        ],
        [
         6.25,
-        700
+        670
        ],
        [
         12.5,
         1090
        ]
       ],
-      "CJ4-OKR": [
+      "CH4-MAL": [
        [
         0.5,
-        50
+        80
        ],
        [
         1,
-        90
+        150
        ],
        [
         1.5,
-        130
-       ],
-       [
-        2,
-        170
-       ],
-       [
-        2.5,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
+        2.5,
+        320
+       ],
+       [
         3,
-        260
+        370
        ],
        [
         3.5,
-        300
-       ],
-       [
-        4,
-        340
-       ],
-       [
-        4.5,
-        380
-       ],
-       [
-        5,
         420
        ],
        [
+        4,
+        460
+       ],
+       [
+        4.5,
+        500
+       ],
+       [
+        5,
+        540
+       ],
+       [
         6.25,
-        530
+        650
        ],
        [
         12.5,
         1050
        ]
       ],
-      "CH4-MAL": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        120
-       ],
-       [
-        1.5,
-        170
-       ],
-       [
-        2,
-        220
-       ],
-       [
-        2.5,
-        270
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        560
-       ],
-       [
-        12.5,
-        1070
-       ]
-      ],
       "CN5-TAI": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        370
        ],
        [
         3.5,
-        350
+        420
        ],
        [
         4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
         470
        ],
        [
-        6.25,
+        4.5,
+        510
+       ],
+       [
+        5,
         550
        ],
        [
+        6.25,
+        660
+       ],
+       [
         12.5,
-        1060
+        1080
        ]
       ],
       "CD4-CS": [
@@ -10473,269 +10285,269 @@
        ],
        [
         1,
-        140
+        160
        ],
        [
         1.5,
-        210
+        230
        ],
        [
         2,
-        270
+        290
        ],
        [
         2.5,
-        330
+        350
        ],
        [
         3,
-        390
+        400
        ],
        [
         3.5,
-        440
+        460
        ],
        [
         4,
-        490
+        510
        ],
        [
         4.5,
-        540
+        560
        ],
        [
         5,
-        590
+        600
        ],
        [
         6.25,
-        700
+        730
        ],
        [
         12.5,
-        1090
+        1210
        ]
       ],
       "CR3-PUD": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        420
        ],
        [
         4,
-        400
+        470
        ],
        [
         4.5,
-        440
+        510
        ],
        [
         5,
-        480
+        550
        ],
        [
         6.25,
-        560
+        660
        ],
        [
         12.5,
-        1070
+        1080
        ]
       ],
       "CD7-SEG": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        370
        ],
        [
         3.5,
-        350
+        420
        ],
        [
         4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
         470
        ],
        [
-        6.25,
+        4.5,
+        510
+       ],
+       [
+        5,
         550
        ],
        [
+        6.25,
+        660
+       ],
+       [
         12.5,
-        1060
+        1080
        ]
       ],
       "CB7-BJ": [
        [
         0.5,
-        60
+        80
        ],
        [
         1,
-        110
+        150
        ],
        [
         1.5,
-        160
-       ],
-       [
-        2,
         210
        ],
        [
+        2,
+        270
+       ],
+       [
         2.5,
-        260
+        320
        ],
        [
         3,
-        310
+        370
        ],
        [
         3.5,
-        350
+        420
        ],
        [
         4,
-        390
-       ],
-       [
-        4.5,
-        430
-       ],
-       [
-        5,
         470
        ],
        [
-        6.25,
+        4.5,
+        510
+       ],
+       [
+        5,
         550
        ],
        [
+        6.25,
+        660
+       ],
+       [
         12.5,
-        1060
+        1080
        ]
       ],
       "CS6-DAM": [
        [
         0.5,
-        70
+        80
        ],
        [
         1,
-        120
+        150
        ],
        [
         1.5,
-        170
+        210
        ],
        [
         2,
-        220
-       ],
-       [
-        2.5,
         270
        ],
        [
-        3,
+        2.5,
         320
        ],
        [
+        3,
+        370
+       ],
+       [
         3.5,
-        360
+        420
        ],
        [
         4,
-        400
+        470
        ],
        [
         4.5,
-        440
+        510
        ],
        [
         5,
-        480
+        550
        ],
        [
         6.25,
-        560
+        660
        ],
        [
         12.5,
-        1070
+        1080
        ]
       ]
      }
     },
     "oil": {
      "stockCost": 8,
-     "replCost": 7.68,
+     "replCost": 8,
      "floors": {
       "10": {
-       "floor": 78.65
+       "floor": 80
       },
       "20": {
-       "floor": 157.29
+       "floor": 160
       },
       "30": {
-       "floor": 235.94
+       "floor": 240
       },
       "40": {
-       "floor": 314.58
+       "floor": 320
       },
       "50": {
-       "floor": 393.23
+       "floor": 400
       }
      },
      "inputs": {
@@ -10818,8 +10630,16 @@
         "to": "2026-09-27"
        },
        "costRule": {
-        "kind": "landed",
-        "note": "His instruction of 19 Sep 2026: oil is mostly for his own use, so the leak is high by design and is NEVER costed into a sale. The floor is the landed cost, purchase plus freight, and nothing else. This replaces the buyPlusPct 15 placeholder of 09 Sep, whose own note said the 15 per cent stood in for freight and leak together; with the freight now in the floor directly, that percentage would have double counted it. The leak is still MEASURED and reported, because not pricing it in is a pricing decision and not a reason to stop counting."
+        "kind": "latestCogs",
+        "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+       },
+       "latest": {
+        "rid": "p030",
+        "date": "2026-09-24",
+        "quote": 400,
+        "freight": 0,
+        "units": 50,
+        "rate": 8
        },
        "costBasis": {
         "freightPerTrip": {
@@ -10880,7 +10700,8 @@
          30,
          40,
          50
-        ]
+        ],
+        "ceilingX": 2
        },
        "lastLevel": "Silver",
        "tiers": [
@@ -11860,22 +11681,22 @@
     },
     "candy": {
      "stockCost": 42,
-     "replCost": 39.33,
+     "replCost": 42,
      "floors": {
       "1": {
-       "floor": 40.64
+       "floor": 42
       },
       "5": {
-       "floor": 203.2
+       "floor": 210
       },
       "10": {
-       "floor": 406.4
+       "floor": 420
       },
       "20": {
-       "floor": 812.79
+       "floor": 840
       },
       "30": {
-       "floor": 1219.19
+       "floor": 1260
       }
      },
      "inputs": {
@@ -11918,8 +11739,16 @@
         "to": "2026-09-27"
        },
        "costRule": {
-        "kind": "stack",
-        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+        "kind": "latestCogs",
+        "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+       },
+       "latest": {
+        "rid": "p031",
+        "date": "2026-09-24",
+        "quote": 630,
+        "freight": 0,
+        "units": 15,
+        "rate": 42
        },
        "costBasis": {
         "freightPerTrip": {
@@ -11976,7 +11805,8 @@
          1,
          10,
          30
-        ]
+        ],
+        "ceilingX": 2
        },
        "lastLevel": "Silver",
        "tiers": [
@@ -12021,7 +11851,7 @@
       {
        "q": 1,
        "prices": [
-        41,
+        42,
         60
        ],
        "fixed": true
@@ -12029,7 +11859,7 @@
       {
        "q": 5,
        "prices": [
-        204,
+        210,
         300
        ],
        "fixed": true
@@ -12037,7 +11867,7 @@
       {
        "q": 10,
        "prices": [
-        407,
+        420,
         550
        ],
        "fixed": true
@@ -12045,7 +11875,7 @@
       {
        "q": 20,
        "prices": [
-        813,
+        840,
         1100
        ],
        "fixed": true
@@ -12053,7 +11883,7 @@
       {
        "q": 30,
        "prices": [
-        1220,
+        1260,
         1500
        ],
        "fixed": true
@@ -12966,16 +12796,16 @@
     },
     "rice": {
      "stockCost": 3.2,
-     "replCost": 3.2,
+     "replCost": 3.4,
      "floors": {
       "1": {
-       "floor": 6.31
+       "floor": 3.4
       },
       "5": {
-       "floor": 31.57
+       "floor": 17
       },
       "10": {
-       "floor": 63.14
+       "floor": 34
       }
      },
      "inputs": {
@@ -13018,8 +12848,16 @@
         "to": "2026-09-27"
        },
        "costRule": {
-        "kind": "stack",
-        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+        "kind": "latestCogs",
+        "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
+       },
+       "latest": {
+        "rid": "p028",
+        "date": "2026-09-21",
+        "quote": 320,
+        "freight": 20,
+        "units": 100,
+        "rate": 3.4
        },
        "costBasis": {
         "freightPerTrip": {
@@ -13076,7 +12914,8 @@
          1,
          5,
          10
-        ]
+        ],
+        "ceilingX": 2.5
        },
        "lastLevel": "Silver",
        "tiers": [
@@ -13102,7 +12941,7 @@
       {
        "q": 1,
        "prices": [
-        7,
+        4,
         8
        ],
        "fixed": true
@@ -13110,7 +12949,7 @@
       {
        "q": 5,
        "prices": [
-        32,
+        17,
         35
        ],
        "fixed": true
@@ -13118,8 +12957,8 @@
       {
        "q": 10,
        "prices": [
-        64,
-        64
+        34,
+        60
        ],
        "fixed": true
       }
@@ -13136,7 +12975,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CJ4-BJ": [
@@ -13150,7 +12989,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CS6-PER": [
@@ -13164,7 +13003,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CM4-MK": [
@@ -13178,7 +13017,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CE4-CHE": [
@@ -13192,7 +13031,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CM4-TO": [
@@ -13206,7 +13045,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CN3-WM": [
@@ -13220,7 +13059,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CR3-DAM": [
@@ -13234,7 +13073,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CZ4-MK": [
@@ -13248,7 +13087,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CK4-SEN": [
@@ -13262,7 +13101,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CE4-AD": [
@@ -13276,7 +13115,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CM6-HCM": [
@@ -13290,7 +13129,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA4-DAM": [
@@ -13304,7 +13143,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CC9-OKR": [
@@ -13318,7 +13157,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA2-SEN": [
@@ -13332,7 +13171,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CH4-KS": [
@@ -13346,7 +13185,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CI4-OKR": [
@@ -13360,7 +13199,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CR4-PJ": [
@@ -13374,7 +13213,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CM4-SK": [
@@ -13388,7 +13227,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CJ2-KUC": [
@@ -13402,7 +13241,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CM6-PJ": [
@@ -13416,7 +13255,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CG5-SB": [
@@ -13430,7 +13269,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CY2-NIL": [
@@ -13444,7 +13283,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA7-AMP": [
@@ -13458,7 +13297,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CH6-SET": [
@@ -13472,7 +13311,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CE5-SA": [
@@ -13486,7 +13325,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA6-CYB": [
@@ -13500,7 +13339,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA5-BAN": [
@@ -13514,7 +13353,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CF5-WM": [
@@ -13528,7 +13367,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CZ5-TM": [
@@ -13542,7 +13381,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CZ6-WM": [
@@ -13556,7 +13395,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CH5-KLC": [
@@ -13570,7 +13409,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CA5-SEN": [
@@ -13584,7 +13423,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CJ4-OKR": [
@@ -13598,7 +13437,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CH4-MAL": [
@@ -13612,7 +13451,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CN5-TAI": [
@@ -13626,7 +13465,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CD4-CS": [
@@ -13640,7 +13479,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CR3-PUD": [
@@ -13654,7 +13493,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CD7-SEG": [
@@ -13668,7 +13507,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CB7-BJ": [
@@ -13682,7 +13521,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ],
       "CS6-DAM": [
@@ -13696,7 +13535,7 @@
        ],
        [
         10,
-        64
+        60
        ]
       ]
      }
@@ -13763,9 +13602,10 @@
        "freightRate": 0,
        "leak": null,
        "costRule": {
-        "kind": "stack",
-        "note": "Stated deliberately, as salt's and oil's are, rather than left to the default. Change it when the book's own economics are known."
+        "kind": "latestCogs",
+        "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
+       "latest": null,
        "costBasis": {
         "freightPerTrip": {
          "rm": 0
@@ -13848,10 +13688,10 @@
      "cards": {}
     }
    },
-   "v": "v1015"
+   "v": "v1019"
   },
   "OPEN": {
-   "at": "2026-10-05T00:41:54.557Z",
+   "at": "2026-10-05T01:35:40.811Z",
    "count": 9,
    "byKey": {
     "CH5-KLC|2026-10-02|90": {
@@ -14063,7 +13903,7 @@
     "rice": "2026-09-27",
     "spare": null
    },
-   "v": "v1015"
+   "v": "v1019"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14071,7 +13911,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1015"
+   "v": "v1019"
   }
  }
 }

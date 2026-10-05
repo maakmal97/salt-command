@@ -623,8 +623,10 @@ function latestCogs(purchases,onOrBefore){
     if(!best||(d||'')>=(best.date||''))best={p:p,date:d};
   });
   if(!best)return null;
-  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0;
-  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+p.qty,rate:+((+p.total+fr)/+p.qty).toFixed(4)};
+  /* 05 Oct 2026 (review): a lot partly landed is costed over the units RECEIVED, the whole quote and freight on what is on the
+     shelf, so the floor never rests on goods still on the road; a lot with nothing received is not landed and is passed over */
+  const p=best.p, fr=Number.isFinite(+p.freight)?+p.freight:0, u=Math.min(+p.qty,poRecvUnits(p));
+  return {p:p,rid:p.rid||null,date:best.date,quote:+p.total,freight:fr,units:+u,rate:+((+p.total+fr)/u).toFixed(4)};
 }
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's

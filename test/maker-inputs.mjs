@@ -161,6 +161,15 @@ export async function run({ ok, KV } = {}) {
     "Tier input cannot forward prose or arbitrary tier maps.");
   const noRule = book(); delete noRule.pricing.byProduct.salt.inputs;
   check(!!tier({}, noRule).error, "Missing tier policy fails closed.");
+  /* 05 Oct 2026: on a drift book a customer's price is their drift, set on the desk; Add ID starts one on a drift */
+  const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: { up: 0.3, down: 0.2 } };
+  check(/drift/.test(tier({}, driftBook).error || "") && /drift/.test(tier({ tier: 0.3 }, driftBook).error || ""),
+    "On a drift book the tier input refuses a level and a drift alike: a drift is set on the desk.");
+  const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
+    vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
+  check(addDrift({ salt: -0.3 }).entry?.payload.tiers.salt === -0.3 && addDrift({ salt: -0.3 }).draft?.collection === "roster"
+    && /from -1 to \+1, never a level/.test(addDrift({ salt: "Gold" }).error || "") && /from -1 to \+1, never a level/.test(addDrift({ salt: 1.5 }).error || ""),
+    "Add ID on a drift book starts the customer on a drift from -1 to +1 and refuses a level or a drift past one.");
 
   const loan = makerLedgerInput("loan", { at, form: "salt", direction: "out", product: "salt",
     code: "CX1-ZED", date: "2026-10-01", amount: 2 }, book());

@@ -502,12 +502,12 @@ export function flagsFor(entry, row, book, priced) {
         so "the floor" now reads as one thing when it is two. */
   const fl = isSale ? floorFor(book, p, qty) : null;
   if (fl && isNum(total) && total < fl.floor - 0.005) {
-    /* v502: ONE FLOOR, and it is the goods after the leak. Delivery is a figure on the order,
+    /* v502: ONE FLOOR; since 05 Oct 2026 it is COGS times the size, no leak in it. Delivery is a figure on the order,
        taken out of the total before this comparison, and his time is not charged. */
     const at = fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`;
     const made = isNum(fl.time) && fl.time > 0
-      ? `the goods after the leak and RM ${round(fl.time)} for your time`
-      : "the goods after the leak";
+      ? `the goods at COGS, purchase plus freight off the latest lot, and RM ${round(fl.time)} for your time`
+      : "the goods at COGS, purchase plus freight off the latest lot";
     flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the floor of RM ${round(fl.floor)}${at}, which is what the order costs to take out: ${made}, with nothing above them.`);
   }
 
@@ -521,7 +521,7 @@ export function flagsFor(entry, row, book, priced) {
   /* v496: the row's cost is absolute; the unit figure is the engine's derivation, and the inventory's figure is already per unit. */
   const ownCost = isNum(row && row.cost) ? POSITION_ENGINE.txUnitCost(row, priced.cost) : (isNum(priced.cost) ? priced.cost : null);
   if (isSale && ownCost != null && rate != null && rate < ownCost) {
-    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the inventory"}: it loses money on every unit.`);
+    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : (priced && priced.basis ? ", COGS off the latest purchase" : " from the inventory")}: it loses money on every unit.`);
   }
 
   /* 5. A BLENDED SHELF. The cost given is an average and the row may in truth draw two lots. */
@@ -1105,11 +1105,13 @@ export function draftRow(entry, book) {
     const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
     if (pay.tiers != null) {
       const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
+      const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
       const ps = (typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? Object.keys(pay.tiers) : [];
       if (!ps.length) return { skip: "a starting tier names no product" };
       for (const p of ps) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        if (!names.includes(pay.tiers[p])) return { skip: `${pay.tiers[p]} is not a tier` };
+        /* 05 Oct 2026: a drift book starts on a drift he picks, -1 to +1; a level is refused there */
+        if (driftB(p) ? !PRICING_ENGINE.driftOk(pay.tiers[p]) : !names.includes(pay.tiers[p])) return { skip: driftB(p) ? `${pay.tiers[p]} is not a drift from -1 to +1` : `${pay.tiers[p]} is not a tier` };
       }
       if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no tier` };
     }
@@ -1219,7 +1221,8 @@ export function draftRow(entry, book) {
     const products = (book.state && book.state.PRODUCTS) || {};
     const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
     const name = (p) => (products[p] && products[p].name) || p;
-    const say = (v) => v == null ? "not set" : typeof v === "string" ? v
+    const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
+    const say = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
       : isObj(v) ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v);
     const row = { tiers: {} }, flags = [];
     for (const c of codes) {
@@ -1232,7 +1235,8 @@ export function draftRow(entry, book) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
         /* v670: a tier may be one level or a band set, a level for small, mid and big orders; the engine says which shapes price */
-        if (t !== null && !PRICING_ENGINE.levelShapeOk(t, names)) return { skip: `${say(t)} is not a tier` };
+        /* 05 Oct 2026: on a drift book what is held is a drift, -1 to +1, and a level is refused */
+        if (t !== null && (driftB(p) ? !PRICING_ENGINE.driftOk(t) : !PRICING_ENGINE.levelShapeOk(t, names))) return { skip: driftB(p) ? `${say(t)} is not a drift from -1 to +1` : `${say(t)} is not a tier` };
         row.tiers[c][p] = t;
         if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
@@ -1242,7 +1246,7 @@ export function draftRow(entry, book) {
       row,
       flags,
       reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + say(row.tiers[c][p])).join(" and ")).join(", ")}.`
-        + " It moves no cash and no stock, and until the quotes switch it moves no price.",
+        + " It moves no cash and no stock; a drift moves that customer's own price and never the board.",
     };
   }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and

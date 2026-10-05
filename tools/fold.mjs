@@ -54,7 +54,7 @@ import { execFileSync } from "node:child_process";
 import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as MASTER_DEFAULT } from "./booksync.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";   /* v670: the one shape check for a held tier, shared with the drafter */
 /* v670: a tier as words, one level or a band set spelled band by band, so a refusal or a plan line never reads [object Object] */
-const sayLevel = (v) => v == null ? "not set" : typeof v === "string" ? v
+const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
   : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -398,8 +398,8 @@ export function plan(book, staged, notes) {
       if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => !tierNames().includes(rt[p]));   // v645, per product since v646
-      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => rt[p]).join(" and ")} is not a tier` }); continue; }
+      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
@@ -446,10 +446,10 @@ export function plan(book, staged, notes) {
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
       /* v670: a tier may be a band set, so the check is the engine's shape rule rather than a name lookup */
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !PRICING_ENGINE.levelShapeOk(x[2], tierNames()));
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a drift, -1 to +1, on a drift book, held as a tier was; a level on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : `${bad.map((x) => sayLevel(x[2])).join(" and ")} is not a tier` });
+          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLevel(x[2]) + (driftBooks().includes(x[1]) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ") });
         continue;
       }
       entry.tiers = r.tiers;
@@ -498,6 +498,23 @@ function tierNames() {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
   const line = masterLines.find((l) => l.startsWith("const TIER_NAMES=["));
   return line ? (line.match(/'([^']+)'/g) || []).map((x) => x.slice(1, -1)) : [];
+}
+/* 05 Oct 2026: the books the master prices by drift, read off its own TIER_RULE (a product whose rule opens with drift), so
+   the fold refuses by book as the drafter does: a drift book takes a drift from -1 to +1 and no level, any other book a
+   level (or a band set) and no drift */
+function driftBooks() {
+  masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
+  const a = masterLines.findIndex((l) => l.startsWith("const TIER_RULE={"));
+  if (a < 0) return [];
+  const out = [];
+  for (let i = a + 1; i < masterLines.length && !/^\};/.test(masterLines[i]); i++) {
+    const m = /^\s+([a-z0-9_]+):\{drift:/.exec(masterLines[i]);
+    if (m) out.push(m[1]);
+  }
+  return out;
+}
+function tierOk(p, v) {
+  return driftBooks().includes(p) ? PRICING_ENGINE.driftOk(v) : PRICING_ENGINE.levelShapeOk(v, tierNames());
 }
 function pinnedInMaster(code) {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
@@ -933,7 +950,15 @@ export function apply(book, staged, notes, masterText) {
       /* v496: the shelf's figure is RM per unit; the order's cost is absolute, so it is the shelf times the order's units. */
       /* 24 Sep 2026: A PENDING ORDER ALSO GOES OUT BY A CORRECTION, which raises deliveredQty and moves no kg,
          and s183 and s196 went live that way with no cost, blanking the gross margin. Goods out is the test. */
-      if (it.dir !== "BUY" && (it.pay.kg > 0.009 || (+it.target.deliveredQty || 0) > 0.009) && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
+      /* 05 Oct 2026, HIS SETTLED RULE: A SALE IS COSTED AT COGS OFF THE LATEST PURCHASE, the engine's latestCogs over that
+         book's lots landed on or before the movement, as the drafter costs one; the shelf's rate stays for a gift or a
+         reward, and for salt where no lot has landed. */
+      if (it.dir !== "BUY" && (it.pay.kg > 0.009 || (+it.target.deliveredQty || 0) > 0.009) && it.target.cost == null) {
+        const gift = !!(it.target.goodwill || it.target.rebate);
+        const lc = gift ? null : E.latestCogs((book.purchases || []).filter((r) => prodOf(r) === prodOf(it.target)), (it.pay && it.pay.date) || it.target.date || null);
+        if (lc) it.target.cost = +(lc.rate * it.target.qty).toFixed(2);
+        else if (prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
+      }
       /* 05 Oct 2026: A COST THE CORRECTION SETS STANDS: the notes may not move it back to the shelf rate */
       if (n.cost != null && !(it.pay && it.pay.fields && it.pay.fields.cost != null)) it.target.cost = +n.cost;
       /* v496: the step was written inside applyAmend before either fill above, so a movement on a row the

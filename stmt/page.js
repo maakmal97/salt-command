@@ -1074,8 +1074,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "<h1>Guest links</h1>"
         + '<p class="lead">A link shows one board and nothing else: no statement, no '
         + "order, no account. The id in the link is what opens it, so it is the key.</p>"
-        + '<p class="lead">Name the customer introducing them and the prices follow that customer: '
-        + "two levels above theirs where there is room, and never past the board every stranger sees. "
+        + '<p class="lead">Name the customer introducing them and '
+        + "the prices follow that customer, never past the board every stranger sees. "
         + "Move that customer up and every link they gave out moves with them.</p>"
         + '<label class="lbl" for="gintro">Who is introducing them</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '

@@ -6,6 +6,38 @@
 
 ## Pricing (hard rule 5)
 
+- **COGS off the latest purchase, every book** (his settled rule of 05 Oct 2026, `COST_RULE` kind
+  `latestCogs`). `pxInputs` hands the stack the engine's `latestCogs` over the book's lots (the
+  latest landed by received date, the later in the list winning a day), and `costStack` prices
+  off its quote plus trip freight over its units, no freight typed reading nought: `lot`,
+  `freight`, `landed`, `eff` and `effEx` are that, and `floorTotal` is it times the size. The
+  leak is still measured; `afterLeak` carries the stack's after-leak figure, printed beside the
+  floor on Pricing where the book loses `RULES.leakInfoFrom` (a quarter) or more, oil and rice
+  today, and nothing prices off it. `replCost()` reads the same lot. A book with no landed lot
+  falls through to the older roads below with nothing added for the leak. A stated board
+  (`fixed`) is held between its floor and `ceilingX` times it, capped down to the book's grid:
+  oil and candy 2, rice 2.5. The fold costs a sale moving goods with no cost of its own at
+  `latestCogs` over that book's lots landed by the movement's day, as the drafter's `cogsFor`
+  does; a gift or reward keeps the shelf's rate. A lot partly landed is costed over the units
+  received (`poRecvUnits`), its whole quote and freight on what is on the shelf; a lot with nothing
+  received is not landed and is passed over (review of 05 Oct 2026). The bullets below describe the roads this
+  replaced, kept for a book with no rule.
+- **Salt is the Set Price and each customer's drift** (Model B, his decision of 05 Oct 2026).
+  `TIER_RULE.salt` carries `drift`, `mS`/`qS`, `mB`/`qB`, `ceilingX`, `auto` and `presets` and no
+  `multiples`, so `fiveTiers` answers it with `driftWalk`: each row's `prices` are the floor's ten
+  and the Set Price, flagged `drift`. `cardQuote` prices a named customer at `driftAt` with
+  `driftOf(code).d`: his figure in `TIER_OF` when he set one (a number, -1 to +1, folded as
+  `tierset`), else `autoDrift` over `driftSignals` (paid on time from three settlements, orders a
+  month over 4, units a month over 10, orders over 12 and nought after 60 days quiet; late a half,
+  long late, a write-off or 14 days overdue past `RULES.holdDays` all of it). The Drift card on
+  Customers replaces the Tiers card on a drift book; Add ID offers automatic (the default), Better
+  -0.3, Standard 0, Higher +0.3 or a typed drift. The 41 held salt levels were retired at the switch,
+  oil's two held entries kept. The snapshot carries each customer's quotes as `cards`, which the
+  price list reads (`basis: "card"`); a guest or standing link has no level to follow on a drift
+  book and quotes the Set Price. NRV reads `driftAt` at `-auto.cap`. The drafter, the fold and the
+  maker take a drift on salt and refuse a level there; the maker's tier input refuses salt
+  outright, a drift being his to set on the desk. The level bullets below stand for a book that
+  names levels; the suite proves them on salt's last level rule.
 - **The window is the last three lots** (rate and freight); **the leak is the drift of the
   last three counts** (`COUNTS` on the book, appended by every fold) over the units sold in
   those cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG`
