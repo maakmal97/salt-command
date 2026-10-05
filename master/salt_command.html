@@ -6462,10 +6462,11 @@ function vaultPendingOk(record,publicWord=()=>false){
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
-    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
+    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
+  const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const safe=(v,key)=>{
     if(v===null||typeof v==='boolean')return true;
     if(typeof v==='number')return Number.isFinite(v);
@@ -6474,13 +6475,14 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v);
+    if(key==='hide')return house&&Array.isArray(v)&&v.length<=50&&v.every(n=>typeof n==='number'&&Number.isFinite(n)&&n>0);
     if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
       ||i===2&&typeof n==='string'&&publicWord(n));
     return object(v)&&Object.entries(v).every(([k,n])=>
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
@@ -9225,7 +9227,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1020","d":"05 Oct 2026","t":"AUTOMATIC OFFSETS FROM THE COUNTER (A2)","n":["<b>A2.</b> Counter Maker lists what the Desk's automatic offset would propose, one unit of an associate's reward against their oldest unpaid order, and one owner tap queues each as the entry the Desk builds; a departed or banned holder, or a row with a correction or refusal already on it, is never offered, a row is held to what it can still take, money already on its way counted, and two taps on one row queue once. <code>offsetFor</code> moved into the engine, so the desk and the Worker share it, and the mirror now carries the reward scheme as <code>REWARD</code>: until now the Worker refused every reward spend as unconfigured. Nothing prices."]}];
+const evolution=[{"v":"v1021","d":"05 Oct 2026","t":"COUNTER MAKER SETS THE PRINTED BOARD SIZES (A6)","n":["<b>A6.</b> Counter Admin gains Printed board sizes, <code>inputs/house-sizes</code>: the sizes the board prints, queued as the one entry the Desk's <code>shQueueHouse</code> queues (a hide list, <code>prices</code> empty, <code>clearing</code>). It is a print setting and never a price: the body takes only a timestamp, a book and the sizes to hide, the entry carries no price figure, and the drafter refuses one. The rungs offered are the Desk's own <code>shSizes</code>, which the pricing snapshot now carries as <code>rungs</code>; hiding every size is refused. Ticking the sizes again after a send makes a new request. The engine's record check accepts a <code>hide</code> list on this path alone. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9374,7 +9376,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 10:07 KL';
+const LAST_UPDATED='05 Oct 2026, 11:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1007,6 +1007,7 @@ export const OWNER_JS = `
       },function(error){
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         if(error.status===400&&path==='/all/maker/inputs/tier-accept-all'){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
           pending=null;
@@ -1697,6 +1698,41 @@ export const OWNER_JS = `
           allPending=false;
         },false);
       }
+      /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
+      var houseSection=el('section','maker-input');
+      houseSection.appendChild(el('h3',null,'Printed board sizes'));
+      houseSection.appendChild(el('p','msg','Tick the sizes the board prints. This sets no price: the ladder sets the ask at every size.'));
+      var houseBooks=(catalog.products||[]).filter(function(item){ return catalog.houseBoards&&catalog.houseBoards[item.product]&&catalog.houseBoards[item.product].sizes.length>1; });
+      if(!houseBooks.length){
+        houseSection.appendChild(el('p','msg','No board has sizes to choose between.'));
+      }else{
+        var houseProduct=el('select','fld salt-field__input'), houseBoxes=el('div','maker-field');
+        houseBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; houseProduct.appendChild(option); });
+        var houseWrap=el('label','maker-field','Book'); houseWrap.appendChild(houseProduct); houseSection.appendChild(houseWrap);
+        houseSection.appendChild(houseBoxes);
+        var houseTicks=[];
+        function fillHouse(){
+          var board=catalog.houseBoards[houseProduct.value]; houseBoxes.textContent=''; houseTicks=[];
+          board.sizes.forEach(function(size){
+            var label=el('label','maker-field'), tick=el('input'); tick.type='checkbox';
+            tick.checked=board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; }); tick.value=String(size);
+            label.appendChild(tick); label.appendChild(el('span','lbl',' '+size+' unit')); houseBoxes.appendChild(label); houseTicks.push(tick);
+          });
+        }
+        houseProduct.addEventListener('change',fillHouse); fillHouse();
+        var houseAnswer=el('p','msg'); houseAnswer.setAttribute('role','status'); houseSection.appendChild(houseAnswer);
+        var housePending=false, houseAt=null, houseSignature='';
+        makerButton(houseSection,'Send board sizes for review',async function(send){
+          if(housePending) return;
+          var body={product:houseProduct.value,hide:houseTicks.filter(function(t){ return !t.checked; }).map(function(t){ return Number(t.value); })};
+          var check=JSON.stringify(body); if(check!==houseSignature){ houseSignature=check; houseAt=new Date().toISOString(); }
+          body.at=houseAt; housePending=true;
+          try{ await send('/all/maker/inputs/house-sizes',body); houseAt=null; houseSignature=''; houseAnswer.textContent='Sent for review. The board prints these sizes once folded; no price moves.'; loadMaker(); }
+          catch(error){ houseAnswer.textContent=error.message; }
+          housePending=false;
+        },true);
+      }
+      box.appendChild(houseSection);
       makerOtherInputs(box,catalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
       makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }

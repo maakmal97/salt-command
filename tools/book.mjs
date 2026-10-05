@@ -267,7 +267,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -284,6 +284,8 @@ export function pricingSnapshot(w) {
          carded fallback for a 30 unit oil order read the 12.5 floor. recompute() has just rebuilt
          PRICE_TIERS for this product; read it now, and carry it so the price list can too. */
       sizesHere = call("PRICE_TIERS && PRICE_TIERS.sizes") || sizes;
+      /* A6: the rungs the desk's own board table lists (shSizes: the book's sizes cut to boardBy), hidden ones included, for Maker's printed-sizes input */
+      rungs = call("typeof shSizes==='function'?shSizes():null");
       /* v651: Ambassador and the tiers at this book's rungs, the prices the customer's page quotes from */
       /* 19 Sep 2026: `fixed` TRAVELS WITH THE ROW. A product priced by a stated board says so on its
          own ladder rows, and this map dropped the flag, so the customer's price list could not tell a
@@ -300,7 +302,7 @@ export function pricingSnapshot(w) {
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, ladder, cards };
+    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards };
   }
 
   return {

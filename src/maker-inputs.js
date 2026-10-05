@@ -116,6 +116,8 @@ export function makerInputCatalog(book) {
     associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
+    houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
+      hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !["note", "orderCode", "settle"].includes(field))
@@ -263,6 +265,39 @@ export function makerTierAcceptAll(body, book, queued) {
   return proposed(POSITION_ENGINE.tierSetEntry({ at: body.at, tiers,
     raw: codes.length === 1 ? "Set " + codes[0] + ": " + say(tiers[codes[0]])
       : "Set " + codes.length + " customers from their proposals: " + codes.map((c) => c + " " + say(tiers[c])).join("; ") }), book);
+}
+
+/* A6: the sizes the printed board shows. The Desk's shQueueHouse queues the sizes he unticks as a hide list and no price:
+   this is that entry, over the rungs the snapshot carries (sizes now on the board plus those already hidden). A price is
+   never an input here, and the entry's own prices stay empty. */
+export function houseRungs(book, product) {
+  const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
+  const hidden = book.state.PRICE_SET && book.state.PRICE_SET[product] && book.state.PRICE_SET[product].hide;
+  /* the Desk's shSizes travels in the snapshot as `rungs`; a snapshot from before it falls back to the sizes on the board */
+  const base = snap && Array.isArray(snap.rungs) ? snap.rungs : snap && Array.isArray(snap.sizes) ? snap.sizes : [];
+  const all = [].concat(base, snap && Array.isArray(snap.rungs) || !Array.isArray(hidden) ? [] : hidden)
+    .filter((n) => typeof n === "number" && Number.isFinite(n) && n > 0).sort((a, b) => a - b);
+  return all.filter((n, i) => !i || n - all[i - 1] > 0.009);
+}
+export function makerHouseSizes(body, book) {
+  if (!exact(body, ["at", "product", "hide"])) return { error: "Printed sizes carry only a timestamp, a book and the sizes to hide; a price is never an input." };
+  if (!timestamp(body.at)) return { error: "A board input needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!active(body.product, book)) return { error: "Choose an active book." };
+  if (!Array.isArray(body.hide) || body.hide.length > 50 || !body.hide.every((n) => typeof n === "number" && Number.isFinite(n) && n > 0))
+    return { error: "Choose the sizes to hide from the board." };
+  const rungs = houseRungs(book, body.product), hide = [];
+  for (const n of body.hide) {
+    const rung = rungs.find((r) => Math.abs(r - n) < 0.009);
+    if (rung === undefined) return { error: "A size to hide must be one of this book's board sizes." };
+    if (!hide.includes(rung)) hide.push(rung);
+  }
+  hide.sort((a, b) => a - b);
+  if (hide.length >= rungs.length) return { error: "Every size is unticked, so there is no board to make." };
+  const say = (n) => Number(n).toLocaleString("en-MY", { maximumFractionDigits: 2 }) + " unit";
+  return proposed({ at: body.at, type: "PRICE", party: null, qty: null, total: null, status: "price",
+    raw: "Board sizes on " + body.product + ": " + (hide.length ? "hiding " + hide.map(say).join(", ") : "every size printed"),
+    payload: { mode: "price", product: body.product, prices: {}, hide, clearing: true } }, book);
 }
 
 const safeGeo = (value) => {
