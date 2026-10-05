@@ -148,7 +148,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .osheet .salt-sheet__close{margin-left:auto}
 .osheet .salt-sheet__body > * + *{margin-top:18px}
 .osheet .salt-options__grid .salt-ghost,.osheet .ofull{width:100%}
-/* New order stands where the order form's pane stood, so it keeps the pane's gap to the Notifications card under it */
+/* New order stands where the order form's pane stood, and keeps the pane's gap to what follows it */
 #oNew{margin-bottom:14px}
 .ototal{flex:1 1 0;min-width:0}
 .ototal .salt-kpi__value{margin-top:0}
@@ -377,7 +377,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    list, one filled Pay, the thread on Bubble and thread, what happened on Plan, folded. The look is the
    recipes'; this block lays them out and nothing else. On a phone the open order is the whole tab; from 1080px
    the list stands beside it with its messages in view, wider than the reading column. */
-/* S7-R3 of the review: what stood above the orders (the lead, New order or the limit, Notifications, the Pay page) is the
+/* S7-R3 of the review: what stood above the orders (the lead, New order or the limit, the Pay page) is the
    head of the list's column, so from 1080px the open order stands level with it at the top of the place */
 .otop{margin:0 0 18px}
 .olab{margin:18px 0 8px}

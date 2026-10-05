@@ -14649,7 +14649,6 @@ function tabLedger(){
   </div>`;
   return `<h1>Ledger</h1>
   <div class="dsc dsclead">Every transaction the desk holds, latest first, with the trail of what moved when.</div>
-  <h2>Transactions ledger <span class="rule"></span></h2>
   <div class="note">One line per order, <b>Opened &rarr; steps &rarr; Closed</b>, figures only; the notes stay on each row in the book. The last seven days show first and the rest fold below them. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
   ${toolbar}
   ${ledSumBar(shownTx,total)}
@@ -24870,6 +24869,10 @@ function stripMethod(el){
 }
 function renderPart(tab,el,snap){
   el.innerHTML=builders[tab]();
+  /* D10: where the parts strip already names this part, its h1 says it to a screen reader alone, so the pill and a
+     heading do not say the same word twice; the h1 stays in the page as its one heading */
+  const pill=el.parentNode&&el.parentNode.querySelector(`.vnav .vpill[data-s="${tab}"]`),h1=el.querySelector('h1');
+  if(pill&&h1&&h1.textContent.trim().toLowerCase()===pill.textContent.trim().toLowerCase())h1.classList.add('sr-only');
   if(tab==='add'){
     wireWorkbench();
     if(snap){Object.keys(snap).forEach(id=>{const e=document.getElementById(id);if(!e)return;
