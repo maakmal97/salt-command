@@ -1910,6 +1910,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const out = { ok: true, at: now(), considered: 0, drafted: 0, raced: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
+    /* A5: a hush Counter Maker queued is a record the Desk reads, never a row: not drafted, not refused */
+    if (entry.makerRequest && entry.payload && entry.payload.mode === "obs") { out.hushes = (out.hushes || 0) + 1; continue; }
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }

@@ -116,6 +116,8 @@ export function makerInputCatalog(book) {
     associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
+    tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
+      .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !["note", "orderCode", "settle"].includes(field))
@@ -205,6 +207,22 @@ export function makerTierAcceptAll(body, book, queued) {
   return proposed(POSITION_ENGINE.tierSetEntry({ at: body.at, tiers,
     raw: codes.length === 1 ? "Set " + codes[0] + ": " + say(tiers[codes[0]])
       : "Set " + codes.length + " customers from their proposals: " + codes.map((c) => c + " " + say(tiers[c])).join("; ") }), book);
+}
+
+/** The Whiteboard's hush, over the snapshot's tips (the desk's own observations): a date snoozes it to then, null dismisses it. Moves no figure. */
+export function makerHush(body, book) {
+  if (!exact(body, ["at", "id", "until"]) || typeof body.id !== "string" || body.until === undefined)
+    return { error: "Hushing carries a tip, its request timestamp and a date or null." };
+  if (!timestamp(body.at)) return { error: "A hush needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!((book.pricing && book.pricing.obs) || []).some((tip) => tip && tip.id === body.id))
+    return { error: "Choose a tip the Desk is showing." };
+  if (body.until !== null) {
+    const today = new Date(Date.parse(body.at) + 8 * 3600000).toISOString().slice(0, 10);   // MYT, from the request, so a retry reads the same
+    if (!date(body.until) || body.until <= today || body.until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10))
+      return { error: "A snooze ends after today and within a year." };
+  }
+  return { entry: POSITION_ENGINE.obsEntry({ at: body.at, id: body.id, act: body.until === null ? "dismiss" : "snooze", until: body.until }) };
 }
 
 const safeGeo = (value) => {
