@@ -50,6 +50,9 @@ export async function run({ ok }) {
     && !!add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: "Silver" } }).error
     && !add({ kind: "reseller", tiers: { salt: "Silver" } }).error,
     "only a customer or an associate takes a starting tier");
+  ok(/holds a starting tier/.test(add({ kind: "supplier", tiers: { salt: "Silver" } }).error)
+    && /holds a starting tier/.test(add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: "Silver" } }).error),
+    "a tier on a supplier or downstream is an input error naming the rule, not a drafter skip");
 
   /* owner auth: the typed route forwards for the verified owner and for no one else */
   const key = "maker-addid-tiers-capability-0001", calls = [];
