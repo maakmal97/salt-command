@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1020",
+  "d": "05 Oct 2026",
+  "t": "AUTOMATIC OFFSETS FROM THE COUNTER (A2)",
+  "n": [
+   "<b>A2.</b> Counter Maker lists what the Desk's automatic offset would propose, one unit of an associate's reward against their oldest unpaid order, and one owner tap queues each as the entry the Desk builds; a departed or banned holder, or a row with a correction or refusal already on it, is never offered, a row is held to what it can still take, money already on its way counted, and two taps on one row queue once. <code>offsetFor</code> moved into the engine, so the desk and the Worker share it, and the mirror now carries the reward scheme as <code>REWARD</code>: until now the Worker refused every reward spend as unconfigured. Nothing prices."
+  ]
+ },
+ {
   "v": "v1019",
   "d": "05 Oct 2026",
   "t": "COGS OFF THE LATEST PURCHASE; SALT IS THE SET PRICE MOVED BY EACH CUSTOMER'S DRIFT",

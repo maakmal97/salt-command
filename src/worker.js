@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom } from "./maker-inputs.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
@@ -330,7 +330,27 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
   return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
 }
 
-async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
+/* the three lists the Desk's own `offered` check reads, read the way it reads them: the queue, the pending drafts, every
+   refusal (Counter Maker A2). A row with a correction on its way is not offered an offset. */
+async function offsetHeld(env) {
+  const parse = (rows) => (rows.results || []).map((row) => { try { return JSON.parse(row.entry); } catch (e) { return null; } }).filter(Boolean);
+  const queued = (await (await handleQueueGet(env, true)).json()).queue || [];
+  const pending = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE status='pending'").all();
+  const refused = await env.SALT_LEDGER.prepare("SELECT entry FROM refused").all();
+  return { queued, pending: parse(pending), refused: parse(refused) };
+}
+/* a lock on one row's offset, in the shared receipt table: taken before the held lists are read, let go after the draft exists.
+   A lock older than a minute is a crashed request's and is taken over. */
+async function offsetLock(db, rid) {
+  const id = "offset-lock:" + rid, now = Date.now();
+  await db.prepare("DELETE FROM maker_request WHERE id=?1 AND operation='offset-lock' AND CAST(entry AS INTEGER) < ?2").bind(id, now - 60000).run();
+  const taken = await db.prepare("INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry) VALUES (?1,'offset-lock','lock',?2)").bind(id, String(now)).run();
+  return taken.meta.changes === 1;
+}
+async function offsetUnlock(db, rid) {
+  await db.prepare("DELETE FROM maker_request WHERE id=?1 AND operation='offset-lock'").bind("offset-lock:" + rid).run();
+}
+async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, offsetLocked = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
@@ -343,6 +363,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
+    && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset"
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
@@ -417,6 +438,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
       : await bulletinRelay(env, "POST", { lines: body.lines, mode: "run" });
     return json(result, result.ok ? 200 : (result.status || 502));
   }
+  if (p === "/_internal/maker/inputs/offset" && m === "POST" && !offsetLocked && env.SALT_LEDGER) {
+    /* one offset a row at a time, the held lists read after the lock is taken: two taps under different request ids cannot both queue */
+    const retained = request.clone();
+    let rid = null;
+    try { rid = (await request.clone().json()).rid; } catch (e) { rid = null; }
+    if (typeof rid === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(rid)) {
+      if (!await offsetLock(env.SALT_LEDGER, rid))
+        return json({ ok: false, error: "Another offset on this row is being recorded. Retry in a moment." }, 409);
+      try { return await handleInternalMaker(retained, env, ctx, p, m, gateHeld, true); }
+      finally { await offsetUnlock(env.SALT_LEDGER, rid); }
+    }
+  }
   if (!gateHeld && m === "POST" && /^\/_internal\/maker\/inputs\/(add-id|amend-id|place)$/.test(p))
     return vaultWriteResponse(env, () => handleInternalMaker(request, env, ctx, p, m, true));
   if (p === "/_internal/maker/vault/pair") {
@@ -455,6 +488,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
       catalog: makerInputCatalog(book) });
   }
+  if (p === "/_internal/maker/offsets") {
+    /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue and mirror are required" }, 503);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    let held;
+    try { held = await offsetHeld(env); }
+    catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
+    const listed = makerOffsetOffers(book, held);
+    return listed.error ? json({ ok: false, error: listed.error }, 503) : json({ ok: true, version: book.version, offers: listed.offers });
+  }
   if (p === "/_internal/maker/drafts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return handleDraftsGet(env, new URL(request.url));
@@ -481,7 +526,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
     return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
   }
-  if (/^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
+  if (p === "/_internal/maker/inputs/offset"
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -510,10 +556,16 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
     const waitingTiers = operation !== "tier-accept-all" ? [] : (await (await handleQueueGet(env, true)).json()).queue.concat(
       ((await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all()).results || [])
         .map((row) => JSON.parse(row.entry)));
+    let held = null;
+    if (operation === "offset") {
+      try { held = await offsetHeld(env); }
+      catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
+    }
     const built = operation === "stock-count" ? makerStockCount(body)
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "tier-set" ? makerTierSet(body, book)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
+          : operation === "offset" ? makerOffset(body, book, held)
           : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
           : makerLedgerInput(operation, body, book);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
@@ -551,7 +603,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false) {
       return json({ ok: false, error: "File the encrypted vault on this device before adding the ID." }, 400);
     const proposed = draftRow(entry, book);
     if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
-    if (operation === "ledger-amend") {
+    if (operation === "ledger-amend" || operation === "offset") {
       const roomFault = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
       if (roomFault) return json({ ok: false, error: roomFault }, 409);
     }

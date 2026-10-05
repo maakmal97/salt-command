@@ -145,6 +145,63 @@ export function makerInputCatalog(book) {
   };
 }
 
+
+/** The parties the Desk's associateIds names: the bench, R2 owners, referrers, introducers and the R0 reseller, less a standing ban. */
+function associateCodes(book) {
+  const state = book.state, ids = new Set(state.associates || []);
+  for (const sale of book.sales || []) {
+    if (sale && sale.rev === "R2") ids.add(POSITION_ENGINE.ownerCode(sale.customer));
+    if (sale && sale.ref) ids.add(sale.ref);
+  }
+  for (const entry of state.INTRODUCTIONS || []) if (entry && entry.by) ids.add(entry.by);
+  if (state.R0_NETWORK && state.R0_NETWORK.reseller) ids.add(state.R0_NETWORK.reseller);
+  const banned = ((state.PEOPLE || {}).banned || []).filter((row) => row && !row.lifted).map((row) => row.id);
+  return [...ids].filter((id) => typeof id === "string" && !banned.includes(id)).sort();
+}
+
+/** Counter Maker A2: what the Desk's autoOffsets would propose, from the mirror alone. A departed holder has no reward account
+    (rewardAccount refuses them), so nothing here offsets them. `held` is the three lists the Desk's own `offered` reads, the same
+    way: `queued` (a Correction naming the rid), `pending` (a Correction naming the rid or the row's key) and `refused` (any entry
+    naming the rid, whatever it was). */
+export function makerOffsetOffers(book, held = {}) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const pay = (entry) => entry && entry.payload || {};
+  const offered = (sale) => (held.queued || []).some((e) => pay(e).mode === "amend" && pay(e).kind === "Correction" && pay(e).rid === sale.rid)
+    || (held.pending || []).some((e) => pay(e).kind === "Correction"
+      && (pay(e).rid === sale.rid || pay(e).orderKey === POSITION_ENGINE.ovKey(sale)))
+    || (held.refused || []).some((e) => pay(e).rid === sale.rid);
+  const offers = [];
+  for (const code of associateCodes(book)) {
+    const reward = POSITION_ENGINE.rewardAccount(book, code);
+    if (reward.error || !(reward.held > 0.009)) continue;
+    const sale = (book.sales || []).filter((row) => row && row.customer === code && (row.product || "salt") === "salt"
+      && POSITION_ENGINE.txAdvance(row) > 0.009)
+      .sort((a, b) => !a.date ? (b.date ? 1 : 0) : !b.date ? -1 : a.date < b.date ? -1 : a.date > b.date ? 1 : 0)[0];
+    if (!sale || !sale.rid || offered(sale)) continue;
+    const { offUnits: units, offRM: rm } = POSITION_ENGINE.offsetFor(sale, reward.held, 1);
+    if (units > 0.009) offers.push({ code, rid: sale.rid, saleDate: sale.date || null, units, rm,
+      owed: +POSITION_ENGINE.txAdvance(sale).toFixed(2), held: reward.held });
+  }
+  return { offers };
+}
+
+/** One owner tap on one offer. The figures are the mirror's, never the request's: the body names only the holder, the row and a date. */
+export function makerOffset(body, book, held) {
+  if (!exact(body, ["at", "code", "rid", "date"]) || !timestamp(body.at) || !date(body.date)
+    || typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(body.rid))
+    return { error: "An offset carries only its timestamp, party code, order row and date." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!realCode(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
+    return { error: "Choose an associate on the roster." };
+  const offer = (makerOffsetOffers(book, held).offers || []).find((item) => item.code === body.code && item.rid === body.rid);
+  if (!offer) return { error: "That offset is not on offer: the reward is spent or held, the order is settled, or it already has a correction waiting." };
+  const sale = book.sales.find((row) => row && row.rid === offer.rid);
+  return proposed(POSITION_ENGINE.rebateOffsetEntry({ at: body.at, party: body.code, date: body.date, sale,
+    units: offer.units, rm: offer.rm, auto: true,
+    raw: "Automatic offset: " + body.code + " reward, " + offer.units + " unit, against the " + (sale.date || "undated")
+      + " order, RM" + offer.rm + " settled in kind" }), book);
+}
+
 /** One customer, one product; null clears the held tier, bands use the pricing engine's shape check. */
 export function makerTierSet(body, book) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
@@ -373,9 +430,7 @@ export function makerLedgerInput(operation, body, book) {
       && (sale.product || "salt") === "salt" && POSITION_ENGINE.txAdvance(sale) > 0.009)
       .sort((a, b) => !a.date ? (b.date ? 1 : 0) : !b.date ? -1 : a.date.localeCompare(b.date));
     if (advances.length) {
-      const sale = advances[0], qty = +sale.qty || 0, rate = qty > 0 ? POSITION_ENGINE.txGoods(sale) / qty : 0;
-      const units = +Math.min(free, free, qty, rate > 0 ? POSITION_ENGINE.txAdvance(sale) / rate : 0).toFixed(2);
-      const rm = +Math.min(POSITION_ENGINE.txAdvance(sale), rate * units).toFixed(2);
+      const sale = advances[0], { offUnits: units, offRM: rm } = POSITION_ENGINE.offsetFor(sale, free, free);
       if (!(units > 0.009) || !(rm > 0.009)) return { error: "The available reward cannot offset this order." };
       entry = POSITION_ENGINE.rebateOffsetEntry({ at: body.at, party: body.code, date: body.date, sale, units, rm });
     } else {

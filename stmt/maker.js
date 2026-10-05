@@ -71,6 +71,8 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
+    || path === "/_internal/maker/offsets" && method === "GET"
+    || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
@@ -177,6 +179,8 @@ function internalOperation(path) {
   if (claim) return { kind: "claim", u: claim[1], id: claim[2], action: claim[3] };
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
   if (thread) return { kind: "thread", u: thread[1] };
+  if (path === "/all/maker/offsets") return { kind: "offsets" };
+  if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
   const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
@@ -272,6 +276,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (Object.keys(parsed.body).length !== 1 || typeof parsed.body.url !== "string")
         return json({ ok: false, error: "Send only the short map link." }, 400);
       return json(await deskCall(env, "/_internal/maker/geo/expand", "POST", parsed.body));
+    }
+    if (op.kind === "offsets") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/offsets", "GET"));
     }
     if (op.kind === "inputs") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

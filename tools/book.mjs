@@ -244,6 +244,16 @@ export function supplySnapshot(w) {
   return r.ok && typeof r.value === "string" ? JSON.parse(r.value) : null;
 }
 
+/* 05 Oct 2026 (Counter Maker A2): THE REWARD SCHEME the desk Worker spends a reward by. REWARD is a rule, so it is not a ledger
+   key and the mirror carried none: engine rewardAccount answered "no configured reward" to every Worker road that spends one
+   (the Maker redemption and offset, the queue's and the fold's reservation checks). A state key of its own, read out of the
+   master like TERMS, never inside PRICING. */
+export function rewardSnapshot(w) {
+  const r = reader(w)("JSON.stringify({stated:REWARD.stated})");
+  if (!r.ok) throw new Error("the reward scheme did not read: " + r.why);
+  return JSON.parse(r.value);
+}
+
 export function pricingSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
@@ -486,6 +496,7 @@ export async function readBook(masterPath = MASTER) {
   ledger.PRICING = { ...pricingSnapshot(w), v: version };
   ledger.OPEN = { ...openSnapshot(w), v: version };
   ledger.TERMS = { ...termsSnapshot(w), v: version };
+  ledger.REWARD = { ...rewardSnapshot(w), v: version };
   return { dom, w, read, ledger, meta, missing, version, stamped: meta.LAST_UPDATED || null,
     src: readFileSync(masterPath, "utf8") };
 }

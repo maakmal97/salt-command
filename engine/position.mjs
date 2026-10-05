@@ -278,6 +278,10 @@ function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
    v438, and txWrittenOff carries the figure to every reading of what was LOST, so no loss leaves the book. */
 function txUnpaidOut(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
 function txAdvance(s){return s.defaulted?0:txUnpaidOut(s);}
+/* v594 (Counter Maker A2: moved here so the desk and the Worker share it): a reward priced on the goods rate, the units never over what was sold, the ringgit never over what is owed */
+function offsetFor(s,free,cap){const owe=txAdvance(s),q=+s.qty||0,rate=q>0?txGoods(s)/q:0;
+  const offUnits=+Math.min(free,cap,q,rate>0?owe/rate:0).toFixed(2);
+  return {offUnits:offUnits,offRM:+Math.min(owe,rate*offUnits).toFixed(2)};}
 function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
 /* 28 SEP 2026, HIS INSTRUCTION: OVERDUE IS COUNTED FROM THE DAY THE GOODS WERE COLLECTED OR DELIVERED. txUnpaidSince
    names that day for the goods still unpaid: the handovers walked in date order against the units the money covers,
@@ -1385,7 +1389,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,

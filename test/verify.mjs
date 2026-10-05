@@ -49887,6 +49887,7 @@ await (async () => {
   const incumbentChecks = await import("./desk-maker-constructors.mjs");
   await incumbentChecks.run({ ok });
   await (await import("./maker-tier-accept.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+  await (await import("./maker-offsets.mjs")).run({ ok });
   const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
   const calls = [];
   const key = "counter-maker-test-key-0123456789abcdef";

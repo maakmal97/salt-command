@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, termsSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR, areaNameSet, publishedLocalities } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, termsSnapshot, rewardSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR, areaNameSet, publishedLocalities } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -214,6 +214,8 @@ ledger.PRICING = { ...pricingSnapshot(w), v: (Array.isArray(meta.evolution) && m
 ledger.OPEN = { ...openSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
 /* V5b2: the terms the desk Worker decides an order paid in advance by (book.mjs termsSnapshot) */
 ledger.TERMS = { ...termsSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
+/* 05 Oct 2026: the reward scheme the Worker spends a reward by (book.mjs rewardSnapshot) */
+ledger.REWARD = { ...rewardSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
 {
   const P = ledger.PRICING, salt = P.byProduct && P.byProduct.salt;
   if (!salt || salt.stockCost == null || !salt.floors) fail("the pricing snapshot came back without a salt cost or floors; the drafter cannot price a row without it");

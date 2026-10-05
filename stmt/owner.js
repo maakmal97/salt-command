@@ -1279,6 +1279,37 @@ export const OWNER_JS = `
         redeemStatus.textContent='Sent for review. The Desk chose the oldest advance or an in-kind redemption.';loadMaker();}
       catch(error){redeemStatus.textContent=error.message;}
     },true);
+    var offsets=el('section','maker-input');offsets.appendChild(el('h3',null,'Automatic offsets'));
+    offsets.appendChild(el('p','msg','What the Desk offers an associate holding a reward and an unpaid advance: one unit against the oldest order. A departed holder is never offered. Each tap waits for approval.'));
+    parent.appendChild(offsets);
+    var offerDate=makerField(offsets,'Date','date',today), offerStatus=makerStatus(offsets),
+      offerList=el('div','maker-offers'), offerAt={};
+    offsets.appendChild(offerList);
+    var offerLoad=async function(){
+      offerStatus.textContent='Reading offers from the Desk…';
+      try{
+        var read=await refs('/all/maker/offsets');
+        offerList.textContent='';
+        offerStatus.textContent=read.offers.length?read.offers.length+' offered.':'No offset is offered.';
+        read.offers.forEach(function(offer){
+          var row=el('div','maker-offer');
+          row.appendChild(el('p','maker-facts',offer.code+' · '+offer.units+' unit · RM '+offer.rm.toFixed(2)+' against the '+(offer.saleDate||'undated')+' order '+offer.rid));
+          makerButton(row,'Send offset for review',async function(){
+            var key=offer.code+'|'+offer.rid+'|'+offerDate.value, at=offerAt[key]||(offerAt[key]=new Date().toISOString());
+            offerStatus.textContent='Sending to the Desk…';
+            try{
+              await refs('/all/maker/inputs/offset',{at:at,code:offer.code,rid:offer.rid,date:offerDate.value});
+              delete offerAt[key];
+              await offerLoad();
+              offerStatus.textContent='Sent for review. It settles in kind only when approved and folded.';
+              loadMaker();
+            }catch(error){offerStatus.textContent=error.message;}
+          },true);
+          offerList.appendChild(row);
+        });
+      }catch(error){offerStatus.textContent=error.message;}
+    };
+    offerLoad();
     var editor=el('section','maker-input');editor.appendChild(el('h3',null,'Amend a ledger row'));
     editor.appendChild(el('p','msg','Correction restates typed fields; Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose, order-code edits and cancelled/defaulted-row editing stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
     parent.appendChild(editor);
