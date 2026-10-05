@@ -52035,5 +52035,36 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+/* 05 OCT 2026, PERF 1: RECEIVED ON AN ORDER READ THE PAYMENTS ON THEIR WAY TWICE, once for the claims' rows (acctInFlight) and
+   once for the room (rowRoom), the same SELECT a moment apart. It is read once and both take it. Behaviour is the room it
+   gives: the same row, owing and on-its-way figures with the list handed in as with the list read. */
+section("05 Oct 2026: Received on an order reads the payments on their way once");
+await (async () => {
+  const { receivedOrder, rowRoom } = await import("../src/orders.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const sale = { rid: "r1", customer: "CC9-OKR", date: "2026-10-01", qty: 2, total: 200, cash: 20, deliveredQty: 2, handover: "collected" };
+  const key = PE.ovKey(sale);
+  const pay = (at, cash, claimId) => JSON.stringify({ at, claimId, status: "Payment", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", rid: "r1", orderKey: key, cash } });
+  const mk = () => { const c = { way: 0 }; return { c, prepare(sql) {
+    const way = sql.includes("OR (status='approved'");
+    return { bind() { return this; },
+      all: async () => { if (way) { c.way++; return { results: [{ entry: pay("2026-10-05T01:00:00.000Z", 50, "c1") }, { entry: pay("2026-10-05T02:00:00.000Z", 30) }] }; }
+        if (sql.includes("FROM entry")) return { results: [{ doc: JSON.stringify(sale) }] };
+        if (sql.includes("FROM state")) return { results: [{ key: "PRICING", doc: "{}" }] };
+        return { results: [] }; },
+      first: async () => ({ v: "v1", stamped: "2026-10-05T00:00:00.000Z" }) }; } }; };
+  const a = mk(), b = mk();
+  await receivedOrder({ SALT_LEDGER: a }, "o1", { amount: 10 }, "desk", new Date());
+  ok(a.c.way === 1, "Received on an order reads the payments on their way once, not twice: " + a.c.way);
+  /* the room is the same read as handed in as read for itself */
+  const own = { at: "2026-10-05T02:00:00.000Z", payload: { rid: "r1" } };
+  const read = await rowRoom(b), way0 = b.c.way;
+  const hand = await rowRoom(b, "SELL", [JSON.parse(pay("2026-10-05T01:00:00.000Z", 50, "c1")), JSON.parse(pay("2026-10-05T02:00:00.000Z", 30))]);
+  ok(way0 === 1 && b.c.way === 1, "a room handed the list reads no second one");
+  ok(JSON.stringify(read(key)) === JSON.stringify(hand(key)) && JSON.stringify(read(key, own)) === JSON.stringify(hand(key, own))
+    && read(key).on === 80 && read(key, own).on === 50 && read(key).owes === 180,
+    "a room handed the list answers as the room that read it: " + JSON.stringify(read(key)) + " / " + JSON.stringify(hand(key)));
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
