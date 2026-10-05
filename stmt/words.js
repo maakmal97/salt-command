@@ -778,6 +778,8 @@ export const EN = {
   "news.ready-deliver.owed": "Please make your payment now.",
   "news.ready-deliver.waiting": "Your payment is waiting for us to confirm it.",
   "news.ready-deliver.paid": "It is paid for.",
+  "news.pool-closed": "Group order closed",
+  "news.pool-closed.b": "Your order is in. We acknowledge it next.",
   "news.reply": "Counter says:",
   "news.message": "Counter says:",
   "news.paid": "Payment received",

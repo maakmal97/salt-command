@@ -1084,6 +1084,8 @@ export function wakes(ev, order, done) {
   const o = (order && order.id) || "";
   if (ev.kind === "ledger") return ev.paid !== undefined ? { k: "paid", o } : handedWake(order, o);
   if (ev.kind === "handover") return handedWake(order, o);
+  /* a group order closed tells each joiner; poolClose puts each one's own order in o. A retry that only records what was left wakes nobody */
+  if (ev.kind === "pclose") return ev.again ? null : { k: "pool-closed", o: "" };
   /* Step 1b: his reason at Decline or Cancel is the banner's body; his line on the order is, in quotation marks, under
      a banner of its own (its moment names it) */
   if (ev.kind === "status" && ev.by === "desk") {

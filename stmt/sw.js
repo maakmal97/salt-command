@@ -29,7 +29,7 @@ import { WORDS } from "./words.js";
 /* S13 13.3: THE WORDS ARE THE TABLE'S (stmt/words.js, "news.<kind>" and four more), one table a language; NEWS is
    English's by kind, which is what a wake's kind is checked against. Only the news words travel in the script. */
 const KINDS = ["confirmed", "confirmed-credit", "ready-collect", "ready-deliver", "reply", "paid", "notfound", "due",
-  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate", "message"];
+  "delivered", "collected", "part-delivered", "part-collected", "complete", "declined", "cancelled", "rate", "message", "pool-closed"];
 /* Step 1b: the cases a kind's body is chosen by (stmt/orders.js payCase), and the kinds whose body is his own text:
    his line on the order (reply), his line on the account's thread (message, Step 7) and his reason at Decline or Cancel */
 export const CASES = ["owed", "waiting", "paid"];
@@ -68,7 +68,7 @@ self.addEventListener('push', function(e){
     /* one banner a message of his (plan F1): his line takes its own tag, so a second line never replaces the first unseen */
     var m = n && LINE_KINDS.indexOf(n.k) >= 0 && typeof n.m === 'string' && /^[0-9TZ:.-]{10,30}$/.test(n.m) ? n.m : '';
     if (n && typeof n.k === 'string' && Object.prototype.hasOwnProperty.call(NEWS, n.k))
-      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + (th ? 'thread' : o) + '-' + m : o ? 'order-' + o : 'order-update', renotify: true, data: to });
+      return self.registration.showNotification(nw(n.k), { body: bodyOf(n), tag: m ? 'm-' + (th ? 'thread' : o) + '-' + m : n.k === 'pool-closed' && o ? 'pool-' + o : o ? 'order-' + o : 'order-update', renotify: true, data: to });
     return fetch('bulletin', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(function(b){

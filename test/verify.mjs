@@ -24444,7 +24444,7 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 17 && seen.length === 25 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  ok(!own.length && kinds.length === 18 && seen.length === 26 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -52049,6 +52049,11 @@ await (async () => {
 section("Pool B4: Home's group order card, one row each, Join through the check, and a moved list redraws it");
 await (async () => {
   await (await import("./pool-page.mjs")).page({ ok });
+})();
+
+section("Pool B5: opening a group order wakes nobody; Close wakes each joiner once under a banner of its own");
+await (async () => {
+  await (await import("./pool-wake.mjs")).wake({ ok, KV, skipOff });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

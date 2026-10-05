@@ -158,7 +158,9 @@ async function wake(env, u, topic, news) {
        over the order and the line's moment, so no line of his is replaced unseen at the push service either.
        Step 7: and a line of his on the account's thread, which names no order, takes the same topic over the thread */
     const line = text && LINE_KINDS.includes(news.k) && news.m ? news.m : "";
-    const orderTopic = line ? "m-" + (await endpointId((o || "thread") + "|" + line)) : text && o ? "o-" + (await endpointId(o)) : topic;
+    /* a group order closing is its own banner beside the order's own (acknowledged, next): a topic and a tag of its own, so neither replaces the other */
+    const orderTopic = line ? "m-" + (await endpointId((o || "thread") + "|" + line)) : text && o && news.k === "pool-closed" ? "p-" + (await endpointId(o))
+      : text && o ? "o-" + (await endpointId(o)) : topic;
     let sent = 0, gone = 0, failed = 0, sealed = 0;
     for (const s of subs) {
       let origin;
