@@ -99,7 +99,7 @@ export function makerQueuedTradeFault(entry, queue) {
   return makerQueuedTradeCheck(entry, queue).error || "";
 }
 
-export function makerInputCatalog(book) {
+export function makerInputCatalog(book, hush = {}) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
   const products = Object.keys(book.state.PRODUCTS || {}).filter((product) => active(product, book)).map((product) => {
@@ -117,7 +117,7 @@ export function makerInputCatalog(book) {
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
     tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
-      .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title })),
+      .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !["note", "orderCode", "settle"].includes(field))
@@ -209,7 +209,29 @@ export function makerTierAcceptAll(body, book, queued) {
       : "Set " + codes.length + " customers from their proposals: " + codes.map((c) => c + " " + say(tiers[c])).join("; ") }), book);
 }
 
-/** The Whiteboard's hush, over the snapshot's tips (the desk's own observations): a date snoozes it to then, null dismisses it. Moves no figure. */
+/* THE HUSHES: one KV key, {tip id: snooze day, or null for dismissed}, read by the Desk on load and written by the Desk
+   and by Counter Maker, never a queue entry, a draft or a fold. A past day is dropped on every write. */
+export const HUSH_KEY = "hush";
+const mytDay = (at) => new Date(Date.parse(at) + 8 * 3600000).toISOString().slice(0, 10);
+export async function hushGet(kv) {
+  let map = null;
+  try { map = await kv.get(HUSH_KEY, "json"); } catch { map = null; }
+  return object(map) ? map : {};
+}
+/** until: a day to snooze to, null to dismiss; clear removes the tip's hush. today is MYT, from the request. */
+export async function hushPut(kv, id, until, today, clear = false) {
+  const map = await hushGet(kv), next = {};
+  for (const [tip, day] of Object.entries(map)) if (day === null || (typeof day === "string" && day > today)) next[tip] = day;
+  if (clear) delete next[id]; else next[id] = until;
+  await kv.put(HUSH_KEY, JSON.stringify(next));
+  return next;
+}
+export function hushFault(id, until) {
+  if (typeof id !== "string" || !POSITION_ENGINE.TIP_ID.test(id)) return "That is not a tip id.";
+  if (until !== null && !date(until)) return "A snooze is a real day, or null to dismiss.";
+  return null;
+}
+/** Maker's hush over the snapshot's tips (the Desk's own observations). It moves no figure. */
 export function makerHush(body, book) {
   if (!exact(body, ["at", "id", "until"]) || typeof body.id !== "string" || body.until === undefined)
     return { error: "Hushing carries a tip, its request timestamp and a date or null." };
@@ -217,12 +239,12 @@ export function makerHush(body, book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!((book.pricing && book.pricing.obs) || []).some((tip) => tip && tip.id === body.id))
     return { error: "Choose a tip the Desk is showing." };
-  if (body.until !== null) {
-    const today = new Date(Date.parse(body.at) + 8 * 3600000).toISOString().slice(0, 10);   // MYT, from the request, so a retry reads the same
-    if (!date(body.until) || body.until <= today || body.until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10))
-      return { error: "A snooze ends after today and within a year." };
-  }
-  return { entry: POSITION_ENGINE.obsEntry({ at: body.at, id: body.id, act: body.until === null ? "dismiss" : "snooze", until: body.until }) };
+  const fault = hushFault(body.id, body.until);
+  if (fault) return { error: fault };
+  const today = mytDay(body.at);
+  if (body.until !== null && (body.until <= today || body.until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10)))
+    return { error: "A snooze ends after today and within a year." };
+  return { id: body.id, until: body.until, today };
 }
 
 const safeGeo = (value) => {

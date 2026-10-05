@@ -158,6 +158,8 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
       kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
       handover,second,more,coverFree,...(trip?{trip}:{})}};
 }
+/* a Whiteboard tip's id: its family, then codes, dates and figures (a decimal total included) */
+const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
 function tierSetEntry({at,tiers,raw}){
   const codes=Object.keys(tiers),copied={};
   codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
@@ -167,12 +169,6 @@ function tierSetEntry({at,tiers,raw}){
   return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
     payload:{mode:'tierset',tiers:copied}};
-}
-/* A hushed observation (the Whiteboard card, or Counter Maker): one record that moves no figure, read by obsState. */
-function obsEntry({at,id,act,until}){
-  return {at,type:"OBS",party:"whiteboard",qty:null,total:null,status:"obs",
-    raw:(act==="restore"?"Bring back observation ":act==="dismiss"?"Dismiss observation ":"Snooze observation ")+id+(until?" to "+until:""),
-    payload:{mode:"obs",id:id,act:act,until:until,why:""}};
 }
 function loanEntry({at,product,direction,party,date,form,amount,note=null,raw}){
   const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
@@ -1340,7 +1336,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(['vault','addrVault','names'].includes(key))return envelope(v);
     if(key==='places'&&envelope(v))return true;
     if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
-      ||key==='id'&&/^[a-z]{2,8}(?::[A-Za-z0-9-]{1,24}){1,5}$/.test(v)   /* a Whiteboard tip: its family, then codes and dates */
+      ||key==='id'&&TIP_ID.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v);
     if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
@@ -1390,7 +1386,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {obsEntry:obsEntry,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {TIP_ID:TIP_ID,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,

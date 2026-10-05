@@ -1676,7 +1676,7 @@ export const OWNER_JS = `
         tipSection.appendChild(el('p','msg','The Desk is showing no tip to hush.'));
       }else{
         var tipId=el('select','fld salt-field__input'), tipFor=el('select','fld salt-field__input');
-        tips.forEach(function(tip){ var option=el('option',null,tip.id+' | '+tip.title); option.value=tip.id; tipId.appendChild(option); });
+        tips.forEach(function(tip){ var option=el('option',null,tip.id+' | '+tip.title+(tip.hush===null?' | dismissed':tip.hush?' | snoozed to '+tip.hush:'')); option.value=tip.id; tipId.appendChild(option); });
         [['7','Snooze 7 days'],['30','Snooze 30 days'],['','Dismiss']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; tipFor.appendChild(option); });
         [['Tip',tipId],['Hush for',tipFor]].forEach(function(item){ var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tipSection.appendChild(wrap); });
         var tipAnswer=el('p','msg'); tipAnswer.setAttribute('role','status'); tipSection.appendChild(tipAnswer);
@@ -1686,7 +1686,7 @@ export const OWNER_JS = `
           var check=tipId.value+'|'+tipFor.value; if(check!==tipSignature){ tipSignature=check; tipAt=new Date().toISOString(); }
           var until=tipFor.value===''?null:new Date(Date.parse(tipAt)+8*3600000+Number(tipFor.value)*86400000).toISOString().slice(0,10);
           tipPending=true;
-          try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hushed. The Desk reads it from its queue.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hushed. The Desk hides it when it next reads the hushes: on load, or on opening Whiteboard.'; loadMaker(); }
           catch(error){ tipAnswer.textContent=error.message; }
           tipPending=false;
         },true);
