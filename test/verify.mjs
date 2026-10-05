@@ -45430,6 +45430,13 @@ await (async () => {
   ok(res.ok && sale.cost === 64, "a new sale keeps the drafter's COGS cost over the notes' shelf figure: " + (res.ok ? sale.cost : JSON.stringify(res.problems)));
   ok(res.ok && fixed.cost === 64, "and a cost a correction sets stands over the notes: " + fixed.cost);
   ok(res.ok && lot.cost === 60 && bare.cost === 60, "while a lot, and a sale drafted with no cost, still take the notes' figure: " + JSON.stringify([lot.cost, bare.cost]));
+  /* and the correction's own card counts the delivery in what the row is worth, so s233's RM170 is not called overpaid */
+  const { checkCorrection } = await import("../src/drafter.js");
+  const tgt = { rid: "s9002", customer: "CZ9-CGS", date: "2099-10-05", qty: 1, total: 130, delivery: 40, cash: 170, deliveredQty: 1, cost: 60 };
+  const cc = checkCorrection({ cost: 64 }, { state: { roster: ["CZ9-CGS"], PRODUCTS: { salt: {} } } }, tgt, true);
+  const ccOver = checkCorrection({ cash: 175 }, { state: { roster: ["CZ9-CGS"], PRODUCTS: { salt: {} } } }, tgt, true);
+  ok(!/overpaid/.test((cc.flags || []).join(" ")) && /RM 5 overpaid/.test((ccOver.flags || []).join(" ")),
+    "a correction reads a sale as worth its goods and its delivery: RM 170 on RM 130 plus RM 40 is paid, RM 175 is RM 5 over: " + JSON.stringify([cc.flags, ccOver.flags]));
 })();
 
 section("22 Sep 2026: the rail, the bar and the tags draw from the system's recipes");

@@ -252,8 +252,11 @@ export function checkCorrection(fields, book, target, isSale) {
   /* THE COMPARISONS A FIELD CANNOT MAKE AGAINST ITSELF. Each of these is a figure that is legal
      on its own and says something worth reading beside the rest of the row. */
   const num = (x) => (isNum(x) ? x : 0);
-  if (num(after.cash) > num(after.total) + 0.005) {
-    flags.push(`RM ${round(after.cash)} is recorded as paid against a row worth RM ${round(after.total)}, so it would be RM ${round(num(after.cash) - num(after.total))} overpaid.`);
+  /* 05 Oct 2026: a sale is worth the goods AND the delivery beside them since v727 (txOwed); this read the goods alone and
+     called s233's RM170, RM130 of salt and RM40 of delivery, RM40 overpaid. A lot is worth its total. */
+  const worth = num(after.total) + (isSale ? num(after.delivery) : 0);
+  if (num(after.cash) > worth + 0.005) {
+    flags.push(`RM ${round(after.cash)} is recorded as paid against a row worth RM ${round(worth)}, so it would be RM ${round(num(after.cash) - worth)} overpaid.`);
   }
   if (num(after.deliveredQty) > num(after.qty) + 0.005) {
     flags.push(`${round(after.deliveredQty)} unit is recorded as handed over against an order of ${round(after.qty)} unit.`);
