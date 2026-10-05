@@ -49889,6 +49889,7 @@ await (async () => {
   await (await import("./maker-tier-accept.mjs")).run({ ok, KV, worker, handleMaker, REPO });
   await (await import("./maker-offsets.mjs")).run({ ok });
   await (await import("./maker-house-sizes.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+  await (await import("./maker-addid-tiers.mjs")).run({ ok });
   const owner = { email: "  MAAKMAL97@ICLOUD.COM " };
   const calls = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -51110,6 +51111,9 @@ await (async () => {
       && addRequests[2].body.code === "CX1-AB-R" && addRequests[2].body.kind === "bucket"
       && addRequests[2].body.vault === null,
       "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
+    ok(JSON.stringify(addRequests[0].body.tiers) === '{"salt":"Silver"}' && addRequests[1].body.tiers === null
+      && addRequests[2].body.tiers === null,
+      "Counter Add ID offers a starting tier per tiered book, preselected as the Desk does, and sends none for a downstream or a resale account");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Amend ID");
     const amendFields = amendId.querySelectorAll("input");
     amendFields[0].value = "Ben"; amendFields[1].value = "Pudu"; amendFields[2].value = "name-pass";
