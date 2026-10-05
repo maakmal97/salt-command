@@ -1606,8 +1606,8 @@ KV road refuses it, `POOL_ON_KV`, as it does the account's thread):
   `{id, kind: "pool", at, product, q, target, closesOn?, state, closedAt?, closeLeft?, joins: [{u, oid, at}]}`. **The units in are
   never stored**: `poolUnits` reads them live off the joined orders, a cancelled or declined join leaving at once. Nothing
   writes a pool behind to KV.
-- **A join is one step.** `pjoin` runs `decidePoolJoin` (`poolTwice`, `poolClosed`, `poolNone`; the closing day passed counts as
-  closed) and then, in one `transactionSync`, appends the placement (under the request id's own event, so a retry lands once) and
+- **A join is one step.** `pjoin` runs `decidePoolJoin` (`poolTwice`, `poolClosed`, `poolNone`; the closing day is the card's
+  promise alone, only his Close shuts a pool) and then, in one `transactionSync`, appends the placement (under the request id's own event, so a retry lands once) and
   the join. The order is `decidePlace` with the pool set: collect, one order, no sheet, at the customer's own sealed price, the list's
   digest checked as at Place (409 `pricesMoved` answers the sealed list). `decidePlace` without the pool refuses a body that names
   one, `decideReplace` refuses a pooled order (`amendClosed`), and `customerView` carries `pool` and nothing else new.
