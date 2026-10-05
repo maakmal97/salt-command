@@ -9232,7 +9232,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1023","d":"05 Oct 2026","t":"TWO ADVANCES TO CN3-WM, ONE PENDING RICE ORDER FOR CJ2-KUC","n":["<b>THREE SALES FOLDED.</b> CN3-WM took 1 unit of salt and 2 unit of rice on 05 Oct, both collected with nothing paid, decided by the desk. CJ2-KUC has a pending rice order of 10 unit, preapproved by phone. The unusual point is that CN3-WM was already past its credit cap of 2 units before either advance, and the figures do not answer that flag.","<b>INVENTORY.</b> Salt and rice each fall by the units that left with CN3-WM. The CJ2-KUC row is pending, so it draws no stock and books no revenue until something moves. The stock cost basis is unchanged."]}];
+const evolution=[{"v":"v1024","d":"05 Oct 2026","t":"AN EQUAL TOTAL OWED ON TWO BOOKS IS NOT AN UNSCOPED READ; THE SUITE RUNS IN THREE BALANCED PARTS","n":["<b>THE PARITY SCAN READS THE ROWS.</b> v1023 left salt and rice each owing 10 unit: salt 9.5 to CM4-TO and 0.5 to CH5-KLC, rice 10 to CJ2-KUC. Rule 1 compared the totals alone and called the coincidence an unscoped read, which turned the post-live suite red. It now asks the party and units behind each total, so the same rows on every book still flag and an equal total on other rows does not.","<b>THE SUITE, CHEAPER TO WAIT FOR.</b> CI and the post-live suite run as three parts on three runners, each on both of its cores (#48), and a batch the fold refuses is held for a person rather than folded again, red, on every run (#49). The cost file that balances the parts is refreshed from a clean run: 900 s in all, against 7,529 s measured under load, which had left one part twice as long as the others. No pricing rule, row or figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9381,7 +9381,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 18:08 KL';
+const LAST_UPDATED='05 Oct 2026, 19:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

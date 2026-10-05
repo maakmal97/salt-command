@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1024",
+  "d": "05 Oct 2026",
+  "t": "AN EQUAL TOTAL OWED ON TWO BOOKS IS NOT AN UNSCOPED READ; THE SUITE RUNS IN THREE BALANCED PARTS",
+  "n": [
+   "<b>THE PARITY SCAN READS THE ROWS.</b> v1023 left salt and rice each owing 10 unit: salt 9.5 to CM4-TO and 0.5 to CH5-KLC, rice 10 to CJ2-KUC. Rule 1 compared the totals alone and called the coincidence an unscoped read, which turned the post-live suite red. It now asks the party and units behind each total, so the same rows on every book still flag and an equal total on other rows does not.",
+   "<b>THE SUITE, CHEAPER TO WAIT FOR.</b> CI and the post-live suite run as three parts on three runners, each on both of its cores (#48), and a batch the fold refuses is held for a person rather than folded again, red, on every run (#49). The cost file that balances the parts is refreshed from a clean run: 900 s in all, against 7,529 s measured under load, which had left one part twice as long as the others. No pricing rule, row or figure moves."
+  ]
+ },
+ {
   "v": "v1023",
   "d": "05 Oct 2026",
   "t": "TWO ADVANCES TO CN3-WM, ONE PENDING RICE ORDER FOR CJ2-KUC",
