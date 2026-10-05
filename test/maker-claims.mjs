@@ -310,6 +310,8 @@ async function concurrentFixture(ok) {
   const { build } = await import("../tools/testfix.mjs");
   const { exampleMove, exampleReplace } = await import("../stmt/testfix.js");
   const store = new Store(), u = TEST_USER, fix = build(new Date(), "open", u);
+  /* the group orders' two pooled orders are left out: this check drives the plain orders, with room for one more */
+  fix.orders = fix.orders.filter((o) => !o.pool);
   const open = fix.orders.filter((o) => ["placed", "acknowledged", "ready"].includes(o.status));
   fix.orders = fix.orders.filter((o) => o !== open.at(-1));
   fix.salt = "concurrent-fixture"; fix.makerOrders = fix.orders; fix.makerBook = { sales: [] };
