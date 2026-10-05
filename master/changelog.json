@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1021",
+  "d": "05 Oct 2026",
+  "t": "COUNTER MAKER SETS THE PRINTED BOARD SIZES (A6)",
+  "n": [
+   "<b>A6.</b> Counter Admin gains Printed board sizes, <code>inputs/house-sizes</code>: the sizes the board prints, queued as the one entry the Desk's <code>shQueueHouse</code> queues (a hide list, <code>prices</code> empty, <code>clearing</code>). It is a print setting and never a price: the body takes only a timestamp, a book and the sizes to hide, the entry carries no price figure, and the drafter refuses one. The rungs offered are the Desk's own <code>shSizes</code>, which the pricing snapshot now carries as <code>rungs</code>; hiding every size is refused. Ticking the sizes again after a send makes a new request. The engine's record check accepts a <code>hide</code> list on this path alone. Nothing prices."
+  ]
+ },
+ {
   "v": "v1020",
   "d": "05 Oct 2026",
   "t": "AUTOMATIC OFFSETS FROM THE COUNTER (A2)",
