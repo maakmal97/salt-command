@@ -73,6 +73,12 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     ok(bad.map((r) => r.status).join() === "400,400,400,405" && Object.keys(stored()).length === 0,
       "a malformed id, day or clear is refused, and so is any other method");
 
+    const same = [await desk("/hush", "POST", { id, until: "2020-01-01" }), await desk("/hush", "POST", { id, until: "2099-01-01" }),
+      await desk("/hush", "POST", { id, until: null, at: AT }), await desk("/hush", "POST", { id, until: null, extra: 1 }), await desk("/hush", "POST", null)];
+    ok(same.map((r) => r.status).join() === "400,400,400,400,400" && Object.keys(stored()).length === 0
+      && !!makerHush({ at: AT, id, until: "2020-01-01" }, { version: 1, pricing: { obs: [{ id }] }, state: {} }).error,
+      "the Desk's /hush refuses what Maker refuses, a past day, a day past a year and any field but id, until and clear, by the same check");
+
     /* 3. a hush set in Maker hides the tip on the Desk */
     const set = await call({ at: AT, id, until: "2026-10-12" }), setBody = await set.json();
     ok(set.status === 200 && setBody.ok && setBody.hushed === id && bridged[0] === "/_internal/maker/inputs/hush"

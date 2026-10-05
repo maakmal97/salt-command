@@ -226,9 +226,12 @@ export async function hushPut(kv, id, until, today, clear = false) {
   await kv.put(HUSH_KEY, JSON.stringify(next));
   return next;
 }
-export function hushFault(id, until) {
+/** The one check of a hush, for Maker and for the Desk's own route: a tip id, and a day after today and within a year, or null. */
+export function hushFault(id, until, today) {
   if (typeof id !== "string" || !POSITION_ENGINE.TIP_ID.test(id)) return "That is not a tip id.";
   if (until !== null && !date(until)) return "A snooze is a real day, or null to dismiss.";
+  if (until !== null && (until <= today || until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10)))
+    return "A snooze ends after today and within a year.";
   return null;
 }
 /** Maker's hush over the snapshot's tips (the Desk's own observations). It moves no figure. */
@@ -239,11 +242,8 @@ export function makerHush(body, book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!((book.pricing && book.pricing.obs) || []).some((tip) => tip && tip.id === body.id))
     return { error: "Choose a tip the Desk is showing." };
-  const fault = hushFault(body.id, body.until);
+  const today = mytDay(body.at), fault = hushFault(body.id, body.until, today);
   if (fault) return { error: fault };
-  const today = mytDay(body.at);
-  if (body.until !== null && (body.until <= today || body.until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10)))
-    return { error: "A snooze ends after today and within a year." };
   return { id: body.id, until: body.until, today };
 }
 

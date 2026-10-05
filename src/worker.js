@@ -1575,9 +1575,10 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
       try { b = await request.json(); } catch { b = {}; }
-      const until = b.until === undefined ? null : b.until, fault = hushFault(b.id, until);
+      const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10), until = b && b.until !== undefined ? b.until : null;
+      const extra = !b || typeof b !== "object" || Array.isArray(b) || Object.keys(b).some((k) => !["id", "until", "clear"].includes(k));
+      const fault = extra ? "A hush carries only id, until and clear." : hushFault(b.id, b.clear === true ? null : until, today);
       if (fault || b.clear !== undefined && b.clear !== true) return json({ ok: false, error: fault || "clear is true or absent" }, 400);
-      const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
       return json({ ok: true, hush: await hushPut(env.SALT_QUEUE, b.id, until, today, b.clear === true) });
     }
     if (p === "/orders") {
