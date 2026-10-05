@@ -44976,6 +44976,30 @@ await (async () => {
     "and the master page's quiet button is the system's ghost");
 })();
 
+section("C3: a figure on a statement line's sub-line carries the system's figure class; a words-only one does not; the shipped CSS carries the recipe");
+await (async () => {
+  const M = await import("../tools/make_statements.mjs");
+  const row = (x) => Object.assign({ product: "salt", gift: false, resale: false, delivery: 0, cover: false, inKind: 0, inKindUnits: 0,
+    owed: 0, pendingOrder: false, cancelled: false, cancelledOn: null, agreedOn: null, gotOn: null }, x, { unit: x.total / x.qty, deliverable: x.qty });
+  const rows = [
+    row({ rid: "c3a", date: "2026-09-20", qty: 1, total: 100, delivery: 15, paidCash: 115, got: 1, toGet: 0, paidOn: "2026-09-20" }),
+    row({ rid: "c3b", date: "2026-08-05", qty: 2, total: 200, paidCash: 200, got: 0, toGet: 2, paidOn: "2026-08-07", resale: true }),
+    row({ rid: "c3c", date: "2026-09-22", qty: 1, total: 60, paidCash: 0, got: 0, toGet: 1, pendingOrder: true }),
+    row({ rid: "c3d", date: "2026-09-01", qty: 1, total: 90, paidCash: 40, got: 0, toGet: 0, cancelled: true, cancelledOn: "2026-09-03" }),
+    row({ rid: "c3e", date: "2026-09-10", qty: 1, total: 80, paidCash: 80, got: 1, toGet: 0, paidOn: "2026-09-10", cover: true, inKindUnits: 0.5 })];
+  const live = M.stmtDoc("ZZ9-TST", rows, { dates: true, brand: null, issued: "24 Sep 2026 12:00", live: true, user: "abcd-efgh", recon: [], refunds: [] });
+  const subs = [...live.matchAll(/<span class="(salt-lines__sub[^"]*)">([^<]*)<\/span>/g)].map((m) => [m[1], m[2]]);
+  const figs = subs.filter((s) => s[0] === "salt-lines__sub salt-lines__sub--figure").map((s) => s[1]), word = subs.filter((s) => s[0] === "salt-lines__sub").map((s) => s[1]);
+  ok(figs.some((t) => /^plus delivery RM 15\.00/.test(t)) && figs.some((t) => /^paid 20 Sep 2026$/.test(t)) && figs.some((t) => /^2 units still to collect$/.test(t)) && figs.some((t) => /^03 Sep 2026$/.test(t)),
+    "a delivery charge, a paid date, a unit figure and a cancelled date each carry salt-lines__sub--figure (C3): " + JSON.stringify(figs));
+  ok(word.some((t) => /on behalf of a friend/.test(t)) && word.some((t) => /to be collected and paid/.test(t)) && !figs.some((t) => /on behalf|to be collected and paid/.test(t)),
+    "a words-only sub-line keeps the plain class (C3): " + JSON.stringify(word));
+  ok(word.includes("Part paid from your reward") && !figs.includes("Part paid from your reward"), "a cover row's sub-line is words and stays plain (C3): " + JSON.stringify(word));
+  ok(figs.some((t) => /^0\.5 units? applied /.test(t)), "the in-kind units figure sub-line carries the figure class (C3): " + JSON.stringify(figs));
+  ok(figs.some((t) => /^RM 40\.00 paid, see Refunds$/.test(t)), "a cancelled row's paid-and-refunded sub-line carries the figure class (C3): " + JSON.stringify(figs));
+  const R = (await import("../stmt/statement-css.js")).SITE_RECIPES;
+  ok(/\.salt-lines__sub--figure \{ font-family: var\(--salt-font-mono\); font-variant-numeric: tabular-nums; \}/.test(R), "the shipped Counter CSS carries the system's figure recipe, pulled and never restated (C3)");
+})();
 section("S2 2.11: the Counter carries the recipes it will use, whole, in the system's order, and none of the system's notes");
 await (async () => {
   /* STAGE 2 OF THE COUNTER REDESIGN, 24 Sep 2026. The nine recipes salt-ds v1.3.0 gained for the Counter, and the ones it

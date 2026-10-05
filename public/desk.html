@@ -73,7 +73,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="212aa3f6cfb8dd47";
+var SALT_BUILD_ID="adfa7153803008de";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2647,6 +2647,9 @@ label.salt-field__label {
   line-height: 1.45;
   color: var(--salt-prose);
 }
+/* A second line that is a date or a figure (a delivery charge, a sum paid) takes the figures' face, so a cell never mixes two
+   faces for one kind of thing. */
+.salt-lines__sub--figure { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
 .salt-lines__row--cancelled .salt-lines__what,
 .salt-lines__row--cancelled .salt-lines__amount {
   color: var(--salt-prose);
@@ -9104,7 +9107,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1013","d":"05 Oct 2026","t":"MALAY REMOVED EVERYWHERE: ENGLISH IS THE ONLY LANGUAGE","n":["<b>MALAY REMOVED (his decision of 05 Oct 2026).</b> The Counter has one table, English: no Malay table, no language switch, no kept choice, no language written to the Cache for the banner, and no Malay half on the sign-in message. Nothing a customer reads in English changes.","<b>THE LOCKS.</b> siteWords and the desk's siteSafe now read the English level and product words only; a bare emas or perak no longer warns. Nothing prices."]}];
+const evolution=[{"v":"v1014","d":"05 Oct 2026","t":"STATEMENT SUB-LINES TAKE THE FIGURES FACE","n":["<b>C3.</b> A second line on a statement row that is a date or a figure (a delivery charge, a sum paid, an in-kind unit count, a cancelled refund) carries <code>salt-lines__sub--figure</code>, so a cell never mixes two faces for one kind of thing. The recipe is pulled from the design system. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this

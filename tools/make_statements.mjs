@@ -485,26 +485,27 @@ function stmtDoc(party,rows,o){
        words, stacked on a phone and a table from about 600px of the list's own width. Only the live document: it is
        read inside the Counter, which carries the recipe, while an issue is a standalone file and keeps its table. */
     if(lines){
-      const sub=t=>t?'<span class="salt-lines__sub">'+t+'</span>':'';
+      /* C3 (29 Sep 2026): a sub-line that is a date or a figure carries the system's salt-lines__sub--figure, a words-only one does not */
+      const sub=(t,f)=>t?'<span class="salt-lines__sub'+(f?' salt-lines__sub--figure':'')+'">'+t+'</span>':'';
       /* C4 (29 Sep 2026): EVERY FULLY PAID ROW SAYS WHEN, under its state word, the same day or later; it was said only when
          the money came on a later day, so a reader could not tell paid the same day from no date known */
       const paidSaid=(o.dates&&r.paidOn)?'paid '+e(dLong(r.paidOn)):'';
-      const [word,tone,subs]=r.cancelled?['cancelled','',[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',
-          (r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'']]
+      const [word,tone,subs]=r.cancelled?['cancelled','',[[(r.cancelledOn&&!moved)?e(dLong(r.cancelledOn)):'',1],
+          [(r.paidCash+r.inKind)>0.009?'RM '+money(r.paidCash+r.inKind)+' paid, see Refunds':'',1]]]
         :r.state==='Written off'?['written off','',[]]
         :r.gift?['no charge','',[]]
-        :r.pendingOrder?['ordered','steel',['to be collected and paid']]
+        :r.pendingOrder?['ordered','steel',[['to be collected and paid']]]
         :due?['RM '+money(r.owed)+' due','ember',[]]
-        :owedUnits?['paid in full','verdigris',[paidSaid,units(r.toGet)+' still to collect']]
-        :['settled','verdigris',[paidSaid]];
+        :owedUnits?['paid in full','verdigris',[[paidSaid,1],[units(r.toGet)+' still to collect',1]]]
+        :['settled','verdigris',[[paidSaid,1]]];
       return '<div class="salt-lines__row'+(r.cancelled?' salt-lines__row--cancelled':'')+'" role="row"'
         +(r.date?' data-m="'+e(r.date.slice(0,7))+'"':'')+'>'
         +'<div class="salt-lines__date" role="cell">'+(r.date?e(dLong(r.date)):moved)+'</div>'
         +'<div class="salt-lines__what" role="cell">'+lineTile(r.product,r.qty)+sub(r.resale?'on behalf of a friend':'')
-          +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'')+'</div>'
+          +sub(r.inKindUnits>0.009?units(r.inKindUnits)+' applied '+(noLegDates.has(r.date)?'by agreement':'to an earlier balance'):'',1)+'</div>'
         +'<div class="salt-lines__amount" role="cell">'+(r.gift?'nil':'RM '+money(r.total))+sub(r.cover?coverSaid():'')
-          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'')+'</div>'
-        +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(sub).join('')+'</div></div>';
+          +sub(r.delivery>0.009?'plus delivery RM '+money(r.delivery)+tripSaid(r):'',1)+'</div>'
+        +'<div class="salt-lines__state'+(tone?' salt-lines__state--'+tone:'')+'" role="cell">'+word+subs.map(x=>sub(...x)).join('')+'</div></div>';
     }
     /* v690, HIS INSTRUCTION OF 18 SEP 2026: NOTHING A CUSTOMER SEES IS BOUND TO A MONTH. The
        document carries every order from the start, and the page filters it, so the month each row

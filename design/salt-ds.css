@@ -1000,6 +1000,9 @@ label.salt-field__label {
   line-height: 1.45;
   color: var(--salt-prose);
 }
+/* A second line that is a date or a figure (a delivery charge, a sum paid) takes the figures' face, so a cell never mixes two
+   faces for one kind of thing. */
+.salt-lines__sub--figure { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
 .salt-lines__row--cancelled .salt-lines__what,
 .salt-lines__row--cancelled .salt-lines__amount {
   color: var(--salt-prose);
