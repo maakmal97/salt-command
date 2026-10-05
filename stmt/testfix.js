@@ -21,7 +21,7 @@
  * binding exists, on either store road; no real events, marks or write-behind read that table. A new publication
  * resets its generation. Binding-less legacy customer fixtures remain in KV; new owner replies refuse there.
  */
-import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove } from "./orders.js";
+import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
 
 export const TEST_USER = "0000-0000";
@@ -75,7 +75,7 @@ export async function exampleAccount(env, u, move = {}) {
     return { ok: false, error: "The acceptance publication changed. Preview it again.", status: 409 };
   const result = await fixtureAccountMove(env, {
     u, generation, seed: { claims: fix.claims || [], sales: fix.makerBook?.sales || [],
-      orders: fix.makerOrders || fix.orders || [] },
+      orders: fix.makerOrders || fix.orders || [], pools: fix.pools || [] },
     actor: "read", ...move
   });
   return { ...result, generation, orders: result.account?.orders || [], prepared: !!fix.makerBook };
@@ -157,6 +157,30 @@ export async function exampleClaim(env, u, body) {
   if (rid) rids[rid] = claim.id;
   await keep(env, u, fix);
   return { claim };
+}
+
+/** A test account's group orders, from its fixture alone (a real pool is never shown to one): the units in are the fixture's own
+ *  invented others (`seedUnits`) and the live orders joined in it. [] with no fixture, and on the KV road, which keeps no pool. */
+export async function examplePools(env, u) {
+  const fix = await fixNow(env, u);
+  if (!fix || !env.ORDERBOOK) return [];
+  const state = await exampleAccount(env, u);
+  if (!state.ok) throw new Error(state.error);
+  const orders = state.account.orders;
+  return (state.account.pools || []).map((p) => {
+    const mine = (p.joins || []).find((j) => j.u === u && joinLive(orders.find((o) => o.id === j.oid)));
+    return Object.assign({}, p, { mine: mine ? mine.oid : null, unitsIn: +((+p.seedUnits || 0) + poolUnits(p, (uu, oid) => orders.find((o) => o.id === oid))).toFixed(3) });
+  });
+}
+/** Their join on a fixture pool, by the book's own rules, in their fixture alone; a retry once. */
+export async function exampleJoin(env, u, id, body) {
+  const fix = await fixNow(env, u);
+  if (!fix) return soon();
+  if (!env.ORDERBOOK) return { error: POOL_ON_KV, status: 503 };
+  const result = await exampleAccount(env, u, { actor: "pjoin", id, body, digest: (fix.prices && fix.prices.digest) || "",
+    request: { id, body }, rid: ridOf(body) || crypto.randomUUID() });
+  return result.ok ? { order: customerView(result.order) } : { error: result.error, status: result.status,
+    ...(result.code ? { code: result.code } : {}), ...(result.vars ? { vars: result.vars } : {}) };
 }
 
 /** Step 7: the fixture's thread, or null: a test account's thread lives there alone, so the desk's Chat never lists it. */

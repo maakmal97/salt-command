@@ -54,12 +54,12 @@ import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb6
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { handleMaker, publicHours, customerAmend } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
 import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
-  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet } from "./orders.js";
+  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -389,6 +389,21 @@ async function handleCustomer(request, env, p, m) {
     const b = await readJson(request);
     const r = isTest(u) ? await exampleSay(env, u, b) : await sayThread(env, u, b);
     return r.error ? refuse(r) : json({ ok: true, thread: threadView(r.thread) });
+  }
+  /* A GROUP ORDER (the pool): the open ones and any they joined lately, read on the page's poll; and their join, through the
+     order's own road (one collected order at their own list price, its digest checked as at Place). A test account's are its fixture's. */
+  if (p === "/pools") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, pools: (isTest(u) ? await examplePools(env, u) : await poolsOf(env, u)).map(poolView) });
+  }
+  const pj = /^\/pools\/(p[0-9]{14}-[a-z0-9]{1,8})\/join$/.exec(p);
+  if (pj) {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const r = isTest(u) ? await exampleJoin(env, u, pj[1], b) : await poolJoin(env, u, pj[1], b);
+    /* a moved list answers 409 with the list as it stands, sealed, as Place does */
+    if (r.error) return refuse(r, "prices" in r ? { prices: r.prices } : {});
+    return json({ ok: true, order: customerView(r.order) });
   }
   /* F13: the public half of his slip key, which their page seals a slip to; none filed, no slip is offered */
   if (p === "/slip/key") {
@@ -1864,7 +1879,7 @@ export default {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
-      || p === "/thread") return handleCustomer(request, env, p, m);
+      || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")

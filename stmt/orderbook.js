@@ -341,7 +341,7 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (op === "fixture-account") {
       if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
-        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder"].includes(a.actor))
+        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder", "pjoin"].includes(a.actor))
         return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
         const sql = this.state.storage.sql;
@@ -350,6 +350,7 @@ export class OrderBook {
           return { ok: false, error: "The acceptance account changed. Read its latest publication.", status: 409 };
         const doc = row && row.generation === a.generation ? JSON.parse(row.doc)
           : { claims: a.seed?.claims || [], sales: a.seed?.sales || [], orders: a.seed?.orders || [], revision: 0 };
+        if (!doc.pools) doc.pools = JSON.parse(JSON.stringify(a.seed?.pools || []));   /* a group order's examples, in this fixture alone */
         const receipts = row && row.generation === a.generation ? JSON.parse(row.receipts) : {};
         if (a.actor !== "read") {
           if (typeof a.rid !== "string" || !RID_RE.test(a.rid))
@@ -391,6 +392,15 @@ export class OrderBook {
             if (decision.error) return no(decision, decision.status || 400);
             order = decision.none ? previous : applyEvent(previous, decision.ev).order;
             doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = order;
+          } else if (a.actor === "pjoin") {
+            /* a join on an example pool: the book's own decidePoolJoin, the order and the join written together into this fixture */
+            const pool = doc.pools.find((p) => p.id === a.id);
+            const decision = decidePoolJoin(a.u, pool, a.body, doc.orders, at, a.digest);
+            if (decision.error) return no(decision, decision.status || 400);
+            order = applyEvent(null, decision.place).order;
+            order.id = order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+            doc.orders.push(order);
+            pool.joins = (pool.joins || []).concat([{ u: a.u, oid: order.id, at }]);
           } else if (a.actor === "customer") {
             const decision = decideAccountClaim(a.u, a.request, doc.claims.filter((c) => c.state === "waiting"), at);
             if (decision.error) return no(decision, decision.status || 400);

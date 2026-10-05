@@ -52036,5 +52036,10 @@ await (async () => {
   await (await import("./pool.mjs")).store({ ok, KV, skipOff });
 })();
 
+section("Pool B2: a customer reads the pools and joins on their session, at their own price, and a test account's join stays in its fixture");
+await (async () => {
+  await (await import("./pool-join.mjs")).join({ ok, KV, skipOff });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

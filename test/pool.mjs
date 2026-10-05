@@ -1,8 +1,8 @@
 /* test/pool.mjs: THE POOL, A GROUP ORDER (his plan of 05 Oct 2026). One exported function a fold, each run as a section of
  * test/verify.mjs. Every assertion here was proved red by its own mutation (see the fold's commit). */
-const U1 = "abcd-efgh", U2 = "jklm-npqr", rid = (s) => s.repeat(16).slice(0, 32);
+export const U1 = "abcd-efgh", U2 = "jklm-npqr", rid = (s) => s.repeat(16).slice(0, 32);
 
-async function sqlite() {
+export async function sqlite() {
   try { return (await import("node:sqlite")).DatabaseSync; } catch (e) { return null; }
 }
 
