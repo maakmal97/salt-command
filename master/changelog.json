@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1018",
+  "d": "05 Oct 2026",
+  "t": "A LOT'S PAYMENT, RECEIPT AND DEFAULT FROM THE COUNTER",
+  "n": [
+   "<b>A4.</b> Counter Maker amends a purchase lot with Payment (cash only), Receipt (units only) or Default, each the entry the Workbench builds, through the same ledger-amend route; a payment is held to what the lot can still take, money already on its way counted, and a default waits behind it and is refused once units have arrived. The drafter and the fold now take the three on a lot; Linked and Rewarded stay refused, and a Desk entry the drafter refused before stays refused. A default is dated (<code>defaultedOn</code>) and leaves its step in the lot's trail, a defaulted lot takes no payment or receipt, and a Correction that reverts a default clears its date, in the fold and in ovAmend. Nothing prices."
+  ]
+ },
+ {
   "v": "v1017",
   "d": "05 Oct 2026",
   "t": "THE RESTOCK LIGHT AND THE RESTOCK DATE",
