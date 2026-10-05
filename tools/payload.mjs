@@ -65,6 +65,25 @@ export async function openMaster(masterPath = MASTER) {
       w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() { }, removeListener() { }, addEventListener() { }, removeEventListener() { } }));
       w.scrollTo = () => { };
       w.HTMLCanvasElement.prototype.getContext = () => null;   // charts are not needed here
+      /* v1022: the desk's time script arms a timer for the next theme, hours away, and a jsdom
+         timer holds Node open, so a tool that never closes its window (stmt-publish) hung until
+         Actions cancelled the job. A timer over a minute runs on an unref'd Node timer instead,
+         cleared when the window closes; the desk's own short timers stay jsdom's. */
+      const jsSet = w.setTimeout, jsClear = w.clearTimeout, long = new Map();
+      let nextId = -1;
+      w.setTimeout = function (fn, ms, ...args) {
+        if (!(Number(ms) > 60000)) return jsSet.call(w, fn, ms, ...args);
+        const id = nextId--;
+        const h = setTimeout(() => { long.delete(id); typeof fn === "function" ? fn(...args) : w.eval(String(fn)); }, Number(ms));
+        h.unref();
+        long.set(id, h);
+        return id;
+      };
+      w.clearTimeout = function (id) {
+        if (long.has(id)) { clearTimeout(long.get(id)); long.delete(id); } else jsClear.call(w, id);
+      };
+      const close = w.close;
+      w.close = function () { for (const h of long.values()) clearTimeout(h); long.clear(); return close.call(w); };
     },
   });
 

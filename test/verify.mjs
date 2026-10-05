@@ -8311,6 +8311,20 @@ await (async () => {
   ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color starts at obsidian; salt-time.js sets it to the theme's ground");
 })();
 
+section("v1022 hang: a tool that opens the desk and never closes it still exits");
+await (async () => {
+  /* v1022's time script arms a timer for the next theme, hours away; a jsdom timer holds Node open, so
+     stmt-publish, which never closes its window, ran until Actions cancelled the job twice. openMaster runs
+     a timer over a minute unref'd. In a fresh node, the way a tool runs, with the window left open. */
+  const MH = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const r = spawnSync(process.execPath, ["--input-type=module", "-e",
+    'const { openMaster } = await import("./tools/payload.mjs"); const { w } = await openMaster(process.argv[1]);'
+    + ' console.log(w.document.documentElement.getAttribute("data-time") || "");', MH],
+    { cwd: REPO, encoding: "utf8", timeout: 60000 });
+  ok(!r.error && r.status === 0, "a tool that opens the desk and leaves the window open exits on its own (" + (r.error ? r.error.code : "status " + r.status) + ")");
+  ok(/^(dawn|day|dusk|night)$/.test(String(r.stdout).trim()), "…and the desk's time script still sets a theme in that window (" + String(r.stdout).trim() + ")");
+})();
+
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
 await (async () => {
   /* The v233 breach compared a lock the desk stopped pricing from at v280 against the latest lot,
