@@ -9227,7 +9227,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1021","d":"05 Oct 2026","t":"COUNTER MAKER SETS THE PRINTED BOARD SIZES (A6)","n":["<b>A6.</b> Counter Admin gains Printed board sizes, <code>inputs/house-sizes</code>: the sizes the board prints, queued as the one entry the Desk's <code>shQueueHouse</code> queues (a hide list, <code>prices</code> empty, <code>clearing</code>). It is a print setting and never a price: the body takes only a timestamp, a book and the sizes to hide, the entry carries no price figure, and the drafter refuses one. The rungs offered are the Desk's own <code>shSizes</code>, which the pricing snapshot now carries as <code>rungs</code>; hiding every size is refused. Ticking the sizes again after a send makes a new request. The engine's record check accepts a <code>hide</code> list on this path alone. Nothing prices."]}];
+const evolution=[{"v":"v1022","d":"05 Oct 2026","t":"THE THEME FOLLOWS THE CLOCK; A PART'S WORD SAID ONCE","n":["<b>Themes.</b> The desk takes its theme from the viewer's clock: Dawn from 04:00, Dusk from 16:00, Night from 22:00; Day is held back and Dawn stands in for it. <code>design/salt-time.js</code> is a fourth generated block, run in the head before the first paint, and a picker at the rail's foot holds Auto, Dawn, Dusk or Night on the device. The desk's own colours now read the tokens, so Night is the build before, pixel for pixel. The Counter looks the same. Nothing prices.","<b>D10 and C20.</b> Under a parts strip the open part's heading is kept for screen readers and hidden from the eye, so the pill says the word once; the Ledger loses its second heading. Two stale comments on the Counter go. Nothing prices."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9376,7 +9376,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Oct 2026, 11:34 KL';
+const LAST_UPDATED='05 Oct 2026, 12:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

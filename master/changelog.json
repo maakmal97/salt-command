@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1022",
+  "d": "05 Oct 2026",
+  "t": "THE THEME FOLLOWS THE CLOCK; A PART'S WORD SAID ONCE",
+  "n": [
+   "<b>Themes.</b> The desk takes its theme from the viewer's clock: Dawn from 04:00, Dusk from 16:00, Night from 22:00; Day is held back and Dawn stands in for it. <code>design/salt-time.js</code> is a fourth generated block, run in the head before the first paint, and a picker at the rail's foot holds Auto, Dawn, Dusk or Night on the device. The desk's own colours now read the tokens, so Night is the build before, pixel for pixel. The Counter looks the same. Nothing prices.",
+   "<b>D10 and C20.</b> Under a parts strip the open part's heading is kept for screen readers and hidden from the eye, so the pill says the word once; the Ledger loses its second heading. Two stale comments on the Counter go. Nothing prices."
+  ]
+ },
+ {
   "v": "v1021",
   "d": "05 Oct 2026",
   "t": "COUNTER MAKER SETS THE PRINTED BOARD SIZES (A6)",
