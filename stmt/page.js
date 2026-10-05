@@ -456,6 +456,9 @@ body.ended>*:not(#aEnded){display:none}
 .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
 .aring svg{width:22px;height:22px}
+/* 05 OCT 2026: THE RAIL'S NAME ON ONE LINE. The recipe's 22px title leaves 131px beside the ring in a 212px rail, and
+   each rail's name needs about 148, so it broke onto two lines; at 1.2rem it fits with room */
+.salt-rail__brand .salt-title{font-size:1.2rem;white-space:nowrap}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 #mFoot:empty{display:none}
 .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
