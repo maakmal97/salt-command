@@ -50133,6 +50133,11 @@ await (async () => {
   await (await import("./maker-orders.mjs")).run({ ok });
 })();
 
+section("Counter maker order controls: close, Ready mode, offer again, quick replies");
+await (async () => {
+  await (await import("./maker-order-controls.mjs")).run({ ok });
+})();
+
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });

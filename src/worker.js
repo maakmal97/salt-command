@@ -22,7 +22,7 @@ import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
-import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish } from "./maker-request.js";
+import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
 import { queueSale } from "./orders.js";
@@ -685,12 +685,16 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         if (others.length) await afterApproval(env, ctx, others);
         else if (result.approved) stageOnApproval(env, ctx);
       } else {
-        result = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
-          env, id, body, "Counter Admin"
+        /* a handover, a close or a move offered again carries its request id: a retry is answered from the first answer */
+        const { rid, ...rest } = body;
+        const tap = () => ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
+          env, id, rest, "Counter Admin"
         );
-        if (result.ok && result.preapproval && result.preapproval.spent === "applied")
+        result = !rid ? await tap() : !env.SALT_LEDGER ? { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" }
+          : await makerOrderOnce(env.SALT_LEDGER, rid, action, { id, ...rest }, tap);
+        if (result.ok && !result.again && result.preapproval && result.preapproval.spent === "applied")
           await afterApproval(env, ctx, [result.preapproval.draft]);
-        if (result.ok) reconcileOnTap(env, ctx);
+        if (result.ok && !result.again) reconcileOnTap(env, ctx);
       }
     } catch (e) { result = { ok: false, status: 500, error: String((e && e.message) || e) }; }
     return json(result, result.ok ? 200 : (result.status || 502));
