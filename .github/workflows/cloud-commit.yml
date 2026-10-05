@@ -26,9 +26,15 @@
 # runs queued, 20 of them behind a suite. The suite job takes no lock, checks out the sha chain
 # proved the phone serving, and writes or clears its notice only while the phone still serves it.
 #
-# SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
+# SETUP, AND IT IS THE ONE THING ONLY HE CAN DO. The repo holds these six secrets and no other
+# (05 Oct 2026); a secret no step reads is deleted, never kept "in case":
 #   gh secret set CLOUDFLARE_API_TOKEN     Workers Scripts:Edit, Workers KV:Edit, D1:Edit
-#   gh secret set ANTHROPIC_API_KEY          (the fold's one call; CLAUDE_CODE_OAUTH_TOKEN is no longer read here)
+#   gh secret set ANTHROPIC_API_KEY        the fold's one call; missing, the fold lands on the tool's notes
+#   gh secret set CF_ACCESS_CLIENT_ID      with _SECRET, the Access service token that reads the live
+#   gh secret set CF_ACCESS_CLIENT_SECRET    desk behind the login (here and in ship-check.yml)
+#   gh secret set SALT_PUSH_KEY            opens POST /push/send and nothing else; optional
+#   gh secret set STMT_KEY                 the statements' content key, from statements/_secrets.json
+# The repo variable CLOUDFLARE_ACCOUNT_ID is a variable, not a secret. Outside the repo:
 #   npx wrangler secret put SALT_GITHUB_TOKEN    (the Worker's dispatch on every approval)
 name: Cloud commit
 
