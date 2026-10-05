@@ -56,9 +56,14 @@ async function shoot(label, only) {
   const b = await chromium.launch();
   for (const [w, h] of WIDTHS) {
     const page = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: w < 600, hasTouch: w < 600 });
+    /* 05 Oct 2026: SALT_TIME=dawn|day|dusk|night holds that theme (the desk's salt-time choice), so a shot does not
+       depend on the hour it is taken; a build from before the themes ignores it */
+    if (process.env.SALT_TIME) await page.addInitScript((t) => { try { localStorage.setItem("salt-time", t); } catch (e) {} }, process.env.SALT_TIME);
     await page.goto(`http://127.0.0.1:${port}/desk`, { waitUntil: "networkidle" });
     /* the stamp, the version chip, the entry counts and the version entries move on every build; nothing else may */
     await page.addStyleTag({ content: "#meta,#verChip,.ledct{visibility:hidden!important}.evo{display:none!important}*{caret-color:transparent!important}" });
+    /* RENDER_HIDE="<selectors>": leave out what a fold adds on purpose, so the shots measure the rest of it */
+    if (process.env.RENDER_HIDE) await page.addStyleTag({ content: process.env.RENDER_HIDE + "{display:none!important}" });
     await page.waitForTimeout(800);
     for (const part of PARTS.filter((p) => !only || only.includes(p))) {
       await page.evaluate((p) => { switchTab(p); window.scrollTo(0, 0);
@@ -96,7 +101,7 @@ for name in sys.argv[3:]:
     if n <= 16: print('  same  %-22s (%d px of noise in %s)' % (name, n, box)); continue
     print('  DIFF  %-22s %d px in %s' % (name, n, box)); bad += 1
 sys.exit(1 if bad else 0)`;
-  const r = spawnSync("python", ["-c", py, A, B, ...shots], { encoding: "utf8" });
+  const r = spawnSync(process.env.PYTHON || "python", ["-c", py, A, B, ...shots], { encoding: "utf8" });
   process.stdout.write(r.stdout); process.stderr.write(r.stderr);
   process.exit(r.status);
 }

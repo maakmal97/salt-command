@@ -73,7 +73,7 @@ function requireOnce(name, needle, why) {
 /* ---- P2 head block: PWA + a per-device id + service-worker registration ---------- */
 const PWA_BLOCK = [
   '<!-- BEGIN cloud/PWA: injected by tools/build.mjs; do NOT hand-edit this built file -->',
-  '<meta name="theme-color" content="#180f2c">',
+  '<meta name="theme-color" content="#05080a">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',

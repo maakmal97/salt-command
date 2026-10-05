@@ -87,7 +87,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026; the Worker's own check s
    the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
    recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
-   actions) migrates one group per version, on his word. The Counter takes the tokens and five
+   actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
+   (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
+   own CSS is a token, never a literal, and Day stays held back (`data-time-day="off"`) until the
+   remaining tints are tokens too (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and

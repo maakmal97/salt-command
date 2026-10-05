@@ -8,13 +8,120 @@
   "mcpServerNames": []
 }
 </script>
-<html lang="en-GB" data-tod="register">
+<html lang="en-GB" data-tod="register" data-time-day="off">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* ==== DESIGN time: generated from design/salt-time.js, vendored from Code/salt-ds src/salt-time.js, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
+/* salt-time.js: the theme follows the viewer's clock (05 Oct 2026).
+ *
+ * Four themes, six hours each, on the viewer's own local time: Dawn from 04:00, Day from 10:00, Dusk
+ * from 16:00, Night from 22:00. It sets data-time on <html>, which re-points the identity's roles in
+ * styles.css. Run it in <head>, before the body paints, so a page never flashes the wrong theme.
+ *
+ * It arms one timer to the next boundary (never a poll) and re-reads on every return to the page. A
+ * change while the page is open cross-fades for --salt-theme-fade (the class salt-theming, removed
+ * when the fade ends); the first paint never fades. A choice of the viewer's (Auto, or one theme held)
+ * is kept in localStorage under salt-time; Auto is the default. In Auto, a phone set to dark mode is
+ * never given the light Day theme: Dawn stands in for it, as it does on a surface marked
+ * data-time-day="off" while its own colours are still being turned into tokens.
+ *
+ * A consumer that draws its own colours (a chart, a canvas) listens for the salt-time event on
+ * document.documentElement and redraws once. window.saltTime.set('auto' | 'dawn' | 'day' | 'dusk' |
+ * 'night') is the one way to change the choice.
+ *
+ * Vendored by each surface's own sync: the desk inlines it in the master, the Counter carries it inside
+ * its page script, QR Command inside app.js (its CSP refuses an inline script). It is ES5 with no
+ * backslash and no backtick, because the Counter ships it inside a template literal. */
+(function () {
+  var KEY = 'salt-time';
+  var HOURS = [[4, 'dawn'], [10, 'day'], [16, 'dusk'], [22, 'night']];
+  var GROUND = { dawn: '#0f131a', day: '#f3efe6', dusk: '#120d0b', night: '#05080a' };
+  var root = document.documentElement;
+  var timer = 0, fading = 0;
+
+  function byClock(d) {
+    var h = d.getHours(), t = 'night';
+    for (var i = 0; i < HOURS.length; i++) if (h >= HOURS[i][0]) t = HOURS[i][1];
+    return t;
+  }
+  function choice() {
+    var v = null;
+    try { v = localStorage.getItem(KEY); } catch (e) {}
+    return v === 'dawn' || v === 'day' || v === 'dusk' || v === 'night' ? v : 'auto';
+  }
+  function prefersDark() {
+    try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
+  }
+  /* A surface whose own colours are not yet all tokens marks <html data-time-day="off">: it is never
+     given the light theme, held or by the clock, and Dawn stands in for it. */
+  function dayOff() { return root.getAttribute('data-time-day') === 'off'; }
+  function resolve(d) {
+    var c = choice();
+    if (c !== 'auto') return c === 'day' && dayOff() ? 'dawn' : c;
+    var t = byClock(d || new Date());
+    return t === 'day' && (prefersDark() || dayOff()) ? 'dawn' : t;
+  }
+  function paint(t, fade) {
+    if (root.getAttribute('data-time') === t) return;
+    if (fade && root.hasAttribute('data-time')) {
+      root.classList.add('salt-theming');
+      clearTimeout(fading);
+      fading = setTimeout(function () { root.classList.remove('salt-theming'); }, 1300);
+    }
+    root.setAttribute('data-time', t);
+    bar();
+    var ev;
+    try { ev = new CustomEvent('salt-time', { detail: { time: t } }); } catch (e) { ev = null; }
+    if (ev) root.dispatchEvent(ev);
+  }
+  /* the browser's bar takes the ground; a theme-color meta written after this script (a build that
+     injects one later in <head>) is set again once the document is parsed */
+  function bar() {
+    var t = root.getAttribute('data-time'), metas = document.querySelectorAll('meta[name="theme-color"]');
+    for (var i = 0; i < metas.length; i++) metas[i].setAttribute('content', GROUND[t] || GROUND.night);
+  }
+  function untilNext(d) {
+    var h = d.getHours(), next = -1;
+    for (var i = 0; i < HOURS.length; i++) if (HOURS[i][0] > h) { next = HOURS[i][0]; break; }
+    var n = new Date(d.getTime());
+    if (next < 0) { n.setDate(n.getDate() + 1); next = HOURS[0][0]; }
+    n.setHours(next, 0, 0, 0);
+    return n.getTime() - d.getTime();
+  }
+  function arm() {
+    clearTimeout(timer);
+    timer = setTimeout(function () { paint(resolve(), true); arm(); }, Math.min(untilNext(new Date()) + 500, 2147483000));
+  }
+
+  paint(resolve(), false);
+  arm();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bar);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { paint(resolve(), true); arm(); }
+  });
+
+  window.saltTime = {
+    hours: HOURS,
+    byClock: byClock,
+    choice: choice,
+    get: function () { return root.getAttribute('data-time'); },
+    set: function (v) {
+      try {
+        if (v === 'dawn' || v === 'day' || v === 'dusk' || v === 'night') localStorage.setItem(KEY, v);
+        else localStorage.removeItem(KEY);
+      } catch (e) {}
+      paint(resolve(), true);
+      arm();
+    }
+  };
+})();
+/* ==== END DESIGN time ==== */
+</script>
 <title>Salt Command</title>
 <!-- BEGIN cloud/PWA: injected by tools/build.mjs; do NOT hand-edit this built file -->
-<meta name="theme-color" content="#180f2c">
+<meta name="theme-color" content="#05080a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -73,7 +180,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="70d0fb850343c355";
+var SALT_BUILD_ID="a8e5e9cd3c1e4148";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -288,12 +395,12 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
 .apday{min-height:64px;border:1px solid var(--line);border-radius:8px;padding:3px 3px 4px;background:rgba(0,0,0,.16);position:relative;overflow:visible;}
 .apday.appast{opacity:.42;}
 .apday.apblank{border-color:transparent;background:transparent;}
-.apday.aptoday{border-color:var(--gold);background:rgba(197,160,89,.07);}
+.apday.aptoday{border-color:var(--gold);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday .apdn{font-size:10px;color:var(--dim);text-align:right;padding:1px 3px 2px;font-variant-numeric:tabular-nums;}
 .apday.aptoday .apdn{color:var(--gold);font-weight:600;}
 .apchip{display:block;width:100%;text-align:left;font-size:9px;font-weight:600;letter-spacing:.2px;border-radius:5px;padding:2px 4px;margin-top:2px;cursor:pointer;position:relative;border:1px solid transparent;background:rgba(228,233,236,.13);color:var(--ice);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.apchip.apowes{background:rgba(212,105,76,.15);color:var(--crim);}
-.apchip.aplate{background:rgba(197,160,89,.15);color:var(--gold);}
+.apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 15%, transparent);color:var(--crim);}
+.apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 15%, transparent);color:var(--gold);}
 .apchip:hover,.apchip:focus{border-color:currentColor;outline:none;}
 .aprail{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
 .aprail .apchip{display:inline-block;width:auto;font-size:10px;padding:4px 8px;margin-top:0;}
@@ -319,31 +426,31 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
   .apside{overflow-wrap:break-word;}}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
-thead th{position:sticky;top:0;background:#0b1215;color:var(--gold);font-size:10px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line);}
+thead th{position:sticky;top:0;background:var(--salt-slate);color:var(--gold);font-size:10px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line);}
 /* v401: a header that SORTS is a control, so it obeys --tap like every other control. On a
    cell, height is a minimum, so it grows with the token and never fights its own padding.
    Measured at 375px: the six Customers sort headers were 30.9px against a 44px token. */
 table.sortt thead th{height:var(--tap);cursor:pointer;}
-th.l,td.l{text-align:left;color:var(--mut);font-weight:700;position:sticky;left:0;background:#0b1215;}
+th.l,td.l{text-align:left;color:var(--mut);font-weight:700;position:sticky;left:0;background:var(--salt-slate);}
 tbody td{border-bottom:1px solid #1c2628;color:var(--ink);font-weight:600;}
-tr.tot td{font-weight:800;background:#0b1215;}
+tr.tot td{font-weight:800;background:var(--salt-slate);}
 
 .mono{font-family:ui-monospace,'Cascadia Code',Consolas,'Segoe UI Mono',monospace;font-size:12px;color:var(--ice);}
 .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px;}
-.paid{background:rgba(111,174,151,.16);color:var(--grn);}
-.unpaid{background:rgba(184,115,51,.16);color:var(--amber);}
+.paid{background:color-mix(in srgb, var(--salt-verdigris) 16%, transparent);color:var(--grn);}
+.unpaid{background:color-mix(in srgb, var(--salt-copper) 16%, transparent);color:var(--amber);}
 .buy{background:rgba(228,233,236,.16);color:var(--ice);}
-.sell{background:rgba(142,162,182,.18);color:var(--vio);}
-.inkind{background:rgba(197,160,89,.16);color:var(--gold);}
-.def{background:rgba(212,105,76,.18);color:var(--crim);}
-.prov{background:rgba(197,160,89,.18);color:var(--gold);border:1px dashed rgba(197,160,89,.55);}
-.provbar{margin-top:8px;padding:8px 12px;border-radius:9px;background:rgba(197,160,89,.10);border:1px dashed rgba(197,160,89,.45);
+.sell{background:color-mix(in srgb, var(--salt-steel) 18%, transparent);color:var(--vio);}
+.inkind{background:color-mix(in srgb, var(--salt-brass) 16%, transparent);color:var(--gold);}
+.def{background:color-mix(in srgb, var(--salt-ember) 18%, transparent);color:var(--crim);}
+.prov{background:color-mix(in srgb, var(--salt-brass) 18%, transparent);color:var(--gold);border:1px dashed color-mix(in srgb, var(--salt-brass) 55%, transparent);}
+.provbar{margin-top:8px;padding:8px 12px;border-radius:9px;background:color-mix(in srgb, var(--salt-brass) 10%, transparent);border:1px dashed color-mix(in srgb, var(--salt-brass) 45%, transparent);
   color:var(--gold);font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .provbar b{color:var(--ink);}
 .ubtn{font-size:11px;padding:3px 9px;border-radius:7px;cursor:pointer;background:transparent;
-  border:1px solid rgba(197,160,89,.5);color:var(--gold);}
-.ubtn:hover{background:rgba(197,160,89,.16);}
-.mod{background:rgba(142,162,182,.18);color:var(--vio);}
+  border:1px solid color-mix(in srgb, var(--salt-brass) 50%, transparent);color:var(--gold);}
+.ubtn:hover{background:color-mix(in srgb, var(--salt-brass) 16%, transparent);}
+.mod{background:color-mix(in srgb, var(--salt-steel) 18%, transparent);color:var(--vio);}
 /* ===== Network tree (v135). The connecting bus is drawn BY the child columns, not
    as a free-standing rule, so it can only ever span first stem to last stem. Each
    column paints a 1px top border across its own width; the first column suppresses
@@ -413,7 +520,7 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .lmove .cqty:empty,.lmove .cprc:empty{min-height:1px;}
 .lpen{all:unset;position:absolute;top:5px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--gold);opacity:0;cursor:pointer;transition:opacity .12s;}
 .ledwrap .lcard:hover .lpen,.ledwrap .lcard:focus-within .lpen,.lpen:focus-visible{opacity:1;}
-.lpen:hover,.lpen:focus-visible{background:rgba(197,160,89,.14);outline:none;}
+.lpen:hover,.lpen:focus-visible{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);outline:none;}
 @media (hover:none){.lpen{opacity:.55;}}
 .lprov{position:absolute;top:6px;right:8px;opacity:1;width:auto;height:auto;border-radius:0;cursor:default;}
 /* v565: THE FAN IS FIXED, NOT ABSOLUTE, BECAUSE .lcard CLIPS. Every rule below follows from that:
@@ -429,8 +536,8 @@ tr.tot td{font-weight:800;background:#0b1215;}
    INVISIBLE and 30.8px tall while still answering a hit test. A control that can be invisible and
    under the 44px tap contract is worse than a control that does not move, and the fan already
    reads as separate buttons because it is separate buttons. */
-.lmenu button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:var(--tap,44px);padding:0 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--bg0,#05080a);border:1px solid var(--line);border-radius:23px;box-shadow:0 8px 22px rgba(0,0,0,.5);}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.14);color:var(--gold);border-color:var(--gold);}
+.lmenu button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:var(--tap,44px);padding:0 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--bg0,var(--salt-obsidian));border:1px solid var(--line);border-radius:23px;box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--gold);border-color:var(--gold);}
 .lmenu button.lmore{color:var(--mut);}
 .lpen::after{content:'';position:absolute;top:-5px;right:-3px;width:44px;height:44px;}
 .ledwrap .lcard{background:none;border:0;border-radius:0;border-bottom:1px solid var(--line);}
@@ -506,7 +613,7 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .lhead .lcol,.lhead .lstate{font-size:11px;color:var(--dim);font-weight:700;}
 .entflash{outline:2px solid var(--gold);outline-offset:2px;}
 .lopen{border-left:2px solid var(--ice);}
-.lclose{border-left:2px solid var(--grn);background:rgba(111,174,151,.04);}
+.lclose{border-left:2px solid var(--grn);background:color-mix(in srgb, var(--salt-verdigris) 4%, transparent);}
 .lcard>.lclose:not(:first-child){border-top:1px solid var(--line);}
 .lclabel{font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;min-width:56px;white-space:nowrap;}
 .lclabel.roleopen{color:var(--ice);}
@@ -546,9 +653,9 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .eref.elink:hover{background:rgba(228,233,236,.14);}
 .etype{font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:6px;white-space:nowrap;}
 .etype.efulfil{background:rgba(228,233,236,.14);color:var(--ice);}
-.etype.emod{background:rgba(142,162,182,.16);color:var(--vio);}
-.etype.ecancel{background:rgba(212,105,76,.16);color:var(--crim);}
-.etype.erewarded{background:rgba(197,160,89,.16);color:var(--gold);}
+.etype.emod{background:color-mix(in srgb, var(--salt-steel) 16%, transparent);color:var(--vio);}
+.etype.ecancel{background:color-mix(in srgb, var(--salt-ember) 16%, transparent);color:var(--crim);}
+.etype.erewarded{background:color-mix(in srgb, var(--salt-brass) 16%, transparent);color:var(--gold);}
 .etype.elinked{background:rgba(228,233,236,.16);color:var(--ice);}
 .pnil{color:var(--dim);}
 /* ============ LEDGER ON A PHONE (v307) ============
@@ -577,8 +684,8 @@ tr.tot td{font-weight:800;background:#0b1215;}
    later in the file, so it won. The desk already treats 560px as its phone breakpoint,
    which is where the rail goes sticky, so the treatment belongs there and there is now one
    breakpoint for the ledger rather than two fighting. */
-.open{background:rgba(184,115,51,.16);color:var(--amber);}
-.pendingt{background:rgba(142,162,182,.16);color:#8ea2b6;border:1px solid rgba(142,162,182,.35);}
+.open{background:color-mix(in srgb, var(--salt-copper) 16%, transparent);color:var(--amber);}
+.pendingt{background:color-mix(in srgb, var(--salt-steel) 16%, transparent);color:var(--salt-steel);border:1px solid color-mix(in srgb, var(--salt-steel) 35%, transparent);}
 /* v123: Ledger card state colour spine, cancelled dimming, collapsible interim steps */
 /* v493: the card's state tint moved to design/desk.css, the layer that owns colour. */
 .lopen,.lclose{border-left:0;}
@@ -597,10 +704,10 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .nswhy b{color:var(--gold);font-weight:700;}
 .neq{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:13px 0 4px;padding-top:13px;border-top:1px solid var(--line);}
 .nchip{font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--ink);white-space:nowrap;}
-.nchip.nv{border-color:var(--vio);color:#8ea2b6;}
-.nchip.ng{border-color:var(--grn);color:#6fae97;}
+.nchip.nv{border-color:var(--vio);color:var(--salt-steel);}
+.nchip.ng{border-color:var(--grn);color:var(--salt-verdigris);}
 .nchip.ni{border-color:var(--ice);color:#e4e9ec;}
-.nchip.ngold{background:linear-gradient(135deg,var(--gold),var(--amber));color:#05080a;border-color:transparent;box-shadow:0 8px 20px -12px var(--gold);}
+.nchip.ngold{background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--salt-ink-on-accent);border-color:transparent;box-shadow:0 8px 20px -12px var(--gold);}
 .nop{font-size:15px;font-weight:800;color:var(--dim);}
 .nbranch{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-left:4px;padding-left:12px;border-left:1px dashed var(--line);}
 @media(max-width:640px){.netmap{grid-template-columns:1fr;}.nbranch{margin-left:0;padding-left:0;border-left:0;width:100%;justify-content:center;margin-top:2px;}}
@@ -618,11 +725,11 @@ tr.tot td{font-weight:800;background:#0b1215;}
 
 
 
-.pend{margin-top:14px;border-radius:15px;padding:14px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(228,233,236,.08),rgba(111,174,151,.05));border:1px dashed rgba(228,233,236,.4);}
-.pend.def{background:linear-gradient(135deg,rgba(212,105,76,.12),rgba(184,115,51,.06));border-color:rgba(212,105,76,.5);}
+.pend{margin-top:14px;border-radius:15px;padding:14px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(228,233,236,.08),color-mix(in srgb, var(--salt-verdigris) 5%, transparent));border:1px dashed rgba(228,233,236,.4);}
+.pend.def{background:linear-gradient(135deg,color-mix(in srgb, var(--salt-ember) 12%, transparent),color-mix(in srgb, var(--salt-copper) 6%, transparent));border-color:color-mix(in srgb, var(--salt-ember) 50%, transparent);}
 .pend h3{margin:0 0 3px;font-size:14px;color:var(--ice);display:flex;align-items:center;gap:8px;}
 .pend.def h3{color:var(--crim);}
-.pend .cd{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--ice);background:#05080a;border:1px solid var(--line);border-radius:999px;padding:3px 11px;}
+.pend .cd{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--ice);background:var(--salt-obsidian);border:1px solid var(--line);border-radius:999px;padding:3px 11px;}
 .pend .cd.crim{color:var(--crim);border-color:var(--crim);}
 .pend .dsc{font-size:12px;color:var(--mut);margin-bottom:10px;}
 .dsc{font-size:12px;color:var(--mut);line-height:1.5;}
@@ -633,14 +740,14 @@ details.obsec>summary::-webkit-details-marker{display:none;}
 details.obsec>summary::before{content:"\25B8";color:var(--dim);font-size:11px;transition:transform .15s;}
 details.obsec[open]>summary::before{transform:rotate(90deg);}
 details.obsec>summary .q{font-weight:500;color:var(--dim);font-size:11px;}
-details.obsec>summary .ct{margin-left:auto;font-size:11px;font-weight:700;color:var(--mut);background:#05080a;border:1px solid var(--line);border-radius:999px;padding:2px 9px;}
+details.obsec>summary .ct{margin-left:auto;font-size:11px;font-weight:700;color:var(--mut);background:var(--salt-obsidian);border:1px solid var(--line);border-radius:999px;padding:2px 9px;}
 details.obsec>summary .ct.zero{color:var(--dim);}
 /* ============ v343: THE PARTS ARE VISIBLE. v341 folded a view's other tabs at the foot of its
    lead, which on a 7,000px lead is the same as losing them: the Network sat closed under the
    whole of Customers. A strip of pills at the top of every view names every part it holds,
    the rail lists the active view's parts beneath it, and one part shows at a time. ============ */
 .vnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;}
-.vpill{font:inherit;font-size:12px;font-weight:700;letter-spacing:.2px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:#05080a;color:var(--mut);cursor:pointer;transition:color .12s,border-color .12s;}
+.vpill{font:inherit;font-size:12px;font-weight:700;letter-spacing:.2px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--salt-obsidian);color:var(--mut);cursor:pointer;transition:color .12s,border-color .12s;}
 .vpill:hover{color:var(--ink);}
 .vpill.on{border-color:var(--acc,var(--gold));color:var(--ink);background:rgba(255,255,255,.07);}
 .subs{display:none;margin:-1px 0 7px 12px;padding-left:9px;border-left:1px solid var(--line);}
@@ -679,18 +786,18 @@ details.rcard>summary .rsum b{color:var(--ink);}
   border:1px solid currentColor;line-height:1.5;vertical-align:middle;
   margin-left:8px;margin-right:2px;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .tierpill .pd{width:5px;height:5px;border-radius:50%;background:currentColor;}
-.tierpill.t1{color:#e4e9ec;background:rgba(242,244,245,.10);
-  box-shadow:0 0 0 1px rgba(242,244,245,.35),0 0 14px -2px rgba(242,244,245,.85);}
-.tierpill.t2{color:#d8c79c;background:rgba(216,199,156,.09);
+.tierpill.t1{color:#e4e9ec;background:color-mix(in srgb, var(--salt-salt) 10%, transparent);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 35%, transparent),0 0 14px -2px color-mix(in srgb, var(--salt-salt) 85%, transparent);}
+.tierpill.t2{color:var(--salt-brass-soft);background:rgba(216,199,156,.09);
   box-shadow:0 0 0 1px rgba(216,199,156,.28),0 0 11px -3px rgba(216,199,156,.65);}
-.tierpill.t3{color:#c5a059;background:rgba(197,160,89,.07);
-  box-shadow:0 0 0 1px rgba(197,160,89,.20),0 0 8px -3px rgba(197,160,89,.45);}
+.tierpill.t3{color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-brass) 20%, transparent),0 0 8px -3px color-mix(in srgb, var(--salt-brass) 45%, transparent);}
 @media (prefers-reduced-motion:no-preference){
   .tierpill.t1{animation:tierglow 3.2s ease-in-out infinite;}
 }
 @keyframes tierglow{
-  0%,100%{box-shadow:0 0 0 1px rgba(242,244,245,.35),0 0 14px -2px rgba(242,244,245,.85);}
-  50%    {box-shadow:0 0 0 1px rgba(242,244,245,.55),0 0 20px -1px rgba(242,244,245,1);}
+  0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 35%, transparent),0 0 14px -2px color-mix(in srgb, var(--salt-salt) 85%, transparent);}
+  50%    {box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 55%, transparent),0 0 20px -1px color-mix(in srgb, var(--salt-salt) 100%, transparent);}
 }
 /* ============ QUICK MARK ON A PENDING LEDGER CARD (v253) ============
    Three buttons, and they are deliberately quiet: a pending order is the one state where the
@@ -708,7 +815,7 @@ details.rcard>summary .rsum b{color:var(--ink);}
   min-height:44px;padding:6px 13px;border-radius:999px;border:1px solid var(--brd);
   background:transparent;color:var(--ink);}
 .updchip:hover{border-color:var(--gold);color:var(--gold);}
-.updchip.on{border-color:var(--gold);color:var(--gold);background:rgba(197,160,89,.13);}
+.updchip.on{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb, var(--salt-brass) 13%, transparent);}
 .updmore{margin-top:14px;}
 .updmore>summary{cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;
   color:var(--mut);font-weight:700;margin-bottom:8px;min-height:44px;display:flex;align-items:center;}
@@ -732,7 +839,7 @@ details.rcard>summary .rsum b{color:var(--ink);}
 .exitbtn{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.4px;cursor:pointer;
   padding:4px 11px;border-radius:999px;background:transparent;border:1px solid var(--line);
   color:var(--dim);display:inline-flex;align-items:center;gap:5px;}
-.exitbtn:hover{color:#e08a72;border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
+.exitbtn:hover{color:#e08a72;border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
 /* v257: PINNED TO THE VIEWPORT, NOT TO THE PAGE. In the header it scrolled away, so on a long
    tab the way out was wherever you had last scrolled from. Fixed at the top left it is in the
    same place from every tab and every scroll position.
@@ -743,9 +850,9 @@ details.rcard>summary .rsum b{color:var(--ink);}
    IT KEEPS ITS OWN KEYBOARD ROUTE. focus-visible lights it exactly as hover does, so tabbing
    to it does not land on something the eye cannot see. */
 .exitfix{position:fixed;top:calc(10px + var(--safetop));left:calc(10px + var(--safeleft));z-index:70;opacity:.22;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:rgba(5,8,10,.55);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:color-mix(in srgb, var(--salt-obsidian) 55%, transparent);
   transition:opacity .18s ease,color .18s ease,border-color .18s ease,background .18s ease;}
-.exitfix:hover,.exitfix:focus-visible{opacity:1;background:rgba(212,105,76,.10);}
+.exitfix:hover,.exitfix:focus-visible{opacity:1;background:color-mix(in srgb, var(--salt-ember) 10%, transparent);}
 @media (max-width:860px){.exitfix{top:calc(6px + var(--safetop));left:calc(6px + var(--safeleft));padding:3px 9px;font-size:10px;}}
 .byewrap{min-height:70dvh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
 .byecard{max-width:520px;text-align:center;}
@@ -785,45 +892,45 @@ td.l{white-space:nowrap;}
 .lqb{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;
   padding:9px 14px;min-height:var(--tap);border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--mut);}
 .lqb:hover{border-color:currentColor;}
-.lqb.qpaid{color:#6fae97;}
+.lqb.qpaid{color:var(--salt-verdigris);}
 .lqb.qdeliv{color:#e4e9ec;}
-.lqb.qdone{color:var(--gold);border-color:rgba(197,160,89,.45);}
-.lqb.qdone:hover{background:rgba(197,160,89,.10);}
-.gem{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:999px;color:#05080a;background:linear-gradient(135deg,#e4e9ec,#e4e9ec);box-shadow:0 0 0 1px rgba(228,233,236,.55),0 2px 12px -2px rgba(228,233,236,.75);}
-.starpill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px;color:#05080a;}
-.starpill.s1{background:linear-gradient(135deg,#d8c79c,#c5a059);box-shadow:0 2px 10px -3px rgba(197,160,89,.7);}
-.starpill.s2{background:linear-gradient(135deg,#b87333,#b87333);box-shadow:0 2px 10px -3px rgba(184,115,51,.7);}
-.starpill.s3{background:linear-gradient(135deg,#e08a72,#d4694c);box-shadow:0 2px 12px -2px rgba(212,105,76,.8);}
+.lqb.qdone{color:var(--gold);border-color:color-mix(in srgb, var(--salt-brass) 45%, transparent);}
+.lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);}
+.gem{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:999px;color:var(--salt-ink-on-accent);background:linear-gradient(135deg,#e4e9ec,#e4e9ec);box-shadow:0 0 0 1px rgba(228,233,236,.55),0 2px 12px -2px rgba(228,233,236,.75);}
+.starpill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px;color:var(--salt-ink-on-accent);}
+.starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:0 2px 10px -3px color-mix(in srgb, var(--salt-brass) 70%, transparent);}
+.starpill.s2{background:linear-gradient(135deg,var(--salt-copper),var(--salt-copper));box-shadow:0 2px 10px -3px color-mix(in srgb, var(--salt-copper) 70%, transparent);}
+.starpill.s3{background:linear-gradient(135deg,#e08a72,var(--salt-ember));box-shadow:0 2px 12px -2px color-mix(in srgb, var(--salt-ember) 80%, transparent);}
 
 
 .quotecard{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;}
 .qrow{display:grid;grid-template-columns:1.4fr .9fr 1.1fr;gap:12px;}
 .qfield label{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px;}
-.qfield select,.qfield input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 10px;font-size:15px;font-weight:700;color:var(--ink);background-color:#05080a;outline:none;}
+.qfield select,.qfield input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 10px;font-size:15px;font-weight:700;color:var(--ink);background-color:var(--salt-obsidian);outline:none;}
 .qfield select{padding-right:36px;}
-.qfield select:focus,.qfield input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(197,160,89,.18);}
+.qfield select:focus,.qfield input:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
 .qout{margin-top:14px;}
 .qmeta{margin-top:11px;font-size:13px;color:var(--mut);}
-.warnpill{display:inline-block;background:rgba(212,105,76,.14);border:1px solid var(--crim);color:#e08a72;font-weight:700;font-size:12px;padding:5px 11px;border-radius:9px;}
-.badge{font-size:12px;font-weight:800;color:#05080a;background:var(--gold);border-radius:8px;padding:4px 10px;}
-select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:14px;font-weight:600;color:var(--ink);background-color:#05080a;cursor:pointer;}
-.viewsw{display:inline-flex;background:#05080a;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
+.warnpill{display:inline-block;background:color-mix(in srgb, var(--salt-ember) 14%, transparent);border:1px solid var(--crim);color:#e08a72;font-weight:700;font-size:12px;padding:5px 11px;border-radius:9px;}
+.badge{font-size:12px;font-weight:800;color:var(--salt-ink-on-accent);background:var(--gold);border-radius:8px;padding:4px 10px;}
+select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:14px;font-weight:600;color:var(--ink);background-color:var(--salt-obsidian);cursor:pointer;}
+.viewsw{display:inline-flex;background:var(--salt-obsidian);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
 .viewsw button{background:none;border:none;color:var(--mut);font-size:12px;font-weight:700;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:inherit;min-height:var(--tap);}
-.viewsw button.on{background:linear-gradient(135deg,var(--gold),var(--amber));color:#05080a;}
+.viewsw button.on{background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--salt-ink-on-accent);}
 .viewsw.mini button{font-size:11px;padding:4px 9px;}
 .qunits input{font-variant-numeric:tabular-nums;}
 /* v242: the third cell of .qrow is an ANSWER, not a control. It matches the input boxes
    in height and radius so the row reads as one instrument, and carries the figure at the
    weight of a KPI value. Crimson is not decoration: a quote under its own floor must be
    visible on the number itself, because this panel no longer has a sentence to say so in. */
-.qask{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#05080a;
+.qask{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--salt-obsidian);
   font-size:20px;line-height:1.2;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;}
 .qask.none{color:var(--dim);font-size:15px;font-weight:700;}
-.qask.under{color:var(--crim);border-color:rgba(212,105,76,.45);}
+.qask.under{color:var(--crim);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
 .ledbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:10px 0 12px;}
 /* v471: the Journal, one entry per note, dated and linked to its row */
-.ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#05080a;}
-.ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#05080a;}
+.ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:var(--salt-obsidian);}
+.ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:var(--salt-obsidian);}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
 /* THE FOLD OVER THE OLDER BOOK. A summary that says only "show more" makes the reader open it
    to find out what is in there, so it carries the count and the span of dates it covers. */
@@ -852,9 +959,9 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   animation:lpsweep var(--hold,450ms) linear forwards;}
 @keyframes lpsweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .lcard.lpressed{transform:scale(1.012);border-color:var(--gold);
-  box-shadow:0 0 0 1px var(--gold),0 6px 22px rgba(197,160,89,.22);}
+  box-shadow:0 0 0 1px var(--gold),0 6px 22px color-mix(in srgb, var(--salt-brass) 22%, transparent);}
 .lcard.lpressed::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(120% 80% at 50% 50%,rgba(197,160,89,.18),transparent 70%);
+  background:radial-gradient(120% 80% at 50% 50%,color-mix(in srgb, var(--salt-brass) 18%, transparent),transparent 70%);
   animation:lpflash .24s ease-out forwards;}
 @keyframes lpflash{from{opacity:1}to{opacity:0}}
 /* reduced motion keeps the THREE STATES and drops the movement: the bar still says how long
@@ -888,11 +995,11 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .evo{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:14px;padding:6px 4px;}
 .evo .row{display:flex;gap:12px;padding:10px 14px;border-bottom:1px solid #1c2628;align-items:flex-start;}
 .evo .row:last-child{border-bottom:none;}
-.evo .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--gold);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
+.evo .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 15%, transparent);}
 .evo .v{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--gold);flex:0 0 42px;margin-top:3px;}
 .evo .txt{font-size:13px;color:#e4e9ec;}
 .evo .txt b{color:var(--ink);}
-.note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(197,160,89,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
+.note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,color-mix(in srgb, var(--salt-brass) 8%, transparent),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .note b{color:var(--gold);}
 /* v372: .stand-note WAS .note WITH AN EXEMPTION, and there is nothing left to be exempt
    from. v365 added it because body.noteshide hid every .note on a fresh load, which was
@@ -901,7 +1008,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
    explaining why a cancelled row has no Save button. The fold is gone and nothing hides a
    .note any more, so the two are one box under two names and the alias is kept only so the
    six places using it do not all have to be edited to say the same thing. */
-.stand-note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(197,160,89,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
+.stand-note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,color-mix(in srgb, var(--salt-brass) 8%, transparent),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .stand-note b{color:var(--gold);}
 
 
@@ -910,7 +1017,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 
 
 
-.vbtn{border:1px solid var(--gold);background:linear-gradient(135deg,var(--gold),var(--amber));color:#05080a;font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer;}
+.vbtn{border:1px solid var(--gold);background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--salt-ink-on-accent);font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer;}
 /* THE BUTTON DOCTRINE (v170). Gold is reserved for a button that BOOKS or PRODUCES
    something: publish, mint, download, redeem, commit. Navigation to a readout earns no
    gold, because a loud button that merely changes tab is furniture dressed as a decision.
@@ -966,9 +1073,9 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;
   white-space:nowrap;}
 .pchip b{color:var(--ink);font-weight:600;}
-.pchip.good{color:var(--grn);border-color:rgba(111,174,151,.4);}
-.pchip.warn{color:var(--amber);border-color:rgba(184,115,51,.45);}
-.pchip.bad{color:var(--crim);border-color:rgba(212,105,76,.5);}
+.pchip.good{color:var(--grn);border-color:color-mix(in srgb, var(--salt-verdigris) 40%, transparent);}
+.pchip.warn{color:var(--amber);border-color:color-mix(in srgb, var(--salt-copper) 45%, transparent);}
+.pchip.bad{color:var(--crim);border-color:color-mix(in srgb, var(--salt-ember) 50%, transparent);}
 @media(max-width:860px){
   .act{grid-template-columns:1fr auto;gap:6px 12px;}
   .actk{grid-column:1/2;padding-top:0;}
@@ -1082,7 +1189,7 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .menu button[aria-checked="true"]::after{content:"\2713";margin-left:auto;color:var(--gold);}
 .menu hr{border:0;border-top:1px solid var(--hair);margin:5px 2px;}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .menu{background:#0b1215;}}
+  .menu{background:var(--salt-slate);}}
 /* Print: a dropdown is a screen control, so it prints as its chosen value. */
 @media print{select{background-image:none;padding-right:9px;}.menu{display:none;}}
 .tab,.navlink,.ubtn,.vbtn{min-height:var(--tap);}
@@ -1112,7 +1219,7 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .isub{font-size:11px;color:var(--mut);}
 .istmt td{padding:6px 9px;}
 .istmt .tot td{border-top:1px solid var(--line);font-weight:700;}
-.tag.buychip{background:rgba(197,160,89,.14);color:var(--gold);border-color:rgba(197,160,89,.35);}
+.tag.buychip{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--gold);border-color:color-mix(in srgb, var(--salt-brass) 35%, transparent);}
 /* v275: the product badge on the three tabs that draw ONE book while their lead lines claim
    the desk. Small and quiet: it states scope, and the jump buttons beside it are the control.
    IT SITS IN ITS OWN ROW, NOT IN THE LEAD, AND THAT IS THE WHOLE POINT. The first attempt put
@@ -1202,9 +1309,9 @@ details.obshush:hover{opacity:.85;}
                      inset 0 1px 0 rgba(255,255,255,.28);}}
 @media (prefers-reduced-transparency:reduce){
   .totop{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-    background:rgba(11,18,21,.97)!important;}}
+    background:color-mix(in srgb, var(--salt-slate) 97%, transparent)!important;}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .totop{background:rgba(11,18,21,.94);}}
+  .totop{background:color-mix(in srgb, var(--salt-slate) 94%, transparent);}}
 @media(max-width:860px){.totop{left:calc(14px + var(--safeleft));right:auto;bottom:calc(14px + var(--safebot));width:var(--tap);height:var(--tap);}}
 /* ============ v276: PORTRAIT ============
    Landscape was always fine because a phone on its side is 640 to 930px and lands in the
@@ -1436,10 +1543,10 @@ body.navopen .wrap{z-index:97;}
    has now gone and the two were about to share a corner. */
 .fabtn{position:fixed;z-index:96;width:46px;height:46px;border-radius:50%;cursor:pointer;padding:0;
   display:grid;place-items:center;color:var(--gold);font-family:inherit;
-  background:linear-gradient(165deg,var(--railA,#0b1215),var(--railB,#05080a)),var(--bg0);
+  background:linear-gradient(165deg,var(--railA,var(--salt-slate)),var(--railB,var(--salt-obsidian))),var(--bg0);
   border:1px solid var(--line);box-shadow:0 14px 34px -12px #000,var(--gloss);
   transition:transform .18s ease,border-color .18s ease;}
-.fabtn:hover{border-color:rgba(197,160,89,.5);}
+.fabtn:hover{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);}
 .fabtn:active{transform:scale(.94);}
 .fabtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .navbtn{display:none;}
@@ -1457,7 +1564,7 @@ body.navopen .navbtn .nb3{transform:translateY(-6px) rotate(-45deg);}
    recognisably where you left it and stops competing for the eye, which a solid panel
    would not do and a plain dark wash would not do either. */
 .navveil{position:fixed;inset:0;z-index:94;opacity:0;pointer-events:none;
-  background:rgba(5,8,10,.42);
+  background:color-mix(in srgb, var(--salt-obsidian) 42%, transparent);
   -webkit-backdrop-filter:blur(14px) saturate(.9);backdrop-filter:blur(14px) saturate(.9);
   transition:opacity .2s ease;}
 body.navopen .navveil{opacity:1;pointer-events:auto;}
@@ -1603,7 +1710,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   .card{overflow-x:auto;}
 }
 @media (prefers-reduced-transparency:reduce) and (max-width:560px){
-  .rail{background:rgba(11,18,21,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
+  .rail{background:color-mix(in srgb, var(--salt-slate) 97%, transparent);-webkit-backdrop-filter:none;backdrop-filter:none;}
 }
 /* ============ D3 TO D9 (29 Sep 2026, the fault list): A TAP IS 44px EITHER WAY, AT EVERY WIDTH ============
    A hit test at 1280 found the parts strip's pills 36 tall (their --tap sat in the phone's query alone), the
@@ -1769,6 +1876,125 @@ details.obs>summary{min-height:var(--tap);}
   --salt-radius-lg: 24px;
   --salt-radius-xl: 36px;
   --salt-radius-pill: 100px;
+
+  /* THE TIME OF DAY (05 Oct 2026, his approval of the version 2 design). The six colours and the
+     materials above are ROLES from here on: obsidian is the ground, slate the raised surface, salt the
+     text, mist the captions, brass the accent. A theme below re-points the roles, so every recipe and
+     every consumer that reads a token follows it with no rule of its own. Night is this block, unchanged.
+     Three tokens do not follow a theme: the ink on a filled control (dark on the brass pill in every
+     theme) and the QR's field and ink, which stay light and dark so a code always scans. */
+  --salt-ink-on-accent: var(--salt-obsidian);
+  --salt-qr-field: #f2f4f5;
+  --salt-qr-ink: #0b1215;
+  --salt-theme-fade: 1200ms;
+  color-scheme: dark;
+}
+
+/* Four themes, six hours each, on the viewer's own clock: Dawn 04:00, Day 10:00, Dusk 16:00, Night
+   22:00. salt-time.js sets data-time on <html> before the first paint and again at each boundary. Every
+   text and ground pair below was computed before it was written: text, captions and the three semantic
+   words at 4.5:1 or more on the ground and on the raised surface, accents and field edges at 3:1, and the
+   ink on both ends of the pill's gradient at 4.5:1. Day is the one light theme, for a phone read outdoors
+   at the market in full sun. */
+:root[data-time="dawn"] {
+  --salt-obsidian: #0f131a;
+  --salt-slate: #171d26;
+  --salt-slate-light: #222a35;
+  --salt-brass: #e4a67c;
+  --salt-copper: #c77a52;
+  --salt-salt: #f4f2f0;
+  --salt-mist: #8d95a1;
+  --salt-mist-light: #b7bcc5;
+  --salt-mist-bright: #c6cad1;
+  --salt-edge-field: #a77c60;
+  --salt-verdigris: #80c3a7;
+  --salt-ember: #f09576;
+  --salt-steel: #a5b8cc;
+  --salt-brass-soft: #f0c9ad;
+  --salt-alarm: #ff5a72;
+  --salt-line: rgba(228, 166, 124, 0.24);
+  --salt-line-strong: rgba(228, 166, 124, 0.45);
+  --salt-veil: rgba(15, 19, 26, 0.86);
+  --salt-scrim: rgba(15, 19, 26, 0.55);
+  --salt-pane: rgba(23, 29, 38, 0.66);
+  --salt-panel: rgb(34, 28, 29);
+}
+:root[data-time="day"] {
+  --salt-obsidian: #f3efe6;
+  --salt-slate: #fcfaf5;
+  --salt-slate-light: #ebe3d3;
+  --salt-brass: #8a5618;
+  --salt-copper: #b8732f;
+  --salt-salt: #1a1611;
+  --salt-mist: #6f665a;
+  --salt-mist-light: #524a40;
+  --salt-mist-bright: #3d362e;
+  --salt-edge-field: #9a7440;
+  --salt-verdigris: #246e52;
+  --salt-ember: #b23e24;
+  --salt-steel: #45607a;
+  --salt-brass-soft: #7d6233;
+  --salt-alarm: #c4122f;
+  --salt-amber: #8a6400;
+  --salt-product-salt: #6b7b86;
+  --salt-product-oil: #a07a2c;
+  --salt-product-candy: #a8537f;
+  --salt-product-rice: #4c58a6;
+  --salt-product-spare: #6b7330;
+  --salt-glass: rgba(26, 22, 17, 0.03);
+  --salt-glass-faint: rgba(26, 22, 17, 0.02);
+  --salt-line: rgba(138, 86, 24, 0.22);
+  --salt-line-faint: rgba(26, 22, 17, 0.08);
+  --salt-line-strong: rgba(138, 86, 24, 0.45);
+  --salt-glass-hover: rgba(26, 22, 17, 0.05);
+  --salt-highlight: rgba(255, 255, 255, 0.6);
+  --salt-shadow: 0 32px 64px rgba(40, 30, 10, 0.18);
+  --salt-shadow-desk: 0 18px 40px rgba(40, 30, 10, 0.14);
+  --salt-well: rgba(26, 22, 17, 0.06);
+  --salt-well-hover: rgba(26, 22, 17, 0.09);
+  --salt-veil: rgba(243, 239, 230, 0.9);
+  --salt-scrim: rgba(26, 22, 17, 0.35);
+  --salt-pane: rgba(252, 250, 245, 0.82);
+  --salt-panel: rgb(235, 227, 211);
+  --salt-gradient: linear-gradient(135deg, #c5a059, #b8732f);
+  --salt-gradient-title: linear-gradient(135deg, #1a1611 30%, #8a5618 100%);
+  --salt-ink-on-accent: #1a1611;
+  color-scheme: light;
+}
+:root[data-time="dusk"] {
+  --salt-obsidian: #120d0b;
+  --salt-slate: #1c1512;
+  --salt-slate-light: #2a201b;
+  --salt-brass: #dba35f;
+  --salt-copper: #c46a37;
+  --salt-salt: #f6f0e8;
+  --salt-mist: #9a8878;
+  --salt-mist-light: #c3b3a5;
+  --salt-mist-bright: #d0c2b5;
+  --salt-edge-field: #a17a48;
+  --salt-verdigris: #80c2a8;
+  --salt-ember: #ef9372;
+  --salt-steel: #a7b6c7;
+  --salt-brass-soft: #ecd0a6;
+  --salt-alarm: #ff5a72;
+  --salt-line: rgba(219, 163, 95, 0.24);
+  --salt-line-strong: rgba(219, 163, 95, 0.45);
+  --salt-veil: rgba(18, 13, 11, 0.86);
+  --salt-scrim: rgba(18, 13, 11, 0.55);
+  --salt-pane: rgba(28, 21, 18, 0.66);
+  --salt-panel: rgb(42, 28, 18);
+}
+/* The change of theme is a slow cross-fade, set by salt-time.js for the length of the fade only. */
+:root.salt-theming,
+:root.salt-theming * {
+  transition: background-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
+    color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
+    border-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
+    fill var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
+    stroke var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.salt-theming, :root.salt-theming * { transition: none !important; }
 }
 
 /* ---- Root ---- */
@@ -1811,6 +2037,8 @@ details.obs>summary{min-height:var(--tap);}
   pointer-events: none;
   z-index: 0;
 }
+/* Day is flat paper: the aurora's light would read as a stain on it. */
+:root[data-time="day"] .salt-aurora { opacity: 0; }
 .salt-aurora__blob {
   position: absolute;
   border-radius: 50%;
@@ -2030,7 +2258,7 @@ details.obs>summary{min-height:var(--tap);}
   text-decoration: none;
   text-align: center;
   background: var(--salt-gradient);
-  color: var(--salt-obsidian);
+  color: var(--salt-ink-on-accent);
   border: none;
   border-radius: var(--salt-radius-pill);
   font-family: var(--salt-font-mono);
@@ -3829,7 +4057,7 @@ html[data-tod="register"],:root{
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
   --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:var(--salt-slate-light);
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23c5a059' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --ink-2:rgba(242,244,245,.66);--ink-3:rgba(242,244,245,.40);
+  --ink-2:color-mix(in srgb, var(--salt-salt) 66%, transparent);--ink-3:color-mix(in srgb, var(--salt-salt) 40%, transparent);
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
@@ -3839,7 +4067,7 @@ html[data-tod="register"],:root{
      the band labels at .62, while the .86 it replaced already passed 14 per cent. The fill is the
      identity's --salt-panel since 22 Sep 2026; --panel is the desk's name for it. */
   --panel:var(--salt-panel);
-  --totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
+  --totbg:color-mix(in srgb, var(--salt-brass) 7%, transparent);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
 }
 /* the seven view hues are retired: a view is known by its name and its figures */
@@ -3896,10 +4124,10 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard{
   -webkit-backdrop-filter:blur(24px) saturate(1.15);backdrop-filter:blur(24px) saturate(1.15);}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:rgba(11,18,21,.96)!important;}}
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:color-mix(in srgb, var(--salt-slate) 96%, transparent)!important;}}
 @media (prefers-reduced-transparency:reduce){
   .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
-    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(11,18,21,.97)!important;}
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:color-mix(in srgb, var(--salt-slate) 97%, transparent)!important;}
 }
 /* THE TILE IS THE SYSTEM'S .salt-kpi (22 Sep 2026): its bar, label, figure and note are the recipe in the
    DESIGN base block, and the markup carries both names. The desk's tone letters bind to the recipe's one
@@ -3917,11 +4145,11 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
   -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
 .pend{border:1px dashed var(--salt-line-strong);}
-.pend.def{border-color:rgba(212,105,76,.55);}
+.pend.def{border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 .pend h3{font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);}
 .pend.def h3{color:var(--salt-ember);}
 .pend .cd{background:var(--salt-well);border-color:var(--salt-line);color:var(--salt-brass);}
-.pend .cd.crim{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
+.pend .cd.crim{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 details.obsec>summary{font-size:15px;font-weight:500;}
 details.obsec>summary .q{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;}
 details.obsec>summary .ct{background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);font-weight:500;}
@@ -3986,7 +4214,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
    its stickiness are the recipe's, scoped the same way, and the bar carries the brand there */
 @media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
-.exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
+.exitbtn:hover{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
 .exitfix{background:var(--salt-pane);}
 .byecard .q{color:var(--salt-brass);}
 
@@ -4010,10 +4238,10 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .lqb.qpaid{color:var(--salt-verdigris);}
 .lqb.qdeliv{color:var(--salt-product-salt);}
 .lqb.qdone{color:var(--salt-brass);border-color:var(--salt-line-strong);}
-.lqb.qdone:hover{background:rgba(197,160,89,.10);}
+.lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
-  border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
+  border:1px solid color-mix(in srgb, var(--salt-ember) 55%, transparent);color:var(--salt-ember);border-radius:999px;}
 /* UX6, 24 Sep 2026: A GHOST THAT ENDS SOMETHING SAYS SO AT REST. Decline, Cancel and Reject were the alarm until
    S1 1.48 made them the system's danger ghost, which warms only under a pointer, so on his phone they read as any
    quiet ghost. The recipe's own tone is bound to the alarm, as a tile's tone is bound; nothing is restated. */
@@ -4066,14 +4294,14 @@ input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
   background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
   color:var(--salt-salt);font-weight:400;}
 .qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus,input:focus,select:focus,textarea:focus{
-  border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.18);}
+  border-color:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
 .qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
-.qask.under{color:var(--salt-ember);border-color:rgba(212,105,76,.45);}
+.qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
 select:hover{background-color:rgba(0,0,0,.36);}
-option,optgroup{background-color:#0b1215;color:var(--salt-salt);}
-option:checked{background-color:#16211f;}
+option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
+option:checked{background-color:var(--salt-slate-light);}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
@@ -4128,13 +4356,13 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .dtar{min-width:var(--tap);min-height:var(--tap);margin:0;padding:0;border:0;
   border-left:1px solid var(--salt-line-faint);background:transparent;color:var(--salt-brass);
   cursor:pointer;font-family:var(--salt-font-mono);font-size:17px;line-height:1;}
-.dtar:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtar:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);}
 .dtar:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 .dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
   border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
   background:transparent;color:var(--salt-brass);cursor:pointer;
   font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;}
-.dtoday:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtoday:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);}
 .dtoday:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 @media(max-width:560px){.dtoday{font-size:11px;}}
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
@@ -4143,7 +4371,7 @@ thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mi
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--panel);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
-tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
+tr.tot td{font-weight:500;background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 /* v567: AND THE TOTAL ROW'S BRASS WASH MAY NOT UN-PAINT THE STICKY LABEL COLUMN. This rule sits
    after th.l,td.l and REPLACED its fill, so on every total row the sticky label cell dropped to a
    7 per cent wash and passed 93 per cent of whatever scrolled under it: 14 such cells on the Price
@@ -4151,7 +4379,7 @@ tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
    layered OVER the panel instead of standing in for it, so the tint is unchanged to the eye and
    the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
    rather than by reading this file, which is the only way a cascade fault of this shape shows. */
-tr.tot td.l{background:linear-gradient(rgba(197,160,89,.07),rgba(197,160,89,.07)),var(--panel);}
+tr.tot td.l{background:linear-gradient(color-mix(in srgb, var(--salt-brass) 7%, transparent),color-mix(in srgb, var(--salt-brass) 7%, transparent)),var(--panel);}
 tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
@@ -4187,9 +4415,9 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .lclabel.roleclose{color:var(--salt-verdigris);}
 .submar{color:var(--salt-verdigris);font-weight:500;}
 .submar.thin{color:var(--salt-ember);}
-.lfig.struck{text-decoration-color:rgba(242,244,245,.5);}
-.eref{color:var(--salt-brass);border-color:rgba(197,160,89,.4);}
-.eref.elink:hover{background:rgba(197,160,89,.14);}
+.lfig.struck{text-decoration-color:color-mix(in srgb, var(--salt-salt) 50%, transparent);}
+.eref{color:var(--salt-brass);border-color:color-mix(in srgb, var(--salt-brass) 40%, transparent);}
+.eref.elink:hover{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);}
 .etype{font-weight:500;letter-spacing:.12em;}
 .ledwrap .lcard{border-bottom-color:var(--salt-line-faint);}
 .ledwrap .lcard>.lclose:not(:first-child){border-top-color:var(--salt-line-faint);}
@@ -4201,15 +4429,15 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
    so the word and the tint agree. The base layer's own tint rules (v-old .lcard.s-*), which the
    .ledwrap list mode had switched off since v465, are retired with this. ---- */
 .ledwrap .lcard{border-left:3px solid transparent;}
-.ledwrap .lcard.s-completed,.ledwrap .lcard.s-inkind{border-left-color:var(--salt-verdigris);background:rgba(111,174,151,.06);}
-.ledwrap .lcard.s-advance{border-left-color:var(--salt-copper);background:rgba(184,115,51,.07);}
-.ledwrap .lcard.s-deferred{border-left-color:var(--salt-brass);background:rgba(197,160,89,.07);}
+.ledwrap .lcard.s-completed,.ledwrap .lcard.s-inkind{border-left-color:var(--salt-verdigris);background:color-mix(in srgb, var(--salt-verdigris) 6%, transparent);}
+.ledwrap .lcard.s-advance{border-left-color:var(--salt-copper);background:color-mix(in srgb, var(--salt-copper) 7%, transparent);}
+.ledwrap .lcard.s-deferred{border-left-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .ledwrap .lcard.s-deferred .tag.open{color:var(--salt-brass);}
-.ledwrap .lcard.s-default{border-left-color:var(--salt-ember);background:rgba(212,105,76,.08);}
-.ledwrap .lcard.s-pending{border-left-color:var(--salt-steel);background:rgba(142,162,182,.07);}
+.ledwrap .lcard.s-default{border-left-color:var(--salt-ember);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
+.ledwrap .lcard.s-pending{border-left-color:var(--salt-steel);background:color-mix(in srgb, var(--salt-steel) 7%, transparent);}
 .ledwrap .lcard.s-cancelled{border-left-color:var(--salt-mist);opacity:.5;filter:saturate(.4);transition:opacity .13s,filter .13s;}
 .ledwrap .lcard.s-cancelled:hover,.ledwrap .lcard.s-cancelled:focus-within{opacity:.94;filter:none;}
-.ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(122,134,144,.8);}
+.ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:color-mix(in srgb, var(--salt-mist) 80%, transparent);}
 .ledwrap .tag.buy{--salt-status-tone:var(--salt-steel);}
 .ledwrap .tag.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .tag.paid{--salt-status-tone:var(--salt-verdigris);}
@@ -4223,24 +4451,24 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 /* the corner pill sits where the pen sits, and the pen's rule strips a border; the chip's dotted hairline is put back here, in the chip's own colour */
 .ledwrap .tag.prov{border:1px dotted currentColor;border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
 .ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
-.ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
+.ledwrap .lqb:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);border-color:var(--salt-brass);}
 .ledwrap .tag.def{--salt-status-tone:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
-.lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px rgba(197,160,89,.22);}
-.lcard.lpressed::after{background:radial-gradient(120% 80% at 50% 50%,rgba(197,160,89,.18),transparent 70%);}
+.lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px color-mix(in srgb, var(--salt-brass) 22%, transparent);}
+.lcard.lpressed::after{background:radial-gradient(120% 80% at 50% 50%,color-mix(in srgb, var(--salt-brass) 18%, transparent),transparent 70%);}
 .ledsum .l{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .ledsum .v{font-size:18px;font-weight:500;}
 .ledsum .v.ice{color:var(--salt-product-salt);}
 .ledsum .v.gold{color:var(--salt-brass);}
 .ledsum .v.warn{color:var(--salt-copper);}
-.tscroll.more::after{background:linear-gradient(90deg,transparent,rgba(5,8,10,.85));}
-.tscroll.morel::before{background:linear-gradient(270deg,transparent,rgba(5,8,10,.85));}
-.tscroll{scrollbar-color:rgba(197,160,89,.3) transparent;}
-.tscroll::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
-.rail::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
+.tscroll.more::after{background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
+.tscroll.morel::before{background:linear-gradient(270deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
+.tscroll{scrollbar-color:color-mix(in srgb, var(--salt-brass) 30%, transparent) transparent;}
+.tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
+.rail::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
-.evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
+.evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 15%, transparent);}
 .evo .v{color:var(--salt-brass);}
 .evo .txt{color:var(--mut);font-size:14px;line-height:1.6;}
 .evo .txt b{color:var(--salt-salt);font-weight:500;}
@@ -4263,19 +4491,19 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .def{color:var(--salt-ember);}
 .prov{color:var(--salt-brass);}
 .mod,.pendingt{color:var(--salt-steel);}
-.provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
+.provbar{font-size:11px;letter-spacing:.06em;background:color-mix(in srgb, var(--salt-brass) 8%, transparent);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
-.ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
+.ubtn{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);color:var(--salt-brass);}
 .tierpill{font-size:10.5px;font-weight:500;letter-spacing:.14em;background:transparent;animation:none!important;}
-.tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px rgba(242,244,245,.55);}
+.tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent);}
 .tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
 .tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
-.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,#f2f4f5,#c9d3d8);
-  box-shadow:0 0 0 1px rgba(242,244,245,.4);}
+.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),#c9d3d8);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 40%, transparent);}
 .starpill{font-weight:700;letter-spacing:.12em;color:var(--salt-obsidian);}
-.starpill.s1{background:linear-gradient(135deg,#d8c79c,#c5a059);box-shadow:none;}
-.starpill.s2{background:linear-gradient(135deg,#c5a059,#b87333);box-shadow:none;}
-.starpill.s3{background:linear-gradient(135deg,#b87333,#d4694c);box-shadow:none;}
+.starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
+.starpill.s2{background:linear-gradient(135deg,var(--salt-brass),var(--salt-copper));box-shadow:none;}
+.starpill.s3{background:linear-gradient(135deg,var(--salt-copper),var(--salt-ember));box-shadow:none;}
 .prodtag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;box-shadow:none;text-shadow:none;
   border:1px solid var(--salt-line-faint);border-radius:6px;}
 .prodtag .gl{box-shadow:0 0 6px -1px currentColor;}
@@ -4294,9 +4522,9 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .pscope,.pscopen,.pbadgeo{font-size:11px;color:var(--salt-mist);}
 .pchip{font-size:12px;background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .pchip b{color:var(--salt-salt);font-weight:500;}
-.pchip.good{color:var(--salt-verdigris);border-color:rgba(111,174,151,.5);}
-.pchip.warn{color:var(--salt-copper);border-color:rgba(184,115,51,.55);}
-.pchip.bad{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
+.pchip.good{color:var(--salt-verdigris);border-color:color-mix(in srgb, var(--salt-verdigris) 50%, transparent);}
+.pchip.warn{color:var(--salt-copper);border-color:color-mix(in srgb, var(--salt-copper) 55%, transparent);}
+.pchip.bad{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
 /* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
@@ -4342,11 +4570,11 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apside .apbig{font-weight:500;}
 .apside .aphr{background:var(--salt-line-faint);}
 .apday{border-color:var(--salt-line-faint);background:var(--salt-glass-faint);}
-.apday.aptoday{border-color:var(--salt-brass);background:rgba(197,160,89,.07);}
+.apday.aptoday{border-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday.aptoday .apdn{color:var(--salt-brass);}
 .apchip{font-weight:500;letter-spacing:.04em;background:rgba(228,233,236,.10);color:var(--salt-product-salt);}
-.apchip.apowes{background:rgba(212,105,76,.14);color:var(--salt-ember);}
-.apchip.aplate{background:rgba(197,160,89,.14);color:var(--salt-brass);}
+.apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 14%, transparent);color:var(--salt-ember);}
+.apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-brass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .appop .apact{border-top-color:var(--salt-line-faint);}
 .appop td:last-child{color:var(--salt-salt);}
@@ -4390,7 +4618,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
   #pbSheet .pbl .mark{width:56px;height:56px;display:block;}
   #pbSheet .pbu{font-family:var(--salt-font-mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);margin:0 0 24px;min-height:17px;}
   #pbSheet table{border-collapse:collapse;min-width:300px;}
-  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
+  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid color-mix(in srgb, var(--salt-brass) 30%, transparent);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
   #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);color:var(--salt-salt);}
 }
 
@@ -4414,7 +4642,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .lrow .lc-type .tag{font-size:10.5px;letter-spacing:.14em;}
 .ledwrap .lqb,.ledwrap .lqb.qdone{border:1px solid var(--salt-line-strong);background:transparent;border-radius:999px;padding:3px 10px;min-height:0;line-height:1.3;
   font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);text-decoration:none;}
-.ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
+.ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);border-color:var(--salt-brass);}
 .ledwrap .lquick{justify-content:flex-end;align-self:center;}
 
 /* ---- 5c. THE HEADER, REDRAWN (his comment of 12 Sep 2026: "this persisting header can look much
@@ -4472,12 +4700,12 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ledwrap .tag.ltype.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
-.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
+.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-salt);}
 /* v565: the ground moved from the container to each pill, because the fan is pills now. The last
    rule keyed on :last-child, which named More only while More happened to be last; it keys on the
    role. */
 .lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
+.lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 12%, transparent);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
 
@@ -4538,6 +4766,16 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordpart{display:flex;flex-direction:column;gap:8px;}
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
+/* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
+   Day is hidden while the desk holds it back (html[data-time-day="off"]). */
+.railtheme{display:flex;gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
+.railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
+  color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
+  transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}
+.railtheme button:hover{color:var(--salt-salt);}
+.railtheme button[aria-checked="true"]{background:var(--salt-slate-light);color:var(--salt-salt);}
+.railtheme button:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
+html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -4569,6 +4807,15 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <button class="tab salt-rail__tab" data-s="enter">Enter</button>
     </div>
     <div class="railfoot salt-rail__foot">
+    </div>
+    <!-- 05 Oct 2026, the version 2 design: the theme follows the clock (DESIGN time block in <head>); this holds
+         one or goes back to Auto, kept on this device. Day shows once the desk's own colours are all tokens. -->
+    <div class="railtheme" role="radiogroup" aria-label="Theme">
+      <button type="button" role="radio" data-time-set="auto">Auto</button>
+      <button type="button" role="radio" data-time-set="dawn">Dawn</button>
+      <button type="button" role="radio" data-time-set="day">Day</button>
+      <button type="button" role="radio" data-time-set="dusk">Dusk</button>
+      <button type="button" role="radio" data-time-set="night">Night</button>
     </div>
   </nav>
   <main class="main">
@@ -25531,6 +25778,16 @@ window.addEventListener('hashchange',()=>{
     setTimeout(function(){ centre(t); },250);
   },true);
   window.addEventListener('load',function(){ setTimeout(follow,120); });
+})();
+
+/* 05 Oct 2026, the version 2 design: the theme picker at the rail's foot holds one theme or goes back to Auto,
+   through window.saltTime (the DESIGN time block in <head>); the held one is marked, and stays marked when the
+   clock moves the theme. */
+(function(){
+  var box=document.querySelector('.railtheme');if(!box||!window.saltTime)return;
+  function mark(){var c=window.saltTime.choice();[].forEach.call(box.querySelectorAll('[data-time-set]'),function(b){b.setAttribute('aria-checked',b.getAttribute('data-time-set')===c?'true':'false');});}
+  box.addEventListener('click',function(e){var b=e.target.closest('[data-time-set]');if(!b)return;window.saltTime.set(b.getAttribute('data-time-set'));mark();});
+  document.documentElement.addEventListener('salt-time',mark);mark();
 })();
 </script>
 </body>
