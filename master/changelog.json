@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1025",
+  "d": "06 Oct 2026",
+  "t": "CJ2-KUC RICE ORDER S237 PAID AND COLLECTED",
+  "n": [
+   "<b>TWO AMENDMENTS FOLDED ON S237.</b> A payment of RM60 and a correction recording the 10 unit collected, both dated 05 Oct and preapproved by phone. Unusual: the collection was booked after the order was drafted as an advance, and the drafter flagged it. Both amend the row in place, so the order now stands paid and collected.",
+   "<b>INVENTORY.</b> Rice shelf rolled by 10 unit out to CJ2-KUC. The payment moves cash only. Salt is untouched and no lot landed, so the cost basis stays."
+  ]
+ },
+ {
   "v": "v1024",
   "d": "05 Oct 2026",
   "t": "AN EQUAL TOTAL OWED ON TWO BOOKS IS NOT AN UNSCOPED READ; THE SUITE RUNS IN THREE BALANCED PARTS",
