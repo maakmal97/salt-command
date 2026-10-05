@@ -7,6 +7,7 @@
 # be picked up. Measured on the CJ4-BJ approval of 07 Sep: about 45 seconds of job boundaries
 # and 15 seconds of push-to-run on an 8-minute chain. One job does the checkout and install
 # once, and the deploy follows the fold in the same workspace without waiting for anything.
+# Measured again over 119 green runs, 29 Sep to 05 Oct 2026: chain 1.2 min median, 2.0 at most.
 #
 # WHAT IS UNCHANGED. The credential does the mechanical things (read D1, deploy, mark
 # committed); the JUDGEMENT stays with the agent, which writes the notes and the version
@@ -73,7 +74,7 @@ jobs:
   chain:
     runs-on: ubuntu-latest
     # BOUNDED (26 Sep 2026). GitHub's default is six hours of the one concurrency slot. The
-    # longest run seen took 17.6 min, and tools/foldcall.mjs bounds the fold's two calls at about
+    # longest run seen took 17.6 min (2.0 from 29 Sep to 05 Oct 2026), and tools/foldcall.mjs bounds the fold's two calls at about
     # 12.2 min, so a run past 30 is already broken. tools/lint-workflows.mjs refuses a job without one.
     timeout-minutes: 30
     # THE LOCK IS THIS JOB'S, NOT THE WORKFLOW'S (26 Sep 2026): one chain at a time, and a newer
@@ -545,15 +546,24 @@ jobs:
   # ---- THE FULL SUITE, AFTER THE PHONE IS LIVE (v522), IN ITS OWN JOB (26 Sep 2026) -----------
   # Off the critical path: the clock has stopped by now, and this job takes NO LOCK, so the next
   # approval's chain starts while it runs; nothing cancels or queues it, and two in flight are two
-  # runners. It tests the sha chain proved the phone serving, never master, and writes nothing but
-  # its notice. A failure turns the run red, which emails, and is written where the phone shows
+  # runners. It tests the sha chain proved the phone serving, never master, and writes nothing. A
+  # failure turns the run red, which emails, and job suite-notice writes it where the phone shows
   # refusals under a synthetic id above the watermark, seen on the Approve view until a suite passes.
   suite:
     needs: chain
     # A job-level `if` drops the implied success(), so chain's own success is named.
     if: needs.chain.result == 'success' && needs.chain.outputs.deploy == '1'
     runs-on: ubuntu-latest
-    # BOUNDED: a checkout, npm ci and a suite of 146 to 301 s; ci.yml's `verify` has the same 20.
+    # ONE PART A RUNNER (05 Oct 2026, his instruction). The repo went private on 01 Oct and its runners
+    # have two cores since, so three shards ran as two fighting over them: the suite went from about
+    # 5 min (29 Sep to 01 Oct) to 6 to 11 (02 to 05 Oct). Three runners, a third of the suite each,
+    # cut the same way by tools/suite-split.mjs --part; a part failing never cancels the others.
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
+    # BOUNDED: a checkout, npm ci and a third of the suite; the whole suite on one runner took up to
+    # 11.3 min (05 Oct 2026), so 20 is a hang guard.
     timeout-minutes: 20
     permissions:
       contents: read
@@ -574,10 +584,28 @@ jobs:
           fi
           echo "testing ${{ needs.chain.outputs.sha }}, served as $have"
 
-      # Three shards packed by test/suite-costs.json, as ci.yml's Tests (26 Sep 2026).
+      # A third of the suite, packed by test/suite-costs.json, as ci.yml's Tests (05 Oct 2026).
       - name: The full suite, after the phone is live
         id: suite
-        run: npm test -- --jobs 3
+        run: npm test -- --part ${{ matrix.part }}/3
+
+  # ---- THE NOTICE, ONCE FOR THE THREE PARTS (05 Oct 2026) -----------------------------------
+  # Each part runs on its own runner, so a part that passed could clear a notice another part
+  # raised. The phone hears one verdict, job suite's, after all three: failure if any part failed.
+  suite-notice:
+    needs: [chain, suite]
+    if: always() && needs.chain.result == 'success' && needs.chain.outputs.deploy == '1'
+    runs-on: ubuntu-latest
+    # BOUNDED: a checkout, npm ci, one read of /rev and one D1 write.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: "${{ needs.chain.outputs.sha }}" }
+      - uses: actions/setup-node@v5
+        with: { node-version: '24', cache: npm }
+      - run: npm ci
 
       # A SUITE SPEAKS TO THE PHONE ONLY ABOUT THE BUILD THE PHONE SERVES. Two suites can be in
       # flight and both notices are keyed on the version, and the clear deletes every suite notice:
@@ -599,7 +627,7 @@ jobs:
           echo "same=$same (phone on $got, this suite tested ${{ needs.chain.outputs.rev }})"
 
       - name: Say so on the phone if the suite failed
-        if: always() && steps.suite.outcome == 'failure' && steps.live.outputs.same == '1'
+        if: always() && needs.suite.result == 'failure' && steps.live.outputs.same == '1'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -612,7 +640,7 @@ jobs:
       # so one raised by a failing suite stayed on the phone through every green run after it, as suite:v791 did through
       # six. It goes the moment a later run's suite passes, which is the thing it was about.
       - name: Clear a test notice once the suite passes
-        if: steps.suite.outcome == 'success' && steps.live.outputs.same == '1'
+        if: needs.suite.result == 'success' && steps.live.outputs.same == '1'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

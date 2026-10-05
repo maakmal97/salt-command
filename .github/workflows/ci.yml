@@ -21,8 +21,11 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # BOUNDED (26 Sep 2026): the longest run seen took 8.1 min; GitHub's default is six hours.
+    # BOUNDED (26 Sep 2026): the longest run seen took 8.1 min, and 18.8 by 05 Oct 2026 with the
+    # suite in this job; GitHub's default is six hours. The suite is job tests's since 05 Oct.
     timeout-minutes: 20
+    outputs:
+      covered: ${{ steps.chain.outputs.covered }}
     steps:
       - uses: actions/checkout@v5      # v5 runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
 
@@ -113,13 +116,6 @@ jobs:
           echo "covered=$covered" >> "$GITHUB_OUTPUT"
           echo "cloud-commit tests this push: $covered"
 
-      # THREE SHARDS, PACKED BY test/suite-costs.json (26 Sep 2026): the runner has no timings of its
-      # own, so the committed costs pack it. Three is what four cores and 16 GB carry at a 4 GB heap a
-      # shard; tools/suite-split.mjs runs no more than the cores less one, so a two-core runner runs two.
-      - name: Tests
-        if: steps.chain.outputs.covered != '1'
-        run: npm test -- --jobs 3
-
       # THE COMMITTED BUILD MATCHES THE MASTER, JUDGED BY THE ID AND NOT BY THE BYTES.
       # public/desk.html, public/data.json and public/rev.json are committed on purpose so the
       # data lives in the repo, and that is only worth anything if they correspond to the
@@ -149,3 +145,28 @@ jobs:
             exit 1
           fi
           echo "public/ matches the master at $after."
+
+  # ONE PART A RUNNER (05 Oct 2026, his instruction), as cloud-commit's job suite. The repo went
+  # private on 01 Oct and its runners have two cores since, so three shards in one job ran as two
+  # fighting over them (up to 11.3 min). Three runners each run a third, cut the same way by
+  # tools/suite-split.mjs --part and packed by test/suite-costs.json. It stands down only when the
+  # guard in verify says cloud-commit is testing this push; a red check in verify still runs it.
+  tests:
+    needs: verify
+    if: "!cancelled() && needs.verify.outputs.covered != '1'"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
+    # BOUNDED: a checkout, npm ci and a third of the suite; 20 is a hang guard.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Tests
+        run: npm test -- --part ${{ matrix.part }}/3
