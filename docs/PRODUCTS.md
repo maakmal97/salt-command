@@ -33,8 +33,9 @@ nested customer to product to level name.
 `lostDemand`. The field is optional; see section 6.
 
 **`COST_RULE` is the model the rest should follow.** It is keyed by product, each entry
-carrying a `kind` (`stack` for salt, `landed` for oil, `buyPlusPct` retired) and a dated note
-saying the two differ deliberately rather than by one of them being absent. The engine reads
+carrying a `kind` and a dated note: `latestCogs` on every book since 05 Oct 2026 (COGS off the
+latest purchase, no leak), with `stack`, `landed` and the retired `buyPlusPct` kept in the engine
+for a book that states one. `tools/product.mjs` opens a new book on `latestCogs`. The engine reads
 the `kind` and never the product's name, so a new rule needs no code.
 
 **The one structural outlier: quotes.** `supplierQuote` (salt, implicitly, carrying no
