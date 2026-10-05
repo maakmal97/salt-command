@@ -10559,6 +10559,13 @@ await (async () => {
       "the schema the fold's call sent is the one schema built for 60 rows (" + (sentSchema ? unionsIn(sentSchema) + " union(s)" : "no request") + ")");
     ok(sent && sent.model === "claude-sonnet-5-5", "with SALT_FOLD_MODEL unset the fold calls claude-sonnet-5-5, his instruction of 30 Sep 2026 (" + (sent && sent.model) + ")");
     ok(sent && sent.max_tokens >= 16000, "and leaves room for the model's thinking tokens (max_tokens " + (sent && sent.max_tokens) + ")");
+    /* 05 Oct 2026: the house rules and the dossier each carry a cache breakpoint, so the one retry reads both */
+    const bpOf = (b) => b && b.cache_control && b.cache_control.type === "ephemeral" && !b.cache_control.ttl;
+    const sysB = sent && Array.isArray(sent.system) && sent.system[0], userB = sent && Array.isArray(sent.messages[0].content) && sent.messages[0].content[0];
+    ok(bpOf(sysB) && /never kg or kilo/.test(sysB.text) && bpOf(userB) && userB.text.includes(JSON.stringify([id9])),
+      "the fold's call caches the house rules and the dossier, five minutes each (" + JSON.stringify([sysB && sysB.cache_control, userB && userB.cache_control]) + ")");
+    ok(F.cacheLine({ input_tokens: 40, cache_creation_input_tokens: 0, cache_read_input_tokens: 9000 }) === "cache 0 written, 9000 read, 40 uncached",
+      "and the log says what the cache wrote and read");
     rm9(dirM, { recursive: true, force: true });
   }
   /* a fake reply that breaks the rules is refused, and nothing is folded */
