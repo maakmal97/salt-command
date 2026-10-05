@@ -140,6 +140,7 @@ jobs:
           set -euo pipefail
           echo "staged=0" >> "$GITHUB_OUTPUT"
           echo "folded=0" >> "$GITHUB_OUTPUT"
+          echo "held=0" >> "$GITHUB_OUTPUT"
           if git cat-file -e HEAD:master/_folded.json 2>/dev/null; then
             echo "::notice::master/_folded.json is in HEAD: the last fold was pushed and its deploy did not finish. Deploying it, marking its rows and clearing the handoff; nothing new is staged on this run."
             echo "skip=1" >> "$GITHUB_OUTPUT"
@@ -156,6 +157,13 @@ jobs:
               git commit -q -m "The fold refused the staged batch as a replay: $ids"
               git push origin HEAD:master
               echo "skip=0" >> "$GITHUB_OUTPUT"
+            elif held=$(node tools/fold.mjs --held); then
+              # HELD (05 Oct 2026, his instruction): fold.mjs refuses a row, so the batch waits for a
+              # person. The run that staged it went red and noted the phone; this run neither folds it
+              # again nor deploys, and stays green. A fix to the book or the batch ends the hold.
+              echo "::warning::The staged batch of $n row(s) is held for a person; not folded again until it changes: $(tr '\n' ' ' <<< "$held")"
+              echo "skip=1" >> "$GITHUB_OUTPUT"
+              echo "held=1" >> "$GITHUB_OUTPUT"
             else
               echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it; the fold runs on it below."
               echo "skip=1" >> "$GITHUB_OUTPUT"
@@ -236,6 +244,8 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ] && [ "${{ inputs.probe_key }}" != "true" ]; then deploy=1; fi
           if [ "$fold" = "1" ]; then deploy=1; fi
           if [ "${{ steps.guard.outputs.folded }}" = "1" ]; then deploy=1; fi
+          # a held batch changes nothing on the desk: no deploy, so no re-seed, publish or suite either
+          if [ "${{ steps.guard.outputs.held }}" = "1" ]; then deploy=0; fi
           publish=1
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.probe_key }}" = "true" ]; then publish=0; fi
           echo "fold=$fold" >> "$GITHUB_OUTPUT"

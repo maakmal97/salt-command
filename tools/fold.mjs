@@ -1086,10 +1086,10 @@ export function apply(book, staged, notes, masterText) {
 /* ---- the command line ---------------------------------------------------------------------- */
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const mode = argv.find((a) => a === "--plan" || a === "--apply" || a === "--replays");
-  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--users f] [--today YYYY-MM-DD]"); process.exit(2); }
+  const mode = argv.find((a) => a === "--plan" || a === "--apply" || a === "--replays" || a === "--held");
+  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays | --held   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--users f] [--today YYYY-MM-DD]"); process.exit(2); }
   const staged = readStaged();
-  if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(mode === "--replays" ? 1 : 0); }
+  if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(mode === "--replays" || mode === "--held" ? 1 : 0); }
   const book = readBookFile(BOOK);
   /* v512: IS THE WHOLE BATCH A REPLAY? Exit 0 and print the ids when every staged row is refused
      because the same row is already on the book, and 1 for anything else. The stage job reads
@@ -1102,6 +1102,15 @@ if (isMain) {
     }
     console.log("  not a replay batch: " + p.items.length + " row(s) would fold, " + (p.refused.length - replay.length) + " refused for other reasons, " + replay.length + " replay(s)");
     process.exit(1);
+  }
+  /* 05 Oct 2026, his instruction: IS THE STAGED BATCH HELD? Exit 0 and print each refusal when any row is refused, and 1
+     when the batch would fold. The stage reads this so a batch waiting on a person is not folded again, red, on every
+     tick and tap: 15 red runs on 30 Sep and 01 Oct 2026, each refusing the same rows. The run that staged it is still
+     red and notes the phone; a person's fix to the book or the batch lets the next run fold it. */
+  if (mode === "--held") {
+    const p = plan(book, staged, null);
+    if (p.refused.length) { for (const x of p.refused) console.log(x.id + ": " + x.why); process.exit(0); }
+    console.log("  not held: " + p.items.length + " row(s) would fold"); process.exit(1);
   }
   const notes = existsSync(NOTES) ? JSON.parse(readFileSync(NOTES, "utf8")) : null;
   if (mode === "--plan") {

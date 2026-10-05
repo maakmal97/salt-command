@@ -57,7 +57,9 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    do (append, fulfil, count, register) and what will leave or land on the shelf, refuses anything
    it must refuse, and writes **`master/_fold_notes.json`**, a skeleton with one entry per row.
 
-2. **A refusal folds nothing.** A **Correction** is mechanical from 25 Aug 2026 and folds like
+2. **A refusal folds nothing**, and the batch is **held** (05 Oct 2026): the run that staged it goes
+   red and notes the phone; every later run asks `fold.mjs --held`, stays green, and neither folds
+   nor deploys it until a fix to the book or the batch ends the refusal. A **Correction** is mechanical from 25 Aug 2026 and folds like
    any other amendment: it rewrites what a row says (its product, its party, its attribution, its
    date, its size, its total, its note), moves no cash and no stock, and leaves the old value in
    the row's `mod` field. The tool refuses a Linked or Rewarded amendment (neither carries
