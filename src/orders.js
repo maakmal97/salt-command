@@ -1733,9 +1733,27 @@ async function rowOf(env, o, k, idx, amended) {
   if (rids) { const hit = [...rids].map((r) => idx.byRid.get(r)).filter((r) => r && (r.product || "salt") === product); return hit.length === 1 ? hit[0] : null; }
   const day = k.split("|").slice(1), hits = [o.code, bucketFor(o.code)].map((p) => [p].concat(day).join("|")).filter((c) => c !== k && idx.rows.get(c) === 1);
   const row = hits.length === 1 ? idx.byKey.get(hits[0]) : null;
-  if (!row || +row.qty !== +o.qty || (row.product || "salt") !== product || !/\bstream [^;,]* to /.test(row.mod || "")) return null;
+  const ours = row && +row.qty === +o.qty && (row.product || "salt") === product && /\bstream [^;,]* to /.test(row.mod || "");
+  const found = ours ? row : ["cancelled", "declined"].includes(o.status) ? null : strayRow(o, k, idx, product);   /* a cancelled order has no row to follow */
+  if (!found) return null;
   const ack = await fate(env, o.queued && o.queued.ack);
-  return ack && ack.landed ? row : null;
+  return ack && ack.landed ? found : null;
+}
+/* Two more ways a key names no row (his two live orders, 05 Oct 2026), each taking ONE row and nothing on a doubt. (a) Amend ID
+   re-keyed the customer, so the key's party is a code no row holds now: the one row of the order's own account (code or bucket)
+   at that day, figure, size and product. (b) the key's party is the order's own, and the row that carried it was restated by a
+   Correction (its mod says so): the one row of that account, product and day, whatever its figure and size are now. */
+function strayRow(o, k, idx, product) {
+  const [party, day, total] = k.split("|"), PE = POSITION_ENGINE, rows = [...idx.byKey.values()];
+  const sole = (l) => l.length === 1 && idx.rows.get(PE.ovKey(l[0])) === 1 ? l[0] : null;   /* byKey keeps one of two twins */
+  const mine = rows.filter((r) => PE.ownerCode(r.customer) === o.code && (r.product || "salt") === product && r.date === day);
+  const twins = mine.some((r) => idx.rows.get(PE.ovKey(r)) > 1);
+  if (PE.ownerCode(party) === o.code) {
+    const r = twins ? null : sole(mine.filter((x) => !x.cancelled && !x.defaulted));   /* a row he voided or wrote off is no restated row */
+    return r && new RegExp("\\btotal " + (+total) + " to ").test(r.mod || "") ? r : null;   /* the Correction names the old figure, not any correction */
+  }
+  if (rows.some((r) => PE.ownerCode(r.customer) === PE.ownerCode(party))) return null;
+  return twins ? null : sole(mine.filter((r) => +r.qty === +o.qty && +((+r.total || 0) + (+r.delivery || 0)).toFixed(2) === +total));
 }
 const answerOf = async (m) => Object.assign({ why: m ? " (http " + m.status + ")" : "" }, m && m.ok ? await m.json().catch(() => ({})) : {});
 /* his yes still waiting for the row it amends (cash taken at the counter, 11.12) is pointed at the order's row, its key

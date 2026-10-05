@@ -48362,7 +48362,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -48423,10 +48423,10 @@ await (async () => {
     const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
     const drafts = (id) => db.prepare("SELECT id,status,amends,entry FROM draft ORDER BY id").all()
       .map((d) => Object.assign(d, { e: JSON.parse(d.entry) })).filter((d) => d.e.orderId === id);
-    const place = async (u, extra) => (await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" }, extra || {}))).order;
+    const place = async (u, extra) => { const r = await O.placeOrder(senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" }, extra || {})); setup(r.order, "the order was placed: " + J(r)); return r.order; };
     const accept = async (o) => {
       const pv = await call("/orders/" + o.id + "/preview", {}), a = await call("/orders/" + o.id + "/accept", { hash: pv.j.hash });
-      setup(a.j.approved === true, "Accept approved its pending row: " + J(pv.j.error || a.j));
+      setup(a.j.approved === true, "Accept approved its pending row: " + J([o.u, o.id, pv.j.error || a.j]));
       return a.j.draft;
     };
     /* an order agreed, its pending row landed unless held back, and with `out` collected, its handover folded: an amendment naming its rid */
@@ -48631,6 +48631,50 @@ await (async () => {
     const t7 = await tellSite(denv), p7 = (await orderOf(P.o.id)).ledgerKey;
     ok(!t7.failed && p7 === pStale && !marks.some((m) => m.id === P.o.id),
       tag + ", an order is never followed onto another book's row its amendment landed on: " + J({ p7, marks: marks.filter((m) => m.id === P.o.id) }));
+
+    /* THE TWO LIVE CASES OF 05 OCT 2026: a customer re-keyed by Amend ID (the key names a code no row holds), and a row restated by a Correction
+       its order never amended. Each is followed to the ONE row; two rows that fit are followed to neither. */
+    const stale = (x, key) => O.deskMove(senv, x.u, x.o.id, { mark: { ledgerKey: key } });
+    const Q = await agreed(13, {}, false), qDay = saleOf(Q.rid).date, qOld = "CF99-OLD|" + qDay + "|110";
+    await stale(Q, qOld);
+    const Q2 = await agreed(14, {}, false), q2Day = saleOf(Q2.rid).date, q2Old = "CF98-OLD|" + q2Day + "|110";
+    addRow(Object.assign({}, saleOf(Q2.rid), { rid: "s9810" })); reseed();
+    await stale(Q2, q2Old);
+    const S = await agreed(15, { qty: 2, unit: 110, total: 220 }, false), sKey = S.key;
+    const rowS = correct(S.rid, { total: 160, qty: 1.5 });
+    const S2 = await agreed(16, {}, false), s2Key = S2.key;
+    addRow(Object.assign({}, saleOf(S2.rid), { rid: "s9811", total: 90 }));
+    const rowS2 = correct(S2.rid, { total: 160 });
+    marks.length = 0;
+    const t11 = await tellSite(denv);
+    const o11 = {}; for (const x of [Q, Q2, S, S2]) o11[x.o.id] = (await orderOf(x.o.id)).ledgerKey;
+    ok(!t11.failed && o11[Q.o.id] === PE.ovKey(saleOf(Q.rid)),
+      tag + ", an order whose customer was re-keyed takes the one row of the new code at its day, figure and size: " + J({ t11, key: o11[Q.o.id] }));
+    ok(o11[Q2.o.id] === q2Old && !mk(Q2).length,
+      tag + ", a re-keyed customer's order is followed to neither of two rows that fit: " + J({ key: o11[Q2.o.id], marks: mk(Q2) }));
+    ok(o11[S.o.id] === PE.ovKey(rowS) && /\|160$/.test(o11[S.o.id]),
+      tag + ", an order whose row a Correction restated, never amended, takes the one row of that account and day: " + J({ key: o11[S.o.id], was: sKey }));
+    ok(o11[S2.o.id] === s2Key && !mk(S2).length,
+      tag + ", a restated row is not followed where the account holds two rows that day: " + J({ key: o11[S2.o.id], marks: mk(S2), row: PE.ovKey(rowS2) }));
+    /* a restated row is named by the Correction's old figure, never by any Correction, and a voided row or a cancelled order follows nothing */
+    const Z = await agreed(17, {}, false), zDay = saleOf(Z.rid).date, zKey = Z.code + "|" + zDay + "|220";
+    correct(Z.rid, { cash: 50 });
+    await stale(Z, zKey);
+    const Y = await agreed(18, { qty: 2, unit: 110, total: 220 }, false), yKey = Y.key;
+    const rowY = correct(Y.rid, { total: 160 }); rowY.cancelled = true; putRow(rowY); reseed();
+    const X = await agreed(19, { qty: 2, unit: 110, total: 220 }, false), xKey = X.key;
+    correct(X.rid, { total: 160 });
+    const xc = await O.customerMove(senv, X.u, X.o.id, "cancel", {});
+    setup((await orderOf(X.o.id)).status === "cancelled", "the order is cancelled: " + J(xc));
+    marks.length = 0;
+    const t12 = await tellSite(denv);
+    const o12 = {}; for (const x of [Z, Y, X]) o12[x.o.id] = (await orderOf(x.o.id)).ledgerKey;
+    ok(!t12.failed && o12[Z.o.id] === zKey && !mk(Z).length,
+      tag + ", a row another Correction touched that day is not taken for the restated one: " + J({ key: o12[Z.o.id], marks: mk(Z) }));
+    ok(o12[Y.o.id] === yKey && !mk(Y).length,
+      tag + ", a restated row he has since voided is not followed: " + J({ key: o12[Y.o.id], marks: mk(Y) }));
+    ok(o12[X.o.id] === xKey && !mk(X).length,
+      tag + ", a cancelled order is not followed to a restated row: " + J({ key: o12[X.o.id], marks: mk(X) }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */
