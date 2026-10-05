@@ -8257,6 +8257,60 @@ await (async () => {
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 })();
 
+section("v2 design: the theme follows the clock (Dawn, Dusk, Night; Day held back)");
+await (async () => {
+  /* His approval of the version 2 design, 05 Oct 2026, step 1: the tokens and the time of day. The identity's
+     tokens became roles a theme re-points (Code/salt-ds src/styles.css), salt-time.js sets data-time on <html>
+     before the first paint, and the desk's own literal colours read the tokens, so Night renders as it did
+     (renderdiff: 34 of 34 shots the same) and Dawn and Dusk follow. Day, the light theme, is held back by
+     data-time-day="off" until the desk's remaining white and black tints are tokens too. Each check below was
+     proved red on a SALT_MASTER copy (or a changed design/desk.css) before its green was trusted. */
+  const MV2 = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const m = readFileSync(MV2, "utf8");
+  let dchk = "";
+  try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8", env: { ...process.env, SALT_MASTER: "" } }); }
+  catch (e) { dchk = String((e && e.stdout) || e); }
+  ok(/ok\s+time:/.test(dchk), "tools/designsync.mjs --check: the DESIGN time block in the master is design/salt-time.js");
+  const headAt = m.indexOf("<head>"), timeAt = m.indexOf("/* ==== DESIGN time:"), styleAt = m.indexOf("<style>");
+  ok(headAt > 0 && timeAt > headAt && timeAt < styleAt && m.lastIndexOf("<script>", timeAt) > headAt,
+    "the time script is in <head>, inside a <script>, before the stylesheet: the theme is set before the first paint");
+  ok(/<html [^>]*data-time-day="off"/.test(m.slice(0, headAt)), "Day is held back on the desk (<html data-time-day=\"off\") until its own tints are tokens");
+  ok(/:root\[data-time="dawn"\]/.test(m) && /:root\[data-time="dusk"\]/.test(m) && /--salt-ink-on-accent:/.test(m), "the four themes and the pill's own ink are in the design system's block");
+  /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
+  const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
+  const litIn = (css) => {
+    const bare = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+    return TRIP.filter((t) => bare.includes("rgba(" + t + ",")).concat(["#c5a059", "#b87333", "#d4694c", "#6fae97", "#8ea2b6", "#0b1215", "#05080a"].filter((h) => {
+      /* a data: URL (the select chevron) writes brass as %23c5a059, never #c5a059, so a plain hex is a declaration */
+      return bare.toLowerCase().includes(h);
+    }));
+  };
+  const a0 = m.indexOf("<style>"), b0 = m.indexOf("</style>", a0);
+  const ownCss = m.slice(a0, b0).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "");
+  const lit1 = litIn(ownCss), lit2 = litIn(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
+  ok(lit1.length === 0, `the desk's own stylesheet writes no identity colour as a literal (found ${lit1.join(" ") || "none"})`);
+  ok(lit2.length === 0, `nor does design/desk.css (found ${lit2.join(" ") || "none"})`);
+  /* the picker: five radios at the rail's foot, Day hidden while it is held back */
+  const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
+  const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
+  ok(/role="radiogroup"/.test(pick) && sets.join(",") === "auto,dawn,day,dusk,night", `the rail carries the theme picker: Auto, Dawn, Day, Dusk, Night (read ${sets.join(",") || "none"})`);
+  ok(/html\[data-time-day="off"\] \.railtheme \[data-time-set="day"\]\{display:none;\}/.test(m), "and Day's button is hidden while the desk holds Day back");
+  /* behaviour, in the desk's own window */
+  const { openMaster: omV2 } = await import("../tools/payload.mjs");
+  const { w: wV2 } = await omV2();
+  const st = String(wV2.eval("document.documentElement.getAttribute('data-time')"));
+  /* which theme it opens on depends on the hour the suite runs; that Day never shows is the held-Day check below */
+  ok(["dawn", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
+  wV2.eval("window.saltTime.set('day')");
+  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dawn", "Day held by hand reads Dawn on the desk while Day is held back");
+  wV2.eval("window.saltTime.set('dusk')");
+  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dusk", "Dusk held by hand holds");
+  wV2.eval("window.saltTime.set('auto')");
+  /* the bar's colour: the build's default is obsidian, never the violet retired at v472 */
+  const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color starts at obsidian; salt-time.js sets it to the theme's ground");
+})();
+
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
 await (async () => {
   /* The v233 breach compared a lock the desk stopped pricing from at v280 against the latest lot,
@@ -38506,7 +38560,8 @@ await (async () => {
     ok(hexIn(ap).length === 0 && yes && yes.classList.contains("salt-pill") && !yes.hasAttribute("style")
       && no && no.classList.contains("salt-ghost") && !no.hasAttribute("style"),
       "and so does Approve, its Reject and its caution line: " + JSON.stringify({ hex: hexIn(ap), yes: yes && yes.outerHTML.slice(0, 90), no: no && no.className }));
-    ok(w148.getComputedStyle(yes).color === "var(--salt-obsidian)" && w148.getComputedStyle(no).color === "var(--salt-ghost-tone)",
+    /* 05 Oct 2026: the pill's ink is its own token since the time of day (dark on the brass in every theme) */
+    ok(w148.getComputedStyle(yes).color === "var(--salt-ink-on-accent)" && w148.getComputedStyle(no).color === "var(--salt-ghost-tone)",
       "and no older layer of the desk paints over either recipe: " + JSON.stringify([w148.getComputedStyle(yes).color, w148.getComputedStyle(no).color]));
 
     /* S7 7.5 (his D14): the notice has no modes to press any more; Set and Clear are the system's ghosts, Set the lit one */

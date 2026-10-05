@@ -31,7 +31,7 @@ html[data-tod="register"],:root{
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
   --wellbg:var(--salt-well);--veil:var(--salt-veil);--menu:var(--salt-slate);--menu-2:var(--salt-slate-light);
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23c5a059' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --ink-2:rgba(242,244,245,.66);--ink-3:rgba(242,244,245,.40);
+  --ink-2:color-mix(in srgb, var(--salt-salt) 66%, transparent);--ink-3:color-mix(in srgb, var(--salt-salt) 40%, transparent);
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
@@ -41,7 +41,7 @@ html[data-tod="register"],:root{
      the band labels at .62, while the .86 it replaced already passed 14 per cent. The fill is the
      identity's --salt-panel since 22 Sep 2026; --panel is the desk's name for it. */
   --panel:var(--salt-panel);
-  --totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
+  --totbg:color-mix(in srgb, var(--salt-brass) 7%, transparent);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
 }
 /* the seven view hues are retired: a view is known by its name and its figures */
@@ -98,10 +98,10 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard{
   -webkit-backdrop-filter:blur(24px) saturate(1.15);backdrop-filter:blur(24px) saturate(1.15);}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:rgba(11,18,21,.96)!important;}}
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:color-mix(in srgb, var(--salt-slate) 96%, transparent)!important;}}
 @media (prefers-reduced-transparency:reduce){
   .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
-    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(11,18,21,.97)!important;}
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:color-mix(in srgb, var(--salt-slate) 97%, transparent)!important;}
 }
 /* THE TILE IS THE SYSTEM'S .salt-kpi (22 Sep 2026): its bar, label, figure and note are the recipe in the
    DESIGN base block, and the markup carries both names. The desk's tone letters bind to the recipe's one
@@ -119,11 +119,11 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
   -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
 .pend{border:1px dashed var(--salt-line-strong);}
-.pend.def{border-color:rgba(212,105,76,.55);}
+.pend.def{border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 .pend h3{font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);}
 .pend.def h3{color:var(--salt-ember);}
 .pend .cd{background:var(--salt-well);border-color:var(--salt-line);color:var(--salt-brass);}
-.pend .cd.crim{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
+.pend .cd.crim{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 details.obsec>summary{font-size:15px;font-weight:500;}
 details.obsec>summary .q{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;}
 details.obsec>summary .ct{background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);font-weight:500;}
@@ -188,7 +188,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
    its stickiness are the recipe's, scoped the same way, and the bar carries the brand there */
 @media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
-.exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
+.exitbtn:hover{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
 .exitfix{background:var(--salt-pane);}
 .byecard .q{color:var(--salt-brass);}
 
@@ -212,10 +212,10 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .lqb.qpaid{color:var(--salt-verdigris);}
 .lqb.qdeliv{color:var(--salt-product-salt);}
 .lqb.qdone{color:var(--salt-brass);border-color:var(--salt-line-strong);}
-.lqb.qdone:hover{background:rgba(197,160,89,.10);}
+.lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
-  border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
+  border:1px solid color-mix(in srgb, var(--salt-ember) 55%, transparent);color:var(--salt-ember);border-radius:999px;}
 /* UX6, 24 Sep 2026: A GHOST THAT ENDS SOMETHING SAYS SO AT REST. Decline, Cancel and Reject were the alarm until
    S1 1.48 made them the system's danger ghost, which warms only under a pointer, so on his phone they read as any
    quiet ghost. The recipe's own tone is bound to the alarm, as a tile's tone is bound; nothing is restated. */
@@ -268,14 +268,14 @@ input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
   background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
   color:var(--salt-salt);font-weight:400;}
 .qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus,input:focus,select:focus,textarea:focus{
-  border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.18);}
+  border-color:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
 .qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
-.qask.under{color:var(--salt-ember);border-color:rgba(212,105,76,.45);}
+.qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
 select:hover{background-color:rgba(0,0,0,.36);}
-option,optgroup{background-color:#0b1215;color:var(--salt-salt);}
-option:checked{background-color:#16211f;}
+option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
+option:checked{background-color:var(--salt-slate-light);}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
@@ -330,13 +330,13 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 .dtar{min-width:var(--tap);min-height:var(--tap);margin:0;padding:0;border:0;
   border-left:1px solid var(--salt-line-faint);background:transparent;color:var(--salt-brass);
   cursor:pointer;font-family:var(--salt-font-mono);font-size:17px;line-height:1;}
-.dtar:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtar:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);}
 .dtar:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 .dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
   border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
   background:transparent;color:var(--salt-brass);cursor:pointer;
   font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;}
-.dtoday:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtoday:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);}
 .dtoday:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 @media(max-width:560px){.dtoday{font-size:11px;}}
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
@@ -345,7 +345,7 @@ thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mi
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--panel);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
-tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
+tr.tot td{font-weight:500;background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 /* v567: AND THE TOTAL ROW'S BRASS WASH MAY NOT UN-PAINT THE STICKY LABEL COLUMN. This rule sits
    after th.l,td.l and REPLACED its fill, so on every total row the sticky label cell dropped to a
    7 per cent wash and passed 93 per cent of whatever scrolled under it: 14 such cells on the Price
@@ -353,7 +353,7 @@ tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
    layered OVER the panel instead of standing in for it, so the tint is unchanged to the eye and
    the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
    rather than by reading this file, which is the only way a cascade fault of this shape shows. */
-tr.tot td.l{background:linear-gradient(rgba(197,160,89,.07),rgba(197,160,89,.07)),var(--panel);}
+tr.tot td.l{background:linear-gradient(color-mix(in srgb, var(--salt-brass) 7%, transparent),color-mix(in srgb, var(--salt-brass) 7%, transparent)),var(--panel);}
 tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
@@ -389,9 +389,9 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .lclabel.roleclose{color:var(--salt-verdigris);}
 .submar{color:var(--salt-verdigris);font-weight:500;}
 .submar.thin{color:var(--salt-ember);}
-.lfig.struck{text-decoration-color:rgba(242,244,245,.5);}
-.eref{color:var(--salt-brass);border-color:rgba(197,160,89,.4);}
-.eref.elink:hover{background:rgba(197,160,89,.14);}
+.lfig.struck{text-decoration-color:color-mix(in srgb, var(--salt-salt) 50%, transparent);}
+.eref{color:var(--salt-brass);border-color:color-mix(in srgb, var(--salt-brass) 40%, transparent);}
+.eref.elink:hover{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);}
 .etype{font-weight:500;letter-spacing:.12em;}
 .ledwrap .lcard{border-bottom-color:var(--salt-line-faint);}
 .ledwrap .lcard>.lclose:not(:first-child){border-top-color:var(--salt-line-faint);}
@@ -403,15 +403,15 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
    so the word and the tint agree. The base layer's own tint rules (v-old .lcard.s-*), which the
    .ledwrap list mode had switched off since v465, are retired with this. ---- */
 .ledwrap .lcard{border-left:3px solid transparent;}
-.ledwrap .lcard.s-completed,.ledwrap .lcard.s-inkind{border-left-color:var(--salt-verdigris);background:rgba(111,174,151,.06);}
-.ledwrap .lcard.s-advance{border-left-color:var(--salt-copper);background:rgba(184,115,51,.07);}
-.ledwrap .lcard.s-deferred{border-left-color:var(--salt-brass);background:rgba(197,160,89,.07);}
+.ledwrap .lcard.s-completed,.ledwrap .lcard.s-inkind{border-left-color:var(--salt-verdigris);background:color-mix(in srgb, var(--salt-verdigris) 6%, transparent);}
+.ledwrap .lcard.s-advance{border-left-color:var(--salt-copper);background:color-mix(in srgb, var(--salt-copper) 7%, transparent);}
+.ledwrap .lcard.s-deferred{border-left-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .ledwrap .lcard.s-deferred .tag.open{color:var(--salt-brass);}
-.ledwrap .lcard.s-default{border-left-color:var(--salt-ember);background:rgba(212,105,76,.08);}
-.ledwrap .lcard.s-pending{border-left-color:var(--salt-steel);background:rgba(142,162,182,.07);}
+.ledwrap .lcard.s-default{border-left-color:var(--salt-ember);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
+.ledwrap .lcard.s-pending{border-left-color:var(--salt-steel);background:color-mix(in srgb, var(--salt-steel) 7%, transparent);}
 .ledwrap .lcard.s-cancelled{border-left-color:var(--salt-mist);opacity:.5;filter:saturate(.4);transition:opacity .13s,filter .13s;}
 .ledwrap .lcard.s-cancelled:hover,.ledwrap .lcard.s-cancelled:focus-within{opacity:.94;filter:none;}
-.ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(122,134,144,.8);}
+.ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:color-mix(in srgb, var(--salt-mist) 80%, transparent);}
 .ledwrap .tag.buy{--salt-status-tone:var(--salt-steel);}
 .ledwrap .tag.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .tag.paid{--salt-status-tone:var(--salt-verdigris);}
@@ -425,24 +425,24 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 /* the corner pill sits where the pen sits, and the pen's rule strips a border; the chip's dotted hairline is put back here, in the chip's own colour */
 .ledwrap .tag.prov{border:1px dotted currentColor;border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
 .ledwrap .lqb{border:1px solid var(--salt-line-strong);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
-.ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
+.ledwrap .lqb:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);border-color:var(--salt-brass);}
 .ledwrap .tag.def{--salt-status-tone:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
-.lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px rgba(197,160,89,.22);}
-.lcard.lpressed::after{background:radial-gradient(120% 80% at 50% 50%,rgba(197,160,89,.18),transparent 70%);}
+.lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px color-mix(in srgb, var(--salt-brass) 22%, transparent);}
+.lcard.lpressed::after{background:radial-gradient(120% 80% at 50% 50%,color-mix(in srgb, var(--salt-brass) 18%, transparent),transparent 70%);}
 .ledsum .l{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .ledsum .v{font-size:18px;font-weight:500;}
 .ledsum .v.ice{color:var(--salt-product-salt);}
 .ledsum .v.gold{color:var(--salt-brass);}
 .ledsum .v.warn{color:var(--salt-copper);}
-.tscroll.more::after{background:linear-gradient(90deg,transparent,rgba(5,8,10,.85));}
-.tscroll.morel::before{background:linear-gradient(270deg,transparent,rgba(5,8,10,.85));}
-.tscroll{scrollbar-color:rgba(197,160,89,.3) transparent;}
-.tscroll::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
-.rail::-webkit-scrollbar-thumb{background:rgba(197,160,89,.3);}
+.tscroll.more::after{background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
+.tscroll.morel::before{background:linear-gradient(270deg,transparent,color-mix(in srgb, var(--salt-obsidian) 85%, transparent));}
+.tscroll{scrollbar-color:color-mix(in srgb, var(--salt-brass) 30%, transparent) transparent;}
+.tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
+.rail::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-brass) 30%, transparent);}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
-.evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
+.evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 15%, transparent);}
 .evo .v{color:var(--salt-brass);}
 .evo .txt{color:var(--mut);font-size:14px;line-height:1.6;}
 .evo .txt b{color:var(--salt-salt);font-weight:500;}
@@ -465,19 +465,19 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .def{color:var(--salt-ember);}
 .prov{color:var(--salt-brass);}
 .mod,.pendingt{color:var(--salt-steel);}
-.provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
+.provbar{font-size:11px;letter-spacing:.06em;background:color-mix(in srgb, var(--salt-brass) 8%, transparent);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
-.ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
+.ubtn{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);color:var(--salt-brass);}
 .tierpill{font-size:10.5px;font-weight:500;letter-spacing:.14em;background:transparent;animation:none!important;}
-.tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px rgba(242,244,245,.55);}
+.tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent);}
 .tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
 .tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
-.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,#f2f4f5,#c9d3d8);
-  box-shadow:0 0 0 1px rgba(242,244,245,.4);}
+.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),#c9d3d8);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 40%, transparent);}
 .starpill{font-weight:700;letter-spacing:.12em;color:var(--salt-obsidian);}
-.starpill.s1{background:linear-gradient(135deg,#d8c79c,#c5a059);box-shadow:none;}
-.starpill.s2{background:linear-gradient(135deg,#c5a059,#b87333);box-shadow:none;}
-.starpill.s3{background:linear-gradient(135deg,#b87333,#d4694c);box-shadow:none;}
+.starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
+.starpill.s2{background:linear-gradient(135deg,var(--salt-brass),var(--salt-copper));box-shadow:none;}
+.starpill.s3{background:linear-gradient(135deg,var(--salt-copper),var(--salt-ember));box-shadow:none;}
 .prodtag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;box-shadow:none;text-shadow:none;
   border:1px solid var(--salt-line-faint);border-radius:6px;}
 .prodtag .gl{box-shadow:0 0 6px -1px currentColor;}
@@ -496,9 +496,9 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .pscope,.pscopen,.pbadgeo{font-size:11px;color:var(--salt-mist);}
 .pchip{font-size:12px;background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .pchip b{color:var(--salt-salt);font-weight:500;}
-.pchip.good{color:var(--salt-verdigris);border-color:rgba(111,174,151,.5);}
-.pchip.warn{color:var(--salt-copper);border-color:rgba(184,115,51,.55);}
-.pchip.bad{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
+.pchip.good{color:var(--salt-verdigris);border-color:color-mix(in srgb, var(--salt-verdigris) 50%, transparent);}
+.pchip.warn{color:var(--salt-copper);border-color:color-mix(in srgb, var(--salt-copper) 55%, transparent);}
+.pchip.bad{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);}
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
 /* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
@@ -544,11 +544,11 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apside .apbig{font-weight:500;}
 .apside .aphr{background:var(--salt-line-faint);}
 .apday{border-color:var(--salt-line-faint);background:var(--salt-glass-faint);}
-.apday.aptoday{border-color:var(--salt-brass);background:rgba(197,160,89,.07);}
+.apday.aptoday{border-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday.aptoday .apdn{color:var(--salt-brass);}
 .apchip{font-weight:500;letter-spacing:.04em;background:rgba(228,233,236,.10);color:var(--salt-product-salt);}
-.apchip.apowes{background:rgba(212,105,76,.14);color:var(--salt-ember);}
-.apchip.aplate{background:rgba(197,160,89,.14);color:var(--salt-brass);}
+.apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 14%, transparent);color:var(--salt-ember);}
+.apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-brass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
 .appop .apact{border-top-color:var(--salt-line-faint);}
 .appop td:last-child{color:var(--salt-salt);}
@@ -592,7 +592,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
   #pbSheet .pbl .mark{width:56px;height:56px;display:block;}
   #pbSheet .pbu{font-family:var(--salt-font-mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);margin:0 0 24px;min-height:17px;}
   #pbSheet table{border-collapse:collapse;min-width:300px;}
-  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
+  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid color-mix(in srgb, var(--salt-brass) 30%, transparent);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
   #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);color:var(--salt-salt);}
 }
 
@@ -616,7 +616,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .lrow .lc-type .tag{font-size:10.5px;letter-spacing:.14em;}
 .ledwrap .lqb,.ledwrap .lqb.qdone{border:1px solid var(--salt-line-strong);background:transparent;border-radius:999px;padding:3px 10px;min-height:0;line-height:1.3;
   font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);text-decoration:none;}
-.ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
+.ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);border-color:var(--salt-brass);}
 .ledwrap .lquick{justify-content:flex-end;align-self:center;}
 
 /* ---- 5c. THE HEADER, REDRAWN (his comment of 12 Sep 2026: "this persisting header can look much
@@ -674,12 +674,12 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ledwrap .tag.ltype.sell{--salt-status-tone:var(--salt-product-salt);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
-.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
+.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-salt);}
 /* v565: the ground moved from the container to each pill, because the fan is pills now. The last
    rule keyed on :last-child, which named More only while More happened to be last; it keys on the
    role. */
 .lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
+.lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 12%, transparent);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
 
@@ -740,3 +740,13 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordpart{display:flex;flex-direction:column;gap:8px;}
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
+/* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
+   Day is hidden while the desk holds it back (html[data-time-day="off"]). */
+.railtheme{display:flex;gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
+.railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
+  color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
+  transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}
+.railtheme button:hover{color:var(--salt-salt);}
+.railtheme button[aria-checked="true"]{background:var(--salt-slate-light);color:var(--salt-salt);}
+.railtheme button:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
+html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}

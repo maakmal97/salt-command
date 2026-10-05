@@ -31,6 +31,9 @@ export function inlineScript(html) {
     if (/\bsrc\s*=/.test(m[1])) continue;
     const type = (m[1].match(/\btype\s*=\s*["']?([^"'\s>]+)/i) || [])[1] || "";
     if (type && !/javascript/i.test(type)) continue;
+    /* 05 Oct 2026: the DESIGN time block is a generated script of its own in <head>, so the theme is set before the
+       first paint; designsync --check holds it to design/salt-time.js, and it calls nothing of the page's */
+    if (m[2].includes("/* ==== DESIGN time:")) continue;
     found.push({ code: m[2], line0: html.slice(0, m.index + m[0].indexOf(">") + 1).split("\n").length });
   }
   if (found.length !== 1) throw new Error("expected one classic inline script, found " + found.length);

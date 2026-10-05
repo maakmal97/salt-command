@@ -200,6 +200,34 @@ What was not done that day: the brand fonts. They followed as v785, above.
   which is compositing rounding. After any type change probe `document.documentElement.scrollWidth`
   per part at 375px.
 
+## 05 Oct 2026: the time of day (version 2, step 1)
+
+His approval of the version 2 design: four themes that follow the viewer's clock, six hours each. Dawn
+from 04:00 (cool slate, rose-gold accent), Day from 10:00 (the one light theme: salt paper and deep copper
+ink, for the market in full sun), Dusk from 16:00 (warm brown, apricot brass), Night from 22:00 (the
+identity as it was). The design system made the six colours roles (`Code\salt-ds`, `src/styles.css`): a
+theme re-points obsidian, slate, salt, mist, brass and the materials, and every recipe follows. The pill's
+ink (`--salt-ink-on-accent`) and the QR's field and ink never follow a theme.
+
+**How the desk carries it.** `src/salt-time.js` is a fourth generated block, `DESIGN time`, a `<script>` in
+`<head>` after the viewport meta, so `data-time` is set before the first paint (`designsync --pull`,
+`--sync`, `--check`, as for the others). It arms one timer to the next boundary and cross-fades the change
+for 1.2 seconds; the rail's foot carries the picker (Auto, Dawn, Dusk, Night), the choice kept on the device.
+The build's `theme-color` starts at obsidian (it was the violet retired at v472) and the script sets it
+to the theme's ground.
+
+**The desk's own colours read the tokens.** Every identity colour the desk's older layers and
+`design/desk.css` wrote as a literal is now its token: a tint as `color-mix(in srgb, var(--salt-brass) 7%,
+transparent)`, which is the same pixel at Night, and the ink on a filled control as
+`var(--salt-ink-on-accent)`. Measured: `tools/renderdiff.mjs` with the new `SALT_TIME=night` and
+`RENDER_HIDE=".railtheme"` read 34 of 34 shots the same as the build before; Dawn and Dusk differ on every
+shot, which proves the instrument saw a theme.
+
+**Day is held back** (`<html data-time-day="off">`, which salt-time.js reads: Dawn stands in by the clock
+and when Day is held). What remains before it can show: the white and black tints (`rgba(255,255,255,a)`,
+`rgba(0,0,0,a)`), the light text hexes the older layers write (`#e4e9ec`, `#e08a72`), and the chart and map
+colours in the desk's script. That is the next fold; then the attribute goes.
+
 ## The brand
 
 The identity (obsidian, slate, brass, copper, salt and mist; Fraunces for display, JetBrains Mono
