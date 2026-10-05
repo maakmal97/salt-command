@@ -1,0 +1,178 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-10-05T08:59:58.550Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN3-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 64,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-10-05",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-05"
+   },
+   "reasoning": "Sold 1 unit of salt to CN3-WM for RM 130, RM 130/unit. Costed at RM 64/unit from COGS off the latest purchase p035 landed 2026-10-05: RM 750 quote plus RM 50 freight over 12.5 unit, so RM 66 on the goods at 50.8%. RM 0 of RM 130 paid and delivered in full on 2026-10-05. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CN3-WM typically pays about RM 110/unit for salt across 13 orders; this one is RM 130, 18.2% above that.",
+    "This is an ADVANCE: 1 unit goes out with RM 130 unpaid. Check it against CN3-WM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-05T08:59:58.550Z",
+    "type": "SELL",
+    "party": "CN3-WM",
+    "qty": 1,
+    "total": 130,
+    "status": "unpaid",
+    "raw": "Sell 1 unit to CN3-WM for RM 130 on 2026-10-05, collected, RM 0 cash, 1 unit moved → Open · Advance",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN3-WM",
+     "newId": null,
+     "date": "2026-10-05",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-10-05T09:42:10.390Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-10-05T08:59:58.551Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN3-WM",
+    "qty": 2,
+    "total": 15,
+    "cost": 6.8,
+    "cash": 0,
+    "handover": "collected",
+    "product": "rice",
+    "date": "2026-10-05",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-10-05"
+   },
+   "reasoning": "Sold 2 unit of rice to CN3-WM for RM 15, RM 7.5/unit. Costed at RM 3.4/unit from COGS off the latest purchase p028 landed 2026-09-21: RM 320 quote plus RM 20 freight over 100 unit, so RM 8.2 on the goods at 54.7%. RM 0 of RM 15 paid and delivered in full on 2026-10-05. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CN3-WM has no committed rice order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 2 unit goes out with RM 15 unpaid. Check it against CN3-WM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-05T08:59:58.551Z",
+    "type": "SELL",
+    "party": "CN3-WM",
+    "qty": 2,
+    "total": 15,
+    "status": "unpaid",
+    "raw": "Sell 2 unit of rice to CN3-WM for RM 15 on 2026-10-05, collected, RM 0 cash, 2 unit moved → Open · Advance",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CN3-WM",
+     "newId": null,
+     "date": "2026-10-05",
+     "qty": 2,
+     "total": 15,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 2,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-10-05T09:42:08.951Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-10-05T09:45:14.300Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CJ2-KUC",
+    "qty": 10,
+    "total": 60,
+    "cash": 0,
+    "product": "rice",
+    "date": "2026-10-05",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261005094428-k5m27a, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 10 unit of rice to CJ2-KUC for RM 60, RM 6/unit. Costed at RM 3.4/unit from COGS off the latest purchase p028 landed 2026-09-21: RM 320 quote plus RM 20 freight over 100 unit, so RM 26 on the goods at 43.3%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-05 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CJ2-KUC has no committed rice order on the book, so there is no rate of theirs to compare this against."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-05T09:45:14.300Z",
+    "type": "SELL",
+    "party": "CJ2-KUC",
+    "qty": 10,
+    "total": 60,
+    "status": "Pending",
+    "raw": "SELL CJ2-KUC 10 rice RM 60, nothing paid, nothing moved (order 20261005094428-k5m27a)",
+    "orderKey": "CJ2-KUC|2026-10-05|60|rice",
+    "payload": {
+     "mode": "new",
+     "product": "rice",
+     "direction": "SELL",
+     "party": "CJ2-KUC",
+     "newId": null,
+     "date": "2026-10-05",
+     "qty": 10,
+     "total": 60,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261005094428-k5m27a, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261005094428-k5m27a"
+   },
+   "decidedAt": "2026-10-05T09:45:16.108Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
