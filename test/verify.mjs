@@ -8254,6 +8254,36 @@ await (async () => {
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
 })();
 
+section("Fields: the system's .salt-fields recipe owns the material of every input, select and textarea");
+await (async () => {
+  /* 06 Oct 2026: the fields group of the migration (CLAUDE.md rule 6). The body carries the system's `.salt-fields`
+     scope, so every native field takes the well, the hairline, the ink, the brass focus ring, the placeholder and the
+     option colours from the recipe; the desk's own rules keep SIZE only (padding, font, width, weight). */
+  const mF = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bF = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  ok(/<body class="salt-fields">/.test(mF) && /<body class="salt-fields">/.test(bF), "the body carries .salt-fields, in the master and in the build");
+  ok(/\.salt-fields :is\(input:not/.test(mF), "and the recipe it names is in the DESIGN base block");
+  const a = mF.indexOf("<style>"), b = mF.indexOf("</style>", a);
+  const own = mF.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const MATERIAL = /(^|;)\s*(background(-color)?|border(-color|-radius)?|color|outline|box-shadow)\s*:/;
+  const FIELD = /(^|[\s>+~])(input|select|textarea|option|optgroup)(:(?:focus|hover|checked|disabled)|::placeholder)?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => FIELD.test(x) && !/\[type=/.test(x) && !/(^|\s)(button|label|\.menu|\.appop)/.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no desk rule restates a field's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  /* an inline style on a field outranks the recipe, so none writes a material or a size under 16px */
+  const inl = [];
+  for (const t of mF.matchAll(/<(?:input|select|textarea)\b[^>]*?style="([^"]*)"/g)) {
+    const st = t[1];
+    if (/(^|;)\s*(background(-color)?|border(-color|-radius)?|color)\s*:/.test(st) || /font-size:\s*(\d+(?:\.\d+)?)px/.test(st) && +/font-size:\s*(\d+(?:\.\d+)?)px/.exec(st)[1] < 16) inl.push(st.slice(0, 50));
+  }
+  ok(inl.length === 0, `no inline style on a field paints its material or sets it under 16px (found ${inl.join(" | ") || "none"})`);
+  for (const k of ["const box='", "const bx='"]) { const at = mF.indexOf(k); const q = mF.slice(at, mF.indexOf("';", at)); ok(!/border|background|color/.test(q) && /font-size:16px/.test(q), `${k.slice(6, 9)} (the editor's and the update box's field style) sets size only, at 16px`); }
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
