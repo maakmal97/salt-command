@@ -8329,6 +8329,15 @@ await (async () => {
   const lit1 = litIn(ownCss), lit2 = litIn(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
   ok(lit1.length === 0, `the desk's own stylesheet writes no identity colour as a literal (found ${lit1.join(" ") || "none"})`);
   ok(lit2.length === 0, `nor does design/desk.css (found ${lit2.join(" ") || "none"})`);
+  /* the white and black tints and the light text hexes are tokens too (the fold before Day shows): a white tint is the
+     theme's salt, a black one its ink, ice and the ember text mix from their roles. The print block is paper and stays. */
+  const noPrint = (css) => { let out = css.replace(/\/\*[\s\S]*?\*\//g, ""), at;
+    while ((at = out.search(/@media\s+print\s*\{/)) >= 0) { let d = 0, i = out.indexOf("{", at); for (; i < out.length; i++) { if (out[i] === "{") d++; else if (out[i] === "}" && --d === 0) break; } out = out.slice(0, at) + out.slice(i + 1); }
+    return out.replace(/\s+/g, ""); };
+  const RAW = /rgba\((255,255,255|0,0,0|228,233,236|216,199,156),|#(e4e9ec|e08a72|1c2628|ffffff[0-9a-f]{2}|140b26cc|000|c9d3d8)\b/gi;
+  const raw1 = noPrint(ownCss).match(RAW) || [], raw2 = noPrint(readFileSync(join(REPO, "design", "desk.css"), "utf8")).match(RAW) || [];
+  ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
+  ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
   /* the picker: five radios at the rail's foot, Day hidden while it is held back */
   const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
   const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
