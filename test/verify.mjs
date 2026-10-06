@@ -52409,7 +52409,10 @@ await (async () => {
     shown[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
   }
   const high = live.filter((b) => b.shrink >= b.leakFrom).map((b) => b.p).sort().join();
-  ok(high === "oil,rice" && live.every((b) => shown[b.p] === (b.shrink >= b.leakFrom)),
+  /* 06 Oct 2026: the books were pinned as "oil,rice", which held only while the live book's leak said so; v1030's count moved
+     rice under a quarter and the check went red with nothing wrong. The rule is held on every book instead, with at least
+     one book over the line so the shown side is proved too. */
+  ok(high.length > 0 && live.every((b) => shown[b.p] === (b.shrink >= b.leakFrom)),
     `the after-leak figure is printed as information on the books that lose a quarter or more, ${high}, and on no other: ${JSON.stringify(shown)}`);
   w.eval("setProd('salt');recompute();");
 })();
