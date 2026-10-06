@@ -158,6 +158,8 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
       kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
       handover,second,more,coverFree,...(trip?{trip}:{})}};
 }
+/* a Whiteboard tip's id: its family, then codes, dates and figures (a decimal total included) */
+const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
 function tierSetEntry({at,tiers,raw}){
   const codes=Object.keys(tiers),copied={};
   codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
@@ -1330,7 +1332,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
-    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode'];
+    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
@@ -1341,6 +1343,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(['vault','addrVault','names'].includes(key))return envelope(v);
     if(key==='places'&&envelope(v))return true;
     if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
+      ||key==='id'&&TIP_ID.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v)
       ||key==='orderCode'&&/^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/.test(v);
@@ -1351,7 +1354,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
@@ -1392,7 +1395,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,

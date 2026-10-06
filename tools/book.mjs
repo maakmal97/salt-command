@@ -254,6 +254,10 @@ export function rewardSnapshot(w) {
   return JSON.parse(r.value);
 }
 
+
+/* a card's title is the desk's markup: tags off, entities back */
+const plain = (t) => String(t).replace(/<[^>]*>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+const obsList = (list) => Array.isArray(list) ? list.map((o) => ({ ...o, title: plain(o.title) })) : null;
 export function pricingSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
@@ -310,6 +314,8 @@ export function pricingSnapshot(w) {
     sizes,
     ref: call("REF"),                       // the markup-on-cost ladder: floor, good, great, ceiling
     shrinkAttrib: call("SHRINK_ATTRIB"),
+    /* A5: the Whiteboard's live observations as the desk reads them, id and words only, for Counter Maker to list and hush */
+    obs: obsList(call("(function(){try{return typeof observations==='function'?observations().live.map(function(o){return {id:o.id,sev:o.sev,title:String(o.title)};}):null;}catch(e){return null;}})()")),
     tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
     /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from
        what they pay for it; a product with neither is left out, and their page reads its price as coming soon */

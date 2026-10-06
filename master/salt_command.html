@@ -5290,6 +5290,8 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
       kg:movedUnits,assoc,stream,downstream,kind:null,orderCode:null,linkTo:null,note,
       handover,second,more,coverFree,...(trip?{trip}:{})}};
 }
+/* a Whiteboard tip's id: its family, then codes, dates and figures (a decimal total included) */
+const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
 function tierSetEntry({at,tiers,raw}){
   const codes=Object.keys(tiers),copied={};
   codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
@@ -6462,7 +6464,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
-    'cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode'];
+    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
@@ -6473,6 +6475,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(['vault','addrVault','names'].includes(key))return envelope(v);
     if(key==='places'&&envelope(v))return true;
     if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
+      ||key==='id'&&TIP_ID.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v)
       ||key==='orderCode'&&/^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/.test(v);
@@ -6483,7 +6486,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
@@ -6524,7 +6527,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -9338,6 +9341,8 @@ const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
 /* F4 (his decision of 05 Oct 2026): the day he expects each book's next lot, {<book>: 'YYYY-MM-DD'}, read from the Counter's KV
    `expected` through the keyed /expected. Named expected, not restock: restock is the engine's own reorder plan. */
 let EXPECTED={},EXPECTED_READ=false;
+/* the cloud's hushes, {tip id: snooze day, or null for dismissed}: one store for this desk and Counter Maker, read once on load */
+let HUSH={},HUSH_READ=false;
 /* HIS COMMENT OF 12 SEP 2026: "if there is an input for date, make sure today is clickable while
    other dates are via the opened calendar dialog box". Every date field on the desk is drawn here,
    so a field added later carries both roads: a Today button inside the field's right edge, the
@@ -15935,7 +15940,9 @@ function obsQueued(){return queue.filter(x=>x.payload&&x.payload.mode==='obs');}
 function obsState(id){
   let st=null;
   OBS_DISMISS.forEach(d=>{if(d.id===id)st={act:d.act||'dismiss',until:d.until||null,why:d.why||''};});
-  obsQueued().slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
+  /* in the cloud, once the shared hushes are read they alone decide (Maker may have moved one); until then this device's own queue does */
+  if(cloudMode()&&HUSH_READ){if(Object.prototype.hasOwnProperty.call(HUSH,id))st={act:HUSH[id]?'snooze':'dismiss',until:HUSH[id]||null,why:''};}
+  else obsQueued().slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
     if(q.payload.id===id)st={act:q.payload.act||'dismiss',until:q.payload.until||null,why:q.payload.why||'',_q:true};
   });
   if(!st)return null;
@@ -16548,7 +16555,8 @@ function obsCard(o){
              <button class="obsbtn" onclick="obsAct('${esc(o.id)}','restore')">Bring back</button>`
           : `<button class="obsbtn" onclick="obsAct('${esc(o.id)}','snooze7')">Snooze 7 days</button>
              <button class="obsbtn" onclick="obsAct('${esc(o.id)}','snooze30')">Snooze 30</button>
-             <button class="obsbtn" onclick="obsAct('${esc(o.id)}','dismiss')">Dismiss</button>`}
+             <button class="obsbtn" onclick="obsAct('${esc(o.id)}','dismiss')">Dismiss</button>
+             <span class="dsc obsid">${esc(o.id)} &middot; Hush in Maker</span>`}
       </div>
     </div>
   </details>`;
@@ -16563,6 +16571,8 @@ function obsAct(id,what){
   queue.push({at:new Date().toISOString(),type:'OBS',party:'whiteboard',qty:null,total:null,status:'obs',
     raw:(act==='restore'?'Bring back observation ':act==='dismiss'?'Dismiss observation ':'Snooze observation ')+id+(until?' to '+until:''),
     payload:{mode:'obs',id:id,act:act,until:until,why:''}});
+  /* the cloud keeps one store of hushes, the one Counter Maker writes too: the keyed /hush */
+  if(cloudMode()){if(act==='restore')delete HUSH[id];else HUSH[id]=until;hushPost(id,act==='restore'?{clear:true}:{until:until});}
   render();
   Promise.resolve(saveQueue());
 }
@@ -20353,6 +20363,19 @@ async function expPost(p,clear){
     say(r.status===401?'That write key was refused. Nothing was set.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. Customers see it gone at the next publish, within the hour.':'Set. Customers see it at the next publish, within the hour.');
   }catch(e){ say('No connection, so nothing was set.'); }
   await expLoad(true);
+}
+async function hushLoad(quiet){
+  if(!cloudMode())return;
+  const go=()=>fetch('hush',{cache:'no-store',headers:qHeaders()});
+  let j=null;
+  try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
+  if(!j||!j.ok||!j.hush||typeof j.hush!=='object')return;
+  const was=JSON.stringify(HUSH);HUSH=j.hush;HUSH_READ=true;
+  if(was!==JSON.stringify(HUSH)&&(curAddr==='plans'||curAddr==='today'))render();
+}
+async function hushPost(id,what){
+  const go=()=>fetch('hush',{method:'POST',headers:qHeaders(),body:JSON.stringify(Object.assign({id:id},what))});
+  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); }catch(e){}
 }
 async function bullLoad(quiet){
   const now=document.getElementById('bullNow'),ta=document.getElementById('bullText');if(!now)return;
@@ -25145,7 +25168,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();expLoad();}};
+  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();expLoad();}, plans:()=>hushLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
@@ -25614,7 +25637,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask t
   if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
   /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
      write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
-  if(saltWriteKey()){apLoad(true);ordLoad(true);expLoad(true);}});}catch(e){}
+  if(saltWriteKey()){apLoad(true);ordLoad(true);expLoad(true);hushLoad(true);}});}catch(e){}
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */

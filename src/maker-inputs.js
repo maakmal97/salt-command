@@ -124,7 +124,7 @@ function tierCards(book, roster, products) {
   return cards;
 }
 
-export function makerInputCatalog(book) {
+export function makerInputCatalog(book, hush = {}) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
   const products = Object.keys(book.state.PRODUCTS || {}).filter((product) => active(product, book)).map((product) => {
@@ -143,6 +143,8 @@ export function makerInputCatalog(book) {
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
     houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
+    tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
+      .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     tierCards: tierCards(book, roster, products),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
@@ -333,6 +335,43 @@ export function makerHouseSizes(body, book) {
   return proposed({ at: body.at, type: "PRICE", party: null, qty: null, total: null, status: "price",
     raw: "Board sizes on " + body.product + ": " + (hide.length ? "hiding " + hide.map(say).join(", ") : "every size printed"),
     payload: { mode: "price", product: body.product, prices: {}, hide, clearing: true } }, book);
+}
+/* THE HUSHES: one KV key, {tip id: snooze day, or null for dismissed}, read by the Desk on load and written by the Desk
+   and by Counter Maker, never a queue entry, a draft or a fold. A past day is dropped on every write. */
+export const HUSH_KEY = "hush";
+const mytDay = (at) => new Date(Date.parse(at) + 8 * 3600000).toISOString().slice(0, 10);
+export async function hushGet(kv) {
+  let map = null;
+  try { map = await kv.get(HUSH_KEY, "json"); } catch { map = null; }
+  return object(map) ? map : {};
+}
+/** until: a day to snooze to, null to dismiss; clear removes the tip's hush. today is MYT, from the request. */
+export async function hushPut(kv, id, until, today, clear = false) {
+  const map = await hushGet(kv), next = {};
+  for (const [tip, day] of Object.entries(map)) if (day === null || (typeof day === "string" && day > today)) next[tip] = day;
+  if (clear) delete next[id]; else next[id] = until;
+  await kv.put(HUSH_KEY, JSON.stringify(next));
+  return next;
+}
+/** The one check of a hush, for Maker and for the Desk's own route: a tip id, and a day after today and within a year, or null. */
+export function hushFault(id, until, today) {
+  if (typeof id !== "string" || !POSITION_ENGINE.TIP_ID.test(id)) return "That is not a tip id.";
+  if (until !== null && !date(until)) return "A snooze is a real day, or null to dismiss.";
+  if (until !== null && (until <= today || until > new Date(Date.parse(today) + 366 * 86400000).toISOString().slice(0, 10)))
+    return "A snooze ends after today and within a year.";
+  return null;
+}
+/** Maker's hush over the snapshot's tips (the Desk's own observations). It moves no figure. */
+export function makerHush(body, book) {
+  if (!exact(body, ["at", "id", "until"]) || typeof body.id !== "string" || body.until === undefined)
+    return { error: "Hushing carries a tip, its request timestamp and a date or null." };
+  if (!timestamp(body.at)) return { error: "A hush needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!((book.pricing && book.pricing.obs) || []).some((tip) => tip && tip.id === body.id))
+    return { error: "Choose a tip the Desk is showing." };
+  const today = mytDay(body.at), fault = hushFault(body.id, body.until, today);
+  if (fault) return { error: fault };
+  return { id: body.id, until: body.until, today };
 }
 
 const safeGeo = (value) => {

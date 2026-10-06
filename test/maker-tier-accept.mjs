@@ -36,7 +36,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     "the Counter Admin carries an Accept tier proposals control whose retained request is a valid record");
 
   ok(owner_js.includes("failure.status=r.status;")
-    && owner_js.includes("if(error.status===400&&path==='/all/maker/inputs/tier-accept-all'){makerClear(path);pending=null;cancel.hidden=true;}"),
+    && owner_js.includes("if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}"),
     "a 400 no-proposal answer clears the retained Accept all request and its Cancel control");
 
   /* 2. the fixture book for the constructor and the route */

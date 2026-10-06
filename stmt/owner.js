@@ -1056,6 +1056,7 @@ export const OWNER_JS = `
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         if(error.status===400&&path==='/all/maker/inputs/tier-accept-all'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&path==='/all/maker/inputs/hush'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
           pending=null;
@@ -1881,6 +1882,31 @@ export const OWNER_JS = `
         },true);
       }
       box.appendChild(houseSection);
+      /* A5: the Desk's Whiteboard hush. The tips are the ones the Desk is showing; a hush moves no figure. */
+      var tipSection=el('section','maker-input');
+      tipSection.appendChild(el('h3',null,'Tips'));
+      tipSection.appendChild(el('p','msg','Hush a tip the Desk is showing. A snooze brings it back by itself on the day.'));
+      tierSection.parentNode.insertBefore(tipSection,tierSection.nextSibling);
+      var tips=catalog.tips||[];
+      if(!tips.length){
+        tipSection.appendChild(el('p','msg','The Desk is showing no tip to hush.'));
+      }else{
+        var tipId=el('select','fld salt-field__input'), tipFor=el('select','fld salt-field__input');
+        tips.forEach(function(tip){ var option=el('option',null,tip.id+' | '+tip.title+(tip.hush===null?' | dismissed':tip.hush?' | snoozed to '+tip.hush:'')); option.value=tip.id; tipId.appendChild(option); });
+        [['7','Snooze 7 days'],['30','Snooze 30 days'],['','Dismiss']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; tipFor.appendChild(option); });
+        [['Tip',tipId],['Hush for',tipFor]].forEach(function(item){ var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tipSection.appendChild(wrap); });
+        var tipAnswer=el('p','msg'); tipAnswer.setAttribute('role','status'); tipSection.appendChild(tipAnswer);
+        var tipPending=false, tipAt=null, tipSignature='';
+        makerButton(tipSection,'Hush tip',async function(send){
+          if(tipPending) return;
+          var check=tipId.value+'|'+tipFor.value; if(check!==tipSignature){ tipSignature=check; tipAt=new Date().toISOString(); }
+          var until=tipFor.value===''?null:new Date(Date.parse(tipAt)+8*3600000+Number(tipFor.value)*86400000).toISOString().slice(0,10);
+          tipPending=true;
+          try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hushed. The Desk hides it when it next reads the hushes: on load, or on opening Whiteboard.'; loadMaker(); }
+          catch(error){ tipAnswer.textContent=error.message; }
+          tipPending=false;
+        },true);
+      }
       makerOtherInputs(box,catalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
       makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }

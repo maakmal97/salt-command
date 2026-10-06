@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
@@ -360,7 +360,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset"
@@ -486,7 +486,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
-      catalog: makerInputCatalog(book) });
+      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE)) });
   }
   if (p === "/_internal/maker/offsets") {
     /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
@@ -527,7 +527,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
   }
   if (p === "/_internal/maker/inputs/offset"
-    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -556,6 +556,17 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const waitingTiers = operation !== "tier-accept-all" ? [] : (await (await handleQueueGet(env, true)).json()).queue.concat(
       ((await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all()).results || [])
         .map((row) => JSON.parse(row.entry)));
+    if (operation === "hush") {
+      /* the hush map in KV, written once per request id: no queue entry, no draft, no fold */
+      const made = makerHush(body, book);
+      if (made.error) return json({ ok: false, ...made }, 400);
+      if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint))
+        return json({ ok: false, error: "That input is already being recorded. Retry the original request." }, 409);
+      await hushPut(env.SALT_QUEUE, made.id, made.until, made.today);
+      const response = { ok: true, hushed: made.id, until: made.until };
+      await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, response);
+      return json(response);
+    }
     let held = null;
     if (operation === "offset") {
       try { held = await offsetHeld(env); }
@@ -1496,7 +1507,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
-      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected"
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/hush"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
       || p === "/threads" || p.startsWith("/threads/")   /* Step 7: an account's thread, read and answered like an order's */
       || p === "/vault/addr" || p === "/vault/pair" || p === "/geo/expand"   /* F14: an exact point is more than a name, and a short link opened is his */
@@ -1613,6 +1624,19 @@ export default {
       if (typeof b.product !== "string" || !ids.includes(b.product)) return json({ ok: false, error: "that is not one of the book's products" }, 400);
       const r = await expectedRelay(env, "POST", b);
       return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* A5: the hushed Whiteboard tips, one store for the desk and Counter Maker */
+    if (p === "/hush") {
+      if (!env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue is required" }, 503);
+      if (m === "GET") return json({ ok: true, hush: await hushGet(env.SALT_QUEUE) });
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10), until = b && b.until !== undefined ? b.until : null;
+      const extra = !b || typeof b !== "object" || Array.isArray(b) || Object.keys(b).some((k) => !["id", "until", "clear"].includes(k));
+      const fault = extra ? "A hush carries only id, until and clear." : hushFault(b.id, b.clear === true ? null : until, today);
+      if (fault || b.clear !== undefined && b.clear !== true) return json({ ok: false, error: fault || "clear is true or absent" }, 400);
+      return json({ ok: true, hush: await hushPut(env.SALT_QUEUE, b.id, until, today, b.clear === true) });
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
