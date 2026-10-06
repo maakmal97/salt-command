@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="fb387932d2b56d27";
+var SALT_BUILD_ID="36f8b00033303c4f";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -25690,17 +25690,22 @@ function wrapTables(){
   /* the fade only earns its place where there is actually something hidden; v281 adds
      the LEFT edge, because once scrolled there is hidden content on both sides and a
      touch screen says nothing about either */
-  document.querySelectorAll('.sec.on .tscroll').forEach(w=>{
-    const upd=()=>{
-      w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
-      w.classList.toggle('morel',w.scrollLeft>2);
-    };
-    w.classList.toggle('more',w.scrollWidth>w.clientWidth+2);
-    w.classList.toggle('morel',w.scrollLeft>2);
-    if(w.scrollWidth>w.clientWidth+2&&!w.dataset.wired){w.dataset.wired='1';
-      w.addEventListener('scroll',upd,{passive:true});}
-  });
+  /* a table in a closed card is measured when the card opens: reading its width shut makes the browser lay out
+     the hidden card on its own, about 1 ms a table, 41 ms on Network's 39 */
+  document.querySelectorAll('.sec.on .tscroll').forEach(w=>{if(!w.closest('details:not([open])'))tscrollFade(w);});
 }
+function tscrollFade(w){
+  const upd=()=>{
+    w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
+    w.classList.toggle('morel',w.scrollLeft>2);
+  };
+  w.classList.toggle('more',w.scrollWidth>w.clientWidth+2);
+  w.classList.toggle('morel',w.scrollLeft>2);
+  if(w.scrollWidth>w.clientWidth+2&&!w.dataset.wired){w.dataset.wired='1';
+    w.addEventListener('scroll',upd,{passive:true});}
+}
+document.addEventListener('toggle',e=>{const d=e.target;
+  if(d.tagName==='DETAILS'&&d.open)d.querySelectorAll('.tscroll').forEach(w=>{if(!w.closest('details:not([open])'))tscrollFade(w);});},true);
 /* on a phone the rail is one scrolling row, so the tab you just chose can sit off-screen */
 function railIntoView(){
   const on=document.querySelector('.rail .tab.on'); if(!on)return;

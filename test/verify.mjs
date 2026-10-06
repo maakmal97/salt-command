@@ -46763,6 +46763,38 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("Perf: a table in a closed card is measured when the card opens, never while it is shut");
+await (async () => {
+  /* Reading a width inside a closed <details> lays the hidden card out on its own, about 1 ms a table: 41 ms of a
+     Network switch. jsdom has no layout, so widths are stubbed per wrapper: every other one overflows. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.eval(`(function(){var ws=new WeakMap(),n=0;window.__shutReads=0;
+      var wide=function(el){if(!ws.has(el))ws.set(el,(n++%2)?320:200);return ws.get(el);};
+      var shut=function(el){return !!(el.closest&&el.closest('details:not([open])'));};
+      Object.defineProperty(HTMLElement.prototype,'scrollWidth',{configurable:true,get:function(){if(shut(this))__shutReads++;return wide(this);}});
+      Object.defineProperty(HTMLElement.prototype,'clientWidth',{configurable:true,get:function(){if(shut(this))__shutReads++;return 200;}});
+      window.__wide=wide;})()`);
+    const a = JSON.parse(w.eval(`JSON.stringify((function(){switchTab('today');__shutReads=0;switchTab('network');
+      var all=[].slice.call(document.querySelectorAll('.sec.on .tscroll'));
+      var shut=all.filter(function(x){return x.closest('details:not([open])');});
+      return {reads:__shutReads,shut:shut.length,faded:shut.filter(function(x){return x.classList.contains('more');}).length};})())`));
+    ok(a.shut >= 10 && a.reads === 0 && a.faded === 0,
+      "a Network switch reads no width inside a closed card, and fades none there yet: " + JSON.stringify(a));
+    await new Promise((r) => setTimeout(r, 0));
+    w.eval(`document.querySelectorAll('.sec.on details:not([open])').forEach(function(d){d.open=true;});`);
+    await new Promise((r) => setTimeout(r, 50));
+    const b = JSON.parse(w.eval(`JSON.stringify((function(){
+      var all=[].slice.call(document.querySelectorAll('.sec.on .tscroll'));
+      var wrong=all.filter(function(x){return x.classList.contains('more')!==(__wide(x)>202);}).length;
+      return {n:all.length,wrong:wrong,more:all.filter(function(x){return x.classList.contains('more');}).length,
+        wired:all.filter(function(x){return x.dataset.wired==='1';}).length};})())`));
+    ok(b.n >= 10 && b.wrong === 0 && b.more > 0 && b.more < b.n && b.wired === b.more,
+      "once every card is open, each table's fade is what measuring it gives, and each one that overflows follows its scroll: " + JSON.stringify(b));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
 await (async () => {
   /* HIS DECISION OF 27 SEP 2026. rewardMargin skipped every rebate-stamped row whole, so where the reward
