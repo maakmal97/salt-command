@@ -17840,7 +17840,9 @@ function pxPolicy(){
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
-function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
+/* one render quotes about 950 times off the same stack, so it is read once a render per book and per override
+   (boardHeadroom walks pxOver.cost mid-render); outside a render it is computed fresh */
+function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink, ()=>PRICING_ENGINE.costStack(pxInputs())); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){
   const R=TIER_RULE[PROD];

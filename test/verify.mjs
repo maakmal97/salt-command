@@ -46709,6 +46709,33 @@ await (async () => {
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
+section("Perf: one render builds a book's cost stack once per override, and every view draws as it did");
+await (async () => {
+  /* One render quoted about 950 times off the same stack, rebuilding it from the whole sales book each time. The stack is
+     now read through RENDER_MEMO, keyed by book and by pxOver's cost and shrink, which boardHeadroom walks mid-render. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var cs=PRICING_ENGINE.costStack,n=0;PRICING_ENGINE.costStack=function(){n++;return cs.apply(this,arguments);};
+      try{switchTab('today');}finally{PRICING_ENGINE.costStack=cs;}
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
+      var memo=draw(),again=draw(),keep=window.pxCost;
+      window.pxCost=function(){return PRICING_ENGINE.costStack(pxInputs());};
+      var fresh;try{fresh=draw();}finally{window.pxCost=keep;}
+      var diff=parts.filter(function(p){return memo[p]!==fresh[p];}),unstable=parts.filter(function(p){return memo[p]!==again[p];});
+      var h=(function(){RENDER_MEMO={};try{var a=pxCost().repl,s=pxOver.cost;pxOver.cost=a+50;
+        var b=pxCost().repl;pxOver.cost=s;return {a:a,b:b,back:pxCost().repl};}finally{RENDER_MEMO=null;}})();
+      return {n:n,parts:parts.length,diff:diff,unstable:unstable,price:memo.pricing.length,h:h};})())`));
+    ok(v.n > 0 && v.n <= 40, "one Today render builds the cost stacks a few dozen times at most, not once a quote: " + v.n);
+    ok(v.parts >= 15 && v.price > 1000 && v.unstable.length === 0 && v.diff.length === 0,
+      "every part of every view draws the same with the stack read once a render as built fresh on every read: " + JSON.stringify(v));
+    ok(v.h && v.h.b > v.h.a && v.h.back === v.h.a,
+      "inside one render a cost override moved mid-way reads its own stack, and moving it back reads the first: " + JSON.stringify(v.h));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
 await (async () => {
   /* HIS DECISION OF 27 SEP 2026. rewardMargin skipped every rebate-stamped row whole, so where the reward

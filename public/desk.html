@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="597907e58c1d9d64";
+var SALT_BUILD_ID="7c76051868e50116";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -17967,7 +17967,9 @@ function pxPolicy(){
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
-function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
+/* one render quotes about 950 times off the same stack, so it is read once a render per book and per override
+   (boardHeadroom walks pxOver.cost mid-render); outside a render it is computed fresh */
+function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink, ()=>PRICING_ENGINE.costStack(pxInputs())); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){
   const R=TIER_RULE[PROD];
