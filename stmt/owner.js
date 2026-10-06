@@ -1550,7 +1550,7 @@ export const OWNER_JS = `
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
   }
-  /* a handover, a close or a move offered again, under one request id until it lands, as a move is */
+  /* a handover, a close, cash, a Received or a move offered again, under one request id until it lands, as a move is */
   function makerTap(order,action,body,message){
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
@@ -1900,14 +1900,13 @@ export const OWNER_JS = `
         },false).setAttribute('data-close','');
         var cash=makerField(card,'Cash received (RM)','number','');
         makerButton(card,'Record cash',function(){
-          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
+          makerTap(order,'cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
         },false);
       }
       if(order.status==='acknowledged'||order.status==='ready'){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           makerButton(card,'Receive claimed '+rm(payment.amount),function(){
-            makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',
-              {amount:payment.amount,claim:payment.at},'Claim confirmation sent to the Desk.');
+            makerTap(order,'received',{amount:payment.amount,claim:payment.at},'Claim confirmation sent to the Desk.');
           },false);
           makerButton(card,'Not found '+rm(payment.amount),function(){
             makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.');
@@ -1915,7 +1914,7 @@ export const OWNER_JS = `
         });
         var received=makerField(card,'Other payment received (RM)','number','');
         makerButton(card,'Confirm received',function(){
-          makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
+          makerTap(order,'received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
         },false);
       }
       makerAgain(card,order);

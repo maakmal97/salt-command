@@ -12,7 +12,7 @@ import * as O from "../stmt/orders.js";
 import { landingPage } from "../stmt/page.js";
 import { TEST_USER, FIX_VERSION, fixKey, exampleAccount } from "../stmt/testfix.js";
 
-class Store {
+export class Store {
   values = new Map();
   async get(key, type) {
     const value = this.values.get(key) ?? null;
@@ -26,7 +26,7 @@ class Store {
 }
 
 /* the Desk's D1, as far as these roads read it: the request-id store, the rejected rows an order carries, and nothing else */
-function ledger() {
+export function ledger() {
   const requests = new Map(), rejected = [], faults = [], sqls = [];
   const db = { prepare(sql) {
     let args = [];

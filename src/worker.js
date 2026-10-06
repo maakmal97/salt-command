@@ -685,7 +685,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         if (others.length) await afterApproval(env, ctx, others);
         else if (result.approved) stageOnApproval(env, ctx);
       } else {
-        /* a handover, a close or a move offered again carries its request id: a retry is answered from the first answer */
+        /* a handover, a close, cash, a Received or a move offered again carries its request id: a retry is answered from the first answer */
         const { rid, ...rest } = body;
         const tap = () => ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
           env, id, rest, "Counter Admin"
