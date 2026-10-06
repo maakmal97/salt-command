@@ -1958,8 +1958,11 @@ export const OWNER_JS = `
       }
       if(order.status==='acknowledged'||order.status==='ready'){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
-          makerButton(card,'Receive claimed '+rm(payment.amount),function(){
-            makerTap(order,'received',{amount:payment.amount,claim:payment.at},'Claim confirmation sent to the Desk.');
+          /* a claim above what the order still owes is money he recorded another way: the Desk's Received, on the book already */
+          var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
+          makerButton(card,onBook?'Received, on the book already '+rm(payment.amount):'Receive claimed '+rm(payment.amount),function(){
+            makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
+              onBook?'Received, on the book already: nothing more is booked.':'Claim confirmation sent to the Desk.');
           },false);
           makerButton(card,'Not found '+rm(payment.amount),function(){
             makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.');

@@ -50156,6 +50156,7 @@ await (async () => {
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
+  await (await import("./maker-claim-covered.mjs")).run({ ok });
 })();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
