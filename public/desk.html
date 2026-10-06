@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bac390dab0579234";
+var SALT_BUILD_ID="fb387932d2b56d27";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -16291,7 +16291,10 @@ function restockSignal(R){
    The swap's two recomputes change no row, so the plans already held (the one in view's among them) are
    put back beside the other book's rather than read again: the in-view plan was being computed twice a
    read of another book. */
-function restockFor(prod){
+/* recompute() drops restockFor._c on every book switch, and one render switches books about thirty times, so the
+   plan is also kept for the render (RENDER_MEMO), a book's plan depending only on that book */
+function restockFor(prod){const p=prod||PROD;return renderMemo('restock|'+p,()=>restockForNow(p));}
+function restockForNow(prod){
   const p=prod||PROD;
   if(restockFor._c&&Object.hasOwn(restockFor._c,p)&&restockFor._c[p])return restockFor._c[p];
   if(p!==PROD){const keep=PROD,held=restockFor._c;let r;try{PROD=p;recompute();r=restockFor(p);}finally{PROD=keep;recompute();restockFor._c=held;}
@@ -18512,7 +18515,9 @@ let nameToId={};
    observed fortnightly shipping rate and answers "when do I go dry". They are kept
    apart because the second is an estimate and the first is not. */
 const FWD={days:30};
-function forecast(o){
+/* the bare forecast is read about two dozen times a render off the same book; one with options is computed fresh */
+function forecast(o){return (o&&Object.keys(o).length)?forecastNow(o):renderMemo('forecast|'+PROD,()=>forecastNow());}
+function forecastNow(o){
   o=o||{};
   const MS=86400000, days=o.days||FWD.days;
   const cv=coverStats();

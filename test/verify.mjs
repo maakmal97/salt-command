@@ -46737,6 +46737,32 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("Perf: one render builds a book's restock plan and its bare forecast once, and every view draws as it did");
+await (async () => {
+  /* recompute() drops restockFor's own cache on every book switch, about thirty a render, so the plan and the bare
+     forecast are kept for the render too, keyed by book; a forecast with options is computed fresh. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var rn=restockForNow,fn=forecastNow,n={restock:0,forecast:0};
+      restockForNow=function(){n.restock++;return rn.apply(this,arguments);};
+      forecastNow=function(o){if(!o||!Object.keys(o).length)n.forecast++;return fn.apply(this,arguments);};
+      try{switchTab('today');}finally{restockForNow=rn;forecastNow=fn;}
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
+      var memo=draw(),again=draw(),kr=window.restockFor,kf=window.forecast;
+      restockFor=function(p){return restockForNow(p);};forecast=function(o){return forecastNow(o);};
+      var fresh;try{fresh=draw();}finally{restockFor=kr;forecast=kf;}
+      return {n:n,live:liveBooks().length,parts:parts.length,
+        diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];})};})())`));
+    ok(v.live >= 2 && v.n.restock > 0 && v.n.restock <= v.live && v.n.forecast > 0 && v.n.forecast <= v.live,
+      "one Today render builds each book's restock plan and bare forecast at most once: " + JSON.stringify(v.n));
+    ok(v.parts >= 15 && v.unstable.length === 0 && v.diff.length === 0,
+      "every part of every view draws the same with the plan and the bare forecast kept for the render as built fresh: " + JSON.stringify(v));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
 await (async () => {
   /* HIS DECISION OF 27 SEP 2026. rewardMargin skipped every rebate-stamped row whole, so where the reward
