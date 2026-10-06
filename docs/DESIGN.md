@@ -185,6 +185,17 @@ What was not done that day: the brand fonts. They followed as v785, above.
   the suite need updating.
 - Land one component group per version, report, and wait for his word on the next.
 
+**The fields group (06 Oct 2026, unbumped, for his word).** The body carries `.salt-fields`, the recipe's scope
+for a page that draws its own forms: every input, select and textarea takes the well, the hairline
+(`--salt-edge-field`), the ink, the brass focus ring, the placeholder at full strength and the option colours from
+`design/salt-ds.css`, and the desk keeps size, face and padding (the recipe says so). Deleted: the material of
+`.qfield`, `.ledbar` and bare `select` in the older layers, section 8 of `design/desk.css`, the `box`/`bx` field
+styles and the inline borders and fills on the editor, the update box, the vault and Add ID boxes, the Journal
+note and the price book's customer select. Visible at Night: the resting edge is brass-toned where it was a
+6% white hairline, the focus ring is the system's 2px outline where it was a 3px glow, the placeholder is not
+dimmed; inline fields under 16px (Add ID, vault, editor, price book) are 16px. Not touched: the date field's
+Today button, `.qask`, labels. The suite section "Fields: the system" proves it.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

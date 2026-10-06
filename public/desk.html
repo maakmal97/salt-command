@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="41c758be68364d62";
+var SALT_BUILD_ID="fb66681f9a88ff2e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -804,14 +804,14 @@ td.l{white-space:nowrap;}
 .quotecard{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;}
 .qrow{display:grid;grid-template-columns:1.4fr .9fr 1.1fr;gap:12px;}
 .qfield label{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px;}
-.qfield select,.qfield input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 10px;font-size:15px;font-weight:700;color:var(--ink);background-color:var(--salt-obsidian);outline:none;}
+/* the material of a field (well, hairline, ink, focus ring) is the system's .salt-fields on the body; a rule here sets size only */
+.qfield select,.qfield input{width:100%;padding:10px 10px;font-size:15px;font-weight:700;}
 .qfield select{padding-right:36px;}
-.qfield select:focus,.qfield input:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
 .qout{margin-top:14px;}
 .qmeta{margin-top:11px;font-size:13px;color:var(--mut);}
 .warnpill{display:inline-block;background:color-mix(in srgb, var(--salt-ember) 14%, transparent);border:1px solid var(--crim);color:color-mix(in srgb, var(--salt-ember) 75%, var(--salt-salt));font-weight:700;font-size:12px;padding:5px 11px;border-radius:9px;}
 .badge{font-size:12px;font-weight:800;color:var(--salt-ink-on-accent);background:var(--gold);border-radius:8px;padding:4px 10px;}
-select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:14px;font-weight:600;color:var(--ink);background-color:var(--salt-obsidian);cursor:pointer;}
+select{width:100%;padding:8px 9px;font-size:14px;font-weight:600;cursor:pointer;}
 .viewsw{display:inline-flex;background:var(--salt-obsidian);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
 .viewsw button{background:none;border:none;color:var(--mut);font-size:12px;font-weight:700;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:inherit;min-height:var(--tap);}
 .viewsw button.on{background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--salt-ink-on-accent);}
@@ -827,8 +827,8 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .qask.under{color:var(--crim);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
 .ledbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:10px 0 12px;}
 /* v471: the Journal, one entry per note, dated and linked to its row */
-.ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:var(--salt-obsidian);}
-.ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:var(--salt-obsidian);}
+.ledbar input{flex:1;min-width:170px;padding:7px 10px;font-size:13px;}
+.ledbar select{padding:7px 34px 7px 8px;font-size:12px;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
 /* THE FOLD OVER THE OLDER BOOK. A summary that says only "show more" makes the reader open it
    to find out what is in there, so it carries the count and the span of dates it covers. */
@@ -1072,7 +1072,7 @@ select{appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:point
 select:disabled{opacity:.5;cursor:not-allowed;}
 option{padding:9px 12px;}
 option:checked{font-weight:600;}
-optgroup{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--dim);}
+optgroup{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
 select[multiple],select[size]{background-image:none;padding-right:9px;}
 @media(forced-colors:active){select{background-image:none;padding-right:9px;}}
 /* A menu popover is a Veil, never a Pane: the dark tint stops content scrolling beneath
@@ -4078,20 +4078,16 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .ledbar select{width:auto;flex:0 0 auto;min-width:0;max-width:190px;text-overflow:ellipsis;}
 .ledbar .ledct{margin-left:auto;white-space:nowrap;}
 
-/* ---- 8. FIELDS: inset wells, mono values, brass focus ---- */
-input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
-  background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
-  color:var(--salt-salt);font-weight:400;}
-.qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus,input:focus,select:focus,textarea:focus{
-  border-color:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
+/* ---- 8. FIELDS: the material is the system's .salt-fields on the body (the well, the hairline, the ink,
+   the brass focus ring, the placeholder, the option colours); this layer keeps only what is the desk's own:
+   the labels, the answer box and its states ---- */
 .qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+/* fields with no inner padding of their own (the drift box, the map's two dates) sat their text on the edge, which
+   the recipe's brass edge made plain (09 Oct 2026): 10px in, as the other fields */
+.mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
-select:hover{background-color:color-mix(in srgb, var(--salt-ink-on-accent) 36%, transparent);}
-option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
-option:checked{background-color:var(--salt-slate-light);}
-input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
    "Make sure today is clickable while other dates are via the opened calendar dialog box." Every
@@ -4571,7 +4567,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
-<body>
+<body class="salt-fields">
 <div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
 <div id="pbSheet"></div>
 <div class="wrap">
@@ -13913,7 +13909,7 @@ function renderEditor(){
   const canc=!!row.cancelled;
   const v=edView(row,edType);
   const codes=(roster||[]).slice().sort();
-  const box='width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)';
+  const box='width:100%;padding:9px 10px;font-size:16px';
   const ctl=f=>{
     const id='ed_'+f.k, val=v[f.k];
     if(f.kind==='product')return '<select id="'+id+'" style="'+box+'">'+Object.keys(PRODUCTS).map(k=>'<option value="'+edEsc(k)+'"'+((val||'salt')===k?' selected':'')+'>'+edEsc(PRODUCTS[k].name)+'</option>').join('')+'</select>';
@@ -13928,7 +13924,7 @@ function renderEditor(){
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
     if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
     if(f.kind==='bool')return '<label class="edchk" style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
-    if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
+    if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:16px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
     return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
   };
   /* v365: A FOLD OPENS WHEN IT HAS SOMETHING TO SHOW, same reasoning and same fix as the
@@ -14177,7 +14173,7 @@ function updBlock(row,dir,canc){
        flag would erase the goods. The panel does not offer what the book will not take. */
     chip('Defaulted','default',null,null,dir==='BUY'&&!row.defaulted&&poRecvUnits(row)<=0.009),
   ].filter(Boolean).join('');
-  const bx='width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)';
+  const bx='width:100%;padding:9px 10px;font-size:16px';
   const lb='display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px';
   return '<div class="updbox">'
     +'<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;margin:0 0 8px">Update</p>'
@@ -17155,7 +17151,7 @@ function renderReveal(){
       ? '<div style="display:flex;gap:9px;align-items:flex-start">'+av
         +'<div style="flex:1">'
         +'<textarea data-bio="'+id+'" class="vin" rows="2" placeholder="everything you know: name (location), phone, address, email, anything" '
-        +'style="width:100%;min-height:44px;resize:vertical;font-size:12px;line-height:1.45">'+raw+'</textarea>'
+        +'style="width:100%;min-height:44px;resize:vertical;font-size:16px;line-height:1.45">'+raw+'</textarea>'
         +(chips?'<div style="margin-top:5px">'+chips+'</div>':'')
         +'<button class="vbtn salt-pill salt-pill--sm" data-photo="'+id+'" style="margin-top:5px;font-size:10px;padding:3px 9px;min-height:0">'+(ph?'Replace photo':'Add photo')+'</button>'
         +(ph?'<button class="vbtn salt-pill salt-pill--sm" data-unphoto="'+id+'" style="margin-top:5px;margin-left:5px;font-size:10px;padding:3px 9px;min-height:0">Remove</button>':'')
@@ -17176,7 +17172,7 @@ function renderReveal(){
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       ${namesShown()
         ? `<button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:linear-gradient(135deg,var(--vio),#6f8398);color:#fff">Hide names</button>`
-        : `<input id="vrpass" type="password" autocomplete="current-password" placeholder="passphrase" style="min-width:150px;flex:1;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:16px;color:var(--ink);background:var(--wellbg)">
+        : `<input id="vrpass" type="password" autocomplete="current-password" placeholder="passphrase" style="min-width:150px;flex:1;padding:9px 10px;font-size:16px">
            <button id="vrgo" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:transparent;color:var(--vio)"${vaultRevealBusy?' disabled':''}>${vaultRevealBusy?'Opening…':'Show names'}</button>`}
     </div>
     ${vaultRevealMsg?`<div style="font-size:12px;color:${/did not open|no vault|Enter the/.test(vaultRevealMsg)?'var(--crim)':'var(--mut)'};margin-bottom:7px">${esc(vaultRevealMsg)}</div>`:''}
@@ -17190,15 +17186,15 @@ function renderReveal(){
       ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Save</button>':''}
       ${NAME_VAULT?'<button id="vimport" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--gold);background:transparent;color:var(--gold)">Import old vault</button>':''}
     </div>`}
-    ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;border:1px solid var(--brd);border-radius:8px;padding:8px 9px;font-size:16px;color:var(--ink);background:var(--wellbg)"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
+    ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;padding:8px 9px;font-size:16px"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
     <div id="vmsg" style="font-size:12px;color:var(--mut);min-height:15px;margin-bottom:6px"></div>
     ${(open&&!cloudMode())?`<details id="apBox" style="margin-bottom:9px;border:1px solid var(--line);border-radius:9px;padding:9px 10px">
       <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--gold)">+ Add ID</summary>
       <div class="dsc" style="margin:7px 0 8px">A party is created <b>here</b>, by naming it, because a proper code is derived from a name and a place and this is the only panel that holds names. The code minted is the one the ledger carries from its first transaction, so there is <b>no placeholder and no re-key</b>.</div>
       <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:var(--salt-obsidian)">
-        <input id="apLoc" placeholder="location; blank if to be confirmed" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:var(--salt-obsidian)">
-        <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:var(--salt-obsidian)">
+        <input id="apName" placeholder="name" style="padding:6px 8px;font-size:16px">
+        <input id="apLoc" placeholder="location; blank if to be confirmed" style="padding:6px 8px;font-size:16px">
+        <select id="apKind" style="padding:6px 30px 6px 8px;font-size:16px">
           <option value="customer">Customer: buys direct</option>
           <option value="reseller">Associate, resells for you: R2</option>
           <option value="referral">Referrer, introduces buyers: R3</option>
@@ -17206,7 +17202,7 @@ function renderReveal(){
           <option value="bucket">An associate&rsquo;s end buyer you know NOTHING about: his &ldquo;-Gen&rdquo; bucket</option>
           <option value="supplier">Supplier</option>
         </select>
-        <select id="apParent" style="display:none;border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:var(--salt-obsidian)">
+        <select id="apParent" style="display:none;padding:6px 30px 6px 8px;font-size:16px">
           <option value="">Which associate…</option>${byName(roster.filter(id=>!id.startsWith('S'))).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('')}
         </select>
         <button id="apAdd" class="vbtn salt-pill salt-pill--sm" style="align-self:flex-start">Create the ID</button>
@@ -17214,7 +17210,7 @@ function renderReveal(){
       <div id="apMsg" style="font-size:12px;color:var(--mut);margin-top:7px;min-height:14px"></div>
     </details>`:''}
     <div style="max-height:calc(100dvh - 250px - var(--safetop) - var(--safebot));overflow:auto;border:1px solid var(--line);border-radius:9px"><table><thead><tr><th class="l">Code</th><th class="l">Real name</th><th>Role</th></tr></thead><tbody>${rows}</tbody></table></div>
-    ${qServed()?'<div class="dsc" style="margin-top:8px">Saved changes are written to <b>salt_vault.json</b> beside the desk, encrypted.</div>':'<textarea id="vout" readonly placeholder="encrypted blob (backup)" style="width:100%;margin-top:8px;min-height:44px;display:none;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px;color:var(--ink);background:#0f0820;font-family:ui-monospace,monospace"></textarea>'}
+    ${qServed()?'<div class="dsc" style="margin-top:8px">Saved changes are written to <b>salt_vault.json</b> beside the desk, encrypted.</div>':'<textarea id="vout" readonly placeholder="encrypted blob (backup)" style="width:100%;margin-top:8px;min-height:44px;display:none;padding:8px;font-size:16px;font-family:ui-monospace,monospace"></textarea>'}
   </div>`;
   const btn=document.getElementById('idBtn');if(btn)btn.onclick=()=>{idOpen=!idOpen;renderReveal();};
   const cbtn=document.getElementById('idClose');if(cbtn)cbtn.onclick=()=>{idOpen=false;renderReveal();};
@@ -20380,7 +20376,7 @@ function tabOrders(){
   <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
   <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it. Setting one wakes every phone on the site.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
-    <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
+    <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;font:inherit"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
     <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
   <details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
@@ -22123,7 +22119,7 @@ function pbCard(){
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
     <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price moved by their drift, set on Clients or read off their record; on the other books the board; never under the floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-      <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
+      <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
       <button class="vbtn salt-pill salt-pill--sm" id="pbImage" type="button" style="background:transparent;color:var(--gold)">Save as JPG</button>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPdf" type="button" style="background:transparent;color:var(--gold)">Save as PDF</button>

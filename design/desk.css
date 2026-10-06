@@ -263,20 +263,16 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .ledbar select{width:auto;flex:0 0 auto;min-width:0;max-width:190px;text-overflow:ellipsis;}
 .ledbar .ledct{margin-left:auto;white-space:nowrap;}
 
-/* ---- 8. FIELDS: inset wells, mono values, brass focus ---- */
-input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
-  background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
-  color:var(--salt-salt);font-weight:400;}
-.qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus,input:focus,select:focus,textarea:focus{
-  border-color:var(--salt-brass);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
+/* ---- 8. FIELDS: the material is the system's .salt-fields on the body (the well, the hairline, the ink,
+   the brass focus ring, the placeholder, the option colours); this layer keeps only what is the desk's own:
+   the labels, the answer box and its states ---- */
 .qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+/* fields with no inner padding of their own (the drift box, the map's two dates) sat their text on the edge, which
+   the recipe's brass edge made plain (09 Oct 2026): 10px in, as the other fields */
+.mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
-select:hover{background-color:color-mix(in srgb, var(--salt-ink-on-accent) 36%, transparent);}
-option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
-option:checked{background-color:var(--salt-slate-light);}
-input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
    "Make sure today is clickable while other dates are via the opened calendar dialog box." Every
