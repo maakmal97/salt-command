@@ -51,6 +51,7 @@
  */
 
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
+import { d1Rows } from "./d1json.mjs";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { dirname, resolve, join } from "node:path";
@@ -130,9 +131,9 @@ function d1Drafts(ats) {
     const out = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", "--command", JSON.stringify(sql)], {
       cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: true
     }));
-    const j = jsonSlice(out, "[", "]");
-    if (!Array.isArray(j) || !j[0] || !Array.isArray(j[0].results)) throw new Error("D1's answer could not be read: " + out.trim().slice(0, 80));
-    for (const r of j[0].results) if (found.has(r.id) && (!found.get(r.id) || r.status !== "refused")) found.set(r.id, r);
+    const res = d1Rows({ code: 0, out });
+    if (res.error) throw new Error(res.error);
+    for (const r of res.rows) if (found.has(r.id) && (!found.get(r.id) || r.status !== "refused")) found.set(r.id, r);
   }
   return found;
 }
