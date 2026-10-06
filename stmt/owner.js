@@ -43,7 +43,7 @@ export const OWNER_JS = `
     if(!which) drawNeeds();
     if(which==='accounts'){ drawRoster(); if(!sheet) loadSheet(); }
     if(which==='cards'){ if(!cards) loadCards(); else drawCards(); }
-    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); loadMakerPools(); loadMakerClaims(); }
+    if(which==='maker'){ loadMaker(); loadMakerHours(); loadMakerInputs(); loadMakerThreads(false); loadMakerBulletin(); loadMakerPools(); loadMakerExpected(); loadMakerClaims(); }
     try{ window.scrollTo(0,0); }catch(e){}
   }
   /* ---- WHERE AN ACCOUNT STANDS ---------------------------------------------------------------
@@ -642,7 +642,7 @@ export const OWNER_JS = `
     if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
     return j;
   }
-  var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
+  var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false, makerReenter=null, makerSaleFill=null;
   var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
   function makerSlipClose(){
     makerSlipGeneration++;
@@ -936,6 +936,34 @@ export const OWNER_JS = `
       }
       root.appendChild(card);
     });
+  }
+  /* the restock date: a day set per book is absolute, so a retry sets the same day and needs no request id */
+  async function loadMakerExpected(){
+    var root=document.getElementById('makerExpected'), status=document.getElementById('makerExpectedStatus');
+    if(!root||root.childElementCount) return;
+    try{
+      var context=await refs('/all/maker/inputs'), held=(await refs('/all/maker/expected')).expected||{};
+      var label=el('label','maker-field','Book'), book=el('select','fld salt-field__input');
+      (context.products||[]).forEach(function(code){ var option=el('option',null,pshape(code)); option.value=code; book.appendChild(option); });
+      label.appendChild(book); root.appendChild(label);
+      var day=makerField(root,'Expected by','date','');
+      var current=el('p','maker-facts','');
+      function showHeld(){ current.textContent=held[book.value]?'Expected by '+held[book.value]+'.':'No date set.'; day.value=held[book.value]||''; }
+      book.addEventListener('change',showHeld); showHeld(); root.appendChild(current);
+      var busy=false;
+      async function send(on){
+        if(busy) return; busy=true; status.textContent='Saving…';
+        try{
+          var result=await refs('/all/maker/expected',{product:book.value,on:on});
+          held=result.expected||{}; showHeld(); status.textContent=on?'Date set.':'Date cleared.';
+        }catch(error){ status.textContent=error.message; }
+        busy=false;
+      }
+      var set=el('button','btn salt-pill salt-pill--md','Set date'), clear=el('button','salt-ghost','Clear date');
+      [set,clear].forEach(function(b){ b.type='button'; root.appendChild(b); });
+      set.onclick=function(){ if(!day.value){ status.textContent='Choose a day first.'; return; } send(day.value); };
+      clear.onclick=function(){ send(null); };
+    }catch(error){ status.textContent=error.message; }
   }
   async function loadMakerBulletin(){
     var root=document.getElementById('makerBulletin'), status=document.getElementById('makerBulletinStatus');
@@ -1757,6 +1785,20 @@ export const OWNER_JS = `
       }
       direction.addEventListener('change',fillTradeChoices);
       fillTradeChoices();
+      /* a rejected sale put back on this form to correct; a fresh request id follows because every field is read at send */
+      makerSaleFill=function(seed){
+        direction.value='sale'; fillTradeChoices();
+        var has=function(sel,v){ return Array.prototype.some.call(sel.options,function(o){ return o.value===v; }); };
+        if(!has(tradeProduct,seed.product)) return 'That book is not open for a sale on the Counter.';
+        if(!has(tradeParty,seed.party||'')) return 'That customer is not on the Counter. Add them first.';
+        tradeProduct.value=seed.product; tradeParty.value=seed.party;
+        tradeDate.value=seed.date||''; tradeQty.value=seed.qty==null?'':seed.qty; tradeTotal.value=seed.total==null?'':seed.total;
+        tradeCash.value=seed.cash==null?'':seed.cash; tradeMoved.value=seed.movedUnits==null?'':seed.movedUnits;
+        handover.value=seed.handover||''; carriage.value=seed.delivery==null?'':seed.delivery;
+        tradeSignature=''; tradeAnswer.textContent='The rejected sale, as it was typed. Correct it and send it again.';
+        tradeSection.scrollIntoView(); tradeQty.focus();
+        return '';
+      };
       async function submitTrade(confirmedTwin,send){
         if(tradePending) return;
         var isSale=direction.value==='sale';
@@ -1989,6 +2031,22 @@ export const OWNER_JS = `
     root.textContent='';
     var open=(makerData.orders||[]).filter(function(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; });
     if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
+    if(makerReenter){
+      var again=makerCard(root), seed=makerReenter.seed;
+      again.appendChild(el('h3','','Rejected sale'));
+      if(seed.blocked){
+        again.appendChild(el('p','salt-insight',seed.blocked));
+        makerButton(again,'Dismiss',function(){ makerReenter=null; drawMaker(); },false);
+      }else{
+        again.appendChild(el('p','lead',(seed.party||'no code')+' · '+(seed.product||'')+' · '+seed.qty+' units · RM '+Number(seed.total||0).toFixed(2)));
+        makerButton(again,'Re-enter it, corrected',function(){
+          var said=makerSaleFill?makerSaleFill(seed):'The sale form is not ready.';
+          var s=document.getElementById('makerReviewStatus'); if(s&&said) s.textContent=said;
+          if(!said) makerReenter=null;
+        },true);
+        makerButton(again,'Dismiss',function(){ makerReenter=null; drawMaker(); },false);
+      }
+    }
     if(!open.length) root.appendChild(el('p','rnone','No open Counter orders.'));
     open.forEach(function(order){
       var card=makerCard(root), head=el('h3','',order.id); card.appendChild(head);
@@ -2106,7 +2164,10 @@ export const OWNER_JS = `
       approve.disabled=!!claim;
       makerButton(card,'Reject row',function(){
         if(!window.confirm('Reject this Desk row?')) return;
-        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.');
+        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.').then(function(done){
+          if(!done||!draft.reenter) return;
+          makerReenter={id:draft.id,seed:draft.reenter}; drawMaker();
+        });
       },false);
     });
     (makerData.refused||[]).forEach(function(refused){

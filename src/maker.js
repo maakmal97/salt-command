@@ -24,6 +24,14 @@ export function makerCommunicationFault(kind, body) {
   return "That communication action is not available.";
 }
 
+export function makerExpectedFault(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
+  if (Object.keys(body).some((key) => !["product", "on"].includes(key))) return "A restock date carries only its book and its day.";
+  if (typeof body.product !== "string" || !/^[a-z]+$/.test(body.product)) return "Choose a book.";
+  if (body.on !== null && (typeof body.on !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(body.on))) return "Give a day as YYYY-MM-DD, or clear it.";
+  return "";
+}
+
 export function makerStockCount(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)
     || Object.keys(body).some((key) => !["at", "product", "date", "qty"].includes(key)))

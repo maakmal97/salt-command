@@ -40950,7 +40950,9 @@ await (async () => {
   const saltOnly = v.per.salt.filter((t) => !v.per.oil.includes(t));
   ok(everywhere.length > 0 && everywhere.every((t) => v.rows.filter((r) => r.t === t).length === 1 && v.rows.find((r) => r.t === t).tags.length === 0),
     "an item every book raises is listed once and carries no book: " + JSON.stringify(everywhere));
-  ok(saltOnly.length > 0 && saltOnly.every((t) => v.rows.some((r) => r.t === t && JSON.stringify(r.tags) === '["Salt"]')),
+  /* a party's several items are one merged row, which stands for each of them */
+  const stands = (t) => v.rows.some((r) => (r.t.includes(t) || ((t.match(/[A-Z]{2}\d-[A-Z]{2,3}/) || [""])[0] && r.t.includes((t.match(/[A-Z]{2}\d-[A-Z]{2,3}/) || [""])[0]) && /\d+ items/.test(r.t))) && JSON.stringify(r.tags) === '["Salt"]');
+  ok(saltOnly.length > 0 && saltOnly.every(stands),
     "salt's own items are on Today with oil in view, each tagged Salt: " + JSON.stringify(saltOnly));
   ok(JSON.stringify(v.band) === JSON.stringify(v.live.map((p) => p[0].toUpperCase() + p.slice(1))) && !v.live.includes("spare") && v.live.includes("rice"),
     "the band is one row a book with anything on it, and a book with nothing, spare, is left off: " + JSON.stringify(v.band));
@@ -44712,6 +44714,10 @@ await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
   await (await import("./maker-claim-covered.mjs")).run({ ok });
 })();
+section("Counter maker sets the restock date and re-enters a rejected sale");
+await (async () => {
+  await (await import("./maker-expected-reenter.mjs")).run({ ok });
+})();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });
@@ -47105,6 +47111,801 @@ await (async () => {
     ok(rail.length === 7 && !rail.includes("approve") && !wDash.document.getElementById("orderbtn") && !wDash.document.getElementById("wbSend"),
       "the rail is seven destinations, with no Approve and no order button, and no entry form is in the page: " + JSON.stringify(rail));
   } finally { try { wDash.close(); } catch (e) { /* best effort */ } }
+})();
+
+
+section("v409: the Enter sheet is priced against the book it books to");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
+    if (prods.length < 2) { skipData("one book only, so the cross-book checks cannot arise"); return; }
+    const [a, b] = prods;
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+    const replA = +w.eval("replCost()");
+    w.eval("setProdView(" + JSON.stringify(b) + ");");
+    const replB = +w.eval("replCost()");
+    ok(replA > 0 && replB > 0, `both books expose their own replacement costs (${a} RM ${replA}, ${b} RM ${replB})`);
+
+    const stranger = JSON.parse(w.eval("JSON.stringify((function(){var here={};pSales(PROD).forEach(function(s){here[s.customer]=1;});var all=sales.filter(function(s){return !s.cancelled&&s.customer&&(s.total||0)>0;});for(var i=0;i<all.length;i++){if(!here[all[i].customer])return all[i].customer;}return null;})())"));
+    if (stranger) {
+      const hist = +w.eval("custPrices(" + JSON.stringify(stranger) + ").length");
+      const said = JSON.parse(w.eval("JSON.stringify(priceCoach(" + JSON.stringify(stranger) + ",10,1).map(function(c){return c.msg;}))"));
+      ok(hist === 0, "a customer with no history on THIS book has none in the coach's own reader (" + stranger + ")");
+      ok(said.some((m) => /No price history here/.test(m)) && !said.some((m) => /below their usual|above their usual/.test(m)),
+        "the coach stays on this book: it says there is no history here and quotes no usual price from another book");
+    } else skipData("every party has traded on both books, so the cross-book history case cannot arise");
+
+    const mid = JSON.parse(w.eval("JSON.stringify((function(){var here=pSales(PROD).filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var all=sales.filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var hb=here.length?Math.max.apply(null,here):0;var ab=Math.max.apply(null,all);return ab>hb+1?(hb+ab)/2:null;})())"));
+    if (mid) {
+      const said = JSON.parse(w.eval("JSON.stringify(priceCoach(null," + mid + ",1).map(function(c){return c.msg;}))"));
+      ok(said.some((m) => /Best rate the desk has ever taken/.test(m)),
+        "a rate above this book's own best is still called a record even when another book has beaten it (RM " + Math.round(mid) + ")");
+    } else skipData("the two books share a best rate, so the cross-book record check cannot be told apart");
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("v527: borrow and lend on the phone");
+await (async () => {
+  const { draftRow } = await import("../src/drafter.js");
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bk.loans = (bk.loans || []).filter((l) => !(l.direction === "in" && l.status !== "settled"))
+    .concat([{ date: "2026-09-08", party: "CM4-TO", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture" }]);
+  const lender = bk.loans.find((l) => l.direction === "in" && l.status !== "settled");
+  const mirror = { version: "vX", sales: bk.sales, purchases: bk.purchases,
+    state: { roster: bk.roster, loans: bk.loans, OPEN: { position: { salt: { onHand: 1, owedOut: 8.5, promised: 0 } } } }, pricing: null };
+  const entry = (p) => ({ at: "2099-03-01T00:00:00.001Z", payload: { mode: "loan", product: "salt", ...p } });
+
+  const borrowed = draftRow(entry({ party: lender.party, direction: "in", kg: 2, date: "2099-03-01" }), mirror);
+  ok(!borrowed.skip && borrowed.collection === "loan" && borrowed.row.direction === "in" && borrowed.row.valueKg === 2
+    && borrowed.row.status === "open" && borrowed.flags.some((f) => /already has .* open loan/.test(f)),
+    "a borrowing drafts as an open loan in and names the party's open borrowing already on the book");
+  const lent = draftRow(entry({ party: "CM4-MK", direction: "out", kg: 3, date: "2099-03-01" }), mirror);
+  ok(!lent.skip && lent.row.direction === "out" && lent.flags.some((f) => /Lending more than you hold/.test(f)),
+    "a lending over the inventory still drafts, flagged against what is on hand");
+  ok(/names the party/.test(draftRow(entry({ direction: "in", kg: 1, date: "2099-03-01" }), mirror).skip || "")
+    && /in \(borrowed/.test(draftRow(entry({ party: "CM4-MK", direction: "sideways", kg: 1, date: "2099-03-01" }), mirror).skip || "")
+    && /needs the date/.test(draftRow(entry({ party: "CM4-MK", direction: "in", kg: 1 }), mirror).skip || ""),
+    "no party, a bad direction and no date are each refused by the drafter");
+
+  const staged = { ok: true, count: 2, approved: [
+    { id: "2099-03-01T00:00:00.001Z", collection: "loan", row: borrowed.row, entry: entry({ party: lender.party, direction: "in", kg: 2, date: "2099-03-01" }) },
+    { id: "2099-03-01T00:00:00.002Z", collection: "loan", row: lent.row, entry: entry({ party: "CM4-MK", direction: "out", kg: 3, date: "2099-03-01" }) }
+  ] };
+  const copy = JSON.parse(JSON.stringify(bk));
+  const planned = plan(copy, staged, null);
+  ok(planned.refused.length === 0 && planned.items.length === 2 && planned.moves.length === 2
+    && planned.moves[0].kg === 2 && planned.moves[1].kg === -3
+    && /BORROW 2 unit/.test(planned.items[0].what) && /LEND 3 unit/.test(planned.items[1].what),
+    "the fold planner treats borrowing as stock in and lending as stock out");
+  const notes = { version: "v9999", date: "01 Mar 2099", title: "TWO LOANS", notes: ["<b>TWO LOANS.</b> Fixture notes long enough to pass."],
+    rows: {
+      "2099-03-01T00:00:00.001Z": { note: "<b>BORROWED 2 UNIT.</b> Fixture note long enough to pass." },
+      "2099-03-01T00:00:00.002Z": { note: "<b>LENT 3 UNIT.</b> Fixture note long enough to pass." }
+    }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const before = copy.STATED_STOCK, nLoans = copy.loans.length;
+  const applied = apply(copy, staged, notes, master);
+  ok(applied.ok && copy.loans.length === nLoans + 2 && copy.loans[nLoans].direction === "in" && copy.loans[nLoans].valueKg === 2
+    && /BORROWED 2 UNIT/.test(copy.loans[nLoans].note) && copy.loans[nLoans + 1].direction === "out",
+    "the fold appends both loan rows with their notes");
+  ok(Math.abs(copy.STATED_STOCK - (before + 2 - 3)) < 0.005,
+    "and rolls stated stock by the borrowed units in and the lent units out");
+})();
+
+section("v570: an associate is appointed from the Enter tab, and the Kind means what it says");
+await (async () => {
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const { draftRow } = await import("../src/drafter.js");
+  const { default: POSITION_ENGINE } = await import("../engine/position.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const baseBook = () => ({ roster: ["CX1-OLD", "CX2-NEW", "CX3-AS", "CX3-AS-R", "CX4-REF"], associates: ["CX3-AS"],
+    PRODUCTS: { salt: {} }, sales: [], purchases: [], QUEUE_COMMITTED: "2026-01-01T00:00:00.000Z" });
+  const staged = (at, code, kind) => ({ ok: true, count: 1, approved: [{
+    id: at, collection: "roster", row: { code, kind, parent: null, note: null }, entry: { at, payload: { mode: "addid", code, kind } }
+  }] });
+  const why = (r) => (r.refused.length ? r.refused[0].why : "");
+
+  ok(POSITION_ENGINE.ADDID_APPOINTS && POSITION_ENGINE.ADDID_APPOINTS.reseller === "R2" && POSITION_ENGINE.ADDID_APPOINTS.referral === "R3"
+    && !POSITION_ENGINE.ADDID_APPOINTS.customer && !POSITION_ENGINE.ADDID_APPOINTS.downstream && !POSITION_ENGINE.ADDID_APPOINTS.bucket && !POSITION_ENGINE.ADDID_APPOINTS.supplier,
+    "the engine's one table names only reseller and referral as appointing Add ID kinds");
+
+  const pOld = plan(baseBook(), staged("2026-09-11T01:00:00.000Z", "CX1-OLD", "reseller"), null);
+  ok(pOld.items.length === 1 && pOld.refused.length === 0 && pOld.items[0].roster.register === false && pOld.items[0].roster.appoint === true
+    && pOld.items[0].roster.resell === "CX1-OLD-R" && /APPOINT CX1-OLD/.test(pOld.items[0].what),
+    "appointing a known roster code plans as an appointment, not as a duplicate registration");
+  const pPlain = plan(baseBook(), staged("2026-09-11T01:01:00.000Z", "CX1-OLD", "customer"), null);
+  const pTwice = plan(baseBook(), staged("2026-09-11T01:02:00.000Z", "CX3-AS", "reseller"), null);
+  const pRef = plan(baseBook(), staged("2026-09-11T01:03:00.000Z", "CX4-REF", "referral"), null);
+  const pFresh = plan(baseBook(), staged("2026-09-11T01:04:00.000Z", "CX9-BRANDNEW", "reseller"), null);
+  ok(pPlain.items.length === 0 && /already on the roster/.test(why(pPlain))
+    && pTwice.items.length === 0 && /already an associate/.test(why(pTwice))
+    && pRef.items.length === 1 && pRef.items[0].roster.resell === "CX4-REF-R"
+    && pFresh.items.length === 1 && pFresh.items[0].roster.register === true && pFresh.items[0].roster.appoint === true,
+    "a plain duplicate is refused, a repeat appointment is refused, a referral appoints with its -R account, and a fresh associate both registers and appoints");
+
+  const folded = baseBook();
+  const first = apply(folded, staged("2026-09-11T01:05:00.000Z", "CX1-OLD", "reseller"), { version: "v9999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master);
+  ok(first.ok && folded.associates.includes("CX1-OLD") && folded.roster.includes("CX1-OLD-R") && folded.roster.filter((x) => x === "CX1-OLD").length === 1,
+    "the fold writes the appointment once, minting the resale account without duplicating the code itself");
+  const before = JSON.stringify({ r: folded.roster, a: folded.associates });
+  const again = apply(folded, staged("2026-09-11T01:05:00.000Z", "CX1-OLD", "reseller"), { version: "v9999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master);
+  ok(!again.ok && /already an associate/.test((again.problems || []).join("; ")) && JSON.stringify({ r: folded.roster, a: folded.associates }) === before,
+    "re-folding the same appointment is refused by the plan and writes nothing more");
+  const double = baseBook();
+  const twoTaps = { ok: true, count: 2, approved: [staged("2026-09-11T01:06:00.000Z", "CX1-OLD", "reseller").approved[0], staged("2026-09-11T01:07:00.000Z", "CX1-OLD", "reseller").approved[0]] };
+  const twoRes = apply(double, twoTaps, { version: "v9999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master);
+  ok(twoRes.ok && double.associates.filter((x) => x === "CX1-OLD").length === 1 && double.roster.filter((x) => x === "CX1-OLD-R").length === 1,
+    "two taps for one appointment in one batch still appoint once and mint one resale account");
+
+  const mirror = { state: { roster: baseBook().roster, associates: baseBook().associates, PRODUCTS: { salt: {} } } };
+  const dOld = draftRow({ at: "x", payload: { mode: "addid", code: "CX1-OLD", kind: "reseller" } }, mirror);
+  const dPlain = draftRow({ at: "x", payload: { mode: "addid", code: "CX1-OLD", kind: "customer" } }, mirror);
+  const dTwice = draftRow({ at: "x", payload: { mode: "addid", code: "CX3-AS", kind: "reseller" } }, mirror);
+  const dRef = draftRow({ at: "x", payload: { mode: "addid", code: "CX4-REF", kind: "referral" } }, mirror);
+  ok(!dOld.skip && dOld.collection === "roster" && !dOld.flags.some((f) => /ALREADY on the roster/.test(f))
+    && /Appoints CX1-OLD/.test(dOld.reasoning) && /R2 stream/.test(dOld.reasoning) && /CX1-OLD-R/.test(dOld.reasoning)
+    && dPlain.flags.some((f) => /ALREADY on the roster/.test(f)) && dTwice.flags.some((f) => /ALREADY an associate/.test(f))
+    && /R3 stream/.test(dRef.reasoning) && dRef.reasoning.indexOf("CX4-REF-R") >= 0,
+    "the drafter shares the same appointment rules and names the stream and resale account it confers");
+})();
+section("11 Sep 2026: Add ID derives the code, and a clash takes more of the name");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (expr) => JSON.parse(String(w.eval("JSON.stringify(" + expr + ")")));
+  const onRoster = (codes) => w.eval("(function(){" + JSON.stringify(codes) + ".forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});})();");
+  const offRoster = (codes) => w.eval("(function(){var cs=" + JSON.stringify(codes) + ";cs.forEach(function(c){var i;while((i=roster.indexOf(c))>=0)roster.splice(i,1);});addedParties=addedParties.filter(function(p){return cs.indexOf(p.code)<0;});})();");
+  const fix = ["CZ4-QQQ", "CZY4-QQQ", "CZYX4-QQQ", "CZYXW4-QQQ", "CZ4-QQQ2", "SZ4-QQQ", "SZ4-TBC", "CZ5-PAR", "CZ5-PAR-2-QQQ"];
+  try {
+    offRoster(fix);
+    ok(rd("deriveCode('Abcd','Qqqville','customer')") === "CA4-QQQ"
+      && rd("deriveCode('Abcd','Qqq Rrr','customer')") === "CA4-QR"
+      && rd("deriveCode('Abcd Efgh','Sss Ttt','supplier')") === "SA9-ST",
+      "the derived code follows kind, name length and place words for customers and suppliers");
+    ok(rd("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZ4-QQQ", "a free code starts as the derived code itself");
+    onRoster(["CZ4-QQQ"]);
+    ok(rd("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZY4-QQQ", "one clash takes one more letter of the name");
+    onRoster(["CZY4-QQQ"]);
+    ok(rd("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZYX4-QQQ", "a second clash takes another letter");
+    onRoster(["CZYX4-QQQ", "CZYXW4-QQQ"]);
+    ok(rd("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZ4-QQQ2", "once the name is spent the clash falls back to a number");
+    ok(rd("deriveFreeCode('Zyxw','Qqqville','supplier')") === "SZ4-QQQ" && rd("deriveFreeCode('Zyxw','TBC','supplier')") === "SZ4-TBC",
+      "supplier codes follow the same derivation, including TBC for a blank place");
+    onRoster(["CZ5-PAR", "CZ5-PAR-2-QQQ"]);
+    ok(rd("deriveFreeCode('Anyone','Qqqville','downstream','CZ5-PAR')") === "CZ5-PAR-2-QQQ",
+      "a downstream code is returned as derived from its parent bucket rather than grown from the buyer's name");
+  } finally {
+    try { offRoster(fix); } catch (e) { /* best effort */ }
+    try { w.close(); } catch (e) { /* best effort */ }
+  }
+})();
+
+section("11 Sep 2026: a loan can be cash as well as salt");
+await (async () => {
+  const { draftRow } = await import("../src/drafter.js");
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const mirror = { version: "vX", sales: [], purchases: [], state: { roster: ["CZ7-LEND"], loans: [], OPEN: { position: { salt: { onHand: 1, owedOut: 0, promised: 0 } } } }, pricing: null };
+  const entry = (p) => ({ at: "2099-04-01T00:00:00.001Z", payload: { mode: "loan", ...p } });
+
+  const cashIn = draftRow(entry({ form: "cash", party: "CZ7-LEND", direction: "in", rm: 500, date: "2099-04-01" }), mirror);
+  const cashOut = draftRow(entry({ form: "cash", party: "CZ7-LEND", direction: "out", rm: 5000, date: "2099-04-01" }), mirror);
+  const saltIn = draftRow(entry({ party: "CZ7-LEND", direction: "in", kg: 2, date: "2099-04-01" }), mirror);
+  ok(!cashIn.skip && cashIn.collection === "loan" && cashIn.row.form === "cash" && cashIn.row.valueRM === 500 && cashIn.row.valueKg === null && cashIn.row.product === null,
+    "a cash borrowing drafts as a cash loan with ringgit only, no units and no product");
+  ok(!cashOut.skip && cashOut.row.direction === "out" && !cashOut.flags.some((f) => /Lending more than you hold/.test(f)),
+    "cash lending is not measured against the salt inventory");
+  ok(/ringgit/.test(draftRow(entry({ form: "cash", party: "CZ7-LEND", direction: "in", date: "2099-04-01" }), mirror).skip || "")
+    && !saltIn.skip && saltIn.row.form === "salt" && saltIn.row.valueKg === 2,
+    "a cash loan needs ringgit, while a salt loan still measures units in kind");
+
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const staged = { ok: true, count: 1, approved: [{ id: "2099-04-01T00:00:00.001Z", collection: "loan", row: cashIn.row,
+    entry: entry({ form: "cash", party: "CZ7-LEND", direction: "in", rm: 500, date: "2099-04-01" }) }] };
+  const planned = plan(JSON.parse(JSON.stringify(bk)), staged, null);
+  ok(planned.refused.length === 0 && planned.items.length === 1 && planned.moves.length === 0 && /BORROW RM 500 in cash/.test(planned.items[0].what),
+    "the fold planner names a cash loan in ringgit and moves no stock for it");
+  const copy = JSON.parse(JSON.stringify(bk));
+  const before = copy.STATED_STOCK, n = (copy.loans || []).length;
+  const notes = { version: "v9999", date: "01 Apr 2099", title: "A CASH LOAN", notes: ["<b>A CASH LOAN.</b> Fixture notes long enough to pass."],
+    rows: { "2099-04-01T00:00:00.001Z": { note: "<b>BORROWED RM 500 IN CASH.</b> Fixture note long enough to pass." } }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const folded = apply(copy, staged, notes, master);
+  ok(folded.ok && copy.loans.length === n + 1 && copy.loans[n].form === "cash" && copy.loans[n].valueRM === 500 && Math.abs(copy.STATED_STOCK - before) < 0.005,
+    "the fold appends the cash loan and leaves stated stock unchanged");
+})();
+
+section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
+await (async () => {
+  const { draftRow } = await import("../src/drafter.js");
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const salt = { rid: "l901", date: "2099-06-01", party: "CM4-MK", direction: "in", form: "salt", valueKg: 5, valueRM: null, status: "open", product: "salt", note: "fixture" };
+  const cash = { rid: "l902", date: "2099-06-01", party: "CM4-MK", direction: "out", form: "cash", valueKg: null, valueRM: 400, status: "open", product: null, note: "fixture" };
+  const done = { rid: "l903", date: "2099-06-01", party: "CM4-MK", direction: "in", form: "salt", valueKg: 1, valueRM: null, status: "settled", settledOn: "2099-06-02", product: "salt", note: "fixture" };
+  const mirror = { version: "vX", sales: [], purchases: [], state: { roster: ["CM4-MK"], loans: [salt, cash, done], OPEN: { position: { salt: { onHand: 10 } } } }, pricing: null };
+  const entry = (p) => ({ at: "2099-06-03T00:00:00.001Z", payload: { mode: "repay", ...p } });
+
+  const part = draftRow(entry({ loan: "l901", kg: 2, date: "2099-06-03" }), mirror);
+  const full = draftRow(entry({ loan: "l902", rm: 400, date: "2099-06-03" }), mirror);
+  ok(!part.skip && part.collection === "repayment" && part.row.kg === 2 && part.row.left === 3 && part.row.settles === false,
+    "a part repayment drafts with the units repaid and what is left owing");
+  ok(!full.skip && full.row.rm === 400 && full.row.settles === true && /settles it/.test(full.reasoning),
+    "a repayment of the whole cash loan drafts as settling it in ringgit");
+  ok(/still owing/.test(draftRow(entry({ loan: "l901", kg: 9, date: "2099-06-03" }), mirror).skip || "")
+    && /already settled/.test(draftRow(entry({ loan: "l903", kg: 1, date: "2099-06-03" }), mirror).skip || "")
+    && /no loan/.test(draftRow(entry({ loan: "l999", kg: 1, date: "2099-06-03" }), mirror).skip || "")
+    && /ringgit/.test(draftRow(entry({ loan: "l902", kg: 1, date: "2099-06-03" }), mirror).skip || ""),
+    "the drafter refuses too much, a settled or missing loan, and repaying a cash loan in units");
+
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bk.loans = (bk.loans || []).concat([JSON.parse(JSON.stringify(salt)), JSON.parse(JSON.stringify(cash))]);
+  const staged = (rows) => ({ ok: true, count: rows.length, approved: rows.map((r, i) => ({ id: "2099-06-03T00:00:00.00" + (i + 1) + "Z", collection: "repayment", row: r, entry: { at: "2099-06-03T00:00:00.00" + (i + 1) + "Z", payload: { mode: "repay", loan: r.loan } } })) });
+  const over = plan(JSON.parse(JSON.stringify(bk)), staged([part.row, { ...part.row }, { ...part.row }]), null);
+  ok(over.items.length === 2 && over.refused.length === 1 && /still owing/.test((over.refused[0] || {}).why || ""),
+    "three repayments of 2 against 5 owing fold twice and refuse the third");
+  const planned = plan(JSON.parse(JSON.stringify(bk)), staged([part.row, full.row]), null);
+  ok(planned.refused.length === 0 && planned.moves.length === 1 && planned.moves[0].kg === -2 && /REPAY 2 unit salt/.test((planned.items[0] || {}).what || ""),
+    "the fold planner takes repaid salt back off stock and names the loan it repays");
+  const copy = JSON.parse(JSON.stringify(bk));
+  const notes = { version: "v9999", date: "03 Jun 2099", title: "TWO REPAYMENTS", notes: ["<b>TWO REPAYMENTS.</b> Fixture notes long enough to pass."],
+    rows: {
+      "2099-06-03T00:00:00.001Z": { note: "<b>REPAID 2 UNIT.</b> Fixture note long enough to pass." },
+      "2099-06-03T00:00:00.002Z": { note: "<b>REPAID RM 400.</b> Fixture note long enough to pass." }
+    }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const folded = apply(copy, staged([part.row, full.row]), notes, master);
+  const sl = copy.loans.find((l) => l.rid === "l901"), cl = copy.loans.find((l) => l.rid === "l902");
+  ok(folded.ok && sl && sl.status === "open" && (sl.repaid || []).length === 1 && sl.repaid[0].kg === 2,
+    "the fold writes the part repayment onto the salt loan and leaves it open");
+  ok(folded.ok && cl && cl.status === "settled" && cl.settledOn === "2099-06-03" && (cl.repaid || [])[0] && cl.repaid[0].rm === 400,
+    "and settles the cash loan when the full ringgit owing is repaid");
+})();
+section("v628: Amend ID re-keys a party through Approve, and the name moves in the vault");
+await (async () => {
+  const { default: POSITION_ENGINE } = await import("../engine/position.mjs");
+  const { draftRow } = await import("../src/drafter.js");
+  const FOLD = await import("../tools/fold.mjs");
+  const { mergeBio } = await import("../tools/pull-vault.mjs");
+  const roster = ["CZ9-AB", "CZ9-AB-R", "CZ9-ABC", "CZ8-TBC", "CZ6-AB-R", "SZ9-SUP"];
+  ok(JSON.stringify(POSITION_ENGINE.renamePairs(roster, "CZ9-AB", "CZ7-AB")) === '[["CZ9-AB","CZ7-AB"],["CZ9-AB-R","CZ7-AB-R"]]',
+    "renamePairs moves the party and its resale account together, and nothing that only starts the same way");
+  const book = { roster: roster.slice(), associates: ["CZ9-AB"], AWARDS: { "CZ9-AB": 1 }, PEOPLE: { departed: [{ id: "CZ9-AB" }] },
+    INTRODUCTIONS: [{ by: "CZ9-AB", customer: "CZ8-TBC" }], loans: [{ party: "CZ9-AB" }],
+    sales: [{ customer: "CZ9-AB-R", ref: "CZ9-AB", note: "sold on by CZ9-AB" }, { customer: "CZ9-ABC" }], purchases: [{ supplier: "SZ9-SUP" }] };
+  const changed = POSITION_ENGINE.renameInBook(book, POSITION_ENGINE.renamePairs(roster, "CZ9-AB", "CZ7-AB"));
+  ok(changed === 9 && !/"CZ9-AB(-R)?"/.test(JSON.stringify(book)) && book.AWARDS["CZ7-AB"] === 1 && book.sales[0].customer === "CZ7-AB-R"
+    && book.PEOPLE.departed[0].id === "CZ7-AB" && book.sales[0].note === "sold on by CZ9-AB" && book.sales[1].customer === "CZ9-ABC",
+    "renameInBook moves whole values and keys through the book, leaving history text and other parties' longer codes unchanged");
+
+  const mirror = { sales: [{ customer: "CZ9-AB-R", qty: 1, total: 100 }, { customer: "CZ9-AB", qty: 1, total: 90 }], purchases: [], state: { roster }, pricing: null };
+  const entry = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: { mode: "rename", ...p } });
+  const drafted = draftRow(entry({ from: "CZ9-AB", to: "CZ7-AB" }), mirror);
+  ok(!drafted.skip && drafted.collection === "rename" && drafted.row.orders === 2 && drafted.row.pairs.length === 2
+    && /CZ9-AB-R becomes CZ7-AB-R/.test(drafted.flags.join(" ")) && /username stays/.test(drafted.reasoning),
+    "the drafter raises a rename collection, counts the rows it re-keys and names the resale account and statement username rule");
+  for (const [payload, why] of [
+    [{ from: "CZ5-NOT", to: "CZ5-NEW" }, /not on the roster/],
+    [{ from: "CZ9-AB-R", to: "CZ7-AB-R" }, /resale account/],
+    [{ from: "CZ8-TBC", to: "CZ8-TBC" }, /does not change/],
+    [{ from: "CZ8-TBC", to: "SZ8-TBC" }, /is a customer/],
+    [{ from: "CZ9-AB", to: "CZ9-ABC" }, /CZ9-ABC already belongs/],
+    [{ from: "CZ9-AB", to: "CZ6-AB" }, /CZ6-AB-R already belongs/]
+  ]) ok(why.test(draftRow(entry(payload), mirror).skip || ""), "the drafter refuses " + JSON.stringify(payload));
+
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const live = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  live.roster.push("CZ9-TBC", "CZ9-TBC-R"); live.associates.push("CZ9-TBC");
+  const rename = { id: "2099-01-01T00:00:00.001Z", collection: "rename", row: { from: "CZ9-TBC", to: "CZ9-SEG" }, entry: { at: "2099-01-01T00:00:00.001Z", payload: { mode: "rename", from: "CZ9-TBC", to: "CZ9-SEG" } } };
+  const sale = { id: "2099-01-01T00:00:00.002Z", collection: "sales", row: { date: "2099-01-01", customer: "CZ9-TBC-R", rev: "R2", qty: 1, total: 100, cost: 44, cash: 100, deliveredQty: 1, deliveredOn: "2099-01-01" }, entry: { at: "2099-01-01T00:00:00.002Z", payload: { mode: "new", date: "2099-01-01" } } };
+  const notes = { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: { [sale.id]: { note: "fixture row" } } };
+  const folded = FOLD.apply(live, { ok: true, count: 2, approved: [rename, sale] }, notes, master);
+  const sold = live.sales.find((s) => s.note === "fixture row");
+  ok(folded.ok && sold && sold.customer === "CZ9-SEG-R" && live.roster.includes("CZ9-SEG") && live.roster.includes("CZ9-SEG-R")
+    && !live.roster.includes("CZ9-TBC") && live.associates.includes("CZ9-SEG"),
+    "the fold applies a queued sale after the rename and re-keys it under the new resale account");
+  const users = FOLD.renameUsers({ "CZ9-TBC": "abcd-efgh", "CZ9-TBC-R": "ijkl-mnop", "CZ1-OTH": "qrst-uvwx" }, POSITION_ENGINE.renamePairs(["CZ9-TBC", "CZ9-TBC-R"], "CZ9-TBC", "CZ9-SEG"));
+  const places = { LOCS: { "CZ9-MAL": "MLR", "CZ8-TBC": "KLC" } };
+  const moved = FOLD.renameLocs(places, [["CZ9-MAL", "CZ7-MAL"], ["CZ8-TBC", "CZ8-SEG"]]);
+  const suite = FOLD.renameSuiteText('a "CZ9-TBC" b "CZ9-TBC-R" c "CZ9-TBCX" d XCZ9-TBC e CZ9-TBC.', POSITION_ENGINE.renamePairs(["CZ9-TBC", "CZ9-TBC-R"], "CZ9-TBC", "CZ9-SEG"));
+  ok(users["CZ9-SEG"] === "abcd-efgh" && users["CZ9-SEG-R"] === "ijkl-mnop" && !("CZ9-TBC" in users)
+    && moved === 2 && places.LOCS["CZ7-MAL"] === "MLR" && !("CZ9-MAL" in places.LOCS) && !("CZ8-TBC" in places.LOCS) && !("CZ8-SEG" in places.LOCS)
+    && suite === 'a "CZ9-SEG" b "CZ9-SEG-R" c "CZ9-TBCX" d XCZ9-TBC e CZ9-SEG.',
+    "the rename helpers move statement usernames, place overrides and suite fixtures by whole-code rules only");
+  const merged = mergeBio({ bio: { "CZ9-TBC": { raw: "Old Name (to be confirmed)", note: "kept" }, "CZ1-OTH": { raw: "Same (Here)" } } },
+    { "CZ9-TBC": "New Name (Seg)", "CZ9-SEG": "New Name (Seg)", "CZ1-OTH": "Same (Here)" });
+  ok(merged.amended.join() === "CZ9-TBC" && merged.bio.bio["CZ9-TBC"].raw === "New Name (Seg)" && merged.bio.bio["CZ9-TBC"].was === "Old Name (to be confirmed)",
+    "the laptop pull takes the vault's amended spelling and keeps the old one as was");
+})();
+
+section("v633: a party's place reaches the map on its own, from what is typed at Add ID and Amend ID, or from a tap");
+await (async () => {
+  const { default: POSITION_ENGINE } = await import("../engine/position.mjs");
+  const { draftRow } = await import("../src/drafter.js");
+  const FOLD = await import("../tools/fold.mjs");
+
+  const keyA = POSITION_ENGINE.placeKey("kg. Baru,  Sg. Zedd"), keyB = POSITION_ENGINE.placeKey("Tmn Zedd");
+  ok(String(keyA).toLowerCase().includes("kampung") && String(keyA).toLowerCase().includes("sungai") && String(keyA).toLowerCase().includes("zedd") && String(keyB).toLowerCase() === "taman zedd",
+    "placeKey folds accents and the usual short forms into plain words");
+  const cands = POSITION_ENGINE.placeCandidates("Kampung Zedd Permai, Qqqville");
+  ok(cands[0] === "kampung zedd permai qqqville" && cands.indexOf("zedd permai") > 0 && cands.indexOf("qqqville") > cands.indexOf("zedd permai")
+    && cands.includes("permai") && !cands.includes("kampung") && !cands.includes("zedd"),
+    "placeCandidates leads with the whole wording, then useful parts and runs, never the generic word or a short word alone");
+
+  const mirror = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
+  const entry = (payload) => ({ at: "2026-09-14T09:00:00.000Z", payload });
+  const placed = draftRow(entry({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mirror);
+  ok(!placed.skip && placed.collection === "place" && JSON.stringify(placed.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}'
+    && /CZ9-PLB is on the map already/.test(placed.flags.join(" ")) && /the point travels, with the locality/.test(placed.reasoning),
+    "a place entry drafts as its own collection, rounding the points and flagging a party it moves");
+  for (const [payload, why] of [
+    [{ mode: "place", places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/],
+    [{ mode: "place", places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
+    [{ mode: "place", places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/],
+    [{ mode: "place", places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/],
+    [{ mode: "place", places: {} }, /names no party/]
+  ]) ok(why.test(draftRow(entry(payload), mirror).skip || ""), "the drafter refuses " + JSON.stringify(payload));
+  const add = draftRow(entry({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678] }), mirror);
+  const rename = draftRow(entry({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456] }), mirror);
+  ok(!add.skip && JSON.stringify(add.row.geo) === "[3.12,101.57]" && /not in Malaysia/.test(draftRow(entry({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [0, 0] }), mirror).skip || "")
+    && !rename.skip && JSON.stringify(rename.row.geo) === "[2.7,101.95]" && /place on the map moves with it/.test(rename.reasoning),
+    "an Add ID carries its point, an out-of-country point is refused, and a rename carries the moved point too");
+
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book.roster.push("CZ9-PLA", "CZ9-MOV", "CZ9-GEO"); book.PLACED = { "CZ9-MOV": [2.9, 101.6], "CZ9-GEO": [2.9, 101.6] };
+  const item = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+  const folded = FOLD.apply(book, { ok: true, count: 4, approved: [
+    item(1, "rename", { from: "CZ9-GEO", to: "CZ9-GEX", geo: [3.12, 101.57] }),
+    item(2, "roster", { code: "CZ9-NEW", kind: "customer", parent: null, note: null, geo: [2.7, 101.95] }),
+    item(3, "place", { places: { "CZ9-PLA": [3.05, 101.45] } }),
+    item(4, "rename", { from: "CZ9-MOV", to: "CZ9-MVD" })
+  ] }, { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master);
+  ok(folded.ok && JSON.stringify(book.PLACED["CZ9-NEW"]) === "[2.7,101.95]" && JSON.stringify(book.PLACED["CZ9-PLA"]) === "[3.05,101.45]"
+    && JSON.stringify(book.PLACED["CZ9-MVD"]) === "[2.9,101.6]" && !("CZ9-MOV" in book.PLACED)
+    && JSON.stringify(book.PLACED["CZ9-GEX"]) === "[3.12,101.57]" && !("CZ9-GEO" in book.PLACED),
+    "the fold files new places on the book and carries them through a rename, with or without a new point");
+  const refused = FOLD.plan(book, { ok: true, count: 1, approved: [item(5, "place", { places: { "CZ9-GONE": [3.1, 101.6] } })] }, null).refused.map((x) => x.why).join(" ");
+  ok(/CZ9-GONE is not on the roster/.test(refused), "the fold refuses a place for a code that has left the roster since drafting");
+})();
+section("v670: a customer's level can differ by the size of the order, read band by band in one place");
+await (async () => {
+  const PE67 = (await import("../engine/pricing.mjs")).default;
+  const { pricingSnapshot } = await import("../tools/book.mjs");
+  const { priceList } = await import("../tools/pricelist.mjs");
+  const { draftRow } = await import("../src/drafter.js");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const bands = { smallUpTo: 1, bigFrom: 3 };
+  const bandSet = { small: "Titanium", mid: "Gold", big: "Silver" };
+  const names = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  ok(PE67.levelAt("Gold", 0.5, bands) === "Gold"
+    && [0.5, 1, 1.5, 2.5, 3, 12.5].map((q) => PE67.levelAt(bandSet, q, bands)).join(",") === "Titanium,Titanium,Gold,Gold,Silver,Silver"
+    && PE67.levelAt({ small: "Titanium", mid: "Gold" }, 3, bands) === "Gold"
+    && PE67.levelAt(null, 1, bands) === null,
+  "levelAt reads one held level at every size, band edges exactly, and falls back to mid or null");
+  ok(PE67.levelShapeOk("Gold", names) && PE67.levelShapeOk(bandSet, names) && PE67.levelShapeOk({ big: "Silver" }, names)
+    && !PE67.levelShapeOk("Diamond", names) && !PE67.levelShapeOk({ huge: "Gold" }, names)
+    && !PE67.levelShapeOk({ small: "Diamond" }, names) && !PE67.levelShapeOk({ }, names),
+  "levelShapeOk takes real held levels or sparse bands and refuses unknown or empty shapes");
+
+  const { w } = await openMaster();
+  const rd = (expr) => JSON.parse(String(w.eval("JSON.stringify(" + expr + ")")));
+  try {
+    levelWindow(w);
+    w.eval("(function(){if(roster.indexOf('CZ9-BND')<0)roster.push('CZ9-BND');TIER_OF['CZ9-BND']={salt:{small:'Titanium',mid:'Gold',big:'Silver'}};setProd('salt');recompute();})()");
+    const perSize = rd("(function(){return [1,2,3,12.5].map(function(q){var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());return {q:q,quote:cardQuote('CZ9-BND',q),want:{1:row.prices[1],2:row.prices[3],3:row.prices[4],12.5:row.prices[4]}[q]};});})()");
+    const board = rd("pbPrices('CZ9-BND').map(function(r){return [r.q,r.price,cardQuote('CZ9-BND',r.q)];})");
+    ok(perSize.length === 4 && perSize.every((row) => row.quote === row.want)
+      && board.length > 4 && board.every((row) => row[1] === row[2]),
+    "desk pricing reads each size from its own held band, and the printed board matches the same per-size quote");
+
+    const snap = pricingSnapshot(w);
+    const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const list = priceList("CZ9-BND", book, snap, new Date()).products.find((p) => p.product === "salt");
+    const desk = rd("(function(){var out={};shownSizes('salt').forEach(function(q){out[q]=cardQuote('CZ9-BND',q);});return out;})()");
+    ok(list && list.tier === "Gold" && list.levels && list.levels.big === "Silver"
+      && list.sizes.every((row) => row.price === desk[row.q]),
+    "the pricing snapshot and customer price list preserve the banded held levels and per-size prices");
+  } finally { try { w.close(); } catch (e) {} }
+
+  const good = draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: bandSet } } } },
+    { state: { roster: ["CZ9-BND"], TIER_OF: {}, PRODUCTS: { salt: { name: "Salt" } } }, pricing: { tierNames: names } });
+  const bad = draftRow({ at: "2026-09-16T01:00:01.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: { huge: "Gold" } } } } },
+    { state: { roster: ["CZ9-BND"], TIER_OF: {}, PRODUCTS: { salt: { name: "Salt" } } }, pricing: { tierNames: names } });
+  ok(good && good.collection === "tierset" && JSON.stringify(good.row.tiers["CZ9-BND"].salt) === JSON.stringify(bandSet)
+    && !/object Object/.test(good.reasoning) && bad && /huge/.test(String(bad.skip || "")) && /is not a tier/.test(String(bad.skip || "")),
+  "the drafter carries a held band set through and refuses a tier shape that would not price");
+})();
+
+section("V5c (29 Sep 2026): a late payer is read from the handover across every book, and offered a level down, never priced one");
+await (async () => {
+  const E5c = (await import("../engine/position.mjs")).default;
+  const { pricingSnapshot } = await import("../tools/book.mjs");
+  const R5c = { holdDays: 1, lockDays: 4, lateWindowDays: 90, lateResetRepeat: 3 };
+  const row = (o) => Object.assign({ customer: "CZ9-PAY", product: "salt", qty: 1, total: 100, cost: 1, deliveredQty: 1 }, o);
+  const sales = [
+    row({ rid: "a", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02" }),
+    row({ rid: "b", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-06" }),
+    row({ rid: "c", date: "2026-09-01", qty: 2, total: 200, deliveredQty: 2, cash: 200, amend: [{ kind: "Fulfilment", date: "2026-09-01", kg: 1 }, { kind: "Fulfilment", date: "2026-09-05", kg: 1 }, { kind: "Payment", date: "2026-09-02", cash: 100 }, { kind: "Payment", date: "2026-09-08", cash: 100 }] }),
+    row({ rid: "d", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100 }),
+    row({ rid: "e", date: "2026-09-01", cash: 0 }),
+    row({ rid: "f", date: "2026-09-20", deliveredOn: "2026-09-20", cash: 0 }),
+    row({ rid: "f2", date: "2026-09-28", deliveredOn: "2026-09-28", cash: 0 }),
+    row({ rid: "g", date: "2026-08-01", deliveredOn: "2026-08-01", cash: 0, defaulted: true }),
+    row({ rid: "h", customer: "CZ9-OTH", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0 }),
+    row({ rid: "i", customer: "CZ9-PAY-R", product: "oil", date: "2026-09-10", deliveredOn: "2026-09-10", cash: 100, paidOn: "2026-09-12" }),
+    row({ rid: "j", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02", cancelled: true }),
+    row({ rid: "k", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0, goodwill: true })
+  ];
+  const delays = E5c.payDelays(sales, "CZ9-PAY", "2026-09-29", R5c);
+  ok(JSON.stringify(delays.map((x) => [x.on, x.days, x.open])) === JSON.stringify([["2026-09-02", 1, false], ["2026-09-06", 5, false], ["2026-09-08", 3, false], ["2026-09-29", 9, true], ["2026-08-05", 4, false], ["2026-09-12", 2, false]]),
+  "payDelays walks handovers across books and buckets, skipping undated, cancelled and goodwill rows");
+  const d = (on, days) => ({ on, d: on, days, open: false });
+  const offer = (xs) => E5c.lateOffer(xs, R5c);
+  const reset = [d("2026-06-01", 4), d("2026-06-02", 1), d("2026-07-01", 2)];
+  const r3 = offer(reset), r5 = offer(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1)])), r6 = offer(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1), d("2026-07-04", 1)]));
+  ok(!offer([d("2026-09-01", 2)]).on && offer([d("2026-06-01", 2), d("2026-08-01", 3)]).why === "shorts"
+    && offer([d("2026-09-01", 4)]).why === "long" && !offer([d("2026-09-01", 4), d("2026-09-02", 1)]).on
+    && r3.on && r3.why === "repeat" && r5.on && r5.streak === 2 && !r6.on,
+  "lateOffer turns on at one long or two short delays, turns off on prompt payment, and needs a reset streak after relapse");
+  const lr = (xs) => { const s = offer(xs); return [s.late, s.run]; };
+  ok(JSON.stringify([lr([]), lr([d("2026-09-01", 1)]), lr([d("2026-09-01", 2)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 1)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 5), d("2026-09-04", 0)])]) === '[[false,0],[false,1],[true,0],[true,2],[true,1]]',
+  "the same walk exposes whether lateness ever happened and the on-time run since the last delay for prepay");
+
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (expr) => JSON.parse(String(w.eval("JSON.stringify(" + expr + ")")));
+  try {
+    levelWindow(w);
+    w.eval("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};var s=function(rid,c,p,n,paid){var d=ago(n);return {rid:rid,customer:c,product:p,date:d,qty:1,total:100,cost:1,deliveredQty:1,deliveredOn:d,cash:100,paidOn:ago(n-paid)};};['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-LTP']={salt:'Gold'};TIER_OF['CZ9-LTS']={salt:'Silver'};TIER_OF['CZ9-OKP']={salt:'Gold'};sales.push(s('z5c1','CZ9-LTP','oil',20,6),s('z5c2','CZ9-LTS','salt',20,6),s('z5c3','CZ9-OKP','salt',20,1));setProd('salt');recompute();})()");
+    const late = rd("{ltp:lateOf('CZ9-LTP'),lts:lateOf('CZ9-LTS'),okp:lateOf('CZ9-OKP')}");
+    const same = rd("(function(){var keep=lateOf,who=roster.filter(function(c){return cardTier(c)>=0&&TIER_OF[c]&&TIER_OF[c].salt;});var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};var a,b;try{lateOf=function(){return {on:false};};a=read();lateOf=function(){return {on:true,need:1,streak:0,why:'long',days:9,open:true,since:null};};b=read();}finally{lateOf=keep;}return {same:a===b,n:who.length};})()");
+    const offers = pricingSnapshot(w).lateOffers || {};
+    ok(late.ltp.on && late.ltp.why === "long" && late.ltp.days === 6 && late.lts.on && !late.okp.on
+      && offers["CZ9-LTP"] && offers["CZ9-LTP"].down.salt === "Silver" && !offers["CZ9-LTS"] && !offers["CZ9-OKP"]
+      && same.same && same.n >= 3,
+    "the live desk reads lateness across books, snapshots the offer one level down, and late-payer offers never change quotes");
+  } finally { try { w.close(); } catch (e) {} }
+})();
+
+section("v733: a free unit is a tap, and the reward shrinks with the gift");
+await (async () => {
+  const PE = (await import("../engine/position.mjs")).default;
+  const avg = 48;
+  const fixture = [
+    { rid: "paid", customer: "CZ9-GIFT", qty: 2, total: 200, cost: 96, cash: 200, deliveredQty: 2, deliveredOn: "2026-09-01", date: "2026-09-01", product: "salt" },
+    { rid: "gift", customer: "CZ9-GIFT", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, deliveredQty: 1, deliveredOn: "2026-09-02", date: "2026-09-02", product: "salt" },
+    { rid: "redeem", customer: "CZ9-GIFT", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, rebate: true, rebateKg: 1, deliveredQty: 1, deliveredOn: "2026-09-03", date: "2026-09-03", product: "salt" },
+    { rid: "cancelled", customer: "CZ9-GIFT", qty: 1, total: 48, cost: 48, cash: 0, settledRM: 48, goodwill: true, cancelled: true, cancelledOn: "2026-09-04", deliveredQty: 0, date: "2026-09-04", product: "salt" }
+  ];
+  const paid = PE.rewardMargin({ id: "CZ9-GIFT", sales: fixture.slice(0, 1), averageCost: avg });
+  const gifted = PE.rewardMargin({ id: "CZ9-GIFT", sales: fixture.slice(0, 2), averageCost: avg });
+  const redeemed = PE.rewardMargin({ id: "CZ9-GIFT", sales: fixture.slice(0, 3), averageCost: avg });
+  const cancelled = PE.rewardMargin({ id: "CZ9-GIFT", sales: fixture, averageCost: avg });
+  ok(paid.mine.margin === 104 && paid.mine.n === 1 && gifted.mine.margin === 56 && gifted.mine.n === 1,
+  "rewardMargin earns on paid margin and charges a free unit by its cost without adding a priced-order count");
+  ok(redeemed.mine.margin === 56 && cancelled.mine.margin === 56,
+  "rewardMargin does not double-charge a redemption and ignores a cancelled gift");
+
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const rd = (expr) => JSON.parse(String(w.eval("JSON.stringify(" + expr + ")")));
+  try {
+    const s176 = rd("sales.find(function(s){return s.rid==='s176';})");
+    const gifts = rd("pSales(PROD).filter(function(s){return s.goodwill&&!s.rebate;}).map(function(s){return s.rid;})");
+    const redeems = rd("pSales(PROD).filter(function(s){return s.goodwill&&s.rebate;}).map(function(s){return s.rid;})");
+    ok(!!s176 && s176.goodwill === true && !s176.rebate && s176.total === s176.cost
+      && ["s031", "s056", "s176", "s181"].every((rid) => gifts.includes(rid))
+      && redeems.length >= 3 && !gifts.some((rid) => redeems.includes(rid)),
+    "the live book still marks gifts as goodwill without rebate, at cost, distinct from reward redemptions");
+
+    const before = rd("customerRewards().find(function(r){return r.id==='CC9-OKR';})");
+    const giftCost = rd("(function(){var s=sales.find(function(x){return x.rid==='s176';});return s?+(s.qty*txUnitCost(s,wavgBuy)).toFixed(2):0;})()");
+    w.eval("(function(){var i=sales.findIndex(function(s){return s.rid==='s176';});if(i>=0)sales.splice(i,1);recompute();})()");
+    const after = rd("customerRewards().find(function(r){return r.id==='CC9-OKR';})");
+    ok(!!before && !!after && giftCost > 0 && Math.abs((after.margin - before.margin) - giftCost) < 0.02,
+    "dropping a live gift gives the customer pool back exactly that gift's cost, proving the rule as a difference");
+  } finally { try { w.close(); } catch (e) {} }
+})();
+
+section("v763: a closed order can be opened on the card, read and answered");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.SALT_CLOUD = true;
+    const card = String(w.eval("tabOrders()"));
+    ok(card.includes('id="ordAllBtn"') && /Show the closed ones/.test(card) && /Read here, decided in Counter Admin/.test(card),
+    "Site orders still offers the closed-order switch from its read-only orders card");
+    const asked = [];
+    w.fetch = async (path) => { asked.push(String(path)); return { ok: true, status: 200, json: async () => ({ ok: true, orders: [] }) }; };
+    w.document.body.innerHTML = card;
+    await w.eval("ordLoad(true)");
+    ok(JSON.stringify(asked) === '["orders"]' && /No open orders/.test(w.document.getElementById("ordBox").textContent),
+    "Site orders opens on live open orders and says so when there are none");
+    w.document.getElementById("ordAllBtn").click();
+    await new Promise((r) => setTimeout(r, 50));
+    ok(JSON.stringify(asked) === '["orders","orders?all=1"]' && /Hide the closed ones/.test(w.document.getElementById("ordAllBtn").textContent)
+      && /taken no orders at all yet/.test(w.document.getElementById("ordBox").textContent),
+    "one tap switches the read-only list to every order the site has taken, by the all=1 relay");
+
+    w.eval("ORD_OPEN=[{id:'zz1',u:'abcd-efgh',code:'CC9-OKR',product:'salt',qty:2,total:200,delivery:0,paid:200,moved:2,status:'done',mode:'collect',at:'2026-09-10T02:00:00.000Z',history:[{at:'2026-09-10T02:00:00.000Z',status:'done',by:'desk'}],msgs:[{at:'2026-09-12T02:00:00.000Z',by:'customer',text:'was that the same batch as last time'}],queued:{ack:'x',paid:200,moved:2}}];ordDraw();");
+    const html = w.document.getElementById("ordBox").innerHTML;
+    ok(/Completed/.test(html) && /was that the same batch as last time/.test(html) && !/data-ord=/.test(html) && !/<input|<textarea|<select/.test(html),
+    "a closed order stays readable, with its thread and completed state, and the dashboard offers no answer or move control there");
+  } finally {
+    try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) {}
+    try { w.close(); } catch (e) {}
+  }
+})();
+
+section("Fold 3.2: a push wakes an open desk, and the desk decides what to read under its own guards");
+await (async () => {
+  const vm = await import("node:vm");
+  const { JSDOM, VirtualConsole } = await import("jsdom");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const push = async (list) => {
+    const L = {}, shown = [], asked = [], waits = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" }, registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async (o) => { asked.push(JSON.parse(JSON.stringify(o || null))); return list; }, openWindow: async () => {} },
+      fetch: async () => ({ ok: true, json: async () => ({ ok: true, pending: 1, refused: 0, countDue: [], orders: 0 }) }) };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    L.push({ waitUntil: (pr) => waits.push(pr) });
+    await Promise.all(waits);
+    return { shown, asked };
+  };
+  const deskAt = () => { const c = { url: "https://salt-command.example/desk", told: [] }; c.postMessage = (m) => c.told.push(JSON.parse(JSON.stringify(m))); return c; };
+  const a = deskAt(), b = deskAt();
+  const sw = await push([a, b]);
+  ok(JSON.stringify([a.told, b.told]) === '[[{"salt":"wake"}],[{"salt":"wake"}]]' && sw.shown.length === 1 && JSON.stringify(sw.asked) === '[{"type":"window"}]',
+  "a push still tells every controlled desk {salt:'wake'} and leaves the banner path alone");
+
+  const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  let shown = "visible", swClient = null;
+  const asked = [];
+  const dom = new JSDOM(built, { url: "https://salt-command.example/desk#orders", runScripts: "dangerously", pretendToBeVisual: true, virtualConsole: new VirtualConsole(),
+    beforeParse(w) {
+      const store = new Map([["saltWriteKey", "k-fixture"]]);
+      const stub = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k), clear: () => store.clear() };
+      Object.defineProperty(w, "localStorage", { value: stub, configurable: true });
+      Object.defineProperty(w, "sessionStorage", { value: stub, configurable: true });
+      Object.defineProperty(w.document, "visibilityState", { configurable: true, get: () => shown });
+      Object.defineProperty(w.document, "hidden", { configurable: true, get: () => shown !== "visible" });
+      w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+      w.scrollTo = () => {};
+      w.HTMLCanvasElement.prototype.getContext = () => null;
+      const every = w.setInterval.bind(w);
+      w.setInterval = (f, ms, ...rest) => (ms >= 10000 ? 0 : every(f, ms, ...rest));
+      swClient = new w.EventTarget();
+      swClient.register = async () => ({ update() {} }); swClient.getRegistration = async () => null; swClient.controller = null;
+      Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: swClient });
+      w.fetch = async (path) => {
+        const p = String(path); asked.push(p);
+        const j = (b) => ({ ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) });
+        if (p.startsWith("queue/ping")) return j({ ok: true, cloud: true });
+        if (p === "vault") return j({ ok: true, vault: null });
+        if (p === "rev") return j({ ok: true, id: w.SALT_BUILD_ID, v: "v0" });
+        if (p.startsWith("orders")) return j({ ok: true, orders: [] });
+        if (p.startsWith("drafts")) return j({ ok: true, drafts: [], refused: [], clock: null });
+        if (p === "expected") return j({ ok: true, expected: null });
+        if (p.startsWith("bulletin")) return j({ ok: true, lines: [] });
+        return { ok: false, status: 404, json: async () => ({ ok: false }), text: async () => "" };
+      };
+    }
+  });
+  try {
+    const w = dom.window;
+    const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+    const settle = async () => { for (let i = 0, n = -1; i < 50 && n !== asked.length; i++) { n = asked.length; await nap(120); } };
+    for (let i = 0; i < 80 && !(w.SALT_CLOUD && asked.includes("orders") && asked.includes("drafts?status=pending")); i++) await nap(50);
+    await settle();
+    asked.length = 0;
+    swClient.dispatchEvent(new w.MessageEvent("message", { data: { salt: "wake" } }));
+    await nap(Number(w.SALT_WAKE_MS || 200) + 500);
+    await settle();
+    ok(JSON.stringify(asked) === '["rev","drafts?status=pending","orders"]',
+    "a wake on the read-only desk refreshes the build, pending drafts and orders once each");
+    asked.length = 0;
+    swClient.dispatchEvent(new w.MessageEvent("message", { data: { salt: "news", order: "x" } }));
+    swClient.dispatchEvent(new w.MessageEvent("message", { data: null }));
+    await nap(300);
+    await settle();
+    ok(asked.length === 0, "only the worker's own wake message triggers the desk refresh");
+  } finally { try { dom.window.close(); } catch (e) {} }
+})();
+section("S11 fix: a close that leaves more paid than it comes to is never approved on the tap, and waits under Approve");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { reconcileOrders, deskPass } = await import("../src/orders.js");
+  const { runDrafter } = await import("../src/drafter.js");
+  const PE = (await import("../engine/position.mjs")).default;
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const C1 = "CX1-AB", U1 = "abcd-efgh";
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  let seq = 0;
+  const putSale = (row) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", seq++, "h" + seq, JSON.stringify(row));
+  for (const d of ["2026-08-01", "2026-08-10", "2026-08-20"]) putSale({ rid: "s9" + seq, customer: C1, date: d, qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: d, paidOn: d });
+  const OPEN = { byKey: {}, position: {} };
+  setState("roster", [C1]); setState("OPEN", OPEN);
+  setState("PRICING", { v: "v900", byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 3] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'v900',NULL)").run();
+  const land = (draftId, over) => {
+    const row = Object.assign(JSON.parse(db.prepare("SELECT row FROM draft WHERE id=?").get(draftId).row), { rid: "s99" + seq }, over || {});
+    putSale(row); const key = PE.ovKey(row); OPEN.byKey[key] = Object.assign(PE.ledgerRow(row, "S", "salt"), { key }); setState("OPEN", OPEN);
+    db.prepare("UPDATE draft SET committed_at=? WHERE id=?").run(new Date().toISOString(), draftId); return row;
+  };
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const tails = [], ctx = { waitUntil: (p) => tails.push(p) };
+  const send = async (path, body) => {
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
+      headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, ctx);
+    const j = await r.json(); while (tails.length) await tails.shift(); return { status: r.status, j };
+  };
+  const draftsOf = (id, status) => db.prepare("SELECT id,status,decided_by,entry FROM draft").all()
+    .filter((d) => JSON.parse(d.entry).orderId === id && JSON.parse(d.entry).status === status);
+
+  const o = (await O.placeOrder(senv, U1, { product: "salt", qty: 3, mode: "collect", unit: 100, total: 300, week: "" })).order;
+  const pv = await send("/orders/" + o.id + "/preview", {});
+  const a = await send("/orders/" + o.id + "/accept", { hash: pv.j.hash });
+  land(a.j.draft);
+  await send("/orders/" + o.id + "/cash", { amount: 300 });
+  await deskPass(denv, new Date()); await runDrafter(denv);
+  const cash = draftsOf(o.id, "Payment");
+  const c = await send("/orders/" + o.id + "/handed", { qty: 1, close: true });
+  await reconcileOrders(denv); await runDrafter(denv);
+  const cl = draftsOf(o.id, "Close");
+  ok(cash.length === 1 && cash[0].status === "approved" && c.status === 200 && c.j.preapproval && c.j.preapproval.held === true
+    && /^It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that$/.test(c.j.preapproval.says)
+    && cl.length === 1 && cl[0].status === "pending" && !db.prepare("SELECT id FROM preapproval WHERE order_id=? AND stage='move'").all(o.id).length,
+    "the overpaid close waits under Approve, carries no tap approval, and leaves one pending Correction: "
+    + JSON.stringify({ cash: cash.map((d) => d.status), st: c.status, pre: c.j.preapproval, close: cl.map((d) => [d.status, d.decided_by]) }));
+})();
+
+section("S11 fix: an order whose Accept is given and waiting reads as that, never as a new order to accept again");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the order list was not read against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const U1 = "abcd-efgh";
+  const skv = new KV(), dkv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  await dkv.put("stmt-users", JSON.stringify({ [U1]: "CX1-AB" }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const a = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const b = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" })).order;
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at,draft_id) VALUES (?,?,?,?,?,?,?,?,?)")
+    .run(a.id + "|ack|x", a.id, U1, "ack", "h", "{}", "differs", "2026-09-24T01:00:00.000Z", "2026-09-24T01:00:00.001Z");
+  const r = await deskW.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k-fixture" } }), denv, { waitUntil() {} });
+  const list = (await r.json()).orders || [];
+  const la = list.find((o) => o.id === a.id) || {}, lb = list.find((o) => o.id === b.id) || {};
+  ok(la.yes === "differs" && !("yes" in lb), "GET /orders marks only the order whose Accept is given and waiting: " + JSON.stringify({ a: la.yes, b: lb.yes }));
+})();
+
+section("05 Oct 2026: one delivery for a trip of several books, held once and decided in one tap");
+await (async () => {
+  const E = (await import("../engine/position.mjs")).default;
+  const T = "t1759622400000", row = (product, extra) => Object.assign({ trip: T, customer: "CZ9-TRP", date: "2099-10-05", product, qty: 1, total: 100 }, extra || {});
+
+  ok(E.tripFault([row("salt", { delivery: 40 }), row("rice")]) === null, "a trip of two books with one delivery holds together");
+  ok(/delivery on 2 rows/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { delivery: 5 })]) || ""), "a second delivery on one trip is refused");
+  ok(/more than one customer/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { customer: "CZ9-OTH" })]) || ""), "a trip is one customer's");
+  ok(/more than one date/.test(E.tripFault([row("salt", { delivery: 40 }), row("rice", { date: "2099-10-06" })]) || ""), "and one day's");
+  ok(/names a book twice/.test(E.tripFault([row("salt", { delivery: 40 }), row("salt", { qty: 2 })]) || ""), "and carries one row a book");
+  ok(/not one the desk mints/.test(E.tripFault([row("salt", { trip: "x9" })]) || ""), "and its id is one the desk mints");
+  ok(E.partyOwedRM([row("salt", { delivery: 40 }), row("rice", { total: 10 })], "CZ9-TRP") === 150, "and what is owed counts the delivery once: goods 110 plus 40");
+
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the trip was not driven against the real schema"); return; }
+  const { runDrafter } = await import("../src/drafter.js");
+  const book = {
+    pricing: { v: "vT", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } }, rice: { stockCost: 5, replCost: 5, floors: {} } } },
+    purchases: [{ date: "2099-09-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2099-09-13", receivedQty: 12.5 },
+      { date: "2099-09-13", supplier: "SQ2-VOX", product: "rice", qty: 10, total: 50, receivedOn: "2099-09-13", receivedQty: 10 }],
+    sales: [],
+    state: { roster: ["CZ9-TRP", "SQ2-VOX"], QUEUE_COMMITTED: "2099-10-01T00:00:00.000Z" }
+  };
+  const sale = (at, product, total, delivery) => ({ at, payload: { mode: "new", direction: "SELL", party: "CZ9-TRP", qty: 1, total, cash: total + delivery, kg: 1,
+    date: "2099-10-05", product, delivery, handover: "delivered", trip: T } });
+  const batches = [];
+  const world = () => {
+    const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    for (const c of ["sales", "purchases"]) book[c].forEach((r, i) => db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run(c, i, c + i, JSON.stringify(r)));
+    for (const [k, v] of Object.entries(Object.assign({ PRICING: book.pricing }, book.state))) db.prepare("INSERT INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(v));
+    db.prepare("INSERT INTO snapshot (one,v,stamped) VALUES (1,'vT',NULL)").run();
+    const D1 = { prepare(sql) { const st = db.prepare(sql);
+      const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+      const self = mk([]); self.bind = (...a) => mk(a); return self; },
+      async batch(list) { batches.push(list.length); const out = []; for (const s of list) out.push(s.run()); return out; } };
+    return { db, D1 };
+  };
+  const passTrip = async (entries) => { const wd = world(), kv = new KV();
+    await kv.put("q:phone", JSON.stringify({ device: "phone", queue: entries }));
+    return Object.assign(wd, { kv, r: await runDrafter({ SALT_QUEUE: kv, SALT_LEDGER: wd.D1 }) }); };
+  const twoDv = await passTrip([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 5)]);
+  const why2 = JSON.stringify(twoDv.r.skipped);
+  ok(twoDv.r.drafted === 1 && twoDv.r.skipped.length === 1 && /delivery on 2 rows/.test(why2), "the drafter refuses the second row of a trip that would carry a second delivery: " + JSON.stringify(twoDv.r));
+  const good = await passTrip([sale("2099-10-05T01:00:00.000Z", "salt", 130, 40), sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+  const rows = good.db.prepare("SELECT id,row,flags FROM draft ORDER BY id").all().map((x) => Object.assign(JSON.parse(x.row), { _f: x.flags }));
+  ok(!/carrying its delivery has been drafted/.test(rows.map((x) => x._f).join(" ")), "a trip whose delivery row drafted flags neither row: " + rows.map((x) => x._f).join(" | "));
+  rows.forEach((x) => delete x._f);
+  ok(good.r.drafted === 2 && rows.length === 2 && rows.every((x) => x.trip === T) && rows[0].delivery === 40 && !rows[1].delivery, "a trip with one delivery drafts both rows, each carrying the id: " + JSON.stringify({ r: good.r, rows }));
+
+  good.db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at) VALUES (?,'pending','sales',?,?,'site','suite',?)")
+    .run("2099-10-05T01:00:00.002Z", JSON.stringify({ orderId: "o1" }), JSON.stringify({ customer: "CZ9-TRP", product: "oil", trip: T }), "2099-10-05T01:00:00.002Z");
+  const KEY = "suite-key", env = { SALT_LEDGER: good.D1, SALT_WRITE_KEY: KEY, REQUIRE_ACCESS: "0", SALT_QUEUE: good.kv };
+  const res = await worker.fetch(new Request("https://x.workers.dev/drafts/" + encodeURIComponent("2099-10-05T01:00:00.000Z") + "/approve", {
+    method: "POST", headers: { "Content-Type": "application/json", "X-Salt-Key": KEY }, body: "{}" }), env, { waitUntil() {} });
+  let j = {}; try { j = JSON.parse(await res.text()); } catch (e) { /* not json */ }
+  const st = Object.fromEntries(good.db.prepare("SELECT id,status FROM draft").all().map((x) => [x.id, x.status]));
+  ok(res.status === 200 && st["2099-10-05T01:00:00.001Z"] === "approved" && JSON.stringify(j.trip) === '["2099-10-05T01:00:00.001Z"]',
+    "approving one row of a trip approves its other row in the same tap: " + JSON.stringify({ status: res.status, st, j }));
+  ok(st["2099-10-05T01:00:00.002Z"] === "pending", "and a row a site order made is never swept in: " + JSON.stringify(st));
+  ok(batches.length === 1 && batches[0] === 2, "the tapped row and its sibling are decided in ONE batch, one transaction: " + JSON.stringify(batches));
+  const lone = await passTrip([sale("2099-10-05T01:00:00.001Z", "rice", 10, 0)]);
+  const lf = lone.db.prepare("SELECT flags FROM draft").all().map((x) => x.flags).join(" ");
+  ok(lone.r.drafted === 1 && /No row of trip t1759622400000 carrying its delivery has been drafted/.test(lf), "a trip row drafted with no row carrying its delivery is flagged: " + lf);
+
+  const F = await import("../tools/fold.mjs");
+  const fb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  fb.roster.push("CZ9-TRP");
+  const it = (n, r) => ({ id: "2099-10-05T02:00:00.00" + n + "Z", collection: "sales", row: Object.assign({ cost: 64, cash: 0, deliveredQty: 0 }, r), entry: { at: "2099-10-05T02:00:00.00" + n + "Z", payload: {} } });
+  const two = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10, delivery: 5 }))] }, null);
+  ok(two.items.length === 0 && two.refused.length === 2 && /delivery on 2 rows/.test((two.refused[0] || {}).why || ""), "the fold refuses a staged row that would give its trip a second delivery, and the trip waits whole: " + JSON.stringify(two.refused));
+  const one = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10 }))] }, null);
+  ok(one.items.length === 2 && one.refused.length === 0, "and folds a trip with one delivery whole: " + JSON.stringify(one.refused));
+  const half = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("nothing", { total: 130, delivery: 40, deliveredQty: 1 })), it(2, row("rice", { total: 10, deliveredQty: 2 }))] }, null);
+  ok(half.items.length === 0 && half.refused.length === 2 && /another row of trip/.test(half.refused.map((x) => x.why).join(" ")) && !half.moves.some((m) => m.trip),
+    "and a trip whose delivery row is refused holds its sibling back too, moves and all: " + JSON.stringify({ refused: half.refused, moves: half.moves }));
+
+  const sb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const loneRow = row("salt", { rid: "st3", date: "2099-10-01", total: 120, delivery: 20, cash: 140, deliveredQty: 1, cost: 64 });
+  delete loneRow.trip;
+  sb.sales = [row("salt", { rid: "st1", total: 130, delivery: 40, cash: 170, deliveredQty: 1, cost: 64 }), row("rice", { rid: "st2", total: 10, cash: 10, deliveredQty: 1, cost: 5 }), loneRow];
+  sb.customerRefunds = [];
+  const scratch = "C:\\Users\\maakm\\.copilot\\session-state\\a809e1f9-a14a-4026-a5a9-d28627a41477\\files\\trip-" + Date.now() + ".json";
+  writeFileSync(scratch, JSON.stringify(sb));
+  const keep = process.env.SALT_BOOK;
+  process.env.SALT_BOOK = scratch;
+  let M;
+  try { M = await import((await import("node:url")).pathToFileURL(join(REPO, "tools", "make_statements.mjs")).href + "?trip" + Date.now()); }
+  finally { if (keep === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = keep; }
+  const sr = M.stmtRows("CZ9-TRP", { pending: true, completed: true, open: true });
+  const html = String(M.stmtDoc("CZ9-TRP", sr, {}));
+  ok(/plus delivery[^<]*40[^<]* for one trip of 2 orders/.test(html) && (html.match(/for one trip of/g) || []).length === 1,
+    "the statement says the trip's delivery once, beside its figure, and nowhere else: " + ((html.match(/plus delivery[^<]*/g) || []).join(" | ")));
+  const r2 = sr.find((x) => x.rid === "st2") || {}, r3 = sr.find((x) => x.rid === "st3") || {};
+  ok(!("tripN" in r3) && r2.tripN === 2, "and a row outside a trip carries nothing new: " + JSON.stringify(sr.map((x) => [x.rid, x.tripN])));
+  rmSync(scratch, { force: true });
+})();
+
+section("Today, boundaries and the Order book read one row a party");
+await (async () => {
+  await (await import("./maker-merge-rows.mjs")).run({ ok });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

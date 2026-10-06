@@ -73,6 +73,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/geo/expand" && method === "POST"
     || path === "/_internal/maker/threads" && method === "GET"
     || path === "/_internal/maker/bulletin" && ["GET", "POST"].includes(method)
+    || path === "/_internal/maker/expected" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/claims" && method === "GET"
     || path === "/_internal/maker/vault/key" && method === "GET"
     || /^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(path) && method === "GET"
@@ -189,6 +190,7 @@ function internalOperation(path) {
   if (path === "/all/maker/geo/expand") return { kind: "geo-expand" };
   if (path === "/all/maker/threads") return { kind: "threads" };
   if (path === "/all/maker/bulletin") return { kind: "bulletin" };
+  if (path === "/all/maker/expected") return { kind: "expected" };
   if (path === "/all/maker/claims") return { kind: "claims" };
   if (path === "/all/maker/pools") return { kind: "pools" };
   const pool = /^\/all\/maker\/pools\/(p[0-9]{14}-[a-z0-9]{1,8})\/close$/.exec(path);
@@ -319,13 +321,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
           amount: preview.claim.amount, ...(body.covered ? { covered: true } : {}) } } });
       return json(result.ok ? { ok: true, claim: result.claim, test: true } : result, result.ok ? 200 : result.status || 503);
     }
-    if (op.kind === "threads" || op.kind === "thread" || op.kind === "bulletin") {
+    if (op.kind === "threads" || op.kind === "thread" || op.kind === "bulletin" || op.kind === "expected") {
       const read = method === "GET" && op.kind !== "thread";
       if (!read && !(method === "POST" && op.kind !== "threads"))
         return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = read ? {} : await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
-      const route = op.kind === "bulletin" ? "/bulletin" : "/threads" + (op.u ? "/" + op.u : "");
+      const route = op.kind === "bulletin" ? "/bulletin" : op.kind === "expected" ? "/expected" : "/threads" + (op.u ? "/" + op.u : "");
       return json(await deskCall(env, "/_internal/maker" + route, method, parsed.body));
     }
     if (op.kind === "geo-expand") {

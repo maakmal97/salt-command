@@ -82,7 +82,6 @@ unchanged.
 
 The master draws no control that writes: Approve, Enter and Network inputs, the order cards' taps, the order button, the ledger pen, the drift, tier, rewards and map controls, and the Whiteboard's Snooze and Dismiss are removed. Site orders is a read-only list that points to Counter Admin. The Worker's write routes stay, since the bridge calls them. A test drives every button of every view and fails on a queued entry or a POST. This merges only after the owner accepts Counter Admin review.
 
-With no Counter control yet, and so with no way to do it at all once this ships:
-- the restock date (/expected, KV xpected) and its card;
-- re-entering a rejected entry;
-- the Whiteboard's hush, by design: prose stays off the Counter.
+Counter Admin now carries the restock date (Restock date card, `/all/maker/expected`; idempotent, a book and a day or null, so no `rid`) and re-entering a rejected sale (a new SELL only: a resale, a note or an order code is blocked, since prose stays off the Counter, rules 2 and 3). The Whiteboard's hush has no Counter control, by design: prose stays off the Counter.
+
+Read views: Today, the boundaries table and the Order book show one row a party (06 Oct 2026, his instruction). Today also merges the same warning on several parties into one row; sums add, the date is the oldest, and a table's total is the sum of what it prints.

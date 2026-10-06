@@ -11723,6 +11723,23 @@ function commitRisks(){
         why:'at commit the traceable lot cost is assigned instead, so the margin on this sale will move'});});
   return out;
 }
+/* 06 Oct 2026, HIS INSTRUCTION: one row a party, and one row where several parties stand in the same breach or watch. */
+function mergeBoundaryRows(all){
+  const rows=[],byWho={};
+  all.forEach(x=>{
+    if(x.who==='stock'){rows.push({sev:x.sev,tags:[x.sev],rules:[x.rule],whos:[],what:[x.what]});return;}
+    const k=x.who;
+    if(!byWho[k]){byWho[k]={sev:x.sev,tags:[],rules:[],whos:[x.who],what:[]};rows.push(byWho[k]);}
+    const r=byWho[k];if(!r.tags.includes(x.sev))r.tags.push(x.sev);
+    r.rules.push(x.rule);r.what.push(x.what);});
+  const merged=[],byKey={};
+  rows.forEach(r=>{
+    const k=r.whos.length===1?r.tags.join('+')+'|'+r.rules.join('+')+'|'+r.what.join('+'):null;
+    if(k&&byKey[k]){byKey[k].whos.push(r.whos[0]);return;}
+    if(k)byKey[k]=r;merged.push(r);});
+  return merged.map(r=>({tags:r.tags.map(s=>bSevTag[s]||'').join(' '),rules:[...new Set(r.rules)].join(' &middot; '),
+    who:r.whos.length?r.whos.map(w=>ID(w)).join(', '):NIL,what:r.what.length>1?[...new Set(r.what)].join(' &middot; '):r.what[0]}));
+}
 const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>',risk:'<span class="tag salt-status salt-status--dashed prov">Commit risk</span>'};
 function boundaryPanel(b,r){
   b=b||boundaryScan();r=r||commitRisks();   /* v795: Rules hands in every book's register, merged */
@@ -11745,7 +11762,7 @@ function boundaryPanel(b,r){
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
-    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?NIL:ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
+    ${mergeBoundaryRows(all).map(x=>`<tr><td class="l">${x.tags} ${x.rules}</td><td class="l mono">${x.who}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 /* ============ THE WALK IS A MODULE (v338) ============
@@ -12033,12 +12050,50 @@ function eachBook(fn){const keep=PROD,out={};try{liveBooks().forEach(p=>{PROD=p;
 let RENDER_MEMO=null;
 function renderMemo(k,f){if(!RENDER_MEMO)return f();return (k in RENDER_MEMO)?RENDER_MEMO[k]:(RENDER_MEMO[k]=f());}
 function allActions(){return renderMemo('all',allActionsNow);}
+/* 06 Oct 2026, HIS INSTRUCTION: THE SAME PARTY IS ONE ROW, AND THE SAME WARNING IS ONE ROW. Within a severity, the items about one
+   party (a chase, a refund and a broken rule on the same code) read as a single row listing each, its figure the sum; items
+   that carry the identical sentence for different parties read as one row naming them. The party is the code in the title:
+   an item with no code, or with two, is never merged. The kinds of the parts stay on the row as parts, so the kind chart
+   still splits the figure by kind. */
+const ACT_PARTY=/\b[A-Z]{2}\d-[A-Z]{2,3}(?:-R)?\b/g;
+function actPartyOf(x){const m=String(x.title).replace(/<[^>]*>/g,'').match(ACT_PARTY);return m&&new Set(m).size===1?m[0]:null;}
+function mergeActs(list){
+  const out=[],by={};
+  list.forEach(x=>{const w=actPartyOf(x)?x.sev+'|'+actPartyOf(x):null;
+    if(!w){out.push(x);return;}
+    if(by[w])by[w].push(x);else{by[w]=[x];out.push(by[w]);}});
+  const sameParty=out.map(g=>{
+    if(!Array.isArray(g))return g;
+    if(g.length===1)return g[0];
+    const kinds=[...new Set(g.map(p=>p.kind))],books=[...new Set([].concat(...g.map(p=>p.books||[])))];
+    return Object.assign({},g[0],{kind:kinds.length===1?kinds[0]:'multi',
+      title:ID(actPartyOf(g[0]))+' &middot; '+g.length+' items',
+      why:g.map(p=>'<div class="actsub"><b>'+p.title+'</b> '+p.why+'</div>').join(''),
+      rm:+g.reduce((t,p)=>t+p.rm,0).toFixed(2),books:books,parts:g,
+      copy:g.map(p=>p.copy).filter(Boolean).join('\n')||undefined});
+  });
+  const outB=[],seenW={};
+  sameParty.forEach(x=>{
+    if(x.parts||!actPartyOf(x)){outB.push(x);return;}
+    const k=[x.sev,x.kind,x.why,(x.books||[]).join(',')].join('|');
+    if(seenW[k]){const g=seenW[k];g.parts.push(x);}
+    else{seenW[k]=Object.assign({},x,{parts:[x]});outB.push(seenW[k]);}});
+  return outB.map(x=>{
+    if(!x.parts||x.parts.length<2){if(x.parts)delete x.parts;return x;}
+    if(x.parts[0]!==x&&x.kind!=='multi'&&x.parts.every(p=>actPartyOf(p)&&!p.parts)){
+      const ps=x.parts;
+      return Object.assign({},ps[0],{title:ps.map(p=>p.title).join('; '),
+        rm:+ps.reduce((t,p)=>t+p.rm,0).toFixed(2),parts:ps,
+        copy:ps.map(p=>p.copy).filter(Boolean).join('\n')||undefined});
+    }
+    return x;});
+}
 function allActionsNow(){
   const per=eachBook(()=>actions()),ids=Object.keys(per),seen={},list=[];
   ids.forEach(p=>per[p].forEach(x=>{const k=[x.sev,x.kind,x.title,x.rm,x.why].join('|');
     if(seen[k])seen[k].books.push(p);else{seen[k]=Object.assign({},x,{books:[p]});list.push(seen[k]);}}));
   list.forEach(x=>{if(x.books.length===ids.length)x.books=[];});
-  return list.sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
+  return mergeActs(list).sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
 }
 /* each live book's position, for the band under the list */
 function bookBand(){
@@ -12054,7 +12109,7 @@ function tabToday(){
   /* A word, not a picture. The kind is scanning furniture, so it should read at a glance
      and then get out of the way; an emoji does the opposite and dates badly besides. */
   const KIND={inventory:'Inventory',buy:'Buy',collect:'Collect',pay:'Pay',rule:'Rule',
-              call:'Call',reconnect:'Revive',reward:'Reward',queue:'Queue',plan:'Plan'};
+              call:'Call',reconnect:'Revive',reward:'Reward',queue:'Queue',plan:'Plan',multi:'Several'};
   /* v273: TAB_LABEL was local to this function and the Whiteboard needed the same map for
      its own jump buttons. Hoisted to the top of the file rather than copied, because two
      label maps drift apart and the one that drifts is always the one nobody is looking at. */
@@ -12140,7 +12195,7 @@ function drawTodayCharts(){
                  reward:'#c5a059',inventory:'#6fae97',rule:'rgba(242,244,245,0.40)',call:'#8ea2b6',
                  queue:'#a6afb5',plan:'#d4694c'};
       const byKind={};
-      a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
+      a.forEach(x=>(x.parts||[x]).filter(p=>p.rm>0.009).forEach(p=>{byKind[p.kind]=(byKind[p.kind]||0)+p.rm;}));
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
       if(tdKindObj){try{tdKindObj.destroy();}catch(e){}tdKindObj=null;}
       if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}tdCoverObj=null;}
@@ -15803,11 +15858,15 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=provAge(s),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  /* 06 Oct 2026, HIS INSTRUCTION: A PARTY WITH SEVERAL OPEN ROWS IS ONE ROW. Sums add, the date is the oldest, and a table's total
+     is the sum of what it prints, so nothing moves but the row count. */
+  const foldBy=(rows,sums,extra)=>{const m={},o=[];rows.forEach(r=>{const g=m[r.id];if(!g){m[r.id]=Object.assign({},r,{n_rows:1});o.push(m[r.id]);return;}
+    sums.forEach(k=>{g[k]=+(g[k]+r[k]).toFixed(2);});if((r.date||'9999-99-99')<(g.date||'9999-99-99'))g.date=r.date;g.n_rows++;if(extra)extra(g,r);});return o;};
+  const cCash=foldBy(arList.map(s=>{const d=provAge(s),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};}),['g','n'],(g,r)=>{g.d=Math.max(g.d,r.d);g.over=g.over||r.over;g.rate=g.g>0?+(1-g.n/g.g).toFixed(4):0;})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date?'ordered '+r.date:'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
-  const cSalt=_S.map(s=>{const k=txDeferUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean).sort(oldest);
+  const cSalt=foldBy(_S.map(s=>{const k=txDeferUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean),['k','rm']).sort(oldest);
   const cSaltUnits=+cSalt.reduce((a,r)=>a+r.k,0).toFixed(2),cSaltRm=+cSalt.reduce((a,r)=>a+r.rm,0).toFixed(2);
   /* v456: AN UNDATED ROW SAYS SO, ON EVERY TABLE OF THIS PART. The pending table has printed
      `not dated` for an undated row since it was built, and the five beside it printed the raw
@@ -15824,13 +15883,14 @@ function tabReceivables(){
      and a line that is closed is history. The record itself stays in customerRefunds. */
   /* refunds carry no product: they are a customer-level obligation, so they show once, on the
      default book, rather than being duplicated under every heading */
-  const cRef=(PROD===DEFAULT_PROD&&typeof customerRefunds!=='undefined'?customerRefunds:[]).filter(r=>!r.paidOn);
+  const cRefRows=(PROD===DEFAULT_PROD&&typeof customerRefunds!=='undefined'?customerRefunds:[]).filter(r=>!r.paidOn);
+  const cRef=foldBy(cRefRows.map(r=>({id:r.party,party:r.party,date:r.since,since:r.since,amount:+r.amount})),['amount']);
   /* v708: AN AGE, like every table beside it. This was the one open figure on the page with no
      age against it, on the one thing he said to do immediately. */
   const cRefBody=cRef.map(r=>`<tr><td class="l mono">${ID(r.party)}</td><td class="l">${r.since||''}</td><td>${r.since?dAge(r.since)+'d':NIL}</td><td>${fmt0(r.amount)}</td></tr>`).join('');
-  const cRefTot=+cRef.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
+  const cRefTot=+cRefRows.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
   // Pending customer orders (agreed, nothing moved).
-  const cPen=_S.map(s=>{const k=txPendUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean).sort(oldest);
+  const cPen=foldBy(_S.map(s=>{const k=txPendUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean),['k','rm']).sort(oldest);
   const cPenUnits=+cPen.reduce((a,r)=>a+r.k,0).toFixed(2),cPenRm=+cPen.reduce((a,r)=>a+r.rm,0).toFixed(2);
   const cPenBody=cPen.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td class="l">${r.date||'not dated'}</td><td>${units(r.k)}</td><td>${fmt0(r.rm)}</td></tr>`).join('');
   // ===== SUPPLIER SIDE =====
@@ -15838,14 +15898,14 @@ function tabReceivables(){
   /* an unpaid lot is a bill whether or not it has landed: excluding in-transit hid a
      real payable, and the panel opposite was simultaneously calling it "paid for" */
   /* v438: the same rule as supBills and billsOut, which is the point: it was a third spelling. */
-  const sCash=_B.filter(p=>poOwed(p)>0.009).map(p=>({id:p.supplier,date:p.date,rm:poOwed(p)})).sort(oldest);
+  const sCash=foldBy(_B.filter(p=>poOwed(p)>0.009).map(p=>({id:p.supplier,date:p.date,rm:poOwed(p)})),['rm']).sort(oldest);
   const sCashBody=sCash.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sCashTot=+sCash.reduce((a,p)=>a+p.rm,0).toFixed(2);
   // Salt suppliers owe you: paid (or part-paid) but not yet received (in transit).
   /* v438: a fourth spelling of the same predicate. poOpenUnits already answers nothing for a
      cancelled or defaulted lot (v417, v422), so this moves no figure; it removes the disagreement. */
-  const sSalt=_B.filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
-    .map(p=>({id:p.supplier,date:p.date,k:poOpenUnits(p),rm:+(poOpenUnits(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})).sort(oldest);
+  const sSalt=foldBy(_B.filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
+    .map(p=>({id:p.supplier,date:p.date,k:poOpenUnits(p),rm:+(poOpenUnits(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})),['k','rm']).sort(oldest);
   const sSaltBody=sSalt.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sSaltUnits=+sSalt.reduce((a,p)=>a+p.k,0).toFixed(2);
   // Refunds suppliers owe you: the recoverable default, aged + provisioned.
@@ -15860,8 +15920,8 @@ function tabReceivables(){
      book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
      oil buy would have printed under Salt and again under Oil. Latent only because nothing is
      pending today, which is exactly how the v272 duplicates survived as long as they did. */
-  const sPen=_B.filter(p=>p.pending&&!p.defaulted)
-    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})).sort(oldest);
+  const sPen=foldBy(_B.filter(p=>p.pending&&!p.defaulted)
+    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})),['k','rm']).sort(oldest);
   const sPenBody=sPen.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sPenUnits=+sPen.reduce((a,p)=>a+p.k,0).toFixed(2);
   const sPenRM=+sPen.reduce((a,p)=>a+p.rm,0).toFixed(2);

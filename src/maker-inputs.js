@@ -79,6 +79,17 @@ export function makerTradeEntry(operation, body, book) {
   }), book);
 }
 
+/** A rejected plain sale, as the Counter's sale form can take it again. A resale, a note or an order code cannot ride
+ *  on the Counter's form (prose stays off it, rules 2 and 3), so such a row is named blocked, never half-filled. */
+export function makerReenterSeed(draft) {
+  const p = draft && draft.entry && draft.entry.payload;
+  if (!p || p.mode !== "new" || String(p.direction || "").toUpperCase() !== "SELL") return null;
+  if (p.assoc || p.stream) return { blocked: "A resale is re-entered by hand: the Counter's form books a sale to one customer only." };
+  if (p.note || p.orderCode) return { blocked: "This entry carried a note or an order code, which the Counter's form does not take." };
+  return { product: p.product || "salt", party: p.party || null, qty: p.qty, total: p.total, cash: p.cash || 0,
+    movedUnits: p.kg || 0, handover: p.handover || null, delivery: p.delivery || 0, date: p.date || null };
+}
+
 export function makerQueuedTradeCheck(entry, queue) {
   const p = entry.payload;
   const entries = queue || [];

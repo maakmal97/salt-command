@@ -19,9 +19,9 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
-import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, makerExpectedFault } from "./maker.js";
+import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerReenterSeed } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
@@ -354,7 +354,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
-    && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
+    && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin" && p !== "/_internal/maker/expected"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
@@ -418,6 +418,20 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const result = await listThreads(env, true);
     return json(result, result.ok ? 200 : 503);
+  }
+  if (p === "/_internal/maker/expected") {
+    if (m === "GET") { const r = await expectedRelay(env, "GET"); return json(r, r.ok ? 200 : (r.status || 502)); }
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    let body;
+    try { body = JSON.parse(await request.text()); } catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const fault = makerExpectedFault(body);
+    if (fault) return json({ ok: false, error: fault }, 400);
+    let ids = null;
+    try { const bk = await readBook(env.SALT_LEDGER); ids = bk.pricing && bk.pricing.byProduct ? Object.keys(bk.pricing.byProduct) : null; } catch { ids = null; }
+    if (!ids || !ids.length) return json({ ok: false, error: "the live book's products could not be read" }, 503);
+    if (!ids.includes(body.product)) return json({ ok: false, error: "that is not one of the book's products" }, 400);
+    const r = await expectedRelay(env, "POST", body);
+    return json(r, r.ok ? 200 : (r.status || 502));
   }
   const thread = /^\/_internal\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(p);
   if (thread || p === "/_internal/maker/bulletin") {
@@ -502,7 +516,11 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   }
   if (p === "/_internal/maker/drafts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return handleDraftsGet(env, new URL(request.url));
+    const res = await handleDraftsGet(env, new URL(request.url));
+    if (!res.ok) return res;
+    const out = await res.json();
+    for (const d of out.drafts || []) { const seed = makerReenterSeed(d); if (seed) d.reenter = seed; }
+    return json(out);
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (p === "/_internal/maker/order-again" || p === "/_internal/maker/words") {
