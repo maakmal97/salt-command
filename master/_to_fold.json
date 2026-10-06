@@ -1,0 +1,163 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-10-06T15:50:59.650Z",
+   "collection": "purchases",
+   "row": {
+    "qty": 25,
+    "total": 1400,
+    "cash": 1400,
+    "handover": "collected",
+    "supplier": "SA5-BTR",
+    "freight": 50,
+    "status": "paid",
+    "date": "2026-10-06",
+    "receivedOn": "2026-10-06",
+    "receivedQty": 25,
+    "paidOn": "2026-10-06"
+   },
+   "reasoning": "Bought 25 unit of salt from SA5-BTR for RM 1400, with RM 50 of freight beside it, RM 56/unit. Paid in full and delivered in full on 2026-10-06. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-06T15:50:59.650Z",
+    "type": "BUY",
+    "party": "SA5-BTR",
+    "qty": 25,
+    "total": 1400,
+    "status": "paid",
+    "raw": "Buy 25 unit from SA5-BTR for RM 1,400 on 2026-10-06 plus RM 50 freight, collected, RM 1,400 cash, 25 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "BUY",
+     "party": "SA5-BTR",
+     "newId": null,
+     "date": "2026-10-06",
+     "qty": 25,
+     "total": 1400,
+     "delivery": 0,
+     "freight": 50,
+     "cash": 1400,
+     "kg": 25,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-10-06T15:54:21.358Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-10-06T15:52:16.734Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 1.5,
+    "total": 210,
+    "cash": 0,
+    "delivery": 10,
+    "date": "2026-10-06",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261005120619-nmopxq, acknowledged, to be delivered, delivery RM 10. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1.5 unit of salt to CS6-PER for RM 210, with RM 10 of delivery beside it, RM 220 owed, RM 140/unit. Costed at RM 58/unit from COGS off the latest drafted purchase 2026-10-06T15:50:59.650Z (not yet folded) landed 2026-10-06: RM 1400 quote plus RM 50 freight over 25 unit, so RM 123 on the goods at 58.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-06 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-PER typically pays about RM 82.76/unit for salt across 10 orders; this one is RM 140, 69.2% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-06T15:52:16.734Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 1.5,
+    "total": 210,
+    "status": "Pending",
+    "raw": "SELL CS6-PER 1.5 salt RM 220, nothing paid, nothing moved (order 20261005120619-nmopxq)",
+    "orderKey": "CS6-PER|2026-10-06|220",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-10-06",
+     "qty": 1.5,
+     "total": 210,
+     "delivery": 10,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261005120619-nmopxq, acknowledged, to be delivered, delivery RM 10. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261005120619-nmopxq"
+   },
+   "decidedAt": "2026-10-06T15:52:18.622Z",
+   "decidedBy": "preapproved by phone"
+  },
+  {
+   "id": "2026-10-06T15:53:32.624Z",
+   "collection": "sales",
+   "row": {
+    "qty": 0.5,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-10-02",
+    "customer": "CH5-KLC"
+   },
+   "reasoning": "Cancellation against CH5-KLC's order of 0.5 unit for RM 90 agreed 2026-10-02. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s226",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-06T15:53:32.624Z",
+    "type": "SELL",
+    "party": "CH5-KLC",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CH5-KLC, order 20261002100233-pj3p3g, recorded 2026-10-06",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CH5-KLC",
+     "rid": null,
+     "orderKey": "CH5-KLC|2026-10-02|90",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-06",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the desk, order 20261002100233-pj3p3g."
+    },
+    "orderId": "20261002100233-pj3p3g"
+   },
+   "decidedAt": "2026-10-06T15:54:20.117Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
