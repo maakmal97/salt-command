@@ -17237,6 +17237,11 @@ await (async () => {
       + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
       + "var k=lateOf,a,b,c;try{lateOf=function(){return {on:false};};a=read();lateOf=function(){return {on:true,need:1,streak:0,why:'long',days:9,open:true,since:null};};b=read();}finally{lateOf=k;}"
       + "return {same:a===b,n:who.length,held:cardQuote('CZ9-LTP',1)};})()");
+    /* the Counter reads the same offer: the snapshot's lateOffers is the desk's lateDown over what is held, none at the last level or to a prompt payer */
+    const { pricingSnapshot: snap5c } = await import("../tools/book.mjs");
+    const lo5c = snap5c(w5c).lateOffers || {};
+    ok(lo5c['CZ9-LTP'] && lo5c['CZ9-LTP'].down.salt === 'Silver' && lo5c['CZ9-LTP'].why === 'paid 6 days after the handover' && !lo5c['CZ9-LTS'] && !lo5c['CZ9-OKP'],
+      "the pricing snapshot carries the late-payer offer the Tiers card shows: Silver to a late Gold holder, nothing at the last level or to a prompt payer: " + JSON.stringify(lo5c));
     /* 05 Oct 2026: the held levels are the fixtures' now, salt's book levels retired for the drift */
     ok(same.same && same.n >= 3 && same.held != null, "and the offer prices nothing: every held customer's quote is unchanged whether everyone is late or no one (" + same.n + " customers)");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w5c.close(); } catch (e) { /* best effort */ } }
@@ -50192,6 +50197,7 @@ await (async () => {
   const incumbentChecks = await import("./desk-maker-constructors.mjs");
   await incumbentChecks.run({ ok });
   await (await import("./maker-tier-accept.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+  await (await import("./maker-tier-bands.mjs")).run({ ok, REPO });
   await (await import("./maker-offsets.mjs")).run({ ok });
   await (await import("./maker-house-sizes.mjs")).run({ ok, KV, worker, handleMaker, REPO });
   await (await import("./maker-addid-tiers.mjs")).run({ ok });

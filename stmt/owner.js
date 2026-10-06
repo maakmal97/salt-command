@@ -1731,17 +1731,54 @@ export const OWNER_JS = `
         var tierCode=el('select','fld salt-field__input'), tierProduct=el('select','fld salt-field__input'), tierValue=el('select','fld salt-field__input');
         tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
         tierBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; tierProduct.appendChild(option); });
-        [['','Clear held tier']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; })).forEach(function(item){
+        [['','Clear held tier']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','Small, mid and big bands']]).forEach(function(item){
           var option=el('option',null,item[1]); option.value=item[0]; tierValue.appendChild(option);
         });
         [['Customer',tierCode],['Book',tierProduct],['Held level',tierValue]].forEach(function(item){
           var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tierSection.appendChild(wrap);
         });
+        var bandBox=el('div','maker-bands'), bandSel={};
+        bandBox.hidden=true;
+        [['small','Small sizes'],['mid','Mid sizes'],['big','Big sizes']].forEach(function(item){
+          var s=el('select','fld salt-field__input'); s.setAttribute('aria-label',item[1]+' tier');
+          (catalog.tierNames||[]).forEach(function(name){ var option=el('option',null,name); option.value=name; s.appendChild(option); });
+          bandSel[item[0]]=s; var wrap=el('label','maker-field',item[1]); wrap.appendChild(s); bandBox.appendChild(wrap);
+        });
+        tierSection.appendChild(bandBox);
+        var tierState=el('p','msg'), useProposal=el('button','salt-ghost','Use the proposal'), useOffer=el('button','salt-ghost','Use the late-payer offer');
+        useProposal.type='button'; useOffer.type='button';
+        tierSection.appendChild(tierState); tierSection.appendChild(useProposal); tierSection.appendChild(useOffer);
+        function tierPut(level){
+          if(level&&typeof level==='object'){ tierValue.value='__bands'; ['small','mid','big'].forEach(function(k){ if(level[k]) bandSel[k].value=level[k]; }); }
+          else tierValue.value=level||'';
+          bandBox.hidden=tierValue.value!=='__bands';
+        }
+        function tierCardOf(){
+          return (catalog.tierCards||[]).filter(function(c){ return c.code===tierCode.value&&c.product===tierProduct.value; })[0]||null;
+        }
+        function tierSay(level){
+          return typeof level==='string'?level:['small','mid','big'].map(function(k){ return k+' '+level[k]; }).join(', ');
+        }
+        function tierRefresh(){
+          var c=tierCardOf(), lines=[];
+          if(c&&c.held) lines.push('Held: '+tierSay(c.held)+'.');
+          else if(c&&c.proposed) lines.push('Proposed: '+tierSay(c.proposed)+'. Nothing is held yet.');
+          else lines.push('No level is held or proposed.');
+          if(c&&c.late) lines.push('Late payer: offered '+c.late.level+(c.late.why?', '+c.late.why:'')+'.');
+          tierState.textContent=lines.join(' ');
+          useProposal.hidden=!(c&&(c.proposed||c.held)); useOffer.hidden=!(c&&c.late);
+        }
+        tierValue.addEventListener('change',function(){ bandBox.hidden=tierValue.value!=='__bands'; });
+        tierCode.addEventListener('change',tierRefresh); tierProduct.addEventListener('change',tierRefresh);
+        useProposal.onclick=function(){ var c=tierCardOf(); if(c) tierPut(c.proposed||c.held); };
+        useOffer.onclick=function(){ var c=tierCardOf(); if(c&&c.late) tierPut(c.late.level); };
+        tierRefresh();
         var tierAnswer=el('p','msg'); tierAnswer.setAttribute('role','status'); tierSection.appendChild(tierAnswer);
         var tierPending=false, tierAt=null, tierSignature='';
         makerButton(tierSection,'Send tier for review',async function(send){
           if(tierPending) return;
-          var body={code:tierCode.value,product:tierProduct.value,tier:tierValue.value||null};
+          var level=tierValue.value==='__bands'?{small:bandSel.small.value,mid:bandSel.mid.value,big:bandSel.big.value}:(tierValue.value||null);
+          var body={code:tierCode.value,product:tierProduct.value,tier:level};
           var check=JSON.stringify(body); if(check!==tierSignature){ tierSignature=check; tierAt=new Date().toISOString(); }
           body.at=tierAt; tierPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }

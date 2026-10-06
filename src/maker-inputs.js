@@ -102,6 +102,28 @@ export function makerQueuedTradeFault(entry, queue) {
   return makerQueuedTradeCheck(entry, queue).error || "";
 }
 
+/** What the Desk's Tiers card shows beside each customer and level-named book: the level held, the proposal (a level or small, mid and
+    big bands) and the late-payer offer one level down. Read from the snapshot; it moves nothing and prices nothing. */
+function tierCards(book, roster, products) {
+  const tiered = products.filter((item) => item.tiered).map((item) => item.product);
+  const names = (book.pricing && book.pricing.tierNames) || [];
+  const proposals = object(book.pricing && book.pricing.tierOf) ? book.pricing.tierOf : {};
+  const late = object(book.pricing && book.pricing.lateOffers) ? book.pricing.lateOffers : {};
+  const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
+  const shape = (level) => PRICING_ENGINE.levelShapeOk(level, names) ? level : null;
+  const cards = [];
+  for (const id of roster.filter((value) => !POSITION_ENGINE.isBucket(value))) {
+    for (const product of tiered) {
+      const own = shape((object(held[id]) ? held[id] : {})[product]);
+      const proposed = own ? null : shape((object(proposals[id]) ? proposals[id] : {})[product]);
+      const offer = object(late[id]) && object(late[id].down) && typeof late[id].down[product] === "string" && names.includes(late[id].down[product])
+        ? { level: late[id].down[product], why: typeof late[id].why === "string" ? late[id].why.slice(0, 160) : "" } : null;
+      if (own || proposed || offer) cards.push({ code: id, product, held: own, proposed, late: offer });
+    }
+  }
+  return cards;
+}
+
 export function makerInputCatalog(book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -122,6 +144,7 @@ export function makerInputCatalog(book) {
     houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
+    tierCards: tierCards(book, roster, products),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),

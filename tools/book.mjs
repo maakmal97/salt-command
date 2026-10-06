@@ -314,6 +314,9 @@ export function pricingSnapshot(w) {
     /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from
        what they pay for it; a product with neither is left out, and their page reads its price as coming soon */
     tierOf: call("(function(){if(typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){if(typeof driftBook==='function'&&driftBook(p))return;var t=(TIER_OF[id]||{})[p]||(typeof ruleProposal==='function'?ruleProposal(id,p,b):tierProposal(id,p,b));if(t){o[id]=o[id]||{};o[id][p]=t;}});});return o;})()"),
+    /* a late payer is OFFERED a level down on a book that names levels (V5c): the desk's own lateOf, lateDown and lateWhy, so Counter Admin
+       reads the offer the Tiers card shows. Prices nothing; a drift book names none */
+    lateOffers: call("(function(){if(typeof lateOf!=='function'||typeof lateDown!=='function'||typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){var lt=lateOf(id);if(!lt.on)return;var d={};PROD_IDS.forEach(function(p){if(typeof driftBook==='function'&&driftBook(p))return;var t=(TIER_OF[id]||{})[p]||(typeof ruleProposal==='function'?ruleProposal(id,p,b):tierProposal(id,p,b));var dn=t?lateDown(t):null;if(dn)d[p]=dn;});if(Object.keys(d).length)o[id]={why:lateWhy(lt),down:d};});return o;})()"),
     /* v666: how each customer buys each product, the desk's own reading, so the price list and the drafter read the same
        profile the desk shows rather than working one out of their own. Prices nothing yet. */
     profileOf: call("(function(){if(typeof buyerProfile!=='function')return null;var o={},keep=PROD;try{tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var f=buyerProfile(id,p);if(f){o[id]=o[id]||{};o[id][p]=f;}});});}finally{PROD=keep;}return o;})()"),
