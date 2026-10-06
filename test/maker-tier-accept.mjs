@@ -32,7 +32,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
   const owner_js = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
   ok(POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/tier-accept-all", body: { at: AT } })
     && !POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/tier-accept-all-x", body: { at: AT } })
-    && owner_js.includes("makerButton(tierSection,'Accept tier proposals'") && owner_js.includes("'/all/maker/inputs/tier-accept-all',{at:allAt}"),
+    && owner_js.includes("makerButton(tierSection,'Accept tier proposals'"),
     "the Counter Admin carries an Accept tier proposals control whose retained request is a valid record");
 
   ok(owner_js.includes("failure.status=r.status;")

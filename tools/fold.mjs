@@ -12,7 +12,8 @@
  *                                  sync the master, set the version and the stamp, prepend the
  *                                  changelog, sort, write master/_folded.json. All or nothing.
  *
- * Paths can be overridden for the tests: --staged, --notes, --book, --master, --folded, --today.
+ * Paths can be overridden for the tests: --staged, --notes, --book, --master, --folded, --today, and --ledger (the extract
+ * whose reward scheme a spend is measured against; the book's own directory by default).
  *
  * WHAT IT APPLIES, exactly as docs/CLOUD_FOLD.md states and as the desk's own overlay would:
  *   a new row         appended to sales or purchases WITH ITS NOTE (a row with no note is refused)
@@ -71,6 +72,13 @@ const BOOK = opt("--book", BOOK_DEFAULT);
 const STAGED = opt("--staged", resolve(dirname(MASTER), "_to_fold.json"));
 const NOTES = opt("--notes", resolve(dirname(MASTER), "_fold_notes.json"));
 const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
+/* 06 Oct 2026: the reward scheme is the master's and the book carries none, so a spend is measured against the scheme in the
+   extract beside the book (tools/ledger.mjs writes it from the master). Unreadable, there is no scheme and a spend is refused. */
+const EXTRACT = opt("--ledger", resolve(dirname(BOOK), "ledger.json"));
+function rewardScheme() {
+  try { const r = (JSON.parse(readFileSync(EXTRACT, "utf8")).ledger || {}).REWARD; return r && r.stated ? { stated: r.stated } : null; }
+  catch { return null; }
+}
 const USERS = opt("--users", resolve(REPO, "statements", "_users.json"));   // v588
 const PLACES = opt("--places", resolve(REPO, "geo", "places.json"));       // v628
 const SUITE = opt("--suite", resolve(REPO, "test", "verify.mjs"));         // v628
@@ -172,13 +180,14 @@ export function plan(book, staged, notes) {
   const simSoFar = new Map();
   const simOf = (row) => simSoFar.has(row) ? simSoFar.get(row) : JSON.parse(JSON.stringify(row));
   const reservedEntries = [];
+  const reservationState = book.REWARD ? book : { ...book, REWARD: rewardScheme() };
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
     const resourceEntry = it.collection === "repayment" ? { at: it.id,
       payload: { mode: "repay", loan: r.loan, kg: r.kg, rm: r.rm } } : it.entry;
     const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
-      { state: book, sales: book.sales || [], purchases: book.purchases || [] });
+      { state: reservationState, sales: book.sales || [], purchases: book.purchases || [] });
     if (reservationFault) { out.refused.push({ id: it.id, why: reservationFault }); continue; }
     /* round six: the fold took row.product verbatim, so a row folded under an unregistered
        product shipped to the phone as a ledger line while every total excluded it. This is
@@ -1087,7 +1096,7 @@ export function apply(book, staged, notes, masterText) {
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const mode = argv.find((a) => a === "--plan" || a === "--apply" || a === "--replays" || a === "--held");
-  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays | --held   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--users f] [--today YYYY-MM-DD]"); process.exit(2); }
+  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays | --held   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--users f] [--ledger f] [--today YYYY-MM-DD]"); process.exit(2); }
   const staged = readStaged();
   if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(mode === "--replays" || mode === "--held" ? 1 : 0); }
   const book = readBookFile(BOOK);

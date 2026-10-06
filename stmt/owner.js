@@ -1732,14 +1732,14 @@ export const OWNER_JS = `
           catch(error){ tierAnswer.textContent=error.message; }
           tierPending=false;
         },true);
-        /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone. */
+        /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone.
+           Each new Accept is its own request; a retry is the button's retained request, which keeps the id it was sent under. */
         var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
-        var allPending=false, allAt=null;
+        var allPending=false;
         makerButton(tierSection,'Accept tier proposals',async function(send){
           if(allPending) return;
-          if(!allAt) allAt=new Date().toISOString();
           allPending=true;
-          try{ await send('/all/maker/inputs/tier-accept-all',{at:allAt}); allAt=null;
+          try{ await send('/all/maker/inputs/tier-accept-all',{at:new Date().toISOString()});
             allAnswer.textContent='Proposals sent for review. Held tiers were not moved.'; loadMaker(); }
           catch(error){ allAnswer.textContent=error.message; }
           allPending=false;
