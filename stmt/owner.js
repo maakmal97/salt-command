@@ -1630,6 +1630,24 @@ export const OWNER_JS = `
       },false).setAttribute('data-again',stage);
     });
   }
+  /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
+     goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */
+  function makerAgainAck(order){ return ['acknowledged','ready','done'].indexOf(order.status)>=0&&(order.again||[]).indexOf('ack')>=0; }
+  function makerAcceptAgain(card,order){
+    var route='/all/maker/orders/'+encodeURIComponent(order.id);
+    makerButton(card,'Preview Accept again',function(){
+      refs(route+'/preview',{}).then(function(result){
+        if(!card.isConnected) return;
+        var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
+        note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting it again.'));
+        makerReading(note,result);
+        var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
+        makerButton(card,'Accept again',function(){
+          makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.');
+        },true).setAttribute('data-accept-again','');
+      }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
+    },true).setAttribute('data-preview-again','');
+  }
   /* his quick replies, six at most, kept on this device under the Desk's own key; each is checked when it is sent */
   var MAKER_QUICK='saltQuickReplies';
   function makerQuick(){ try{ var a=JSON.parse(localStorage.getItem(MAKER_QUICK)||'[]'); return Array.isArray(a)?a.filter(function(x){ return typeof x==='string'&&x; }).slice(0,6):[]; }catch(e){ return []; } }
@@ -1977,6 +1995,7 @@ export const OWNER_JS = `
       var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
       card.appendChild(ownerLine);
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      var againAck=makerAgainAck(order);
       if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
         var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
@@ -2005,6 +2024,8 @@ export const OWNER_JS = `
             }
           }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
         },true);
+      }else if(againAck){
+        makerAcceptAgain(card,order);
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
@@ -2029,7 +2050,7 @@ export const OWNER_JS = `
           makerTap(order,'cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
         },false);
       }
-      if(order.status==='acknowledged'||order.status==='ready'){
+      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, on the book already */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
@@ -2047,7 +2068,7 @@ export const OWNER_JS = `
         },false);
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
-      if(order.status==='acknowledged'||order.status==='ready'){
+      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         var aq=makerField(card,'Amend units','number',order.qty), at=makerField(card,'Amend goods price (RM)','number',order.total), ad=makerField(card,'Amend delivery (RM)','number',order.delivery||0);
         [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
         makerButton(card,'Amend order',function(){
@@ -2067,6 +2088,7 @@ export const OWNER_JS = `
     (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){
       var card=makerCard(root); card.appendChild(el('h3','',order.id));
       card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
+      if(makerAgainAck(order)) makerAcceptAgain(card,order);
       makerAgain(card,order);
     });
     (makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).forEach(function(draft){
