@@ -52339,7 +52339,11 @@ await (async () => {
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
     ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "orders", "a yellow light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
-    ok(read("expLights().salt.light") === "yellow" && read("expLights().oil.light") === "green", "the card reads each book's own light off the engine");
+    /* 06 Oct 2026: oil's light was pinned green, which held only while the live book had oil on its shelf; v1030's count
+       emptied it and the check went red with nothing wrong. Each book is now held to the stated rule over its OWN shelf and
+       commitments (red when out, yellow when promised past the shelf, else green), and oil's figures must not be salt's. */
+    const lights = read("expLights()"), rule = (b) => b.shelf < 0.005 ? "red" : b.commit - b.shelf > 0.005 ? "yellow" : "green";
+    ok(lights.salt.light === "yellow" && !!lights.oil && lights.oil.commit !== lights.salt.commit && lights.oil.light === rule(lights.oil), "the card reads each book's own light off the engine");
     w.eval("EXPECTED={salt:'2099-01-01'};");
     ok(rows().length === 0, "and the row falls once a day ahead is set");
     w.eval("EXPECTED={salt:'2020-01-01'};");
