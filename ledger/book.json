@@ -69,7 +69,7 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 20
+      "stated": 0
     },
     "candy": {
       "qty": 0,
@@ -79,7 +79,7 @@
     "rice": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 37
+      "stated": 32
     },
     "spare": {
       "qty": 0,
@@ -90,9 +90,9 @@
   "STATED_STOCK": 1.25,
   "COUNT_ON": {
     "salt": "2026-10-03",
-    "oil": "2026-09-27",
-    "candy": "2026-09-27",
-    "rice": "2026-09-27",
+    "oil": "2026-10-06",
+    "candy": "2026-10-06",
+    "rice": "2026-10-06",
     "spare": null
   },
   "COUNTS": [
@@ -117,7 +117,10 @@
     {"product":"candy","date":"2026-09-27","qty":14,"was":15,"drift":-1},
     {"product":"rice","date":"2026-09-27","qty":74,"was":85,"drift":-11},
     {"product":"salt","date":"2026-09-29","qty":24,"was":26,"drift":-2},
-    {"product":"salt","date":"2026-10-03","qty":0,"was":2.25,"drift":-2.25}
+    {"product":"salt","date":"2026-10-03","qty":0,"was":2.25,"drift":-2.25},
+    {"product":"oil","date":"2026-10-06","qty":0,"was":20,"drift":-20},
+    {"product":"candy","date":"2026-10-06","qty":14,"was":14,"drift":0},
+    {"product":"rice","date":"2026-10-06","qty":32,"was":37,"drift":-5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -480,7 +483,8 @@
     "CZ5-TM",
     "CJ2-KUC",
     "CA6-CYB",
-    "CE5-SA-R"
+    "CE5-SA-R",
+    "CA6-CYB-R"
   ],
   "associates": [
     "CS6-BS",
@@ -490,7 +494,11 @@
     "CI4-OKR",
     "CE4-AD",
     "CR3-DAM",
-    "CE5-SA"
+    "CE5-SA",
+    "CA6-CYB"
+  ],
+  "partners": [
+    "CM4-TO"
   ],
   "INTRODUCTIONS": [
     {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
@@ -852,7 +860,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-05T22:42:02.888Z",
+  "QUEUE_COMMITTED": "2026-10-06T09:29:20.784Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1014,6 +1022,9 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1030 on 2026-10-06: the rice inventory held 32 against 37 on the roll, a drift of -5. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-10-06. <b>RICE COUNT DATED 06 OCT: 32 UNIT COUNTED AGAINST 37 ON THE BOOK, A DRIFT OF -5.</b> The desk counted by hand and the count wins, so stated rice becomes 32 and the count date moves from 27 Sep to 06 Oct. The gap books as shrinkage across every unit sold. The dossier gives no reason for it. Floors stay at 3.4 for 1 unit, 6.8 for 2 and 42.5 for 12.5, with the ask at 8 for 1 unit. Self-use moves from 12 to 17. The drafter flagged the 5 unit unaccounted for; the figures confirm the gap but cannot explain it. Nothing is left outstanding on the row.",
+      "COUNTED AT v1030 on 2026-10-06: the candy inventory held 14 against 14 on the roll, a drift of 0. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-06. <b>CANDY COUNT DATED 06 OCT: 14 UNIT COUNTED AGAINST 14 ON THE BOOK, A DRIFT OF 0.</b> The desk counted by hand and the count matches the ledger, so stated candy stays at 14 and only the count date moves from 27 Sep to 06 Oct. Nothing sits unaccounted for. Floors do not move: 42 for 1 unit, 84 for 2 and 525 for 12.5, with the ask at 60 for 1 unit. Self-use stays at 1. The drafter flagged that this is the first exact count since the last one, and the figures bear that out. Nothing is left outstanding on the row.",
+      "COUNTED AT v1030 on 2026-10-06: the oil inventory held 0 against 20 on the roll, a drift of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-06. <b>OIL COUNT DATED 06 OCT: 0 UNIT COUNTED AGAINST 20 ON THE BOOK, A DRIFT OF -20.</b> The desk counted by hand and the count wins, so stated oil becomes 0 and the count date moves from 27 Sep to 06 Oct. The gap books as shrinkage across every unit sold. The dossier gives no reason for it and none is offered here. Floors stay at 8 for 1 unit, 16 for 2 and 100 for 12.5, with the ask at 10 for 1 unit. Self-use moves from 124 to 144. The drafter flagged the 20 unit unaccounted for; the figures confirm the gap but cannot explain it. Nothing is left outstanding on the row.",
       "ROLLED AT v1026 (rice): 10 unit to CE4-CHE on 2026-10-06, so 47 less 10 is 37. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1025 (rice): 10 unit to CJ2-KUC on 2026-10-05, so 57 less 10 is 47. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1023 (rice): 2 unit to CN3-WM on 2026-10-05, so 59 less 2 is 57. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
