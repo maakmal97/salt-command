@@ -750,3 +750,20 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .railtheme button[aria-checked="true"]{background:var(--salt-slate-light);color:var(--salt-salt);}
 .railtheme button:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
+/* 06 Oct 2026: THE CHARTS' GRID AND THE MAP'S OWN STEPS, as tokens, so the script reads them at draw time (tcol() in the
+   master) and the charts and the map follow the theme. The identity holds no token for them. Night is the value the
+   desk drew before, to the pixel; Dawn and Dusk are Night moved by what the theme moves its ground and its steel; Day is
+   the same steps mixed over paper, pale to dark. To be promoted into Code/salt-ds, then pulled. */
+:root{
+  --desk-chart-grid:rgba(255,255,255,0.07);  /* the gridline: white on a dark ground */
+  --desk-map-0:#34454d;     /* the map's two quietest steps, under steel, brass and ember */
+  --desk-map-1:#56697a;
+  --desk-map-edge:#1c2628;  /* a district around the one opened */
+  --desk-map-name:#e6ebee;  /* an area's name, and a party's dot */
+  --desk-map-state:#6f8398; /* a state's outline */
+  --desk-map-void:#ffffff05; /* an area with nothing in it */
+  --desk-map-core:#ffffff08; /* a district on the place picker */
+}
+:root[data-time="dawn"]{--desk-map-0:#43545f;--desk-map-1:#687b8e;--desk-map-edge:#283339;--desk-map-name:#e8eaea;--desk-map-state:#8397ad;}
+:root[data-time="dusk"]{--desk-map-0:#455054;--desk-map-1:#6a7785;--desk-map-edge:#2b2e2c;--desk-map-name:#eae7e2;--desk-map-state:#8694a6;}
+:root[data-time="day"]{--desk-map-void:#1a161105;--desk-map-core:#1a161108;--desk-chart-grid:rgba(26,22,17,0.08);--desk-map-0:#b3babe;--desk-map-1:#8796a3;--desk-map-edge:#d4d5d3;--desk-map-name:#25211c;--desk-map-state:#687d90;}

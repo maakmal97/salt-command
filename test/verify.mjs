@@ -8287,7 +8287,7 @@ await (async () => {
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
-  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor='rgba(197,160,89,0.14)'"), "Chart.js is told once that figures are mono and hairlines are brass");
+  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor=tcol('brass',0.14)"), "Chart.js is told once that figures are mono and hairlines are brass");
   /* the built desk and the install surface carry it too */
   const built472 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(built472.includes("/* ==== END DESIGN desk ==== */") && built472.includes('aria-label="Salt crystal"'), "the built desk carries the layer and the mark");
@@ -8348,6 +8348,127 @@ await (async () => {
   /* the bar's colour: the build's default is obsidian, never the violet retired at v472 */
   const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color starts at obsidian; salt-time.js sets it to the theme's ground");
+})();
+
+section("v2 design: the charts and the map read the theme's tokens");
+await (async () => {
+  /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
+     which is what held Day back. They read tcol(), a token off <html> at draw time, and a theme change draws the part
+     showing again. Proved in the desk's own window with a recording Chart: at Night every colour is the literal it was
+     (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
+     token stubbed to a colour of its own no literal is drawn at all; Dawn, Dusk and a held Day draw their own; and a
+     theme change redraws without a call. Each check was proved red by a mutation of the master. */
+  const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
+    "rgba(111,174,151,0.35)", "rgba(142,162,182,0.45)", "rgba(142,162,182,0.55)", "rgba(197,160,89,0.5)", "rgba(197,160,89,0.55)",
+    "rgba(212,105,76,0.35)", "rgba(212,105,76,0.55)", "rgba(228,233,236,0.1)", "rgba(228,233,236,0.45)", "rgba(228,233,236,0.5)",
+    "rgba(228,233,236,0.55)", "rgba(242,244,245,0.4)", "rgba(242,244,245,0.66)", "rgba(255,255,255,0.07)"];
+  const norm = (c) => String(c).replace(/\s/g, "").replace(/rgba\((\d+),(\d+),(\d+),([0-9.]+)\)/, (m, r, g, b, a) => `rgba(${r},${g},${b},${+a})`).toLowerCase();
+  const PARTS = ["today", "forward", "receivables", "financials", "inventory", "sourcing", "pricing", "concentration", "network", "ledger", "analysis"];
+  const { w } = await omD(MD);
+  /* the library is a recording stub; its defaults are the shape chartTheme writes into */
+  w.eval(`window.__cfgs=[];window.Chart=function(c,cfg){window.__cfgs.push(cfg);this.destroy=function(){};};window.Chart.register=function(){};
+    window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}}};
+    window.__walk=function(o,out,d){if(d>12||o==null)return;if(typeof o==='string'){if(/^#[0-9a-f]{3,8}$/i.test(o)||/^rgba?\\(/.test(o))out.push(o);return;}
+      if(typeof o==='function')return;if(Array.isArray(o)){o.forEach(function(x){window.__walk(x,out,d+1);});return;}
+      if(typeof o==='object')Object.keys(o).forEach(function(k){if(k==='labels'&&typeof o.generateLabels==='function'){try{window.__walk(o.generateLabels(),out,d+1);}catch(e){}}window.__walk(o[k],out,d+1);});};
+    window.__ink=function(){var o=[];window.__cfgs.forEach(function(c){window.__walk(c.data,o,0);window.__walk(c.options,o,0);});return o;};`);
+  const drawAll = () => {
+    const seen = [];
+    for (const pr of ["salt", "oil"]) for (const p of PARTS) {
+      w.eval(`window.__cfgs=[];setProd('${pr}');recompute();switchTab('${p}');`);
+      seen.push(...JSON.parse(w.eval("JSON.stringify(window.__ink())")));
+    }
+    return seen.map(norm);
+  };
+  const setOf = (a) => [...new Set(a)].sort();
+  const T = (t) => w.eval(`window.saltTime.set('${t}')`);
+  const root = (k, v) => w.eval(`document.documentElement.style.setProperty('${k}','${v}')`);
+  const unroot = (k) => w.eval(`document.documentElement.style.removeProperty('--${k}')`);
+
+  T("night");
+  const nightSeen = drawAll();
+  ok(nightSeen.length > 300, `the eleven parts on two books draw their charts and every colour is read (${nightSeen.length} values)`);
+  const nightSet = setOf(nightSeen), want = setOf(NIGHT.map(norm));
+  ok(JSON.stringify(nightSet) === JSON.stringify(want),
+    `at Night every chart colour is the literal it was (foreign: ${nightSet.filter((c) => !want.includes(c)).join(" ") || "none"}; missing: ${want.filter((c) => !nightSet.includes(c)).join(" ") || "none"})`);
+  /* Chart.js's own defaults: text, border and the tooltip's glass */
+  const defs = () => JSON.parse(w.eval("JSON.stringify({c:Chart.defaults.color,b:Chart.defaults.borderColor,t:Chart.defaults.plugins.tooltip})"));
+  let dn = defs();
+  ok(norm(dn.c) === "rgba(242,244,245,0.66)" && norm(dn.b) === "rgba(197,160,89,0.14)" && norm(dn.t.backgroundColor) === "rgba(5,8,10,0.92)"
+    && norm(dn.t.borderColor) === "rgba(197,160,89,0.45)" && norm(dn.t.titleColor) === "#f2f4f5" && norm(dn.t.bodyColor) === "rgba(242,244,245,0.85)",
+    "and the library's defaults (text, border, the tooltip) are the Night values: " + JSON.stringify(dn));
+
+  /* every token stubbed to its own colour: nothing a chart draws may be a literal */
+  const STUB = { "salt-salt": "#0a0b01", "salt-brass": "#0a0b02", "salt-copper": "#0a0b03", "salt-verdigris": "#0a0b04", "salt-ember": "#0a0b05",
+    "salt-steel": "#0a0b06", "salt-product-salt": "#0a0b07", "salt-mist-light": "#0a0b08", "salt-brass-soft": "#0a0b09", "salt-obsidian": "#0a0b0a",
+    "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-spare": "#0a0b0f",
+    "desk-chart-grid": "rgba(1,2,3,0.07)" };
+  for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
+  const stubSeen = drawAll();
+  const foreign = setOf(stubSeen).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
+  ok(stubSeen.length === nightSeen.length && foreign.length === 0 && setOf(stubSeen).length >= 15, `with every token stubbed no chart draws a literal (${stubSeen.length} values; foreign: ${foreign.join(" ") || "none"})`);
+  ok(setOf(stubSeen).includes("rgba(1,2,3,0.07)") && setOf(stubSeen).some((c) => /^rgba\(10,11,2,/.test(c)), "the grid and the brass series are the stubbed tokens");
+  dn = defs();
+  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",
+    "and the tooltip and the text defaults follow them too: " + JSON.stringify(dn));
+  Object.keys(STUB).forEach(unroot);
+
+  /* Dawn, Dusk and a held Day draw their own */
+  T("dawn");
+  const dawnSeen = setOf(drawAll());
+  T("dusk");
+  const duskSeen = setOf(drawAll());
+  w.eval("document.documentElement.setAttribute('data-time','day')");
+  const daySeen = setOf(drawAll());
+  T("night");
+  ok(dawnSeen.includes("#e4a67c") && dawnSeen.includes("#f09576") && dawnSeen.includes("rgba(244,242,240,0.66)") && !dawnSeen.includes("#d4694c"),
+    `Dawn draws Dawn's brass, ember and salt (${dawnSeen.slice(0, 6).join(" ")}...)`);
+  ok(duskSeen.includes("#dba35f") && duskSeen.includes("#ef9372") && duskSeen.includes("rgba(246,240,232,0.66)") && !duskSeen.includes("#d4694c"),
+    "Dusk draws Dusk's brass, ember and salt");
+  ok(daySeen.includes("#8a5618") && daySeen.includes("rgba(26,22,17,0.08)") && !daySeen.includes("rgba(255,255,255,0.07)"),
+    "and Day, held back from the clock, has its own ink and a dark grid on paper");
+  /* a book's own hue stays its product token: candy's rose and rice's indigo do not move with the theme */
+  ok(duskSeen.includes("#7b86cc") && duskSeen.includes("#cf8fb4"), "the product hues are PRODUCTS.accent and do not move with the theme");
+
+  /* a change of theme draws the part showing again, with nobody calling it */
+  w.eval("window.__cfgs=[];setProd('salt');recompute();switchTab('financials');");
+  const before = JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm);
+  w.eval("window.__cfgs=[];");
+  T("dusk");
+  const after = JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm);
+  ok(before.includes("#c5a059") && after.length === before.length && after.includes("#dba35f") && !after.includes("#c5a059"),
+    `a theme change redraws the part showing in the new theme (${before.length} colours before, ${after.length} after)`);
+  /* and a part with no chart or map is not touched by it */
+  w.eval("switchTab('add');window.__cfgs=[];");
+  T("night");
+  ok(Number(w.eval("window.__cfgs.length")) === 0, "Enter, which draws no chart, is not redrawn by a theme change");
+
+  /* THE MAP: the fills and strokes read the tokens, the ground behind it and the legend too */
+  const mapInk = () => JSON.parse(w.eval(`(function(){var s=document.querySelector('.sec.on'),o=[];
+    [].forEach.call(s.querySelectorAll('svg *'),function(e){['fill','stroke'].forEach(function(a){var v=e.getAttribute(a);if(v&&v!=='none')o.push(v);});});
+    [].forEach.call(s.querySelectorAll('svg'),function(e){(e.getAttribute('style')||'').replace(/#[0-9a-f]{6}/gi,function(m){o.push(m);});});
+    [].forEach.call(s.querySelectorAll('.maplegend span span'),function(e){o.push(e.style.background);});return JSON.stringify(o);})()`)).map(norm);
+  const drawMap = () => { w.eval("setProd('salt');recompute();MAP_VIEW='*';MAP_PICK=null;switchTab('map');"); return mapInk(); };
+  const MAPN = ["#05080a", "#0b1215", "#34454d", "#56697a", "#6f8398", "#8ea2b6", "#a6afb5", "#c5a059", "#d4694c", "#e6ebee", "#ffffff05",
+    "rgb(142,162,182)", "rgb(197,160,89)", "rgb(212,105,76)", "rgb(52,69,77)", "rgb(86,105,122)"];
+  T("night");
+  const mapNight = drawMap(), fillsN = setOf(mapNight);
+  ok(mapNight.length > 40 && fillsN.every((c) => MAPN.includes(c)) && ["#34454d", "#56697a", "#6f8398", "#e6ebee", "#0b1215", "#05080a", "#ffffff05", "#a6afb5"].every((c) => fillsN.includes(c)),
+    `at Night the map is the colours it was: the steps, the states, the names, the ground (${fillsN.join(" ")})`);
+  const MSTUB = { ...STUB, "desk-map-0": "#0a0b10", "desk-map-1": "#0a0b11", "desk-map-edge": "#0a0b12", "desk-map-name": "#0a0b13", "desk-map-state": "#0a0b14", "desk-map-void": "#0a0b15", "desk-map-core": "#0a0b16" };
+  for (const [k, v] of Object.entries(MSTUB)) root("--" + k, v);
+  const mapStub = drawMap();
+  const mfor = setOf(mapStub).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
+  ok(mapStub.length === mapNight.length && mfor.length === 0, `with every token stubbed the map draws no literal (foreign: ${mfor.join(" ") || "none"})`);
+  Object.keys(MSTUB).forEach(unroot);
+  T("dusk");
+  const mapDusk = setOf(mapInk());
+  ok(["#455054", "#6a7785", "#8694a6", "#eae7e2", "#1c1512", "#120d0b", "#c3b3a5"].every((c) => mapDusk.includes(c)) && !mapDusk.includes("#34454d") && !mapDusk.includes("#0b1215"),
+    `a theme change redraws the map in Dusk's own steps (${mapDusk.join(" ")})`);
+  T("night");
+  ok(JSON.stringify(setOf(mapInk())) === JSON.stringify(fillsN), "and Night returns the map to what it was");
 })();
 
 section("v1022 hang: a tool that opens the desk and never closes it still exits");
@@ -14568,6 +14689,7 @@ await (async () => {
 
   const { openMaster: om30 } = await import("../tools/payload.mjs");
   const { w: w30 } = await om30();
+  w30.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd30 = (e) => JSON.parse(String(w30.eval("JSON.stringify(" + e + ")")));
   const sec30 = () => String(w30.eval("(document.querySelector('.sec.on')||{}).innerHTML||''"));
   try {
@@ -14916,6 +15038,7 @@ await (async () => {
      found. Each assertion was proved red by mutation. */
   const { openMaster: om35 } = await import("../tools/payload.mjs");
   const { w: w35 } = await om35();
+  w35.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd35 = (e) => JSON.parse(String(w35.eval("JSON.stringify(" + e + ")")));
   try {
     const row35 = (o) => JSON.stringify(Object.assign({ product: "salt", date: "2026-09-01", deliveredOn: "2026-09-01" }, o));
@@ -14969,6 +15092,7 @@ await (async () => {
      than waited on, and ticked by hand. The state is forced, never found. Each assertion was proved red by mutation. */
   const { openMaster: om36 } = await import("../tools/payload.mjs");
   const { w: w36 } = await om36();
+  w36.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd36 = (e) => JSON.parse(String(w36.eval("JSON.stringify(" + e + ")")));
   try {
     const row36 = (o) => JSON.stringify(Object.assign({ product: "salt", qty: 1, cost: 10, deliveredQty: 1 }, o));
@@ -15038,6 +15162,7 @@ await (async () => {
      red by mutation. */
   const { openMaster: om37 } = await import("../tools/payload.mjs");
   const { w: w37 } = await om37();
+  w37.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd37 = (e) => JSON.parse(String(w37.eval("JSON.stringify(" + e + ")")));
   try {
     const row37 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 10, deliveredQty: o.qty }, o, { cash: o.total, deliveredOn: o.date }));
