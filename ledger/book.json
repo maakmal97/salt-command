@@ -480,7 +480,8 @@
     "CZ5-TM",
     "CJ2-KUC",
     "CA6-CYB",
-    "CE5-SA-R"
+    "CE5-SA-R",
+    "CA6-CYB-R"
   ],
   "associates": [
     "CS6-BS",
@@ -490,7 +491,11 @@
     "CI4-OKR",
     "CE4-AD",
     "CR3-DAM",
-    "CE5-SA"
+    "CE5-SA",
+    "CA6-CYB"
+  ],
+  "partners": [
+    "CM4-TO"
   ],
   "INTRODUCTIONS": [
     {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},

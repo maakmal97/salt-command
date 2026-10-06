@@ -7341,9 +7341,12 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
+  if(d==='partner')return +F.toFixed(2);
   if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
     return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
   if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
@@ -7355,7 +7358,8 @@ function quoteGrid(C,P,d){
   const R=P.tierRule,G=gridOf(R);if(!G)return null;
   const qs=gridSizes(G);let ps;
   const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
-  if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
+  if(d==='partner')ps=qs.map(q=>quoteAt(q,C,P,d));
+  else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
@@ -7952,8 +7956,9 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","paidOn":"2026-09-21","note":"RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R"];
-const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R"];
+const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA","CA6-CYB"];
+const partners=["CM4-TO"];
 const INTRODUCTIONS=[
   {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
   {"by":"CJ4-OKR","customer":"CJ4-BJ","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
@@ -9325,7 +9330,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1028","d":"06 Oct 2026","t":"ANY QUANTITY AT AN AUTOMATIC PRICE, AND NEGOTIATE PRICE, ON THE COUNTER","n":["<b>Any quantity.</b> A customer types any quantity on the Counter and sees its price at once: each book's grid (salt 0.5 to 25 unit in quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10) is priced by the one engine rule, quoteAt, and sealed into their list at publish. The page reads the price and works nothing out. The stamp covers the grid; a Place off the step, over the max, or with no stamp is refused. Above the max the way in is Negotiate.","<b>The whole grid is walked, so the rate never rises with size.</b> This lowers rung prices and raises none: the stranger's 6.25 unit Set Price RM670 to RM660; named cards RM10 to RM20 lower at up to nine rungs (at 1 unit 33 of 41 accounts RM150 to RM140; at 3 unit none; at 12.5 unit 3 accounts RM1,210 to RM1,200). Where the floor binds the walk steps to the floor's own ten. Oil, candy and rice keep his typed rungs exactly; between rungs, the rung's rate times the size to the ringgit.","<b>Negotiate price.</b> One order, for themselves, may ask for a price, with a figure of their own if they want. It reaches him as Asked under Waiting on you, with the automatic price, cost, margin, floor, their drift and record. His offer is the goods alone, never under the floor, filed as his yes and open 48 hours; their Accept drafts the row at it and his yes approves it only on an exact match, else it waits under Approve. An open offer freezes the order. No thanks, or his withdrawal, closes the ask: the order stands at its listed price for his Accept as usual, or, past the grid, is cancelled. A take that finds no yes of his that fits queues its row to wait under Approve, never stranded. Two asks open an account at most, none while their payment waits or goods of theirs are overdue. The price stays on that one order: no board, drift or card moves. No account's amount owed moved."]}];
+const evolution=[{"v":"v1029","d":"06 Oct 2026","t":"A PARTNER PAYS COST, AND CA6-CYB IS AN ASSOCIATE","n":["<b>Partner.</b> A new standing, above Ambassador, held in the book's `partners` list (CM4-TO, a co-founder and CBDO's equal who is always there and has referred and resold to several customers). A partner pays cost: the floor itself, COGS times the size, to the sen, at every size on every book, with no profit and no rounding up to the ten. One rule, the engine's quoteAt and quoteGrid taking 'partner', read by the desk's card, the Counter's sealed list and grid, and the Worker's card at a size off the board. Delivery stays separate as on any order. Nobody else's price moved.","<b>CA6-CYB appointed an associate</b>, with its -R account on the roster; their Counter account already existed."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9476,7 +9481,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Oct 2026, 15:28 KL';
+const LAST_UPDATED='06 Oct 2026, 18:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -22076,9 +22081,11 @@ function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROF
    refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
    all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
    own page, and it is why the desk printed nothing for oil the day the tiers came off. */
+function isPartner(code){return typeof partners!=='undefined'&&partners.includes(ownerOf(code)||code);}
 function cardQuote(code,q,t){
   if(!(q>0))return null;
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
+  if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
   const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
   /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
      point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
