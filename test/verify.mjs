@@ -50163,6 +50163,11 @@ await (async () => {
   await (await import("./maker-order-controls.mjs")).run({ ok });
 })();
 
+section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
+await (async () => {
+  await (await import("./maker-accept-again.mjs")).run({ ok });
+})();
+
 section("Counter maker amends an agreed order after Accept: size, goods price and delivery");
 await (async () => {
   await (await import("./maker-amend.mjs")).run({ ok });
