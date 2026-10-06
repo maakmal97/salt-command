@@ -70,6 +70,7 @@
   is the levels his customers are actually on, and the prudent end of that range is the lowest
   level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
 - **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
+- **Partner** (v1029, his decision of 06 Oct 2026) pays cost: the floor itself, to the sen, at every size on every book, no profit and no ten-rounding. Above Ambassador; a co-founder's or CBDO's equal. `partners` in `ledger/book.json`; the engine's `quoteAt` and `quoteGrid` take `d` of `'partner'`, the desk's `cardQuote` (`isPartner`), the snapshot's `partners` and `drift`, and `tools/pricelist.mjs` and `src/orders.js` `quoteOff` pass it on. Not a Drift card level and no level a customer sees. `test/partner.mjs`.
 - **What the inventory is carried at is DERIVED, and it is not pricing** (his instruction of 26 Sep
   2026). Each book's stock, counted or walked, is allocated newest-first onto its received lots
   (units leave oldest first), and the rate is the units-weighted goods rate of those allocations,

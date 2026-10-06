@@ -134,6 +134,7 @@ export function priceList(code, book, pricing, now, supply) {
        still coming. A fixed ladder says so on its own rows, so the signal travels with the data
        rather than being looked up a second time here. */
     const fixedBoard = (snap.ladder || []).some((r) => r && r.fixed);
+    const partner = (snap.partners || []).includes(code);   // 06 Oct 2026, his decision: a partner pays cost on every book
     /* 05 OCT 2026, HIS DECISION: A DRIFT BOOK (salt's Set Price and drift) IS PRICED FROM THE DESK'S OWN CARDS, the snapshot's
        cardQuote for this customer at every size the board shows, which already carries their drift, the walk and the floor.
        Nothing is worked out here, and no level travels: the list says card. A customer with no card on it is coming soon. */
@@ -146,7 +147,7 @@ export function priceList(code, book, pricing, now, supply) {
          the book's min to its max, so the page quotes any quantity off the list and works nothing out. A snapshot carrying no
          drift for them (one taken before this) sends the board alone. No cost and no drift parameter travels, only prices. */
       const dr = snap.drift && Object.prototype.hasOwnProperty.call(snap.drift, code) ? snap.drift[code] : null;
-      const gridD = typeof dr === "number" ? PRICING_ENGINE.quoteGrid(C, P, dr) : null;
+      const gridD = typeof dr === "number" || dr === "partner" ? PRICING_ENGINE.quoteGrid(C, P, dr) : null;
       out.products.push(Object.assign({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
         basis: "card", tier: null, levels: null, sizes: rowsD }, gridD ? { grid: gridD } : {}));
       continue;
@@ -159,6 +160,7 @@ export function priceList(code, book, pricing, now, supply) {
          lost its 80 and 100 rungs while the printed size list still named them */
       if (!rung || !rung.prices || !rung.prices.length) return null;
       if (fixedBoard) {
+        if (partner) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, "partner") };
         const board = rung.prices[rung.prices.length - 1];
         return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
       }
@@ -175,7 +177,7 @@ export function priceList(code, book, pricing, now, supply) {
        to set up the order form, so the Order tab went blank, orders and Notifications with it. */
     if (!rows.length) { out.soon.push({ product: p, name }); continue; }
     /* 05 Oct 2026: a stated board's grid, the same for everybody, the engine's quoteGrid; a level-priced book has none */
-    const gridF = fixedBoard ? PRICING_ENGINE.quoteGrid(C, P, 0) : null;
+    const gridF = fixedBoard ? PRICING_ENGINE.quoteGrid(C, P, partner ? "partner" : 0) : null;
     out.products.push(Object.assign({
       product: p,
       name,

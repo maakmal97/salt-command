@@ -2813,7 +2813,7 @@ await (async () => {
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
+  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -17005,7 +17005,7 @@ await (async () => {
   try {
     const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
       + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0,offTier=0;"
-      + "roster.filter(function(c){return c.slice(-2)!=='-R';}).forEach(function(c){"
+      + "roster.filter(function(c){return c.slice(-2)!=='-R'&&!isPartner(c);}).forEach(function(c){"   /* v1029: a partner pays cost, off the ten by his decision */
       /* 23 Sep 2026: a stated board is carded to everybody, so only a tiered book is gated on the tier */
       + "  if(!TIER_RULE[p].fixed&&cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
       /* v671: the level is read at each size, because a band set holds a different level for a big order than a small one */
@@ -46087,6 +46087,7 @@ await (async () => {
   const pricing = (await readBook()).ledger.PRICING;
   /* 05 Oct 2026: every customer the desk cards, salt's drift cards and any book's held level */
   const lists = [...new Set([...Object.keys(pricing.tierOf || {}), ...Object.keys((pricing.byProduct.salt || {}).cards || {})])]
+    .filter((c) => !(book.partners || []).includes(c))   /* v1029: a partner pays cost, so is carded apart */
     .map((c) => priceList(c, book, pricing, new Date()));
   const fixed = lists.flatMap((L) => L.products.filter((p) => p.product !== "salt"));
   const same = (pr) => new Set(fixed.filter((p) => p.product === pr).map((p) => JSON.stringify(p.sizes))).size === 1;
@@ -46885,6 +46886,41 @@ await (async () => {
       "one Today render builds each book's restock plan and bare forecast at most once: " + JSON.stringify(v.n));
     ok(v.parts >= 15 && v.unstable.length === 0 && v.diff.length === 0,
       "every part of every view draws the same with the plan and the bare forecast kept for the render as built fresh: " + JSON.stringify(v));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("Perf: one render reads each customer's drift, and a book's signals, once, and every view draws as it did");
+await (async () => {
+  /* The Drift card asked driftOf 202 times a render for about 55 customers, and Analysis asked pxSignals 18 times; each is
+     kept for the render, the signals keyed like pxCost by the cost boardHeadroom moves mid-render. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var dn=driftOfNow,sn=pxSignalsNow,n={drift:0,pairs:{},signals:0};
+      driftOfNow=function(c,p){n.drift++;n.pairs[(ownerOf(c)||c)+'|'+(p||PROD)]=1;return dn.apply(this,arguments);};
+      pxSignalsNow=function(){n.signals++;return sn.apply(this,arguments);};
+      try{switchTab('today');n.drift=0;n.pairs={};switchTab('concentration');var dc=n.drift,pairs=Object.keys(n.pairs).length;
+        n.signals=0;switchTab('analysis');var sc=n.signals;}
+      finally{driftOfNow=dn;pxSignalsNow=sn;}
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
+      var memo=draw(),again=draw(),kd=window.driftOf,ks=window.pxSignals;
+      driftOf=function(c,p){return driftOfNow(c,p);};pxSignals=function(){return pxSignalsNow();};
+      var fresh;try{fresh=draw();}finally{driftOf=kd;pxSignals=ks;}
+      var h=(function(){setProd('salt');RENDER_MEMO={};try{var s=pxOver.cost,a=JSON.stringify(pxSignals());pxOver.cost=pxCost().repl+50;
+        var b=JSON.stringify(pxSignals()),bf=JSON.stringify(pxSignalsNow());pxOver.cost=s;
+        return {moved:a!==b,same:b===bf,back:JSON.stringify(pxSignals())===a};}finally{RENDER_MEMO=null;}})();
+      return {dc:dc,pairs:pairs,sc:sc,live:liveBooks().length,parts:parts.length,h:h,
+        diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];})};})())`));
+    ok(v.pairs >= 10 && v.dc === v.pairs,
+      "one Network lead render reads each customer's drift once a book: " + JSON.stringify({ reads: v.dc, pairs: v.pairs }));
+    ok(v.sc > 0 && v.sc <= v.live,
+      "one Analysis render reads each book's signals once, not once a quote: " + JSON.stringify({ signals: v.sc, live: v.live }));
+    ok(v.parts >= 15 && v.unstable.length === 0 && v.diff.length === 0,
+      "every part of every view draws the same with drift and signals kept for the render as read fresh: " + JSON.stringify({ parts: v.parts, diff: v.diff, unstable: v.unstable }));
+    ok(v.h && v.h.moved && v.h.same && v.h.back,
+      "inside one render a cost override moved mid-way reads its own signals, and moving it back reads the first: " + JSON.stringify(v.h));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -50448,6 +50484,10 @@ section("05 Oct 2026: any quantity at an automatic price, one rule over each boo
 await (async () => {
   await (await import("./any-quantity.mjs")).run({ ok });
 })();
+section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, nobody else's price moved");
+await (async () => {
+  await (await import("./partner.mjs")).run({ ok });
+})();
 section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes, their Accept or No thanks");
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
@@ -52550,7 +52590,7 @@ await (async () => {
     "paying on time counts from three settlements, and the orders count for nothing after sixty days without one");
   /* 6. THE DESK QUOTES EVERY NAMED CUSTOMER THEIR DRIFT at every size the board shows */
   const q6 = rd("(function(){setProd('salt');recompute();var C=pxCost(),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),bad=[],n=0,moved=0;"
-    + "tierCustomers().forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
+    + "tierCustomers().filter(function(id){return !isPartner(id);}).forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
     + "var x=PRICING_ENGINE.driftAt(q,C,P,d).p;if(cardQuote(id,q)!==x)bad.push([id,q,cardQuote(id,q),x]);});});return {n:n,moved:moved,bad:bad.slice(0,3)};})()");
   ok(q6.n > 200 && q6.moved > 20 && !q6.bad.length, "every named customer is quoted the Set Price moved by their own drift at every size, " + q6.moved + " of them off nought: " + JSON.stringify(q6));
   /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it */

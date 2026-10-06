@@ -41,7 +41,7 @@ export const LEDGER = {
      payable into it, which means a queued-but-unapproved cancellation would otherwise put a
      provisional refund into the extract and from there into the store. The census caught it. */
   customerRefunds: "BASE_REFUNDS",
-  roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
+  roster: "roster", associates: "associates", partners: "partners", PEOPLE: "PEOPLE",
   /* v615: who introduced whom where no row carries the referral stamp; a fact on his word */
   INTRODUCTIONS: "INTRODUCTIONS",
   /* v633: where each party is on the map, a point to 0.01 degrees filed by Add ID, Amend ID or a place entry; renamed with its code */
@@ -303,14 +303,14 @@ export function pricingSnapshot(w) {
       /* 05 Oct 2026 (any quantity at an automatic price): EACH CUSTOMER'S DRIFT on a drift book, the desk's own driftOf, so the
          price list's grid and the desk Worker's card at a size off the board are the engine's quoteAt on the same inputs the
          cards above were struck on. The rule travels in the policy (pxPolicy carries TIER_RULE, its grid with it). */
-      drift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
+      drift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id)){o[id]='partner';return;}var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards }, drift ? { drift } : {});
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, drift ? { drift } : {});
   }
 
   return {

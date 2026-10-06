@@ -799,9 +799,12 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
+  if(d==='partner')return +F.toFixed(2);
   if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
     return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
   if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
@@ -813,7 +816,8 @@ function quoteGrid(C,P,d){
   const R=P.tierRule,G=gridOf(R);if(!G)return null;
   const qs=gridSizes(G);let ps;
   const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
-  if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
+  if(d==='partner')ps=qs.map(q=>quoteAt(q,C,P,d));
+  else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
