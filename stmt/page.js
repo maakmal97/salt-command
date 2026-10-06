@@ -3347,6 +3347,7 @@ const CLIENT_JS = `
     /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
     if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return tw('hist.cash',{rm:rm(+m[1])});
     if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return tw('hist.closed',{a:Uq(+m[1],oUnit(o)), b:m[2]});
+    if((m=/^amended to ([0-9.]+) unit, ([0-9.]+) goods, ([0-9.]+) delivery$/.exec(n))) return tw('hist.amended',{a:Uq(+m[1],oUnit(o)), g:rm(+m[2]), d:rm(+m[3])});
     if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return tw('hist.'+m[2],{a:Uq(+m[1],oUnit(o))});
     if(x.method) return tw('hist.chose'+by,how);
     return n?tw('hist.withNote',{s:oWord(x.status,o,x.by), n:n}):oWord(x.status,o,x.by);

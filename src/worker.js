@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
@@ -364,7 +364,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset"
-    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.test(p))
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
@@ -648,7 +648,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
     return json(response);
   }
-  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move)$/.exec(p);
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate)$/.exec(p);
   if (orderMatch) {
     let body;
     try {
@@ -687,7 +687,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       } else {
         /* a handover, a close, cash, a Received or a move offered again carries its request id: a retry is answered from the first answer */
         const { rid, ...rest } = body;
-        const tap = () => ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[action](
+        const tap = () => ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[action](
           env, id, rest, "Counter Admin"
         );
         result = !rid ? await tap() : !env.SALT_LEDGER ? { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" }
@@ -1689,7 +1689,7 @@ export default {
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       return json(r, r.ok ? 200 : (r.status || 502));
     }
-    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again)$/.exec(p);
+    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again|restate)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
@@ -1709,7 +1709,7 @@ export default {
         } else {
           /* S11 11.12: Collected, Cash received and Received record his yes, then the site hears the move and the
              ledger is told in the request's tail, as any move of his is (v762) */
-          r = await ({ handed: handedOrder, cash: cashOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by);
+          r = await ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by);
           if (r.ok && r.preapproval && r.preapproval.spent === "applied") await afterApproval(env, ctx, [r.preapproval.draft]);
           if (r.ok) reconcileOnTap(env, ctx);
         }

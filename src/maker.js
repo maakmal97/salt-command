@@ -58,6 +58,7 @@ export function makerOrderFault(action, body) {
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
     again: ["stage", "rid"],
+    restate: ["qty", "total", "delivery", "rid"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"]
@@ -87,10 +88,12 @@ export function makerOrderFault(action, body) {
   if (body.claim !== undefined && (typeof body.claim !== "string" || !Number.isFinite(Date.parse(body.claim))))
     return "Claim must name its timestamp.";
   if (action === "accept" && body.hash === undefined) return "Accept needs the preview digest.";
+  if (action === "restate" && body.qty === undefined && body.total === undefined && body.delivery === undefined) return "Say which figure changes.";
+  if (action === "restate" && (body.qty !== undefined && !(body.qty > 0) || body.total !== undefined && !(body.total > 0))) return "A size and a price are above nothing.";
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
-  if (action === "again" && !["pay", "cash", "move", "cancel"].includes(body.stage)) return "Choose a stage to offer again.";
-  if (["notfound", "move", "handed", "again", "cash", "received"].includes(action)
+  if (action === "again" && !["pay", "cash", "move", "cancel", "amend"].includes(body.stage)) return "Choose a stage to offer again.";
+  if (["notfound", "move", "handed", "again", "cash", "received", "restate"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
     return "Send the action's immutable request id.";
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))

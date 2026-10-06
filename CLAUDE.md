@@ -49,7 +49,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      `ceilingX` times it. A sale carries `delivery`, typed per
      row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
      typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
-     delivery, the engine's `txOwed`**; nothing reads the total less the cash. **A trip of several
+     delivery, the engine's `txOwed`**; nothing reads the total less the cash. **Everything on an agreed order is
+     amendable after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the delivery charge,
+     each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Counter Admin and from
+     the Desk; the floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
+     ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
    - **SALT IS THE SET PRICE AND EACH CUSTOMER'S DRIFT** (Model B, his decision of 05 Oct 2026). Per
      size the floor, the ceiling (`ceilingX`, 3, times it) and the Set Price, the floor times

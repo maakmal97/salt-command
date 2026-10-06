@@ -493,6 +493,7 @@ export const EN = {
   "hist.recorded": "We recorded a payment of {rm}",
   "hist.cash": "We received {rm} in cash",
   "hist.closed": "Closed at {a} of the {b} ordered",
+  "hist.amended": "Amended to {a}, {g} for the goods and {d} delivery",
   "hist.delivered": "{a} delivered",
   "hist.collected": "{a} collected",
   "hist.chose": "You chose to pay",

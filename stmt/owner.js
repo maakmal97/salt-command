@@ -1557,7 +1557,7 @@ export const OWNER_JS = `
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
   }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
-  var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   function makerAgain(card,order){
     (order.again||[]).filter(function(stage){ return MAKER_AGAIN[stage]; }).forEach(function(stage){
       makerButton(card,'Offer the '+MAKER_AGAIN[stage]+' again',function(){
@@ -1916,6 +1916,20 @@ export const OWNER_JS = `
         makerButton(card,'Confirm received',function(){
           makerTap(order,'received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
         },false);
+      }
+      /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
+      if(order.status==='acknowledged'||order.status==='ready'){
+        var aq=makerField(card,'Amend units','number',order.qty), at=makerField(card,'Amend goods price (RM)','number',order.total), ad=makerField(card,'Amend delivery (RM)','number',order.delivery||0);
+        [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
+        makerButton(card,'Amend order',function(){
+          var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value), status=document.getElementById('makerReviewStatus');
+          if(q!==Number(order.qty)) body.qty=q;
+          if(t!==Number(order.total)) body.total=t;
+          if(d!==Number(order.delivery||0)) body.delivery=d;
+          if(body.qty!==undefined&&body.total===undefined) body.total=t;
+          if(!Object.keys(body).length){ if(status) status.textContent='Change a figure first.'; return; }
+          makerTap(order,'restate',body,'Amendment sent to the Desk for approval.');
+        },false).setAttribute('data-amend','');
       }
       makerAgain(card,order);
       makerOrderMoves(card,order);

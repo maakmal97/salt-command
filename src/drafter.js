@@ -1760,7 +1760,7 @@ async function sha(s) {
 }
 /** Which stage of a site order an entry is, by the status the reconcile gives it (src/orders.js). A close restates
  *  what was handed over (S11 11.9), so Collected's yes answers it. */
-export const STAGE_OF = { Pending: "ack", Payment: "pay", Handover: "move", Close: "move", Cancellation: "cancel" };
+export const STAGE_OF = { Pending: "ack", Payment: "pay", Handover: "move", Close: "move", Cancellation: "cancel", Amendment: "amend" };
 /** The pricing version a row was drafted against: the snapshot's own version, and a digest of the rest of it. */
 export async function pricingOf(book) {
   const p = book && book.pricing;

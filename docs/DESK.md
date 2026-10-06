@@ -387,6 +387,13 @@
   first choice under Who. On the laptop: `seed-vault.mjs --addr` (refused unless the passphrase
   opens the live names vault, and, short of `--force`, while the live places hold a code the file
   lacks or an entry with a later `at`) and `pull-vault.mjs --addr` over `10_Data\salt_addr.json`.
+- **An agreed order is amended after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the
+  delivery charge of an acknowledged or ready order, one Correction for approval (`restateOrder` in `src/orders.js`,
+  `POST /orders/<id>/restate`, the Counter's `/all/maker/orders/<id>/restate` under a request id). Refused: a
+  collection with a delivery charge, a size under what is handed over, a size change on an order closed short, a
+  figure under what is paid, a claim waiting, a total under the floor at the size, a row that cannot take what is on
+  its way (`rowRoom`), an earlier amendment not yet on the book. The board is never repriced; the order book's `restate`
+  event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
 - **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (`hereNow`, kept nowhere), else `_base`; to the

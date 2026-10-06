@@ -1044,6 +1044,71 @@ export async function cashOrder(env, id, body, by, now) {
   });
 }
 
+/** POST /orders/<id>/restate {qty, total, delivery}: his decision of 06 Oct 2026, that EVERYTHING ON AN AGREED ORDER IS AMENDABLE,
+ *  the size, the goods' price and the delivery charge. One Correction restating the row, for approval, the digest of what he
+ *  was shown; the floor holds at the size and the board is never repriced, the row cannot be taken under what is paid or on
+ *  its way to it (rowRoom, which the fold's payFault repeats), and one amendment is in flight at a time. */
+export async function restateOrder(env, id, body, by, now) {
+  const db = env.SALT_LEDGER;
+  const room = db ? await rowRoom(db) : null;
+  const book = db ? await readBook(db).catch(() => null) : null;
+  const earlier = db ? await db.prepare("SELECT id,status,committed_at FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all().catch(() => ({ results: [] })) : { results: [] };
+  const live = db ? await livePre(db, id, "amend").catch(() => null) : null;
+  return stageTap(env, id, body, by, now, "amend", (o, at) => {
+    if (!AGREED_ON_SITE.includes(o.status)) return { status: 409, error: "this order is " + o.status + ", so its figures are not amended" };
+    const num = (v) => typeof v === "number" && Number.isFinite(v);
+    const qty = body && body.qty !== undefined ? body.qty : +o.qty;
+    const total = body && body.total !== undefined ? body.total : +o.total;
+    const delivery = body && body.delivery !== undefined ? body.delivery : +(o.delivery || 0);
+    if (!num(qty) || !(qty > 0) || qty > 1000000) return { error: "the size has to be a figure above nothing" };
+    if (!num(total) || !(total > 0) || total > 1000000) return { error: "the goods' price has to be a figure above nothing" };
+    if (!num(delivery) || delivery < 0 || delivery > 1000000) return { error: "the delivery charge has to be a figure from nothing" };
+    if (delivery > 0 && o.mode !== "deliver") return { error: "a collection carries no delivery charge" };
+    const figs = { qty: +qty.toFixed(3), total: +total.toFixed(2), delivery: +delivery.toFixed(2) };
+    const was = { qty: +o.qty, total: +(+o.total).toFixed(2), delivery: +(+(o.delivery || 0)).toFixed(2) };
+    if (Math.abs(figs.qty - was.qty) < 0.0004 && figs.total === was.total && figs.delivery === was.delivery) return { status: 409, error: "that is what the order already says" };
+    if (figs.qty < (+o.moved || 0) - 0.0004) return { error: "the size cannot go under the " + o.moved + " already handed over" };
+    if (o.closed && Math.abs(figs.qty - was.qty) > 0.0004) return { status: 409, error: "the order was closed at what was handed over, so its size stays; amend the price or the delivery" };
+    if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
+    const owed = +(figs.total + figs.delivery).toFixed(2);
+    if (owed < (+o.paid || 0) - 0.004) return { status: 409, error: "they have paid " + rm(+o.paid || 0) + ", more than that comes to, and the book carries no refund for the difference" };
+    if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
+    /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
+    if (figs.qty !== was.qty || figs.total !== was.total) {
+      const fl = floorFor(book, o.product || "salt", figs.qty);
+      if (!fl || !fl.exact) return { status: 409, error: "no floor is known at " + figs.qty + " unit, so no price can be set on it" };
+      if (figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
+    }
+    /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is not lost by the new figure */
+    const r = room ? room(ledgerKeyOf(o), null) : null;
+    if (r) {
+      const paidRow = +(was.total + was.delivery - r.owes).toFixed(2);
+      if (owed < paidRow + r.on - 0.004) return { status: 409, error: "the row has " + rm(paidRow) + " paid and " + rm(r.on) + " more on its way, so it cannot come to " + rm(owed) };
+    }
+    if ((earlier.results || []).some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
+      return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
+    if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
+    const entry = amendEntry(o, o.code, figs, was, at);
+    entry.orderId = o.id;
+    return { entry, queueIt: true, site: { restate: figs }, shown: Object.assign({ was }, figs) };
+  });
+}
+/** The amendment as a Correction restating the row's size, the goods' price and the delivery charge. */
+export function amendEntry(order, code, figs, was, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const books = partyOnBook(order, code);
+  const said = ["qty", "total", "delivery"].filter((k) => Math.abs(figs[k] - was[k]) > 0.0004).map((k) => (k === "qty" ? "size " : k === "total" ? "goods RM " : "delivery RM ") + was[k] + " to " + figs[k]);
+  return {
+    at: at.toISOString(), type: "SELL", party: books, qty: figs.qty, total: figs.total, status: "Amendment",
+    raw: "Amended " + books + ", order " + order.id + ": " + said.join(", "),
+    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
+      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
+      date: klDate(at), qty: 0, total: 0, cash: 0, kg: 0,
+      fields: { qty: figs.qty, total: figs.total, delivery: figs.delivery },
+      note: "Amended after Accept for order " + order.id + ": " + said.join(", ") + "." }
+  };
+}
+
 /* ---- OFFERED AGAIN (S11 11.13, D6) ----------------------------------------------------------------
  * A row he rejects under Approve is written back onto its order (rejectedOnOrder), and the move that made it
  * is OFFERED AGAIN: the card's own tap for that stage (Accept, Collected, Received, Cash received) or
@@ -1051,8 +1116,8 @@ export async function cashOrder(env, id, body, by, now) {
  * rejected id is refused for good. It is his yes like any other tap, spent only if the fresh row equals what
  * he was shown. The rejected entry is the move: its figures and its day are kept, and only its moment is new.
  * GET /orders says which stages an order has to offer again (`again`), read off the drafts. */
-const STATUS_OF_STAGE = { ack: "Pending", pay: "Payment", cash: "Payment", move: "Handover", cancel: "Cancellation" };
-const STAGE_WORD = { ack: "pending row", pay: "payment", cash: "cash payment", move: "handover", cancel: "cancellation" };
+const STATUS_OF_STAGE = { ack: "Pending", pay: "Payment", cash: "Payment", move: "Handover", cancel: "Cancellation", amend: "Amendment" };
+const STAGE_WORD = { ack: "pending row", pay: "payment", cash: "cash payment", move: "handover", cancel: "cancellation", amend: "amendment" };
 async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids holds one */
   const rs = await db.prepare("SELECT id,status,decided_by,entry FROM draft WHERE entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + ids[0] + '"%').all();
   const want = new Set(ids);
@@ -1092,7 +1157,7 @@ export async function againOf(db, ids) {
 export async function againOrder(env, id, body, by, now) {
   const at = now || new Date();
   const stage = String((body && body.stage) || "");
-  if (!["pay", "cash", "move", "cancel"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move or cancel; a pending row is offered again by Accept, against its preview" };
+  if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, db = env.SALT_LEDGER;
@@ -1670,7 +1735,7 @@ export async function dropQueued(env, ats) {
  * marks say. THE MARK STAYS: cleared, the next pass would queue the same stage at the same moment
  * (stageAt), the drafter would skip it as decided, and the mark would be written again. Offering the
  * move again is a fold of its own. */
-const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Close: "closing correction", Cancellation: "cancellation entry" };
+const REJECTED_WHAT = { Pending: "pending row", Payment: "payment entry", Handover: "handover entry", Close: "closing correction", Cancellation: "cancellation entry", Amendment: "amendment entry" };
 export async function rejectedOnOrder(env, entry, at) {
   /* the entry names the order and never its account (the ledger's side knows codes), so the account
      is found among the site's orders, closed ones included */

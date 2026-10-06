@@ -17,9 +17,15 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : ["rid", "status", "note", "message", "noReply", "mode"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery"] : ["rid", "status", "note", "message", "noReply", "mode"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
+  if (action === "restate") {
+    const figs = ["qty", "total", "delivery"].filter((key) => body[key] !== undefined);
+    if (!figs.length) return "Say which figure changes.";
+    if (figs.some((key) => typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
+    return body.qty === 0 || body.total === 0 ? "A size and a price are above nothing." : "";
+  }
   if (action === "notfound")
     return typeof body.claim === "string" && Number.isFinite(Date.parse(body.claim))
       && typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0 ? "" : "Name the claim and its amount.";
@@ -78,7 +84,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
-    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
     || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words") && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
   const response = await env.DESK_MAKER.fetch(new Request("https://desk" + path, {
@@ -193,7 +199,7 @@ function internalOperation(path) {
   if (dm) return { kind: "draft-decision", id: dm[1], decision: dm[2] };
   const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again)$/.exec(path);
   if (om) return { kind: "order-action", id: om[1], action: om[2] };
-  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound)$/.exec(path);
+  const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound|restate)$/.exec(path);
   if (mm) return { kind: "order-move", id: mm[1], action: mm[2] };
   return null;
 }
@@ -382,6 +388,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
         if (texts.length) await deskCall(env, "/_internal/maker/words", "POST", { texts });
         let move = rest;
         if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
+        if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0) } };
         if (op.action === "notfound") {
           const waiting = (found.payments || []).find((p) => p && p.claim === "waiting" && p.at === rest.claim);
           if (!waiting) return json({ ok: false, error: "That claim is not waiting any more." }, 409);
@@ -395,6 +402,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       }
       const order = (await allOrders(env, true)).find((item) => item.id === op.id);
       if (!order) return json({ ok: false, error: "order not found" }, 404);
+      /* an amendment is a queued row: the Desk's own once-per-id guard answers its retry */
+      if (op.action === "restate") return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/restate", "POST", body));
       /* the order book keeps the request id: a retry that already landed is answered from it, other content refused */
       const seen = await deskSeen(env, order.u, op.id, rid);
       if (!seen.ok) return json({ ok: false, error: seen.error || "The order book could not be read." }, seen.status || 503);
