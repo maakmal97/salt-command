@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c2ce23b669145f35";
+var SALT_BUILD_ID="c1c44d482111b884";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4773,8 +4773,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
    Day is hidden while the desk holds it back (html[data-time-day="off"]). */
-.railtheme{display:flex;gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
-.railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
+.railtheme{display:flex;gap:2px;padding:4px 2px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
+.railtheme button{flex:1 1 0;min-width:var(--salt-tap);min-height:var(--salt-tap);padding:0 2px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
   color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
   transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}
 .railtheme button:hover{color:var(--salt-salt);}
@@ -4788,8 +4788,6 @@ html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
 <div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
 <div id="pbSheet"></div>
 <div class="wrap">
-<button class="fabtn orderbtn salt-orb salt-orb--raised" id="orderbtn" type="button" title="Enter an order"
-  aria-label="Enter an order">+</button>
 <div class="navveil" id="navveil"></div>
 <h2 class="sr-only">Salt Command: one dashboard for inventory, margin, receivables, cost-linked pricing and transaction entry.</h2>
 <div class="shell">
@@ -4809,7 +4807,7 @@ html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
       <button class="tab salt-rail__tab" data-s="price">Pricing</button>
       <button class="tab salt-rail__tab" data-s="people">Network</button>
       <button class="tab salt-rail__tab" data-s="book">Record</button>
-      <button class="tab salt-rail__tab" data-s="enter">Enter</button>
+      <button class="tab salt-rail__tab" data-s="enter">Orders</button>
     </div>
     <div class="railfoot salt-rail__foot">
     </div>
@@ -11852,6 +11850,23 @@ function commitRisks(){
         why:'at commit the traceable lot cost is assigned instead, so the margin on this sale will move'});});
   return out;
 }
+/* 06 Oct 2026, HIS INSTRUCTION: one row a party, and one row where several parties stand in the same breach or watch. */
+function mergeBoundaryRows(all){
+  const rows=[],byWho={};
+  all.forEach(x=>{
+    if(x.who==='stock'){rows.push({sev:x.sev,tags:[x.sev],rules:[x.rule],whos:[],what:[x.what]});return;}
+    const k=x.who;
+    if(!byWho[k]){byWho[k]={sev:x.sev,tags:[],rules:[],whos:[x.who],what:[]};rows.push(byWho[k]);}
+    const r=byWho[k];if(!r.tags.includes(x.sev))r.tags.push(x.sev);
+    r.rules.push(x.rule);r.what.push(x.what);});
+  const merged=[],byKey={};
+  rows.forEach(r=>{
+    const k=r.whos.length===1?r.tags.join('+')+'|'+r.rules.join('+')+'|'+r.what.join('+'):null;
+    if(k&&byKey[k]){byKey[k].whos.push(r.whos[0]);return;}
+    if(k)byKey[k]=r;merged.push(r);});
+  return merged.map(r=>({tags:r.tags.map(s=>bSevTag[s]||'').join(' '),rules:[...new Set(r.rules)].join(' &middot; '),
+    who:r.whos.length?r.whos.map(w=>ID(w)).join(', '):NIL,what:r.what.length>1?[...new Set(r.what)].join(' &middot; '):r.what[0]}));
+}
 const bSevTag={breach:'<span class="tag salt-status def">Breach</span>',watch:'<span class="tag salt-status unpaid">Watch</span>',risk:'<span class="tag salt-status salt-status--dashed prov">Commit risk</span>'};
 function boundaryPanel(b,r){
   b=b||boundaryScan();r=r||commitRisks();   /* v795: Rules hands in every book's register, merged */
@@ -11874,7 +11889,7 @@ function boundaryPanel(b,r){
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))+' retail / '+units(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.${capBorrowNote()}</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
-    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?NIL:ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
+    ${mergeBoundaryRows(all).map(x=>`<tr><td class="l">${x.tags} ${x.rules}</td><td class="l mono">${x.who}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 /* ============ THE WALK IS A MODULE (v338) ============
@@ -12162,12 +12177,50 @@ function eachBook(fn){const keep=PROD,out={};try{liveBooks().forEach(p=>{PROD=p;
 let RENDER_MEMO=null;
 function renderMemo(k,f){if(!RENDER_MEMO)return f();return (k in RENDER_MEMO)?RENDER_MEMO[k]:(RENDER_MEMO[k]=f());}
 function allActions(){return renderMemo('all',allActionsNow);}
+/* 06 Oct 2026, HIS INSTRUCTION: THE SAME PARTY IS ONE ROW, AND THE SAME WARNING IS ONE ROW. Within a severity, the items about one
+   party (a chase, a refund and a broken rule on the same code) read as a single row listing each, its figure the sum; items
+   that carry the identical sentence for different parties read as one row naming them. The party is the code in the title:
+   an item with no code, or with two, is never merged. The kinds of the parts stay on the row as parts, so the kind chart
+   still splits the figure by kind. */
+const ACT_PARTY=/\b[A-Z]{2}\d-[A-Z]{2,3}(?:-R)?\b/g;
+function actPartyOf(x){const m=String(x.title).replace(/<[^>]*>/g,'').match(ACT_PARTY);return m&&new Set(m).size===1?m[0]:null;}
+function mergeActs(list){
+  const out=[],by={};
+  list.forEach(x=>{const w=actPartyOf(x)?x.sev+'|'+actPartyOf(x):null;
+    if(!w){out.push(x);return;}
+    if(by[w])by[w].push(x);else{by[w]=[x];out.push(by[w]);}});
+  const sameParty=out.map(g=>{
+    if(!Array.isArray(g))return g;
+    if(g.length===1)return g[0];
+    const kinds=[...new Set(g.map(p=>p.kind))],books=[...new Set([].concat(...g.map(p=>p.books||[])))];
+    return Object.assign({},g[0],{kind:kinds.length===1?kinds[0]:'multi',
+      title:ID(actPartyOf(g[0]))+' &middot; '+g.length+' items',
+      why:g.map(p=>'<div class="actsub"><b>'+p.title+'</b> '+p.why+'</div>').join(''),
+      rm:+g.reduce((t,p)=>t+p.rm,0).toFixed(2),books:books,parts:g,
+      copy:g.map(p=>p.copy).filter(Boolean).join('\n')||undefined});
+  });
+  const outB=[],seenW={};
+  sameParty.forEach(x=>{
+    if(x.parts||!actPartyOf(x)){outB.push(x);return;}
+    const k=[x.sev,x.kind,x.why,(x.books||[]).join(',')].join('|');
+    if(seenW[k]){const g=seenW[k];g.parts.push(x);}
+    else{seenW[k]=Object.assign({},x,{parts:[x]});outB.push(seenW[k]);}});
+  return outB.map(x=>{
+    if(!x.parts||x.parts.length<2){if(x.parts)delete x.parts;return x;}
+    if(x.parts[0]!==x&&x.kind!=='multi'&&x.parts.every(p=>actPartyOf(p)&&!p.parts)){
+      const ps=x.parts;
+      return Object.assign({},ps[0],{title:ps.map(p=>p.title).join('; '),
+        rm:+ps.reduce((t,p)=>t+p.rm,0).toFixed(2),parts:ps,
+        copy:ps.map(p=>p.copy).filter(Boolean).join('\n')||undefined});
+    }
+    return x;});
+}
 function allActionsNow(){
   const per=eachBook(()=>actions()),ids=Object.keys(per),seen={},list=[];
   ids.forEach(p=>per[p].forEach(x=>{const k=[x.sev,x.kind,x.title,x.rm,x.why].join('|');
     if(seen[k])seen[k].books.push(p);else{seen[k]=Object.assign({},x,{books:[p]});list.push(seen[k]);}}));
   list.forEach(x=>{if(x.books.length===ids.length)x.books=[];});
-  return list.sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
+  return mergeActs(list).sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
 }
 /* each live book's position, for the band under the list */
 function bookBand(){
@@ -12183,7 +12236,7 @@ function tabToday(){
   /* A word, not a picture. The kind is scanning furniture, so it should read at a glance
      and then get out of the way; an emoji does the opposite and dates badly besides. */
   const KIND={inventory:'Inventory',buy:'Buy',collect:'Collect',pay:'Pay',rule:'Rule',
-              call:'Call',reconnect:'Revive',reward:'Reward',queue:'Queue',plan:'Plan'};
+              call:'Call',reconnect:'Revive',reward:'Reward',queue:'Queue',plan:'Plan',multi:'Several'};
   /* v273: TAB_LABEL was local to this function and the Whiteboard needed the same map for
      its own jump buttons. Hoisted to the top of the file rather than copied, because two
      label maps drift apart and the one that drifts is always the one nobody is looking at. */
@@ -12269,7 +12322,7 @@ function drawTodayCharts(){
                  reward:'#c5a059',inventory:'#6fae97',rule:'rgba(242,244,245,0.40)',call:'#8ea2b6',
                  queue:'#a6afb5',plan:'#d4694c'};
       const byKind={};
-      a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
+      a.forEach(x=>(x.parts||[x]).filter(p=>p.rm>0.009).forEach(p=>{byKind[p.kind]=(byKind[p.kind]||0)+p.rm;}));
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
       if(tdKindObj){try{tdKindObj.destroy();}catch(e){}tdKindObj=null;}
       if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}tdCoverObj=null;}
@@ -13479,7 +13532,7 @@ function tabMap(){
       <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap);padding-right:74px"')}</label>
       <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap);padding-right:74px"')}</label>
     </div>`:''}
-    ${Object.keys(vaultNames||{}).length?`<div style="margin-bottom:10px"><button class="vbtn salt-pill salt-pill--sm" onclick="mapPlaceFromVault()">Place parties from their recorded places</button></div>`:''}${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
+    ${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
     ${MAP_NET?`<div class="mapnetnote" style="margin-bottom:9px;font-size:12px;color:var(--mut)">Network: ${net.length} line${net.length===1?'':'s'} from ${netAssoc} associate${netAssoc===1?'':'s'} to the customers they brought in${netMiss.length?`; ${netMiss.length} not drawn, a party with no point`:''}.</div>`:''}
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#0b1215,#05080a);border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
@@ -15033,9 +15086,9 @@ function tabLedger(){
         else out.push(L);});
       return out;})();
     const penRid=ridOf(t);
-    const pen=(finalState!=='Cancelled'&&penRid&&!provOf(t))
-      ?`<button type="button" class="lpen" onclick="ledMenu(event,'${penRid}','${t.type}')" title="Update this ${t.type==='BUY'?'lot':'order'}" aria-label="Update ${code}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.6 13.4 1.9 14.1l.7-3.7L11.3 1.7zm-8 8.9-.4 2.2 2.2-.4 7.6-7.6-1.8-1.8-7.6 7.6z" fill="currentColor"/></svg></button>`
-      :provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
+    /* 06 Oct 2026: the Desk is a dashboard; a row is amended from Counter Admin, so no edit control is drawn here */
+    const pen=provOf(t)
+      ?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
     /* v465: every line is the same cells, so the table's columns hold from the heading down: E, step,
        date, type, product, party, then the four figures. A cell a line has no use for stays in place,
        empty. v466: each cell names its area, so a narrower screen can re-flow the line. The step cell
@@ -15932,11 +15985,15 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=provAge(s),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  /* 06 Oct 2026, HIS INSTRUCTION: A PARTY WITH SEVERAL OPEN ROWS IS ONE ROW. Sums add, the date is the oldest, and a table's total
+     is the sum of what it prints, so nothing moves but the row count. */
+  const foldBy=(rows,sums,extra)=>{const m={},o=[];rows.forEach(r=>{const g=m[r.id];if(!g){m[r.id]=Object.assign({},r,{n_rows:1});o.push(m[r.id]);return;}
+    sums.forEach(k=>{g[k]=+(g[k]+r[k]).toFixed(2);});if((r.date||'9999-99-99')<(g.date||'9999-99-99'))g.date=r.date;g.n_rows++;if(extra)extra(g,r);});return o;};
+  const cCash=foldBy(arList.map(s=>{const d=provAge(s),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};}),['g','n'],(g,r)=>{g.d=Math.max(g.d,r.d);g.over=g.over||r.over;g.rate=g.g>0?+(1-g.n/g.g).toFixed(4):0;})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date?'ordered '+r.date:'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
-  const cSalt=_S.map(s=>{const k=txDeferUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean).sort(oldest);
+  const cSalt=foldBy(_S.map(s=>{const k=txDeferUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean),['k','rm']).sort(oldest);
   const cSaltUnits=+cSalt.reduce((a,r)=>a+r.k,0).toFixed(2),cSaltRm=+cSalt.reduce((a,r)=>a+r.rm,0).toFixed(2);
   /* v456: AN UNDATED ROW SAYS SO, ON EVERY TABLE OF THIS PART. The pending table has printed
      `not dated` for an undated row since it was built, and the five beside it printed the raw
@@ -15953,13 +16010,14 @@ function tabReceivables(){
      and a line that is closed is history. The record itself stays in customerRefunds. */
   /* refunds carry no product: they are a customer-level obligation, so they show once, on the
      default book, rather than being duplicated under every heading */
-  const cRef=(PROD===DEFAULT_PROD&&typeof customerRefunds!=='undefined'?customerRefunds:[]).filter(r=>!r.paidOn);
+  const cRefRows=(PROD===DEFAULT_PROD&&typeof customerRefunds!=='undefined'?customerRefunds:[]).filter(r=>!r.paidOn);
+  const cRef=foldBy(cRefRows.map(r=>({id:r.party,party:r.party,date:r.since,since:r.since,amount:+r.amount})),['amount']);
   /* v708: AN AGE, like every table beside it. This was the one open figure on the page with no
      age against it, on the one thing he said to do immediately. */
   const cRefBody=cRef.map(r=>`<tr><td class="l mono">${ID(r.party)}</td><td class="l">${r.since||''}</td><td>${r.since?dAge(r.since)+'d':NIL}</td><td>${fmt0(r.amount)}</td></tr>`).join('');
-  const cRefTot=+cRef.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
+  const cRefTot=+cRefRows.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
   // Pending customer orders (agreed, nothing moved).
-  const cPen=_S.map(s=>{const k=txPendUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean).sort(oldest);
+  const cPen=foldBy(_S.map(s=>{const k=txPendUnits(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean),['k','rm']).sort(oldest);
   const cPenUnits=+cPen.reduce((a,r)=>a+r.k,0).toFixed(2),cPenRm=+cPen.reduce((a,r)=>a+r.rm,0).toFixed(2);
   const cPenBody=cPen.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td class="l">${r.date||'not dated'}</td><td>${units(r.k)}</td><td>${fmt0(r.rm)}</td></tr>`).join('');
   // ===== SUPPLIER SIDE =====
@@ -15967,14 +16025,14 @@ function tabReceivables(){
   /* an unpaid lot is a bill whether or not it has landed: excluding in-transit hid a
      real payable, and the panel opposite was simultaneously calling it "paid for" */
   /* v438: the same rule as supBills and billsOut, which is the point: it was a third spelling. */
-  const sCash=_B.filter(p=>poOwed(p)>0.009).map(p=>({id:p.supplier,date:p.date,rm:poOwed(p)})).sort(oldest);
+  const sCash=foldBy(_B.filter(p=>poOwed(p)>0.009).map(p=>({id:p.supplier,date:p.date,rm:poOwed(p)})),['rm']).sort(oldest);
   const sCashBody=sCash.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sCashTot=+sCash.reduce((a,p)=>a+p.rm,0).toFixed(2);
   // Salt suppliers owe you: paid (or part-paid) but not yet received (in transit).
   /* v438: a fourth spelling of the same predicate. poOpenUnits already answers nothing for a
      cancelled or defaulted lot (v417, v422), so this moves no figure; it removes the disagreement. */
-  const sSalt=_B.filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
-    .map(p=>({id:p.supplier,date:p.date,k:poOpenUnits(p),rm:+(poOpenUnits(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})).sort(oldest);
+  const sSalt=foldBy(_B.filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
+    .map(p=>({id:p.supplier,date:p.date,k:poOpenUnits(p),rm:+(poOpenUnits(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})),['k','rm']).sort(oldest);
   const sSaltBody=sSalt.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sSaltUnits=+sSalt.reduce((a,p)=>a+p.k,0).toFixed(2);
   // Refunds suppliers owe you: the recoverable default, aged + provisioned.
@@ -15989,8 +16047,8 @@ function tabReceivables(){
      book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
      oil buy would have printed under Salt and again under Oil. Latent only because nothing is
      pending today, which is exactly how the v272 duplicates survived as long as they did. */
-  const sPen=_B.filter(p=>p.pending&&!p.defaulted)
-    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})).sort(oldest);
+  const sPen=foldBy(_B.filter(p=>p.pending&&!p.defaulted)
+    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})),['k','rm']).sort(oldest);
   const sPenBody=sPen.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date||'not dated'}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sPenUnits=+sPen.reduce((a,p)=>a+p.k,0).toFixed(2);
   const sPenRM=+sPen.reduce((a,p)=>a+p.rm,0).toFixed(2);
@@ -16789,13 +16847,7 @@ function obsCard(o){
       ${(o.ev&&o.ev.length)?`<div class="obsev"><div class="obsevh">What it stands on</div><ul>${o.ev.map(e=>`<li>${e}</li>`).join('')}</ul></div>`:''}
       <div class="obsact">
         <button class="navlink" onclick="switchTab('${o.tab}')">${TAB_LABEL[o.tab]||o.tab} &rarr;</button>
-        ${hushed
-          ? `<span class="dsc">${o.st.act==='snooze'?`Snoozed to <b>${esc(o.st.until||'')}</b>`:'Dismissed'}${o.st.why?`: ${esc(o.st.why)}`:''}${o.st._q?' &middot; <span class="attn">queued, not yet filed</span>':''}</span>
-             <button class="obsbtn" onclick="obsAct('${esc(o.id)}','restore')">Bring back</button>`
-          : `<button class="obsbtn" onclick="obsAct('${esc(o.id)}','snooze7')">Snooze 7 days</button>
-             <button class="obsbtn" onclick="obsAct('${esc(o.id)}','snooze30')">Snooze 30</button>
-             <button class="obsbtn" onclick="obsAct('${esc(o.id)}','dismiss')">Dismiss</button>
-             <span class="dsc obsid">${esc(o.id)} &middot; Hush in Maker</span>`}
+        ${hushed?`<span class="dsc">${o.st.act==='snooze'?`Snoozed to <b>${esc(o.st.until||'')}</b>`:'Dismissed'}${o.st.why?`: ${esc(o.st.why)}`:''}</span>`:''}
       </div>
     </div>
   </details>`;
@@ -18315,9 +18367,7 @@ function driftCard(){
       const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand)+', auto '+driftSay(dr.auto):'auto '+driftSay(dr.auto));
       const why='good '+dr.G.toFixed(2)+', bad '+dr.B.toFixed(2)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
       const terms=dr.d>0.0001?'<br><span class="iref">Up barely moves half a unit or one: there the signal is terms or prepayment.</span>':'';
-      rows.push(`<tr><td class="l mono">${ID(id)}</td><td class="l"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px"><input id="driftIn_${id}_${p}" type="number" step="0.05" min="-1" max="1" inputmode="decimal" aria-label="${PRODUCTS[p].name} drift for ${codeOf(id)}" value="${dr.hand!=null?dr.hand:''}" placeholder="-1 to 1" style="min-height:var(--tap);min-width:44px;width:6em">
-        <button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px" onclick="driftSet('${id}','${p}')">Set</button>${dr.hand!=null&&!(w&&wv==null)?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px;background:transparent;color:var(--gold)" onclick="driftClear('${id}','${p}')">Clear</button>`:''}</div></td></tr>`);
+      rows.push(`<tr><td class="l mono">${ID(id)}</td><td class="l"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div></td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
   return `<div class="card"><div class="cardh">Drift <span class="sub">each customer's price against the Set Price; read off their record unless you set one</span></div>
@@ -18341,11 +18391,10 @@ function tierCard(){
     const bands=shown&&typeof shown==='object';
     const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
-    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
-  const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><b>${shown?(bands?'bands':shown):'not set'}</b></div>`;};
+  const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}</td><td class="l">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
   return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
-    ${open?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
     <div class="insight salt-insight">${held} of ${ids.length*tieredBooks().length} product tiers are held; ${PROD_IDS.filter(p=>TIER_RULE[p]&&TIER_RULE[p].fixed).map(p=>PRODUCTS[p].name).join(', ')} are one price for everybody; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
 }
 
@@ -19607,7 +19656,7 @@ function tabConcentration(){
      every card header with a sub, so it is not fixed from this view. */
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table><thead><tr><th class="l">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${cr.some(r=>r.free>=1-1e-9)?`<div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px">${cr.filter(r=>r.free>=1-1e-9).map(r=>`<button class="vbtn salt-pill salt-pill--sm" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} 1 unit for ${ID(r.id)}</button>`).join('')}</div>`:''}</div>`;
+    </div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
@@ -19806,8 +19855,7 @@ function redeemRebate(rid){if(!canRedeem(rid))return;const assoc=networkStats().
   else{queue.push(POSITION_ENGINE.redeemEntry({at:new Date().toISOString(),product:PROD,party:rid,date:today,
       qty:freeUnits,earned:rst.earned,applied,balance:held}));}
   /* the draft is made on arrival, so the Approve part is read again once the post has landed */
-  saveQueue();switchTab('approve');
-  qPost().then(ok=>{if(ok)setTimeout(()=>{if(curAddr==='approve')apLoad(true);},3000);}).catch(()=>{});}
+  saveQueue();qPost().catch(()=>{});}
 /* v585, HIS INSTRUCTION OF 11 SEP 2026: AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCED DELIVERY ORDER,
    UP TO 1 UNIT, AUTOMATICALLY, AND FOLDED INTO THE APPROVE TAB. So nobody presses anything: whenever Approve has
    read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped
@@ -19931,8 +19979,8 @@ function resellerCard(r){
     ?`Rated <b>${starStr(r.starN)}</b> on <b>${r.share.toFixed(1)}%</b> of all revenue.`
     :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue. The first &#9733; starts at ${starMin}%.`;
   const rebateLine=`<div class="insight salt-insight" style="margin-top:10px">${rated}</div>
-    ${rewardTbl}
-    ${freeUnits>0.009&&!held?`<div style="margin-top:9px"><button class="vbtn salt-pill salt-pill--sm" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${units(freeUnits)}</button></div>`:''}`;
+    ${rewardTbl}`;
+
   // ---- three uniform ledgers ----
   const buys=sales.filter(s=>s.total!=null&&s.customer===r.id&&s.rev!=='R2');
   /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
@@ -20500,29 +20548,28 @@ let ORD_OPEN=[],ordUnread='',ordNeedKey=false,ordBusy={},ordMsg='',ordTimer=null
 const ORD_WORD={placed:'Placed',acknowledged:'Acknowledged',ready:'Ready',done:'Completed',declined:'Declined',cancelled:'Withdrawn'};
 function tabOrders(){
   if(!cloudMode())return `<h1>Site orders</h1>
-  <div class="dsc dsclead">Customer orders are read on the cloud desk; this laptop copy has no relay to the statements site.</div>
-  <div class="card">
-    <div class="cardh">Where an order is decided <span class="sub">the phone, or /desk in the cloud</span></div>
-    <div class="insight salt-insight">An order placed on the statements site lands on the cloud desk's Site orders card the moment it is placed. Acknowledge it there, with the delivery charge where there is one, and the pending row is queued for Approve. Payment and handover follow separately, each queueing its own amendment against that row.</div>
-  </div>`;
-  /* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. One row a customer act, oldest first,
-     with its card beside it on the laptop and behind a tap on the phone; the notice folds below, where it
-     is set once a week and not read every visit. The switch to the closed ones stays under the list. */
-  return `<h1>Waiting on you</h1>
-  <div class="dsc dsclead" id="ordLead">Every customer act on the site, oldest first: a new order, a payment they say they made, cash to record, a question.</div>
+  <div class="dsc dsclead">Customer orders are read on the cloud desk; this laptop copy has no relay to the statements site.</div>`;
+  /* 06 Oct 2026, the owner's decision: the Desk is a dashboard. Every order, claim and thread is read here and decided in
+     Counter Admin; no tap on this list writes. The notice and the restock date are set there too. */
+  return `<h1>Site orders</h1>
+  <div class="dsc dsclead" id="ordLead">Read here, decided in Counter Admin: a new order, a payment they say they made, cash to record, a question.</div>
   <div class="ordgrid" id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
   <div id="ordMsg" role="status" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
-  <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
-  <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it. Setting one wakes every phone on the site.</div>
-    <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
-    <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
-    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
-  <details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
-  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as Expected by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
-    <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button></div>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
+}
+/* the read-only card: the order's figures and its thread, and where it is decided */
+function ordRead(o){
+  const who=o.code?codeOf(o.code):'unmapped '+esc(o.u),kind=o.kind==='account'?'Sent against the account':o.kind==='thread'?'Chat':(ORD_WORD[o.status]||o.status);
+  const msgs=(o.msgs||[]).map(m=>`<div class="dsc" style="margin-top:6px"><b>${m.by==='desk'?'You':who}</b> <span style="color:var(--dim)">${ordWhen(m.at)}</span><br>${esc(m.text||'')}</div>`).join('');
+  const line=o.kind==='thread'?'':ordWhat({kind:o.kind==='account'?'paid':'other',o});
+  const money=(o.kind==='account'||o.kind==='thread')?'':`<p class="dsc">Paid ${fmt(+o.paid||0)}, ${units(+o.moved||0)} of ${units(+o.qty||0)} handed over.</p>`;
+  return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
+    <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(kind)}${o.at?', '+ordWhen(o.at):''}</span></div>
+    ${line?`<p class="ordline">${line}</p>`:''}${money}
+    <div class="ordthr">${msgs}</div>
+    <p class="salt-approve__reason">Decided in Counter Admin.</p>
+  </div>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
    ones since v499 and, since v752, any whose last line is the customer's; a question about an order
@@ -21388,7 +21435,7 @@ function ordWhat(a){const o=a.o;
   if(a.kind==='paid'){const cw=ordClaims(o);
     if(cw.length)return 'Says '+fmt(+cw[0].amount||0)+' sent'+(cw[0].method?' by '+esc(cw[0].method)+(cw[0].account?' via '+esc(cw[0].account):''):'')+'. Received or Not found.';
     const p=(o.payments||[]).filter(x=>x&&x.by!=='desk'),l=p[p.length-1];
-    return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits under Approve.';}
+    return 'Says '+fmt(l?+l.amount||0:+o.paid||0)+' paid'+(o.method?' by '+esc(o.method)+(o.account?' via '+esc(o.account):''):'')+'. Its row waits in Counter Admin.';}
   if(a.kind==='asked'){const t=String(o.msgs[o.msgs.length-1].text||'');return '&ldquo;'+esc(t.length>90?t.slice(0,90)+'...':t)+'&rdquo;';}
   return units(+o.qty||0)+' '+esc(o.product||'salt')+', '+fmt(+o.total||0)+', '+esc(ORD_WORD[o.status]||o.status);}
 function ordRow(a,cur){const o=a.o,K=ORD_KIND[a.kind]||(o.kind==='thread'?{w:'Chat',tone:'mist',act:'Open'}:{w:ORD_WORD[o.status]||o.status,tone:'mist',act:'Open'});
@@ -21441,7 +21488,7 @@ function ordDraw(){
       ${chats.length?`<div class="salt-eyebrow ordrest">Chat</div><div class="ordrows">${chats.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
     </div>
     <div class="ordpane"><button type="button" class="salt-ghost ordback" data-back="1">&lsaquo; Waiting on you, ${acts.length}</button>
-      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordCard(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
+      ${ORD_OPEN.filter(Boolean).map(o=>{const c=ordRead(o);return o.id===sel?c:c.replace('<div class="salt-approve ordcard"','<div hidden class="salt-approve ordcard"');}).join('')}</div>`;
     selO=ORD_OPEN.find(o=>o&&o.id===sel)||null;
   }
   box.querySelectorAll('input[data-fee],input[data-hand],input[data-say],input[data-why],input[data-cashamt],input[data-price]').forEach(i=>{const k=ordField(i);
@@ -22811,7 +22858,7 @@ function tabPricing(){
           const fl=floorTotal(qq,null,{collects:true});
           return `<tr>
             <td class="l">${units(qq)}</td>
-            <td><label style="display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin:0;cursor:pointer"><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)" style="width:20px;height:20px"></label></td>
+            <td>${shown?'Printed':'Off'}</td>
             <td class="mono">${ask!=null?fmt(ask):NIL}</td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
@@ -22822,12 +22869,8 @@ function tabPricing(){
         <!-- round 5: was "the derived board", which the prefill stopped being the day a stated
              price won: it is priceLadder's ask, stated where he has stated. "As it stands" is
              true on both books; the reset button below still says derived because reset IS. -->
-        <div id="shOut" style="margin-bottom:8px"><div class="insight salt-insight">Untick a size to take it off the board, then <b>Make it the house board</b>.</div></div>`;})()}
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="vbtn salt-pill salt-pill--sm" style="border-color:var(--acc)" onclick="shQueueHouse(this)">Make it the house board</button>
-        <button class="vbtn salt-pill salt-pill--sm" onclick="shReset()">Put every size back</button>
-      </div>
-      <div class="insight salt-insight" style="border-left-color:var(--gold)"><b>Taking a size off goes through the queue like a trade: drafted, approved and folded before it is the board.</b></div>
+        <div id="shOut" style="margin-bottom:8px"><div class="insight salt-insight">Sizes are chosen from Counter Admin; this is what the board prints now.</div></div>`;})()}
+      <div class="insight salt-insight" style="border-left-color:var(--gold)"><b>A size is taken off from Counter Admin, and goes through approval like a trade before it is the board.</b></div>
       <div class="insight salt-insight">A size taken off stays priceable at the counter and off a quote; it simply stops being printed.</div>
     </details>
     </div>`;})()}
@@ -25428,7 +25471,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,orders:tabOrders};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -25444,7 +25487,7 @@ const VIEWS=[
   {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
   {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']},   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
-  {id:'enter', name:'Enter',            lead:'add',           parts:['approve','orders','plans']}
+  {id:'enter', name:'Orders',           lead:'orders',        parts:['plans']}
 ];
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
 const PART_Q={today:'what needs doing, ranked by the money at stake',
@@ -25471,7 +25514,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();expLoad();}, plans:()=>hushLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), orders:()=>{ordLoad();}, plans:()=>hushLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
@@ -25782,8 +25825,6 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
       if(t)try{t.focus();}catch(e){}}
   };
   b.onclick=()=>set(!document.body.classList.contains('navopen'));
-  const ob=document.getElementById('orderbtn');
-  if(ob)ob.onclick=()=>{set(false);ledNew();};
   v.onclick=()=>set(false);
   /* v684: when the menu layout ends with the menu open (a window widened, a keyboard docked, so the pointer is no
      longer coarse), it closes, or the frost would stay over a rail that has no button to take it away */
@@ -25942,7 +25983,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask t
      and read nothing. They run here instead, once the answer is in; the part on screen is opened again
      so it draws the cloud's card. */
   if(!cloudMode())return;
-  if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
+  if(curAddr==='orders'||curAddr==='enter')switchTab(curAddr);
   /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
      write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
   if(saltWriteKey()){apLoad(true);ordLoad(true);expLoad(true);hushLoad(true);}});}catch(e){}

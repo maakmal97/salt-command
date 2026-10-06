@@ -177,6 +177,7 @@
 ## The desk
 
 - **A dashboard, not a maker** (his decision of 06 Oct 2026): every view reads and none writes. Enter is the read-only Site orders list (`ordRead`), pointing to Counter Admin; the Approve page, the entry forms, the order cards' taps and the order button are removed, and the Worker's write routes remain for the bridge. The suite taps every button of every view and asserts no queued entry and no POST.
+- **Restock date and a rejected entry are Counter Admin's** (/all/maker/expected, and Re-enter on the drafts route through makerReenterSeed); Today, Boundaries and the Order book read one row a party.
 - **Counter maker bridge**: the owner works in Salt Account's Maker place. `/all/maker/*` is
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
