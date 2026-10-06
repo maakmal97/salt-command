@@ -1054,9 +1054,8 @@ export const OWNER_JS = `
         makerClear(pending.path);pending=null;cancel.hidden=true;return result;
       },function(error){
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
-        if(error.status===400&&path==='/all/maker/inputs/tier-accept-all'){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
-        if(error.status===400&&path==='/all/maker/inputs/hush'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
           pending=null;
