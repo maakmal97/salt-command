@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9e971cde276c060b";
+var SALT_BUILD_ID="597907e58c1d9d64";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9367,7 +9367,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1026","d":"06 Oct 2026","t":"TWO SALES TO CE4-CHE: SALT PAID BUT NOT YET HANDED OVER, RICE PAID AND COLLECTED","n":["<b>FOLDED: TWO NEW SALES TO CE4-CHE DATED 06 OCT.</b> Salt, 2.5 unit for RM240, was paid in full but no unit has moved, so it stays open. Rice, 10 unit for RM60, was paid and collected on the day. Both were approved by the desk. Neither draws a lot or changes the cost basis.","<b>UNUSUAL: THE RICE RATE HAS NO HISTORY.</b> CE4-CHE has no committed rice order to compare against. The rice shelf rolls by 10 unit. Salt stock stays at 1.25 unit, since none was handed over."]}];
+const evolution=[{"v":"v1027","d":"06 Oct 2026","t":"GROUP ORDERS ON THE COUNTER; HUSHES FROM COUNTER ADMIN","n":["<b>Group orders (Pool B1 to B7).</b> He opens a group order from Counter Admin; customers see it on Home and join through the usual check, each at their own price, collect only. Only his Close shuts it: Close previews and accepts each joined order, and a failed accept is kept and retried alone. Opening wakes nobody; Close wakes each joiner once. The test accounts show one open and joined and one closed. Nothing prices outside the engine.","<b>A5.</b> Counter Admin hushes a tip the Desk is showing: snooze 7 or 30 days, or dismiss. The hushes live in one store both surfaces read, never a queue entry, a draft or a fold, and the Desk's own route refuses what Counter Admin refuses. Nothing prices.","<b>Perf 1.</b> Received on an order reads the payments on their way once, not twice; the room it gives is unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9518,7 +9518,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Oct 2026, 06:46 KL';
+const LAST_UPDATED='06 Oct 2026, 14:19 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

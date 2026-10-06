@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1027",
+  "d": "06 Oct 2026",
+  "t": "GROUP ORDERS ON THE COUNTER; HUSHES FROM COUNTER ADMIN",
+  "n": [
+   "<b>Group orders (Pool B1 to B7).</b> He opens a group order from Counter Admin; customers see it on Home and join through the usual check, each at their own price, collect only. Only his Close shuts it: Close previews and accepts each joined order, and a failed accept is kept and retried alone. Opening wakes nobody; Close wakes each joiner once. The test accounts show one open and joined and one closed. Nothing prices outside the engine.",
+   "<b>A5.</b> Counter Admin hushes a tip the Desk is showing: snooze 7 or 30 days, or dismiss. The hushes live in one store both surfaces read, never a queue entry, a draft or a fold, and the Desk's own route refuses what Counter Admin refuses. Nothing prices.",
+   "<b>Perf 1.</b> Received on an order reads the payments on their way once, not twice; the room it gives is unchanged."
+  ]
+ },
+ {
   "v": "v1026",
   "d": "06 Oct 2026",
   "t": "TWO SALES TO CE4-CHE: SALT PAID BUT NOT YET HANDED OVER, RICE PAID AND COLLECTED",
