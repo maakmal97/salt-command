@@ -50608,6 +50608,10 @@ section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
 })();
+section("06 Oct 2026: a clipped line never ends on half an emoji");
+await (async () => {
+  await (await import("./clip-text.mjs")).run({ ok });
+})();
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });

@@ -58,7 +58,7 @@
 import { PAY_ACCOUNTS } from "./pay.js";
 import { wakeCustomer } from "./push.js";
 import { sessKey } from "./signin.js";
-import { refusal } from "./words.js";
+import { refusal, clip } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
 
@@ -112,7 +112,7 @@ export const NOTE_MAX = 140;
 export const LAST_SAID = "last-said";
 /* one reader for both: collapsed to single spaces, trimmed, cut to length. Whitespace is where a
    long silent block hides, and a line drawn on the page has to be one line. */
-export const cleanMsg = (s, max) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, max);
+export const cleanMsg = (s, max) => clip(String(s == null ? "" : s).replace(/\s+/g, " ").trim(), max);
 /* their own lines, which is what the cap counts */
 export const saidBy = (o, who) => ((o && o.msgs) || []).filter((m) => m && m.by === who).length;
 
@@ -560,10 +560,10 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   if (ask && body.propose !== undefined && body.propose !== null && (!isNum(body.propose) || !(body.propose > 0) || body.propose > 1000000)) return refusal("askFigure");
   if (ask && body.forFriend === true) return refusal("askFriend");
   if (ask && (body.sheet || body.pool !== undefined)) return refusal("askSheet");
-  const week = String(body.week || "").slice(0, 40);
+  const week = clip(body.week || "", 40);
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
-  const place = String(body.place || "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const place = clip(String(body.place || "").replace(/\s+/g, " ").trim(), 60);
   if (mode === "deliver" && place.length < 2) return refusal("placeWhere");
   /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
      friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
@@ -792,7 +792,7 @@ export function decideFix(order, f, at) {
   } else if (f.unpay !== true) return { error: FIX_REFUSED + "a fix restates a line or takes it back", status: 400 };
   else fix.unpay = true;
   if (f.unmove === true || f.cancel !== undefined) {
-    const note = String(f.cancel || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const note = clip(String(f.cancel || "").replace(/\s+/g, " ").trim(), 120);
     if (!fix.unpay || f.unmove !== true || !note) return { error: FIX_REFUSED + "an order is cancelled by a fix only with its line and its handover taken back, and his reason", status: 400 };
     if ((+order.paid || 0) - line.amount > 0.004 || (+order.claimed || 0) > 0.004) return { error: FIX_REFUSED + "money would still be on it: that is a cancellation for the desk's own Cancel", status: 409 };
     fix.unmove = true; fix.cancel = note;
@@ -1617,7 +1617,7 @@ export function decidePoolJoin(u, pool, body, mine, at, digest, by = "customer")
 export function decidePoolClose(pool, body, at) {
   if (!pool) return Object.assign(refusal("poolNone"), { status: 404 });
   const left = body && Array.isArray(body.left) ? body.left.slice(0, 200).filter((x) => x && OID_SHAPE.test(String(x.id || "")))
-    .map((x) => ({ id: String(x.id), why: String(x.why || "").replace(/\s+/g, " ").trim().slice(0, 200) })) : null;
+    .map((x) => ({ id: String(x.id), why: clip(String(x.why || "").replace(/\s+/g, " ").trim(), 200) })) : null;
   if (pool.state === "open") return { ev: Object.assign({ kind: "pclose", at }, left ? { left } : {}) };
   return left ? { ev: { kind: "pclose", at, left, again: true } } : { none: true };
 }

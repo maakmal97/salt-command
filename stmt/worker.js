@@ -49,7 +49,7 @@ import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
-import { refusal } from "./words.js";
+import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
@@ -913,9 +913,9 @@ async function readBulletin(env) {
   } catch (e) { /* an unreadable notice is no notice */ }
   return { lines: [], mode: "run", at: null };
 }
-function checkBulletin(body) {
+export function checkBulletin(body) {
   const lines = (Array.isArray(body.lines) ? body.lines : []).filter((s) => typeof s === "string")
-    .map((s) => s.replace(/\s+/g, " ").trim().slice(0, 120)).filter(Boolean).slice(0, 8);
+    .map((s) => clip(s.replace(/\s+/g, " ").trim(), 120)).filter(Boolean).slice(0, 8);
   return { lines, mode: body.mode === "change" ? "change" : "run" };
 }
 const DESK_WAITING = "desk-waiting";
