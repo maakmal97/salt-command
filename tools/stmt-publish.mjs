@@ -183,13 +183,24 @@ function deskWrangler(args, opts = {}, run = execFileSync) {
    substring test, and this key has been wrong in exactly that quiet way for a week.
    Exported so it can be driven against the real store by hand, on a throwaway key, which is the
    only place it can be proved: the suite reaches no network and --dry never writes. */
+/* KV is eventually consistent, so a desk key that does not read back is read again after each wait
+   (run 37338957851 went red on one stale read); only one still wrong after the last is a failure. */
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+export function deskReadBack(key, want, run = execFileSync, sleep = sleepSync, waits = ACCOUNT_READBACK_WAITS_MS) {
+  for (let i = 0; ; i++) {
+    let got = "";
+    /* a missing key exits non-zero, which throws; that is a miss, not an error to report */
+    try { got = String(deskWrangler(["kv", "key", "get", key, "--remote", "--binding", "SALT_QUEUE"], { stdio: ["ignore", "pipe", "ignore"] }, run)); }
+    catch (e) { got = ""; }
+    if (got.replace(/^\uFEFF/, "").trim() === want) return true;
+    if (i >= waits.length) return false;
+    console.log("::warning::" + key + " did not read back yet; reading it again in " + Math.round(waits[i] / 1000) + "s (KV is eventually consistent)");
+    sleep(waits[i]);
+  }
+}
 export function deskPut(key, file, what, run = execFileSync) {
   deskWrangler(["kv", "key", "put", key, "--path", file, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" }, run);
-  let got = "";
-  /* a missing key exits non-zero, which throws; that is the failure, not an error to report */
-  try { got = String(deskWrangler(["kv", "key", "get", key, "--remote", "--binding", "SALT_QUEUE"], { stdio: ["ignore", "pipe", "ignore"] }, run)); }
-  catch (e) { got = ""; }
-  if (got.replace(/^\uFEFF/, "").trim() !== readFileSync(file, "utf8").trim()) {
+  if (!deskReadBack(key, readFileSync(file, "utf8").trim(), run)) {
     console.error("::error::wrangler reported writing " + key + " to the desk's store and it does not read back. "
       + "The desk cannot name an account on an order, and the board sheet's QR is not drawn. "
       + "Check nothing in cloud-commit.yml deletes it after this step.");
