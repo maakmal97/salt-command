@@ -1312,7 +1312,7 @@ export const OWNER_JS = `
     };
     offerLoad();
     var editor=el('section','maker-input');editor.appendChild(el('h3',null,'Amend a ledger row'));
-    editor.appendChild(el('p','msg','Correction restates typed fields, the order code included, on any row that is not cancelled; a defaulted row takes a Correction only. Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose and reviving a cancelled row stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
+    editor.appendChild(el('p','msg','Correction restates typed fields, the order code included, on any row that is not cancelled (a cancelled row is revived below); a defaulted row takes a Correction only. Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose and reviving a cancelled row stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total+(row.defaulted?' · Defaulted':'')};});
@@ -1382,6 +1382,22 @@ export const OWNER_JS = `
     },true);
     editorButton.disabled=!rows.length;
     if(!rows.length)editStatus.textContent='No ledger row is available.';
+    var revive=el('section','maker-input');revive.appendChild(el('h3',null,'Revive a cancelled row'));
+    revive.appendChild(el('p','msg','Puts a cancelled order back on the book: cancelled off and its date cleared, as one Correction for approval. Only a row with nothing paid and nothing moved is offered; a paid cancel is a refund, closed by hand.'));
+    parent.appendChild(revive);
+    var revivable=(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);});
+    var reviveRow=addSelect(revive,'Cancelled row',revivable.map(function(row){return {value:row.rid,
+      label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total+(row.cancelledOn?' · Cancelled '+row.cancelledOn:'')};}));
+    var reviveDate=makerField(revive,'Recorded on','date',today), reviveStatus=makerStatus(revive);
+    var reviveButton=makerButton(revive,'Send revival for review',async function(send){
+      reviveStatus.textContent='Checking the ledger row…';
+      await send('/all/maker/inputs/ledger-amend',{at:new Date().toISOString(),rid:reviveRow.value,kind:'Correction',date:reviveDate.value,
+        fields:{cancelled:false,cancelledOn:null}});
+      reviveStatus.textContent='Sent for review. The order is back on the book only after approval and the fold.';
+      await loadMaker();
+    },true);
+    reviveButton.disabled=!revivable.length;
+    if(!revivable.length)reviveStatus.textContent='No cancelled row can be revived.';
     var id=el('section','maker-input');id.appendChild(el('h3',null,'Add ID'));
     id.appendChild(el('p','msg','Name and locality stay in this device until encrypted. Only the derived code, role and sealed envelope leave it. A name/place note is never sent.'));
     parent.appendChild(id);

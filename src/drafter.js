@@ -96,6 +96,12 @@ async function draftLotsOf(db) {
  * also already collides on the real book, on two SA5-BTR lots. tools/rid.mjs gave every row a
  * rid for this. ovKey is still accepted so an entry queued before rids existed still resolves,
  * and it is refused when it matches more than one row rather than guessing. */
+/** The one patch that revives a cancelled row: the flag off and its date cleared together, nothing else. */
+export function reviving(fields) {
+  const keys = fields && typeof fields === "object" ? Object.keys(fields) : [];
+  return keys.length === 2 && fields.cancelled === false && fields.cancelledOn === null;
+}
+
 export function findRow(book, ref) {
   if (!ref) return { err: "this correction names no row" };
   for (const coll of ["sales", "purchases"]) {
@@ -658,8 +664,18 @@ export function draftRow(entry, book) {
       const target = found.row;
       const isSale = found.collection === "sales";
       const partyKey = isSale ? "customer" : "supplier";
-      if (target.cancelled) {
+      /* 06 Oct 2026: A CANCELLED ROW TAKES ONE CORRECTION, ITS REVIVAL, and only a clean one: cancelled off and the date
+         cleared together, with nothing paid against it (a paid cancel raised a refund, and reviving it would count the
+         money twice) and no goods out. Anything else on a cancelled row is still a judgement. */
+      const revival = !!target.cancelled && reviving(fields);
+      if (target.cancelled && !revival) {
         return { skip: `the row at ${target.rid || pay.orderKey} is cancelled, and correcting a cancelled row is a judgement about whether it should be revived` };
+      }
+      if (revival) {
+        const kept = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
+        const out = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
+        if (kept > 0.009) return { skip: `the row at ${target.rid || pay.orderKey} is cancelled with RM ${round(kept)} paid against it, which is a refund owed, not an order to revive` };
+        if (out > 0.009) return { skip: `the row at ${target.rid || pay.orderKey} is cancelled with ${round(out)} unit already moved, which contradicts a revival` };
       }
 
       const chk = checkCorrection(fields, book, target, isSale);
@@ -722,6 +738,8 @@ export function draftRow(entry, book) {
       if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - POSITION_ENGINE.txUnitCost(target, priced.cost)) > 0.005) {
         flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit, ${priced.source}, so this row's margin moves when it is recosted.`);
       }
+
+      if (revival) flags.push(`Revives a cancelled ${isSale ? "order" : "lot"}: ${round(target.qty)} unit for RM ${round(target.total)} is on the book again.`);
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
       const row = {

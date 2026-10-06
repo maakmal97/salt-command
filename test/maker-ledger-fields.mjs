@@ -1,6 +1,5 @@
 /* test/maker-ledger-fields.mjs: the ledger fields Counter Admin may now correct. A Correction sets or clears the order code, which
-   is code-shaped and passes siteWords; a defaulted row is listed and takes a Correction only; a cancelled row is never listed and
-   no kind reaches it, the drafter's own rule; notes and settlement prose stay on the Desk. Each proposal is the Desk's own
+   is code-shaped and passes siteWords; a defaulted row is listed and takes a Correction only; a cancelled row is never listed in the editor and takes only its revival (test/maker-revive.mjs); notes and settlement prose stay on the Desk. Each proposal is the Desk's own
    ledgerAmendmentEntry, drafted by the native drafter over the real bridge and mirror; the owner page keeps one request id per
    amendment until it lands. */
 import { readdirSync, readFileSync } from "node:fs";
@@ -84,11 +83,11 @@ export async function run({ ok }) {
     ok(moves.every((r) => r.error === "A defaulted row takes a Correction only." && !r.entry),
       "a defaulted row takes no Fulfilment or Cancellation from Counter Admin: " + JSON.stringify(moves.map((r) => r.error)));
 
-    /* a cancelled row: reviving it is the Desk's judgement */
+    /* a cancelled row: only its revival reaches it */
     const revive = [["Correction", { fields: { orderCode: "E224" } }], ["Correction", { fields: { cancelled: false } }],
       ["Fulfilment", { cash: 10, movedUnits: 0 }]].map(([kind, extra]) => amend("lf-cancel", kind, extra));
-    ok(revive.every((r) => r.error === "A cancelled row is revived only on the Desk." && !r.entry),
-      "no kind reaches a cancelled row from Counter Admin: " + JSON.stringify(revive.map((r) => r.error)));
+    ok(revive.every((r) => r.error === "A cancelled row takes only its revival: cancelled off and its date cleared." && !r.entry),
+      "no other correction or movement reaches a cancelled row from Counter Admin: " + JSON.stringify(revive.map((r) => r.error)));
 
     /* the page keeps a request it could not send on the device; an order code is a retainable value, prose is not */
     const kept = (value) => POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/ledger-amend",
@@ -130,7 +129,7 @@ export async function run({ ok }) {
     const retry = await call(tap);
     ok(retry.status === 200 && drafts().length === 1, "the same request id again is answered from its receipt and drafts nothing more: " + retry.status);
     const refused = await call({ ...tap, at: "2026-10-06T02:01:00.000Z", rid: "lf-cancel" }), refusedBody = await refused.json();
-    ok(refused.status === 400 && /revived only on the Desk/.test(refusedBody.error) && drafts().length === 1,
+    ok(refused.status === 400 && /takes only its revival/.test(refusedBody.error) && drafts().length === 1,
       "a cancelled row is refused on the road, and nothing is drafted: " + refused.status + " " + JSON.stringify(refusedBody));
   } finally { w.close(); }
 
