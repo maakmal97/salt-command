@@ -50147,6 +50147,11 @@ await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
 
+section("D1 reads fail closed: a wrangler refusal is never an empty answer");
+await (async () => {
+  await (await import("./d1-fail-closed.mjs")).run({ ok });
+})();
+
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });

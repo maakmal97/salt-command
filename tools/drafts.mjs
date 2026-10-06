@@ -22,6 +22,7 @@
  *   --local                                    act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
+import { d1Rows } from "./d1json.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
@@ -64,14 +65,15 @@ function execFile(sql) {
 /* Reads go through --command, not --file: given a file wrangler returns an execution summary
    rather than the rows, so a SELECT run that way looks successful and carries no data. The
    same trap 0001's tooling documents. */
+/* 06 Oct 2026: FAILS CLOSED (tools/d1json.mjs). A refusal read as an empty list, so --approved
+   staged nothing and --committed called a live draft "no draft behind it". */
+export function readRows(r) {
+  const res = d1Rows(r);
+  if (res.error) { fail(res.error); return null; }
+  return res.rows;
+}
 function query(sql) {
-  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
-  const i = r.out.indexOf("["), j = r.out.lastIndexOf("]");
-  if (i < 0 || j < i) { fail("could not read a JSON result from wrangler:\n        " + r.out.split("\n").slice(0, 4).join("\n        ")); return null; }
-  try {
-    const parsed = JSON.parse(r.out.slice(i, j + 1));
-    return (parsed[0] && parsed[0].results) || [];
-  } catch (e) { fail("wrangler returned unparseable JSON: " + e.message); return null; }
+  return readRows(wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true }));
 }
 const q = (v) => v === null || v === undefined ? "NULL" : "'" + String(v).split("'").join("''") + "'";
 const num = (v) => (typeof v === "number" && Number.isFinite(v)) ? String(v) : "NULL";

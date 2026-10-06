@@ -19,6 +19,7 @@
  *   --local                       act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
+import { d1Result, d1Rows } from "./d1json.mjs";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
@@ -47,12 +48,11 @@ function wrangler(args, { quiet = false } = {}) {
    execution SUMMARY ("Total queries executed", "Rows read") instead of the rows, so a SELECT
    run that way comes back looking successful and carrying no data. Writes still use --file
    because the seed is far too long for a command line. Found the first time verify ran. */
+/* 06 Oct 2026: FAILS CLOSED (tools/d1json.mjs); a refusal read as an empty store */
 function query(sql) {
-  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
-  const i = r.out.indexOf("["), j = r.out.lastIndexOf("]");
-  if (i < 0 || j < i) { fail("could not read a JSON result from wrangler:\n        " + r.out.split("\n").slice(0, 4).join("\n        ")); return null; }
-  try { return JSON.parse(r.out.slice(i, j + 1)); }
-  catch (e) { fail("wrangler returned unparseable JSON: " + e.message); return null; }
+  const res = d1Result(wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true }));
+  if (res.error) { fail(res.error); return null; }
+  return res.sets;
 }
 const q = (v) => v === null || v === undefined ? "NULL" : "'" + String(v).split("'").join("''") + "'";
 const num = (v) => (typeof v === "number" && Number.isFinite(v)) ? String(v) : "NULL";
@@ -313,13 +313,13 @@ async function prove() {
    reads D1 on its own login, as drafts.mjs does, so no key is needed. {v, rows, sha}; null when the store was
    never seeded; undefined when wrangler could not answer, tried twice because a first "fetch failed" is
    routine here. It never calls fail(): update.mjs decides what a missing answer means. */
-function readSnapshot() {
+function readSnapshot(run = wrangler) {
   for (let i = 0; i < 2; i++) {
-    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows,sha FROM snapshot WHERE one=1;")], { quiet: true });
-    const a = r.out.indexOf("["), b = r.out.lastIndexOf("]");
-    if (a < 0 || b < a) continue;
-    try { const s = JSON.parse(r.out.slice(a, b + 1)).flatMap((x) => x.results || [])[0]; return s ? { v: s.v, rows: s.rows, sha: s.sha } : null; }
-    catch (e) { /* unparseable: try once more */ }
+    /* a refusal is not "never seeded" (06 Oct 2026): only a readable answer with no row is null */
+    const res = d1Rows(run(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows,sha FROM snapshot WHERE one=1;")], { quiet: true }));
+    if (res.error) continue;
+    const s = res.rows[0];
+    return s ? { v: s.v, rows: s.rows, sha: s.sha } : null;
   }
   return undefined;
 }
