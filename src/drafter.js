@@ -888,6 +888,9 @@ export function draftRow(entry, book) {
       if (t.cash > 0.005 || t.mv > 0.005) {
         flags.push(`This order has already had RM ${round(t.cash)} and ${round(t.mv)} unit against it. Cancelling a row that has moved is not the same as cancelling one that has not.`);
       }
+      if (dir2 === "SELL" && (+t.cash || 0) > 0.009 && !((+t.mv || 0) > 0.009)) {
+        flags.push(`Cancels with RM ${round(t.cash)} paid: the fold raises a refund payable to the customer for it, open and Now until it is returned (paidOn in the book).`);
+      }
     }
     if (open.v && book.version && open.v !== book.version) {
       flags.push(`The open-order snapshot was taken at ${open.v} but the mirror is at ${book.version}, so what is outstanding here may be stale.`);

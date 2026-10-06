@@ -50129,8 +50129,14 @@ await (async () => {
 })();
 
 section("Counter maker order moves: Ready, Decline, Cancel, replies and Not found");
+
 await (async () => {
   await (await import("./maker-orders.mjs")).run({ ok });
+})();
+
+section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
+await (async () => {
+  await (await import("./maker-paid-cancel.mjs")).run({ ok });
 })();
 
 section("Counter maker order controls: close, Ready mode, offer again, quick replies");
@@ -51305,9 +51311,9 @@ await (async () => {
     for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerReview h3")].some((h) => /ca01/.test(h.textContent)); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     const cancelOf = (suffix) => { const h = [...doc.querySelectorAll("#makerReview h3")].find((x) => x.textContent.endsWith(suffix));
       return h ? [...h.parentElement.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
-    ok(cancelOf("ca01") === true && cancelOf("ca02") === false && cancelOf("ca03") === false && cancelOf("ca04") === false
+    ok(cancelOf("ca01") === true && cancelOf("ca02") === true && cancelOf("ca03") === false && cancelOf("ca04") === false
       && cancelOf("ca05") === false && cancelOf("ca06") === null && cancelOf("ca07") === null && cancelOf("ca08") === false,
-      "Maker offers Cancel only on an acknowledged or ready order with nothing paid, claimed, closed or handed over");
+      "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
     extraReviewOrders.length = 0;
     [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
     for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));

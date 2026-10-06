@@ -138,7 +138,7 @@ export async function run({ ok }) {
     ok(declineAgain.status === 409 && book(idA).status === "declined", "Decline is refused on an order already declined.");
     const idC = make("acknowledged");
 
-    /* Cancel: only while nothing is paid */
+    /* Cancel: paid or not, never once goods are out or a claim waits */
     const why = "Customer changed their plan";
     const cancelled = await move(idC, { status: "cancelled", note: why, rid: rid(8) });
     const done = book(idC);
@@ -152,8 +152,11 @@ export async function run({ ok }) {
     const idPaid = make("acknowledged", { cash: 25 });
     const eventsPaid = events(idPaid);
     const cancelPaid = await move(idPaid, { status: "cancelled", rid: rid(10) });
-    ok(cancelPaid.status === 409 && book(idPaid).status === "acknowledged" && events(idPaid) === eventsPaid && book(idPaid).paid === 25,
-      "Cancel is refused while money is paid on the order, which stays as it was.");
+    ok(cancelPaid.status === 200 && book(idPaid).status === "cancelled" && book(idPaid).paid === 25,
+      "Cancel takes an order with money paid on it and leaves the paid figure for the fold to refund.");
+    const cancelPaidAgain = await move(idPaid, { status: "cancelled", rid: rid(10) });
+    ok(cancelPaidAgain.status === 200 && (await cancelPaidAgain.json()).again === true && book(idPaid).history.filter((h) => h.status === "cancelled").length === 1,
+      "A paid Cancel retried under its request id lands once.");
     const idClaim = make("acknowledged", { claim: 30 });
     const cancelClaim = await move(idClaim, { status: "cancelled", rid: rid(11) });
     ok(cancelClaim.status === 409 && book(idClaim).status === "acknowledged", "Cancel is refused while a claim of theirs waits on the order.");
@@ -161,10 +164,9 @@ export async function run({ ok }) {
     const cancelOut = await move(idOut, { status: "cancelled", rid: rid(12) });
     ok(cancelOut.status === 409 && book(idOut).status === "ready", "Cancel is refused once goods have gone out.");
     /* the order book's own check, which holds even when the Desk's read of the order was a moment old */
-    const raced = harness.book.run("desk", { u, id: idPaid, body: { status: "cancelled", maker: true } });
-    const unflagged = harness.book.run("desk", { u, id: make("acknowledged", { cash: 5 }), body: { status: "cancelled" } });
-    ok(raced.ok === false && raced.status === 409 && unflagged.ok === true,
-      "The order book itself refuses a flagged Cancel on a paid order in the same step; the Desk's own Cancel, unflagged, still takes one.");
+    const racedId = make("acknowledged", { cash: 5 });
+    const raced = harness.book.run("desk", { u, id: racedId, body: { status: "cancelled", maker: true } });
+    ok(raced.ok === true, "The order book takes a flagged Cancel on a paid order, as the Desk's own unflagged Cancel does.");
     const cancelDone = await move(idA, { status: "cancelled", rid: rid(13) });
     ok(cancelDone.status === 409 && book(idA).status === "declined", "Cancel is refused on an order already declined.");
 
@@ -284,9 +286,9 @@ export async function run({ ok }) {
     const exState2 = (await exampleAccount(env, TEST_USER)).orders;
     ok(exCancelled.status === 200 && exState2.find((o) => o.id === exCancel).status === "cancelled"
       && exState2.find((o) => o.id === exCancel).history.at(-1).note === "Example reason"
-      && exPaidRefused.status === 409 && exState2.find((o) => o.id === exPaid).status === "acknowledged"
+      && exPaidRefused.status === 200 && exState2.find((o) => o.id === exPaid).status === "cancelled"
       && exClaimRefused.status === 409 && exReadyEarly.status === 409,
-      "The Cancel rule and the Ready rule hold on an acceptance order, the same as on a real one.");
+      "The Cancel rule (paid taken, claimed refused) and the Ready rule hold on an acceptance order, the same as on a real one.");
     /* a retried example move is idempotent, as on the real road: answered again, one event, other content refused */
     const exCancelBody = { status: "cancelled", note: "Example reason", rid: rid(41) };
     const exCancelAgain = await move(exCancel, exCancelBody), exCancelOther = await move(exCancel, { ...exCancelBody, note: "Another reason" });

@@ -874,11 +874,10 @@ export function decideDesk(order, body, at) {
   if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
-  /* Counter Admin's moves (`maker`, his decision of 05 Oct 2026): Ready only on an acknowledged order, and Cancel only while
-     nothing is paid, which the Desk's own Cancel does not ask. Held here so a retry, answered earlier from its request id,
-     is never refused for the order having moved on */
+  /* Counter Admin's moves (`maker`, his decision of 05 Oct 2026): Ready only on an acknowledged order. Cancel takes a paid
+     order since 06 Oct 2026, as the Desk's own does: the fold raises the refund from what was paid. Held here so a retry,
+     answered earlier from its request id, is never refused for the order having moved on */
   if (body && body.maker === true && status === "ready" && order.status !== "acknowledged") return { error: "only an acknowledged order can be marked ready", status: 409 };
-  if (body && body.maker === true && status === "cancelled" && (+order.paid || 0) > 0.004) return { error: "money is paid on this order, so it is cancelled from the Desk, which carries the refund", status: 409 };
   /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER is sent at the acknowledgement alone, and at no
      other move: the desk checked it against the floor, and the site prices nothing, so it takes a positive figure to 2 dp */
   if (body && body.total !== undefined && status !== "acknowledged") return { error: "a price is set only when the order is acknowledged", status: 400 };

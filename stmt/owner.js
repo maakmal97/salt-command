@@ -1623,9 +1623,9 @@ export const OWNER_JS = `
         if(!window.confirm('Decline this order?')) return;
         makerMove(order,Object.assign({status:'declined'},note()),'Order declined.');
       },false);
-    else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.paid>0)&&!(+order.claimed>0)&&!(+order.moved>0))
+    else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0))
       makerButton(card,'Cancel order',function(){
-        if(!window.confirm('Cancel this order? Nothing is paid on it.')) return;
+        if(!window.confirm(+order.paid>0?'Cancel this order? RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Cancel this order? Nothing is paid on it.')) return;
         makerMove(order,Object.assign({status:'cancelled'},note()),'Order cancelled.');
       },false);
   }
