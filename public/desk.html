@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c90c7800bd56c5ea";
+var SALT_BUILD_ID="54c965d2336bf230";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -18208,7 +18208,9 @@ function driftSignals(code,prod){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RULES.holdDays),0)};
 }
-function driftOf(code,prod){
+/* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
+function driftOf(code,prod){const p=prod||PROD;return renderMemo('drift|'+(ownerOf(code)||code)+'|'+p,()=>driftOfNow(code,p));}
+function driftOfNow(code,prod){
   const p=prod||PROD,R=TIER_RULE[p];if(!R||!R.drift)return null;
   const who=ownerOf(code)||code,h=(TIER_OF[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(who,p),a=PRICING_ENGINE.autoDrift(sig,R.auto);
@@ -18337,7 +18339,9 @@ function tierCard(){
 }
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
-function pxSignals(){
+/* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
+function pxSignals(){return renderMemo('pxSignals|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink,pxSignalsNow);}
+function pxSignalsNow(){
   const MS=86400000,out=[];
   const c=pxCost();
   // 1 cover. SHIPPED units, because that is what consumption means.

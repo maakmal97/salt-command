@@ -46764,6 +46764,41 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("Perf: one render reads each customer's drift, and a book's signals, once, and every view draws as it did");
+await (async () => {
+  /* The Drift card asked driftOf 202 times a render for about 55 customers, and Analysis asked pxSignals 18 times; each is
+     kept for the render, the signals keyed like pxCost by the cost boardHeadroom moves mid-render. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var dn=driftOfNow,sn=pxSignalsNow,n={drift:0,pairs:{},signals:0};
+      driftOfNow=function(c,p){n.drift++;n.pairs[(ownerOf(c)||c)+'|'+(p||PROD)]=1;return dn.apply(this,arguments);};
+      pxSignalsNow=function(){n.signals++;return sn.apply(this,arguments);};
+      try{switchTab('today');n.drift=0;n.pairs={};switchTab('concentration');var dc=n.drift,pairs=Object.keys(n.pairs).length;
+        n.signals=0;switchTab('analysis');var sc=n.signals;}
+      finally{driftOfNow=dn;pxSignalsNow=sn;}
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
+      var memo=draw(),again=draw(),kd=window.driftOf,ks=window.pxSignals;
+      driftOf=function(c,p){return driftOfNow(c,p);};pxSignals=function(){return pxSignalsNow();};
+      var fresh;try{fresh=draw();}finally{driftOf=kd;pxSignals=ks;}
+      var h=(function(){setProd('salt');RENDER_MEMO={};try{var s=pxOver.cost,a=JSON.stringify(pxSignals());pxOver.cost=pxCost().repl+50;
+        var b=JSON.stringify(pxSignals()),bf=JSON.stringify(pxSignalsNow());pxOver.cost=s;
+        return {moved:a!==b,same:b===bf,back:JSON.stringify(pxSignals())===a};}finally{RENDER_MEMO=null;}})();
+      return {dc:dc,pairs:pairs,sc:sc,live:liveBooks().length,parts:parts.length,h:h,
+        diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];})};})())`));
+    ok(v.pairs >= 10 && v.dc === v.pairs,
+      "one Network lead render reads each customer's drift once a book: " + JSON.stringify({ reads: v.dc, pairs: v.pairs }));
+    ok(v.sc > 0 && v.sc <= v.live,
+      "one Analysis render reads each book's signals once, not once a quote: " + JSON.stringify({ signals: v.sc, live: v.live }));
+    ok(v.parts >= 15 && v.unstable.length === 0 && v.diff.length === 0,
+      "every part of every view draws the same with drift and signals kept for the render as read fresh: " + JSON.stringify({ parts: v.parts, diff: v.diff, unstable: v.unstable }));
+    ok(v.h && v.h.moved && v.h.same && v.h.back,
+      "inside one render a cost override moved mid-way reads its own signals, and moving it back reads the first: " + JSON.stringify(v.h));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("Perf: a table in a closed card is measured when the card opens, never while it is shut");
 await (async () => {
   /* Reading a width inside a closed <details> lays the hidden card out on its own, about 1 ms a table: 41 ms of a
