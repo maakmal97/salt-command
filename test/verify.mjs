@@ -50142,6 +50142,10 @@ section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
 })();
+section("Counter maker reward spends book; Accept tier proposals keeps its request id");
+await (async () => {
+  await (await import("./maker-reward-spend.mjs")).run({ ok });
+})();
 
 section("Counter maker account claims and sealed slips");
 await (async () => {
