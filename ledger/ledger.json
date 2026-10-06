@@ -1,6 +1,6 @@
 {
- "v": "v1031",
- "stamped": "07 Oct 2026, 01:18 KL",
+ "v": "v1032",
+ "stamped": "07 Oct 2026, 05:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6701,11 +6701,28 @@
     "qty": 1.5,
     "total": 210,
     "cash": 0,
-    "delivery": 10,
+    "delivery": 0,
     "date": "2026-10-06",
     "deliveredQty": 0,
-    "note": "<b>SALT SELL DATED 06 OCT: 1.5 UNIT FOR RM210 PLUS RM10 DELIVERY, PENDING.</b> Booked to CS6-PER, order 20261005120619-nmopxq, RM220 owed, nothing paid and nothing handed over, preapproved by phone. The rate is RM140 a unit. The floor for 1.5 unit is RM96 and the ask RM220: the goods sit above the floor and below the ask, and with delivery the total is exactly the ask. CS6-PER has a median of RM85.52 and range RM8 to RM106.67, RM0 outstanding and 0 units on credit against a cap of 2. The row carries RM58 a unit, COGS off the 06 Oct purchase, not yet folded. The drafter flagged a rate 69.2% above his usual; the figures confirm it is higher than any past rate. Open: RM220 and 1.5 unit undelivered.",
-    "rid": "s240"
+    "note": "<b>AMENDED 07 OCT: DELIVERY RM10 TO RM0.</b> <b>CORRECTION ON S240: DELIVERY RM10 TO RM0, TOTAL RM210.</b> Against CS6-PER's salt order 20261005120619-nmopxq of 1.5 unit dated 06 Oct, preapproved by phone. The rate stays RM140 a unit. The floor for 1.5 unit is RM96 and the ask RM220: the total of RM210 is above the floor and now RM10 below the ask. CS6-PER has a median of RM85.52 and range RM8 to RM140, RM220 outstanding before this correction, 0 units on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase. The drafter flagged a rate 69.2% above his usual; the figures confirm it is the top of his range. Open: RM210 and 1.5 unit undelivered. <b>SALT SELL DATED 06 OCT: 1.5 UNIT FOR RM210 PLUS RM10 DELIVERY, PENDING.</b> Booked to CS6-PER, order 20261005120619-nmopxq, RM220 owed, nothing paid and nothing handed over, preapproved by phone. The rate is RM140 a unit. The floor for 1.5 unit is RM96 and the ask RM220: the goods sit above the floor and below the ask, and with delivery the total is exactly the ask. CS6-PER has a median of RM85.52 and range RM8 to RM106.67, RM0 outstanding and 0 units on credit against a cap of 2. The row carries RM58 a unit, COGS off the 06 Oct purchase, not yet folded. The drafter flagged a rate 69.2% above his usual; the figures confirm it is higher than any past rate. Open: RM220 and 1.5 unit undelivered.",
+    "rid": "s240",
+    "mod": "corrected on 2026-10-07: delivery 10 to 0",
+    "amend": [
+     {
+      "date": "2026-10-06",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-07",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S240: DELIVERY RM10 TO RM0, TOTAL RM210.</b> Against CS6-PER's salt order 20261005120619-nmopxq of 1.5 unit dated 06 Oct, preapproved by phone. The rate stays RM140 a unit. The floor for 1.5 unit is RM96 and the ask RM220: the total of RM210 is above the floor and now RM10 below the ask. CS6-PER has a median of RM85.52 and range RM8 to RM140, RM220 outstanding before this correction, 0 units on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase. The drafter flagged a rate 69.2% above his usual; the figures confirm it is the top of his range. Open: RM210 and 1.5 unit undelivered."
+     }
+    ]
    }
   ],
   "contacts": [
@@ -7345,9 +7362,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-06T15:53:32.624Z",
+  "QUEUE_COMMITTED": "2026-10-06T16:37:33.369Z",
   "PRICING": {
-   "takenAt": "2026-10-06T17:18:27.360Z",
+   "takenAt": "2026-10-06T21:44:59.344Z",
    "sizes": [
     0.5,
     1,
@@ -14184,10 +14201,10 @@
      ]
     }
    },
-   "v": "v1031"
+   "v": "v1032"
   },
   "OPEN": {
-   "at": "2026-10-06T17:18:27.893Z",
+   "at": "2026-10-06T21:44:59.758Z",
    "count": 12,
    "byKey": {
     "CE4-CHE|2026-10-06|240": {
@@ -14205,7 +14222,7 @@
      "handover": "collected",
      "key": "CE4-CHE|2026-10-06|240"
     },
-    "CS6-PER|2026-10-06|220": {
+    "CS6-PER|2026-10-06|210": {
      "d": "2026-10-06",
      "p": "CS6-PER",
      "dir": "S",
@@ -14214,11 +14231,10 @@
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 220,
+     "oweRM": 210,
      "oweUnits": 1.5,
-     "dv": 10,
      "rid": "s240",
-     "key": "CS6-PER|2026-10-06|220"
+     "key": "CS6-PER|2026-10-06|210"
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -14450,7 +14466,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1031"
+   "v": "v1032"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14458,7 +14474,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1031"
+   "v": "v1032"
   },
   "REWARD": {
    "stated": {
@@ -14470,7 +14486,7 @@
      }
     }
    },
-   "v": "v1031"
+   "v": "v1032"
   }
  }
 }
