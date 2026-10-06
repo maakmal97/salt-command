@@ -50150,6 +50150,10 @@ section("Counter maker corrects the order code; a defaulted row takes a Correcti
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });
 })();
+section("Counter maker revives a cancelled order; only a clean revival, as the one Correction");
+await (async () => {
+  await (await import("./maker-revive.mjs")).run({ ok });
+})();
 section("Counter maker reward spends book; Accept tier proposals keeps its request id");
 await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });

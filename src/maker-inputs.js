@@ -1,6 +1,6 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
-import { costFor, draftRow, findRow, checkCorrection } from "./drafter.js";
+import { costFor, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
 import { rowRoom, siteWords } from "./orders.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
@@ -139,6 +139,14 @@ export function makerInputCatalog(book) {
           cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
           movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row),
           open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")) };
+      })),
+    revivable: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
+      .filter((row) => row && row.rid && row.cancelled).map((row) => {
+        const sale = collection === "sales";
+        return { rid: row.rid, direction: sale ? "SELL" : "BUY", party: row[sale ? "customer" : "supplier"],
+          product: row.product || "salt", date: row.date || null, cancelledOn: row.cancelledOn || null, qty: row.qty, total: row.total,
+          paid: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
+          movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row) };
       })),
     loans: (book.state.loans || []).filter((row) => row && row.status !== "settled").map((row) => {
       const cash = row.form === "cash";
@@ -324,8 +332,9 @@ export function makerLedgerAmendment(body, book) {
   const found = findRow(book, body.rid);
   if (found.err) return { error: found.err };
   const row = found.row, sale = found.collection === "sales";
-  /* the drafter's own rule: correcting a cancelled row is a judgement about reviving it, so no kind reaches one here */
-  if (row.cancelled) return { error: "A cancelled row is revived only on the Desk." };
+  /* the drafter's own rule: a cancelled row takes its revival and nothing else, the drafter judging what is paid or moved */
+  if (row.cancelled && (body.kind !== "Correction" || !object(body.fields) || !reviving(body.fields)))
+    return { error: "A cancelled row takes only its revival: cancelled off and its date cleared." };
   if (row.defaulted && body.kind !== "Correction") return { error: "A defaulted row takes a Correction only." };
   const lotKind = ["Payment", "Receipt", "Default"].includes(body.kind);
   if (lotKind && sale) return { error: "Payment, Receipt and Default are purchase-lot movements." };
