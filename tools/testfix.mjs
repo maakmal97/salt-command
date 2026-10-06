@@ -176,6 +176,21 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(22), "customer", Object.assign({ action: "pay", amount: 17 }, rail("tngbiz"))],
     [T(22, 30), "desk", { verdict: { kind: "received", claim: T(22), amount: 17 } }]]));
 
+  /* A GROUP ORDER (the pool): one open with the account joined (the order it made carries the pool's id, and the units in are the
+     account's with invented others, `seedUnits`), and one he closed whose joined order is acknowledged. The order is made by the
+     book's own moves, and the pool is a fixture's: a join on it is written there alone (stmt/testfix.js exampleJoin) */
+  const pid = (n, k) => "p" + T(n, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-ex" + k;
+  const poolJoined = order(oid(1, "16"), list, T(1, 40), { product: "salt", qty: 2.5, mode: "collect" }, []);
+  poolJoined.pool = pid(1, "1");
+  const poolAcked = order(oid(8, "17"), list, T(8), { product: "oil", qty: 3, mode: "collect" }, [[T(7, 30), "desk", { status: "acknowledged" }]]);
+  poolAcked.pool = pid(8, "2");
+  O.push(poolJoined, poolAcked);
+  const pools = [
+    { id: pid(1, "1"), kind: "pool", at: T(2), product: "salt", q: 2.5, target: 12.5, state: "open", closesOn: klDay(new Date(now.getTime() + 4 * 864e5)),
+      joins: [{ u: U, oid: poolJoined.id, at: poolJoined.at }], seedUnits: 5 },
+    { id: pid(8, "2"), kind: "pool", at: T(9), product: "oil", q: 3, target: 9, state: "closed", closedAt: T(7, 40),
+      joins: [{ u: U, oid: poolAcked.id, at: poolAcked.at }], seedUnits: 6 }];
+
   /* EACH ORDER ON THE BOOK IS A ROW, dated its placing day, as the desk's reconcile would book it; the key names the
      invented code, and the page reads only its day (rowOn); a wanted-day order moves to its first handover's day */
   const sales = [];
@@ -236,7 +251,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
 
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
-    orders: O, claims, refs, card, assoc: true, thread,
+    orders: O, claims, refs, card, assoc: true, thread, pools,
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
 }
 
@@ -255,6 +270,10 @@ export const FEATURES = [
   ["a day wanted, handed over early, its row on the handover's day (Step 2, 30 Sep 2026)", (f) => has(f, (o) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
     && +o.moved > 0 && o.movedOn < o.wantBy && String(o.ledgerKey || "").split("|")[1] === o.movedOn && o.movedOn > klDay(new Date(o.at))
     && !!f.live && f.live.pay.now.parts.some((p) => p.date === o.movedOn && Math.abs((+p.whole || 0) - (+o.total + (+o.delivery || 0))) < 0.005))],
+  ["a group order open, joined (Pool)", (f) => (f.pools || []).some((p) => p.state === "open" && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id))
+    && p.closesOn >= klDay(new Date(f.at)))],
+  ["a group order closed, its order acknowledged (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
+    && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id && ROWED.includes(o.status) && hist(o, (h) => h.status === "acknowledged"))))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],
@@ -352,6 +371,6 @@ export async function sealFixture(fix, rec, pass) {
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest }, await seal(fix.prices)),
-    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread,
+    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools,
     makerBook: fix.book, makerOrders: fix.orders };
 }

@@ -449,6 +449,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   mark (`markChased`: in the order book, `chased:<username>` on the `kv` road); the test accounts are
   skipped. The config ships with the job's push paths; an unpushed laptop change needs `npx wrangler
   deploy -c wrangler.stmt.jsonc`.
+- **A group order (the pool) is collect only and the Maker's tap closes it**: one product and size, a target in units,
+  in the order book only (the KV road refuses it). A join is one atomic step, an ordinary placement at the customer's own
+  sealed price plus the join (`pjoin`); the units in are read live off the joined orders, never stored. Opening wakes no
+  phone, a card on Home only; reaching the target closes nothing. Close (`/all/maker/pools/<id>/close`) wakes each joiner
+  once (`pool-closed`) and runs the Desk's own preview and accept on each order, a failure kept as `closeLeft`. The page
+  says "group order", never a level. Detail: `docs/STATEMENTS.md`.
 - **An associate's own card** (`rec.card`), every book's sales progress; the reward on the tiered books
   only: `share`, `stars` and `rank` never travel, and every figure adds up to the list under it. **The
   associates report card** (`/all/assoc`, whitelist `ASSOC_FIELDS`), every book's sales progress; the

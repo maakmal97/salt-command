@@ -281,7 +281,7 @@ export async function storeCompare(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -506,7 +506,7 @@ export function wantByFault(v, at) {
   const last = klDay(new Date(Date.parse(today + "T04:00:00Z") + WANT_DAYS * 864e5).toISOString());
   return v > today && v <= last ? "" : "wantBy";
 }
-export function checkPlacement(body, open, at) {
+export function checkPlacement(body, open, at, poolOk = false) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -533,6 +533,10 @@ export function checkPlacement(body, open, at) {
   const note = cleanMsg(body.note, NOTE_MAX);
   if (wantByFault(body.wantBy, at)) return refusal("wantBy", { n: WANT_DAYS });
   const wantBy = body.wantBy ? body.wantBy : "";
+  /* a group order is joined, never placed: a body naming one is read only where the join asks (poolOk), and it is collected, alone */
+  const pool = poolOk && typeof body.pool === "string" && isPoolId(body.pool) ? body.pool : "";
+  if (body.pool !== undefined && (!poolOk || !pool)) return { error: "a group order is joined from its own card" };
+  if (pool && (mode !== "collect" || body.sheet)) return { error: "a group order is collected, and is one order" };
   const sheet = typeof body.sheet === "string" && SHEET_RE.test(body.sheet) ? body.sheet : "";
   if (body.sheet !== undefined && body.sheet !== "" && !sheet) return { error: "the sheet is not one this page made" };
   const lines = sheet ? open.filter((o) => o.sheet === sheet) : [];
@@ -540,7 +544,7 @@ export function checkPlacement(body, open, at) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}), note };
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, pool ? { pool } : {}), note };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
@@ -604,8 +608,8 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
 /** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }.
  *  V5b2 (his answers of 29 Sep 2026): Place stamps nothing about paying in advance. V3's unit cap is retired on the
  *  Counter, and whether an order is paid in advance is the desk Worker's to decide at Accept, from the book (V5b2a). */
-export function decidePlace(u, body, open, at, digest, by = "customer") {
-  const c = checkPlacement(body, open, at);
+export function decidePlace(u, body, open, at, digest, by = "customer", pool = null) {
+  const c = checkPlacement(body, open, at, !!pool);
   if (c.error) return c;
   if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
@@ -616,6 +620,7 @@ export function decidePlace(u, body, open, at, digest, by = "customer") {
 
 export function decideReplace(order, body, mine, at, digest) {
   if (!order) return Object.assign(refusal("noOrder"), { status: 404 });
+  if (order.pool) return Object.assign(refusal("amendClosed"), { status: 409 });   /* a group order is joined as it stands: leave it by Cancel */
   if (order.status !== "placed" || order.reviewed || order.ledgerKey || (order.queued || {}).ack
     || (+order.paid || 0) > 0 || (+order.moved || 0) > 0 || claimWaits(order))
     return Object.assign(refusal("amendClosed"), { status: 409 });
@@ -907,6 +912,7 @@ export function applyEvent(order, ev) {
   if (ev.kind === "place" || ev.kind === "copy") return { order: JSON.parse(JSON.stringify(ev.order)), done };
   if (ev.kind === "aclaim") return { order: JSON.parse(JSON.stringify(ev.claim)), done };   /* S6 6.6: an account claim, its own record */
   if (ev.kind === "tsay" || ev.kind === "tmark") return { order: foldThread(order, ev), done };   /* Step 7: the account's thread */
+  if (ev.kind === "popen" || ev.kind === "pjoin" || ev.kind === "pclose") return { order: foldPool(order, ev), done };   /* a group order */
   if (ev.kind === "status") {
     if (ev.replacement) order.replacement = ev.replacement;
     if (ev.mode) order.mode = ev.mode;
@@ -1057,7 +1063,7 @@ export function applyEvent(order, ev) {
    back mark `last-theirs` (v760), and so does a rating (F10); the ask is the desk's own, and marks nothing; his moves wake
    them, and of theirs only a payment that completes. */
 export function marksOf(ev, order) {
-  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask" || ev.kind === "tmark") return [];
+  if (ev.kind === "mark" || ev.kind === "copy" || ev.kind === "rateask" || ev.kind === "tmark" || ev.kind === "popen" || ev.kind === "pjoin" || ev.kind === "pclose") return [];
   const at = ev.at;
   /* Step 7: a line of theirs on the account's thread wakes him as a line on an order does; it touches no order, so the
      reconcile is not sent to list them */
@@ -1096,6 +1102,8 @@ export function wakes(ev, order, done) {
   const o = (order && order.id) || "";
   if (ev.kind === "ledger") return ev.paid !== undefined ? { k: "paid", o } : handedWake(order, o);
   if (ev.kind === "handover") return handedWake(order, o);
+  /* a group order closed tells each joiner; poolClose puts each one's own order in o. A retry that only records what was left wakes nobody */
+  if (ev.kind === "pclose") return ev.again ? null : { k: "pool-closed", o: "" };
   /* Step 1b: his reason at Decline or Cancel is the banner's body; his line on the order is, in quotation marks, under
      a banner of its own (its moment names it) */
   if (ev.kind === "status" && ev.by === "desk") {
@@ -1447,4 +1455,105 @@ export async function deskThread(env, u, body) {
   const r = await bookMove(env, "tdesk", { u, body, rid: ridOf(body) });
   if (r.error) return r;
   return { thread: r.order, push: r.wake ? await wakeCustomer(env, u, r.wake) : null };
+}
+
+/* ---- THE POOL, A GROUP ORDER (his plan of 05 Oct 2026) ---------------------------------------------------------------
+ * He opens one for a product and a size with a target in units; a customer joins at their own sealed list price for that
+ * size, COLLECT ONLY; it closes when HE taps Close, never on reaching the target (D2), and then each joined order goes
+ * to the acknowledgement like any other (stmt/maker.js). { id, kind: "pool", at, product, q, target, closesOn?, state:
+ * "open" | "closed", closedAt?, closeLeft?, joins: [{ u, oid, at }] }. THE UNITS IN ARE NEVER STORED: they are the live
+ * joined orders' sizes, a cancelled or declined join leaving them, so no figure can be left behind by a move on an order.
+ * IN THE ORDER BOOK ONLY, as the account's thread is: its own table (u is empty) and its own events under the pool's id;
+ * the KV road refuses (POOL_ON_KV). A JOIN IS ONE STEP: the order and the join are appended together or not at all. */
+export const POOL_ID_RE = /^p[0-9]{14}-[a-z0-9]{1,8}$/;
+export const isPoolId = (id) => POOL_ID_RE.test(String(id || ""));
+export const POOL_ON_KV = "A group order is kept in the order book only, and the site is on the kv road: it waits until the site is back on the book";
+export const POOL_SHOWN_DAYS = 14;
+const poolOnKv = () => ({ error: POOL_ON_KV, status: 503 });
+/** a joined order that still stands: one withdrawn or declined is out of the pool */
+export const joinLive = (o) => !!o && !["cancelled", "declined"].includes(o.status);
+/** the units in, read live: `orderOf(u, oid)` is the joined order */
+export const poolUnits = (p, orderOf) => +((p.joins || []).reduce((n, j) => { const o = orderOf(j.u, j.oid); return n + (joinLive(o) ? +o.qty || 0 : 0); }, 0)).toFixed(3);
+/** Opening one: a product, a size, a target of at least that size, and the day it closes if he sets one. Returns { ev } or { error, status }. */
+export function decidePoolOpen(body, at) {
+  const fields = ["product", "q", "target", "closesOn"];
+  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((k) => !fields.includes(k)))
+    return { error: "a group order is a product, a size, a target and, if you like, the day it closes", status: 400 };
+  if (!/^[a-z]{1,20}$/.test(String(body.product || ""))) return { error: "the product is not one the list carries", status: 400 };
+  if (!isNum(body.q) || !(body.q > 0) || body.q > 1000) return { error: "the size has to be a number above zero", status: 400 };
+  if (!isNum(body.target) || body.target < body.q || body.target > 100000) return { error: "the target has to be at least the size", status: 400 };
+  const closes = body.closesOn === undefined || body.closesOn === null || body.closesOn === "";
+  if (!closes && wantByFault(body.closesOn, at)) return { error: "the closing day is from tomorrow to " + WANT_DAYS + " days on", status: 400 };
+  const pool = Object.assign({ id: "p" + mintOrderId(at), kind: "pool", at, product: body.product, q: body.q, target: body.target, state: "open", joins: [] },
+    closes ? {} : { closesOn: body.closesOn });
+  return { ev: { kind: "popen", at, pool } };
+}
+/** A customer joining: `mine` is their orders, `body` is { q, total, unit, forFriend, digest }. One twice is refused, one after the
+ *  close, and one with no such pool. Returns { place } for the order the join makes, or { error, status }. */
+export function decidePoolJoin(u, pool, body, mine, at, digest, by = "customer") {
+  if (!pool) return Object.assign(refusal("poolNone"), { status: 404 });
+  if (pool.state !== "open") return Object.assign(refusal("poolClosed"), { status: 409 });
+  if ((mine || []).some((o) => o.pool === pool.id && joinLive(o))) return Object.assign(refusal("poolTwice"), { status: 409 });
+  if (!body || typeof body !== "object" || body.q !== pool.q) return { error: "the size is not this group order's", status: 400 };
+  const placed = decidePlace(u, { product: pool.product, qty: pool.q, mode: "collect", total: body.total, unit: body.unit,
+    forFriend: body.forFriend === true, pool: pool.id, digest: body.digest }, (mine || []).filter((o) => OPEN_STATES.includes(o.status)), at, digest, by, pool);
+  if (placed.error) return Object.assign({ status: 400 }, placed);
+  return { place: placed.ev };
+}
+/** His Close: the pool closed once, its joiners to be acknowledged. A close of a closed pool changes nothing, except `left`, the
+ *  orders its first close could not acknowledge, which is written on it (an empty list clears it). Returns { ev }, { none } or { error, status }. */
+export function decidePoolClose(pool, body, at) {
+  if (!pool) return Object.assign(refusal("poolNone"), { status: 404 });
+  const left = body && Array.isArray(body.left) ? body.left.slice(0, 200).filter((x) => x && OID_SHAPE.test(String(x.id || "")))
+    .map((x) => ({ id: String(x.id), why: String(x.why || "").replace(/\s+/g, " ").trim().slice(0, 200) })) : null;
+  if (pool.state === "open") return { ev: Object.assign({ kind: "pclose", at }, left ? { left } : {}) };
+  return left ? { ev: { kind: "pclose", at, left, again: true } } : { none: true };
+}
+const OID_SHAPE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
+function foldPool(p, ev) {
+  if (ev.kind === "popen") return JSON.parse(JSON.stringify(ev.pool));
+  p = JSON.parse(JSON.stringify(p));
+  if (ev.kind === "pjoin") { p.joins = (p.joins || []).concat([{ u: ev.u, oid: ev.oid, at: ev.at }]); return p; }
+  if (p.state !== "closed") { p.state = "closed"; p.closedAt = ev.at; }
+  if (ev.left) { if (ev.left.length) p.closeLeft = ev.left; else delete p.closeLeft; }
+  return p;
+}
+/** What their page is handed of a pool: no joins, no names, and the one of theirs that stands, if any. */
+export const poolView = (p) => Object.assign({ id: p.id, product: p.product, q: p.q, target: p.target, state: p.state, unitsIn: p.unitsIn || 0, joined: p.mine || null },
+  p.closesOn ? { closesOn: p.closesOn } : {});
+/** The pools their page shows: open ones, and a closed one they joined for a fortnight after it closed. [] on the KV road. */
+export async function poolsOf(env, u) {
+  if (!onBook(env)) return [];
+  const r = await bookRead(env, "pools", { u }, async () => ({ pools: [] }));
+  return (r && r.pools) || [];
+}
+/** Every pool, with its joins and what could not be acknowledged at its close: the maker's read. */
+export async function allPools(env) {
+  if (!onBook(env)) return [];
+  const r = await bookRead(env, "pools", {}, async () => ({ pools: [] }));
+  return (r && r.pools) || [];
+}
+/** POST /all/maker/pools: open one. */
+export async function poolOpen(env, body) {
+  if (!onBook(env)) return poolOnKv();
+  const r = await bookMove(env, "popen", { body });
+  return r.error ? r : { pool: r.order };
+}
+/** POST /pools/<id>/join: their join at their own list price, one order, collect. A retry under its id lands once. */
+export async function poolJoin(env, u, id, body) {
+  if (!onBook(env)) return poolOnKv();
+  const rec = await accountRecord(env, u), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";
+  const rid = ridOf(body), r = await bookMove(env, "pjoin", { u, pool: id, body, rid, digest });
+  if (r.error) return r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r;
+  if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
+  return { order: r.order, pool: r.pool };
+}
+/** POST /all/maker/pools/<id>/close: the pool closed, each joiner told once, and the orders still to acknowledge answered.
+ *  `body.left` records the ones a close could not acknowledge. */
+export async function poolClose(env, id, body) {
+  if (!onBook(env)) return poolOnKv();
+  const r = await bookMove(env, "pclose", { pool: id, body });
+  if (r.error) return r;
+  if (r.wake && !r.again) for (const j of r.joined) await wakeCustomer(env, j.u, { k: r.wake.k, o: j.id });
+  return { pool: r.order, joined: r.joined, closed: !r.none && !r.again };
 }

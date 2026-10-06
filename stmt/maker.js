@@ -1,4 +1,4 @@
-import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook } from "./orders.js";
+import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
 import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS } from "./testfix.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours } from "./hours.js";
 
@@ -180,6 +180,9 @@ function internalOperation(path) {
   if (path === "/all/maker/threads") return { kind: "threads" };
   if (path === "/all/maker/bulletin") return { kind: "bulletin" };
   if (path === "/all/maker/claims") return { kind: "claims" };
+  if (path === "/all/maker/pools") return { kind: "pools" };
+  const pool = /^\/all\/maker\/pools\/(p[0-9]{14}-[a-z0-9]{1,8})\/close$/.exec(path);
+  if (pool) return { kind: "pool-close", id: pool[1] };
   if (path === "/all/maker/vault/key") return { kind: "slip-key" };
   const slip = /^\/all\/maker\/slips\/([a-z0-9]{4}-[a-z0-9]{4})\/([0-9a-f]{32})$/.exec(path);
   if (slip) return { kind: "slip", u: slip[1], id: slip[2] };
@@ -212,6 +215,44 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   const method = request.method;
   try {
     if (op.kind === "hours") return await makerHours(request, env, method);
+    /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
+       Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through
+       the Desk, as his own Accept on its card would be; a joined order the Desk will not accept is written on the pool as
+       closeLeft with its reason, the rest carry on, and Close again retries only those. Under the target it still closes. */
+    if (op.kind === "pools") {
+      if (method === "GET") return json({ ok: true, pools: await allPools(env) });
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      const r = await poolOpen(env, parsed.body);
+      return r.error ? json({ ok: false, error: r.error, ...(r.code ? { code: r.code } : {}) }, r.status || 400) : json({ ok: true, pool: r.pool });
+    }
+    if (op.kind === "pool-close") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (Object.keys(parsed.body).length) return json({ ok: false, error: "Close takes an empty object." }, 400);
+      const first = await poolClose(env, op.id, {});
+      if (first.error) return json({ ok: false, error: first.error, ...(first.code ? { code: first.code } : {}) }, first.status || 400);
+      /* the first close answers every order still to acknowledge; a Close again only the ones it could not */
+      const left = new Set(((first.pool && first.pool.closeLeft) || []).map((x) => x.id));
+      const todo = first.joined.filter((j) => j.status === "placed" && (first.closed || !left.size || left.has(j.id)));
+      const accepted = [], failed = [];
+      for (const j of todo) {
+        try {
+          const pv = await deskCall(env, "/_internal/maker/orders/" + j.id + "/preview", "POST", {});
+          const ac = await deskCall(env, "/_internal/maker/orders/" + j.id + "/accept", "POST", { hash: pv.hash });
+          if (ac.differs) failed.push({ id: j.id, why: "its row differs from the preview and waits under Approve" });
+          else accepted.push(j.id);
+        } catch (error) { failed.push({ id: j.id, why: String(error && error.message || error).slice(0, 200) }); }
+      }
+      let pool = first.pool;
+      if (JSON.stringify(failed) !== JSON.stringify((pool && pool.closeLeft) || [])) {
+        const written = await poolClose(env, op.id, { left: failed });
+        if (written.pool) pool = written.pool;
+      }
+      return json({ ok: true, pool, accepted, left: failed });
+    }
     if (op.kind === "slip" || op.kind === "slip-key" || op.kind === "claims") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       if (op.kind === "slip-key") return json(await deskCall(env, "/_internal/maker/vault/key", "GET"));

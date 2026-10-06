@@ -24705,7 +24705,7 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 17 && seen.length === 25 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  ok(!own.length && kinds.length === 18 && seen.length === 26 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -52344,6 +52344,36 @@ await (async () => {
   ok(/the prices follow that customer, never past the board every stranger sees/.test(pg17) && !/two levels above/.test(pg17),
     "the guest-link lead says the prices follow that customer, never past the board every stranger sees, and no longer two levels above");
   try { w.close(); } catch (e) { /* best effort */ }
+})();
+
+section("Pool B1: a group order is one record in the order book, a join is one step, and the units in are read live");
+await (async () => {
+  await (await import("./pool.mjs")).store({ ok, KV, skipOff });
+})();
+
+section("Pool B2: a customer reads the pools and joins on their session, at their own price, and a test account's join stays in its fixture");
+await (async () => {
+  await (await import("./pool-join.mjs")).join({ ok, KV, skipOff });
+})();
+
+section("Pool B3: only the owner opens and closes a group order; Close closes in the book, then previews and accepts each joined order");
+await (async () => {
+  await (await import("./pool-maker.mjs")).maker({ ok, KV, skipOff });
+})();
+
+section("Pool B4: Home's group order card, one row each, Join through the check, and a moved list redraws it");
+await (async () => {
+  await (await import("./pool-page.mjs")).page({ ok });
+})();
+
+section("Pool B5: opening a group order wakes nobody; Close wakes each joiner once under a banner of its own");
+await (async () => {
+  await (await import("./pool-wake.mjs")).wake({ ok, KV, skipOff });
+})();
+
+section("Pool B6: the test accounts show a group order open and joined, and one closed with its order acknowledged, sealed for the account alone");
+await (async () => {
+  await (await import("./pool-fixture.mjs")).fixture({ ok, KV, skipOff });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

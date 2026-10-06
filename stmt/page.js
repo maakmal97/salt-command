@@ -1113,6 +1113,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
         + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<section aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
+        + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'
+        + '<div id="makerPools" aria-live="polite"></div></section>'
         + '<section aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
         + '<p class="lead" id="makerHoursStatus">Reading hours…</p>'
         + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
@@ -1184,7 +1187,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
     + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
-    + '<div class="hcol"><div id="hComing"></div><div id="hAgain"></div></div></div>'
+    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
@@ -1268,7 +1271,7 @@ const CLIENT_JS = `
   window.bullDraw=bullDraw; window.bullRead=bullRead;   /* reachable from outside the closure, which is how the suite drives them */
   bullDraw(BULL);
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
-  var session='', user='', prices=null, orders=[], poll=null, tab='home', draft={}, counterHours=null, hoursError=false;
+  var session='', user='', prices=null, orders=[], pools=[], poll=null, tab='home', draft={}, counterHours=null, hoursError=false;
   /* S6 6.5: the account's own claims, money said to be sent on To pay now rather than on an order (GET /orders) */
   var claims=[];
   /* S3 3.5: the content key the account was opened with, so a return re-reads it without asking for anything */
@@ -2054,7 +2057,7 @@ const CLIENT_JS = `
     ticket++; busy=false; go.disabled=false;
     if(poll){ clearInterval(poll); poll=null; }
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
-    bundle=null; session=''; view=false; prices=null; orders=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
+    bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
     parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
@@ -2843,9 +2846,10 @@ const CLIENT_JS = `
   function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
-  function sheetOpen(product,q,opener,amend){
+  function sheetOpen(product,q,opener,amend,pool){
     if(view||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
+    draft.pool=pool||'';   /* a group order is joined from the same sheet: collected, one size, its own request */
     if(amend){
       draft.mode=amend.mode; draft.place=amend.place||''; draft.placeWas=draft.place;
       draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
@@ -2896,7 +2900,7 @@ const CLIENT_JS = `
   function sheetClose(){
     if(!osh) return;
     dropPlaced(false);
-    var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend='';
+    var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool='';
     s.wrap.parentNode.removeChild(s.wrap);
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
@@ -2954,6 +2958,7 @@ const CLIENT_JS = `
   function formWhy(){
     if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
     if(!quotes().length) return tw('sh.whySize');
+    if(draft.pool) return '';
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return tw('sh.whyWhere');
     if(draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
     return '';
@@ -2966,7 +2971,7 @@ const CLIENT_JS = `
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
   }
   function drawForm(){
-    sheetHead(tw(draft.amend?'ord.amend':'sh.new'));
+    sheetHead(tw(draft.pool?'hp.h':draft.amend?'ord.amend':'sh.new'));
     var S=sold(), B=osh.body, ff=!!(assoc&&draft.forFriend);
     if(draft.amend){ var original=oFind(draft.amend); S=S.filter(function(p){ return original&&p.product===original.product; }); }
     /* a list that came back with nothing priced (a 409, then Change) leaves nothing to pick: the Order tab's own line */
@@ -2979,6 +2984,8 @@ const CLIENT_JS = `
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
     if(assoc) B.appendChild(oChoice(tw('sh.whoFor'),[['me',tw('sh.me')],['friend',tw('sh.friend')]],draft.forFriend==null?'':(draft.forFriend?'friend':'me'),'for',
       function(v){ draft.forFriend=(v==='friend'); sheetDraw(); }));
+    /* a group order asks nothing more: its size and its way are fixed, and Review follows the answer an associate gives */
+    if(draft.pool){ formFoot(); return; }
     /* V4b (his point 5 of 28 Sep 2026): EVERY PRODUCT ON THEIR LIST, EACH WITH ITS SIZES, a size of each they want. A
        product is its mark in the legend (v695: named by its shape); a chosen size tapped again comes off the sheet */
     if(S.length>1) B.appendChild(el('p','sub2',tw('sh.multi')));
@@ -3061,9 +3068,10 @@ const CLIENT_JS = `
     draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(),
         /* S4 4.4: the price as shown, for a moved list to be told against; placed, the order Place made of it */
         shown:qt.total, was:null, gone:false, placed:''}; }),
-      amend:draft.amend||'', sheet:draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.mode,
-      place:draft.mode==='deliver'?String(draft.place||'').trim():'', say:String(draft.say||'').trim(), forFriend:ff,
-      wantBy:draft.when==='day'&&wantOk(draft.wantBy)?draft.wantBy:'',
+      amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
+      place:draft.mode==='deliver'&&!draft.pool?String(draft.place||'').trim():'', say:draft.pool?'':String(draft.say||'').trim(), forFriend:ff,
+      pool:draft.pool||'',
+      wantBy:draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
     draft.step='check'; draft.snote=''; sheetDraw();
@@ -3137,13 +3145,23 @@ const CLIENT_JS = `
     await loadOrders(); if(mine!==ticket) return;
     drawOrder(); sheetDraw();
   }
+  /* a group order's Join: the sheet opens on the pool's own product and size; one who is asked who it is for (an associate) answers
+     that first, anyone else is at the check at once, where Join sends it */
+  function poolOpen(p,opener){
+    if(!oSoldHas(p.product,p.q)) return;
+    draft.mode='collect'; draft.place=''; draft.say=''; draft.noteOpen=false; draft.when='soon'; draft.wantBy='';
+    if(assoc) draft.forFriend=null;
+    sheetOpen(p.product,p.q,opener,null,p.id);
+    if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
   function toForm(){ dropPlaced(true); draft.step='form'; draft.check=null; draft.snote=''; sheetDraw(); }
   function drawCheck(){
     var c=draft.check, B=osh.body, one=c.lines.length===1, a=c.lines[0];
     /* V5b2: one forecast for the sheet, every line still on the list counted at its goods */
     var lk=advanceLikely(c.lines.filter(function(l){ return !l.gone; }).map(function(l){ return l.total; }));
-    sheetHead(tw(c.amend?'ord.amendReview':'sh.check'),toForm);
+    sheetHead(tw(c.pool?'hp.h':c.amend?'ord.amendReview':'sh.check'),c.pool&&!assoc?sheetDismiss:toForm);
     if(c.amend) B.appendChild(el('p','salt-insight',tw('ord.amendAsk')));
+    if(c.pool) B.appendChild(el('p','salt-insight',tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
     if(c.amend&&(hoursError||counterHours&&!counterHours.open))
       B.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
     /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
@@ -3163,7 +3181,7 @@ const CLIENT_JS = `
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
+    if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
@@ -3181,8 +3199,8 @@ const CLIENT_JS = `
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
     var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
-    bk.addEventListener('click',toForm); F.appendChild(bk);
-    var pl=el('button','salt-pill salt-pill--md',c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
+    bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
+    var pl=el('button','salt-pill salt-pill--md',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
     pl.disabled=!!draft.busy||gone||!!c.shut; pl.setAttribute('data-k','place');
     pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
     /* the answer is drawn beside Place, which is what was tapped */
@@ -3202,7 +3220,9 @@ const CLIENT_JS = `
       if(c.sheet) body.sheet=c.sheet;
       if(c.wantBy) body.wantBy=c.wantBy;
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
-      var r=await api(c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
+      /* a group order is joined, not placed: its size is the pool's, it is collected, and the Worker makes the one order */
+      if(c.pool) body={q:l.q,total:l.total,unit:l.rate,digest:c.digest,rid:l.rid,forFriend:!!(assoc&&c.forFriend)};
+      var r=await api(c.pool?'/pools/'+encodeURIComponent(c.pool)+'/join':c.amend?'/orders/'+encodeURIComponent(c.amend)+'/amend':'/orders',body);
       if(mine!==ticket) return;
       if(r.status===409&&(r.body.code==='pricesMoved'||r.body.error==='prices moved')){ draft.busy=false; await pricesMoved(r.body.prices); if(mine!==ticket) return; sheetDraw(); return; }
       /* a retry the Worker already has on this sheet (its request id not yet read back on the kv road) is placed */
@@ -3210,6 +3230,8 @@ const CLIENT_JS = `
       if(!r.body.ok){
         draft.busy=false;
         draft.snote=wErr(r.body,'sh.notPlaced');
+        /* a pool that closed, or one they are in already, is read again so Home says so */
+        if(c.pool&&r.status===409){ await loadOrders(); if(mine!==ticket) return; drawHome(); }
         /* S4 4.6: a refusal that the open orders explain (placed from another phone meanwhile) turns to the limit itself */
         if(r.status===400){ await loadOrders(); if(mine!==ticket) return; drawOrder();
           if(!c.amend&&openN()>=OMAX&&!c.lines.some(function(x){ return x.placed; })){ draft.step='limit'; draft.check=null; draft.snote=''; } }
@@ -3223,6 +3245,7 @@ const CLIENT_JS = `
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
+    if(c.pool) drawHome();
   }
   /* S4 4.5: SENT. See the order closes the sheet on the order itself. Step 1b: its notifications question retired, the
      bell asking instead */
@@ -4447,7 +4470,7 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
     drawPayHead();
@@ -4483,6 +4506,32 @@ const CLIENT_JS = `
       box.appendChild(homeRow(o,tw('rt.row',{d:ymdDay(o.movedOn)})));
       box.appendChild(rateStrip(o));
       var tp=oTap(o); if(tp.k==='rate'&&tp.t) box.appendChild(statusLine(tp.t));
+    });
+    return box;
+  }
+  /* A GROUP ORDER (the pool): one row each, between Needs you and Coming up. Its mark and size, how many units are in of its target,
+     and the day it closes; Join is its one action while it is open, they are not in and their list sells the size; a row they are
+     in opens their order. A pool he has closed reads Closed, their order acknowledged next. Nothing wakes a phone to say one is open. */
+  function homePool(){
+    var box=el('div'); if(!session||view||!pools.length) return box;
+    box.appendChild(hHead(tw('hp.h'),pools.length>1?pools.length:0));
+    pools.forEach(function(p){
+      var inn=!!p.joined, shut=p.state!=='open', sold1=oSoldHas(p.product,p.q);
+      var r=el(inn?'button':'div','salt-inbox-row hpool'); if(inn) r.type='button';
+      r.setAttribute('data-pool',p.id);
+      r.appendChild(mtile(p.product,p.q,unitFor(p.product)));
+      var main=el('span','salt-inbox-row__main');
+      main.appendChild(el('span','salt-inbox-row__what',shut?tw('hp.closed'):inn?tw('hp.joined',{q:unitsOf(p.q,unitFor(p.product))}):tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
+      if(inn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.in',{n:p.unitsIn,t:unitsOf(p.target,unitFor(p.product))})));
+      if(p.closesOn&&!shut) main.appendChild(el('span','salt-inbox-row__what',tw('hp.closes',{d:Dd(ymdDay,p.closesOn)})));
+      r.appendChild(main);
+      if(inn) r.addEventListener('click',function(){ if(oFind(p.joined)) oOpen(p.joined); else placeShow('order'); });
+      else if(!shut&&sold1){
+        var side=el('span','salt-inbox-row__side'), j=el('button','salt-pill salt-pill--md',tw('hp.join')); j.type='button'; j.setAttribute('data-pool-join',p.id);
+        j.addEventListener('click',function(){ poolOpen(p,j); });
+        side.appendChild(j); r.appendChild(side);
+      }
+      box.appendChild(r);
     });
     return box;
   }
@@ -4583,6 +4632,10 @@ const CLIENT_JS = `
     /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
     if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
     else ordersFailed=true;
+    /* a group order is read with the orders; a read that fails keeps the list as it stood, and says nothing: the card is an extra */
+    var pr=await api('/pools');
+    if(mine!==ticket) return;
+    if(pr.body&&pr.body.ok&&Array.isArray(pr.body.pools)) pools=pr.body.pools;
   }
   /* S5 5.5 (24 Sep 2026): A RE-READ PATCHES WHAT CHANGED AND NOTHING ELSE. It drew the whole tab again, the order
      form and every order with it, so a poll bringing any change to any order took the box being typed in and the
@@ -4590,9 +4643,10 @@ const CLIENT_JS = `
      and only the rows and the parts of the open order that changed are drawn again. A return to the page and a lapse
      reopened (S3 3.5) come this way too; only an account that now draws the form above differently draws the tab. */
   async function oReread(){
-    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), thWas=JSON.stringify(thread), failedWas=ordersFailed; orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
+    var before={}, mine=ticket, was=JSON.stringify([claims,orders.map(oClaimed)]), thWas=JSON.stringify(thread), failedWas=ordersFailed, poolsWas=JSON.stringify(pools); orders.forEach(function(o){ before[o.id]=JSON.stringify(o); });
     await loadOrders();
     if(mine!==ticket) return;
+    if(JSON.stringify(pools)!==poolsWas) drawHome();   /* a group order filled, joined or closed: Home says so on the poll */
     /* C14: the line and its Try again come and go with the list, and what the read brought may lift or set the hold */
     if(ordersFailed!==failedWas){ setHold(); drawOrder(); if(osh&&draft.step==='limit') sheetDraw(); return; }
     /* V5: a stage reached on the phone's clock (a page left open across midnight in Kuala Lumpur) reads as a change too */
@@ -4999,7 +5053,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

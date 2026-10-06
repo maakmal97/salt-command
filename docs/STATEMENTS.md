@@ -1595,6 +1595,43 @@ distinguishes matching content from another notice and keeps the prior notificat
 outcome explicitly unknown. This source stage has not been deployed or
 accepted by the owner.
 
+### Group orders, the pool (his plan of 05 Oct 2026)
+
+He opens a group order for one product and size with a target in units; customers join at their own sealed list price for that
+size; he closes it, and each joined order goes on to the acknowledgement as any other. Mechanism, in the order book only (the
+KV road refuses it, `POOL_ON_KV`, as it does the account's thread):
+
+- **Store.** `pool (u, oid, at, doc)` in the site's Durable Object, `u` empty, the oid a pool id `^p[0-9]{14}-[a-z0-9]{1,8}$`
+  (`isPoolId`; `TABLE()` routes it). Events under the pool's id: `popen`, `pjoin`, `pclose` (`foldPool`). The doc is
+  `{id, kind: "pool", at, product, q, target, closesOn?, state, closedAt?, closeLeft?, joins: [{u, oid, at}]}`. **The units in are
+  never stored**: `poolUnits` reads them live off the joined orders, a cancelled or declined join leaving at once. Nothing
+  writes a pool behind to KV.
+- **A join is one step.** `pjoin` runs `decidePoolJoin` (`poolTwice`, `poolClosed`, `poolNone`; the closing day is the card's
+  promise alone, only his Close shuts a pool) and then, in one `transactionSync`, appends the placement (under the request id's own event, so a retry lands once) and
+  the join. The order is `decidePlace` with the pool set: collect, one order, no sheet, at the customer's own sealed price, the list's
+  digest checked as at Place (409 `pricesMoved` answers the sealed list). `decidePlace` without the pool refuses a body that names
+  one, `decideReplace` refuses a pooled order (`amendClosed`), and `customerView` carries `pool` and nothing else new.
+- **Customer routes** (`handleCustomer`, on a session): `GET /pools` (the open ones, and a closed one they joined in the last 14
+  days; `poolView`: no joins, their own standing join as `joined`) and `POST /pools/<id>/join {q, total, unit, digest, rid,
+  forFriend}`. An associate's Join asks Me / A friend first, as Place does; a friend's books to the `-R` bucket by the same
+  `bookR2` road, since the order is an ordinary placement. A test account's pools are its fixture's (`examplePools`,
+  `exampleJoin`, actor `pjoin` in `fixture-account`) and a real pool is never shown to one.
+- **The page.** Home's `hPool`, between Needs you and Coming up: one row a pool, its mark and size, `hp.in`, `hp.closes`, and Join
+  as the one action while it is open, they are not in, and their list sells the size; a row they are in opens their order; a
+  closed one reads `hp.closed`. Join opens the order sheet's check on the pool's own product and size (`poolOpen`), a request id a
+  review. **Opening a pool wakes no phone**: it is a card on Home. **Reaching the target closes nothing.**
+- **Maker** (`stmt/maker.js`, the verified owner only): `GET|POST /all/maker/pools` (open: `product, q, target, closesOn`, any other
+  field 400) and `POST /all/maker/pools/<id>/close` (an empty body). Close closes in the book first (`pclose`; each joiner who
+  still stands is woken once, kind `pool-closed`, naming their own order, on a topic and tag of their own), then for each joined
+  order at `placed` runs the Desk's own `/_internal/maker/orders/<id>/preview` and `/accept` with the preview's hash, in turn. A
+  `differs` or any error is written on the pool as `closeLeft [{id, why}]` and the rest carry on; **Close again retries only
+  those**, and clears them as they land. Closing under the target still accepts.
+- **Banners at close, in order:** `pool-closed` ("Group order closed", "Your order is in. We acknowledge it next."), then the
+  order's own `confirmed` from the Desk's accept.
+- **Fixture** (`tools/testfix.mjs`): one pool open with the account joined, one closed whose order is acknowledged, each with
+  invented others (`seedUnits`); sealed with the fixture (`pools`). The account is over the five-order limit in the fixture, so a
+  join on it meets `openMax`.
+
 **Remaining cutover inventory:** account claims preview/Received/Not found; slip viewing
 and private-key unlock; order messages, reasons and omitted moves; tier proposal
 Accept-all/Add-ID; remaining Network actions; safe notes, settlement prose, order-code
