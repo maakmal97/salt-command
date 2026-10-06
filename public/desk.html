@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="db49ca39e7687b22";
+var SALT_BUILD_ID="ed199b1dc10fe73d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7461,9 +7461,12 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
+  if(d==='partner')return +F.toFixed(2);
   if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
     return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
   if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
@@ -7475,7 +7478,8 @@ function quoteGrid(C,P,d){
   const R=P.tierRule,G=gridOf(R);if(!G)return null;
   const qs=gridSizes(G);let ps;
   const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
-  if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
+  if(d==='partner')ps=qs.map(q=>quoteAt(q,C,P,d));
+  else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
   else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
   else ps=qs.map(q=>quoteAt(q,C,P,d));
   if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
@@ -7573,6 +7577,9 @@ const opening={
   "qty": 4.9,
   "costPerKg": 64
 };
+/* COUNTED AT v1030 on 2026-10-06: the rice inventory held 32 against 37 on the roll, a drift of -5. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-10-06. <b>RICE COUNT DATED 06 OCT: 32 UNIT COUNTED AGAINST 37 ON THE BOOK, A DRIFT OF -5.</b> The desk counted by hand and the count wins, so stated rice becomes 32 and the count date moves from 27 Sep to 06 Oct. The gap books as shrinkage across every unit sold. The dossier gives no reason for it. Floors stay at 3.4 for 1 unit, 6.8 for 2 and 42.5 for 12.5, with the ask at 8 for 1 unit. Self-use moves from 12 to 17. The drafter flagged the 5 unit unaccounted for; the figures confirm the gap but cannot explain it. Nothing is left outstanding on the row. */
+/* COUNTED AT v1030 on 2026-10-06: the candy inventory held 14 against 14 on the roll, a drift of 0. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-06. <b>CANDY COUNT DATED 06 OCT: 14 UNIT COUNTED AGAINST 14 ON THE BOOK, A DRIFT OF 0.</b> The desk counted by hand and the count matches the ledger, so stated candy stays at 14 and only the count date moves from 27 Sep to 06 Oct. Nothing sits unaccounted for. Floors do not move: 42 for 1 unit, 84 for 2 and 525 for 12.5, with the ask at 60 for 1 unit. Self-use stays at 1. The drafter flagged that this is the first exact count since the last one, and the figures bear that out. Nothing is left outstanding on the row. */
+/* COUNTED AT v1030 on 2026-10-06: the oil inventory held 0 against 20 on the roll, a drift of -20. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-06. <b>OIL COUNT DATED 06 OCT: 0 UNIT COUNTED AGAINST 20 ON THE BOOK, A DRIFT OF -20.</b> The desk counted by hand and the count wins, so stated oil becomes 0 and the count date moves from 27 Sep to 06 Oct. The gap books as shrinkage across every unit sold. The dossier gives no reason for it and none is offered here. Floors stay at 8 for 1 unit, 16 for 2 and 100 for 12.5, with the ask at 10 for 1 unit. Self-use moves from 124 to 144. The drafter flagged the 20 unit unaccounted for; the figures confirm the gap but cannot explain it. Nothing is left outstanding on the row. */
 /* ROLLED AT v1026 (rice): 10 unit to CE4-CHE on 2026-10-06, so 47 less 10 is 37. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1025 (rice): 10 unit to CJ2-KUC on 2026-10-05, so 57 less 10 is 47. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v1023 (rice): 2 unit to CN3-WM on 2026-10-05, so 59 less 2 is 57. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
@@ -7609,7 +7616,7 @@ const PROD_OPENING={
   "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 0
   },
   "candy": {
     "qty": 0,
@@ -7619,7 +7626,7 @@ const PROD_OPENING={
   "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 37
+    "stated": 32
   },
   "spare": {
     "qty": 0,
@@ -7733,9 +7740,9 @@ const PROD_OPENING={
 const STATED_STOCK=1.25;
 const COUNT_ON={
   "salt": "2026-10-03",
-  "oil": "2026-09-27",
-  "candy": "2026-09-27",
-  "rice": "2026-09-27",
+  "oil": "2026-10-06",
+  "candy": "2026-10-06",
+  "rice": "2026-10-06",
   "spare": null
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -7761,7 +7768,10 @@ const COUNTS=[
   {"product":"candy","date":"2026-09-27","qty":14,"was":15,"drift":-1},
   {"product":"rice","date":"2026-09-27","qty":74,"was":85,"drift":-11},
   {"product":"salt","date":"2026-09-29","qty":24,"was":26,"drift":-2},
-  {"product":"salt","date":"2026-10-03","qty":0,"was":2.25,"drift":-2.25}
+  {"product":"salt","date":"2026-10-03","qty":0,"was":2.25,"drift":-2.25},
+  {"product":"oil","date":"2026-10-06","qty":0,"was":20,"drift":-20},
+  {"product":"candy","date":"2026-10-06","qty":14,"was":14,"drift":0},
+  {"product":"rice","date":"2026-10-06","qty":32,"was":37,"drift":-5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -8072,8 +8082,9 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","paidOn":"2026-09-21","note":"RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R"];
-const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R"];
+const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA","CA6-CYB"];
+const partners=["CM4-TO"];
 const INTRODUCTIONS=[
   {"by":"CJ4-OKR","customer":"CC9-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
   {"by":"CJ4-OKR","customer":"CJ4-BJ","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
@@ -8440,7 +8451,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-05T22:42:02.888Z";
+const QUEUE_COMMITTED="2026-10-06T09:29:20.784Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -9445,7 +9456,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1028","d":"06 Oct 2026","t":"ANY QUANTITY AT AN AUTOMATIC PRICE, AND NEGOTIATE PRICE, ON THE COUNTER","n":["<b>Any quantity.</b> A customer types any quantity on the Counter and sees its price at once: each book's grid (salt 0.5 to 25 unit in quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10) is priced by the one engine rule, quoteAt, and sealed into their list at publish. The page reads the price and works nothing out. The stamp covers the grid; a Place off the step, over the max, or with no stamp is refused. Above the max the way in is Negotiate.","<b>The whole grid is walked, so the rate never rises with size.</b> This lowers rung prices and raises none: the stranger's 6.25 unit Set Price RM670 to RM660; named cards RM10 to RM20 lower at up to nine rungs (at 1 unit 33 of 41 accounts RM150 to RM140; at 3 unit none; at 12.5 unit 3 accounts RM1,210 to RM1,200). Where the floor binds the walk steps to the floor's own ten. Oil, candy and rice keep his typed rungs exactly; between rungs, the rung's rate times the size to the ringgit.","<b>Negotiate price.</b> One order, for themselves, may ask for a price, with a figure of their own if they want. It reaches him as Asked under Waiting on you, with the automatic price, cost, margin, floor, their drift and record. His offer is the goods alone, never under the floor, filed as his yes and open 48 hours; their Accept drafts the row at it and his yes approves it only on an exact match, else it waits under Approve. An open offer freezes the order. No thanks, or his withdrawal, closes the ask: the order stands at its listed price for his Accept as usual, or, past the grid, is cancelled. A take that finds no yes of his that fits queues its row to wait under Approve, never stranded. Two asks open an account at most, none while their payment waits or goods of theirs are overdue. The price stays on that one order: no board, drift or card moves. No account's amount owed moved."]}];
+const evolution=[{"v":"v1030","d":"06 Oct 2026","t":"THREE COUNTS ON 06 OCT: OIL SHORT BY 20, RICE SHORT BY 5, CANDY EXACT","n":["<b>THREE STOCK COUNTS FOLDED.</b> Oil, candy and rice were each counted by hand on 06 Oct, the desk deciding all three. Oil was 20 unit short of the book and rice 5 unit short. Candy matched the book exactly, the first clean count since 27 Sep. The dossier gives no reason for either gap.","<b>THE COUNT WINS.</b> Stated oil is now 0, candy 14 and rice 32, and the count dates for all three move to 06 Oct. Each gap books as shrinkage across the units sold. Salt, spare and cost basis are untouched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9596,7 +9607,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Oct 2026, 15:28 KL';
+const LAST_UPDATED='06 Oct 2026, 18:33 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18196,7 +18207,9 @@ function driftSignals(code,prod){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RULES.holdDays),0)};
 }
-function driftOf(code,prod){
+/* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
+function driftOf(code,prod){const p=prod||PROD;return renderMemo('drift|'+(ownerOf(code)||code)+'|'+p,()=>driftOfNow(code,p));}
+function driftOfNow(code,prod){
   const p=prod||PROD,R=TIER_RULE[p];if(!R||!R.drift)return null;
   const who=ownerOf(code)||code,h=(TIER_OF[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(who,p),a=PRICING_ENGINE.autoDrift(sig,R.auto);
@@ -18325,7 +18338,9 @@ function tierCard(){
 }
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
-function pxSignals(){
+/* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
+function pxSignals(){return renderMemo('pxSignals|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink,pxSignalsNow);}
+function pxSignalsNow(){
   const MS=86400000,out=[];
   const c=pxCost();
   // 1 cover. SHIPPED units, because that is what consumption means.
@@ -22196,9 +22211,11 @@ function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROF
    refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
    all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
    own page, and it is why the desk printed nothing for oil the day the tiers came off. */
+function isPartner(code){return typeof partners!=='undefined'&&partners.includes(ownerOf(code)||code);}
 function cardQuote(code,q,t){
   if(!(q>0))return null;
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
+  if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
   const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
   /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
      point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed

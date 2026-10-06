@@ -266,7 +266,7 @@ function quoteOff(snap, code, qty) {
   const I = snap && snap.inputs;
   if (!I || !I.cost || !I.policy || !(qty > 0)) return null;
   const R = I.policy.tierRule || null;
-  const d = R && R.drift ? (snap.drift && typeof snap.drift[code] === "number" ? snap.drift[code] : null) : 0;
+  const d = (snap.partners || []).includes(code) ? "partner" : R && R.drift ? (snap.drift && typeof snap.drift[code] === "number" ? snap.drift[code] : null) : 0;
   if (d == null) return null;
   try { const v = PRICING_ENGINE.quoteAt(qty, PRICING_ENGINE.costStack(I.cost), I.policy, d); return v != null && isFinite(v) && v > 0 ? v : null; }
   catch (e) { return null; }
