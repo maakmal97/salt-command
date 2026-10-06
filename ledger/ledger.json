@@ -1,6 +1,6 @@
 {
- "v": "v1029",
- "stamped": "06 Oct 2026, 18:00 KL",
+ "v": "v1030",
+ "stamped": "06 Oct 2026, 18:33 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 0
    },
    "candy": {
     "qty": 0,
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 37
+    "stated": 32
    },
    "spare": {
     "qty": 0,
@@ -94,9 +94,9 @@
   "STATED_STOCK": 1.25,
   "COUNT_ON": {
    "salt": "2026-10-03",
-   "oil": "2026-09-27",
-   "candy": "2026-09-27",
-   "rice": "2026-09-27",
+   "oil": "2026-10-06",
+   "candy": "2026-10-06",
+   "rice": "2026-10-06",
    "spare": null
   },
   "COUNTS": [
@@ -260,6 +260,27 @@
     "qty": 0,
     "was": 2.25,
     "drift": -2.25
+   },
+   {
+    "product": "oil",
+    "date": "2026-10-06",
+    "qty": 0,
+    "was": 20,
+    "drift": -20
+   },
+   {
+    "product": "candy",
+    "date": "2026-10-06",
+    "qty": 14,
+    "was": 14,
+    "drift": 0
+   },
+   {
+    "product": "rice",
+    "date": "2026-10-06",
+    "qty": 32,
+    "was": 37,
+    "drift": -5
    }
   ],
   "purchases": [
@@ -7280,9 +7301,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-05T22:42:02.888Z",
+  "QUEUE_COMMITTED": "2026-10-06T09:29:20.784Z",
   "PRICING": {
-   "takenAt": "2026-10-06T09:56:22.784Z",
+   "takenAt": "2026-10-06T10:33:39.181Z",
    "sizes": [
     0.5,
     1,
@@ -10995,12 +11016,12 @@
        "repl": 7.68,
        "freightRate": 0.1846,
        "leak": {
-        "ratio": 1.3636,
+        "ratio": 3.75,
         "leak": 75,
-        "sold": 55,
+        "sold": 20,
         "cycles": 3,
-        "from": "2026-09-09",
-        "to": "2026-09-27"
+        "from": "2026-09-19",
+        "to": "2026-10-06"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -11026,7 +11047,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.28057971014492755,
+       "shrinkRate": 0.33855072463768116,
        "avgDel": {
         "n": 15,
         "kg": 201,
@@ -12122,9 +12143,9 @@
         "ratio": 0.0333,
         "leak": 1,
         "sold": 30,
-        "cycles": 1,
+        "cycles": 2,
         "from": null,
-        "to": "2026-09-27"
+        "to": "2026-10-06"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -13243,12 +13264,12 @@
        "repl": 3.2,
        "freightRate": 0.2,
        "leak": {
-        "ratio": 0.8571,
-        "leak": 12,
-        "sold": 14,
-        "cycles": 2,
+        "ratio": 0.3333,
+        "leak": 17,
+        "sold": 51,
+        "cycles": 3,
         "from": null,
-        "to": "2026-09-27"
+        "to": "2026-10-06"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -13274,7 +13295,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.12,
+       "shrinkRate": 0.17,
        "avgDel": {
         "n": 9,
         "kg": 51,
@@ -14119,10 +14140,10 @@
      ]
     }
    },
-   "v": "v1029"
+   "v": "v1030"
   },
   "OPEN": {
-   "at": "2026-10-06T09:56:23.826Z",
+   "at": "2026-10-06T10:33:39.864Z",
    "count": 12,
    "byKey": {
     "CE4-CHE|2026-10-06|240": {
@@ -14334,10 +14355,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": 7.4,
+     "coverDays": 0,
      "rate": 2.45,
      "owedToYou": 0,
      "promised": 0,
@@ -14356,10 +14377,10 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 37,
-     "free": 37,
+     "onHand": 32,
+     "free": 32,
      "owedOut": 0,
-     "coverDays": 12.7,
+     "coverDays": 11.1,
      "rate": 2.68,
      "owedToYou": 15,
      "promised": 0,
@@ -14379,12 +14400,12 @@
    },
    "countedOn": {
     "salt": "2026-10-03",
-    "oil": "2026-09-27",
-    "candy": "2026-09-27",
-    "rice": "2026-09-27",
+    "oil": "2026-10-06",
+    "candy": "2026-10-06",
+    "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1029"
+   "v": "v1030"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14392,7 +14413,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1029"
+   "v": "v1030"
   },
   "REWARD": {
    "stated": {
@@ -14404,7 +14425,7 @@
      }
     }
    },
-   "v": "v1029"
+   "v": "v1030"
   }
  }
 }
