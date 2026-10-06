@@ -572,7 +572,11 @@ function fiveTiers(sizes,C,P){
      is what a stranger is quoted; a named customer is quoted the Set Price moved by their drift (driftAt below). */
   if(R&&R.drift&&Array.isArray(R.rungs)&&R.rungs.length){
     const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-    return driftWalk(sizes,C,P,0).map(x=>{
+    /* 05 OCT 2026, HIS DECISION: THE WHOLE GRID IS WALKED. The sizes asked for are walked with every point of the book's
+       grid beneath them (walkSizes), so the board reads exactly what any quantity is quoted at, and the rate never rises
+       across the grid; then the sizes asked for are read off that one walk */
+    const all=driftWalk(walkSizes(R,sizes),C,P,0);
+    return sizes.map(q=>all.find(x=>Math.abs(x.q-q)<0.009)).map(x=>{
       let rung=0; rungs.forEach((r,i)=>{if(r<=x.q+0.009)rung=i;});
       return {q:x.q,rung:rung,cogs:Math.round(ladderCogs(x.q,C)),floor:x.floor,cols:[x.set],prices:[up(x.floor),x.set],
               set:x.set,ceiling:x.ceiling,drift:true};
@@ -631,9 +635,11 @@ function driftWalk(sizes,C,P,d){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
   const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
+  /* a rate rising with size steps down to the ten that holds it flat; where that ten is under the floor, to the floor's own
+     ten (06 Oct 2026): keeping the raw price there let a drifted grid jump RM330 at 24 unit, where the floor first binds */
   const walk=(q,raw,lift,prev)=>{
     let p=raw;
-    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;if(st>=lift-0.009)p=st;}
+    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;p=st>=lift-0.009?st:Math.min(raw,lift);}
     return p;
   };
   let prevS=Infinity, prevP=Infinity;
@@ -647,10 +653,40 @@ function driftWalk(sizes,C,P,d){
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
   });
 }
-/* the drift price at ANY size, walked against the rungs beneath it, as fiveTierAt walks a level */
+/* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
+   A book's TIER_RULE may carry `grid`, {min, step, max}: every size from min to max in steps of step is a quantity a
+   customer may type on the Counter and be quoted at once. Above max the only way in is Negotiate. The grid is read
+   here and nowhere else: gridOf checks it, gridSizes lists it, onGrid says whether a size is one of its points. */
+function gridOf(R){
+  const G=R&&R.grid;if(!G||typeof G!=='object')return null;
+  const min=+G.min,step=+G.step,max=+G.max;
+  if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
+  return {min:min,step:step,max:max};
+}
+function gridSizes(G){
+  if(!G)return [];
+  const n=Math.round((G.max-G.min)/G.step),out=[];
+  for(let i=0;i<=n;i++)out.push(+(G.min+i*G.step).toFixed(6));
+  return out;
+}
+function onGrid(q,G){
+  if(!G||typeof q!=='number'||!(q>0))return false;
+  const k=(q-G.min)/G.step;
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6;
+}
+/* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
+   the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
+   rises from one grid point to the next, and a rung reads what the walk through every point beneath it leaves. */
+function walkSizes(R,sizes){
+  const top=Math.max.apply(null,sizes.map(Number).concat([0]));
+  const all=(R.rungs||[]).map(Number).concat(gridSizes(gridOf(R))).filter(x=>x<=top+0.009).concat(sizes.map(Number)).sort((a,b)=>a-b);
+  const out=[];all.forEach(x=>{if(!out.length||Math.abs(out[out.length-1]-x)>=0.009)out.push(x);});
+  return out;
+}
+/* the drift price at ANY size, walked against every rung and grid point beneath it (walkSizes), as fiveTierAt walks a level */
 function driftAt(q,C,P,d){
   const R=P.tierRule;if(!R||!R.drift||!(q>0))return null;
-  const sizes=R.rungs.map(Number).filter(r=>r<q-0.009).concat([q]);
+  const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);
   const w=driftWalk(sizes,C,P,d);return w[w.length-1];
 }
 /* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
@@ -735,6 +771,54 @@ function fiveTierAt(q,C,P){
   const sizes=R.rungs.map(Number).filter(r=>Math.abs(r-q)>0.009).concat([q]).sort((a,b)=>a-b);
   return fiveTiers(sizes,C,P).find(r=>Math.abs(r.q-q)<0.009);
 }
+/* ============ 05 OCT 2026, HIS DECISION: A NAMED CUSTOMER'S PRICE AT ANY SIZE, ONE RULE ============
+   What the desk's cardQuote answered on a drift book and a stated board, moved here so the desk, the Counter's sealed
+   grid and the desk Worker's card read one function. A stated board: the size's own row, pro rata on its rung's rate and
+   rounded down, between the floor and the ceiling, the same for everybody. A drift book: the Set Price moved by the
+   customer's drift d, walked through every grid point beneath the size. Either way never under the floor, through the
+   one cardPrice. A book priced by levels (no drift, no board) is not this function's: null. */
+/* A STATED BOARD OVER ITS GRID (06 Oct 2026, his rule that the rate never rises across the grid). A size between rungs is
+   its rung's rate times the size, rounded down to the ringgit: down to the book's ten, oil's rate rose within a band (13 unit
+   RM160, 14 unit RM180), and walking that flat pushed the band under his next typed rung. The floor's ten and the ceiling
+   hold it as fiveTiers holds a rung, and a typed rung is his price, never moved. A rate that still rises (a floor lift) steps
+   down to the ringgit that holds it, never under the floor's ten. */
+function fixedWalk(sizes,C,P){
+  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+  const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  let prev=Infinity;
+  return fiveTiers(sizes,C,P).map(r=>{
+    let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
+    const typed=R.fixed[String(r.q)]!=null, base=+R.fixed[String(rungs[r.rung])], lift=up(r.floor);
+    if(!typed&&p!=null&&base>0&&rungs[r.rung]>0){
+      p=Math.floor(base*r.q/rungs[r.rung]+1e-9);
+      if(p<r.floor-0.009)p=lift;
+      if(r.ceiling!=null&&p>r.ceiling+0.009)p=r.ceiling;
+      if(prev<Infinity&&p/r.q>prev+1e-9){const st=Math.floor(prev*r.q+1e-9);p=st>=lift-0.009?st:Math.min(p,lift);}
+    }
+    if(p!=null&&isFinite(p)&&r.q>0)prev=Math.min(prev,p/r.q);
+    return {q:r.q,p:p};
+  });
+}
+function quoteAt(q,C,P,d){
+  const R=P.tierRule;if(!R||!(q>0))return null;
+  const F=floorTotal(q,C,P);
+  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
+    return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
+  if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
+  return null;
+}
+/* THE GRID A CUSTOMER'S LIST CARRIES: quoteAt at every point of the book's grid, {min, step, max, p}, one walk a book, so
+   p[i] is exactly quoteAt(min + i*step). Null for a book with no grid, or one any point of which is unpriced. */
+function quoteGrid(C,P,d){
+  const R=P.tierRule,G=gridOf(R);if(!G)return null;
+  const qs=gridSizes(G);let ps;
+  const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
+  if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
+  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
+  else ps=qs.map(q=>quoteAt(q,C,P,d));
+  if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
+  return {min:G.min,step:G.step,max:G.max,p:ps};
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -766,6 +850,7 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift};
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
+        gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;

@@ -142,8 +142,13 @@ export function priceList(code, book, pricing, now, supply) {
       const rowsD = sizesHere.slice().sort((a, b) => a - b).map((q) => { const hit = mine.find((x) => Math.abs(x[0] - q) < 0.009);
         return hit && isFinite(hit[1]) && hit[1] > 0 ? { q, price: +(+hit[1]).toFixed(2) } : null; }).filter(Boolean);
       if (!rowsD.length) { out.soon.push({ product: p, name }); continue; }
-      out.products.push({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
-        basis: "card", tier: null, levels: null, sizes: rowsD });
+      /* 05 Oct 2026 (any quantity at an automatic price): AND THE GRID, the engine's quoteGrid at their drift, every point from
+         the book's min to its max, so the page quotes any quantity off the list and works nothing out. A snapshot carrying no
+         drift for them (one taken before this) sends the board alone. No cost and no drift parameter travels, only prices. */
+      const dr = snap.drift && Object.prototype.hasOwnProperty.call(snap.drift, code) ? snap.drift[code] : null;
+      const gridD = typeof dr === "number" ? PRICING_ENGINE.quoteGrid(C, P, dr) : null;
+      out.products.push(Object.assign({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
+        basis: "card", tier: null, levels: null, sizes: rowsD }, gridD ? { grid: gridD } : {}));
       continue;
     }
     const t = fixedBoard ? 0 : names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
@@ -169,6 +174,8 @@ export function priceList(code, book, pricing, now, supply) {
        dropping out above (a level the board has no column for) pushed sizes: [], and the page reads the first size
        to set up the order form, so the Order tab went blank, orders and Notifications with it. */
     if (!rows.length) { out.soon.push({ product: p, name }); continue; }
+    /* 05 Oct 2026: a stated board's grid, the same for everybody, the engine's quoteGrid; a level-priced book has none */
+    const gridF = fixedBoard ? PRICING_ENGINE.quoteGrid(C, P, 0) : null;
     out.products.push(Object.assign({
       product: p,
       name,
@@ -182,7 +189,7 @@ export function priceList(code, book, pricing, now, supply) {
       tier: fixedBoard ? null : names[t],
       levels: (!fixedBoard && held && typeof held === "object") ? held : null,
       sizes: rows
-    }, (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
+    }, gridF ? { grid: gridF } : {}, (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
   }
   return out;
 }
@@ -193,9 +200,19 @@ export function priceList(code, book, pricing, now, supply) {
    Place (4.2) without reading a price. KEYED, under STMT_KEY and over the username: a bare hash in the clear would
    let a copy of the store test a guessed board against it, and would show which accounts share one. */
 /* V3's cap left the stamp with the cap (V5b2, 29 Sep 2026), so a list that carried one re-quotes once. */
+/* 05 Oct 2026 (any quantity at an automatic price): THE STAMP COVERS THE GRID, every point's price and its min, step and max,
+   so an order at any quantity is checked at Place exactly as one at a board size is, and a moved grid re-quotes (409). */
 export function priceDigest(list, secret, username) {
-  const figures = ((list && list.products) || []).map((p) => [p.product, (p.sizes || []).map((r) => [r.q, r.price])]);
+  const figures = ((list && list.products) || []).map((p) => [p.product, (p.sizes || []).map((r) => [r.q, r.price]),
+    p.grid ? [p.grid.min, p.grid.step, p.grid.max, p.grid.p] : null]);
   return createHmac("sha256", String(secret)).update("prices\n" + username + "\n" + JSON.stringify(figures)).digest("hex");
+}
+/* THE STEPS IN THE CLEAR, beside the stamp: each product's {min, step, max}, no price, so the Counter's Worker refuses a
+   quantity off the step or over the max (stmt/orders.js checkPlacement) without reading the sealed list. */
+export function priceSteps(list) {
+  const out = {};
+  for (const p of (list && list.products) || []) if (p.grid) out[p.product] = { min: p.grid.min, step: p.grid.step, max: p.grid.max };
+  return out;
 }
 
 /* THE BOARD A STRANGER IS SHOWN (his instruction, 10 Sep 2026), pinned to one tier.

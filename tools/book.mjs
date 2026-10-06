@@ -271,7 +271,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null, drift = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -300,13 +300,17 @@ export function pricingSnapshot(w) {
          preview can set a customer's card beside what their page quoted without the Worker pricing anything.
          [size, price] pairs by code; a code the desk quotes nothing is left out. */
       cards = call("(function(){if(typeof cardQuote!=='function'||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){var r=[];shownSizes(PROD).forEach(function(q){var x=cardQuote(id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)o[id]=r;});return o;})()");
+      /* 05 Oct 2026 (any quantity at an automatic price): EACH CUSTOMER'S DRIFT on a drift book, the desk's own driftOf, so the
+         price list's grid and the desk Worker's card at a size off the board are the engine's quoteAt on the same inputs the
+         cards above were struck on. The rule travels in the policy (pxPolicy carries TIER_RULE, its grid with it). */
+      drift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards };
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards }, drift ? { drift } : {});
   }
 
   return {

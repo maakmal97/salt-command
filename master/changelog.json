@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1028",
+  "d": "06 Oct 2026",
+  "t": "ANY QUANTITY AT AN AUTOMATIC PRICE, AND NEGOTIATE PRICE, ON THE COUNTER",
+  "n": [
+   "<b>Any quantity.</b> A customer types any quantity on the Counter and sees its price at once: each book's grid (salt 0.5 to 25 unit in quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10) is priced by the one engine rule, quoteAt, and sealed into their list at publish. The page reads the price and works nothing out. The stamp covers the grid; a Place off the step, over the max, or with no stamp is refused. Above the max the way in is Negotiate.",
+   "<b>The whole grid is walked, so the rate never rises with size.</b> This lowers rung prices and raises none: the stranger's 6.25 unit Set Price RM670 to RM660; named cards RM10 to RM20 lower at up to nine rungs (at 1 unit 33 of 41 accounts RM150 to RM140; at 3 unit none; at 12.5 unit 3 accounts RM1,210 to RM1,200). Where the floor binds the walk steps to the floor's own ten. Oil, candy and rice keep his typed rungs exactly; between rungs, the rung's rate times the size to the ringgit.",
+   "<b>Negotiate price.</b> One order, for themselves, may ask for a price, with a figure of their own if they want. It reaches him as Asked under Waiting on you, with the automatic price, cost, margin, floor, their drift and record. His offer is the goods alone, never under the floor, filed as his yes and open 48 hours; their Accept drafts the row at it and his yes approves it only on an exact match, else it waits under Approve. An open offer freezes the order. No thanks, or his withdrawal, closes the ask: the order stands at its listed price for his Accept as usual, or, past the grid, is cancelled. A take that finds no yes of his that fits queues its row to wait under Approve, never stranded. Two asks open an account at most, none while their payment waits or goods of theirs are overdue. The price stays on that one order: no board, drift or card moves. No account's amount owed moved."
+  ]
+ },
+ {
   "v": "v1027",
   "d": "06 Oct 2026",
   "t": "GROUP ORDERS ON THE COUNTER; HUSHES FROM COUNTER ADMIN",

@@ -166,6 +166,12 @@
   tier), and the reward cover, whose gap is to their card price (his decision of 16 Sep 2026,
   replacing the board's ask of 14 Sep). The v510 draw toward the ask (`adjustedPrice`,
   `pbAdjusted`) and its loyalty test retired with v651.
+- **One rule at any size, the engine's `quoteAt` (05 Oct 2026).** `cardQuote` is `quoteAt`: on a drift book the Set Price
+  moved by the drift, **walked through every grid point beneath the size** (`walkSizes`), so the rate never rises across
+  the grid; on a stated board the rung's rate times the size, rounded down to the ringgit between rungs, his typed rungs
+  exact (`fixedWalk`). Where the floor binds, the walk steps to the floor's own ten (06 Oct 2026), the one place the rate
+  can rise, by less than a ten. The grid walk moved salt's 6.25 unit Set Price from RM670 to RM660 and lowers most named
+  cards RM10 to RM20 at up to nine rungs; it raises none.
 
 ## The desk
 

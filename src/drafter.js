@@ -1800,6 +1800,19 @@ export async function stageDigest(stage, entry, d, pricing) {
         amendKind: d.amendKind || null, flags: d.flags || [] };
   return sha(canon(shown));
 }
+/* 05 Oct 2026 (Negotiate, his decisions): HIS OFFER IS HIS YES TO A ROW BEFORE THEY ANSWER, an ack pre-approval whose shown
+   carries `offer`. Its digest reads the row's figures and the flags and nothing else, as a later stage's does: not the pricing
+   version, which moves with every deploy and would send nearly every take to Approve, and not the row's date or note, the row
+   being dated the day they take it. Every other field of the row, the party, product, size, goods, delivery and paid in
+   advance, is in it, so a book that moved under the offer sends the row to Approve, marked. */
+const OFFER_SKIP = (k) => k === "date" || k === "note" || k === "rid" || /On$/.test(k);
+export const isOfferPre = (pre) => { try { const s = typeof pre.shown === "string" ? JSON.parse(pre.shown || "{}") : (pre.shown || {}); return !!(s && s.offer); } catch (e) { return false; } };
+export async function offerDigest(entry, d) {
+  const row = (d && d.row) || {}, figures = {};
+  for (const k of Object.keys(row)) if (!OFFER_SKIP(k)) figures[k] = row[k];
+  return sha(canon(Object.assign({ stage: "offer", collection: (d && d.collection) || null, row: figures, flags: (d && d.flags) || [] },
+    entry && entry.prepay === true ? { prepay: true } : {})));
+}
 /* A LATER STAGE BEFORE ITS ROW HAS LANDED (S11 11.12) is previewed against the book as it will stand when it does:
    the pending row appended, and the open-order snapshot carrying it in the engine's own ledgerRow shape, which is
    what that snapshot's entries are. Nothing else is guessed at: whatever else moves before it lands shows as a
@@ -1839,12 +1852,15 @@ export async function preFor(db, at, entry) {
   /* a store before migrations/0011 has no pre-approvals, and every row waits under Approve as it did before D6 */
   try { rows = (await db.prepare("SELECT * FROM preapproval WHERE order_id=?1 AND status='waiting' ORDER BY at DESC").bind(id).all()).results || []; }
   catch (e) { return null; }
-  return rows.find((r) => r.entry_at === at) || (entry.counter ? null : rows.find((r) => !r.entry && !r.entry_at && r.stage === stage && answers(r, entry))) || null;
+  /* an offer of his waits on THEIR answer with no entry yet: only its own take (entry_at) spends it, never a row the site made */
+  return rows.find((r) => r.entry_at === at) || (entry.counter ? null : rows.find((r) => !r.entry && !r.entry_at && r.stage === stage && !isOfferPre(r) && answers(r, entry))) || null;
 }
 /** Approve the draft if it equals what he was shown, else mark it. "applied", "differs", or null if he decided it first. */
 export async function applyPre(db, pre, draft, book, now) {
   const at = now || new Date().toISOString();
-  const got = await stageDigest(pre.stage, draft.entry, draft, pre.stage === "ack" ? await pricingOf(book) : null);
+  /* an offer of his taken is digested on the row's figures and flags alone (offerDigest) */
+  const got = isOfferPre(pre) ? await offerDigest(draft.entry, draft)
+    : await stageDigest(pre.stage, draft.entry, draft, pre.stage === "ack" ? await pricingOf(book) : null);
   if (got !== pre.hash) {
     await db.prepare("UPDATE preapproval SET status='differs', draft_id=?1, decided_at=?2 WHERE id=?3").bind(draft.id, at, pre.id).run();
     return "differs";

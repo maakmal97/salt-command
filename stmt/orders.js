@@ -291,6 +291,8 @@ export const customerView = (o) => {
   if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day || "")) v.rowOn = day;
   /* S6: a claim's `queued` names the desk's entry for it, which is the desk's bookkeeping */
   if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
+  /* 05 Oct 2026: a negotiation, through its own whitelist (priceView) */
+  if (o && o.price) v.price = priceView(o.price);
   return v;
 };
 
@@ -506,17 +508,58 @@ export function wantByFault(v, at) {
   const last = klDay(new Date(Date.parse(today + "T04:00:00Z") + WANT_DAYS * 864e5).toISOString());
   return v > today && v <= last ? "" : "wantBy";
 }
-export function checkPlacement(body, open, at, poolOk = false) {
+/* ---- ANY QUANTITY, AND NEGOTIATE (his decisions of 05 Oct 2026) ------------------------------------------------------
+ * A customer may order any quantity on their book's grid, {min, step, max}, which the publish writes in the clear beside the
+ * list's stamp (tools/pricelist.mjs priceSteps): the page reads the price off the sealed grid and this checks only that the
+ * size is a point of it, the stamp being what holds the total to the list. Over the max the only way in is Negotiate.
+ * NEGOTIATE is an order placed with `ask`: a size and, if they want, a figure of their own (a number, nothing else), and the
+ * order waits in `price` for his offer, which they take or decline. AN OPEN OFFER FREEZES THE ORDER: nothing amends or
+ * cancels it, by either side, until it is taken, declined, withdrawn or past its `until`, read at the moment of each move and
+ * by no clock elsewhere. The customer reads `price` through priceView alone. */
+export const ASK_OPEN_MAX = 2;
+export const OFFER_HOURS = 48;
+export const stepsOk = (g) => !!g && isNum(g.min) && isNum(g.step) && isNum(g.max) && g.min > 0 && g.step > 0 && g.max >= g.min;
+/** Whether a size is a point of the grid: from min to max, a whole number of steps from min. */
+export const onStep = (q, g) => {
+  if (!stepsOk(g) || !isNum(q)) return false;
+  const k = (q - g.min) / g.step;
+  return q >= g.min - 1e-9 && q <= g.max + 1e-9 && Math.abs(k - Math.round(k)) < 1e-6;
+};
+/** An offer of his still open at `at`: offered, and `at` not past its `until`. */
+export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offered" && o.price.offer
+  && String(at || new Date().toISOString()) <= String(o.price.offer.until));
+/** An ask still waiting on his answer or on theirs: asked, or offered and open. */
+export const askOpen = (o, at) => !!(o && o.price && OPEN_STATES.includes(o.status) && (o.price.state === "asked" || offerOpen(o, at)));
+/** What the customer reads of a negotiation, his whitelist: {state, total, delivery: null, until}, delivery being set at the
+ *  acknowledgement as ever. Never a floor, a cost, a margin, a digest, a drift or anything else of the desk's. */
+export const priceView = (p) => {
+  if (!p || typeof p !== "object") return null;
+  const v = { state: ["asked", "offered", "taken", "passed", "withdrawn"].includes(p.state) ? p.state : "asked" };
+  if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { total: p.offer.total, delivery: null, until: p.offer.until });
+  return v;
+};
+export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
   const qty = body.qty;
   if (!isNum(qty) || qty <= 0 || qty > 1000) return { error: "the size has to be a number above zero" };
+  const ask = body.ask === true;
+  /* 05 Oct 2026: a size off the book's step, or over its max, is not a size the list quotes; over the max, Negotiate alone */
+  const g = steps && steps[product], past = stepsOk(g) && qty > g.max + 1e-9;
+  if (past && !ask) return refusal("overMax", { n: g.max });
+  if (stepsOk(g) && !past && !onStep(qty, g)) return refusal("offStep", { s: g.step, n: g.min });
   const mode = String(body.mode || "");
   if (!MODES.includes(mode)) return { error: "collected or delivered, one or the other" };
-  const total = body.total, unit = body.unit;
-  if (!isNum(total) || !(total > 0) || total > 1000000) return { error: "the total is not a figure the list quoted" };   /* 08 Sep 2026: RM 0 was accepted */
+  const total = past ? 0 : body.total, unit = past ? 0 : body.unit;
+  if (past && ((body.total !== undefined && body.total !== 0) || (body.unit !== undefined && body.unit !== 0))) return { error: "a size over the list is asked for, never quoted" };
+  if (!past && (!isNum(total) || !(total > 0) || total > 1000000)) return { error: "the total is not a figure the list quoted" };   /* 08 Sep 2026: RM 0 was accepted */
   if (!isNum(unit) || unit < 0) return { error: "the unit rate is not a figure the list quoted" };
+  /* Negotiate: a figure of their own is a number and nothing else; one order a negotiation, never a sheet's line, never a
+     group order's, and never a friend's order, which books to a bucket that is not its own person */
+  if (ask && body.propose !== undefined && body.propose !== null && (!isNum(body.propose) || !(body.propose > 0) || body.propose > 1000000)) return refusal("askFigure");
+  if (ask && body.forFriend === true) return refusal("askFriend");
+  if (ask && (body.sheet || body.pool !== undefined)) return refusal("askSheet");
   const week = String(body.week || "").slice(0, 40);
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
@@ -544,7 +587,8 @@ export function checkPlacement(body, open, at, poolOk = false) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, pool ? { pool } : {}), note };
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, pool ? { pool } : {}), note,
+    ask: ask ? Object.assign({ state: "asked", at }, isNum(body.propose) ? { proposed: +body.propose.toFixed(2) } : {}) : null };
 }
 
 /* WHAT IS STILL OWED ON AN ORDER, and what is still to be handed over. Both read the record alone:
@@ -608,18 +652,35 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
 /** A placement, checked against the customer's open orders and the account's list now. Returns { ev } or { error }.
  *  V5b2 (his answers of 29 Sep 2026): Place stamps nothing about paying in advance. V3's unit cap is retired on the
  *  Counter, and whether an order is paid in advance is the desk Worker's to decide at Accept, from the book (V5b2a). */
-export function decidePlace(u, body, open, at, digest, by = "customer", pool = null) {
-  const c = checkPlacement(body, open, at, !!pool);
+/* 05 Oct 2026 (his decision): A PLACEMENT WITH NO STAMP IS REFUSED, as a moved one is, so it re-quotes off the list as it
+   stands: the stamp is what holds a total typed at any quantity to the sealed grid. `ctx` carries the grid's steps in the
+   clear (the account's record) and whether a claim of theirs waits, which Negotiate reads. */
+export function decidePlace(u, body, open, at, digest, by = "customer", pool = null, ctx = {}) {
+  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps);
   if (c.error) return c;
-  if (body.digest !== undefined && String(body.digest || "") !== String(digest || "")) return refusal("pricesMoved");
+  /* a stamped list is checked whatever the page sends, a Place with no stamp included; a list published with none has
+     nothing to check */
+  if (digest ? body.digest !== String(digest) : body.digest !== undefined && String(body.digest || "") !== "") return refusal("pricesMoved");
+  if (c.ask) {
+    /* two asks open at once an account, and none while a payment they say they sent waits on him */
+    const n = open.filter((o) => askOpen(o, at)).length;
+    if (n >= ASK_OPEN_MAX) return refusal("askMax", { n });
+    if (ctx && ctx.claimWaiting) return refusal("askClaim");
+    /* 06 Oct 2026 (Fable's review): nor while goods of theirs are past their grace unpaid, read off their own orders, so the
+       Worker holds the line the page's overdue gate draws without unsealing anything */
+    if (ctx && ctx.overdue) return refusal("askOverdue");
+  }
   const order = Object.assign({ id: mintOrderId(at), u, at, status: "placed", paid: 0, payments: [], moved: 0, movedOn: null,
     msgs: c.note ? [{ at, by, text: c.note }] : [],   /* v751: the line they typed with the order is its first message */
-    history: [{ at, status: "placed", by }] }, c.order);
+    history: [{ at, status: "placed", by }] }, c.order, c.ask ? { price: c.ask } : {});
   return { ev: { kind: "place", at, order } };
 }
 
-export function decideReplace(order, body, mine, at, digest) {
+export function decideReplace(order, body, mine, at, digest, ctx = {}) {
   if (!order) return Object.assign(refusal("noOrder"), { status: 404 });
+  /* 05 Oct 2026: an offer of his open on it freezes it, and an offer they took is on its way to its row */
+  if (offerOpen(order, at)) return Object.assign(refusal("offerOpen"), { status: 409 });
+  if (order.price && order.price.state === "taken") return Object.assign(refusal("amendClosed"), { status: 409 });
   if (order.pool) return Object.assign(refusal("amendClosed"), { status: 409 });   /* a group order is joined as it stands: leave it by Cancel */
   if (order.status !== "placed" || order.reviewed || order.ledgerKey || (order.queued || {}).ack
     || (+order.paid || 0) > 0 || (+order.moved || 0) > 0 || claimWaits(order))
@@ -629,7 +690,7 @@ export function decideReplace(order, body, mine, at, digest) {
     || !ridOf(body) || typeof body.digest !== "string" || body.product !== order.product)
     return Object.assign(refusal("amendShape"), { status: 400 });
   const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {});
-  const placed = decidePlace(order.u, next, mine.filter((item) => item.id !== order.id && OPEN_STATES.includes(item.status)), at, digest);
+  const placed = decidePlace(order.u, next, mine.filter((item) => item.id !== order.id && OPEN_STATES.includes(item.status)), at, digest, "customer", null, ctx);
   if (placed.error) return placed;
   placed.ev.order.replaces = order.id;
   return { cancel: { kind: "status", at, status: "cancelled", by: "customer", replacement: placed.ev.order.id }, place: placed.ev };
@@ -648,7 +709,21 @@ export function decideCustomer(order, action, body, mine, at) {
     if ((+order.moved || 0) > 0) return Object.assign(refusal("cancelMoved"), { status: 409 });
     /* S6 fix: NOT WHILE A CLAIM WAITS. A cancelled order is off his card, so nothing could answer it and it waited for good */
     if (claimWaits(order)) return Object.assign(refusal("cancelClaim", { rm: claimedOf(order).toFixed(2) }), { status: 409 });
+    /* 05 Oct 2026: nor while an offer of his is open on it: they answer it first, Accept or No thanks */
+    if (offerOpen(order, at)) return Object.assign(refusal("offerOpen"), { status: 409 });
     return { ev: { kind: "status", at, status: "cancelled", by: "customer" } };
+  }
+  /* 05 Oct 2026: THEIR ANSWER TO HIS OFFER. Accept takes it while it is open and the order is still the one it was made for;
+     No thanks declines it. Either is one event under the tap's own id, so a retry lands once. Taken, the desk Worker drafts
+     its row at the offer's figure and his yes, recorded when he offered, is spent only on an exact match (D6). */
+  if (action === "take" || action === "pass") {
+    const p = order.price;
+    if (!p || p.state !== "offered" || !p.offer || order.status !== "placed") return Object.assign(refusal("offerNone"), { status: 409 });
+    if (action === "take" && String(at) > String(p.offer.until)) return Object.assign(refusal("offerLapsed"), { status: 409 });
+    if (action === "take" && (p.offer.product !== order.product || Math.abs(+p.offer.qty - +order.qty) > 0.0004)) return Object.assign(refusal("offerVoid"), { status: 409 });
+    /* 06 Oct 2026: No thanks closes the ask. The order stands at its listed price; past the grid it has none, and is cancelled */
+    return { ev: Object.assign({ kind: "price", at, state: action === "take" ? "taken" : "passed", by: "customer", offer: p.offer.id },
+      action === "pass" && !(+order.total > 0) ? { cancel: true } : {}) };
   }
   if (action === "method") {
     if (!PAYABLE.includes(order.status)) return Object.assign(refusal("methodEarly"), { status: 409 });
@@ -868,10 +943,33 @@ export function decideDesk(order, body, at) {
     }
     return { ev };
   }
+  /* 05 Oct 2026: HIS OFFER on an order whose price they asked for, the goods alone, filed by the desk Worker once it has
+     drafted the row at it (never under the floor) and recorded his yes: one live offer an order, a new one replacing the
+     old, open OFFER_HOURS. The site keeps the figure and the moment it lapses, bound to the order's product and size, and
+     never the digest, which is the desk's. Withdrawn, it is no longer theirs to take. */
+  if (body && body.offer !== undefined) {
+    const f = body.offer;
+    if (!order.price || order.status !== "placed") return { error: "no price was asked for on this order, so there is nothing to offer", status: 409 };
+    if (order.price.state === "taken") return { error: "they have taken your offer already", status: 409 };
+    if (!["asked", "offered"].includes(order.price.state)) return { error: "the ask is closed: the order stands at its listed price", status: 409 };
+    if (!f || typeof f !== "object" || typeof f.id !== "string" || !/^[A-Za-z0-9_|:.-]{1,80}$/.test(f.id) || !isNum(f.total) || !(f.total > 0) || f.total > 1000000
+      || typeof f.until !== "string" || !(Date.parse(f.until) > Date.parse(at)))
+      return { error: "an offer is a figure for the goods, its own name and when it lapses", status: 400 };
+    return { ev: { kind: "offer", at, offer: { id: f.id, total: +f.total.toFixed(2), until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty: order.qty } } };
+  }
+  if (body && body.withdraw === true) {
+    if (!order.price || order.price.state !== "offered") return { error: "no offer of yours is open on this order", status: 409 };
+    return { ev: Object.assign({ kind: "price", at, state: "withdrawn", by: "desk", offer: order.price.offer ? order.price.offer.id : null },
+      !(+order.total > 0) && !(+order.paid > 0) ? { cancel: true } : {}) };
+  }
   const status = String((body && body.status) || "");
   /* its own states only (26 Sep 2026): a bare NEXT[status] read "constructor" or "__proto__" off Object.prototype, and
      .includes threw on it where any other unknown state is refused */
   if (!Object.hasOwn(NEXT, status)) return { error: "not a state the desk sets", status: 400 };
+  /* 05 Oct 2026: an open offer freezes the order for him too: he withdraws it first. And an order whose price was asked for
+     is agreed only by an offer they took */
+  if ((status === "declined" || status === "cancelled") && offerOpen(order, at)) return { error: "an offer is open on this order: withdraw it first", status: 409 };
+  if (status === "acknowledged" && order.price && ["asked", "offered"].includes(order.price.state)) return { error: "they asked for a price on this order: it is agreed by an offer they take", status: 409 };
   /* Step 1b (his 1.13 and 1.14, 28 Sep 2026): READY AGAIN FOR THE REST. A part handed over tells them "We will notify you
      when the rest of your order is ready", so while units are still owed on an order at ready, Ready is his to tap again,
      and it tells them so; with nothing handed over, or nothing left, it stays a state reached once */
@@ -970,6 +1068,13 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
     order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });
     done = settle(order, at);
+  } else if (ev.kind === "offer") {   /* 05 Oct 2026: his offer, replacing any before it */
+    order.price = Object.assign({}, order.price || { state: "asked" }, { state: "offered", offer: Object.assign({}, ev.offer), offeredAt: at });
+    order.history.push({ at, status: order.status, by: "desk", note: "price offered " + (+ev.offer.total).toFixed(2) });
+  } else if (ev.kind === "price") {   /* their Accept or No thanks, or his withdrawal */
+    order.price = Object.assign({}, order.price || {}, { state: ev.state, [ev.state + "At"]: at });
+    if (ev.cancel) order.status = "cancelled";   /* past the grid there is no listed price to fall back on */
+    order.history.push({ at, status: order.status, by: ev.by, note: "price " + ev.state + (ev.cancel ? ", order cancelled" : "") });
   } else if (ev.kind === "rate") {   /* F10: their stars; nothing else on the order moves */
     order.rating = { stars: ev.stars, at };
   } else if (ev.kind === "rateask") {   /* F10: asked, once, at a slot; the desk's, never on their page */
@@ -1074,6 +1179,8 @@ export function marksOf(ev, order) {
   if (ev.kind === "pay" || ev.kind === "claim" || ev.kind === "aclaim") k.push([LAST_THEIRS, at + "|pay"]);
   if (ev.kind === "status" && ev.by === "customer") k.push([LAST_THEIRS, at + "|cancel"]);
   if (ev.kind === "rate") k.push([LAST_THEIRS, at + "|rate"]);   /* F10: his minute nudge says a customer rated an order */
+  /* 05 Oct 2026: their answer to his offer, which his nudge names; taken, the desk's pass drafts its row */
+  if (ev.kind === "price" && ev.by === "customer") k.push([LAST_THEIRS, at + "|" + (ev.state === "taken" ? "take" : "pass")]);
   return k;
 }
 /* S12 12.2: WHAT KIND OF NEWS EACH MOVE OF HIS IS, for the banner, whose words are NEWS in stmt/sw.js.
@@ -1114,6 +1221,8 @@ export function wakes(ev, order, done) {
     return w;
   }
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o, t: ev.text, m: ev.at };
+  /* 05 Oct 2026: his offer, its own kind (news.offer): never the figure, the product or a name */
+  if (ev.kind === "offer") return { k: "offer", o };
   /* Step 7: his line on the account's thread, its own kind; a tap opens the thread, never an order */
   if (ev.kind === "tsay" && ev.by === "desk") return { k: "message", o: "", t: ev.text, m: ev.at };
   if (ev.kind === "pay" && done) return { k: "complete", o };
@@ -1149,8 +1258,11 @@ export async function placeOrder(env, u, body, by = "customer") {
   /* S4 4.2: the account's list as it stands; a moved list is answered with itself, sealed, for the page to re-open */
   const rec = await accountRecord(env, u), prices = (rec && rec.prices) || null, digest = (prices && prices.digest) || "";   /* the test account's fixture list */
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
+  /* 05 Oct 2026: the grid's steps in the clear beside the stamp; Negotiate needs the order book, whose one step reads their claims */
+  const steps = (prices && prices.steps) || null;
+  if (body && body.ask === true && !onBook(env)) return Object.assign(refusal("askStore"), { status: 503 });
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by });
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by, steps });
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
@@ -1159,7 +1271,7 @@ export async function placeOrder(env, u, body, by = "customer") {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by);
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps });
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
@@ -1181,7 +1293,7 @@ export async function replaceOrder(env, u, id, body) {
   const digest = account.prices && account.prices.digest || "";
   const replacement = Object.assign({}, body);
   delete replacement.buildId;
-  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest });
+  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest, steps: (account.prices && account.prices.steps) || null });
   if (result.error === PRICES_MOVED) return Object.assign({}, result, { status: 409, prices: account.prices || null });
   return result.error ? result : { order: result.order };
 }

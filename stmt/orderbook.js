@@ -66,7 +66,7 @@
  */
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
-  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS } from "./orders.js";
+  isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver } from "./orders.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -341,7 +341,7 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (op === "fixture-account") {
       if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
-        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder", "pjoin"].includes(a.actor))
+        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor))
         return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
         const sql = this.state.storage.sql;
@@ -370,7 +370,18 @@ export class OrderBook {
             return { ok: false, error: "Publish fresh acceptance cases before more claims.", status: 409 };
           let claim;
           let order;
-          if (a.actor === "order" || a.actor === "replace") {
+          if (a.actor === "place") {
+            /* Negotiate: a test account's ask for a price, by decidePlace's own rules, into this fixture alone */
+            /* counted over the asks this account made here (an id of six), never the publication's own cases (an id of two), so
+               the cases shown never use up the limits a test of them needs */
+            const open = doc.orders.filter((o) => OPEN_STATES.includes(o.status) && /-ex[0-9a-f]{6}$/.test(o.id));
+            const decision = decidePlace(a.u, a.body, open, at, a.digest, "customer", null,
+              { steps: a.steps || null, claimWaiting: doc.claims.some((c) => c.state === "waiting") });
+            if (decision.error) return no(decision, decision.status || 400);
+            order = applyEvent(null, decision.ev).order;
+            order.id = order.id.slice(0, 15) + "ex" + crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+            doc.orders.push(order);
+          } else if (a.actor === "order" || a.actor === "replace") {
             const previous = doc.orders.find((o) => o.id === a.id);
             if (!previous) return { ok: false, error: "No such acceptance order.", status: 404 };
             const decision = a.actor === "replace" ? decideReplace(previous, a.body, doc.orders, at, a.digest)
@@ -571,7 +582,11 @@ export class OrderBook {
       const u = String(a.u || ""), eid = a.rid ? "c:" + u + ":place:" + a.rid : null;
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(seen.u, seen.oid), again: true };
-      const d = decidePlace(u, a.body, this.ordersOf(u).filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer");
+      /* 05 Oct 2026: the grid's steps the record carries, and whether a payment they say they sent waits on him, on an order
+         or against the account, which Negotiate reads; both read here, in the one step nobody comes between */
+      const mine = this.ordersOf(u), overdue = mine.some((o) => isAdvance(o) && graceOver(o, at)), claimWaiting = mine.some(claimWaits)
+        || this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ?", u).toArray().some((r) => JSON.parse(r.doc).state === "waiting");
+      const d = decidePlace(u, a.body, mine.filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer", null, { steps: a.steps || null, claimWaiting, overdue });
       if (d.error) return no(d, 400);
       return this.append(eid, u, d.ev.order.id, d.ev, null);
     }
@@ -581,7 +596,7 @@ export class OrderBook {
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(u, seen.oid), again: true };
       const order = this.order(u, id);
-      const d = decideReplace(order, a.body, this.ordersOf(u), at, a.digest);
+      const d = decideReplace(order, a.body, this.ordersOf(u), at, a.digest, { steps: a.steps || null });
       if (d.error) return no(d, d.status || 400);
       return this.state.storage.transactionSync(() => {
         this.append(null, u, id, d.cancel, order, true);

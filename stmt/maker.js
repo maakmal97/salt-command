@@ -123,6 +123,16 @@ export async function customerAmend(env, u, id, body) {
         : response.status === 404 ? "noOrder" : "amendBridge"), status: response.status };
 }
 
+/** Negotiate: their Accept on his offer, told to the desk at once (best effort; the desk's minute pass follows it anyway). */
+export async function takeNudge(env, id) {
+  const secret = String(env.COUNTER_MAKER_KEY || "");
+  if (!env.DESK_MAKER || secret.length < 32 || !/^[0-9]{14}-[a-z0-9]{1,8}$/.test(id)) return null;
+  const response = await env.DESK_MAKER.fetch(new Request("https://desk/_internal/maker/orders/" + id + "/take", {
+    method: "POST", headers: { "X-Counter-Maker-Key": secret, "content-type": "application/json" }, body: "{}"
+  }));
+  return response.ok;
+}
+
 async function readHours(env) {
   const value = await env.STMT.get(HOURS_KEY, "json");
   if (!value) return { config: null, status: hoursStatus(null) };

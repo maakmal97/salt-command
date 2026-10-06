@@ -21,7 +21,7 @@
  * means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued } from "./drafter.js";
+import { readBook, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
@@ -60,7 +60,8 @@ const NEWS_KEY = "orders:news";
 /* S11 11.16: HIS WAKES NAME THE KIND OF ACT, and nothing else: never a code, a name or an amount. What
    they did is their word until he checks it, so a payment is what they SAY. The banner (public/sw.js)
    takes these as its title, and only in letters and spaces; a new order is its own title there. */
-const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancelled", said: "A customer wrote", rate: "A customer rated an order" };
+const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancelled", said: "A customer wrote", rate: "A customer rated an order",
+  take: "A customer took your price", pass: "A customer said no to your price" };
 /* v764: the book the return leg last told the site about. A fold mints a new version and re-seeds
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
@@ -255,7 +256,20 @@ function cardAt(pricing, code, product, qty) {
     return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : (level ? level : "their card") + " at " + qty + " unit" };
   }
   if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
+  /* 05 Oct 2026 (any quantity at an automatic price): A SIZE OFF THE BOARD is the engine's quoteAt on the snapshot's own inputs
+     and their drift, which is what their sealed grid was struck from, so the card here and the price their page quoted agree */
+  const at = quoteOff(snap, code, qty);
+  if (at != null) return { card: at, cardNote: (fixed ? "the board, one price for everybody" : "their card") + " at " + qty + " unit" };
   return { card: null, cardNote: qty + " unit is not a size on their board, so there is no card at it" };
+}
+function quoteOff(snap, code, qty) {
+  const I = snap && snap.inputs;
+  if (!I || !I.cost || !I.policy || !(qty > 0)) return null;
+  const R = I.policy.tierRule || null;
+  const d = R && R.drift ? (snap.drift && typeof snap.drift[code] === "number" ? snap.drift[code] : null) : 0;
+  if (d == null) return null;
+  try { const v = PRICING_ENGINE.quoteAt(qty, PRICING_ENGINE.costStack(I.cost), I.policy, d); return v != null && isFinite(v) && v > 0 ? v : null; }
+  catch (e) { return null; }
 }
 async function previewAck(env, o, code, delivery, now, ctx, price) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
@@ -348,6 +362,10 @@ export async function previewOrder(env, id, body, now) {
   if (pr.error) return { ok: false, status: 400, error: pr.error };
   const p = await previewAck(env, o, o.code, again ? (+o.delivery || 0) : chargeOf(body), now || new Date(), { orders: f.orders, again }, pr.price);
   if (!p.ok) return p;
+  /* 05 Oct 2026 (Negotiate): on an order whose price they asked for, the digest his Offer sends back is the offer's own,
+     on the row's figures and flags (offerDigest), and the ask rides along for the card: their own figure, if they gave one */
+  if (o.price && o.status === "placed") Object.assign(p, { offerHash: await offerDigest(p.entry, { collection: "sales", row: p.row, flags: p.flags }),
+    ask: { state: o.price.state, proposed: typeof o.price.proposed === "number" ? o.price.proposed : null } });
   delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
   return Object.assign(p, { again, chargeChosen: again || o.mode !== "deliver" || chargeOf(body) != null });
 }
@@ -413,12 +431,22 @@ export async function acceptOrder(env, id, body, by, now) {
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Accept answers a preview: send the digest the preview gave" };
-  /* one pending row an order: a yes already given is followed, never given twice */
-  const live = await livePre(db, id, "ack");
+  /* 05 Oct 2026 (Negotiate): an order whose price they asked for is agreed only by an offer of his that they take, while the
+     ask is open; after No thanks or his withdrawal (06 Oct 2026) it is back at its listed price and Accept is his as ever */
+  if (o.price && o.status === "placed" && ASKING.includes(o.price.state)) return { ok: false, status: 409, error: o.price.state === "taken"
+    ? "they have taken your offer: its row is drafted at it, so there is nothing to accept here"
+    : "they asked for a price on this order: send them an offer, which they take or decline" };
+  /* one pending row an order: a yes already given is followed, never given twice; an offer they declined or he withdrew is
+     no longer his yes, and goes here rather than at the minute's pass */
+  let live = await livePre(db, id, "ack");
+  if (live && isOfferPre(live) && live.status === "waiting" && !live.entry && o.price && !ASKING.includes(o.price.state)) {
+    await voidOffers(db, id, at.toISOString()); live = await livePre(db, id, "ack");
+  }
   if (live && live.status === "applied") return o.status === "placed"
     ? Object.assign({ approved: true, again: true, draft: live.draft_id }, await ackOnApproval(env, live))   /* its move failed before: again */
     : { ok: true, approved: true, again: true, draft: live.draft_id, order: o };
-  if (live) return { ok: false, status: 409, error: live.status === "differs" ? "its row differs from what you saw and waits under Approve" : "its row is being drafted: look again in a moment" };
+  if (live) return { ok: false, status: 409, error: live.status === "differs" ? "its row differs from what you saw and waits under Approve"
+    : isOfferPre(live) ? "an offer is open on this order, waiting on their answer" : "its row is being drafted: look again in a moment" };
   const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(db, id, "ack"));
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
   const delivery = again ? (+o.delivery || 0) : chargeOf(body);
@@ -452,6 +480,159 @@ export async function acceptOrder(env, id, body, by, now) {
   return Object.assign(out, { ok: true, approved: false, waiting: true });
 }
 
+/* ---- NEGOTIATE: HIS OFFER, THEIR ANSWER (his decisions of 05 Oct 2026) ------------------------------------------------
+ * A customer may ask for a price on an order (stmt/orders.js, `ask`). He answers with an OFFER, the goods alone, typed on the
+ * order card: this drafts the pending row at it exactly as Accept would (previewAck, which refuses it under the floor), and
+ * records his yes as an ack pre-approval that WAITS ON THEIR ANSWER, its digest the offer's own, on the row's figures and
+ * flags (offerDigest), never the pricing version. Then the site is told the figure and the moment it lapses, OFFER_HOURS on,
+ * and their phone is woken. One live offer an order: a new one voids the yes before it (recordPre). Their Accept is a tap
+ * on the site, which tells this Worker at once (takeOffer, through the maker bridge) and the minute's deskPass as the net:
+ * the row is drafted again at the offer's figure and queued, and the drafter approves it where it lands only on an exact
+ * match (D6); otherwise it waits under Approve, marked. The figure stays on that one order (`asked` keeps what it was placed
+ * at); the board, a drift and a held card never move by it (rule 5). The lapse is read at the take and nowhere else. */
+export const OFFER_HOURS = 48;
+/* the states of an ask still open: asked, an offer of his out (lapsed or not), or one they took on its way to its row */
+const ASKING = ["asked", "offered", "taken"];
+const voidOffers = (db, id, at) => db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE order_id=?2 AND stage='ack' AND status='waiting' AND entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").bind(at, id).run();
+/** POST /orders/<id>/offer {total, delivery, hash}. Returns { ok, order, offer } or { ok: false, status, error }. */
+export async function offerOrder(env, id, body, by, now) {
+  const at = now || new Date();
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  if (o.status !== "placed" || !o.price) return { ok: false, status: 409, error: "no price was asked for on this order, so there is nothing to offer" };
+  if (o.price.state === "taken") return { ok: false, status: 409, error: "they have taken your offer already: its row is drafted at it" };
+  if (!ASKING.includes(o.price.state)) return { ok: false, status: 409, error: "the ask is closed: the order stands at its listed price, so Accept or decline it" };
+  /* a tap that already landed is answered with the offer it filed, never filed twice */
+  if (body && typeof body.rid === "string" && o.price.offer && o.price.offer.id === body.rid) return { ok: true, again: true, order: o, offer: o.price.offer };
+  const pr = priceOf(body);
+  if (pr.error) return { ok: false, status: 400, error: pr.error };
+  if (pr.price == null) return { ok: false, status: 400, error: "type your price for the goods first" };
+  const delivery = o.mode === "deliver" ? chargeOf(body) : 0;
+  if (delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
+  if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "an offer answers a preview: send the digest the preview gave" };
+  const live = await livePre(db, id, "ack");
+  if (live && !isOfferPre(live)) return { ok: false, status: 409, error: "a yes of yours on this order is already on its way to its row" };
+  /* the row at his figure, drafted as Accept would draft it: under the floor it is refused here, before anything is told */
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price);
+  if (!pv.ok) return pv;
+  const entry = pv.entry;
+  delete pv.entry;
+  const hash = await offerDigest(entry, { collection: "sales", row: pv.row, flags: pv.flags });
+  if (hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the row has changed since the card drew it: look at it again before you offer", preview: Object.assign(pv, { offerHash: hash }) };
+  const until = new Date(at.getTime() + OFFER_HOURS * 3600e3).toISOString();
+  /* the tap's own request id names the offer, so a tap sent twice files one offer (the order book's desk rid road) */
+  const rid = typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? body.rid : "f" + at.getTime().toString(36) + Math.random().toString(36).slice(2, 12).padEnd(10, "0");
+  const offer = { id: rid, total: pr.price, delivery, until, qty: +o.qty, product: o.product || "salt" };
+  /* THE SITE FIRST, HIS YES SECOND (06 Oct 2026, Fable's review): recorded first, the yes voided the one before it, and a take
+     of the old offer landing between found no yes on file and stranded the order at taken. A refused move now leaves the old
+     yes standing, and a take that still finds none is queued to wait under Approve (queueOffer) */
+  const r = await moveOrder(env, o.u, id, { offer: { id: offer.id, total: offer.total, until }, rid });
+  if (!r.ok) return r;
+  await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash, entry: null, at: at.toISOString(), by,
+    shown: { from: "placed", offer, row: pv.row, flags: pv.flags, prepay: !!entry.prepay } });
+  return { ok: true, order: r.order, offer, push: r.push || null, preview: pv };
+}
+/** POST /orders/<id>/withdraw: his open offer taken back; his yes with it. */
+export async function withdrawOffer(env, id, body) {
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order;
+  if (!o.price || o.price.state !== "offered") return { ok: false, status: 409, error: "no offer of yours is open on this order" };
+  const r = await moveOrder(env, o.u, id, Object.assign({ withdraw: true }, body && typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? { rid: body.rid } : {}));
+  if (!r.ok) return r;
+  if (env.SALT_LEDGER) await voidOffers(env.SALT_LEDGER, id, new Date().toISOString());
+  return { ok: true, order: r.order };
+}
+/** THEIR ACCEPT, followed: the row drafted at the offer and queued, approved where it lands only if it equals what he offered. */
+export async function takeOffer(env, id, now) {
+  const at = now || new Date();
+  const f = await findOrder(env, id);
+  if (!f.ok) return f;
+  const o = f.order, db = env.SALT_LEDGER;
+  if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
+  if (!o.price || o.price.state !== "taken") return { ok: false, status: 409, error: "no offer of yours is taken on this order" };
+  const pre = await livePre(db, id, "ack");
+  if (!pre || !isOfferPre(pre)) return o.status === "placed" ? queueOffer(env, f, null, "no yes of yours was on file for the offer they took", at)
+    : { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to take" };
+  if (pre.status === "applied") return o.status === "placed" ? Object.assign({ approved: true, again: true, draft: pre.draft_id }, await ackOnApproval(env, pre))
+    : { ok: true, approved: true, again: true, draft: pre.draft_id, order: o };
+  if (pre.status === "differs") return { ok: true, approved: false, differs: true, again: true };
+  if (o.status !== "placed") return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to take" };
+  const shown = JSON.parse(pre.shown || "{}"), off = shown.offer || {};
+  /* bound to the offer they saw, the order's product and size, and its lapse, read at the take */
+  const bad = !o.price.offer || o.price.offer.id !== off.id ? "the offer they took is not the one on file"
+    : String(o.price.takenAt || "") > String(off.until) ? "they took it after it lapsed"
+    : o.product !== off.product || Math.abs(+o.qty - +off.qty) > 0.0004 ? "the order is no longer the size the offer was made for" : "";
+  if (bad) {
+    /* the bridge's nudge and the minute's pass can both get here: only the one that voids the yes queues the row (queueSale
+       moves a second entry to a free millisecond, never dropping it, so two takes would be two rows) */
+    const v = await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2 AND status='waiting'").bind(at.toISOString(), pre.id).run();
+    if (!(v && v.meta && v.meta.changes === 1)) return { ok: true, again: true };
+    return queueOffer(env, f, off, bad, at);
+  }
+  if (!pre.entry_at) {
+    const pv = await previewAck(env, o, o.code, off.delivery || 0, at, { orders: f.orders }, off.total);
+    if (!pv.ok) {
+      await markOrder(env, o.u, id, { sync: { state: "waiting", why: "they took your offer, but its row could not be drafted: " + pv.error, at: new Date().toISOString() } });
+      return pv;
+    }
+    const entry = pv.entry;
+    await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
+    await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), pre.id).run();
+  }
+  const drafted = await runDrafter(env);
+  let p = await preById(db, pre.id);
+  if (p.status === "waiting") { await settlePre(db, p, await readBook(db)); p = await preById(db, pre.id); }
+  const out = { draft: p.entry_at, drafted };
+  if (p.status === "applied") return Object.assign(out, { approved: true }, await ackOnApproval(env, p));
+  if (p.status === "differs") {
+    await markOrder(env, o.u, id, { sync: { state: "waiting", why: "they took your offer, but its row differs from what you offered, so it waits under Approve; approving it there moves the order", at: new Date().toISOString() } });
+    return Object.assign(out, { ok: true, approved: false, differs: true });
+  }
+  return Object.assign(out, { ok: true, approved: false, waiting: true });
+}
+/* A TAKEN OFFER WITH NO YES THAT FITS IT IS NEVER STRANDED (06 Oct 2026, Fable's review): its row is queued at the offer's
+   figure under a yes that cannot match (its reason for a digest), so the drafter marks it and it waits under Approve, where
+   approving it moves the order as any Accept that came out other than he saw. Once queued, a take finds that yes. */
+async function queueOffer(env, f, off, why, at) {
+  const o = f.order, db = env.SALT_LEDGER, offer = o.price.offer || {};
+  const delivery = off && typeof off.delivery === "number" ? off.delivery : 0;
+  const say = (w) => markOrder(env, o.u, o.id, { sync: { state: "waiting", why: w, at: new Date().toISOString() } });
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, +offer.total);
+  if (!pv.ok) { await say("they took your offer, but its row could not be drafted: " + pv.error); return pv; }
+  const entry = pv.entry;
+  await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
+  const preId = await recordPre(db, { order_id: o.id, u: o.u, stage: "ack", hash: "unmatched: " + why, entry, at: at.toISOString(), by: "take",
+    shown: { from: "placed", offer: Object.assign({ product: o.product, qty: +o.qty, delivery }, offer), row: pv.row, flags: pv.flags, unmatched: why } });
+  await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), preId).run();
+  const drafted = await runDrafter(env);
+  await say("they took your offer, but " + why + ", so its row waits under Approve" + (o.mode === "deliver" ? " at no delivery charge" : "")
+    + "; approving it there moves the order");
+  return { ok: true, approved: false, differs: true, unmatched: why, draft: entry.at, drafted };
+}
+/* the minute's net for the offers: a take not followed yet is followed, and an offer they declined or he withdrew lets its yes
+   go. An offer past its lapse is left: it is read at a take and nowhere else. */
+async function offerPass(env, now) {
+  const db = env.SALT_LEDGER;
+  let rows = [];
+  try { rows = (await db.prepare("SELECT order_id FROM preapproval WHERE stage='ack' AND status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").all()).results || []; }
+  catch (e) { return []; }
+  if (!rows.length) return [];
+  const all = await listOrders(env, true);
+  if (!all.ok) return [];
+  const taken = [];
+  for (const { order_id: id } of rows) {
+    const o = all.orders.find((x) => x.id === id);
+    if (o && o.status === "placed" && o.price && o.price.state === "taken") {
+      try { const r = await takeOffer(env, id, now); if (r && r.approved && r.draft) taken.push(r.draft); } catch (e) { /* the next minute tries again */ }
+    } else if (!o || o.status !== "placed" || !o.price || ["passed", "withdrawn"].includes(o.price.state)) await voidOffers(db, id, (now || new Date()).toISOString());
+  }
+  return taken;
+}
 export async function amendOrder(env, id, body) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the Desk mirror is required to check this amendment" };
   const found = await findOrder(env, id);
@@ -475,9 +656,16 @@ export async function amendOrder(env, id, body) {
   if (found.order.status !== "placed" || found.order.reviewed || found.order.ledgerKey || (found.order.queued || {}).ack)
     return { ok: false, status: 409, error: "this order is already under review or agreed", code: "amendClosed" };
   const pre = await env.SALT_LEDGER.prepare(
-    "SELECT id FROM preapproval WHERE order_id=?1 AND status IN ('waiting','differs','applied') LIMIT 1"
+    "SELECT id, shown, status FROM preapproval WHERE order_id=?1 AND status IN ('waiting','differs','applied') LIMIT 1"
   ).bind(id).first();
-  if (pre) return { ok: false, status: 409, error: "this order has already been approved for a row and cannot be changed" };
+  /* 05 Oct 2026 (Negotiate): an offer of his open on it freezes it, in the customer's words (offer open); one they declined,
+     he withdrew or that lapsed is no longer his yes, and goes as the order is changed */
+  if (pre && isOfferPre(pre) && pre.status === "waiting") {
+    const p = found.order.price || {}, now = new Date().toISOString();
+    if (p.state === "offered" && p.offer && now <= String(p.offer.until)) return { ok: false, status: 409, error: "an offer is open on this order", code: "offerOpen" };
+    if (p.state === "taken") return { ok: false, status: 409, error: "this order is already under review or agreed", code: "amendClosed" };
+    await env.SALT_LEDGER.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2 AND status='waiting'").bind(now, pre.id).run();
+  } else if (pre) return { ok: false, status: 409, error: "this order has already been approved for a row and cannot be changed" };
   if (body.product !== found.order.product) return { ok: false, status: 400, error: "replace the same product line" };
   if (!env.ASSETS) return { ok: false, status: 503, error: "the Desk revision is unavailable" };
   const revisionResponse = await env.ASSETS.fetch(new Request("https://desk/rev.json"));
@@ -1209,8 +1397,10 @@ export async function deskPass(env, now) {
     untold = (await db.prepare("SELECT * FROM preapproval WHERE stage='ack' AND status='applied' AND acked_at IS NULL ORDER BY at").all()).results || [];
   } catch (e) { return { ok: true, queued: 0 }; }   /* before migrations/0011 */
   for (const p of untold) { try { await ackOnApproval(env, p); } catch (e) { /* the next minute tries again */ } }
-  if (!pres.length) return { ok: true, queued: 0 };
-  let queued = 0; const dropped = [], approved = []; let open = null;
+  /* 05 Oct 2026 (Negotiate): an offer they took, followed, and one they declined or he withdrew, let go */
+  const offered = await offerPass(env, now);
+  if (!pres.length) return Object.assign({ ok: true, queued: 0 }, offered.length ? { approved: offered } : {});
+  let queued = 0; const dropped = [], approved = offered.slice(); let open = null;
   for (const p of pres.filter((x) => !x.entry_at)) {
     const entry = JSON.parse(p.entry);
     /* an amendment the desk made itself (cash taken, 11.12) waits for its row exactly as a stage the site made does */

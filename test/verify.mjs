@@ -15615,17 +15615,17 @@ await (async () => {
       && R.empty.status === 409 && R.empty.b.error === "prices moved" && JSON.stringify(R.empty.b.prices) === JSON.stringify(sealed42("d-one")),
       nm + ": a placement carrying an older stamp, or an empty one, is refused 409 with the account's list as it stands, sealed, and places nothing: "
         + JSON.stringify([R.stale.status, R.stale.b, R.empty.status, R.empty.b.error]));
-    /* S4 fix (S4R-1): a Counter loaded before the stamp sends no stamp field at all and has no way to re-quote, so a
-       refusal held it until a reload nothing tells it to make; it places as it did, and the desk's acknowledgement is
-       the check behind its total. The page since S4 always sends the field (S4 fix section below). */
-    ok(R.bare.status === 200 && R.bare.b.ok === true && R.n1 === 2,
-      nm + ": a page from before the stamp, whose Place carries no stamp field at all, places as it did against a stamped list: "
+    /* 05 Oct 2026, HIS DECISION (any quantity at an automatic price): A PLACE WITH NO STAMP IS REFUSED against a stamped list,
+       as a moved one is, and answered with the list so the page re-quotes. The stamp is what holds a total typed at any
+       quantity to the sealed grid; S4R-1's allowance for a page from before the stamp (24 Sep 2026) is retired. */
+    ok(R.bare.status === 409 && R.bare.b.error === "prices moved" && JSON.stringify(R.bare.b.prices) === JSON.stringify(sealed42("d-one")) && R.n1 === 1,
+      nm + ": a Place with no stamp field at all is refused 409 against a stamped list, with the list as it stands: "
         + JSON.stringify([R.bare.status, R.bare.b.error, R.n1]));
     ok(R.retry.status === 200 && R.retry.b.ok === true && R.same.b.order && R.retry.b.order && R.retry.b.order.id === R.same.b.order.id,
       nm + ": a retry of a placement that landed is answered with its order after the list has moved, never refused: " + JSON.stringify([R.retry.status, R.retry.b.error]));
     ok(R.own.status === 400 && R.own.b.ok === false && R.own.b.error && R.own.b.error !== "prices moved" && !("prices" in R.own.b),
       nm + ": an order refused on its own terms says so, and not that the price moved: " + JSON.stringify([R.own.status, R.own.b.error]));
-    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 3,
+    ok(R.unstamped.status === 200 && R.unstamped.b.ok === true && R.n2 === 2,
       nm + ": a list published before the stamp, and a page sending none, still place: " + JSON.stringify([R.unstamped.status, R.unstamped.b.error, R.n2]));
   }
 })();
@@ -24719,7 +24719,7 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 18 && seen.length === 26 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  ok(!own.length && kinds.length === 19 && seen.length === 27 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -44035,11 +44035,12 @@ await (async () => {
     const lr = await lrB(tmpB, "test-secret", at, pricingB, null, { "CX0-DGA": { salt: { own: 1 } } });
     const rec = lr.records.find((r) => r.u === A), sealed = JSON.parse(await CB.decryptWith(ck, rec.prices));
     const figures = hmB("sha256", "test-secret").update("prices\n" + A + "\n"
-      + JSON.stringify(sealed.products.map((p) => [p.product, p.sizes.map((r) => [r.q, r.price])]))).digest("hex");
+      /* 05 Oct 2026: and each product's grid, null where it has none (any quantity at an automatic price) */
+      + JSON.stringify(sealed.products.map((p) => [p.product, p.sizes.map((r) => [r.q, r.price]), p.grid ? [p.grid.min, p.grid.step, p.grid.max, p.grid.p] : null]))).digest("hex");
     ok(!("caps" in rec.prices) && sealed.products.every((p) => !("cap" in p)),
       "no cap is written beside the stamp or sealed on a product, even handed one: " + JSON.stringify([Object.keys(rec.prices), sealed.products.map((p) => Object.keys(p))]));
     ok(rec.prices.digest === figures && sealed.digest === figures,
-      "the stamp is the figures alone, as before V3: " + JSON.stringify([rec.prices.digest.slice(0, 8), figures.slice(0, 8)]));
+      "the stamp is the figures alone (the board and the grid), as before V3: " + JSON.stringify([rec.prices.digest.slice(0, 8), figures.slice(0, 8)]));
     ok(typeof ceilB === "number" && sealed.ceiling === ceilB && !("ceiling" in rec.prices),
       "the ceiling is the master's, sealed with the list and never in the clear: " + JSON.stringify([ceilB, sealed.ceiling, Object.keys(rec.prices)]));
     const { priceDigest: pdB } = await import("../tools/pricelist.mjs");
@@ -50199,6 +50200,14 @@ section("Counter maker amends an agreed order after Accept: size, goods price an
 await (async () => {
   await (await import("./maker-amend.mjs")).run({ ok });
 })();
+section("05 Oct 2026: any quantity at an automatic price, one rule over each book's grid, the rate never rising across it");
+await (async () => {
+  await (await import("./any-quantity.mjs")).run({ ok });
+})();
+section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes, their Accept or No thanks");
+await (async () => {
+  await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
+})();
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
@@ -52269,8 +52278,10 @@ await (async () => {
   /* 3. THE DRIFT BOTH WAYS at 12.5 unit on RM 64: floor 800, Set 1,090, ceiling 2,400. Up: 1,090 + d x min(1,310, 240); down:
      1,090 - |d| x min(290, 160) */
   const at125 = [-1, -0.5, 0, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
-  ok(JSON.stringify(at125) === "[930,1010,1090,1210,1330]",
-    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 930, 1,010, 1,090, 1,210 and 1,330: " + JSON.stringify(at125));
+  /* 05 Oct 2026, HIS DECISION, THE WHOLE GRID IS WALKED: driftAt walks every quarter beneath 12.5, so the ends of the drift
+     come down where a quarter's rate held them (930 to 900, 1,210 to 1,200, 1,330 to 1,300); the Set Price stays 1,090 */
+  ok(JSON.stringify(at125) === "[900,1010,1090,1200,1300]",
+    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 900, 1,010, 1,090, 1,200 and 1,300, walked over the grid: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];

@@ -31,7 +31,7 @@ import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
 import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, encryptText, userFor, usersJson } from "./stmt-crypto.mjs";
-import { priceList, priceDigest } from "./pricelist.mjs";
+import { priceList, priceDigest, priceSteps } from "./pricelist.mjs";
 /* v782: the marks the customer's own page draws, so a statement and the site cannot diverge on
    what a book looks like. tools/ reading stmt/ is the safe direction and is what stmt-send.mjs
    already does; the ban is on stmt/ reaching OUT, because that Worker bundle must stay free of
@@ -1018,7 +1018,11 @@ export async function liveRecords(root, key, now, pricing, cards, buildId, suppl
            account's first order included */
         const ceiling = ceilingRM();
         if (ceiling != null) list.ceiling = ceiling;
-        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await encryptWith(ck, JSON.stringify(list)));
+        /* 05 Oct 2026 (any quantity at an automatic price): each product's {min, step, max} in the clear beside the stamp, no price,
+           for the Worker to refuse a quantity off the step or over the max; Negotiate is the only way past the max */
+        const steps = priceSteps(list);
+        rec.prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, Object.keys(steps).length ? { steps } : {},
+          await encryptWith(ck, JSON.stringify(list)));
         priced++;
       }
       /* v706, his instruction of 18 Sep 2026: an associate sees their own report card, by month,

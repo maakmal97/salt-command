@@ -7114,7 +7114,11 @@ function fiveTiers(sizes,C,P){
      is what a stranger is quoted; a named customer is quoted the Set Price moved by their drift (driftAt below). */
   if(R&&R.drift&&Array.isArray(R.rungs)&&R.rungs.length){
     const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-    return driftWalk(sizes,C,P,0).map(x=>{
+    /* 05 OCT 2026, HIS DECISION: THE WHOLE GRID IS WALKED. The sizes asked for are walked with every point of the book's
+       grid beneath them (walkSizes), so the board reads exactly what any quantity is quoted at, and the rate never rises
+       across the grid; then the sizes asked for are read off that one walk */
+    const all=driftWalk(walkSizes(R,sizes),C,P,0);
+    return sizes.map(q=>all.find(x=>Math.abs(x.q-q)<0.009)).map(x=>{
       let rung=0; rungs.forEach((r,i)=>{if(r<=x.q+0.009)rung=i;});
       return {q:x.q,rung:rung,cogs:Math.round(ladderCogs(x.q,C)),floor:x.floor,cols:[x.set],prices:[up(x.floor),x.set],
               set:x.set,ceiling:x.ceiling,drift:true};
@@ -7173,9 +7177,11 @@ function driftWalk(sizes,C,P,d){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
   const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
   const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
+  /* a rate rising with size steps down to the ten that holds it flat; where that ten is under the floor, to the floor's own
+     ten (06 Oct 2026): keeping the raw price there let a drifted grid jump RM330 at 24 unit, where the floor first binds */
   const walk=(q,raw,lift,prev)=>{
     let p=raw;
-    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;if(st>=lift-0.009)p=st;}
+    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;p=st>=lift-0.009?st:Math.min(raw,lift);}
     return p;
   };
   let prevS=Infinity, prevP=Infinity;
@@ -7189,10 +7195,40 @@ function driftWalk(sizes,C,P,d){
     return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
   });
 }
-/* the drift price at ANY size, walked against the rungs beneath it, as fiveTierAt walks a level */
+/* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
+   A book's TIER_RULE may carry `grid`, {min, step, max}: every size from min to max in steps of step is a quantity a
+   customer may type on the Counter and be quoted at once. Above max the only way in is Negotiate. The grid is read
+   here and nowhere else: gridOf checks it, gridSizes lists it, onGrid says whether a size is one of its points. */
+function gridOf(R){
+  const G=R&&R.grid;if(!G||typeof G!=='object')return null;
+  const min=+G.min,step=+G.step,max=+G.max;
+  if(!(min>0)||!(step>0)||!(max>=min)||!isFinite(max))return null;
+  return {min:min,step:step,max:max};
+}
+function gridSizes(G){
+  if(!G)return [];
+  const n=Math.round((G.max-G.min)/G.step),out=[];
+  for(let i=0;i<=n;i++)out.push(+(G.min+i*G.step).toFixed(6));
+  return out;
+}
+function onGrid(q,G){
+  if(!G||typeof q!=='number'||!(q>0))return false;
+  const k=(q-G.min)/G.step;
+  return q>=G.min-1e-9&&q<=G.max+1e-9&&Math.abs(k-Math.round(k))<1e-6;
+}
+/* the sizes a drift walk takes up to and including the largest asked for: the rungs and every grid point beneath it, with
+   the sizes asked for, smallest first and each once. HIS DECISION: THE WHOLE GRID IS WALKED, so the rate per unit never
+   rises from one grid point to the next, and a rung reads what the walk through every point beneath it leaves. */
+function walkSizes(R,sizes){
+  const top=Math.max.apply(null,sizes.map(Number).concat([0]));
+  const all=(R.rungs||[]).map(Number).concat(gridSizes(gridOf(R))).filter(x=>x<=top+0.009).concat(sizes.map(Number)).sort((a,b)=>a-b);
+  const out=[];all.forEach(x=>{if(!out.length||Math.abs(out[out.length-1]-x)>=0.009)out.push(x);});
+  return out;
+}
+/* the drift price at ANY size, walked against every rung and grid point beneath it (walkSizes), as fiveTierAt walks a level */
 function driftAt(q,C,P,d){
   const R=P.tierRule;if(!R||!R.drift||!(q>0))return null;
-  const sizes=R.rungs.map(Number).filter(r=>r<q-0.009).concat([q]);
+  const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);
   const w=driftWalk(sizes,C,P,d);return w[w.length-1];
 }
 /* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
@@ -7277,6 +7313,54 @@ function fiveTierAt(q,C,P){
   const sizes=R.rungs.map(Number).filter(r=>Math.abs(r-q)>0.009).concat([q]).sort((a,b)=>a-b);
   return fiveTiers(sizes,C,P).find(r=>Math.abs(r.q-q)<0.009);
 }
+/* ============ 05 OCT 2026, HIS DECISION: A NAMED CUSTOMER'S PRICE AT ANY SIZE, ONE RULE ============
+   What the desk's cardQuote answered on a drift book and a stated board, moved here so the desk, the Counter's sealed
+   grid and the desk Worker's card read one function. A stated board: the size's own row, pro rata on its rung's rate and
+   rounded down, between the floor and the ceiling, the same for everybody. A drift book: the Set Price moved by the
+   customer's drift d, walked through every grid point beneath the size. Either way never under the floor, through the
+   one cardPrice. A book priced by levels (no drift, no board) is not this function's: null. */
+/* A STATED BOARD OVER ITS GRID (06 Oct 2026, his rule that the rate never rises across the grid). A size between rungs is
+   its rung's rate times the size, rounded down to the ringgit: down to the book's ten, oil's rate rose within a band (13 unit
+   RM160, 14 unit RM180), and walking that flat pushed the band under his next typed rung. The floor's ten and the ceiling
+   hold it as fiveTiers holds a rung, and a typed rung is his price, never moved. A rate that still rises (a floor lift) steps
+   down to the ringgit that holds it, never under the floor's ten. */
+function fixedWalk(sizes,C,P){
+  const R=P.tierRule, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+  const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  let prev=Infinity;
+  return fiveTiers(sizes,C,P).map(r=>{
+    let p=r.prices&&r.prices.length?r.prices[r.prices.length-1]:null;
+    const typed=R.fixed[String(r.q)]!=null, base=+R.fixed[String(rungs[r.rung])], lift=up(r.floor);
+    if(!typed&&p!=null&&base>0&&rungs[r.rung]>0){
+      p=Math.floor(base*r.q/rungs[r.rung]+1e-9);
+      if(p<r.floor-0.009)p=lift;
+      if(r.ceiling!=null&&p>r.ceiling+0.009)p=r.ceiling;
+      if(prev<Infinity&&p/r.q>prev+1e-9){const st=Math.floor(prev*r.q+1e-9);p=st>=lift-0.009?st:Math.min(p,lift);}
+    }
+    if(p!=null&&isFinite(p)&&r.q>0)prev=Math.min(prev,p/r.q);
+    return {q:r.q,p:p};
+  });
+}
+function quoteAt(q,C,P,d){
+  const R=P.tierRule;if(!R||!(q>0))return null;
+  const F=floorTotal(q,C,P);
+  if(R.fixed){const w=fixedWalk(walkSizes(R,[q]),C,P),x=w.find(r=>Math.abs(r.q-q)<0.009),t=x?x.p:null;
+    return t==null||!isFinite(t)?null:+cardPrice(null,F,t,true).toFixed(2);}
+  if(R.drift){const x=driftAt(q,C,P,d);return x&&isFinite(x.p)?+cardPrice(null,F,x.p).toFixed(2):null;}
+  return null;
+}
+/* THE GRID A CUSTOMER'S LIST CARRIES: quoteAt at every point of the book's grid, {min, step, max, p}, one walk a book, so
+   p[i] is exactly quoteAt(min + i*step). Null for a book with no grid, or one any point of which is unpriced. */
+function quoteGrid(C,P,d){
+  const R=P.tierRule,G=gridOf(R);if(!G)return null;
+  const qs=gridSizes(G);let ps;
+  const read=(w,fixed)=>qs.map(q=>{const x=w.find(r=>Math.abs(r.q-q)<0.009);return x&&x.p!=null&&isFinite(x.p)?+cardPrice(null,floorTotal(q,C,P),x.p,fixed).toFixed(2):null;});
+  if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);
+  else if(R.fixed)ps=read(fixedWalk(walkSizes(R,qs),C,P),true);
+  else ps=qs.map(q=>quoteAt(q,C,P,d));
+  if(!ps.length||ps.some(p=>p==null||!isFinite(p)||!(p>0)))return null;
+  return {min:G.min,step:G.step,max:G.max,p:ps};
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -7308,7 +7392,8 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift};
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
+        gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
@@ -9240,7 +9325,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1027","d":"06 Oct 2026","t":"GROUP ORDERS ON THE COUNTER; HUSHES FROM COUNTER ADMIN","n":["<b>Group orders (Pool B1 to B7).</b> He opens a group order from Counter Admin; customers see it on Home and join through the usual check, each at their own price, collect only. Only his Close shuts it: Close previews and accepts each joined order, and a failed accept is kept and retried alone. Opening wakes nobody; Close wakes each joiner once. The test accounts show one open and joined and one closed. Nothing prices outside the engine.","<b>A5.</b> Counter Admin hushes a tip the Desk is showing: snooze 7 or 30 days, or dismiss. The hushes live in one store both surfaces read, never a queue entry, a draft or a fold, and the Desk's own route refuses what Counter Admin refuses. Nothing prices.","<b>Perf 1.</b> Received on an order reads the payments on their way once, not twice; the room it gives is unchanged."]}];
+const evolution=[{"v":"v1028","d":"06 Oct 2026","t":"ANY QUANTITY AT AN AUTOMATIC PRICE, AND NEGOTIATE PRICE, ON THE COUNTER","n":["<b>Any quantity.</b> A customer types any quantity on the Counter and sees its price at once: each book's grid (salt 0.5 to 25 unit in quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10) is priced by the one engine rule, quoteAt, and sealed into their list at publish. The page reads the price and works nothing out. The stamp covers the grid; a Place off the step, over the max, or with no stamp is refused. Above the max the way in is Negotiate.","<b>The whole grid is walked, so the rate never rises with size.</b> This lowers rung prices and raises none: the stranger's 6.25 unit Set Price RM670 to RM660; named cards RM10 to RM20 lower at up to nine rungs (at 1 unit 33 of 41 accounts RM150 to RM140; at 3 unit none; at 12.5 unit 3 accounts RM1,210 to RM1,200). Where the floor binds the walk steps to the floor's own ten. Oil, candy and rice keep his typed rungs exactly; between rungs, the rung's rate times the size to the ringgit.","<b>Negotiate price.</b> One order, for themselves, may ask for a price, with a figure of their own if they want. It reaches him as Asked under Waiting on you, with the automatic price, cost, margin, floor, their drift and record. His offer is the goods alone, never under the floor, filed as his yes and open 48 hours; their Accept drafts the row at it and his yes approves it only on an exact match, else it waits under Approve. An open offer freezes the order. No thanks, or his withdrawal, closes the ask: the order stands at its listed price for his Accept as usual, or, past the grid, is cancelled. A take that finds no yes of his that fits queues its row to wait under Approve, never stranded. Two asks open an account at most, none while their payment waits or goods of theirs are overdue. The price stays on that one order: no board, drift or card moves. No account's amount owed moved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9391,7 +9476,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Oct 2026, 14:19 KL';
+const LAST_UPDATED='06 Oct 2026, 15:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11189,7 +11274,9 @@ function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDE
    Ambassador and the four tiers are retired for salt. Per size: the Floor (COGS times the size), the Ceiling (ceilingX
    times the floor) and the Set Price, the floor times a multiple sliding in the log of size from mS at qS to mB at qB, down
    to the ten, lifted to the floor, capped at the ceiling and walked under the rate law: at COGS RM64 it reads RM90, 160,
-   220, 280, 330, 380, 430, 480, 520, 560, 670 and 1,090 on the rungs. A stranger is quoted the Set Price. Each customer
+   220, 280, 330, 380, 430, 480, 520, 560, 660 and 1,090 on the rungs, every rung walked with the grid's own sizes (05 Oct
+   2026, any amount: `grid`, from min in steps to max, each point priced by the engine's quoteAt and sealed per customer, so
+   the rate never rises across the whole grid). A stranger is quoted the Set Price. Each customer
    holds a drift from -1 to +1, hand-set (TIER_OF, folded as `tierset`) or read off their record (`auto`, the engine's
    autoDrift), which moves the Set Price by up to `drift.up` of the floor towards the ceiling or `drift.down` of it towards
    the floor (driftAt in the ENGINE block). */
@@ -11197,24 +11284,30 @@ const TIER_RULE={
   salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
         presets:{Better:-0.3, Standard:0, Higher:0.3},
-        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
+        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
+        /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
+           walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
+        grid:{min:0.5, step:0.25, max:25}},
   /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
      customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
      the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
      RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
      board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
      price there is nothing for them to say. */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2},
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:1, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2},
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
      `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
      changelog states. A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5}
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
 };
+/* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
+   Above max the only way in is Negotiate. Null for a book with none. */
+function gridFor(p){return PRICING_ENGINE.gridOf(TIER_RULE[p||PROD]);}
 /* the levels' names, cheapest first: Ambassador, on his word alone and earning no free units; Titanium to
    Silver are the tiers, and a new customer starts at Silver, the last. Bronze went on 23 Sep 2026, his choice
    when the workbook came down to four tiers; nobody held it. */
@@ -20502,6 +20595,15 @@ const ORD_KIND={new:{w:'New',tone:'steel',act:'Accept'},paid:{w:'Paid?',tone:'ve
 const ordDue=o=>+((+o.total||0)+(+o.delivery||0)-(+o.paid||0)).toFixed(2);
 /* S6 (D7): the claims of theirs still waiting for his answer, oldest first, each named by its moment */
 const ordClaims=o=>((o&&o.payments)||[]).filter(p=>p&&p.claim==='waiting');
+/* 05 Oct 2026 (Negotiate): A PRICE THEY ASKED FOR is his to answer while nothing of his is open on it: asked, or an offer
+   they said no thanks to, he withdrew, or that lapsed. An offer open is theirs to answer; one taken is his yes on its way. */
+/* 06 Oct 2026: an ask is open while asked, offered or taken; No thanks or his withdrawal closes it, and the order is a New one
+   again at its listed price */
+function ordAsking(o){const p=o&&o.status==='placed'&&o.price;return !!p&&['asked','offered','taken'].includes(p.state);}
+const ordYes=o=>o&&o.yes==='offer'&&!ordAsking(o)?'':(o&&o.yes)||'';   /* an offer's yes left over from a closed ask is none */
+function ordPriceAct(o){const p=o&&o.status==='placed'&&o.price;if(!p||o.yes==='waiting'||o.yes==='differs')return false;
+  if(p.state==='asked')return true;
+  return p.state==='offered'&&!!p.offer&&new Date().toISOString()>String(p.offer.until);}
 function ordAsked(o){const m=(o&&o.msgs)||[],l=m[m.length-1];return !!(l&&l.by==='customer'&&!(o.quiet&&String(o.quiet)>=String(l.at)));}
 function ordActs(){
   const open=(typeof ORD_OPEN!=='undefined'&&Array.isArray(ORD_OPEN))?ORD_OPEN:[];
@@ -20511,7 +20613,8 @@ function ordActs(){
     if(o.kind==='account'){if(o.state==='waiting')out.push({kind:'paid',o,at:o.at||''});return;}   /* S6 11.15 */
     if(o.kind==='thread'){if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});return;}   /* Step 7 */
     const live=['acknowledged','ready'].includes(o.status);
-    if(o.status==='placed'&&!o.yes)out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
+    if(ordPriceAct(o))out.push({kind:'asked',o,at:o.price[o.price.state+'At']||o.at||''});   /* Negotiate: his to answer */
+    else if(o.status==='placed'&&!ordYes(o)&&!ordAsking(o))out.push({kind:'new',o,at:o.at||''});   /* his yes already given waits under Approve, counted there */
     else if(ordAsked(o))out.push({kind:'asked',o,at:o.msgs[o.msgs.length-1].at||''});
     const cw=ordClaims(o);   /* S6: a claim of theirs is its own act, and while one waits there is no cash to record */
     if(live&&(+o.moved||0)>0.0004&&(+o.paid||0)<=0.004&&ordDue(o)>0.004&&!cw.length){
@@ -20600,7 +20703,8 @@ function ordAgainAck(o){return ['acknowledged','ready','done'].includes(o.status
 /* the row is drafted at the chosen charge, and at none until one is chosen, its figures being the goods' */
 function ordPvDelivery(o){{const L=ordSheetLead(o);if(L&&L.id!==o.id)return 0;}if(ordAgainAck(o))return +o.delivery||0;if(o.mode!=='deliver')return 0;const d=ordFeeNow(o);return d==null?0:d;}
 async function ordPreview(o){
-  if(!o||o.yes||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
+  if(!o||(ordYes(o)&&!(o.yes==='offer'&&ordPriceAct(o)))||!(o.status==='placed'||ordAgainAck(o))||!cloudMode())return;
+  if(ordAsking(o)&&!ordPriceAct(o))return;   /* Negotiate: nothing to draft while an offer is open or taken */
   const d=ordPvDelivery(o);if(d==null)return;
   const cur=ORD_PV[o.id];
   const pr=ordPriceNow(o);
@@ -20626,6 +20730,28 @@ function ordPriceBlock(o,pv){
     <input type="number" inputmode="decimal" min="0" step="0.5" value="${pr!=null?pr:+o.total||0}" class="salt-field__input salt-field__input--mono" data-price="${esc(o.id)}"></label>
     ${say?`<p class="salt-approve__reason ordfloor" data-floor="${esc(o.id)}">${esc(say)}</p>`:''}`;
 }
+/* Negotiate: what they asked, the automatic price, their drift and record, and where his offer stands. The figure he offers is
+   the goods alone, typed in the price box above the row; Offer drafts the row at it (never under the floor), files his yes
+   against the row's figures and flags, and the Counter shows them the figure for OFFER_HOURS. */
+/* a tap's request id, minted on the device: 22 letters and digits, which the order book's desk rid road reads */
+const ORD_RID={};
+function ordRid(){const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,b=>'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[b%62]).join('').slice(0,22);}
+function ordOfferBlock(o,when){const p=o.price||{},q=+o.qty||0,t=+o.total||0;
+  const auto=t>0&&q>0?'Automatic price '+fmt(t)+', '+fmt(+(t/q).toFixed(2))+' a unit':'Past the largest size listed: no automatic price';
+  const dr=o.code&&typeof driftOf==='function'?driftOf(o.code,o.product||'salt'):null,sg=dr&&dr.sig;
+  const rec=sg?' Record: '+sg.orders+' order'+(sg.orders===1?'':'s')+', '+sg.onTime+' of '+sg.settled+' paid on time'+(sg.late?', paying late now':'')+'.':'';
+  const lines=['They asked for a price on '+units(q)+(typeof p.proposed==='number'?', suggesting '+fmt(p.proposed)+' for the goods':'')+'. '+auto+'.'
+    +(dr&&typeof dr.d==='number'?' Their drift '+(dr.d>0?'+':'')+(+dr.d).toFixed(2)+'.':'')+rec];
+  const lapsed=p.state==='offered'&&p.offer&&new Date().toISOString()>String(p.offer.until);
+  if(p.state==='offered'&&p.offer)lines.push(lapsed?'Your offer of '+fmt(+p.offer.total)+' lapsed '+when(p.offer.until)+'. Offer again, or decline.'
+    :'You offered '+fmt(+p.offer.total)+' for the goods, open until '+when(p.offer.until)+': waiting on their answer.');
+  else if(p.state==='taken')lines.push('They took your offer of '+fmt(+((p.offer||{}).total||0))+'. Its row is drafted at it and booked as it lands if it is the row you offered; otherwise it waits under Approve, marked.');
+  return lines.map(x=>`<p class="salt-approve__reason ordask">${esc(x)}</p>`).join('');}
+function ordOfferActs(o,pvOk,sum){const p=o.price||{},u=esc(o.u),id=esc(o.id);
+  if(p.state==='taken')return '';
+  if(!ordPriceAct(o))return `<button class="salt-ghost salt-ghost--danger" data-ord="withdraw" data-u="${u}" data-id="${id}">Withdraw the offer</button>`;
+  return `<button class="vbtn salt-pill salt-pill--sm" data-ord="offer" data-u="${u}" data-id="${id}"${pvOk&&sum>0?'':' disabled'}>Offer, ${fmt(sum)}</button>`
+    +`<button class="salt-ghost salt-ghost--danger" data-ord="declined" data-u="${u}" data-id="${id}">Decline</button>`;}
 function ordPvBlock(o){
   const pv=ORD_PV[o.id];
   if(!pv||pv.st==='wait')return ordPriceBlock(o,null)+`<p class="salt-approve__reason ordpv" data-pv="${esc(o.id)}">Drafting the row this order would make.</p>`;
@@ -20937,7 +21063,8 @@ function ordCard(o){
   /* S11 (D6): HIS YES ALREADY GIVEN (GET /orders carries `yes`): its row is being drafted, or came out other than he saw
      and waits under Approve. The order still reads as it did, so the card says where the decision is, and offers no
      second Accept, which the Worker would refuse. */
-  const yes=(o.status==='placed'||againAck)?(o.yes||''):'';
+  const yes=(o.status==='placed'||againAck)?(o.yes==='offer'?'':ordYes(o)):'';
+  const pa=ordAsking(o);   /* Negotiate: a price they asked for */
   /* V4b.2: A SHEET PLACED TOGETHER IS AGREED TOGETHER, on its first order's card: one Accept for all of them, the charge
      he chooses on that order and RM 0 on the rest, each row drafted and shown; the other cards keep Decline */
   const G=ordSheetGroup(o),SL=ordSheetLead(o),sLead=!!SL&&SL.id===o.id,sSib=!!SL&&SL.id!==o.id;
@@ -20985,6 +21112,7 @@ function ordCard(o){
   const goWhy=st=>`<button class="salt-ghost salt-ghost--danger" data-ord="${st}" data-go="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${ORD_WHY[o.id].pick?'':' disabled'}>${st==='declined'?'Decline and tell them':'Cancel and tell them'}</button><button class="salt-ghost" data-whyoff="${esc(o.id)}">Keep the order</button>`;
   if(whyOpen&&(o.status==='placed'||(rowed&&o.status!=='done'&&!(moved>0))))acts=goWhy(whyOpen.st);
   else if(yes)acts='';
+  else if(pa)acts=ordOfferActs(o,pvOk,sum);
   else if(o.status==='placed'&&sSib)acts=btn('declined','Decline',true);
   else if(o.status==='placed'&&sLead)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-sheet="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk&&pvAll&&ORD_SHEET_BUSY!==o.sheet?'':' disabled'}>Accept all ${G.length}, ${fmt(sumAll)}</button>`+btn('declined','Decline',true);
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
@@ -21039,7 +21167,7 @@ function ordCard(o){
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
     ${ordSheetLine(o)}${ordWantLine(o)}
-    ${yes?'':o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
+    ${yes?'':pa?ordOfferBlock(o,when)+(ordPriceAct(o)?ordPvBlock(o):''):o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?NIL:fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
@@ -21054,6 +21182,8 @@ function ordCard(o){
       ${c0&&c0.slip&&!whyOpen?slipPart(o.u,c0.slip,c0.at):''}
       ${yes?`<p class="salt-approve__reason ordyes">${yes==='differs'?'Your yes waits under Approve: the row came out other than you saw. Approve it there, or reject it there to decide again.'
         :'Your yes is given, and its row is being drafted: it is booked as it lands if it is the row you saw.'}</p>`
+      :pa&&!whyOpen?(ordPriceAct(o)?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.':!pvFor?'Drafting the row first.':pv.st==='err'?'The row could not be drafted, so Offer waits until it can.'
+        :'Offer shows them '+fmt(sum)+' for the goods for 48 hours, and files your yes: if they accept and the real row equals this one it is approved; otherwise it waits under Approve, marked.'}</p>`:'')
       :o.status==='placed'&&!whyOpen&&sSib?'<p class="salt-approve__reason">Accept them together on the first order of this sheet'+(o.mode==='deliver'?', whose card carries the delivery charge.':'.')+'</p>'
       :o.status==='placed'&&!whyOpen?`<p class="salt-approve__reason">${feeNow==null?'Choose the delivery charge first.'
         :!pvFor||!pvAll?(sLead?'Drafting the rows first.':'Drafting the row first.')
@@ -21237,6 +21367,19 @@ async function ordAct(b){
     const pr=ordPriceNow(o);
     body=JSON.stringify(Object.assign({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.hash)||null},pr!=null?{total:pr}:{}));
     url='orders/'+encodeURIComponent(id)+'/accept';
+  }else if(st==='offer'){
+    /* Negotiate: the goods he typed (or the automatic price), the charge, and the digest of the row the card drew at them */
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const d=o.mode==='deliver'?ordFeeNow(o):0;
+    if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
+    const pv=ORD_PV[id],pr=ordPriceNow(o),t=pr!=null?pr:+o.total||0;
+    if(!(t>0))return refuse('Type your price for the goods first; nothing moved.');
+    /* the tap's own id, kept until it lands, so an Offer sent twice files one offer */
+    const rid=ORD_RID[id+':offer:'+t]||(ORD_RID[id+':offer:'+t]=ordRid());
+    body=JSON.stringify({delivery:d,total:t,rid,hash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.offerHash)||null});
+    url='orders/'+encodeURIComponent(id)+'/offer';
+  }else if(st==='withdraw'){
+    body=JSON.stringify({rid:ORD_RID[id+':withdraw']||(ORD_RID[id+':withdraw']=ordRid())});url='orders/'+encodeURIComponent(id)+'/withdraw';
   }else if((st==='declined'||st==='cancelled')&&!b.dataset.go){
     ORD_WHY[id]={st,pick:''};delete ordBusy[id];ORD_SAID=null;ordDraw();return;
   }else if(st==='declined'||st==='cancelled'){
@@ -21305,6 +21448,7 @@ async function ordAct(b){
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body,keepalive:keep});
     let j={};try{j=await r.json();}catch(e){}
     done=r.ok;
+    if(r.ok&&(st==='offer'||st==='withdraw'))Object.keys(ORD_RID).filter(k=>k.startsWith(id+':')).forEach(k=>delete ORD_RID[k]);   /* landed: the next tap is a new one */
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
     /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
@@ -21317,6 +21461,8 @@ async function ordAct(b){
       :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
         :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Sent until you approve it there.'
         :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
+      :st==='offer'?'Offered '+fmt(JSON.parse(body).total)+' for the goods. They have 48 hours to accept; your yes is filed and spent only if the row equals this one. '+told
+      :st==='withdraw'?'Offer withdrawn. Nothing is booked, and they see it withdrawn.'
       :st==='say'?'Sent. '+told
       :st==='again'?'Offered again under a fresh entry. '+says
       :st==='received'&&b.dataset.covered?'Received, on the book already: '+fmt(+b.dataset.amt||0)+' is carried by what you recorded, and nothing more is booked. They see it received. '+told
@@ -21929,11 +22075,11 @@ function cardQuote(code,q,t){
   if(!(q>0))return null;
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
   const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
-  if(row&&row.fixed)return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[row.prices.length-1],true).toFixed(2);
-  /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through the size;
-     a size beyond the rungs is walked the same way. Never under the floor, through the one cardPrice. */
-  if(row&&row.drift){const dr=driftOf(code,PROD),x=PRICING_ENGINE.driftAt(q,pxCost(),P,dr?dr.d:0);
-    return x?+PRICING_ENGINE.cardPrice(null,floorTotal(q),x.p).toFixed(2):null;}
+  /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
+     point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
+     grid and the desk Worker's card read too. Never under the floor. */
+  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,pxCost(),P,0);
+  if(row&&row.drift){const dr=driftOf(code,PROD);return PRICING_ENGINE.quoteAt(q,pxCost(),P,dr?dr.d:0);}
   if(t==null)t=cardTierAt(code,q);if(t<0)return null;
   if(!row||row.prices[t]==null)return null;
   return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[t]).toFixed(2);}

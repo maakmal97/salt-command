@@ -52,9 +52,9 @@ import { FONTS } from "./fonts.js";
 import { refusal } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
-import { handleMaker, publicHours, customerAmend } from "./maker.js";
+import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
-  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -347,7 +347,7 @@ async function readJson(request) {
 }
 const OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
 
-async function handleCustomer(request, env, p, m) {
+async function handleCustomer(request, env, p, m, ctx) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   const u = await sessionUser(request, env);
   /* S1 1.42: Log out is answered with or without a live session. Behind the check, a phone logging out after
@@ -435,7 +435,9 @@ async function handleCustomer(request, env, p, m) {
     if (m === "GET") return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView)),
       { thread: threadView(isTest(u) ? await exampleThread(env, u) : await threadOf(env, u)) }));
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    const r = await placeOrder(env, u, await readJson(request));
+    const pb = await readJson(request);
+    /* Negotiate: a test account's ask is written into its fixture alone, so no desk ever sees it */
+    const r = isTest(u) && pb && pb.ask === true ? await examplePlace(env, u, pb) : await placeOrder(env, u, pb);
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
     if (r.error) return refuse(r, "prices" in r ? { prices: r.prices } : {});
     return json({ ok: true, order: customerView(r.order) });
@@ -491,7 +493,8 @@ async function handleCustomer(request, env, p, m) {
     return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
       : json({ ok: true, order: customerView(result.order) });
   }
-  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate)$/.exec(p);   /* v751: say, a line on the order; F10: rate, its stars */
+  /* v751: say, a line on the order; F10: rate, its stars; Negotiate: take or pass his offer */
+  const mm = /^\/orders\/([^/]+)\/(method|cancel|pay|say|rate|take|pass)$/.exec(p);
   if (!mm || !OID_RE.test(mm[1])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   /* F13: a claim on an order carries its slip the same way; on any other move no claim names it, so none is filed */
@@ -504,6 +507,8 @@ async function handleCustomer(request, env, p, m) {
   if (isExample(u, mm[1])) { const x = await exampleMove(env, u, mm[1], mm[2], f.body); return x.error ? refuse(x) : json({ ok: true, order: customerView(x.order) }); }
   const r = await customerMove(env, u, mm[1], mm[2], f.body);
   if (r.error) return refuse(r);
+  /* their Accept on his offer: the desk is told at once, its minute's pass the net; its answer is never theirs to read */
+  if (mm[2] === "take" && !r.again && ctx && ctx.waitUntil) ctx.waitUntil(takeNudge(env, mm[1]).catch(() => null));
   /* the claim this move recorded is the newest waiting one; a repeat answered with an earlier claim names another slip */
   if (f.slip) await keepSlip(env, u, f.slip, ((r.order && r.order.payments) || []).some((p) => p && p.slip === f.slip.id) ? f.slip.id : null);
   return json({ ok: true, order: customerView(r.order) });
@@ -1601,7 +1606,7 @@ async function handleGuest(request, env, id) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const held = maintenance(request, env);
     if (held) return held;
     const url = new URL(request.url);
@@ -1879,7 +1884,7 @@ export default {
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
-      || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m);
+      || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
     if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")

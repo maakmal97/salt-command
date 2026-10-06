@@ -21,6 +21,7 @@ import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
 import { liveFor, holdTerm, stageDays, ceilingRM } from "./make_statements.mjs";
+import { priceSteps } from "./pricelist.mjs";
 
 /* the invented account on the invented book: no roster holds either code */
 export const FIX_CODE = "TX0-FIX";
@@ -47,24 +48,38 @@ function priceList(now) {
   const list = { at: now.toISOString(), week: { monday, sunday: monday, label: "this week" }, since: klDay(new Date(now.getTime() - 60 * 864e5)),
     products: [
       { product: "salt", name: "Salt", unit: "unit", basis: "card", tier: null, levels: null, supply: { light: "yellow", by: klDay(new Date(now.getTime() + 9 * 864e5)) },
-        sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }] },
+        sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }], grid: exampleGrid() },
       { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "red", by: null }, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
       { product: "candy", name: "Candy", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
       { product: "rice", name: "Rice", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
     soon: [{ product: "spare", name: "Spare" }] };
-  list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes]))).digest("hex");
+  list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes, p.grid || null]))).digest("hex");
   const ceiling = ceilingRM();
   if (ceiling != null) list.ceiling = ceiling;
   return list;
 }
-const priceOf = (list, product, q) => list.products.find((p) => p.product === product).sizes.find((s) => s.q === q).price;
+/* 05 Oct 2026: ANY AMOUNT, an invented grid for salt from 0.5 to 25 in quarters, the rate never rising, the board's sizes on it */
+function exampleGrid() {
+  const p = [];
+  for (let i = 0; i <= 98; i++) {
+    const q = 0.5 + i * 0.25, rate = q <= 1 ? 110 : q <= 2.5 ? 108 : q <= 5 ? 106 : q <= 12.5 ? 104 : 102;
+    p.push(+(q * rate).toFixed(2));
+  }
+  return { min: 0.5, step: 0.25, max: 25, p };
+}
+const priceOf = (list, product, q) => {
+  const P = list.products.find((x) => x.product === product), g = P.grid, i = g ? Math.round((q - g.min) / g.step) : -1;
+  if (g && i >= 0 && i < g.p.length && Math.abs(g.min + i * g.step - q) < 1e-6) return g.p[i];
+  const s = P.sizes.find((x) => x.q === q);
+  return s ? s.price : 0;   /* past the grid: a price asked, placed at nothing */
+};
 
 /* one order, taken through the order book's own moves: each step is [moment, who, body] */
 function order(id, list, placedAt, place, steps) {
   const body = Object.assign({ unit: 0, week: list.week.monday, digest: list.digest }, place);
   body.total = priceOf(list, body.product, body.qty); body.unit = +(body.total / body.qty).toFixed(2);
-  const p = decidePlace(U, body, [], placedAt, list.digest);
+  const p = decidePlace(U, body, [], placedAt, list.digest, "customer", null, { steps: priceSteps(list) });
   if (p.error) throw new Error("the fixture's order " + id + " was refused at Place: " + p.error);
   let o = applyEvent(null, p.ev).order;
   o.id = id;
@@ -190,6 +205,25 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
       joins: [{ u: U, oid: poolJoined.id, at: poolJoined.at }], seedUnits: 5 },
     { id: pid(8, "2"), kind: "pool", at: T(9), product: "oil", q: 3, target: 9, state: "closed", closedAt: T(7, 40),
       joins: [{ u: U, oid: poolAcked.id, at: poolAcked.at }], seedUnits: 6 }];
+
+  /* 05 Oct 2026: ANY AMOUNT, agreed at 6.75 units off the grid; and NEGOTIATE, a price asked (with a figure of theirs),
+     offered and open, taken and agreed at it, declined, and lapsed. The agreed ones are collected and paid, and the declined
+     one withdrawn after, so the cases add only the three a negotiation leaves open to the account's open orders */
+  O.push(order(oid(2, "31"), list, T(2, 10), { product: "salt", qty: 6.75, mode: "collect" }, [[T(2, 25), "desk", { status: "acknowledged" }],
+    [T(2, 30), "desk", { handover: { units: 6.75 } }], [T(2, 31), "desk", { cash: { amount: priceOf(list, "salt", 6.75) } }]]));
+  const offerAt = (at, id, total, hours) => [at, "desk", { offer: { id, total, until: new Date(Date.parse(at) + hours * 3600e3).toISOString() } }];
+  O.push(order(oid(0, "32"), list, T(0, 3), { product: "salt", qty: 7, mode: "collect", ask: true, propose: 690 }, []));
+  O.push(order(oid(1, "33"), list, T(1, 3), { product: "salt", qty: 10, mode: "collect", ask: true }, [offerAt(T(0, 20), "fex33", 1010, 48)]));
+  O.push(order(oid(3, "34"), list, T(3, 3), { product: "salt", qty: 8, mode: "collect", ask: true, propose: 800 }, [
+    offerAt(T(3, 20), "fex34", 810, 48), [T(3, 40), "customer", { action: "take" }], [T(2, 50), "desk", { status: "acknowledged", total: 810 }],
+    [T(2, 55), "desk", { handover: { units: 8 } }], [T(2, 56), "desk", { cash: { amount: 810 } }]]));
+  O.push(order(oid(5, "35"), list, T(5, 3), { product: "salt", qty: 9, mode: "collect", ask: true }, [
+    offerAt(T(5, 20), "fex35", 920, 48), [T(5, 40), "customer", { action: "pass" }]]));
+  /* 06 Oct 2026: No thanks closes the ask; on the grid the order stands at its listed price (above), past it there is none and
+     the order is cancelled */
+  O.push(order(oid(4, "37"), list, T(4, 3), { product: "salt", qty: 40, mode: "collect", ask: true }, [
+    offerAt(T(4, 20), "fex37", 4000, 48), [T(4, 40), "customer", { action: "pass" }]]));
+  O.push(order(oid(6, "36"), list, T(6, 3), { product: "salt", qty: 30, mode: "collect", ask: true }, [offerAt(T(6, 20), "fex36", 3000, 48)]));
 
   /* EACH ORDER ON THE BOOK IS A ROW, dated its placing day, as the desk's reconcile would book it; the key names the
      invented code, and the page reads only its day (rowOn); a wanted-day order moves to its first handover's day */
@@ -320,6 +354,14 @@ export const FEATURES = [
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
   ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
     return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
+  ["order at 6.75 units, any amount off the grid (05 Oct 2026)", (f) => has(f, (o) => Math.abs(+o.qty - 6.75) < 1e-9 && !o.price && o.status !== "placed" && o.total > 0)
+    && f.prices.products.some((p) => p.grid && p.grid.step > 0 && p.grid.p.length > 1)],
+  ["price asked (Negotiate)", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "asked")],
+  ["price offered, open", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "offered" && String(o.price.offer.until) > f.at)],
+  ["offer accepted, agreed at it", (f) => has(f, (o) => o.price && o.price.state === "taken" && ["acknowledged", "ready", "done"].includes(o.status) && Math.abs(o.total - o.price.offer.total) < 0.005)],
+  ["offer declined, the order back at its listed price", (f) => has(f, (o) => o.price && o.price.state === "passed" && o.status === "placed" && o.total > 0)],
+  ["offer declined past the grid, the order cancelled", (f) => has(f, (o) => o.price && o.price.state === "passed" && o.status === "cancelled")],
+  ["offer lapsed", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "offered" && String(o.price.offer.until) < f.at)],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
@@ -370,7 +412,8 @@ export async function sealFixture(fix, rec, pass) {
   return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: true,
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
-    prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest }, await seal(fix.prices)),
+    prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest },
+      Object.keys(priceSteps(fix.prices)).length ? { steps: priceSteps(fix.prices) } : {}, await seal(fix.prices)),
     card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools,
     makerBook: fix.book, makerOrders: fix.orders };
 }

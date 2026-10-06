@@ -2127,7 +2127,7 @@ const CLIENT_JS = `
     /* S4 fix: the order sheet lies over the bar, so a lapse closes it; Continue is then in reach, and the sheet will
        not open again until it is tapped (sheetOpen). What was chosen and typed in it stays in draft, and the same account
        let in again opens it again at the form (enter), so an order they were writing is kept, as S3 3.5 keeps it */
-    if(osh&&!view&&(draft.step==='form'||draft.step==='check')) draft.sheetBack=true;
+    if(osh&&!view&&(draft.step==='form'||draft.step==='check'||draft.step==='ask')) draft.sheetBack=true;
     sheetClose();
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
@@ -2751,6 +2751,16 @@ const CLIENT_JS = `
   /* 24 Sep 2026: what can be ordered is a product with a priced size. The list sends none without one now, and an
      older sealed list still can: its first size was read unguarded, and the throw blanked the whole tab. */
   function sold(){ return ((prices&&prices.products)||[]).filter(function(x){ return x.sizes&&x.sizes.length; }); }
+  /* 05 Oct 2026: ANY AMOUNT AT ITS AUTOMATIC PRICE. A product's grid (from min in steps to max, a price a point, sealed with
+     the list) prices any amount on it; a board size off the grid reads its own row. The page calculates nothing: every
+     figure is read off the list, and past the grid's max there is no price, only Negotiate. */
+  function gridOf(P){ var g=P&&P.grid; return g&&g.step>0&&g.p&&g.p.length?g:null; }
+  function gridIx(g,q){ var i=Math.round((+q-g.min)/g.step); return i>=0&&i<g.p.length&&Math.abs(g.min+i*g.step-(+q))<1e-6?i:-1; }
+  function priceAt(P,q){ if(!P||q==null||!(+q>0)) return null;
+    var g=gridOf(P), i=g?gridIx(g,q):-1; if(i>=0&&typeof g.p[i]==='number') return g.p[i];
+    var z=(P.sizes||[]).filter(function(x){ return String(x.q)===String(q); })[0]; return z?z.price:null; }
+  var ASK_CAP=1000;   /* the Worker's own limit on a size (checkPlacement) */
+  function overMax(P,q){ var g=gridOf(P); return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP; }
   /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
   function noOrderLine(){ return tw(prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'ord.opensSet':'ord.opensList'); }
   async function api(path, body, method){
@@ -2784,8 +2794,9 @@ const CLIENT_JS = `
     ((prices&&prices.products)||[]).forEach(function(p){
       var q=draft.pick&&Object.prototype.hasOwnProperty.call(draft.pick,p.product)?draft.pick[p.product]:null;
       if(q==null||!p.sizes) return;
-      var r=p.sizes.filter(function(x){return String(x.q)===String(q);})[0];
-      if(r) out.push({p:p, q:r.q, total:r.price, unit:+(r.price/r.q).toFixed(2)});
+      var t=priceAt(p,q);
+      if(t!=null) out.push({p:p, q:+q, total:t, unit:+(t/q).toFixed(2)});
+      else if(overMax(p,q)) out.push({p:p, q:+q, total:0, unit:0, over:true});   /* past the grid: Negotiate alone */
     });
     return out;
   }
@@ -2845,7 +2856,9 @@ const CLIENT_JS = `
   }
   function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
-    return !!P&&(q==null||P.sizes.some(function(s){ return String(s.q)===String(q); })); }
+    return !!P&&(q==null||priceAt(P,q)!=null); }
+  /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
+  function oCanPick(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0]; return oSoldHas(p,q)||!!P&&overMax(P,q); }
   function sheetOpen(product,q,opener,amend,pool){
     if(view||hold||!sold().length||!lapse.hidden) return;
     draft.amend=amend?amend.id:'';
@@ -2862,7 +2875,7 @@ const CLIENT_JS = `
       /* V4b: what was picked last time stays while the list still sells it; a sheet with nothing on it opens, as before,
          on the product they order most at their usual size, else its first size, else the list's first */
       var K=draft.pick||{}; draft.pick={};
-      Object.keys(K).forEach(function(k){ if(oSoldHas(k,K[k])) draft.pick[k]=K[k]; });
+      Object.keys(K).forEach(function(k){ if(oCanPick(k,K[k])) draft.pick[k]=K[k]; });
       if(!picked()){ var S0=sold(), P0=(U&&S0.filter(function(x){ return x.product===U.product; })[0])||S0[0];
         draft.pick[P0.product]=String(U&&U.product===P0.product&&oSoldHas(U.product,U.q)?U.q:P0.sizes[0].q); }
     }
@@ -2926,7 +2939,7 @@ const CLIENT_JS = `
     var fo=document.activeElement, inside=!!fo&&osh.box.contains(fo), fk=inside?fo.getAttribute('data-k'):null;
     osh.head.textContent=''; osh.body.textContent=''; osh.foot.textContent='';
     if(draft.step==='limit'&&openN()<OMAX) draft.step='form';
-    if(draft.step==='check') drawCheck(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
+    if(draft.step==='check') drawCheck(); else if(draft.step==='ask') drawAsk(); else if(draft.step==='sent') drawSent(); else if(draft.step==='limit') drawLimit(); else drawForm();
     osh.foot.hidden=!osh.foot.firstChild;
     if(fk){ var back=[].filter.call(osh.box.querySelectorAll('[data-k]'),function(x){ return x.getAttribute('data-k')===fk; })[0];
       if(back) try{ back.focus({preventScroll:true}); }catch(e){} }
@@ -2978,7 +2991,7 @@ const CLIENT_JS = `
     if(!S.length){ B.appendChild(el('p','lead',noOrderLine())); return; }
     /* V4b: a size no longer on the list leaves the sheet; with one product on the list a size is always chosen, as before */
     if(!draft.pick) draft.pick={};
-    Object.keys(draft.pick).forEach(function(k){ if(!oSoldHas(k,draft.pick[k])) delete draft.pick[k]; });
+    Object.keys(draft.pick).forEach(function(k){ if(!oCanPick(k,draft.pick[k])) delete draft.pick[k]; });
     if(S.length===1&&!picked()) draft.pick[S[0].product]=String(S[0].sizes[0].q);
     /* S4 4.7: AN ASSOCIATE IS ASKED WHO IT IS FOR, FIRST (v702's tick, which was the last field and easy to pass). Nothing is
        chosen for them: Review waits for the answer, and every order asks again. Nobody else is asked. */
@@ -3007,7 +3020,9 @@ const CLIENT_JS = `
         tx.appendChild(lb); tx.appendChild(el('span','salt-option__figure',rm(x.price)));
         face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); grid.appendChild(lab);
       });
-      fs.appendChild(grid); B.appendChild(fs);
+      fs.appendChild(grid);
+      if(gridOf(P)&&!draft.amend) fs.appendChild(anyField(P,i,cur));
+      B.appendChild(fs);
     });
     /* V5b2: the sheet picked so far, one verdict, said once under the sizes */
     var qsNow=quotes(); if(advanceLikely(qsNow.map(function(x){ return x.total; }))){ var lk=el('p','salt-insight',tw('sh.prepay',{c:rm(ceilingRM())})); lk.id='advLikely'; B.appendChild(lk); }
@@ -3047,6 +3062,27 @@ const CLIENT_JS = `
     }
     formFoot();
   }
+  /* ANY AMOUNT (05 Oct 2026): typed in units, read off the grid as it is typed, its figure and its rate said under it */
+  function anyHint(P,v){ var g=gridOf(P), q=+v, t=v===''?null:priceAt(P,q);
+    if(v===''||!(q>0)) return tw('sh.anyHint',{n:g.min, s:g.step, m:g.max});
+    if(t!=null) return tw('sh.anyAt',{rm:rm(t), u:rm(+(t/q).toFixed(2))});
+    if(overMax(P,q)) return tw('sh.anyOver',{m:g.max});
+    if(q>ASK_CAP) return tw('sh.anyCap',{n:ASK_CAP});
+    return tw('e.offStep',{s:g.step, n:g.min}); }
+  function anyField(P,i,cur){
+    var onB=cur!=null&&(P.sizes||[]).some(function(x){ return String(x.q)===String(cur); }), g=gridOf(P);
+    var af=el('div','salt-field oany'), al=el('label','salt-field__label',tw('sh.any')); al.htmlFor='oAny'+i;
+    var ai=el('input','salt-field__input salt-field__input--mono'); ai.id='oAny'+i; ai.type='number'; ai.inputMode='decimal';
+    ai.min=String(g.min); ai.step=String(g.step); ai.autocomplete='off'; ai.setAttribute('data-k','any:'+i);
+    ai.value=cur!=null&&!onB?String(cur):'';
+    var ah=el('span','salt-field__hint',anyHint(P,ai.value));
+    ai.addEventListener('input',function(){ var v=String(ai.value||'').trim(), q=+v;
+      if(v!==''&&q>0&&(priceAt(P,q)!=null||overMax(P,q))) draft.pick[P.product]=String(+q.toFixed(6));
+      else if(draft.pick[P.product]!=null&&!(P.sizes||[]).some(function(x){ return String(x.q)===String(draft.pick[P.product]); })) delete draft.pick[P.product];
+      ah.textContent=anyHint(P,v); formFoot(); });
+    ai.addEventListener('change',function(){ sheetDraw(); });
+    af.appendChild(al); af.appendChild(ai); af.appendChild(ah); return af;
+  }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
     var F=osh.foot; F.textContent='';
@@ -3065,7 +3101,7 @@ const CLIENT_JS = `
     var qs=quotes(); if(!qs.length||formWhy()) return;
     var ff=!!(assoc&&draft.forFriend);
     /* V4b: a line a product, each its own request id; two or more share the sheet's id, which Place sends with each */
-    draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(),
+    draft.check={lines:qs.map(function(qt){ return {product:qt.p.product, unit:qt.p.unit||'unit', q:qt.q, total:qt.total, rate:qt.unit, rid:mintRid(), over:!!qt.over,
         /* S4 4.4: the price as shown, for a moved list to be told against; placed, the order Place made of it */
         shown:qt.total, was:null, gone:false, placed:''}; }),
       amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
@@ -3097,10 +3133,11 @@ const CLIENT_JS = `
     var moved=false, gone=false;
     c.lines.filter(function(l){ return !l.placed; }).forEach(function(l){
       var P=(fresh.products||[]).filter(function(x){ return x.product===l.product&&x.sizes&&x.sizes.length; })[0];
-      var z=P&&P.sizes.filter(function(x){ return String(x.q)===String(l.q); })[0];
-      if(!z){ l.gone=true; l.was=null; gone=true; return; }
-      l.gone=false;
-      if(Math.abs(z.price-l.total)>0.004){ l.total=z.price; l.rate=+(z.price/z.q).toFixed(2); l.rid=mintRid(); moved=true; }
+      var zt=P?priceAt(P,l.q):null;
+      if(l.over&&P&&overMax(P,l.q)){ l.gone=false; l.was=null; return; }
+      if(zt==null){ l.gone=true; l.was=null; gone=true; return; }
+      l.gone=false; l.over=false;
+      if(Math.abs(zt-l.total)>0.004){ l.total=zt; l.rate=+(zt/l.q).toFixed(2); l.rid=mintRid(); moved=true; }
       l.was=Math.abs(l.total-l.shown)>0.004?l.shown:null;
     });
     if(!moved&&!gone) draft.snote=c.lines.length===1?tw('sh.stillAt',{rm:rm(c.lines[0].total)}):tw('sh.stillAtAll',{rm:rm(sheetSum(c))});
@@ -3173,7 +3210,7 @@ const CLIENT_JS = `
       l.appendChild(lab); if(typeof v==='string') val.textContent=v; else val.appendChild(v);
       l.appendChild(val); r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag)); L.appendChild(r); }
     if(assoc) row(tw('sh.for'),tw(c.forFriend?'sh.friend':'sh.me'));
-    if(one) row(tw('sh.price'),rm(a.total));
+    if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
     else {
       /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
       c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):''); });
@@ -3197,20 +3234,52 @@ const CLIENT_JS = `
     if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
     /* S4 4.9: a delivery is checked beside the one sentence that says how its charge is set */
     if(c.mode==='deliver') B.appendChild(el('p','salt-insight',tw('deliv')));
+    /* NEGOTIATE (05 Oct 2026): one line, for themselves, asks for a price instead of placing at the list's. The check holds
+       nothing to type into, so the figure of their own, optional, is its own step (drawAsk) */
+    var canAsk=one&&!c.amend&&!c.pool&&!c.forFriend&&!a.placed&&!c.sheet;
+    if(c.lines.some(function(l){ return l.over; })&&!canAsk) B.appendChild(el('p','salt-insight salt-insight--copper',tw('sh.askOne')));
     var F=osh.foot, was=c.lines.some(function(l){ return l.was!=null; }), gone=c.lines.some(function(l){ return l.gone; });
     var bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','change');
     bk.addEventListener('click',c.pool&&!assoc?sheetDismiss:toForm); F.appendChild(bk);
     var pl=el('button','salt-pill salt-pill--md',c.pool?tw('hp.join'):c.amend?tw('ord.amendConfirm'):was?tw('sh.placeAt',{rm:rm(sheetSum(c))}):tw('sh.place')); pl.type='button'; pl.id='oPlace';
-    pl.disabled=!!draft.busy||gone||!!c.shut; pl.setAttribute('data-k','place');
-    pl.addEventListener('click',oPlaceIt); F.appendChild(pl);
+    var over=c.lines.some(function(l){ return l.over; });
+    pl.disabled=!!draft.busy||gone||!!c.shut||over; pl.setAttribute('data-k','place');
+    pl.addEventListener('click',function(){ oPlaceIt(false); }); if(!over) F.appendChild(pl);
+    if(canAsk){ var ng=el('button',over?'salt-pill salt-pill--md':'salt-ghost',tw('sh.ask')); ng.type='button'; ng.id='oAskGo';
+      ng.disabled=!!draft.busy||gone||!!c.shut; ng.setAttribute('data-k','askgo');
+      ng.addEventListener('click',function(){ draft.step='ask'; draft.snote=''; sheetDraw(); }); F.appendChild(ng); }
     /* the answer is drawn beside Place, which is what was tapped */
+    if(draft.snote) F.appendChild(statusLine(draft.snote));
+  }
+  /* NEGOTIATE's own step: what they ask a price for, a figure of their own if they want one (a number, nothing else), and
+     Send; Change goes back to the check */
+  function toCheck(){ draft.step='check'; draft.snote=''; sheetDraw(); }
+  function drawAsk(){
+    var c=draft.check, B=osh.body, a=c&&c.lines[0];
+    if(!a){ toForm(); return; }
+    sheetHead(tw('sh.askT'),toCheck);
+    var H=el('div','mhero'); H.appendChild(mtile(a.product,a.q,a.unit)); B.appendChild(H);
+    B.appendChild(el('p','salt-insight',tw('sh.askHint')));
+    var kf=el('div','salt-field'), kl=el('label','salt-field__label',tw('sh.askFig')); kl.htmlFor='oAsk';
+    var ki=el('input','salt-field__input salt-field__input--mono'); ki.id='oAsk'; ki.type='number'; ki.inputMode='decimal'; ki.min='0'; ki.step='0.01';
+    ki.value=c.propose||''; ki.autocomplete='off'; ki.setAttribute('data-k','ask');
+    ki.addEventListener('input',function(){ c.propose=ki.value; });
+    kf.appendChild(kl); kf.appendChild(ki); B.appendChild(kf);
+    var F=osh.foot, bk=el('button','salt-ghost',tw('sh.change')); bk.type='button'; bk.id='oAskBack'; bk.disabled=!!draft.busy; bk.setAttribute('data-k','askback');
+    bk.addEventListener('click',toCheck); F.appendChild(bk);
+    var go=el('button','salt-pill salt-pill--md',tw('sh.askSend')); go.type='button'; go.id='oAskSend'; go.disabled=!!draft.busy; go.setAttribute('data-k','asksend');
+    go.addEventListener('click',function(){ oPlaceIt(true); }); F.appendChild(go);
     if(draft.snote) F.appendChild(statusLine(draft.snote));
   }
   /* V4b: PLACE SENDS ONE ORDER A LINE, in order, each under its own request id and the sheet's; a line placed stays placed,
      so a Place tapped again after a refusal sends only the lines still to go, and a retry of a line that landed is answered
      with its order. The line they typed rides with the first. */
-  async function oPlaceIt(){
+  async function oPlaceIt(ask){
     var c=draft.check; if(!c||draft.busy) return;
+    if(ask!==true) ask=false;
+    var fig=ask&&String(c.propose||'').trim()!==''?+c.propose:null;
+    if(ask&&fig!=null&&!(fig>0)){ draft.snote=tw('e.askFigure'); sheetDraw(); return; }
+    if(!ask&&c.lines.some(function(l){ return l.over; })) return;
     draft.busy=true; draft.snote=''; sheetDraw();
     var mine=ticket, week=(prices&&prices.week&&prices.week.monday)||'';
     var todo=c.lines.filter(function(l){ return !l.placed; });
@@ -3219,6 +3288,8 @@ const CLIENT_JS = `
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
       if(c.wantBy) body.wantBy=c.wantBy;
+      /* Negotiate: its own request id, so an ask is never answered with a placing of the same line, or the other way */
+      if(ask){ body.ask=true; if(!l.askRid) l.askRid=mintRid(); body.rid=l.askRid; if(fig!=null) body.propose=+fig.toFixed(2); }
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
       /* a group order is joined, not placed: its size is the pool's, it is collected, and the Worker makes the one order */
       if(c.pool) body={q:l.q,total:l.total,unit:l.rate,digest:c.digest,rid:l.rid,forFriend:!!(assoc&&c.forFriend)};
@@ -3241,7 +3312,7 @@ const CLIENT_JS = `
     }
     draft.busy=false;
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
-    draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
+    draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
     await loadOrders(); if(mine!==ticket) return;
     drawOrder();
@@ -3254,7 +3325,7 @@ const CLIENT_JS = `
     var B=osh.body, top=el('div','osent');
     top.appendChild(oGlyph('tick','otick',40));
     var h=el('h2','salt-sheet__title',tw('sh.sent')); h.id='oshT'; top.appendChild(h);
-    top.appendChild(el('p',null,tw('sh.sentP')));
+    top.appendChild(el('p',null,tw(draft.asked?'sh.askedP':'sh.sentP')));
     B.appendChild(top);
     /* Step 1b: Sent's ask retired; the bell in the saved app's header asks, on every view, until notifications are on */
     var see=el('button','salt-ghost ofull',tw('sh.see')); see.type='button'; see.id='oSee'; see.setAttribute('data-k','see');
@@ -3372,6 +3443,7 @@ const CLIENT_JS = `
     if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return tw('hist.closed',{a:Uq(+m[1],oUnit(o)), b:m[2]});
     if((m=/^amended to ([0-9.]+) unit, ([0-9.]+) goods, ([0-9.]+) delivery$/.exec(n))) return tw('hist.amended',{a:Uq(+m[1],oUnit(o)), g:rm(+m[2]), d:rm(+m[3])});
     if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return tw('hist.'+m[2],{a:Uq(+m[1],oUnit(o))});
+    if((m=/^price (asked|offered|taken|passed|withdrawn)(, order cancelled)?$/.exec(n))) return tw('hist.price.'+m[1]+(m[2]?'Cx':''));
     if(x.method) return tw('hist.chose'+by,how);
     return n?tw('hist.withNote',{s:oWord(x.status,o,x.by), n:n}):oWord(x.status,o,x.by);
   }
@@ -3753,7 +3825,8 @@ const CLIENT_JS = `
     /* S6 fix: not while what they sent waits on him, which a cancelled order would leave with nobody to answer it */
     else if(oClaimed(o)>0.004) f.appendChild(el('p','sub2',tw('of.checking',{rm:rm(oClaimed(o))})));
     else {
-      if(o.status==='placed'&&!hold){
+      if(oOfferOpen(o)){ f.appendChild(el('p','sub2',tw('e.offerOpen'))); return f; }
+      if(o.status==='placed'&&!hold&&!(o.price&&o.price.state==='taken')){
         var amend=el('button','salt-ghost',tw('ord.amend')); amend.type='button';
         amend.addEventListener('click',function(){
           if(!oSoldHas(o.product,o.qty)){ tapSaid(o,'amend',tw('ord.amendMissing')); oDraw(); return; }
@@ -3819,7 +3892,39 @@ const CLIENT_JS = `
     var tp=oTap(o); if(tp.k==='rate'&&tp.t) w.appendChild(statusLine(tp.t));
     return w;
   }
-  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, act:oAct, rate:oRate, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
+  /* NEGOTIATE (05 Oct 2026): a price they asked for, and our offer: the goods alone and the rate, open until a moment, Accept
+     or No thanks. Delivery stays its own line, told at the acknowledgement as on any order. The page prices nothing. */
+  function oOfferOpen(o){ var p=o.price; return !!p&&p.state==='offered'&&o.status==='placed'&&!!p.until&&new Date().toISOString()<=String(p.until); }
+  function oPrice(o){
+    var w=el('div','oprice'), p=o.price; if(!p||o.status!=='placed') return w;
+    var lapsed=p.state==='offered'&&!oOfferOpen(o), tp=oTap(o);
+    if(p.state==='asked') w.appendChild(el('p','salt-insight',tw('np.asked')));
+    else if(p.state==='offered'&&!lapsed){
+      w.appendChild(kpiTile('brass',tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(+o.qty||1)).toFixed(2))})));
+      w.appendChild(el('p','sub2',tw('np.until',{t:Dd(stamp,p.until)})+' '+tw(o.mode==='deliver'?'np.deliv':'np.collect')));
+      if(!view){
+        var ok=el('button','salt-pill salt-pill--md',tw('np.accept')); ok.type='button'; ok.disabled=draft.offerBusy===o.id;
+        ok.addEventListener('click',function(){ offerAnswer(o,'take'); });
+        var no=el('button','salt-ghost',tw('np.pass')); no.type='button'; no.disabled=draft.offerBusy===o.id;
+        no.addEventListener('click',function(){ offerAnswer(o,'pass'); });
+        var r=el('div','oact'); r.appendChild(ok); r.appendChild(no); w.appendChild(r);
+      }
+    }
+    else w.appendChild(el('p','sub2',tw(lapsed?'np.lapsed':p.state==='passed'?'np.passed':p.state==='withdrawn'?'np.withdrawn':'np.taken')));
+    if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));
+    return w;
+  }
+  async function offerAnswer(o,how){
+    if(view||draft.offerBusy) return;
+    var key=o.id+':'+how, mine=ticket; draft.offerBusy=o.id; oPart(o.id,'price');
+    var r=await api('/orders/'+encodeURIComponent(o.id)+'/'+how,{rid:ridFor(key,'')});
+    draft.offerBusy='';
+    if(mine!==ticket) return;
+    var b=r.body||{}; if(b.ok) ridDone(key);
+    tapSaid(o,'price',b.ok?'':wErr(b,'np.notSent'));
+    await loadOrders(); if(mine!==ticket) return; oDraw();
+  }
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, rate:oRate, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
   function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
@@ -4596,7 +4701,7 @@ const CLIENT_JS = `
        check, so nothing here is a radio, and no rule of the page's own restates the recipe (S7-R3 of the review) */
     var g=el('div','salt-options__grid salt-options__grid--2');
     list.slice(0,4).forEach(function(a){
-      var P=sold().filter(function(x){ return x.product===a.product; })[0], z=P.sizes.filter(function(x){ return String(x.q)===String(a.q); })[0];
+      var P=sold().filter(function(x){ return x.product===a.product; })[0], z={price:priceAt(P,a.q)};
       var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
       /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
       b.type='button';

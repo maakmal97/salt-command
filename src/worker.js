@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
@@ -364,7 +364,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset"
-    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate)$/.test(p))
+    && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
@@ -659,7 +659,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
     return json(response);
   }
-  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate)$/.exec(p);
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.exec(p);
   if (orderMatch) {
     let body;
     try {
@@ -675,6 +675,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     let result;
     try {
       if (action === "amend") result = await amendOrder(env, id, body);
+      /* Negotiate: their Accept on his offer, told by the Counter at once; the minute's deskPass is the net */
+      else if (action === "take") {
+        result = await takeOffer(env, id);
+        const others = ((result.drafted && result.drafted.approved) || []).filter((x) => x !== result.draft);
+        if (others.length) await afterApproval(env, ctx, others);
+        else if (result.approved) stageOnApproval(env, ctx);
+      }
       else if (action === "notfound") result = await notFoundOrder(env, id, body);
       else if (action === "move") {
         /* his reply, No reply needed, Ready, Decline or Cancel: moveOrder checks every word through siteWords */
@@ -1653,8 +1660,9 @@ export default {
         /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
            because it came out other than he saw (`differs`); the card then offers no second Accept */
         try {
-          const ys = await env.SALT_LEDGER.prepare("SELECT order_id,status FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all();
-          const yes = new Map((ys.results || []).map((y) => [y.order_id, y.status]));
+          /* Negotiate: an offer of his waiting on their answer, its row not yet queued, is `offer`: the card shows it open */
+          const ys = await env.SALT_LEDGER.prepare("SELECT order_id,status,(entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL) AS off FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all();
+          const yes = new Map((ys.results || []).map((y) => [y.order_id, y.off && y.status === "waiting" ? "offer" : y.status]));
           for (const o of r.orders) if (yes.has(o.id)) o.yes = yes.get(o.id);
         } catch (e) { /* a store before migrations/0011 has no yes to say */ }
       }
@@ -1713,7 +1721,7 @@ export default {
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       return json(r, r.ok ? 200 : (r.status || 502));
     }
-    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again|restate)$/.exec(p);
+    const cm = /^\/orders\/([^/]+)\/(preview|accept|handed|cash|received|again|restate|offer|withdraw)$/.exec(p);
     if (cm) {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
@@ -1723,6 +1731,9 @@ export default {
       const by = (b && typeof b.by === "string" && b.by.trim().slice(0, 40)) || "phone";
       try {
         if (cm[2] === "preview") r = await previewOrder(env, id, b);
+        /* Negotiate: his offer on an order whose price they asked for, and its withdrawal */
+        else if (cm[2] === "offer") r = await offerOrder(env, id, b, by);
+        else if (cm[2] === "withdraw") r = await withdrawOffer(env, id, b);
         else if (cm[2] === "accept") {
           r = await acceptOrder(env, id, b, by);
           /* the stage rung for the row his yes approved; any other row the same drafting pass approved is followed

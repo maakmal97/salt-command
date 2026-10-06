@@ -31,7 +31,7 @@ export const TEST_PASS = "0000-0000-0000-0000";
 export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
 export const TEST_USERS = Object.keys(TESTS);
 export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 4;   /* 4: V5b2b, no cap on the list, the ceiling sealed in it, paid in advance the desk's */
+export const FIX_VERSION = 5;   /* 5: any amount off the grid, and a price asked, offered, taken, declined and lapsed (05 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */
@@ -137,6 +137,18 @@ export async function exampleReplace(env, u, id, body) {
   rids[key] = order.id;
   await keep(env, u, fix);
   return { order };
+}
+
+/** Negotiate: a test account's ask for a price, into its fixture alone, by decidePlace's own rules; a retry once. No
+    desk ever sees it, so the fixture's own cases show what follows (offered, taken, passed, lapsed). */
+export async function examplePlace(env, u, body) {
+  const fix = await fixNow(env, u);
+  if (!fix) return soon();
+  if (!env.ORDERBOOK) return Object.assign(refusal("askStore"), { status: 503 });
+  const p = fix.prices || {};
+  const result = await exampleAccount(env, u, { actor: "place", body, digest: p.digest || "", steps: p.steps || null,
+    request: body, rid: ridOf(body) || crypto.randomUUID() });
+  return result.ok ? { order: result.order } : { error: result.error, code: result.code, vars: result.vars, status: result.status };
 }
 
 /** Their claim against a test account, into its fixture: it waits there, as a customer's waits on him; a retry once. */

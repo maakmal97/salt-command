@@ -61,7 +61,8 @@ export function makerOrderFault(action, body) {
     restate: ["qty", "total", "delivery", "rid"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode"],
-    amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"]
+    amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"],
+    take: []
   };
   if (!Object.hasOwn(fields, action) || Object.keys(body).some((key) => !fields[action].includes(key)))
     return "Unsupported order action fields.";
