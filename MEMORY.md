@@ -10,9 +10,10 @@
 - The maintenance guard exists in both Workers and QR Command (`MAINTENANCE_UNTIL`, an ISO UTC time; empty = off, the current value).
 
 ## Migrations
-- Newest rebuild: `migrations/0010`.
+- Newest rebuild of `draft`: `migrations/0010`; of `preapproval`: `migrations/0017`.
 - `0011` adds `preapproval` (applied alone, the same way as 0010).
 - `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`.
+- `0017_preapproval_amend.sql` rebuilds `preapproval` with `amend` in its stage CHECK (restateOrder's yes), keeping rows and both indexes. Live D1 carried 0011's narrow CHECK, so every amend tap answered 500; 0017 applied alone on 06 Oct 2026, schema, both indexes and the 71 rows by stage and status read back after.
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
 
 ## Disabled automation

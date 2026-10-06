@@ -48830,6 +48830,67 @@ await (async () => {
     "and a claimant with more entries to look up than D1 binds in one statement is still read, by the hundred: " + m4.seen);
 })();
 
+section("06 Oct 2026: an amendment after Accept files his yes in the real preapproval table, whose stage CHECK names amend");
+await (async () => {
+  /* his decision of 06 Oct 2026, that everything on an agreed order is amendable: restateOrder goes through stageTap as
+     stage `amend`, and recordPre inserts that stage into `preapproval`. 0011 declared the stage CHECK without `amend`, so
+     every amend tap answered 500 on the live D1 while test/maker-amend.mjs, which stubs D1, stayed green. Driven through the
+     desk's own route over the real migrations in node:sqlite. Invented codes only. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so an amendment's yes was not filed against the real schema"); return; }
+  const O = await import("../stmt/orders.js");
+  const { withPending } = await import("../src/drafter.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const C = "CX8-QM", U = "qrst-vwxz";
+  const db = new DatabaseSync(":memory:");
+  for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const D1 = { prepare(sql) { const st = db.prepare(sql);
+    const mk = (a) => ({ async run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      async first() { const r = st.get(...a); return r === undefined ? null : r; }, async all() { return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+  const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, JSON.stringify(doc));
+  /* on the book: the order's pending row, agreed and nothing handed over or paid */
+  const row = { rid: "s70", customer: C, product: "salt", date: "2026-10-05", qty: 1, total: 90, cash: 0 };
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0", JSON.stringify(row));
+  const bk = withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, row);
+  setState("roster", [C]); setState("OPEN", bk.state.OPEN);
+  setState("PRICING", { v: "v1027", byProduct: { salt: { stockCost: 30, floors: { "1": { floor: 40 } }, inputs: null, sizes: [1] } } });
+  db.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v1027',NULL,'2026-10-06T00:00:00.000Z')").run();
+  const skv = new KV(), dkv = new KV(), bko = H.orderBook({});
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bko.ns, ORDER_STORE: "object" };
+  await dkv.put("stmt-users", JSON.stringify({ [U]: C }));
+  const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const o = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+  await O.deskMove(senv, U, o.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o.id, { mark: { ledgerKey: E.ovKey(row), ack: "2026-10-05T01:00:00.000Z" } });
+  const r = await deskW.fetch(new Request("https://salt-command.example/orders/" + o.id + "/restate", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ total: 95 }) }), denv, {});
+  const j = await r.json().catch(() => ({}));
+  const pre = db.prepare("SELECT stage,status,entry FROM preapproval WHERE order_id=?").all(o.id);
+  const now = (await O.ordersOf(senv, U)).find((x) => x.id === o.id) || {};
+  ok(r.status === 200 && j.ok && pre.length === 1 && pre[0].stage === "amend" && pre[0].status === "waiting" && /"Amendment"/.test(pre[0].entry || "") && now.total === 95,
+    "an amendment of an agreed order's goods price files his yes as stage amend in the migrations' own preapproval table, its entry queued, and the order restated: "
+    + JSON.stringify({ status: r.status, err: j.error, pre: pre.map((x) => x.stage + "/" + x.status), total: now.total }));
+  /* and the rebuild keeps every yes already filed, every column, and both of 0011's indexes */
+  const old = new DatabaseSync(":memory:"), files = readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort();
+  const last = files.filter((f) => /preapproval/.test(readFileSync(join(REPO, "migrations", f), "utf8"))).pop();
+  for (const f of files.slice(0, files.indexOf(last))) old.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+  const cols = "id,order_id,u,stage,hash,shown,entry,entry_at,status,draft_id,tapped_by,at,decided_at,acked_at";
+  const filed = [["o1|ack|t1", "o1", "u1", "ack", "h1", "{}", "{\"at\":\"t1\"}", "t1", "applied", "t1", "desk", "t1", "t2", "t3"],
+    ["o2|cancel|t4", "o2", null, "cancel", "h2", "{\"x\":1}", null, null, "waiting", null, null, "t4", null, null]];
+  for (const x of filed) old.prepare("INSERT INTO preapproval (" + cols + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(...x);
+  old.exec(readFileSync(join(REPO, "migrations", last), "utf8"));
+  const kept = old.prepare("SELECT " + cols + " FROM preapproval ORDER BY id").all().map((x) => Object.values(x));
+  const idx = old.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='preapproval' AND sql IS NOT NULL ORDER BY name").all().map((x) => x.name);
+  ok(last !== "0011_preapproval.sql" && JSON.stringify(kept) === JSON.stringify(filed) && idx.join(",") === "preapproval_entry,preapproval_order",
+    "and the migration that widens it keeps every yes already filed, column for column, and makes both indexes again: "
+    + JSON.stringify({ last, rows: kept.length, same: JSON.stringify(kept) === JSON.stringify(filed), idx }));
+})();
+
 section("28 Sep 2026, fix 3: an order follows its row, moved to the resale bucket and back or restated, by the rid its own amendments name; a key two orders want is followed by neither, and a Counter that does not know the side moves nothing");
 await (async () => {
   /* HIS ANSWER ON CE5-SA'S s211 (28 Sep 2026). A Correction moved an associate's rows to their resale bucket (s210 and s212
