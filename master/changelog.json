@@ -1,5 +1,23 @@
 [
  {
+  "v": "v1030",
+  "d": "06 Oct 2026",
+  "t": "THREE COUNTS ON 06 OCT: OIL SHORT BY 20, RICE SHORT BY 5, CANDY EXACT",
+  "n": [
+   "<b>THREE STOCK COUNTS FOLDED.</b> Oil, candy and rice were each counted by hand on 06 Oct, the desk deciding all three. Oil was 20 unit short of the book and rice 5 unit short. Candy matched the book exactly, the first clean count since 27 Sep. The dossier gives no reason for either gap.",
+   "<b>THE COUNT WINS.</b> Stated oil is now 0, candy 14 and rice 32, and the count dates for all three move to 06 Oct. Each gap books as shrinkage across the units sold. Salt, spare and cost basis are untouched."
+  ]
+ },
+ {
+  "v": "v1029",
+  "d": "06 Oct 2026",
+  "t": "A PARTNER PAYS COST, AND CA6-CYB IS AN ASSOCIATE",
+  "n": [
+   "<b>Partner.</b> A new standing, above Ambassador, held in the book's `partners` list (CM4-TO, a co-founder and CBDO's equal who is always there and has referred and resold to several customers). A partner pays cost: the floor itself, COGS times the size, to the sen, at every size on every book, with no profit and no rounding up to the ten. One rule, the engine's quoteAt and quoteGrid taking 'partner', read by the desk's card, the Counter's sealed list and grid, and the Worker's card at a size off the board. Delivery stays separate as on any order. Nobody else's price moved.",
+   "<b>CA6-CYB appointed an associate</b>, with its -R account on the roster; their Counter account already existed."
+  ]
+ },
+ {
   "v": "v1028",
   "d": "06 Oct 2026",
   "t": "ANY QUANTITY AT AN AUTOMATIC PRICE, AND NEGOTIATE PRICE, ON THE COUNTER",

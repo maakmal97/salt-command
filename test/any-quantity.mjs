@@ -17,7 +17,7 @@ export async function run({ ok }) {
   for (const p of books) {
     w.eval("setProd(" + JSON.stringify(p) + ");recompute();");
     const R = rd("TIER_RULE[PROD]"), P = { ...rd("pxPolicy()"), tierRule: R }, C = rd("pxCost()");
-    const codes = rd("tierCustomers()"), drift = rd("(function(){var o={};tierCustomers().forEach(function(id){var d=driftBook(PROD)?driftOf(id,PROD):null;o[id]=d?d.d:0;});return o;})()");
+    const codes = rd("tierCustomers().filter(function(id){return !isPartner(id);})"), drift = rd("(function(){var o={};tierCustomers().forEach(function(id){var d=driftBook(PROD)?driftOf(id,PROD):null;o[id]=d?d.d:0;});return o;})()");
     const cards = rd("(function(){var o={};tierCustomers().forEach(function(id){o[id]=TIER_RULE[PROD].rungs.map(function(q){return cardQuote(id,q);});});return o;})()");
     ctx[p] = { R, P, C, codes, drift, cards };
   }
