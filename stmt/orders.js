@@ -825,6 +825,20 @@ export function decideDesk(order, body, at) {
     if (a > due + 0.004) return { error: "that is more than the " + due.toFixed(2) + " outstanding on this order", status: 400 };
     return { ev: { kind: "cash", at, amount: +a.toFixed(2) } };
   }
+  /* 06 Oct 2026, his decision: EVERYTHING ON AN AGREED ORDER IS AMENDABLE, the size, the goods' price and the delivery
+     charge. The desk checked the floor and stated the figures; the site prices nothing, so it holds only what makes the
+     order true: not under what is out or what they have paid or claimed, no charge on a collection, no waiting claim. */
+  if (body && body.restate) {
+    if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
+    const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
+    if (!isNum(q) || !(q > 0) || q > 1000000 || q < (+order.moved || 0) - 0.0004) return { error: "the size has to be above nothing and not under what is handed over", status: 400 };
+    if (!isNum(t) || !(t > 0) || t > 1000000) return { error: "the goods' price has to be a figure above nothing", status: 400 };
+    if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && order.mode !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
+    if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+    if (+(t + d).toFixed(2) < (+order.paid || 0) - 0.004) return { error: "they have paid more than that comes to", status: 409 };
+    if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004) return { none: true };
+    return { ev: { kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) } };
+  }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
   if (body && body.handover) {
@@ -1017,6 +1031,11 @@ export function applyEvent(order, ev) {
       order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     }
     if (told) { order.queued = q; done = settle(order, at); }
+  } else if (ev.kind === "restate") {
+    /* never `closed`: that record says the order was closed short, which the customer's page reads as such */
+    order.qty = ev.qty; order.total = ev.total; order.delivery = ev.delivery;
+    order.history.push({ at, status: order.status, by: "desk", note: "amended to " + ev.qty + " unit, " + ev.total.toFixed(2) + " goods, " + ev.delivery.toFixed(2) + " delivery" });
+    done = settle(order, at);
   } else if (ev.kind === "handover") {
     order.moved = +ev.units.toFixed(3);
     order.movedOn = klDay(at);

@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="69d1ee26f74374b8";
+var SALT_BUILD_ID="077ef9b31e235946";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -20775,7 +20775,7 @@ function ordKeepSay(id){const b=document.querySelector('button[data-keep="'+id+'
   const t=i?String(i.value||'').trim().replace(/\s+/g,' ').slice(0,200):'';
   b.textContent=t&&ordQuick().includes(t)?'Forget this quick reply':'Keep as a quick reply';}
 /* S11 11.9: which cards have Delivered part open, and the units stepped to, read off the box as a charge is */
-let ORD_PART={};
+let ORD_PART={},ORD_AMEND={};
 function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
 /* what a part of n units would mean, said under the stepper */
 function ordPartCap(o,n){const paid=+o.paid||0,st=POSITION_ENGINE.closeGoods(o.total,+o.qty,n),over=+(paid-st-(+o.delivery||0)).toFixed(2);
@@ -21067,6 +21067,14 @@ function ordCard(o){
   const cov=!!c0&&(+c0.amount||0)>ordDue(o)+0.004;
   const claimBtns=c0?`<button class="vbtn salt-pill salt-pill--sm" data-ord="received" data-claim="${esc(c0.at)}" data-amt="${+c0.amount||0}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${cov?' data-covered="1"':''}>${cov?'Received, on the book already':'Received, '+fmt(+c0.amount||0)}</button>`
     +`<button class="salt-ghost salt-ghost--danger" data-ord="notfound" data-claim="${esc(c0.at)}" data-amt="${+c0.amount||0}" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Not found</button>`:'';
+  /* 06 Oct 2026, his decision: the size, the goods' price and the delivery charge stay amendable after Accept; one Correction for approval */
+  const amendOn=['acknowledged','ready'].includes(o.status)&&!c0;
+  const amendUi=!amendOn?'':ORD_AMEND[o.id]?`<fieldset class="salt-options"><legend class="salt-options__legend">Amend the order</legend>`
+    +`<label class="salt-field"><span class="salt-field__label">Units</span><input type="number" inputmode="decimal" min="0" step="any" class="salt-field__input salt-field__input--mono" data-amq="${esc(o.id)}" value="${+o.qty}"></label>`
+    +`<label class="salt-field"><span class="salt-field__label">Goods, RM</span><input type="number" inputmode="decimal" min="0" step="any" class="salt-field__input salt-field__input--mono" data-amt="${esc(o.id)}" value="${+o.total}"></label>`
+    +(o.mode==='deliver'?`<label class="salt-field"><span class="salt-field__label">Delivery, RM</span><input type="number" inputmode="decimal" min="0" step="any" class="salt-field__input salt-field__input--mono" data-amd="${esc(o.id)}" value="${+o.delivery||0}"></label>`:'')
+    +`</fieldset><button class="vbtn salt-pill salt-pill--sm" data-ord="restate" data-u="${esc(o.u)}" data-id="${esc(o.id)}">Send the amendment</button><button class="salt-ghost" data-amendoff="${esc(o.id)}">Keep it as it is</button>`
+    :`<button class="salt-ghost" data-amendopen="${esc(o.id)}">Amend the order</button>`;
   const ghostBtn=(st,label,mode)=>`<button class="salt-ghost" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''}>${label}</button>`;
   /* S11 11.9: DELIVERED PART. The handover is one tap in the order's own mode for the whole of it; a part is
      stepped to in halves and recorded, keeping the rest owed, or closed at, which restates the order at what
@@ -21090,10 +21098,10 @@ function ordCard(o){
         +`<button class="salt-ghost" data-partopen="${esc(o.id)}">${how} part</button>`
         +(moved>0?handBtn('Close at '+units(moved)+', '+fmt(shortT(moved)),` data-close="1" data-qty="${moved}"`):'')):'')
     +(!part&&(o.status==='acknowledged'||(o.status==='ready'&&moved>0&&owedU>0.004))?ghostBtn('ready','Ready to collect','collect')+ghostBtn('ready','Ready to deliver','deliver'):'')
-    +(moved>0||part||c0?'':btn('cancelled','Cancel',true));   /* S6 fix: not while a claim of theirs waits: answer it first */
+    +amendUi+(moved>0||part||c0?'':btn('cancelled','Cancel',true));   /* S6 fix: not while a claim of theirs waits: answer it first */
   /* S11 11.13 (D6): A LATER MOVE WHOSE ROW HE REJECTED is offered again under a fresh entry (POST orders/<id>/again),
      booked only if the fresh row equals it; GET /orders says which (`again`) */
-  const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation'};
+  const AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   /* V4b.2: and made ready, and handed over, together, from the first order's card while none has moved; a part stays on
      each order's own card */
   if(!whyOpen&&!yes&&G.length>1&&G[0].id===o.id&&G.every(x=>!(+x.moved>0)&&!ORD_PART[x.id]&&!ORD_WHY[x.id]&&!ordClaims(x).length&&!x.yes&&!ordAgainAck(x))){
@@ -21278,6 +21286,8 @@ function ordDraw(){
   box.querySelectorAll('button[data-quick]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-say="'+b.dataset.quick+'"]');if(i){i.value=b.dataset.text;i.focus();ordKeepSay(b.dataset.quick);}};});
   box.querySelectorAll('input[data-say]').forEach(i=>{i.oninput=()=>ordKeepSay(i.dataset.say);ordKeepSay(i.dataset.say);});
   box.querySelectorAll('button[data-partopen]').forEach(b=>{b.onclick=()=>{ORD_PART[b.dataset.partopen]=1;ordDraw();};});
+  box.querySelectorAll('button[data-amendopen]').forEach(b=>{b.onclick=()=>{ORD_AMEND[b.dataset.amendopen]=1;ordDraw();};});
+  box.querySelectorAll('button[data-amendoff]').forEach(b=>{b.onclick=()=>{delete ORD_AMEND[b.dataset.amendoff];ordDraw();};});
   box.querySelectorAll('button[data-partoff]').forEach(b=>{b.onclick=()=>{delete ORD_PART[b.dataset.partoff];ordDraw();};});
   box.querySelectorAll('button[data-cashopen]').forEach(b=>{b.onclick=()=>{ORD_CASH[b.dataset.cashopen]=1;ordDraw();};});
   box.querySelectorAll('button[data-cashoff]').forEach(b=>{b.onclick=()=>{delete ORD_CASH[b.dataset.cashoff];ordDraw();};});
@@ -21347,6 +21357,17 @@ async function ordAct(b){
     if(b.dataset.held==null&&b.nodeType===1){delete ordBusy[id];ordHold(b.dataset,amount);return false;}
     body=JSON.stringify({amount});
     url='orders/'+encodeURIComponent(id)+'/cash';
+  }else if(st==='restate'){
+    const o=ORD_OPEN.find(x=>x&&x.id===id)||{};
+    const q=typed('amq'),g=typed('amt'),d=o.mode==='deliver'?typed('amd'):0;
+    if(!(q>0)||!(g>0)||!(d>=0))return refuse('Units and the goods price are above nothing and the delivery from nothing; nothing moved.');
+    const ch={};
+    if(Math.abs(q-(+o.qty))>0.0004)ch.qty=q;
+    if(Math.abs(g-(+o.total))>0.004||ch.qty!==undefined)ch.total=g;
+    if(Math.abs(d-(+o.delivery||0))>0.004)ch.delivery=d;
+    if(!Object.keys(ch).length)return refuse('Change a figure first; nothing moved.');
+    body=JSON.stringify(ch);
+    url='orders/'+encodeURIComponent(id)+'/restate';
   }else if(st==='again'){
     body=JSON.stringify({stage:b.dataset.stage});
     url='orders/'+encodeURIComponent(id)+'/again';

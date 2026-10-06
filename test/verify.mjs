@@ -50138,6 +50138,10 @@ await (async () => {
   await (await import("./maker-order-controls.mjs")).run({ ok });
 })();
 
+section("Counter maker amends an agreed order after Accept: size, goods price and delivery");
+await (async () => {
+  await (await import("./maker-amend.mjs")).run({ ok });
+})();
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });

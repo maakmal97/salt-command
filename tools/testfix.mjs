@@ -146,7 +146,8 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(4, 20), "desk", { status: "acknowledged", prepay: true }], [T(4, 30), "customer", pay("transfer")],
     [T(4, 35), "customer", Object.assign({ action: "pay", amount: 530 }, rail("transfer"))],
     [T(4, 50), "desk", { verdict: { kind: "received", claim: T(4, 35), amount: 530 } }],
-    [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }]]));
+    [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }],
+    [T(2, 20), "desk", { restate: { qty: 5, total: 540, delivery: 0 } }]]));
   O.push(order(oid(3, "15"), list, T(3), { product: "salt", qty: 2.5, mode: "collect", wantBy: klDay(new Date(Date.parse(T(3)) + 6 * 864e5)) }, [
     [T(3, 20), "desk", { status: "acknowledged" }], [T(0, 40), "desk", { handover: { units: 2.5 } }]]));
   /* WITHDRAWN by them */
@@ -261,6 +262,7 @@ export const FEATURES = [
   ["cancelled by us, with his reason", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "desk" && h.note))],
   ["not taken, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
+  ["amended after the acknowledgement, the goods and the delivery restated (06 Oct 2026)", (f) => has(f, (o) => hist(o, (h) => h.by === "desk" && /^amended to /.test(h.note || "")))],
   ["a price set at the acknowledgement, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
   ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty

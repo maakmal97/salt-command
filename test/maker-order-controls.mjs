@@ -36,6 +36,7 @@ export function ledger() {
         if (/^SELECT operation,fingerprint,response,entry FROM maker_request WHERE id=\?1$/.test(sql)) {
           const row = requests.get(args[0]); return row ? { ...row } : null;
         }
+        if (/^SELECT v,stamped FROM snapshot WHERE one=1$/.test(sql)) return null;
         faults.push(sql); throw new Error("unexpected D1 read " + sql);
       },
       async run() {
