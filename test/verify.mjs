@@ -10799,6 +10799,20 @@ await (async () => {
   const pubMain = pubSrc.slice(pubSrc.indexOf("async function main("));
   ok(!/deskWrangler\(\["kv", "key", "put"/.test(pubMain) && (pubMain.match(/\bdeskPut\(/g) || []).length === 2
      && /deskWrangler\(\["kv", "key", "get"/.test(pubSrc), "both desk-store writes in the publish go through deskPut, which reads the key back");
+  /* a stale first read is read again after a wait, and only a key still wrong after every wait fails */
+  {
+    const { deskReadBack } = await import("../tools/stmt-publish.mjs");
+    const drive = (answers) => {
+      let reads = 0; const slept = [];
+      const run = () => { const a = answers[Math.min(reads++, answers.length - 1)]; if (a === null) throw new Error("missing"); return a; };
+      const okd = deskReadBack("k", "NEW", run, (ms) => slept.push(ms), [1, 2, 3]);
+      return { okd, reads, slept: slept.join() };
+    };
+    const late = drive([null, "OLD", "﻿NEW\n"]), never = drive(["OLD"]), first = drive(["NEW"]);
+    ok(late.okd === true && late.reads === 3 && late.slept === "1,2" && never.okd === false && never.reads === 4
+      && never.slept === "1,2,3" && first.okd === true && first.reads === 1,
+      "a desk key that reads back stale is read again after each wait, and fails only after the last: " + JSON.stringify({ late, never, first }));
+  }
   ok(/if: always\(\) && needs\.suite\.result == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 })();
