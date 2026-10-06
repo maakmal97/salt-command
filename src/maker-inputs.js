@@ -1,7 +1,10 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, draftRow, findRow, checkCorrection } from "./drafter.js";
-import { rowRoom } from "./orders.js";
+import { rowRoom, siteWords } from "./orders.js";
+
+/* note and settle are free prose a row carries about itself, so they stay on the Desk */
+const DESK_ONLY_FIELDS = ["note", "settle"];
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -120,17 +123,18 @@ export function makerInputCatalog(book) {
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
-    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !["note", "orderCode", "settle"].includes(field))
+    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
-        kind: POSITION_ENGINE.CORRECT_BOOL.includes(field) ? "boolean"
+        kind: field === "orderCode" ? "text" : POSITION_ENGINE.CORRECT_BOOL.includes(field) ? "boolean"
           : POSITION_ENGINE.CORRECT_DATE.includes(field) ? "date"
             : POSITION_ENGINE.CORRECT_CODE.includes(field) ? "code"
               : field === "product" ? "product" : field === "stream" ? "stream"
                 : field === "handover" ? "handover" : "number" })),
     rows: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
-      .filter((row) => row && row.rid && !row.cancelled && !row.defaulted).map((row) => {
+      .filter((row) => row && row.rid && !row.cancelled).map((row) => {
         const sale = collection === "sales";
         return { rid: row.rid, direction: sale ? "SELL" : "BUY", party: row[sale ? "customer" : "supplier"],
+          ...(row.defaulted ? { defaulted: true } : {}),
           product: row.product || "salt", date: row.date || null, qty: row.qty, total: row.total,
           cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
           movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row),
@@ -320,17 +324,25 @@ export function makerLedgerAmendment(body, book) {
   const found = findRow(book, body.rid);
   if (found.err) return { error: found.err };
   const row = found.row, sale = found.collection === "sales";
-  if (row.cancelled || row.defaulted) return { error: "A cancelled or defaulted row needs a Desk judgement." };
+  /* the drafter's own rule: correcting a cancelled row is a judgement about reviving it, so no kind reaches one here */
+  if (row.cancelled) return { error: "A cancelled row is revived only on the Desk." };
+  if (row.defaulted && body.kind !== "Correction") return { error: "A defaulted row takes a Correction only." };
   const lotKind = ["Payment", "Receipt", "Default"].includes(body.kind);
   if (lotKind && sale) return { error: "Payment, Receipt and Default are purchase-lot movements." };
   if (body.kind === "Correction") {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
       || Object.keys(body.fields).some((field) => !POSITION_ENGINE.CORRECTABLE.includes(field)
-        || ["note", "orderCode", "settle"].includes(field)))
-      return { error: "Choose correctable typed fields; notes, order codes and settlement prose stay on Desk." };
+        || DESK_ONLY_FIELDS.includes(field)))
+      return { error: "Choose correctable typed fields; notes and settlement prose stay on Desk." };
     for (const [field, value] of Object.entries(body.fields)) {
       if (value == null) continue;
+      if (field === "orderCode") {
+        if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/.test(value))
+          return { error: "An order code is up to 16 letters, digits and hyphens." };
+        const why = siteWords(value);
+        if (why) return { error: "Not sent: " + why + "." };
+      }
       if (POSITION_ENGINE.CORRECT_DATE.includes(field) && !date(value))
         return { error: "Correction dates must be real dates." };
       if ((POSITION_ENGINE.CORRECT_NUM_POS.includes(field) || POSITION_ENGINE.CORRECT_NUM_NN.includes(field)) && !figure(value))

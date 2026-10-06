@@ -1312,10 +1312,10 @@ export const OWNER_JS = `
     };
     offerLoad();
     var editor=el('section','maker-input');editor.appendChild(el('h3',null,'Amend a ledger row'));
-    editor.appendChild(el('p','msg','Correction restates typed fields; Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose, order-code edits and cancelled/defaulted-row editing stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
+    editor.appendChild(el('p','msg','Correction restates typed fields, the order code included, on any row that is not cancelled; a defaulted row takes a Correction only. Fulfilment records cash or units; Cancellation withdraws an open row with no goods moved. A purchase lot also takes Payment (cash), Receipt (units) and Default (nothing arrived). Notes, settlement prose and reviving a cancelled row stay on Desk. Linked/Rewarded are unavailable here and refused by the cloud drafter.'));
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
-      label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total};});
+      label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total+(row.defaulted?' · Defaulted':'')};});
     var editRow=addSelect(editor,'Ledger row',rowItems),
       editKind=addSelect(editor,'Amendment',[{value:'Correction',label:'Correction'},
         {value:'Fulfilment',label:'Fulfilment'},{value:'Cancellation',label:'Cancellation'}]),
@@ -1338,7 +1338,7 @@ export const OWNER_JS = `
             :definition.kind==='stream'?[{value:'R2',label:'R2'},{value:'R3',label:'R3'}]
               :definition.kind==='handover'?[{value:'delivered',label:'Delivered'},{value:'collected',label:'Collected'}]:null;
       if(choices)editValue=addSelect(valueBox,'Set to',choices);
-      else editValue=makerField(valueBox,'Set to',definition.kind==='date'?'date':'number','');
+      else editValue=makerField(valueBox,'Set to',definition.kind==='date'?'date':definition.kind==='text'?'text':'number','');
     };
     editField.addEventListener('change',drawValue);drawValue();
     makerButton(patch,'Add field change',function(){
@@ -1346,7 +1346,7 @@ export const OWNER_JS = `
       if(!definition||!editValue)return;
       if(!editValue.value.trim())throw new Error('Choose a value. Use Clear field to remove an optional value.');
       changes[definition.field]=definition.kind==='number'?Number(editValue.value)
-        :definition.kind==='boolean'?editValue.value==='true':editValue.value;
+        :definition.kind==='boolean'?editValue.value==='true':definition.kind==='text'?editValue.value.trim():editValue.value;
       patchList.textContent=Object.keys(changes).join(', ')+' ready to send.';
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
@@ -1359,7 +1359,7 @@ export const OWNER_JS = `
     editRow.addEventListener('change',function(){changes={};patchList.textContent='';});
     var kindsFor=function(){
       var row=rows.find(function(item){return item.rid===editRow.value;}), kept=editKind.value;
-      var names=row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
+      var names=row&&row.defaulted?['Correction']:row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
       editKind.replaceChildren();
       names.forEach(function(name){var option=el('option',null,name);option.value=name;editKind.appendChild(option);});
       editKind.value=names.indexOf(kept)>=0?kept:'Correction';
