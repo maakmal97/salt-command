@@ -621,7 +621,7 @@ export async function receivedOrder(env, id, body, by, now) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
      and then that draft's own entry is the one his yes answers */
-  let queued = [], shut = new Set(), onRows = {};
+  let queued = [], shut = new Set(), onRows = {}, way = null;
   if (env.SALT_LEDGER) {
     const rs = await env.SALT_LEDGER.prepare("SELECT id,entry FROM draft WHERE status='pending' AND entry LIKE ?1 ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all();
     queued = (rs.results || []).map((r) => { try { return JSON.parse(r.entry); } catch (e) { return null; } })
@@ -629,9 +629,10 @@ export async function receivedOrder(env, id, body, by, now) {
     /* S6 11.14: a claim's entry filed not found never lands, so that claim is not received after it */
     const rj = await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE status='rejected' AND decided_by='notfound' AND entry LIKE ?1").bind('%"orderId":"' + id + '"%').all();
     shut = new Set((rj.results || []).map((r) => r.id));
-    onRows = await acctInFlight(env.SALT_LEDGER, null);
+    way = await paysOnWay(env.SALT_LEDGER);   /* read once: the claims' rows and the room both take it */
+    onRows = await acctInFlight(env.SALT_LEDGER, null, way);
   }
-  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER) : null;
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way) : null;
   /* 28 Sep 2026, s210: whichever entry his yes answers, it answers to what the row can still take */
   return stageTap(env, id, body, by, now, "pay", (o, at) => { const b = payTap(o, at); return (b.entry && pastRoom(room, o, b.entry, "received", !!b.site)) || b; });
   function payTap(o, at) {
@@ -768,9 +769,9 @@ function rowKeyer(sales) {
   for (const s of sales || []) if (s && s.rid) byRid.set(s.rid, POSITION_ENGINE.ovKey(s));
   return (p) => (p.rid && byRid.get(p.rid)) || p.orderKey || null;
 }
-async function acctInFlight(db, except) {
+async function acctInFlight(db, except, way) {
   const by = {};
-  for (const e of await paysOnWay(db)) {
+  for (const e of way || await paysOnWay(db)) {
     const k = e.claimId && e.claimId !== except && e.payload.orderKey;
     if (k) by[k] = +((by[k] || 0) + (+e.payload.cash || 0)).toFixed(2);
   }
@@ -782,9 +783,9 @@ async function acctInFlight(db, except) {
    knows its own moves at once and a claim against the account never; the mirror knows every folded row and nothing on its
    way; a tap that books money answers to both. null where the mirror has no row by that key yet, and there the fold's own
    rule measures. */
-export async function rowRoom(db, direction = "SELL") {
+export async function rowRoom(db, direction = "SELL", onWay) {
   /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
-  const [book, way] = await Promise.all([readBook(db).catch(() => null), paysOnWay(db, direction)]);
+  const [book, way] = await Promise.all([readBook(db).catch(() => null), onWay || paysOnWay(db, direction)]);
   const isSale = direction !== "BUY";
   const sales = ((book && book[isSale ? "sales" : "purchases"]) || []).filter((s) => s && !s.cancelled);
   const keyOf = rowKeyer(sales), byRid = new Map(sales.filter((s) => s.rid).map((s) => [s.rid, s]));
