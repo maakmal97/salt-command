@@ -77,3 +77,12 @@ not a genuine owner session. Positive live owner/keyed-vault acceptance remains 
 No Desk input is retired on the strength of this inventory, a generated catalog, or the generic
 Maker input allowlist. Pricing rules, restricted amendment kinds and sealed history remain
 unchanged.
+
+## The Desk is a dashboard (his decision of 06 Oct 2026)
+
+The master draws no control that writes: Approve, Enter and Network inputs, the order cards' taps, the order button, the ledger pen, the drift, tier, rewards and map controls, and the Whiteboard's Snooze and Dismiss are removed. Site orders is a read-only list that points to Counter Admin. The Worker's write routes stay, since the bridge calls them. A test drives every button of every view and fails on a queued entry or a POST. This merges only after the owner accepts Counter Admin review.
+
+With no Counter control yet, and so with no way to do it at all once this ships:
+- the restock date (/expected, KV xpected) and its card;
+- re-entering a rejected entry;
+- the Whiteboard's hush, by design: prose stays off the Counter.

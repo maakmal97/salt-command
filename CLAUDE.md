@@ -129,7 +129,7 @@ Everything the desk shows, cost and margin included, is served at the desk's URL
 Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
 `<title>` stays Salt Command, the build's anchor.
 
-In cloud mode Enter carries **Add ID**, **Amend ID** and **Approve**. A code is derived from the
+**The Desk is a dashboard** (his decision of 06 Oct 2026): it reads and decides nothing, and the master draws no control that writes. Enter is a read-only Site orders list pointing to Counter Admin; Approve, the entry forms, the order cards' taps and the rail's order button are gone. Counter Admin is the one place a row is decided and an entry made (**Add ID**, **Amend ID**, **Approve** and the rest, in its Maker place); the Desk's write routes stay in the Worker for the capability bridge. The suite drives every button of every view and fails on a queued entry or a POST. A code is derived from the
 name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
 re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
 the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
@@ -165,7 +165,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 |---|---|---|
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
-| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
+| Approve or reject | Counter Admin over the bridge, D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); hourly at :23 as the last net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
