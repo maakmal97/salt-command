@@ -55,8 +55,8 @@ export function makerOrderFault(action, body) {
     preview: ["delivery", "total"],
     accept: ["delivery", "total", "hash"],
     handed: ["qty", "close", "rid"],
-    cash: ["amount"],
-    received: ["amount", "claim", "covered"],
+    cash: ["amount", "rid"],
+    received: ["amount", "claim", "covered", "rid"],
     again: ["stage", "rid"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode"],
@@ -90,7 +90,7 @@ export function makerOrderFault(action, body) {
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
   if (action === "again" && !["pay", "cash", "move", "cancel"].includes(body.stage)) return "Choose a stage to offer again.";
-  if (["notfound", "move", "handed", "again"].includes(action)
+  if (["notfound", "move", "handed", "again", "cash", "received"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
     return "Send the action's immutable request id.";
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))
