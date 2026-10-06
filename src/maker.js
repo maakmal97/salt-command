@@ -88,6 +88,8 @@ export function makerOrderFault(action, body) {
   if (body.claim !== undefined && (typeof body.claim !== "string" || !Number.isFinite(Date.parse(body.claim))))
     return "Claim must name its timestamp.";
   if (action === "accept" && body.hash === undefined) return "Accept needs the preview digest.";
+  if (body.covered !== undefined && (action !== "received" || body.covered !== true || body.claim === undefined))
+    return "Received, on the book already, answers one named claim.";
   if (action === "restate" && body.qty === undefined && body.total === undefined && body.delivery === undefined) return "Say which figure changes.";
   if (action === "restate" && (body.qty !== undefined && !(body.qty > 0) || body.total !== undefined && !(body.total > 0))) return "A size and a price are above nothing.";
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
