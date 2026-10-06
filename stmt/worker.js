@@ -58,8 +58,8 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, ordersOf, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimsOf, claimView, allClaims, deskClaim, CLAIM_ID_RE,
-  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView } from "./orders.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+  threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -432,8 +432,12 @@ async function handleCustomer(request, env, p, m, ctx) {
   if (p === "/orders") {
     /* S6 6.6: and their claims against the account beside the orders */
     /* Step 7: and their thread with us, so Home's card moves on the page's own poll */
-    if (m === "GET") return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView)),
-      { thread: threadView(isTest(u) ? await exampleThread(env, u) : await threadOf(env, u)) }));
+    /* 06 Oct 2026: the three read from the book in one round trip (accountBook), the answer unchanged */
+    if (m === "GET") {
+      const mine = await accountBook(env, u);
+      return json(Object.assign({ ok: true }, await withExamples(env, u, mine.orders.map(customerView), mine.claims.map(claimView)),
+        { thread: threadView(isTest(u) ? await exampleThread(env, u) : mine.thread) }));
+    }
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const pb = await readJson(request);
     /* Negotiate: a test account's ask is written into its fixture alone, so no desk ever sees it */
@@ -1728,7 +1732,8 @@ export default {
         if (!acct) return notFound();
         const refs = acct.assoc === true ? (await refsBy(env, u)).concat(await examplesRefs(env, u)).map((r) => mineOut(url.origin, r)) : [];
         /* S6 fix: their orders as their page is handed them, so his view nets what theirs nets; the test account's with its examples */
-        return json(Object.assign({ ok: true }, await withExamples(env, u, (await ordersOf(env, u)).map(customerView), (await claimsOf(env, u)).map(claimView)), { refs, max: MAX_PER_ASSOC }));   /* S6 6.6 */
+        const mine = await accountBook(env, u);   /* one round trip to the book for both lists (06 Oct 2026) */
+        return json(Object.assign({ ok: true }, await withExamples(env, u, mine.orders.map(customerView), mine.claims.map(claimView)), { refs, max: MAX_PER_ASSOC }));   /* S6 6.6 */
       }
       /* S9 9.3: AN ACCOUNT'S OWN SCREEN, read as it opens: how they got in, each way in with its moment and the kind
          of device, off the account's seen: record. Reading only. */
