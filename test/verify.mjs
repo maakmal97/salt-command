@@ -1590,6 +1590,46 @@ await (async () => {
     globalThis.fetch = async () => { throw new Error("github is down"); };
     d = await decide(await draftNo(4), "approve", armed);
     ok(d.status === 200 && d.j.draft.status === "approved", "a dispatch fault never fails the approval");
+
+    /* 07 Oct 2026: THE GITHUB APP. With GH_APP_KEY the Worker signs as the app, trades the JWT for an
+       installation token, holds it, and dispatches with it; the PAT is ignored. */
+    {
+      const { generateKeyPairSync, createVerify } = await import("node:crypto");
+      const pair = generateKeyPairSync("rsa", { modulusLength: 2048 });
+      const pk8 = pair.privateKey.export({ type: "pkcs8", format: "pem" });
+      const appEnv = { ...armed, GH_APP_KEY: pk8 };
+      const seen = [], logs = [], realL = console.log;
+      globalThis.fetch = async (u, o = {}) => {
+        u = String(u); seen.push({ url: u, auth: o.headers && o.headers.authorization, body: o.body });
+        if (/\/repos\/maakmal97\/salt-command\/installation$/.test(u)) return Response.json({ id: 77 });
+        if (/\/app\/installations\/77\/access_tokens$/.test(u)) return Response.json({ token: "ghs-app", expires_at: new Date(Date.now() + 3600000).toISOString() }, { status: 201 });
+        return new Response(null, { status: 204 });
+      };
+      console.log = (...x) => logs.push(x.join(" "));
+      try {
+        await decide(await draftNo(5), "approve", appEnv);
+        await decide(await draftNo(6), "approve", appEnv);
+      } finally { console.log = realL; }
+      const jwt = (seen[0] && seen[0].auth || "").replace(/^Bearer /, "").split(".");
+      const claims = jwt.length === 3 ? JSON.parse(Buffer.from(jwt[1], "base64url").toString()) : {};
+      const signed = jwt.length === 3 && createVerify("RSA-SHA256").update(jwt[0] + "." + jwt[1]).verify(pair.publicKey, Buffer.from(jwt[2], "base64url"));
+      const disp = seen.filter((s) => /\/dispatches$/.test(s.url));
+      ok(signed && claims.iss === "5222854" && claims.exp - claims.iat <= 600,
+         "with GH_APP_KEY the Worker signs an RS256 JWT as app 5222854 that the app's public key verifies, inside GitHub's ten minutes: " + JSON.stringify(claims));
+      ok(seen.filter((s) => /access_tokens$/.test(s.url)).length === 1 && seen[1] && JSON.parse(seen[1].body).permissions.actions === "write"
+         && disp.length === 2 && disp.every((s) => s.auth === "Bearer ghs-app"),
+         "two approvals dispatch twice with the installation token, minted once and held, scoped to Actions write; the PAT is not used: " + JSON.stringify(seen.map((s) => [s.url.replace(/^https:\/\/api\.github\.com/, ""), s.auth && s.auth.slice(0, 12)])) + " " + JSON.stringify(logs));
+      globalThis.fetch = async () => new Response('{"message":"Unexpected inputs provided"}', { status: 422 });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(7), "approve", appEnv); } finally { console.log = realL; }
+      ok(logs.some((l) => /^stage dispatch: 422 .*Unexpected inputs provided/.test(l)),
+         "a refused dispatch logs GitHub's reason beside its status: " + JSON.stringify(logs));
+      const pk1 = pair.privateKey.export({ type: "pkcs1", format: "pem" });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(8), "approve", { ...own, GH_APP_KEY: pk1 }); } finally { console.log = realL; }
+      ok(logs.some((l) => /stage dispatch FAILED.*PKCS#1.*openssl pkcs8/.test(l)),
+         "a PKCS#1 key, as GitHub downloads it, fails saying to convert it, and needs no PAT to be armed: " + JSON.stringify(logs));
+    }
     globalThis.fetch = realFetch;
 
     /* the workflow's half, read as text because YAML cannot be run here */

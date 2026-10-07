@@ -1195,23 +1195,60 @@ async function handleDraftPost(request, env) {
  * `chain` runs one and holds one pending (a newer pending run replaces an older, and a chain reads
  * D1 when it starts), and the stage's own guard stands the extras down. The suite is its own job
  * and takes no lock, so no dispatch waits behind one. A dispatch that is lost is rung again by
- * redispatchStale below, on the minute cron. */
+ * redispatchStale below, on the minute cron.
+ *
+ * THE GITHUB APP (07 Oct 2026). The fine-grained token lapsed about 02 Oct (401), and the one put
+ * back on 05 Oct was refused (400), so every fold waited on GitHub's hourly schedule, which fires
+ * a few times a day. With GH_APP_KEY set, the Worker signs as the app salt-desk-dispatch-mk
+ * (Actions read and write on this repo alone) and trades that for an installation token of one
+ * hour, held in this isolate until five minutes before it lapses: nothing for him to renew. The
+ * key is PKCS#8 (`openssl pkcs8 -topk8 -nocrypt`); GitHub's own download is PKCS#1, and the
+ * failure says so. SALT_GITHUB_TOKEN is the fallback while GH_APP_KEY is unset. A refused
+ * dispatch logs GitHub's reason beside its status, so a 400 is never again read blind. */
 const STAGE_REPO = "maakmal97/salt-command";
+const STAGE_APP_ID = "5222854";
+const GH_HEADERS = { accept: "application/vnd.github+json", "user-agent": "salt-command" };
+let appToken = null;
+const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function ghRefusal(r, what) {
+  let why = "";
+  try { why = (await r.text()).slice(0, 200); } catch (e) { why = ""; }
+  return what + " " + r.status + (why ? " " + why : "");
+}
+async function appInstallToken(env) {
+  const pem = String(env.GH_APP_KEY);
+  if (/BEGIN RSA PRIVATE KEY/.test(pem)) throw new Error("GH_APP_KEY is PKCS#1; convert it with openssl pkcs8 -topk8 -nocrypt");
+  if (appToken && appToken.until - Date.now() > 5 * 60000) return appToken.token;
+  const der = Uint8Array.from(atob(pem.replace(/-----[^-]+-----|\s+/g, "")), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const now = Math.floor(Date.now() / 1000), enc = (o) => b64url(new TextEncoder().encode(JSON.stringify(o)));
+  const head = enc({ alg: "RS256", typ: "JWT" }) + "." + enc({ iat: now - 60, exp: now + 540, iss: STAGE_APP_ID });
+  const sig = new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(head)));
+  const as = { ...GH_HEADERS, authorization: "Bearer " + head + "." + b64url(sig) };
+  const inst = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/installation", { headers: as });
+  if (!inst.ok) throw new Error(await ghRefusal(inst, "app installation"));
+  const { id } = await inst.json();
+  const t = await fetch("https://api.github.com/app/installations/" + id + "/access_tokens", {
+    method: "POST", headers: { ...as, "content-type": "application/json" },
+    body: JSON.stringify({ repositories: ["salt-command"], permissions: { actions: "write" } })
+  });
+  if (!t.ok) throw new Error(await ghRefusal(t, "app token"));
+  const j = await t.json();
+  appToken = { token: j.token, until: Date.parse(j.expires_at) || Date.now() + 50 * 60000 };
+  return j.token;
+}
+const dispatchArmed = (env) => !!(env.GH_APP_KEY || env.SALT_GITHUB_TOKEN);
 function stageOnApproval(env, ctx) {
-  if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_GITHUB_TOKEN) return;
+  if (!ctx || typeof ctx.waitUntil !== "function" || !dispatchArmed(env)) return;
   ctx.waitUntil((async () => {
     try {
+      const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
       const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/dispatches", {
         method: "POST",
-        headers: {
-          authorization: "Bearer " + env.SALT_GITHUB_TOKEN,
-          accept: "application/vnd.github+json",
-          "content-type": "application/json",
-          "user-agent": "salt-command"
-        },
+        headers: { ...GH_HEADERS, authorization: "Bearer " + token, "content-type": "application/json" },
         body: JSON.stringify({ ref: "master", inputs: { stage_only: "true" } })
       });
-      console.log("stage dispatch: " + r.status);
+      console.log(r.ok ? "stage dispatch: " + r.status : await ghRefusal(r, "stage dispatch:"));
     } catch (e) {
       console.log("stage dispatch FAILED, the hourly stage will catch it: " + String((e && e.message) || e));
     }
@@ -1234,7 +1271,7 @@ function stageOnApproval(env, ctx) {
 const REDISPATCH_KEY = "stage:redispatch";
 const REDISPATCH_MIN = [15, 30, 60];
 async function redispatchStale(env, ctx, now) {
-  if (!env.SALT_LEDGER || !env.SALT_QUEUE || !env.SALT_GITHUB_TOKEN) return { waiting: 0 };
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE || !dispatchArmed(env)) return { waiting: 0 };
   const r = await env.SALT_LEDGER.prepare(
     "SELECT COUNT(*) AS n, MAX(decided_at) AS newest FROM draft WHERE status='approved' AND committed_at IS NULL").first();
   if (!r || !r.n || !r.newest) return { waiting: 0 };
