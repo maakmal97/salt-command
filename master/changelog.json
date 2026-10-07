@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1033",
+  "d": "08 Oct 2026",
+  "t": "ONE CANDY SALE FOLDED, PAID AND COLLECTED",
+  "n": [
+   "<b>FOLDED:</b> one new candy sale to CE4-CHE, 1 unit for RM50, dated 08 Oct, paid in cash and collected the same day. It was approved by the desk. The drafter flagged that CE4-CHE has no committed candy order on the book, so no rate of theirs exists to compare against.",
+   "<b>INVENTORY:</b> candy falls by 1 unit. Salt is untouched, with stock at 26.25 unit and the count dated 03 Oct. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1032",
   "d": "07 Oct 2026",
   "t": "CORRECTION ON CS6-PER SALT ORDER: DELIVERY CHARGE REMOVED",
