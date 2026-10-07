@@ -52254,7 +52254,12 @@ await (async () => {
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
     ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "orders", "a yellow light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
-    ok(read("expLights().salt.light") === "yellow" && read("expLights().oil.light") === "green", "the card reads each book's own light off the engine");
+    /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf and
+       commitments taken book by book, and none may carry salt's 1,000 promised units */
+    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
+    ok(L.salt.light === "yellow" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
+      && Object.keys(L).every((p) => JSON.stringify(L[p]) === JSON.stringify(own[p]) && (p === "salt" || L[p].commit < 1000)),
+      "the card reads each book's own light off the engine: " + JSON.stringify(L));
     w.eval("EXPECTED={salt:'2099-01-01'};");
     ok(rows().length === 0, "and the row falls once a day ahead is set");
     w.eval("EXPECTED={salt:'2020-01-01'};");
@@ -52438,15 +52443,20 @@ await (async () => {
   ok(forced.p === Math.floor(2 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
     `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under twice its RM ${forced.floor} floor`);
   /* THE AFTER-LEAK FIGURE, INFORMATION ONLY, beside the floor on a book losing a quarter or more of what it buys */
-  const shown = {};
-  for (const b of live) {
-    w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
-    const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
-    shown[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
-  }
+  /* which books lose a quarter is live data (the counts of 06 Oct 2026 took rice to 24.998%), so the line is driven at the
+     live quarter and at a line under every book's leak and over every book's: all shown, then none, whatever the book holds */
+  const shownAt = (from) => { const s = {}, was = w.eval("RULES.leakInfoFrom");
+    try { if (from != null) w.eval(`RULES.leakInfoFrom=${from};`);
+      for (const b of live) {
+        w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
+        const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
+        s[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
+      } } finally { w.eval(`RULES.leakInfoFrom=${was};`); }
+    return s; };
+  const shown = shownAt(null), shownAll = shownAt(0), shownNone = shownAt(2);
   const high = live.filter((b) => b.shrink >= b.leakFrom).map((b) => b.p).sort().join();
-  ok(high === "oil,rice" && live.every((b) => shown[b.p] === (b.shrink >= b.leakFrom)),
-    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high}, and on no other: ${JSON.stringify(shown)}`);
+  ok(live.every((b) => b.leakFrom === 0.25 && shown[b.p] === (b.shrink >= b.leakFrom) && shownAll[b.p] && !shownNone[b.p]),
+    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high || "none today"}, and on no other; every book at a line of 0, none at 2: ${JSON.stringify({ shown, shownAll, shownNone })}`);
   w.eval("setProd('salt');recompute();");
 })();
 

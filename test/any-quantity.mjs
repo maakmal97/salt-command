@@ -39,8 +39,11 @@ export async function run({ ok }) {
   let typedOff = 0;
   for (const p of ["oil", "candy", "rice"]) { const { R, P, C } = ctx[p]; for (const q of R.rungs) if (E.quoteAt(q, C, P, 0) !== +R.fixed[String(q)]) typedOff++; }
   ok(typedOff === 0, "every rung of a stated board quotes his typed price exactly: " + typedOff + " differ");
-  ok(E.quoteAt(6.25, CS, PS, 0) === 660 && E.quoteAt(1, CS, PS, 0) === 160 && E.quoteAt(12.5, CS, PS, 0) === 1090,
-    "the stranger's board: 6.25 unit comes down to RM 660 and 1 and 12.5 unit hold at RM 160 and RM 1,090: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, CS, PS, 0))));
+  /* the worked example is pinned to the COGS it was worked at, RM 64 a unit (lot p035 of 05 Oct 2026), never the live lot's:
+     a new salt lot moves the live board by rule 5 and must not turn this red */
+  const C64 = { ...CS, repl: 60, lot: 60, freight: 4, landed: 64, inventoriable: 64, eff: 64, effEx: 64 };
+  ok(E.quoteAt(6.25, C64, PS, 0) === 660 && E.quoteAt(1, C64, PS, 0) === 160 && E.quoteAt(12.5, C64, PS, 0) === 1090,
+    "the stranger's board at RM 64 COGS: 6.25 unit comes down to RM 660 and 1 and 12.5 unit hold at RM 160 and RM 1,090: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
 
   /* 3. THE RATE NEVER RISES across each book's grid, for every account; the one exception is where the floor holds the price
      (the floor's own ten, rule 5), where it can rise by less than a ten over the size */
