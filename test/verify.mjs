@@ -1433,13 +1433,16 @@ await (async () => {
      statements the Worker actually issues, and throws on anything else rather than
      quietly returning nothing, which is how a mock hides a broken query. */
   class D1 {
-    constructor() { this.rows = new Map(); this.refusals = new Map(); }
+    constructor() { this.rows = new Map(); this.refusals = new Map(); this.makerRequests = new Map(); }
     prepare(sql) {
       const self = this, s = sql.replace(/\s+/g, " ").trim();
       let binds = [];
       const api = {
         bind(...a) { binds = a; return api; },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT id FROM input_admission WHERE id=/.test(s)) return null;
           if (/^SELECT status FROM draft WHERE id=/.test(s) || /^SELECT status,committed_at FROM draft WHERE id=/.test(s)) {
             return self.rows.get(binds[0]) || null;
@@ -1454,6 +1457,7 @@ await (async () => {
         async all() {
           if (/^SELECT .* FROM refused/.test(s)) return { results: [...self.refusals.values()] };
           if (/^SELECT id FROM input_admission_source WHERE source=/.test(s)) return { results: [] };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
           let out = [...self.rows.values()];
           if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
@@ -1461,6 +1465,15 @@ await (async () => {
           return { results: out };
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) {
             self.refusals.set(binds[0], {
               id: binds[0], entry: binds[1], why: binds[2], party: binds[3], source: binds[4], seen_at: binds[5]
@@ -11843,9 +11856,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -12983,9 +12998,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(state).map((k) => ({ key: k, doc: JSON.stringify(state[k]) })) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused].map(([id, r]) => ({ id, source: r.source })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: "vX", stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -33542,7 +33559,7 @@ await (async () => {
     state: { roster: ["CC9-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const mirrorN = (b) => {
-    const self = { drafts: new Map(), refused: new Map() };
+    const self = { drafts: new Map(), refused: new Map(), makerRequests: new Map() };
     self.prepare = (sql) => {
       const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
       const api = {
@@ -33555,12 +33572,24 @@ await (async () => {
           return { results: [] };
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           if (/COUNT\(\*\)/.test(s)) return { n: 0 };
           return null;
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
           return { meta: { changes: 0 } };
@@ -50455,7 +50484,7 @@ await (async () => {
 
 section("Counter resource batches: atomic capacity, ownership and withdrawal fence");
 await (async () => {
-  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok });
+  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok, worker });
 })();
 
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
@@ -50523,7 +50552,8 @@ await (async () => {
     COUNTER_MAKER_KEY: key,
     DESK_MAKER: { fetch: async (request) => {
       calls.push({ path: new URL(request.url).pathname, method: request.method, key: request.headers.get("X-Counter-Maker-Key") });
-      return new Response(JSON.stringify({ ok: true, drafts: [], refused: [] }), { status: 200 });
+      return new Response(JSON.stringify(new URL(request.url).pathname === "/_internal/maker/queue"
+        ? { ok: true, entries: [] } : { ok: true, drafts: [], refused: [] }), { status: 200 });
     } }
   };
   const call = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
@@ -50532,8 +50562,10 @@ await (async () => {
   const reviewed = await call("/all/maker/review");
   const review = await reviewed.json();
   ok(reviewed.status === 200 && review.ok && review.orders.length === 0 && review.drafts.length === 0
-    && calls.length === 1 && calls[0].path === "/_internal/maker/drafts" && calls[0].key === key,
-    "the verified owner receives the unified order/draft review through the named Desk route");
+    && review.queue.length === 0 && calls.length === 2
+    && calls.some((item) => item.path === "/_internal/maker/drafts" && item.key === key)
+    && calls.some((item) => item.path === "/_internal/maker/queue" && item.key === key),
+    "the verified owner receives the unified order/draft/server-queue review through the two named Desk routes");
   const startCalls = calls.length;
   const denied = await handleMaker(new Request("https://counter.test/all/maker/review", {
     headers: { "X-User-Email": "maakmal97@icloud.com" }
@@ -51868,6 +51900,11 @@ await (async () => {
       && !Object.hasOwn(sentFor.body, "master") && !Object.hasOwn(sentFor.body, "note"),
       "on-behalf UI sends the quote and replay id only to its protected route");
   } finally { admin.window.close(); }
+})();
+
+section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
+await (async () => {
+  await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
 })();
 
 section("Counter amendments: atomic replacement, review reservation and session ownership");

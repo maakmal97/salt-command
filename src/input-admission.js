@@ -73,7 +73,11 @@ export async function admitInputs(db, entries, book, source) {
       if (results[i + 1].meta.changes === 1) await withdrawInputAdmission(db, entry.at, source);
     return fault("The book changed during admission. This batch was not sent; retry the original request.");
   }
-  return { accepted: true };
+  return {
+    accepted: true,
+    newSources: claims.filter((_, index) => results[index + 1].meta.changes === 1)
+      .map(({ entry }) => entry.at)
+  };
 }
 
 export async function checkInputAdmission(db, entry, book) {
@@ -122,9 +126,10 @@ export async function admitInput(db, entry, book, source) {
     WHERE (SELECT v FROM snapshot WHERE one=1)=?5
       AND ?4 + COALESCE((SELECT SUM(amount) FROM input_admission
         WHERE resource=?3 AND (state='accepted' OR state='committed' AND snapshot=?5)),0) <= ?7 + 0.005
-      AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1 AND (status='rejected' OR committed_at IS NOT NULL))`)
+      AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1 AND (status='rejected' OR committed_at IS NOT NULL))
+      AND NOT EXISTS (SELECT 1 FROM maker_request WHERE id=?8 AND operation='queue-withdraw')`)
     .bind(entry.at, fingerprint, claim.resource, claim.amount, String(book.version),
-      JSON.stringify(normalized(entry)), claim.available);
+      JSON.stringify(normalized(entry)), claim.available, queueWithdrawalKey(entry.at));
   const owner = db.prepare(`INSERT OR IGNORE INTO input_admission_source(id,source)
     SELECT id,?3 FROM input_admission WHERE id=?1 AND fingerprint=?2 AND state='accepted'`)
     .bind(entry.at, fingerprint, source);
@@ -165,4 +170,63 @@ export async function withdrawInputAdmission(db, id, source) {
       AND NOT EXISTS (SELECT 1 FROM input_admission_source WHERE id=?1)
       AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1 AND status IN ('pending','approved') AND committed_at IS NULL)`).bind(id)
   ]);
+}
+
+const DEVICE_QUEUE_LOCK_MS = 120000;
+export const queueWithdrawalKey = (id) => "queue-withdraw:" + id;
+export const queueOwnerKey = (id) => "queue-owner:" + id;
+const deviceQueueLockKey = (device) => "queue-device:" + device;
+
+export async function acquireDeviceQueueLock(db, device, now = Date.now()) {
+  const id = deviceQueueLockKey(device), token = crypto.randomUUID();
+  const result = await db.prepare(`INSERT OR REPLACE INTO maker_request(id,operation,fingerprint,entry)
+    SELECT ?1,'queue-device-lock',?2,?3
+    WHERE NOT EXISTS (SELECT 1 FROM maker_request WHERE id=?1
+      AND (operation<>'queue-device-lock' OR CAST(entry AS INTEGER)>=?4))`)
+    .bind(id, token, String(now), now - DEVICE_QUEUE_LOCK_MS).run();
+  return result.meta.changes === 1 ? token : null;
+}
+
+export async function releaseDeviceQueueLock(db, device, token) {
+  await db.prepare("DELETE FROM maker_request WHERE id=?1 AND operation='queue-device-lock' AND fingerprint=?2")
+    .bind(deviceQueueLockKey(device), token).run();
+}
+
+export async function claimDeviceQueueWithdrawal(db, id, device, fingerprint) {
+  const key = queueWithdrawalKey(id), source = "device:" + device;
+  const entry = JSON.stringify({ device, fingerprint });
+  const result = await db.batch([
+    db.prepare(`INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry)
+      SELECT ?1,'queue-withdraw',?2,?3
+      WHERE NOT EXISTS (SELECT 1 FROM draft WHERE id=?4)
+        AND NOT EXISTS (SELECT 1 FROM input_admission a WHERE a.id=?4
+          AND (a.state NOT IN ('accepted','rejected')
+            OR NOT EXISTS (SELECT 1 FROM input_admission_source s WHERE s.id=a.id AND s.source=?5)))
+        AND NOT EXISTS (SELECT 1 FROM input_admission_source s WHERE s.id=?4 AND s.source NOT IN (?5,'drafter'))`)
+      .bind(key, fingerprint, entry, id, source),
+    db.prepare(`DELETE FROM input_admission_source WHERE id=?1 AND source IN (?2,'drafter')
+      AND EXISTS (SELECT 1 FROM maker_request WHERE id=?3 AND operation='queue-withdraw'
+        AND fingerprint=?4 AND entry=?5)`).bind(id, source, key, fingerprint, entry),
+    db.prepare(`UPDATE input_admission SET state='withdrawn' WHERE id=?1 AND state='accepted'
+      AND NOT EXISTS (SELECT 1 FROM input_admission_source WHERE id=?1)
+      AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1)
+      AND EXISTS (SELECT 1 FROM maker_request WHERE id=?2 AND operation='queue-withdraw'
+        AND fingerprint=?3 AND entry=?4)`)
+      .bind(id, key, fingerprint, entry)
+  ]);
+  const claim = await db.prepare("SELECT operation,fingerprint,entry,response FROM maker_request WHERE id=?1").bind(key).first();
+  if (!claim || claim.operation !== "queue-withdraw" || claim.fingerprint !== fingerprint || claim.entry !== entry)
+    return { error: "The entry's owner or status changed. Refresh the server-held queue before retrying." };
+  return { claimed: result[0].meta.changes === 1, response: claim.response || null };
+}
+
+export async function finishDeviceQueueWithdrawal(db, id, device, fingerprint, response) {
+  const key = queueWithdrawalKey(id), entry = JSON.stringify({ device, fingerprint });
+  const result = await db.prepare(`UPDATE maker_request SET response=?1
+    WHERE id=?2 AND operation='queue-withdraw' AND fingerprint=?3 AND entry=?4 AND response IS NULL`)
+    .bind(JSON.stringify(response), key, fingerprint, entry).run();
+  if (result.meta.changes === 1) return true;
+  const current = await db.prepare("SELECT response FROM maker_request WHERE id=?1 AND operation='queue-withdraw' AND fingerprint=?2 AND entry=?3")
+    .bind(key, fingerprint, entry).first();
+  return !!current?.response && current.response === JSON.stringify(response);
 }

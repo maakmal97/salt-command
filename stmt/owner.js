@@ -2333,6 +2333,7 @@ export const OWNER_JS = `
   }
   function drawMaker(){
     var root=document.getElementById('makerReview'), status=document.getElementById('makerReviewStatus');
+    var queueRoot=document.getElementById('makerQueueReview');
     if(!root) return;
     if(!makerData){
       if(!Object.keys(makerCashHeld).length&&!makerCashStorageError)return;
@@ -2477,6 +2478,44 @@ export const OWNER_JS = `
       var card=makerCard(root); card.appendChild(el('h3','','Refused entry'));
       card.appendChild(el('p','salt-insight',refused.why||'This entry was refused by the drafter.'));
     });
+    if(queueRoot){
+      queueRoot.textContent='';
+      var held=makerData.queue||[];
+      if(!held.length) queueRoot.appendChild(el('p','rnone','No server-held device entries or cloud refusals.'));
+      held.forEach(function(entry){
+        var card=makerCard(queueRoot), title=entry.state==='refused'?'Refused server entry':'Server-held device entry';
+        card.appendChild(el('h4','',title));
+        card.appendChild(el('p','maker-facts',entry.id+(entry.date?' · '+entry.date:'')+' · '+entry.state));
+        if(entry.device) card.appendChild(el('p','maker-facts','Device '+entry.device));
+        if(entry.refusalSource||entry.seenAt)
+          card.appendChild(el('p','maker-facts','Refusal source '+(entry.refusalSource||'unknown')
+            +(entry.seenAt?' · seen '+entry.seenAt:'')));
+        if(entry.why) card.appendChild(el('p','salt-insight',entry.why));
+        if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
+        if(entry.canWithdraw||entry.canRetry){
+          var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
+          var action=makerClaimButton(card,entry.canRetry?'Finish server withdrawal':'Withdraw server-held entry',function(button){
+            if(entry.canWithdraw&&!window.confirm('Withdraw this uploaded entry from the Desk server queue? This does not withdraw an unsent device entry.')) return;
+            button.disabled=true;
+            refs('/all/maker/queue/'+encodeURIComponent(entry.id)+'/withdraw',{fingerprint:entry.fingerprint})
+              .then(function(result){
+                var confirmed=result&&result.ok===true&&result.withdrawn===entry.id
+                  && (result.state==='withdrawn'&&result.confirmedAbsent===undefined
+                    || result.state==='rejected'&&result.confirmedAbsent===true)
+                  && (result.again===undefined||result.again===true);
+                if(!confirmed) throw new Error('The server did not return a matching withdrawal receipt. Refresh and retry.');
+                return loadMaker().then(function(){
+                  var current=document.getElementById('makerReviewStatus');
+                  if(current) current.textContent=result.state==='rejected'
+                    ?'Desk rejection confirmed; server-held entry is gone.'
+                    :'Server-held entry withdrawal confirmed.';
+                });
+              }).catch(function(error){ note.textContent=error.message; button.disabled=false; });
+          },false);
+          action.classList.add('maker-queue-action');
+        }
+      });
+    }
     makerButton(root,'Refresh',loadMaker,false);
   }
   function klInputValue(iso){

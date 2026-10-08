@@ -19,13 +19,14 @@
 
 import { runDrafter, dryRunDrafter, readBook, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
-import { queueSale, queueResourceTrades } from "./orders.js";
+import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission,
+  acquireDeviceQueueLock, releaseDeviceQueueLock, claimDeviceQueueWithdrawal, finishDeviceQueueWithdrawal,
+  queueWithdrawalKey, queueOwnerKey } from "./input-admission.js";
 import { ciAccess, ownerAccess } from "./access.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
@@ -275,13 +276,31 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
   catch (e) { return json({ ok: false, error: String(e && e.message || e) }, 400); }
   if (!gateHeld && payload.queue.some(entry => ["addid", "rename", "place"].includes(entry?.payload?.mode)))
     return vaultWriteResponse(env, () => handleQueuePost(retainedRequest, env, ctx, true));
+  const queueLock = env.SALT_LEDGER
+    ? await acquireDeviceQueueLock(env.SALT_LEDGER, payload.device) : null;
+  if (env.SALT_LEDGER && !queueLock)
+    return json({ ok: false, error: "This device queue is changing. Retry the upload." }, 409);
+  try {
   /* v525: an entry whose draft was rejected never comes back, whichever device re-posts it */
   const gone = await rejectedAmong(env, payload.queue.map((e) => e && e.at));
-  const kept = gone.size ? payload.queue.filter((e) => !(e && gone.has(e.at))) : payload.queue;
+  const withdrawn = new Set();
+  if (env.SALT_LEDGER) for (const entry of payload.queue) {
+    if (!entry?.at) continue;
+    const receipt = await env.SALT_LEDGER.prepare(
+      "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+    ).bind(queueWithdrawalKey(entry.at)).first();
+    if (receipt) withdrawn.add(entry.at);
+  }
+  const kept = payload.queue.filter((entry) =>
+    !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));
   if (env.VAULT_STORE === "pair" && kept.some((entry) => ["rename", "place"].includes(entry?.payload?.mode)
     || entry?.payload?.mode === "addid" && entry.payload.kind !== "bucket"))
     return json({ ok: false, error: "ID and place inputs must file the versioned ciphertext pair and transactional outbox. Upgrade this client; nothing was queued." }, 409);
-  const previousQueue = (await (await handleQueueGet(env, true)).json()).queue;
+  const previous = await handleQueueGet(env, true);
+  const previousBody = await previous.json();
+  if (!previous.ok || previousBody.ok !== true)
+    return json({ ok: false, error: previousBody.error || "The server queue could not be checked; nothing was queued." }, 503);
+  const previousQueue = previousBody.queue;
   const reserved = kept.some((entry) => entry && entry.payload
     && (entry.payload.mode === "repay" || entry.payload.mode === "redeem"
       || entry.payload.fields && (entry.payload.fields.rebateKg != null || entry.payload.fields.coverUnits != null)
@@ -303,15 +322,26 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
       if (fault) return json({ ok: false, error: fault }, 409);
     }
   }
+  let admissionSources = [];
   if (reserved) {
     const result = await admitInputs(env.SALT_LEDGER, kept, book, "device:" + payload.device);
     if (result.error) return json({ ok: false, error: result.error }, result.status);
+    admissionSources = result.newSources || [];
+  }
+  const ownership = await recordDeviceQueueOwners(env, payload.device, kept);
+  if (!ownership.ok) {
+    for (const id of admissionSources) await withdrawInputAdmission(env.SALT_LEDGER, id, "device:" + payload.device);
+    return json({ ok: false, error: ownership.error }, ownership.status);
   }
   // Per-device replace: this device's key holds its whole current queue, so an undo on
   // the device (which re-posts the shortened queue) is reflected rather than merged away.
-  await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
-    updated: payload.updated, device: payload.device, queue: kept
-  }));
+  try {
+    await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
+      updated: payload.updated, device: payload.device, queue: kept
+    }));
+  } catch (error) {
+    return json({ ok: false, error: "The queue write is uncertain; its device receipt is kept for recovery. Retry the upload or withdraw through the same-origin recovery route." }, 503);
+  }
   if (env.SALT_LEDGER) {
     const owned = await env.SALT_LEDGER.prepare("SELECT id FROM input_admission_source WHERE source=?1")
       .bind("device:" + payload.device).all();
@@ -320,7 +350,12 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
         await withdrawInputAdmission(env.SALT_LEDGER, entry.id, "device:" + payload.device);
   }
   draftOnArrival(env, ctx);
-  return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
+  return json({ ok: true, entries: kept.length, device: payload.device,
+    dropped: gone.size, droppedAts: [...gone],
+    withdrawn: withdrawn.size, withdrawnAts: [...withdrawn] });
+  } finally {
+    if (queueLock) await releaseDeviceQueueLock(env.SALT_LEDGER, payload.device, queueLock);
+  }
 }
 
 /* the three lists the Desk's own `offered` check reads, read the way it reads them: the queue, the pending drafts, every
@@ -345,6 +380,7 @@ async function offsetUnlock(db, rid) {
 }
 async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, offsetLocked = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
+    && p !== "/_internal/maker/queue"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
     && p !== "/_internal/maker/trade-cover"
@@ -356,12 +392,26 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
+    && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset"
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
   if (!makerKeyMatches(request, env)) return json({ ok: false, error: "not found" }, 404);
+  if (p === "/_internal/maker/queue") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const result = await makerQueueReview(env);
+    return json(result, result.ok ? 200 : result.status || 503);
+  }
+  const queueWithdrawal = /^\/_internal\/maker\/queue\/([^/]+)\/withdraw$/.exec(p);
+  if (queueWithdrawal) {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    let id;
+    try { id = decodeURIComponent(queueWithdrawal[1]); }
+    catch { return json({ ok: false, error: "The entry timestamp is invalid." }, 400); }
+    return withdrawMakerQueueEntry(request, env, id);
+  }
   if (p === "/_internal/maker/vault/key") return handleVaultKey(env, m);
   if (p === "/_internal/maker/claims") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -797,6 +847,358 @@ async function rejectedAmong(env, ats) {
   return out;
 }
 
+const canonicalQueueAt = (value) => typeof value === "string" && Number.isFinite(Date.parse(value))
+  && new Date(value).toISOString() === value;
+
+async function deviceQueueRecords(env) {
+  if (!env.SALT_QUEUE) throw new Error("The Desk queue is unavailable.");
+  const records = [];
+  let cursor;
+  do {
+    const page = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
+    for (const key of page.keys) {
+      if (key.name === "q:orders" || key.name.startsWith("q:orders:")) continue;
+      const device = key.name.slice(2);
+      if (!DEVICE_RE.test(device) || device === "orders" || device.includes(":")) continue;
+      const raw = await env.SALT_QUEUE.get(key.name);
+      if (raw == null) continue;
+      let record;
+      try { record = JSON.parse(raw); }
+      catch { throw new Error("A device queue could not be read; no withdrawal was made."); }
+      if (!record || record.device !== device || !Array.isArray(record.queue))
+        throw new Error("A device queue has no matching owner record; no withdrawal was made.");
+      records.push({ key: key.name, device, record });
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return records;
+}
+
+async function recordDeviceQueueOwners(env, device, entries) {
+  if (!env.SALT_LEDGER || device === "anon") return { ok: true };
+  let records;
+  try { records = await deviceQueueRecords(env); }
+  catch (error) { return { ok: false, status: 503, error: String(error && error.message || error) }; }
+  for (const entry of entries) {
+    if (!entry || !canonicalQueueAt(entry.at)) continue;
+    const fingerprint = await makerRequestFingerprint("server-queue-entry", entry);
+    const otherOwner = records.some(({ device: owner, record }) => owner !== device
+      && record.queue.some((held) => held?.at === entry.at));
+    if (otherOwner) return { ok: false, status: 409, error: "That timestamp is already held by another device." };
+    const key = queueOwnerKey(entry.at), owner = JSON.stringify({ device, fingerprint });
+    const current = await env.SALT_LEDGER.prepare("SELECT operation,fingerprint,entry FROM maker_request WHERE id=?1")
+      .bind(key).first();
+    if (current) {
+      let saved;
+      try { saved = JSON.parse(current.entry); } catch { saved = null; }
+      if (current.operation !== "queue-owner" || current.fingerprint !== fingerprint
+        || saved?.device !== device || saved?.fingerprint !== fingerprint)
+        return { ok: false, status: 409, error: "That timestamp already names another device entry." };
+      continue;
+    }
+    const draft = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(entry.at).first();
+    if (draft) {
+      let drafted;
+      try { drafted = JSON.parse(draft.entry); } catch { drafted = null; }
+      if (!drafted || await makerRequestFingerprint("server-queue-entry", drafted) !== fingerprint)
+        return { ok: false, status: 409, error: "That drafted timestamp does not match this device entry." };
+    }
+    await env.SALT_LEDGER.prepare(`INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry)
+      VALUES (?1,'queue-owner',?2,?3)`).bind(key, fingerprint, owner).run();
+    const saved = await env.SALT_LEDGER.prepare("SELECT operation,fingerprint,entry FROM maker_request WHERE id=?1")
+      .bind(key).first();
+    let proof;
+    try { proof = JSON.parse(saved?.entry); } catch { proof = null; }
+    if (saved?.operation !== "queue-owner" || saved.fingerprint !== fingerprint
+      || proof?.device !== device || proof?.fingerprint !== fingerprint)
+      return { ok: false, status: 409, error: "That timestamp's device ownership could not be recorded." };
+  }
+  return { ok: true };
+}
+
+async function makerQueueReview(env) {
+  if (!env.SALT_LEDGER || !env.SALT_QUEUE)
+    return { ok: false, status: 503, error: "The Desk queue and ledger are required for server-held review." };
+  const records = await deviceQueueRecords(env);
+  const [draftRows, refusalRows, sourceRows, admissionRows, withdrawalRows] = await Promise.all([
+    env.SALT_LEDGER.prepare("SELECT id,status,committed_at FROM draft").all(),
+    env.SALT_LEDGER.prepare("SELECT id,entry,why,source,seen_at FROM refused WHERE source='cloud-drafter'").all(),
+    env.SALT_LEDGER.prepare("SELECT id,source FROM input_admission_source").all(),
+    env.SALT_LEDGER.prepare("SELECT id,state FROM input_admission").all(),
+    env.SALT_LEDGER.prepare("SELECT id,entry,response FROM maker_request WHERE operation='queue-withdraw'").all()
+  ]);
+  const drafts = new Map((draftRows.results || []).map((row) => [row.id, row]));
+  const refusals = new Map((refusalRows.results || []).map((row) => [row.id, row]));
+  const sources = new Map(), admissions = new Map();
+  for (const row of sourceRows.results || []) {
+    const list = sources.get(row.id) || [];
+    list.push(row.source);
+    sources.set(row.id, list);
+  }
+  for (const row of admissionRows.results || []) admissions.set(row.id, row.state);
+  const withdrawals = new Map();
+  for (const row of withdrawalRows.results || []) {
+    const id = row.id.slice("queue-withdraw:".length);
+    if (!canonicalQueueAt(id)) continue;
+    let entry = null;
+    try { entry = JSON.parse(row.entry); } catch { /* an unreadable receipt is not actionable */ }
+    withdrawals.set(id, { entry, pending: !row.response });
+  }
+  const held = new Map();
+  for (const { device, record } of records) for (const entry of record.queue) {
+    if (!entry || !canonicalQueueAt(entry.at)) continue;
+    const list = held.get(entry.at) || [];
+    list.push({ device, entry });
+    held.set(entry.at, list);
+  }
+  const ids = new Set([...held.keys(), ...refusals.keys(),
+    ...[...withdrawals].filter(([, receipt]) => receipt.pending).map(([id]) => id)]);
+  const entries = [];
+  for (const id of [...ids].sort()) {
+    if (!canonicalQueueAt(id)) continue;
+    const owners = held.get(id) || [];
+    const refusal = refusals.get(id) || null;
+    const withdrawal = withdrawals.get(id) || null;
+    if (withdrawal && !withdrawal.pending) continue;
+    let refusedEntry = null;
+    if (refusal) {
+      try { refusedEntry = JSON.parse(refusal.entry); } catch { /* keep the authoritative reason */ }
+    }
+    const owner = owners.length === 1 ? owners[0] : null;
+    const draft = drafts.get(id) || null;
+    const admissionSources = sources.get(id) || [];
+    const admissionState = admissions.get(id) || null;
+    const ownedSource = owner && (admissionState || admissionSources.length
+      ? admissionSources.includes("device:" + owner.device) && admissionSources.every((source) =>
+        source === "device:" + owner.device || source === "drafter")
+      : true);
+    const canWithdraw = !!owner && owner.device !== "anon" && !draft && (!admissionState || admissionState === "accepted")
+      && ownedSource && !withdrawal;
+    const fingerprint = owner ? await makerRequestFingerprint("server-queue-entry", owner.entry) : null;
+    entries.push({
+      id,
+      date: (owner?.entry && (owner.entry.date || owner.entry.payload?.date))
+        || (refusedEntry && (refusedEntry.date || refusedEntry.payload?.date)) || null,
+      mode: (owner?.entry && owner.entry.payload?.mode)
+        || (refusedEntry && refusedEntry.payload?.mode) || null,
+      device: owner?.device || withdrawal?.entry?.device || null,
+      devices: owners.map((item) => item.device),
+      state: withdrawal?.pending ? "withdrawal-pending"
+        : draft?.committed_at ? "committed"
+          : draft?.status === "approved" ? "approved"
+            : draft ? "drafted" : refusal ? "refused" : "queued",
+      why: refusal?.why || null,
+      refusalSource: refusal?.source || null,
+      seenAt: refusal?.seen_at || null,
+      fingerprint: fingerprint || withdrawal?.entry?.fingerprint || null,
+      canWithdraw,
+      canRetry: !!withdrawal?.pending,
+      unavailable: owners.length > 1 ? "More than one device holds this timestamp."
+        : withdrawal?.pending ? "Withdrawal is recorded; retry to finish removing it."
+          : !owners.length ? "No server-held device entry matches this refusal."
+            : owner?.device === "anon" ? "This legacy queue has no uniquely identified device owner."
+            : draft?.status === "pending" ? "This entry is drafted; reject it under Desk rows."
+              : draft?.status === "approved" || draft?.committed_at ? "This entry is approved or committed and cannot be withdrawn."
+                : draft ? "This entry has already been decided and cannot be withdrawn."
+                  : !ownedSource || admissionState && admissionState !== "accepted"
+                    ? "The active admission is not owned solely by this device."
+                    : null
+    });
+  }
+  return { ok: true, entries };
+}
+
+function queueDraftConflict(draft) {
+  if (!draft) return null;
+  const state = draft.committed_at ? "committed"
+    : draft.status === "approved" ? "approved"
+      : draft.status === "pending" ? "drafted" : draft.status === "rejected" ? "rejected" : "already-decided";
+  if (state === "rejected") return null;
+  const error = state === "drafted" ? "This entry is drafted; reject it under Desk rows."
+    : state === "approved" || state === "committed" ? "This entry is approved or committed and cannot be withdrawn."
+      : "This entry has already been decided and cannot be withdrawn.";
+  return json({ ok: false, state, error }, 409);
+}
+
+async function withdrawMakerQueueEntry(request, env, id, requireDevice = false) {
+  if (!env.SALT_QUEUE || !env.SALT_LEDGER)
+    return json({ ok: false, state: "withdrawal-pending", error: "The Desk queue and ledger are required for withdrawal." }, 503);
+  if (!canonicalQueueAt(id)) return json({ ok: false, state: "entry-changed", error: "The entry timestamp is invalid." }, 400);
+  let body;
+  try {
+    const raw = await request.text();
+    if (raw.length > 4096) return json({ ok: false, error: "request is too large" }, 413);
+    body = JSON.parse(raw);
+  } catch { return json({ ok: false, state: "entry-changed", error: "send JSON" }, 400); }
+  const fields = requireDevice ? ["device", "fingerprint"] : ["fingerprint"];
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || Object.keys(body).length !== fields.length || Object.keys(body).some((key) => !fields.includes(key))
+    || !/^[0-9a-f]{64}$/.test(body.fingerprint || "")
+    || requireDevice && (!DEVICE_RE.test(body.device || "") || body.device === "anon"))
+    return json({ ok: false, state: "entry-changed", error: "Send the server-held entry identity." }, 400);
+  const requestedDevice = requireDevice ? body.device : null;
+
+  const key = queueWithdrawalKey(id);
+  let receipt = await env.SALT_LEDGER.prepare(
+    "SELECT operation,fingerprint,entry,response FROM maker_request WHERE id=?1"
+  ).bind(key).first();
+  let savedOwner = null;
+  if (receipt) {
+    try { savedOwner = JSON.parse(receipt.entry); } catch { savedOwner = null; }
+    if (receipt.operation !== "queue-withdraw" || !/^[0-9a-f]{64}$/.test(receipt.fingerprint || "")
+      || !savedOwner || !DEVICE_RE.test(savedOwner.device || "") || savedOwner.device === "anon"
+      || savedOwner.fingerprint !== receipt.fingerprint || requestedDevice && requestedDevice !== savedOwner.device)
+      return json({ ok: false, state: "ownership-conflict", error: "That timestamp already names another server withdrawal." }, 409);
+    if (receipt.fingerprint !== body.fingerprint)
+      return json({ ok: false, state: "entry-changed",
+        error: "The saved withdrawal belongs to a different entry identity; its answer cannot confirm this local copy." }, 409);
+    if (receipt.response) {
+      let answer;
+      try { answer = JSON.parse(receipt.response); }
+      catch { return json({ ok: false, state: "withdrawal-pending", error: "The saved withdrawal answer is unreadable." }, 503); }
+      return json({ ...answer, again: true });
+    }
+  }
+
+  let records;
+  try { records = await deviceQueueRecords(env); }
+  catch (error) { return json({ ok: false, state: "withdrawal-pending", error: String(error && error.message || error) }, 503); }
+  let matches = records.flatMap(({ device, key: queueKey, record }) =>
+    record.queue.filter((entry) => entry?.at === id)
+      .map((entry) => ({ device, key: queueKey, record, entry })));
+  if (matches.length > 1)
+    return json({ ok: false, state: "ownership-conflict", error: "More than one device holds this timestamp; refresh the server-held queue." }, 409);
+  if (savedOwner && matches.length && matches[0].device !== savedOwner.device)
+    return json({ ok: false, state: "ownership-conflict", error: "The device owner changed; refresh the server-held queue." }, 409);
+  let ownerProof = null;
+  const ownerRow = await env.SALT_LEDGER.prepare("SELECT operation,fingerprint,entry FROM maker_request WHERE id=?1")
+    .bind(queueOwnerKey(id)).first();
+  if (ownerRow) {
+    try { ownerProof = JSON.parse(ownerRow.entry); } catch { ownerProof = null; }
+    if (ownerRow.operation !== "queue-owner" || !/^[0-9a-f]{64}$/.test(ownerRow.fingerprint || "")
+      || !ownerProof || ownerProof.fingerprint !== ownerRow.fingerprint || !DEVICE_RE.test(ownerProof.device || "")
+      || ownerProof.device === "anon" || requestedDevice && ownerProof.device !== requestedDevice)
+      return json({ ok: false, state: "ownership-conflict", error: "The saved device ownership does not match this entry." }, 409);
+  }
+  if (matches.length && ownerProof && (matches[0].device !== ownerProof.device
+    || await makerRequestFingerprint("server-queue-entry", matches[0].entry) !== ownerProof.fingerprint))
+    return json({ ok: false, state: "ownership-conflict", error: "The server queue and saved device ownership disagree." }, 409);
+  if (matches.length && await makerRequestFingerprint("server-queue-entry", matches[0].entry) !== body.fingerprint) {
+    const serverFingerprint = ownerProof && ownerProof.fingerprint;
+    return json({ ok: false, state: "entry-changed",
+      ...(requireDevice && matches[0].device === requestedDevice && serverFingerprint ? { serverFingerprint } : {}),
+      error: "The server-held entry changed; review its current identity before withdrawing." }, 409);
+  }
+  if (!matches.length && ownerProof && ownerProof.fingerprint !== body.fingerprint) {
+    return json({ ok: false, state: "entry-changed",
+      error: "The server-held entry identity differs; review its saved identity before withdrawing." }, 409);
+  }
+  if (matches.length && requestedDevice && matches[0].device !== requestedDevice)
+    return json({ ok: false, state: "ownership-conflict", error: "That entry is not held by this device." }, 409);
+  const device = savedOwner?.device || ownerProof?.device || matches[0]?.device;
+  if (!device || device === "anon" || requestedDevice && requestedDevice !== device)
+    return json({ ok: false, state: "not-held", error: "No uniquely owned server-held entry matches this device and timestamp." }, 409);
+
+  const token = await acquireDeviceQueueLock(env.SALT_LEDGER, device);
+  if (!token) return json({ ok: false, state: "withdrawal-pending", error: "This device queue is changing. Refresh and retry." }, 409);
+  try {
+    records = await deviceQueueRecords(env);
+    matches = records.flatMap(({ device: owner, key: queueKey, record }) =>
+      record.queue.filter((entry) => entry?.at === id)
+        .map((entry) => ({ device: owner, key: queueKey, record, entry })));
+    if (matches.length > 1 || matches.length && matches[0].device !== device)
+      return json({ ok: false, state: "ownership-conflict", error: "The device owner changed; refresh the server-held queue." }, 409);
+    if (matches.length && requestedDevice && matches[0].device !== requestedDevice)
+      return json({ ok: false, state: "ownership-conflict", error: "That entry is not held by this device." }, 409);
+    if (matches.length && await makerRequestFingerprint("server-queue-entry", matches[0].entry) !== body.fingerprint)
+      return json({ ok: false, state: "entry-changed", error: "The server-held entry changed; refresh before withdrawing it." }, 409);
+    if (!ownerProof && matches.length) {
+      const owner = JSON.stringify({ device, fingerprint: body.fingerprint });
+      await env.SALT_LEDGER.prepare(`INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry)
+        VALUES (?1,'queue-owner',?2,?3)`).bind(queueOwnerKey(id), body.fingerprint, owner).run();
+      const saved = await env.SALT_LEDGER.prepare("SELECT operation,fingerprint,entry FROM maker_request WHERE id=?1")
+        .bind(queueOwnerKey(id)).first();
+      let proof;
+      try { proof = JSON.parse(saved?.entry); } catch { proof = null; }
+      if (saved?.operation !== "queue-owner" || saved.fingerprint !== body.fingerprint
+        || proof?.device !== device || proof?.fingerprint !== body.fingerprint)
+        return json({ ok: false, state: "ownership-conflict", error: "The device ownership changed; refresh and retry." }, 409);
+      ownerProof = proof;
+    }
+    const draft = await env.SALT_LEDGER.prepare("SELECT status,committed_at,entry FROM draft WHERE id=?1").bind(id).first();
+    if (draft) {
+      if (draft.status === "rejected") {
+        let drafted;
+        try { drafted = JSON.parse(draft.entry); } catch { drafted = null; }
+        const same = drafted && ownerProof && ownerProof.device === device
+          && await makerRequestFingerprint("server-queue-entry", drafted) === body.fingerprint;
+        if (!same) return json({ ok: false, state: "ownership-conflict", error: "The rejected row does not match this device entry." }, 409);
+        const stillHeld = records.some((item) => item.record.queue.some((entry) => entry?.at === id));
+        if (stillHeld) return json({ ok: false, state: "withdrawal-pending", error: "The rejected row still has a server queue copy; retry after it is dropped." }, 503);
+        return json({ ok: true, state: "rejected", confirmedAbsent: true, withdrawn: id });
+      }
+      return queueDraftConflict(draft);
+    }
+    const refusal = await env.SALT_LEDGER.prepare("SELECT entry FROM refused WHERE id=?1 AND source='cloud-drafter'")
+      .bind(id).first();
+    if (refusal) {
+      let refused;
+      try { refused = JSON.parse(refusal.entry); } catch { refused = null; }
+      if (!refused || await makerRequestFingerprint("server-queue-entry", refused) !== body.fingerprint)
+        return json({ ok: false, state: "entry-changed", error: "The cloud refusal does not match this device entry." }, 409);
+    }
+    if (!matches.length && !refusal && !(requireDevice && ownerProof))
+      return json({ ok: false, state: "not-held", error: "No server-held entry or matching cloud refusal remains." }, 409);
+    const claimed = await claimDeviceQueueWithdrawal(env.SALT_LEDGER, id, device, body.fingerprint);
+    if (claimed.error) {
+      const racedDraft = await env.SALT_LEDGER.prepare("SELECT status,committed_at FROM draft WHERE id=?1").bind(id).first();
+      return queueDraftConflict(racedDraft)
+        || json({ ok: false, state: "ownership-conflict", error: claimed.error }, 409);
+    }
+    if (claimed.response) {
+      let answer;
+      try { answer = JSON.parse(claimed.response); }
+      catch { return json({ ok: false, state: "withdrawal-pending", error: "The saved withdrawal answer is unreadable." }, 503); }
+      return json({ ...answer, again: true });
+    }
+    if (matches.length) {
+      const current = await env.SALT_QUEUE.get(matches[0].key);
+      if (current == null) return json({ ok: false, state: "withdrawal-pending", error: "The server-held device queue changed; retry to finish withdrawal." }, 503);
+      let record;
+      try { record = JSON.parse(current); }
+      catch { return json({ ok: false, state: "withdrawal-pending", error: "The device queue could not be read; withdrawal remains blocked." }, 503); }
+      const same = record?.device === device && Array.isArray(record.queue)
+        && record.queue.filter((entry) => entry?.at === id).length === 1
+        && await makerRequestFingerprint("server-queue-entry", record.queue.find((entry) => entry?.at === id)) === body.fingerprint;
+      if (!same) return json({ ok: false, state: "entry-changed", error: "The device queue changed; withdrawal remains blocked. Refresh the queue." }, 409);
+      const queue = record.queue.filter((entry) => entry?.at !== id);
+      await env.SALT_QUEUE.put(matches[0].key, JSON.stringify({
+        ...record, updated: new Date().toISOString(), queue
+      }));
+      const saved = await env.SALT_QUEUE.get(matches[0].key);
+      let after;
+      try { after = saved == null ? null : JSON.parse(saved); } catch { after = null; }
+      if (!after || after.device !== device || !Array.isArray(after.queue)
+        || after.queue.some((entry) => entry?.at === id))
+        return json({ ok: false, state: "withdrawal-pending", error: "Withdrawal remains blocked from drafting, but queue removal is unverified; retry." }, 503);
+    } else if (!savedOwner && !ownerProof) {
+      return json({ ok: false, state: "not-held", error: "No server-held device entry matches this timestamp." }, 409);
+    }
+    const remaining = (await deviceQueueRecords(env)).some((item) =>
+      item.record.queue.some((entry) => entry?.at === id));
+    if (remaining)
+      return json({ ok: false, state: "withdrawal-pending", error: "Withdrawal remains blocked from drafting, but another device copy is present." }, 409);
+    const answer = { ok: true, state: "withdrawn", withdrawn: id };
+    if (!await finishDeviceQueueWithdrawal(env.SALT_LEDGER, id, device, body.fingerprint, answer))
+      return json({ ok: false, state: "withdrawal-pending", error: "The queue was removed, but the withdrawal answer could not be recorded; retry." }, 503);
+    return json(answer);
+  } catch (error) {
+    return json({ ok: false, state: "withdrawal-pending", error: String(error && error.message || error) }, 503);
+  } finally {
+    await releaseDeviceQueueLock(env.SALT_LEDGER, device, token);
+  }
+}
+
 /* Union of every device's queue, for the drain and for eyeballing behind Access. */
 async function handleQueueGet(env, strict = false) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
@@ -822,7 +1224,19 @@ async function handleQueueGet(env, strict = false) {
   // (or a device that re-posted) never double it.
   const byAt = new Map();
   for (const e of out) byAt.set(e && e.at ? e.at : JSON.stringify(e), e);
-  const queue = [...byAt.values()].sort((a, b) => ((a && a.at) || "") < ((b && b.at) || "") ? -1 : 1);
+  let withdrawn = new Set();
+  if (env.SALT_LEDGER) {
+    try {
+      const receipts = await env.SALT_LEDGER.prepare(
+        "SELECT id FROM maker_request WHERE operation='queue-withdraw'"
+      ).all();
+      withdrawn = new Set((receipts.results || []).map((row) => row.id.slice("queue-withdraw:".length)));
+    } catch (error) {
+      return json({ ok: false, error: "Withdrawal state could not be checked; the queue is unavailable." }, 503);
+    }
+  }
+  const queue = [...byAt.values()].filter((entry) => !withdrawn.has(entry?.at))
+    .sort((a, b) => ((a && a.at) || "") < ((b && b.at) || "") ? -1 : 1);
   return json({ ok: true, entries: queue.length, queue });
 }
 
@@ -1570,7 +1984,7 @@ export default {
      * validated, and nothing else under /stmt/ is let past. */
     if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
     if (!await accessOk(request, env, p, m)) {
-      if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
+      if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
@@ -1593,7 +2007,7 @@ export default {
      *
      * Ordered before the routes rather than added to each handler, so a route added later
      * cannot quietly miss it. */
-    if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
+    if ((p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
       || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users" || p === "/bulletin" || p === "/expected" || p === "/hush"
       || p.startsWith("/claims/")   /* S6: a claim against an account, read and answered like an order */
@@ -1625,6 +2039,15 @@ export default {
       if (m === "POST") return handleQueuePost(request, env, ctx);
       if (m === "GET") return handleQueueGet(env);
       return json({ ok: false, error: "method not allowed" }, 405);
+    }
+    const queueWithdrawal = /^\/queue\/([^/]+)\/withdraw$/.exec(p);
+    if (queueWithdrawal) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      if (!writeOk(request, env)) return needsKey();
+      let id;
+      try { id = decodeURIComponent(queueWithdrawal[1]); }
+      catch { return json({ ok: false, error: "The entry timestamp is invalid.", state: "entry-changed" }, 400); }
+      return withdrawMakerQueueEntry(request, env, id, true);
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
 
