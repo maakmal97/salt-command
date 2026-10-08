@@ -1420,7 +1420,8 @@ decisions use `handleDraftDecide`, so double decisions and site-order effects re
 checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
 and `inputs/place`. On the drift book, `inputs/tier-set` accepts the existing `tierset` shape with a
-numeric `-1..+1` override (zero is held) or `null` to restore automatic record drift; supplier codes
+numeric `-1..+1` override rounded to two decimals like the Desk (zero is held) or `null` to restore
+automatic record drift; supplier codes
 and resale buckets are excluded; level books retain their tier and band shapes, and fixed books
 remain refused. The Counter shows held versus automatic drift from the seeded snapshot and offers
 no control on fixed books. No pricing is done
@@ -1541,6 +1542,13 @@ the official locality point rounded to 0.01 degrees. Ambiguous or unlisted local
 refused and directed to Desk. Amend ID preserves descendant place keys and `_base`, can file
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
+
+Add ID alone also accepts a blank locality, matching Desk and the laptop panel: the code
+uses the deterministic `TBC` suffix (with the existing name-letter clash handling), and the
+encrypted name says `(to be confirmed)`. No locality or approximate point is invented or
+sent. An optional valid Maps/Waze point still goes only into the encrypted places envelope.
+A supplied locality must still resolve officially; a supplied map link must still parse.
+Amend ID and Network placement keep their existing locality requirements. Desk inputs remain.
 
 Legacy KV mode has two non-atomic envelope writes. The pair
 mode supplies all-writer CAS and a durable ID/place outbox. Its schema and code shipped in

@@ -50445,6 +50445,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter blank-locality Add ID: owner device pair and real bridge");
+await (async () => {
+  await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

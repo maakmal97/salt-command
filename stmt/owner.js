@@ -1019,7 +1019,7 @@ export const OWNER_JS = `
       detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
     }
   }
-  function makerButton(parent, label, action, primary){
+  function makerButton(parent, label, action, primary, onSuccess){
     var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
     var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
     cancel.type='button';cancel.hidden=true;
@@ -1051,7 +1051,7 @@ export const OWNER_JS = `
       }
       return refs(pending.path,pending.body).then(function(result){
         if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');
-        makerClear(pending.path);pending=null;cancel.hidden=true;return result;
+        makerClear(pending.path);pending=null;cancel.hidden=true;if(onSuccess)onSuccess();return result;
       },function(error){
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1212,7 +1212,8 @@ export const OWNER_JS = `
   }
   function makerDerivedCode(name, locality, kind, roster, except, parent){
     var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
-    if(!n||!local) return null;
+    if(!n) return null;
+    local=local||'TBC';
     var bits=local.split(/\\s+/), suffix=(bits.length>1?bits.map(function(x){return x.charAt(0);}).join(''):local.slice(0,3)).toUpperCase();
     if(kind==='downstream'){
       if(!parent) return null;
@@ -1455,6 +1456,7 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,'Parent / associate',idParentItems);
     var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
+    idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the locality is confirmed.'));
     var idPass=makerField(id,'Vault passphrase','password','');
     var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
@@ -1481,17 +1483,17 @@ export const OWNER_JS = `
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
-      if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
+      if(!code){idStatus.textContent='Enter a name, or choose the parent for a resale account.';idBusy=false;return;}
       var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
           var pass=idPass.value;
           if(!pass) throw new Error('Enter the vault passphrase on this device.');
-          geo=await makerLocalityPoint(locality);
+          if(locality)geo=await makerLocalityPoint(locality);
           var filed=await makerFiledLink(idLink.value);
           idDraft=await makerPairPrepare(pass,function(maps){
             if(Object.hasOwn(maps.names,code))throw new Error('That code is already filed in the vault. Keep this form and review its identity.');
-            maps.names[code]=name+' ('+locality+')';if(filed)maps.places[code]=filed;
+            maps.names[code]=name+' ('+(locality||'to be confirmed')+')';if(filed)maps.places[code]=filed;
           },idDraft);
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
@@ -1500,7 +1502,8 @@ export const OWNER_JS = `
         if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
         if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
-          parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
+          parent:parentCode,tiers:tiers,vault:envelope};
+         if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
@@ -1524,7 +1527,7 @@ export const OWNER_JS = `
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
-      if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
+      if(!to||!locality){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
       try{
         var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
         var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
@@ -1883,6 +1886,7 @@ export const OWNER_JS = `
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
         var driftPending=false, driftAt=null, driftSignature='';
+        function driftReceiptComplete(){ driftAt=null; driftSignature=''; }
         function driftCardOf(){
           return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
         }
@@ -1910,7 +1914,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent for review. The held drift changes only when folded.'; loadMaker(); }
           catch(error){ driftAnswer.textContent=error.message; }
           driftPending=false;
-        },true);
+        },true,driftReceiptComplete);
         var clearDrift=makerButton(driftActions,'Clear held drift',async function(send){
           if(driftPending) return;
           var body={code:driftCode.value,product:driftProduct.value,tier:null};
@@ -1919,7 +1923,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Clear sent for review. Automatic drift returns when folded.'; loadMaker(); }
           catch(error){ driftAnswer.textContent=error.message; }
           driftPending=false;
-        },false);
+        },false,driftReceiptComplete);
         driftRefresh();
       }
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */

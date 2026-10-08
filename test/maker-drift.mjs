@@ -167,11 +167,21 @@ export async function run({ ok } = {}) {
       }));
     value.value = "0.75"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retried = await waitFor(() => calls.length === 2 && !setButton.disabled && !clearButton.disabled);
-    check(retried && calls[0].body.tier === 0 && calls[1].body.tier === 0,
-      "Retry sends the retained zero unchanged even if the form is edited");
+    check(retried && JSON.stringify(calls[0].body) === JSON.stringify(calls[1].body),
+      "an uncertain retry sends its entire retained drift request unchanged even if the form is edited");
+    const confirmedAt = calls[1].body.at;
+    value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    setButton.click();
+    const repeated = await waitFor(() => calls.length === 3 && !setButton.disabled);
+    check(repeated && calls[2].body.tier === 0 && calls[2].body.at !== confirmedAt,
+      "a successful same-value Set gets a fresh request timestamp on the next intentional tap");
+    value.value = "0.125"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    const rounded = await waitFor(() => calls.length === 4 && !setButton.disabled);
+    check(rounded && calls[3].body.tier === 0.13,
+      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet");
     clearButton.click();
-    const clearSent = await waitFor(() => calls.length === 3);
-    check(clearSent && calls[2].body.tier === null && calls[2].body.product === "salt",
+    const clearSent = await waitFor(() => calls.length === 5);
+    check(clearSent && calls[4].body.tier === null && calls[4].body.product === "salt",
       "Clear sends null through the same endpoint so the record resumes");
     const css = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
     check(/\.maker-drift-actions button\{[^}]*min-width:var\(--salt-tap\)/.test(css),
