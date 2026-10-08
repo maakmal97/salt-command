@@ -230,12 +230,18 @@ export function makerInputCatalog(book, hush = {}) {
     rows: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
       .filter((row) => row && row.rid && !row.cancelled).map((row) => {
         const sale = collection === "sales";
+        const open = POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt"));
+        const movedUnits = sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row);
+        const cancelled = { ...row, cancelled: true };
+        const after = sale ? POSITION_ENGINE.txStat(cancelled) : POSITION_ENGINE.poStat(cancelled);
+        const refund = sale ? POSITION_ENGINE.refundOnCancel([], cancelled) : null;
         return { rid: row.rid, direction: sale ? "SELL" : "BUY", party: row[sale ? "customer" : "supplier"],
           ...(row.defaulted ? { defaulted: true } : {}),
           product: row.product || "salt", date: row.date || null, qty: row.qty, total: row.total,
           cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
-          movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row),
-          open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")) };
+          movedUnits, open,
+          cancellation: open && !row.defaulted && movedUnits <= 0.009
+            ? { pay: after.pay, deliv: after.deliv, order: after.order, refundRM: refund ? refund.amount : null } : null };
       })),
     revivable: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
       .filter((row) => row && row.rid && row.cancelled).map((row) => {
