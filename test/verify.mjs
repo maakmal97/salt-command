@@ -50417,6 +50417,10 @@ await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
   await (await import("./maker-claim-covered.mjs")).run({ ok });
 })();
+section("Counter maker cash Undo: ten seconds, hide and leave flush, immutable retry");
+await (async () => {
+  await (await import("./maker-cash-undo.mjs")).run({ ok });
+})();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });

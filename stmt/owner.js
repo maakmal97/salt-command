@@ -1623,6 +1623,118 @@ export const OWNER_JS = `
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
   }
+  var MAKER_CASH_MS=10000, makerCashHeld={}, makerCashSaid={};
+  var MAKER_CASH_PREFIX='saltMakerCash:', makerCashStorageError='';
+  function makerCashSave(id,held){
+    var key=MAKER_CASH_PREFIX+id, old=localStorage.getItem(key);
+    if(old&&JSON.parse(old).body!==held.body)throw new Error('Another cash request is retained for this order. Reload to recover it; nothing new was sent.');
+    localStorage.setItem(key,JSON.stringify({v:1,id:id,body:held.body,beforePaid:held.beforePaid,confirmed:!!held.confirmed}));
+  }
+  function makerCashRestore(){
+    try{
+      Object.keys(localStorage).filter(function(key){return key.indexOf(MAKER_CASH_PREFIX)===0;}).forEach(function(key){
+        var saved=JSON.parse(localStorage.getItem(key)), body=JSON.parse(saved.body), id=key.slice(MAKER_CASH_PREFIX.length);
+        if(saved.v!==1||saved.id!==id||typeof saved.confirmed!=='boolean'||!Number.isFinite(saved.beforePaid)||saved.beforePaid<0
+          ||!(/^[0-9a-f]{32}$/).test(body.rid)||!Number.isFinite(body.amount)||body.amount<=0.004
+          ||Object.keys(body).sort().join(',')!=='amount,rid')throw new Error('Retained cash is unreadable. No new cash can be sent until it is recovered.');
+        if(!makerCashHeld[id]){
+          makerCashHeld[id]={amount:body.amount,body:saved.body,beforePaid:saved.beforePaid,confirmed:saved.confirmed,sent:true,busy:false};
+          makerCashSaid[id]=saved.confirmed?'Recorded, refresh pending.':'Confirmation not received. Retry the same cash amount.';
+        }
+      });
+      makerCashStorageError='';
+    }catch(error){makerCashStorageError=error.message;}
+  }
+  function makerCashReconcile(data){
+    Object.keys(makerCashHeld).forEach(function(id){
+      var held=makerCashHeld[id], order=(data.orders||[]).filter(function(o){return o.id===id;})[0];
+      if(held.confirmed&&order&&Number(order.paid||0)+0.004>=held.beforePaid+held.amount){
+        localStorage.removeItem(MAKER_CASH_PREFIX+id);delete makerCashHeld[id];
+        makerCashSaid[id]='Recorded: '+rm(held.amount)+' in cash. '+rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))+' still owed.';
+      }
+    });
+  }
+  function makerCashLeft(id){
+    var held=makerCashHeld[id];
+    return held?Math.max(0,Math.ceil((held.until-Date.now())/1000)):0;
+  }
+  function makerCashHold(order,amount){
+    makerCashRestore();
+    if(makerCashStorageError){drawMaker();return;}
+    if(makerCashHeld[order.id]) return;
+    var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);
+    if(!Number.isFinite(amount)||amount<=0.004||amount>due+0.004){
+      makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed. Nothing was sent.';drawMaker();return;
+    }
+    var held={amount:amount,beforePaid:Number(order.paid||0),until:Date.now()+MAKER_CASH_MS,sent:false,busy:false};
+    makerCashHeld[order.id]=held;delete makerCashSaid[order.id];
+    held.timer=setTimeout(function(){ makerCashGo(order.id); },MAKER_CASH_MS);
+    held.tick=setInterval(function(){
+      var node=document.querySelector('[data-maker-cash-left="'+order.id+'"]');
+      if(node)node.textContent=String(makerCashLeft(order.id));
+    },1000);
+    drawMaker();
+  }
+  function makerCashUndo(id){
+    var held=makerCashHeld[id];if(!held||held.sent)return;
+    clearTimeout(held.timer);clearInterval(held.tick);delete makerCashHeld[id];
+    makerCashSaid[id]='Undone: nothing was sent, and the order is as it was.';drawMaker();
+  }
+  async function makerCashGo(id){
+    var held=makerCashHeld[id];if(!held||held.busy||held.confirmed)return;
+    held.busy=true;held.sent=true;
+    clearTimeout(held.timer);clearInterval(held.tick);
+    /* After transport starts, every retry carries these exact bytes, never the edited field. */
+    if(!held.body)held.body=JSON.stringify({rid:mintRid(),amount:held.amount});
+    makerCashSaid[id]='Sending.';drawMaker();
+    try{
+      makerCashSave(id,held);
+      var response=await fetch('/all/maker/orders/'+encodeURIComponent(id)+'/cash',{
+        method:'POST',headers:{'content-type':'application/json'},body:held.body,redirect:'manual',keepalive:true
+      });
+      if(response.type==='opaqueredirect'||response.status===401){ended();throw new Error(ENDED);}
+      var result=await response.json();
+      if(!response.ok||!result.ok)throw new Error(result.error||'Cash confirmation was refused.');
+      held.confirmed=true;
+      makerCashSaid[id]='Recorded, refresh pending.';
+      makerCashSave(id,held);
+      await loadMaker();
+    }catch(error){
+      makerCashSaid[id]=(held.confirmed?'Recorded, refresh pending. ':'Confirmation not received. Retry the same cash amount: ')+error.message;
+    }finally{held.busy=false;drawMaker();}
+  }
+  function makerCashFlush(){
+    return Promise.all(Object.keys(makerCashHeld).filter(function(id){return !makerCashHeld[id].sent;}).map(makerCashGo));
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')makerCashFlush();});
+  window.addEventListener('pagehide',function(){makerCashFlush();});
+  function makerCashControls(card,order){
+    var held=makerCashHeld[order.id], note=el('p','salt-insight');
+    note.setAttribute('role','status');note.setAttribute('data-maker-cash-status',order.id);
+    if(held){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      if(!held.sent){
+        note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+': it goes in '));
+        var left=el('span',null,String(makerCashLeft(order.id)));left.setAttribute('data-maker-cash-left',order.id);
+        note.appendChild(left);note.appendChild(document.createTextNode(' s. Undo sends nothing.'));
+        makerClaimButton(card,'Undo',function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');
+      }else{
+        note.textContent=makerCashSaid[order.id]||'Sending.';
+        var retry=makerClaimButton(card,held.confirmed?'Refresh cash':'Retry cash',function(){
+          return held.confirmed?loadMaker():makerCashGo(order.id);
+        },true);
+        retry.disabled=held.busy;retry.setAttribute('data-maker-cash-retry','');
+      }
+    }else if(makerCashStorageError){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      note.textContent=makerCashStorageError;
+    }else{
+      var cash=makerField(card,'Cash received (RM)','number','');
+      makerButton(card,'Record cash',function(){makerCashHold(order,Number(cash.value));},false);
+      note.textContent=makerCashSaid[order.id]||'';
+    }
+    card.appendChild(note);
+  }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   function makerAgain(card,order){
@@ -1982,13 +2094,19 @@ export const OWNER_JS = `
     var status=document.getElementById('makerReviewStatus');
     if(status) status.textContent='Reading orders and rows…';
     try{
-      makerData=await refs('/all/maker/review');
+      makerCashRestore();
+      var reading=await refs('/all/maker/review');
+      makerCashReconcile(reading);makerData=reading;
       drawMaker();
-    }catch(error){ if(status) status.textContent=error.message; }
+    }catch(error){ drawMaker();if(status) status.textContent=error.message; }
   }
   function drawMaker(){
     var root=document.getElementById('makerReview'), status=document.getElementById('makerReviewStatus');
-    if(!root||!makerData) return;
+    if(!root) return;
+    if(!makerData){
+      if(!Object.keys(makerCashHeld).length&&!makerCashStorageError)return;
+      makerData={orders:[],drafts:[]};
+    }
     root.textContent='';
     var open=(makerData.orders||[]).filter(function(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; });
     if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
@@ -2048,10 +2166,6 @@ export const OWNER_JS = `
           if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
           makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
         },false).setAttribute('data-close','');
-        var cash=makerField(card,'Cash received (RM)','number','');
-        makerButton(card,'Record cash',function(){
-          makerTap(order,'cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
-        },false);
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
@@ -2086,6 +2200,11 @@ export const OWNER_JS = `
       }
       makerAgain(card,order);
       makerOrderMoves(card,order);
+      if(order.status==='ready'&&!againAck)makerCashControls(card,order);
+    });
+    Object.keys(makerCashHeld).filter(function(id){return !open.some(function(o){return o.id===id;});}).forEach(function(id){
+      var card=makerCard(root);card.appendChild(el('h3',null,id));
+      makerCashControls(card,{id:id});
     });
     /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
     (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){
