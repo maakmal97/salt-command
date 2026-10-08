@@ -1,7 +1,7 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
-import { rowRoom, siteWords } from "./orders.js";
+import { cardAt, rowRoom, siteWords } from "./orders.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
 const DESK_ONLY_FIELDS = ["note", "settle"];
@@ -206,8 +206,7 @@ export function makerCoverPlan(body, book, pending = []) {
   const reward = rewardFree(book, body.party, body.product, pending.filter((entry) => entry.at !== body.at));
   const snapshot = book.pricing?.byProduct?.[body.product], inputs = snapshot?.inputs;
   if (reward.error || reward.associate || !inputs || inputs.policy?.tierRule?.fixed) return null;
-  const ask = PRICING_ENGINE.quoteAt(body.qty, PRICING_ENGINE.costStack(inputs.cost), inputs.policy,
-    snapshot.partners?.includes(body.party) ? "partner" : snapshot.drift?.[body.party] ?? 0);
+  const ask = cardAt(book.pricing, body.party, body.product, body.qty).card;
   return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
 }
 

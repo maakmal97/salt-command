@@ -245,7 +245,7 @@ const priceOf = (b) => {
   return { price: +t.toFixed(2) };
 };
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
-function cardAt(pricing, code, product, qty) {
+export function cardAt(pricing, code, product, qty) {
   const snap = pricing && pricing.byProduct && pricing.byProduct[product];
   if (!snap || !snap.cards) return { card: null, cardNote: "the pricing snapshot carries no cards yet: the next re-seed brings them" };
   const fixed = (snap.ladder || []).some((r) => r && r.fixed);

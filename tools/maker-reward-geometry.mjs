@@ -28,26 +28,37 @@ let browser, failures = 0;
 try {
   browser = await chromium.launch(process.env.SALT_BROWSER ? { executablePath: process.env.SALT_BROWSER } : {});
   for (const width of [1280, 390]) {
+    for (const mode of ["first", "extra"]) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
     await page.goto("http://127.0.0.1:" + server.address().port);
     await page.locator('button[data-m="maker"]:visible').last().click();
     const trade = page.locator(".maker-input").filter({ has: page.getByRole("heading", { name: "Sale or purchase", exact: true }) });
     await trade.getByLabel("Goods total (RM)", { exact: true }).fill(String(wd.ask - 30));
+    if (mode === "extra") {
+      await trade.locator("label").filter({ hasText: /^Book/ }).first().locator("select").selectOption("oil");
+      await trade.getByRole("button", { name: "Add another book", exact: true }).click();
+      await trade.getByLabel("Goods total (RM)", { exact: true }).last().fill(String(wd.ask - 30));
+    }
     await trade.locator(".maker-cover:visible").waitFor();
     const selector = ".maker-reward button:not([hidden]), .maker-cover:visible input";
-    const controls = page.locator(selector);
+    const controls = page.locator(selector).or(page.getByRole("button", { name: "Read reward offers", exact: true }));
     const n = await controls.count();
     if (n < 2) throw new Error("Missing generated reward/cover controls.");
     const measure = async () => {
       const rows = [];
       for (let i = 0; i < n; i++) {
-        const control = controls.nth(i);await control.scrollIntoViewIfNeeded();
+        const control = controls.nth(i);
+        await control.evaluate((node) => node.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
         rows.push(await control.evaluate((node) => {
           const r = node.getBoundingClientRect();
           return { label: node.textContent || node.parentNode.textContent, w: r.width, h: r.height,
             hits: [[0, 0], [-21, 0], [21, 0], [0, -21], [0, 21]].map(([x, y]) => {
               const hit = document.elementFromPoint(r.left + r.width / 2 + x, r.top + r.height / 2 + y);
               return hit === node || node.contains(hit);
+            }), blocked: [[0, 0], [-21, 0], [21, 0], [0, -21], [0, 21]].flatMap(([x, y]) => {
+              const hit = document.elementFromPoint(r.left + r.width / 2 + x, r.top + r.height / 2 + y);
+              return hit === node || node.contains(hit) ? [] : [{ x, y, tag: hit?.tagName, cls: hit?.className,
+                top: r.top, bottom: r.bottom, label: hit?.textContent.slice(0, 60) }];
             }) };
         }));
       }
@@ -55,14 +66,15 @@ try {
     };
     const base = await measure();
     const green = base.every((r) => r.w >= 44 && r.h >= 44 && r.hits.every(Boolean));
-    console.log(JSON.stringify({ width, controls: base, green }));
+    console.log(JSON.stringify({ width, mode, controls: base, green }));
     if (!green) failures++;
-    const style = await page.addStyleTag({ content: ".maker-reward button,.maker-cover input{box-sizing:border-box!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;padding:0!important}" });
+    const style = await page.addStyleTag({ content: ".maker-reward button,.maker-rewards~button,.maker-cover input{box-sizing:border-box!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;padding:0!important;overflow:hidden!important}" });
     const red = await measure();
     const detected = red.every((r) => r.w === 20 && r.h === 20 && !r.hits.every(Boolean));
-    console.log(JSON.stringify({ width, mutationDetected: detected, controls: red }));
+    console.log(JSON.stringify({ width, mode, mutationDetected: detected, controls: red }));
     if (!detected) failures++;
     await style.evaluate((node) => node.remove());await page.close();
+    }
   }
 } finally {
   await browser?.close();await new Promise((done) => server.close(done));

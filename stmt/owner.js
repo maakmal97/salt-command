@@ -1976,9 +1976,13 @@ export const OWNER_JS = `
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
+        coverChoices.forEach(function(choice){choice.read();});
       }
       direction.addEventListener('change',fillTradeChoices);
-      tradeProduct.addEventListener('change',function(){extraTrades.forEach(function(extra){extraChoices(extra.product);});});
+      tradeProduct.addEventListener('change',function(){
+        extraTrades.forEach(function(extra){extraChoices(extra.product);});
+        coverChoices.forEach(function(choice){choice.read();});
+      });
       fillTradeChoices();
       async function submitTrade(confirmedTwin,send){
         if(tradePending) return;

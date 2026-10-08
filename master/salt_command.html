@@ -5177,7 +5177,9 @@ function rewardUnits(total,unit){
 }
 function rewardAccount(book,id,product='salt'){
   const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
-  if(!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)return {error:'This book has no configured reward.'};
+  const products=state.PRODUCTS||{},stated=Object.values(products).some(p=>p&&typeof p.reward==='boolean');
+  if(stated&&!(products[product]||{}).reward||!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)
+    return {error:'This book has no configured reward.'};
   const allSales=book.sales||[],sales=allSales.filter(s=>(s.product||'salt')===product);
   const introductions=state.INTRODUCTIONS||[];
   const associate=(state.associates||[]).includes(id)

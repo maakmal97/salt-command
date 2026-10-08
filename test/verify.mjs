@@ -50439,6 +50439,21 @@ await (async () => {
   await (await import("./maker-reward-parity.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter extra-book cover: generated control to approved native fold");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runExtra({ ok, pageWork });
+})();
+
+section("Counter cover recovery: durable source before queue transport");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runRecovery({ ok });
+})();
+
+section("Counter resource batches: atomic capacity, ownership and withdrawal fence");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok });
+})();
+
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
 await (async () => {
   await (await import("./d1-fail-closed.mjs")).run({ ok });
