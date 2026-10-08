@@ -45700,7 +45700,9 @@ await (async () => {
     const movedCancel = await editCall({ ...cancelBody, at: "2026-09-29T19:08:00.000Z", rid: movedRow.rid });
     const cancelEntry = JSON.parse(countDb.prepare("SELECT entry FROM draft WHERE id=?").get(cancelBody.at)?.entry || "{}");
     ok(cancelled.status === 200 && movedCancel.status === 400 && cancelEntry.payload.cash === null
-      && cancelEntry.payload.kg === null && cancelEntry.payload.kind === "Cancellation",
+      && cancelEntry.payload.kg === null && cancelEntry.payload.kind === "Cancellation"
+      && cancelEntry.payload.qty === null && cancelEntry.payload.total === null
+      && cancelEntry.qty === null && cancelEntry.total === null && cancelEntry.status === "cancelled",
       "Counter cancellation moves no money or units and refuses a row whose goods have moved");
     const twinPayment = await editCall({ ...fulfilBody, at: "2026-09-29T19:09:00.000Z",
       rid: movedRow.rid, cash: 60, movedUnits: 0 });
@@ -47368,6 +47370,86 @@ await (async () => {
   ok(folded.ok && cl && cl.status === "settled" && cl.settledOn === "2099-06-03" && (cl.repaid || [])[0] && cl.repaid[0].rm === 400,
     "and settles the cash loan when the full ringgit owing is repaid");
 })();
+section("v457: the Counter cancellation constructor discards stale movement figures");
+await (async () => {
+  const { default: engine } = await import("../engine/position.mjs");
+  const entry = engine.ledgerAmendmentEntry({
+    at: "2026-09-01T01:00:00.000Z", direction: "SELL", kind: "Cancellation", date: "2026-09-01",
+    row: { rid: "v457-cancel", customer: "CX9-RSD", qty: 2, total: 450, cash: 450, deliveredQty: 0 },
+    cash: 400, movedUnits: 1
+  });
+  ok(entry.status === "cancelled" && entry.payload.kind === "Cancellation" && entry.payload.qty === null
+    && entry.payload.total === null && entry.payload.cash === null && entry.payload.kg === null,
+    "Counter's native Cancellation payload discards stale cash and units instead of booking a movement");
+  ok(entry.qty === null && entry.total === null,
+    "Counter's native Cancellation entry itself carries no movement figures");
+})();
+
+section("v495: retained ledger layout and provisional disclosure survive input retirement");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.eval("sales.push({customer:'CX9-PROV',qty:1,total:100,cash:100,deliveredQty:1,"
+      + "date:'2026-09-01',rid:'v495-prov',_prov:true});setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
+    const areas = (selector) => String(w.eval("getComputedStyle(document.querySelector(" + JSON.stringify(selector)
+      + ")).gridTemplateAreas")).split('"').filter((value, index) => index % 2 === 1).map((row) => row.trim().split(/\s+/));
+    const opening = areas(".sec.on .lcard .lrow"), step = areas(".sec.on .lcard .lmove");
+    ok(opening.length === 2 && ["e", "date", "party", "prod", "qty", "price", "tot", "state"]
+      .every((area) => opening[0].includes(area)),
+      "the retained ledger opening row shows entry, date, party, product, units, price, total and state");
+    ok(opening.length === 2 && opening[1][0] === "step" && opening[1].includes("type")
+      && opening[1].at(-1) === "act" && !opening[1].includes("prod"),
+      "the retained ledger second row opens with the step and keeps type and end cell separate from product");
+    ok(step.length === 1 && step[0].includes("step") && !step[0].includes("act"),
+      "a retained ledger movement stays on one row");
+    const provisional = JSON.parse(w.eval(`JSON.stringify((function(){
+      var card=document.querySelector('.lcard[data-rid=v495-prov]'),pill=card.querySelector('.tag.prov');
+      return {corner:!!card.querySelector('.lprov.tag.prov'),product:!!card.querySelector('.lc-prod .tag.prov'),
+        pen:!!card.querySelector('button.lpen'),border:pill?getComputedStyle(pill).borderTopStyle:null,
+        background:pill?getComputedStyle(pill).backgroundColor:null};})())`));
+    ok(provisional.corner && !provisional.product && !provisional.pen,
+      "a provisional ledger row still discloses its state at the corner without a write pen");
+    ok(provisional.border === "dotted" && /transparent|rgba\(0, 0, 0, 0\)/.test(provisional.background),
+      "the retained provisional disclosure is dotted with no filled ground");
+  } finally { w.close(); }
+})();
+
+section("v309: refusals remain readings and never increase the waiting count");
+await (async () => {
+  await (await import("./maker-refused-reading.mjs")).run({ ok });
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.eval("ORD_OPEN=[];queue=[];AP_DRAFTS=[{id:'v309-draft'}];AP_REFUSED=[{id:'v309-refused'}];");
+    ok(w.eval("enterCount()") === 1,
+      "the retained waiting-count reading counts one pending draft and no refused entry");
+    w.eval("queue=[{at:'v309-queued',type:'SELL'}];");
+    ok(w.eval("enterCount()===qTx().length+AP_DRAFTS.length"),
+      "the retained waiting-count reading counts the queue and drafts but never refusals");
+  } finally { w.close(); }
+})();
+
+section("v419: read-only overlay refuses delivered cancellation without hiding its reason");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    w.eval(`setProd('salt');sales.push(
+      {rid:'v419-moved',customer:'CZ9-OVR',qty:2,total:200,cost:50,cash:0,deliveredQty:1},
+      {rid:'v419-open',customer:'CZ9-OVR',qty:2,total:200,cost:50,cash:0,deliveredQty:0});recompute();`);
+    const read = (expression) => JSON.parse(w.eval("JSON.stringify(" + expression + ")"));
+    w.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:'v419-moved'},{at:'v419-a'})");
+    ok(read("sales.find(function(row){return row.rid==='v419-moved';}).cancelled!==true"),
+      "the read-only overlay does not cancel a sale whose goods moved");
+    ok(/not applied.*already been delivered/.test(w.eval("provNotes[provNotes.length-1]")),
+      "the read-only overlay explicitly records why a delivered cancellation was not applied");
+    w.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:'v419-open'},{at:'v419-b'})");
+    ok(read("sales.find(function(row){return row.rid==='v419-open';}).cancelled===true"),
+      "the same read-only overlay still cancels an untouched sale");
+  } finally { w.close(); }
+})();
+
 section("v528: laptop pull preserves the vault's names without inventing empty entries");
 await (async () => {
   const { mergeBio } = await import("../tools/pull-vault.mjs");
@@ -47378,6 +47460,31 @@ await (async () => {
     && merged.bio.bio["CB2-Y"].raw === "Filled (Now)" && merged.bio.bio["CC3-Z"].raw === "Added (Place)"
     && !("CD4-W" in merged.bio.bio),
     "the pull adds absent and blank directory names, keeps the previous spelling, takes the vault's spelling and skips an empty name");
+})();
+
+section("v528: Counter Add ID fails closed before encrypted identity registration");
+await (async () => {
+  await (await import("./maker-id-safety.mjs")).run({ ok });
+})();
+
+section("v528: a retired browser names vault never outranks the served envelope");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { vaultEncrypt } = await import("../tools/seed-vault.mjs");
+  const oldEnvelope = await vaultEncrypt("invented-vault-pass", { "CX1-OLD": "Invented old" });
+  const newEnvelope = await vaultEncrypt("invented-vault-pass", {
+    "CX1-OLD": "Invented old", "CX2-NEW": "Invented new"
+  });
+  const { w } = await openMaster();
+  try {
+    w.eval("localStorage.setItem('saltNameVault'," + JSON.stringify(JSON.stringify(oldEnvelope)) + ");"
+      + "NAME_VAULT=" + JSON.stringify(oldEnvelope) + ";qSyncState='server';"
+      + "window.fetch=function(){return Promise.resolve({ok:true,json:function(){return Promise.resolve({ok:true,vault:"
+      + JSON.stringify(newEnvelope) + "});}});};");
+    await w.eval("vaultLoad()");
+    ok(w.eval("JSON.stringify(NAME_VAULT)") === JSON.stringify(newEnvelope),
+      "the read-only Desk loads the served names envelope despite an older retired browser copy");
+  } finally { w.close(); }
 })();
 
 section("v628: Amend ID re-keys a party through Approve, and the name moves in the vault");

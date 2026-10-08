@@ -2173,6 +2173,10 @@ export const OWNER_JS = `
     (makerData.refused||[]).forEach(function(refused){
       var card=makerCard(root); card.appendChild(el('h3','','Refused entry'));
       card.appendChild(el('p','salt-insight',refused.why||'This entry was refused by the drafter.'));
+      var refusedMeta=[];
+      if(refused.source)refusedMeta.push(refused.source);
+      if(refused.seenAt)refusedMeta.push(stampDay(refused.seenAt));
+      if(refusedMeta.length)card.appendChild(el('p','msg',refusedMeta.join(' · ')));
     });
     makerButton(root,'Refresh',loadMaker,false);
   }

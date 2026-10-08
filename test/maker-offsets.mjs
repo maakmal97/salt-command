@@ -75,7 +75,7 @@ export async function run({ ok }) {
     heldBook.state.PEOPLE = heldBook.state.PEOPLE || {};
     heldBook.state.PEOPLE.departed = [...(heldBook.state.PEOPLE.departed || []), { id: "CM4-TO", since: today }];
     w.eval("PEOPLE.departed.push({id:'CM4-TO',since:" + JSON.stringify(today) + "});recompute();");
-    const heldStats = w.eval("(function(){var r=networkStats().find(function(x){return x.id==='CM4-TO';});return r?{earned:r.earned,margin:r.marginTotal}:null;})()");
+    const heldStats = w.eval("(function(){var r=networkStats().find(function(x){return x.id==='CM4-TO';});return r?{earned:r.earned,margin:r.marginTotal,taken:rebateApplied('CM4-TO')}:null;})()");
     const heldCard = String(w.eval("resellerCard(networkStats().find(function(x){return x.id==='CM4-TO';}))"));
     const redemption = { at: "2026-10-05T01:02:30.000Z", payload: { mode: "redeem", product: "salt", party: "CM4-TO",
       qty: 1, date: today, earned: 1, applied: 0, balance: 1 } };
@@ -88,8 +88,8 @@ export async function run({ ok }) {
       { ...heldBook, state: { ...heldBook.state, PEOPLE: { ...heldBook.state.PEOPLE, departed: [] } } }, advance, true).errs.join(" ");
     const undoRedemption = checkCorrection({ rebate: false, rebateKg: 0 }, heldBook,
       { ...advance, rebate: true, rebateKg: 1 }, true).errs.join(" ");
-    ok(heldStats && heldStats.earned > 0 && heldStats.margin > 0,
-      "a departed associate keeps earning from their recorded margin: " + JSON.stringify(heldStats));
+    ok(heldStats && heldStats.earned > 0 && heldStats.margin > 0 && heldStats.taken === 0,
+      "a departed associate keeps earning from their recorded margin without consuming the held reward: " + JSON.stringify(heldStats));
     ok(/has departed/.test(blockedRedemption.skip || ""),
       "the drafter refuses a departed holder's redemption");
     ok(!allowedRedemption.skip && allowedRedemption.row,
