@@ -217,8 +217,12 @@ export function makerInputCatalog(book, hush = {}, pending = []) {
     const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
     const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
     const cost = costFor(book, product).cost;
+    const driftPresets = rule && rule.drift && object(rule.presets)
+      ? Object.entries(rule.presets).filter(([name, value]) => typeof name === "string" && name
+        && PRICING_ENGINE.driftOk(value)).map(([name, value]) => ({ name, value }))
+      : [];
     return { product, tiered: !!rule && !rule.fixed && !rule.drift, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
-      saleReady: cost > 0, purchaseReady: cost !== null };
+      ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
     version: book.version, products, parties: roster,

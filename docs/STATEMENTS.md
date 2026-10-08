@@ -1424,8 +1424,11 @@ numeric `-1..+1` override rounded to two decimals like the Desk (zero is held) o
 automatic record drift; supplier codes
 and resale buckets are excluded; level books retain their tier and band shapes, and fixed books
 remain refused. The Counter shows held versus automatic drift from the seeded snapshot and offers
-no control on fixed books. No pricing is done
-on this road. These inputs use the existing Position Engine constructors and drafter checks, go
+no control on fixed books. Add ID is separate: drift books offer Automatic by default, the active
+rule's presets and a typed `-1..+1` starting drift; a valid choice travels in the existing `addid`
+entry and pair-vault route, while an invalid typed value is refused before vault preparation.
+Automatic leaves the drift unset. No pricing is done on either road. These inputs use the existing
+Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
 eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
