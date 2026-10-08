@@ -1240,7 +1240,8 @@ export const OWNER_JS = `
   }
   function makerDerivedCode(name, locality, kind, roster, except, parent){
     var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
-    if(!n||!local) return null;
+    if(!n) return null;
+    local=local||'TBC';
     var bits=local.split(/\\s+/), suffix=(bits.length>1?bits.map(function(x){return x.charAt(0);}).join(''):local.slice(0,3)).toUpperCase();
     if(kind==='downstream'){
       if(!parent) return null;
@@ -1483,6 +1484,7 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,'Parent / associate',idParentItems);
     var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
+    idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the locality is confirmed.'));
     var idPass=makerField(id,'Vault passphrase','password','');
     var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
@@ -1509,17 +1511,17 @@ export const OWNER_JS = `
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
-      if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
+      if(!code){idStatus.textContent='Enter a name, or choose the parent for a resale account.';idBusy=false;return;}
       var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
           var pass=idPass.value;
           if(!pass) throw new Error('Enter the vault passphrase on this device.');
-          geo=await makerLocalityPoint(locality);
+          if(locality)geo=await makerLocalityPoint(locality);
           var filed=await makerFiledLink(idLink.value);
           idDraft=await makerPairPrepare(pass,function(maps){
             if(Object.hasOwn(maps.names,code))throw new Error('That code is already filed in the vault. Keep this form and review its identity.');
-            maps.names[code]=name+' ('+locality+')';if(filed)maps.places[code]=filed;
+            maps.names[code]=name+' ('+(locality||'to be confirmed')+')';if(filed)maps.places[code]=filed;
           },idDraft);
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
@@ -1528,7 +1530,8 @@ export const OWNER_JS = `
         if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
         if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
-          parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
+          parent:parentCode,tiers:tiers,vault:envelope};
+         if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
@@ -1552,7 +1555,7 @@ export const OWNER_JS = `
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
-      if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
+      if(!to||!locality){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
       try{
         var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
         var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
@@ -1647,6 +1650,118 @@ export const OWNER_JS = `
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+  }
+  var MAKER_CASH_MS=10000, makerCashHeld={}, makerCashSaid={};
+  var MAKER_CASH_PREFIX='saltMakerCash:', makerCashStorageError='';
+  function makerCashSave(id,held){
+    var key=MAKER_CASH_PREFIX+id, old=localStorage.getItem(key);
+    if(old&&JSON.parse(old).body!==held.body)throw new Error('Another cash request is retained for this order. Reload to recover it; nothing new was sent.');
+    localStorage.setItem(key,JSON.stringify({v:1,id:id,body:held.body,beforePaid:held.beforePaid,confirmed:!!held.confirmed}));
+  }
+  function makerCashRestore(){
+    try{
+      Object.keys(localStorage).filter(function(key){return key.indexOf(MAKER_CASH_PREFIX)===0;}).forEach(function(key){
+        var saved=JSON.parse(localStorage.getItem(key)), body=JSON.parse(saved.body), id=key.slice(MAKER_CASH_PREFIX.length);
+        if(saved.v!==1||saved.id!==id||typeof saved.confirmed!=='boolean'||!Number.isFinite(saved.beforePaid)||saved.beforePaid<0
+          ||!(/^[0-9a-f]{32}$/).test(body.rid)||!Number.isFinite(body.amount)||body.amount<=0.004
+          ||Object.keys(body).sort().join(',')!=='amount,rid')throw new Error('Retained cash is unreadable. No new cash can be sent until it is recovered.');
+        if(!makerCashHeld[id]){
+          makerCashHeld[id]={amount:body.amount,body:saved.body,beforePaid:saved.beforePaid,confirmed:saved.confirmed,sent:true,busy:false};
+          makerCashSaid[id]=saved.confirmed?'Recorded, refresh pending.':'Confirmation not received. Retry the same cash amount.';
+        }
+      });
+      makerCashStorageError='';
+    }catch(error){makerCashStorageError=error.message;}
+  }
+  function makerCashReconcile(data){
+    Object.keys(makerCashHeld).forEach(function(id){
+      var held=makerCashHeld[id], order=(data.orders||[]).filter(function(o){return o.id===id;})[0];
+      if(held.confirmed&&order&&Number(order.paid||0)+0.004>=held.beforePaid+held.amount){
+        localStorage.removeItem(MAKER_CASH_PREFIX+id);delete makerCashHeld[id];
+        makerCashSaid[id]='Recorded: '+rm(held.amount)+' in cash. '+rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))+' still owed.';
+      }
+    });
+  }
+  function makerCashLeft(id){
+    var held=makerCashHeld[id];
+    return held?Math.max(0,Math.ceil((held.until-Date.now())/1000)):0;
+  }
+  function makerCashHold(order,amount){
+    makerCashRestore();
+    if(makerCashStorageError){drawMaker();return;}
+    if(makerCashHeld[order.id]) return;
+    var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);
+    if(!Number.isFinite(amount)||amount<=0.004||amount>due+0.004){
+      makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed. Nothing was sent.';drawMaker();return;
+    }
+    var held={amount:amount,beforePaid:Number(order.paid||0),until:Date.now()+MAKER_CASH_MS,sent:false,busy:false};
+    makerCashHeld[order.id]=held;delete makerCashSaid[order.id];
+    held.timer=setTimeout(function(){ makerCashGo(order.id); },MAKER_CASH_MS);
+    held.tick=setInterval(function(){
+      var node=document.querySelector('[data-maker-cash-left="'+order.id+'"]');
+      if(node)node.textContent=String(makerCashLeft(order.id));
+    },1000);
+    drawMaker();
+  }
+  function makerCashUndo(id){
+    var held=makerCashHeld[id];if(!held||held.sent)return;
+    clearTimeout(held.timer);clearInterval(held.tick);delete makerCashHeld[id];
+    makerCashSaid[id]='Undone: nothing was sent, and the order is as it was.';drawMaker();
+  }
+  async function makerCashGo(id){
+    var held=makerCashHeld[id];if(!held||held.busy||held.confirmed)return;
+    held.busy=true;held.sent=true;
+    clearTimeout(held.timer);clearInterval(held.tick);
+    /* After transport starts, every retry carries these exact bytes, never the edited field. */
+    if(!held.body)held.body=JSON.stringify({rid:mintRid(),amount:held.amount});
+    makerCashSaid[id]='Sending.';drawMaker();
+    try{
+      makerCashSave(id,held);
+      var response=await fetch('/all/maker/orders/'+encodeURIComponent(id)+'/cash',{
+        method:'POST',headers:{'content-type':'application/json'},body:held.body,redirect:'manual',keepalive:true
+      });
+      if(response.type==='opaqueredirect'||response.status===401){ended();throw new Error(ENDED);}
+      var result=await response.json();
+      if(!response.ok||!result.ok)throw new Error(result.error||'Cash confirmation was refused.');
+      held.confirmed=true;
+      makerCashSaid[id]='Recorded, refresh pending.';
+      makerCashSave(id,held);
+      await loadMaker();
+    }catch(error){
+      makerCashSaid[id]=(held.confirmed?'Recorded, refresh pending. ':'Confirmation not received. Retry the same cash amount: ')+error.message;
+    }finally{held.busy=false;drawMaker();}
+  }
+  function makerCashFlush(){
+    return Promise.all(Object.keys(makerCashHeld).filter(function(id){return !makerCashHeld[id].sent;}).map(makerCashGo));
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')makerCashFlush();});
+  window.addEventListener('pagehide',function(){makerCashFlush();});
+  function makerCashControls(card,order){
+    var held=makerCashHeld[order.id], note=el('p','salt-insight');
+    note.setAttribute('role','status');note.setAttribute('data-maker-cash-status',order.id);
+    if(held){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      if(!held.sent){
+        note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+': it goes in '));
+        var left=el('span',null,String(makerCashLeft(order.id)));left.setAttribute('data-maker-cash-left',order.id);
+        note.appendChild(left);note.appendChild(document.createTextNode(' s. Undo sends nothing.'));
+        makerClaimButton(card,'Undo',function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');
+      }else{
+        note.textContent=makerCashSaid[order.id]||'Sending.';
+        var retry=makerClaimButton(card,held.confirmed?'Refresh cash':'Retry cash',function(){
+          return held.confirmed?loadMaker():makerCashGo(order.id);
+        },true);
+        retry.disabled=held.busy;retry.setAttribute('data-maker-cash-retry','');
+      }
+    }else if(makerCashStorageError){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      note.textContent=makerCashStorageError;
+    }else{
+      var cash=makerField(card,'Cash received (RM)','number','');
+      makerButton(card,'Record cash',function(){makerCashHold(order,Number(cash.value));},false);
+      note.textContent=makerCashSaid[order.id]||'';
+    }
+    card.appendChild(note);
   }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
@@ -2021,13 +2136,19 @@ export const OWNER_JS = `
     var status=document.getElementById('makerReviewStatus');
     if(status) status.textContent='Reading orders and rows…';
     try{
-      makerData=await refs('/all/maker/review');
+      makerCashRestore();
+      var reading=await refs('/all/maker/review');
+      makerCashReconcile(reading);makerData=reading;
       drawMaker();
-    }catch(error){ if(status) status.textContent=error.message; }
+    }catch(error){ drawMaker();if(status) status.textContent=error.message; }
   }
   function drawMaker(){
     var root=document.getElementById('makerReview'), status=document.getElementById('makerReviewStatus');
-    if(!root||!makerData) return;
+    if(!root) return;
+    if(!makerData){
+      if(!Object.keys(makerCashHeld).length&&!makerCashStorageError)return;
+      makerData={orders:[],drafts:[]};
+    }
     root.textContent='';
     var open=(makerData.orders||[]).filter(function(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; });
     if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
@@ -2103,10 +2224,6 @@ export const OWNER_JS = `
           if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
           makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
         },false).setAttribute('data-close','');
-        var cash=makerField(card,'Cash received (RM)','number','');
-        makerButton(card,'Record cash',function(){
-          makerTap(order,'cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
-        },false);
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
@@ -2141,6 +2258,11 @@ export const OWNER_JS = `
       }
       makerAgain(card,order);
       makerOrderMoves(card,order);
+      if(order.status==='ready'&&!againAck)makerCashControls(card,order);
+    });
+    Object.keys(makerCashHeld).filter(function(id){return !open.some(function(o){return o.id===id;});}).forEach(function(id){
+      var card=makerCard(root);card.appendChild(el('h3',null,id));
+      makerCashControls(card,{id:id});
     });
     /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
     (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){

@@ -44724,6 +44724,10 @@ section("Counter maker sets the restock date and re-enters a rejected sale");
 await (async () => {
   await (await import("./maker-expected-reenter.mjs")).run({ ok });
 })();
+section("Counter maker cash Undo: ten seconds, hide and leave flush, immutable retry");
+await (async () => {
+  await (await import("./maker-cash-undo.mjs")).run({ ok });
+})();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });
@@ -44745,6 +44749,11 @@ await (async () => {
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
+})();
+
+section("Counter blank-locality Add ID: owner device pair and real bridge");
+await (async () => {
+  await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");
