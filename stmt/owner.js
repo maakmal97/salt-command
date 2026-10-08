@@ -1212,7 +1212,8 @@ export const OWNER_JS = `
   }
   function makerDerivedCode(name, locality, kind, roster, except, parent){
     var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
-    if(!n||!local) return null;
+    if(!n) return null;
+    local=local||'TBC';
     var bits=local.split(/\\s+/), suffix=(bits.length>1?bits.map(function(x){return x.charAt(0);}).join(''):local.slice(0,3)).toUpperCase();
     if(kind==='downstream'){
       if(!parent) return null;
@@ -1455,6 +1456,7 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,'Parent / associate',idParentItems);
     var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
+    idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the locality is confirmed.'));
     var idPass=makerField(id,'Vault passphrase','password','');
     var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
@@ -1481,17 +1483,17 @@ export const OWNER_JS = `
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
-      if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
+      if(!code){idStatus.textContent='Enter a name, or choose the parent for a resale account.';idBusy=false;return;}
       var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
           var pass=idPass.value;
           if(!pass) throw new Error('Enter the vault passphrase on this device.');
-          geo=await makerLocalityPoint(locality);
+          if(locality)geo=await makerLocalityPoint(locality);
           var filed=await makerFiledLink(idLink.value);
           idDraft=await makerPairPrepare(pass,function(maps){
             if(Object.hasOwn(maps.names,code))throw new Error('That code is already filed in the vault. Keep this form and review its identity.');
-            maps.names[code]=name+' ('+locality+')';if(filed)maps.places[code]=filed;
+            maps.names[code]=name+' ('+(locality||'to be confirmed')+')';if(filed)maps.places[code]=filed;
           },idDraft);
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
@@ -1500,7 +1502,8 @@ export const OWNER_JS = `
         if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
         if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
-          parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
+          parent:parentCode,tiers:tiers,vault:envelope};
+         if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
@@ -1524,7 +1527,7 @@ export const OWNER_JS = `
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
-      if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
+      if(!to||!locality){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
       try{
         var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
         var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
