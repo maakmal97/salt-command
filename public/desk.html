@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="254744b24c192583";
+var SALT_BUILD_ID="97a8102158c89825";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6596,12 +6596,14 @@ function vaultPendingOk(record,publicWord=()=>false){
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
+  const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const safe=(v,key)=>{
     if(v===null||typeof v==='boolean')return true;
     if(typeof v==='number')return Number.isFinite(v);
     if(['vault','addrVault','names'].includes(key))return envelope(v);
     if(key==='places'&&envelope(v))return true;
-    if(typeof v==='string')return ['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
+    if(typeof v==='string')return offset&&key==='rid'&&/^[A-Za-z0-9_-]{1,64}$/.test(v)
+      ||['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
       ||key==='id'&&TIP_ID.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v)
@@ -6616,8 +6618,15 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(/\/offset$/.test(record.path)&&(Object.keys(record).some(k=>!['path','body'].includes(k))
+    ||Object.keys(record.body).length!==4||Object.keys(record.body).some(k=>!['at','code','rid','date'].includes(k))
+    ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))||new Date(record.body.at).toISOString()!==record.body.at
+    ||typeof record.body.code!=='string'||!/^C[A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(record.body.code)
+    ||typeof record.body.rid!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(record.body.rid)
+    ||typeof record.body.date!=='string'||!/^\d{4}-\d\d-\d\d$/.test(record.body.date)||!Number.isFinite(Date.parse(record.body.date))
+    ||new Date(record.body.date).toISOString().slice(0,10)!==record.body.date))return false;
   if(record.base!==undefined&&!pair(record.base)||record.desired!==undefined&&!pair(record.desired))return false;
   if(record.input!=null&&(!object(record.input)||Object.keys(record.input).some(k=>!['operation','body'].includes(k))
     ||!['add-id','amend-id','place'].includes(record.input.operation)||!safe(record.input.body,'body')))return false;
