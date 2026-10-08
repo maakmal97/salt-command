@@ -15,7 +15,7 @@ export async function run({ ok }) {
   const preview = (body) => ({ cost: { unit: 80, total: 160, source: "purchase" },
     ok: true, quote: body.total, delivery: body.delivery, hash: "h-" + (posts.filter((p) => p.kind === "preview").length), row: { qty: 2, total: body.total },
     card: 190, cardNote: null, floor: { rm: 150, at: 2, exact: true }, margin: { rm: 40, pct: 21 },
-    usual: { who: "CX1-AB", rate: 95, orders: 4, uniform: true, off: false, dir: 0, far: false }, flags: ["Check the quantity"] });
+    usual: { who: "CX1-AB", rate: 95, orders: 4, uniform: true, off: false, dir: 0, far: false }, flags: ["Check the quantity"], prepay: true, owedWith: 300, ceiling: 250, late: { run: 1, need: 3 } });
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
@@ -85,6 +85,8 @@ export async function run({ ok }) {
       && tile(id, "Their usual") && tile(id, "Their usual").querySelector(".salt-kpi__value").textContent === "RM 95.00"
       && !card(id).querySelector("pre.maker-row"),
       "A successful preview shows the native card, margin, floor and usual tiles, not raw row JSON: " + card(id).textContent);
+    ok(/In advance: paid late before, 1 of 3 on time since; RM 300\.00 owed with this order, over RM 250\.00\./.test(card(id).textContent),
+      "The prepay line carries the late-payer clause from the server's late run and need: " + card(id).textContent);
     ok(accept(id).textContent === "Accept order at RM 200.00, delivery RM 10.00", "Accept is labelled with the server's quote and delivery: " + accept(id).textContent);
 
     /* changed input invalidates the preview */

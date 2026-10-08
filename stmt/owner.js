@@ -1044,7 +1044,7 @@ export const OWNER_JS = `
     parent.appendChild(el('p','salt-insight',flags.length?('The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':'):'The drafter raises no flag.'));
     flags.forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(result.owedWith!=null&&result.ceiling!=null)
-      parent.appendChild(el('p','salt-insight',(result.prepay?'In advance':'On credit')+': '+rm(result.owedWith)+' owed with this order, '
+      parent.appendChild(el('p','salt-insight',(result.prepay?'In advance':'On credit')+': '+(result.late&&typeof result.late.run==='number'&&typeof result.late.need==='number'?'paid late before, '+result.late.run+' of '+result.late.need+' on time since; ':'')+rm(result.owedWith)+' owed with this order, '
         +(result.owedWith>result.ceiling+0.004?'over':'within')+' '+rm(result.ceiling)+'.'
         +(result.prepay?' They are asked to pay before it is handed over.':'')));
   }
