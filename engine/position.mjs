@@ -1129,7 +1129,10 @@ function correctionFaults(row,fields,isSale){
     const bareD=Object.assign({},after);delete bareD.defaulted;
     if(isSale){
       if(txEffDeliv(bareD)<=0.009)out.push('a sale nothing has been handed over on cannot default: cancel it instead');
-      else if(!after.unpriced&&txPaid(bareD)>=(+after.total||0)-0.009)out.push('a sale paid in full has nothing to default on');}
+      /* 06 Oct 2026: paid in full is the goods AND the delivery (txOwed), as txStat and txAdvance have read it since v741. On the
+         goods alone a delivered order whose charge was never paid read as paid in full, so the RM it still owed could not be
+         written off: txAdvance said money owed and this line said nothing to default on. */
+      else if(!after.unpriced&&txPaid(bareD)>=txOwed(bareD)-0.009)out.push('a sale paid in full has nothing to default on');}
     else{const rcv=poRecvUnits(bareD);if(rcv>0.009)out.push('a lot that has received '+rcv+' unit cannot be defaulted on');}}
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */

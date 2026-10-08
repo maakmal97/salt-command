@@ -6278,7 +6278,10 @@ function correctionFaults(row,fields,isSale){
     const bareD=Object.assign({},after);delete bareD.defaulted;
     if(isSale){
       if(txEffDeliv(bareD)<=0.009)out.push('a sale nothing has been handed over on cannot default: cancel it instead');
-      else if(!after.unpriced&&txPaid(bareD)>=(+after.total||0)-0.009)out.push('a sale paid in full has nothing to default on');}
+      /* 06 Oct 2026: paid in full is the goods AND the delivery (txOwed), as txStat and txAdvance have read it since v741. On the
+         goods alone a delivered order whose charge was never paid read as paid in full, so the RM it still owed could not be
+         written off: txAdvance said money owed and this line said nothing to default on. */
+      else if(!after.unpriced&&txPaid(bareD)>=txOwed(bareD)-0.009)out.push('a sale paid in full has nothing to default on');}
     else{const rcv=poRecvUnits(bareD);if(rcv>0.009)out.push('a lot that has received '+rcv+' unit cannot be defaulted on');}}
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */
@@ -16490,7 +16493,7 @@ function observations(){
     if((s.amend||[]).some(a=>a.kind==='Fulfilment'))return false;
     const settled=(+s.cash||0)+(+s.settledRM||0);
     const lateMoney=s.paidOn&&s.paidOn!==s.date;
-    const shortMoney=settled<(+s.total||0)-0.009;
+    const shortMoney=settled<txOwed(s)-0.009;   /* 06 Oct 2026: short of the goods and the delivery, never the goods alone */
     return !!(lateMoney||shortMoney);
   });
   if(undated.length){
@@ -16498,7 +16501,7 @@ function observations(){
       title:`${undated.length} ${undated.length===1?'delivery is':'deliveries are'} dated by assumption on a day that was not clean`,
       why:`Salt went out and the money did not follow on the same day, yet no delivery date is recorded, so txDates falls back to the order date and marks it assumed. That is the case where the assumption can actually be wrong. It matters because the inventory walk consumes lots in delivery order: a wrong date consumes the wrong lot, mis-costs the sale, and can drive the reconstructed inventory below zero, which then reads as a stockout when it is a dating fault. Rows paid in full on the day are excluded, because there the assumption cannot be wrong.`,
       ev:undated.slice(0,8).map(s=>{const settled=(+s.cash||0)+(+s.settledRM||0);
-        return `${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.deliveredQty)} out, ${settled<(+s.total||0)-0.009?`only ${fmt0(settled)} of ${fmt0(+s.total)} received`:`paid ${esc(s.paidOn)}`}`;})});
+        return `${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.deliveredQty)} out, ${settled<txOwed(s)-0.009?`only ${fmt0(settled)} of ${fmt0(txOwed(s))} received`:`paid ${esc(s.paidOn)}`}`;})});
   }
   /* PENDING GOING STALE. Pending counts nowhere, which is right, and is exactly why it can
      sit unnoticed for weeks. */
