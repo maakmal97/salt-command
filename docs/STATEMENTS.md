@@ -1433,7 +1433,11 @@ through the existing queue and wait for review. Loans and repayments retain thei
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
 eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
 the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
-entries or unchecked notes. Each input button disables its controls while sending and persists the
+entries or unchecked notes.
+Trade refusals distinguish an unknown buyer, supplier, associate, referrer and end buyer, pointing
+to Counter Admin > Add ID before selecting the code. An R2 end buyer may instead remain Not named;
+an arbitrary code is never accepted. Date and inventory-cost requirements remain unchanged.
+Each input button disables its controls while sending and persists the
 whole request (including timestamp and ciphertext) before transport. A retained input must be
 retried, reviewed or explicitly cancelled; editing the form does not replace that request.
 Record count, Send tier for review, Hush tip and Send board sizes for review release their
