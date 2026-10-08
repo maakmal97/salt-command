@@ -1537,6 +1537,13 @@ refused and directed to Desk. Amend ID preserves descendant place keys and `_bas
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
 
+Add ID alone also accepts a blank locality, matching Desk and the laptop panel: the code
+uses the deterministic `TBC` suffix (with the existing name-letter clash handling), and the
+encrypted name says `(to be confirmed)`. No locality or approximate point is invented or
+sent. An optional valid Maps/Waze point still goes only into the encrypted places envelope.
+A supplied locality must still resolve officially; a supplied map link must still parse.
+Amend ID and Network placement keep their existing locality requirements. Desk inputs remain.
+
 Legacy KV mode has two non-atomic envelope writes. The pair
 mode supplies all-writer CAS and a durable ID/place outbox. Its schema and code shipped in
 the v991 preparatory release. Revision-1 bootstrap was read back under paused maintenance on
