@@ -23,7 +23,7 @@
 import { sendPush } from "./push.js";
 import { readBook, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { admitInput } from "./input-admission.js";
+import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 
@@ -245,7 +245,7 @@ const priceOf = (b) => {
   return { price: +t.toFixed(2) };
 };
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
-function cardAt(pricing, code, product, qty) {
+export function cardAt(pricing, code, product, qty) {
   const snap = pricing && pricing.byProduct && pricing.byProduct[product];
   if (!snap || !snap.cards) return { card: null, cardNote: "the pricing snapshot carries no cards yet: the next re-seed brings them" };
   const fixed = (snap.ladder || []).some((r) => r && r.fixed);
@@ -1685,7 +1685,55 @@ export function stageAt(order, job, now) {
  * id is the `at` and two ids cannot be one. A millisecond is spent while its entry is queued in either
  * shape, and for good once the draft table holds it: the drafter prunes a committed entry from the queue,
  * and a stage landing on its millisecond after that would be counted committed and never drafted. */
+async function queueFixedTrades(env, entry, admissionCheck = async () => {}) {
+    const key = OKEY(entry[0].at);
+    const kept = await env.SALT_QUEUE.get(key, "json");
+    if (kept && await makerRequestFingerprint("fixed-trades", kept.queue)
+      !== await makerRequestFingerprint("fixed-trades", entry))
+      throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+    for (const e of entry) {
+      const own = await env.SALT_QUEUE.get(OKEY(e.at), "json");
+      const hit = own && (own.queue || []).find((item) => item.at === e.at);
+      if (hit && await makerRequestFingerprint("fixed-input", hit)
+        !== await makerRequestFingerprint("fixed-input", e))
+        throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+      const draft = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(e.at).first();
+      if (draft && await makerRequestFingerprint("fixed-input", JSON.parse(draft.entry))
+        !== await makerRequestFingerprint("fixed-input", e))
+        throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+    }
+    await admissionCheck();
+    if (kept) return false;
+    await env.SALT_QUEUE.put(key, JSON.stringify({ device: DEVICE, updated: new Date().toISOString(), queue: entry }));
+    noteQueued(env.SALT_QUEUE, key);
+    return true;
+}
+
+export async function queueResourceTrades(env, entries) {
+  if (!Array.isArray(entries) || !entries.length || entries.some((entry) => entry?.payload?.mode !== "new"
+    || !["SELL", "BUY"].includes(entry.payload.direction))
+    || !entries.some((entry) => POSITION_ENGINE.inputConsumesResource(entry)))
+    throw Object.assign(new Error("A resource trade batch carries native trade entries and a reward cover."), { status: 400 });
+  return queueFixedTrades(env, entries, async () => {
+    const book = env.SALT_LEDGER ? await readBook(env.SALT_LEDGER) : null;
+    if (!book) throw Object.assign(new Error("The Desk mirror is required."), { status: 503 });
+    for (const entry of entries) {
+      const drafted = draftRow(entry, book);
+      if (drafted.skip) throw Object.assign(new Error(drafted.skip), { status: 409 });
+      const fault = POSITION_ENGINE.entryReservationFault(entry, entries, book);
+      if (fault) throw Object.assign(new Error(fault), { status: 409 });
+    }
+    const admission = await admitInputs(env.SALT_LEDGER, entries, book, "orders");
+    if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
+  });
+}
+
 export async function queueSale(env, entry, fixedId = false) {
+  if (Array.isArray(entry)) {
+    if (!fixedId || !entry.length || entry.some((e) => !e || POSITION_ENGINE.inputConsumesResource(e)))
+      throw Object.assign(new Error("A fixed trade batch carries ordinary trade entries only."), { status: 400 });
+    return queueFixedTrades(env, entry);
+  }
   const resourceInput = POSITION_ENGINE.inputConsumesResource(entry);
   const admissionCheck = async () => {
     if (!resourceInput) return;

@@ -66,6 +66,8 @@ async function deskCall(env, path, method, body) {
   const secret = String(env.COUNTER_MAKER_KEY || "");
   if (secret.length < 32 || !env.DESK_MAKER) throw new Error("The private Desk maker bridge is not configured.");
   const allowed = path === "/_internal/maker/drafts" && method === "GET"
+    || path === "/_internal/maker/queue" && method === "GET"
+    || path === "/_internal/maker/trade-cover" && method === "POST"
     || path === "/_internal/maker/inputs" && method === "GET"
     || path === "/_internal/maker/vault" && method === "GET"
     || path === "/_internal/maker/vault/addr" && method === "GET"
@@ -84,6 +86,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
     || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words") && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
@@ -99,7 +102,8 @@ async function deskCall(env, path, method, body) {
   try { result = await response.json(); } catch (e) { throw new Error("The Desk maker route returned an unreadable response."); }
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
-      { status: response.ok ? 502 : response.status, twin: result && result.twin, queuedTwin: result && result.queuedTwin });
+      { status: response.ok ? 502 : response.status, state: result && result.state,
+        twin: result && result.twin, queuedTwin: result && result.queuedTwin });
   return result;
 }
 
@@ -180,7 +184,11 @@ async function makerHours(request, env, method) {
 }
 
 function internalOperation(path) {
+  if (path === "/all/maker/trade-cover") return { kind: "trade-cover" };
   if (path === "/all/maker/review") return { kind: "review" };
+  if (path === "/all/maker/queue") return { kind: "queue" };
+  const withdrawal = /^\/all\/maker\/queue\/([^/]+)\/withdraw$/.exec(path);
+  if (withdrawal) return { kind: "queue-withdraw", id: withdrawal[1] };
   if (path === "/all/maker/hours") return { kind: "hours" };
   if (path === "/all/maker/inputs") return { kind: "inputs" };
   if (path === "/all/maker/vault") return { kind: "vault" };
@@ -224,6 +232,12 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   if (!op) return json({ ok: false, error: "not found" }, 404);
   const method = request.method;
   try {
+    if (op.kind === "trade-cover") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      return json(await deskCall(env, "/_internal/maker/trade-cover", "POST", parsed.body));
+    }
     if (op.kind === "hours") return await makerHours(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
        Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through
@@ -373,7 +387,11 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
     if (op.kind === "review") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
-      const [orders, drafts] = await Promise.all([allOrders(env, true), deskCall(env, "/_internal/maker/drafts", "GET")]);
+      const [orders, drafts, queue] = await Promise.all([
+        allOrders(env, true), deskCall(env, "/_internal/maker/drafts", "GET"),
+        deskCall(env, "/_internal/maker/queue", "GET")
+      ]);
+      if (!Array.isArray(queue.entries)) return json({ ok: false, error: "The server-held queue was unreadable." }, 502);
       /* a move he rejected under Approve, offered again from here: the Desk's own againOf names the stages */
       /* open orders first, then the rest: a cancellation he rejected leaves the order cancelled, still offered again */
       const open = (o) => !["declined", "cancelled", "done"].includes(o.status);
@@ -389,7 +407,24 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
         }
         orders.push(...fixture.orders.map((o) => ({ ...o, u: o.u || u, test: true })));
       }
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [] });
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries });
+    }
+    if (op.kind === "queue") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/queue", "GET"));
+    }
+    if (op.kind === "queue-withdraw") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (Object.keys(parsed.body).length !== 1 || !/^[0-9a-f]{64}$/.test(parsed.body.fingerprint || ""))
+        return json({ ok: false, error: "Send only the server-held entry fingerprint." }, 400);
+      let id;
+      try { id = decodeURIComponent(op.id); }
+      catch { return json({ ok: false, error: "Invalid queue timestamp." }, 400); }
+      if (!Number.isFinite(Date.parse(id)) || new Date(id).toISOString() !== id)
+        return json({ ok: false, error: "Invalid queue timestamp." }, 400);
+      return json(await deskCall(env, "/_internal/maker/queue/" + encodeURIComponent(id) + "/withdraw", "POST", parsed.body));
     }
     if (op.kind === "drafts") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -468,7 +503,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
     }
   } catch (error) {
     const status = Number.isInteger(error && error.status) ? error.status : 503;
-    return json({ ok: false, error: String(error && error.message || error) }, status);
+    return json({ ok: false, error: String(error && error.message || error),
+      ...(typeof error.state === "string" ? { state: error.state } : {}),
+      ...(error.twin ? { twin: error.twin } : {}),
+      ...(error.queuedTwin ? { queuedTwin: error.queuedTwin } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
 }

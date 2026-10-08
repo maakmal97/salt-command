@@ -1,7 +1,7 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
-import { rowRoom, siteWords } from "./orders.js";
+import { cardAt, rowRoom, siteWords } from "./orders.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
 const DESK_ONLY_FIELDS = ["note", "settle"];
@@ -23,11 +23,11 @@ const proposed = (entry, book) => {
 };
 
 /** Dedicated trade inputs, not a queue-entry or row-patch forwarding road. */
-export function makerTradeEntry(operation, body, book) {
+export function makerTradeEntry(operation, body, book, trip = null, pending = []) {
   if (!["sale", "purchase"].includes(operation)) return { error: "Choose sale or purchase." };
   const sale = operation === "sale";
   const fields = ["at", "product", "party", "date", "qty", "total", "cash", "movedUnits", "handover", "second"]
-    .concat(sale ? ["delivery", "assoc", "stream", "downstream"] : ["freight"]);
+    .concat(sale ? ["delivery", "assoc", "stream", "downstream", "cover"] : ["freight"]);
   if (!object(body) || Object.keys(body).some((key) => !fields.includes(key)))
     return { error: "Unsupported trade input fields." };
   if (!timestamp(body.at)) return { error: "A trade needs its canonical request timestamp." };
@@ -35,7 +35,9 @@ export function makerTradeEntry(operation, body, book) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
   const roster = book.state.roster || [];
-  if (!code(body.party, roster)) return { error: "Choose a party on the roster." };
+  const partyKind = sale ? body.stream === "R2" ? "associate" : "buyer" : "supplier";
+  if (!code(body.party, roster)) return { error:
+    `Choose ${partyKind === "associate" ? "an" : "a"} ${partyKind} on the roster. Register a new ${partyKind} under Counter Admin > Add ID first, then pick the code.` };
   for (const key of ["qty", "total", "cash", "movedUnits"])
     if (!figure(body[key])) return { error: "Trade figures must be finite, non-negative numbers." };
   if (!(body.qty > 0)) return { error: "Units must be above zero." };
@@ -47,7 +49,11 @@ export function makerTradeEntry(operation, body, book) {
   const assoc = body.assoc || null, stream = body.stream || null, downstream = body.downstream || null;
   for (const key of ["assoc", "downstream"])
     if (body[key] !== undefined && body[key] !== null && !code(body[key], roster))
-      return { error: "Choose an associate and end buyer from the roster." };
+      return { error: key === "downstream"
+        ? "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code."
+        : body.stream === "R3"
+          ? "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code."
+          : "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code." };
   if (body.stream !== undefined && body.stream !== null && !["R2", "R3"].includes(body.stream))
     return { error: "Choose R2 or R3." };
   if (assoc ? !["R2", "R3"].includes(stream) : stream || downstream)
@@ -60,6 +66,10 @@ export function makerTradeEntry(operation, body, book) {
   }
   if (sale && !(costFor(book, body.product).cost > 0))
     return { error: "This product has no inventory cost yet. Record the lot first." };
+  if (body.cover !== undefined && typeof body.cover !== "boolean")
+    return { error: "Cover is a choice, never a typed reward figure." };
+  const cover = body.cover ? makerCoverPlan(body, book, pending) : null;
+  if (body.cover && !cover) return { error: "No reward cover is available for this sale. Read the offer again." };
   if (body.second !== undefined && body.second !== null && body.second !== true
     && (typeof body.second !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(body.second)))
     return { error: "A second order names its booked twin." };
@@ -75,8 +85,49 @@ export function makerTradeEntry(operation, body, book) {
     at: body.at, product: body.product, direction: sale ? "SELL" : "BUY", party: body.party,
     date: body.date, qty: body.qty, total: body.total, cash: body.cash, movedUnits: body.movedUnits,
     delivery: sale ? body.delivery ?? 0 : 0, freight: sale ? 0 : body.freight ?? 0,
-    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null
+    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null, trip,
+    ...(cover ? { more: { coverUnits: cover.units, coverRM: cover.rm }, coverFree: cover.free } : {})
   }), book);
+}
+
+/** The Workbench's extra books: validate all before queueing any; carriage belongs to the first row alone. */
+export function makerTradeBatch(operation, body, book, pending = []) {
+  if (!object(body)) return { error: "Unsupported trade input fields." };
+  const { extras, ...first } = body;
+  if (extras === undefined) return makerTradeEntry(operation, first, book, null, pending);
+  if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8640000000000000 - 20)
+    return { error: "A trade needs its canonical request timestamp." };
+  if (!Array.isArray(extras) || !extras.length || extras.length > 19)
+    return { error: "Choose one or more extra books, at most one row per book." };
+  const products = [first.product];
+  const inputs = [first];
+  const start = Date.parse(first.at);
+  for (const [i, extra] of extras.entries()) {
+    if (!object(extra) || Object.keys(extra).some((key) =>
+      !["product", "qty", "total", "cash", "movedUnits", "second", "cover"].includes(key)))
+      return { error: "An extra book carries only its book, units, goods, cash, movement and booked-twin confirmation." };
+    if (products.includes(extra.product)) return { error: "Choose each book once." };
+    products.push(extra.product);
+    if (!Number.isFinite(start + i + 1)) return { error: "A trade needs its canonical request timestamp." };
+    const r2 = first.stream === "R2";
+    inputs.push({
+      at: new Date(start + i + 1).toISOString(), product: extra.product, party: first.party, date: first.date,
+      qty: extra.qty, total: extra.total, cash: extra.cash, movedUnits: extra.movedUnits,
+      handover: first.handover ?? null, [operation === "sale" ? "delivery" : "freight"]: 0,
+      ...(extra.cover === undefined ? {} : { cover: extra.cover }),
+      ...(r2 ? { assoc: first.assoc, stream: "R2", downstream: first.downstream ?? null } : {}),
+      ...(extra.second == null ? {} : { second: extra.second })
+    });
+  }
+  const trip = operation === "sale" && first.delivery > 0.005 ? "t" + start : null;
+  const entries = [], drafts = [];
+  for (const [i, input] of inputs.entries()) {
+    const made = makerTradeEntry(operation, input, book, trip, pending.concat(entries));
+    if (made.error) return { ...made, ...(made.twin ? { twin: { ...made.twin, index: i } } : {}) };
+    entries.push(made.entry); drafts.push(made.draft);
+  }
+  const fault = trip && POSITION_ENGINE.tripFault(drafts.map((draft) => draft.row));
+  return fault ? { error: fault } : { entries, drafts, trip };
 }
 
 export function makerQueuedTradeCheck(entry, queue) {
@@ -124,29 +175,85 @@ function tierCards(book, roster, products) {
   return cards;
 }
 
-export function makerInputCatalog(book, hush = {}) {
+function driftCustomerCode(id) {
+  return typeof id === "string" && !id.startsWith("S") && !POSITION_ENGINE.isBucket(id);
+}
+
+/** The held override or effective record drift the Desk's drift card reads; no pricing is computed here. */
+function driftCards(book, roster, products) {
+  const driftProducts = products.filter((item) => item.drift).map((item) => item.product);
+  const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
+  const cards = [];
+  for (const id of roster.filter(driftCustomerCode)) {
+    for (const product of driftProducts) {
+      const set = object(held[id]) && Object.hasOwn(held[id], product)
+        && PRICING_ENGINE.driftOk(held[id][product]);
+      const drift = book.pricing.byProduct[product].drift;
+      const current = object(drift) && PRICING_ENGINE.driftOk(drift[id]) ? drift[id] : null;
+      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current });
+    }
+  }
+  return cards;
+}
+
+function rewardFree(book, code, product, pending) {
+  const account = POSITION_ENGINE.rewardAccount(book, code, product);
+  const resource = "reward:" + product + ":" + code;
+  const reserved = pending.reduce((sum, entry) => {
+    const claim = POSITION_ENGINE.inputResource(entry, book);
+    return claim?.resource === resource ? sum + claim.amount : sum;
+  }, 0);
+  return { ...account, free: +Math.max(0, (account.held || 0) - reserved).toFixed(2) };
+}
+
+export function makerCoverPlan(body, book, pending = []) {
+  if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)
+    || !code(body.party, book.state.roster || [])) return null;
+  const reward = rewardFree(book, body.party, body.product, pending.filter((entry) => entry.at !== body.at));
+  const snapshot = book.pricing?.byProduct?.[body.product], inputs = snapshot?.inputs;
+  if (reward.error || reward.associate || !inputs || inputs.policy?.tierRule?.fixed) return null;
+  const ask = cardAt(book.pricing, body.party, body.product, body.qty).card;
+  return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
+}
+
+export function makerInputCatalog(book, hush = {}, pending = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
   const products = Object.keys(book.state.PRODUCTS || {}).filter((product) => active(product, book)).map((product) => {
     const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
     const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
     const cost = costFor(book, product).cost;
+    const driftPresets = rule && rule.drift && object(rule.presets)
+      ? Object.entries(rule.presets).filter(([name, value]) => typeof name === "string" && name
+        && PRICING_ENGINE.driftOk(value)).map(([name, value]) => ({ name, value }))
+      : [];
     return { product, tiered: !!rule && !rule.fixed && !rule.drift, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
-      saleReady: cost > 0, purchaseReady: cost !== null };
+      ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
     version: book.version, products, parties: roster,
+    rewards: roster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
+      const reward = rewardFree(book, id, "salt", pending);
+      if (reward.earned == null || !(reward.earned || reward.applied)) return [];
+      const free = reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;
+      const sale = book.sales.filter((row) => row.customer === id && (row.product || "salt") === "salt"
+        && POSITION_ENGINE.txAdvance(row) > 0.009).sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))[0];
+      return [{ code: id, held: reward.held, free: reward.free, associate: reward.associate, departed: !!reward.departed,
+        action: !reward.error && free > 0.009 ? sale ? "Offset" : "Redeem" : null }];
+    }),
     placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
       .filter(([id, point]) => roster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
-    associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
+    associates: associateCodes(book).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
+    driftCustomers: roster.filter(driftCustomerCode),
     houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
       .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     tierCards: tierCards(book, roster, products),
+    driftCards: driftCards(book, roster, products),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -158,12 +265,18 @@ export function makerInputCatalog(book, hush = {}) {
     rows: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
       .filter((row) => row && row.rid && !row.cancelled).map((row) => {
         const sale = collection === "sales";
+        const open = POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt"));
+        const movedUnits = sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row);
+        const cancelled = { ...row, cancelled: true };
+        const after = sale ? POSITION_ENGINE.txStat(cancelled) : POSITION_ENGINE.poStat(cancelled);
+        const refund = sale ? POSITION_ENGINE.refundOnCancel([], cancelled) : null;
         return { rid: row.rid, direction: sale ? "SELL" : "BUY", party: row[sale ? "customer" : "supplier"],
           ...(row.defaulted ? { defaulted: true } : {}),
           product: row.product || "salt", date: row.date || null, qty: row.qty, total: row.total,
           cash: sale ? POSITION_ENGINE.txPaid(row) : POSITION_ENGINE.poCash(row),
-          movedUnits: sale ? POSITION_ENGINE.txEffDeliv(row) : POSITION_ENGINE.poRecvUnits(row),
-          open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")) };
+          movedUnits, open,
+          cancellation: open && !row.defaulted && movedUnits <= 0.009
+            ? { pay: after.pay, deliv: after.deliv, order: after.order, refundRM: refund ? refund.amount : null } : null };
       })),
     revivable: ["sales", "purchases"].flatMap((collection) => (book[collection] || [])
       .filter((row) => row && row.rid && row.cancelled).map((row) => {
@@ -241,7 +354,7 @@ export function makerOffset(body, book, held) {
       + " order, RM" + offer.rm + " settled in kind" }), book);
 }
 
-/** One customer, one product; null clears the held tier, bands use the pricing engine's shape check. */
+/** One customer, one product; null clears its held level or drift through the same tierset road. */
 export function makerTierSet(body, book) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
     return { error: "A tier input carries only its timestamp, code, product and tier." };
@@ -253,10 +366,15 @@ export function makerTierSet(body, book) {
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
   if (!rule || rule.fixed) return { error: "This product has no customer tiers." };
-  if (rule.drift) return { error: "This product prices by each customer's drift, set on the desk." };
-  const names = (book.pricing && book.pricing.tierNames) || [];
-  if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
-    return { error: "Choose a tier or a set of small, mid and big tiers." };
+  if (rule.drift) {
+    if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
+    if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
+      return { error: "Choose a drift from -1 to +1, or clear it." };
+  } else {
+    const names = (book.pricing && book.pricing.tierNames) || [];
+    if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
+      return { error: "Choose a tier or a set of small, mid and big tiers." };
+  }
   return proposed(POSITION_ENGINE.tierSetEntry({
     at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
   }), book);
@@ -499,7 +617,7 @@ export async function makerAmendmentRoom(db, entry, book) {
     : "";
 }
 
-export function makerLedgerInput(operation, body, book) {
+export function makerLedgerInput(operation, body, book, pending = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = book.state.roster || [];
   if (!timestamp(body && body.at)) return { error: "The input needs its canonical request timestamp." };
@@ -540,10 +658,12 @@ export function makerLedgerInput(operation, body, book) {
   } else if (operation === "redeem") {
     if (!exact(body, ["at", "code", "date"]) || !realCode(body.code, roster) || POSITION_ENGINE.isBucket(body.code)
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
-    const state = POSITION_ENGINE.rewardAccount(book, body.code);
+    const state = rewardFree(book, body.code, "salt", pending.filter((entry) => entry.at !== body.at));
     if (state.error) return state;
-    const free = state.associate ? state.held : state.held >= 1 - 1e-9 ? 1 : 0;
-    if (!(free > 0.009)) return { error: "There is no whole reward unit available to redeem." };
+    const free = state.associate ? state.free : state.free >= 1 - 1e-9 ? 1 : 0;
+    if (!(free > 0.009)) return { error: state.held >= 1 - 1e-9
+      ? "The reward is already spent or reserved by another input awaiting its fold."
+      : "There is no whole reward unit available to redeem." };
     const advances = (book.sales || []).filter((sale) => sale && sale.customer === body.code
       && (sale.product || "salt") === "salt" && POSITION_ENGINE.txAdvance(sale) > 0.009)
       .sort((a, b) => !a.date ? (b.date ? 1 : 0) : !b.date ? -1 : a.date.localeCompare(b.date));

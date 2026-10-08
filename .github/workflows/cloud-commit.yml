@@ -35,7 +35,9 @@
 #   gh secret set SALT_PUSH_KEY            opens POST /push/send and nothing else; optional
 #   gh secret set STMT_KEY                 the statements' content key, from statements/_secrets.json
 # The repo variable CLOUDFLARE_ACCOUNT_ID is a variable, not a secret. Outside the repo:
-#   npx wrangler secret put SALT_GITHUB_TOKEN    (the Worker's dispatch on every approval)
+#   npx wrangler secret put GH_APP_KEY           (the Worker's dispatch on every approval: the GitHub App
+#                                                 salt-desk-dispatch-mk's private key, PKCS#8, since 07 Oct 2026)
+#   SALT_GITHUB_TOKEN, a fine-grained token, is the fallback while GH_APP_KEY is unset.
 name: Cloud commit
 
 on:

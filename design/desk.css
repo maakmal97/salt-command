@@ -18,7 +18,7 @@
    twice in the old layers, once as a radius and once as a fill; it is a radius here. ---- */
 html[data-tod="register"],:root{
   --bg0:var(--salt-obsidian);
-  --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
+  --card:var(--salt-glass);--card2:color-mix(in srgb, var(--salt-salt) 4.5%, transparent);--line:var(--salt-line);
   --ink:var(--salt-salt);--mut:var(--salt-mist-bright);--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
   /* ---- v557 (his instruction of 09 Sep 2026): a TRUE ALARM, clear of the decoration. --crim and --rose
@@ -35,7 +35,7 @@ html[data-tod="register"],:root{
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
-  --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
+  --railA:color-mix(in srgb, var(--salt-salt) 3.5%, transparent);--railB:color-mix(in srgb, var(--salt-salt) 2%, transparent);
   /* v567: THE STICKY TABLE SURFACES ARE WARM AND FULLY OPAQUE. --salt-veil is cold and floats OVER the
      page; these sit INSIDE a card the aurora lights warm, and he caught the ORDERS column legible through
      the band labels at .62, while the .86 it replaced already passed 14 per cent. The fill is the
@@ -197,7 +197,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 /* the parts strip is the system's .salt-tabs__pill (22 Sep 2026), its open pill read off aria-selected */
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
 .viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
-.viewsw button.on{background:rgba(255,255,255,.08);color:var(--salt-salt);}
+.viewsw button.on{background:color-mix(in srgb, var(--salt-salt) 8%, transparent);color:var(--salt-salt);}
 .viewsw.mini button{font-size:10.5px;}
 
 /* ---- 7. BUTTONS. The pill books or produces; everything else is a ghost. ---- */
@@ -273,7 +273,7 @@ input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
-select:hover{background-color:rgba(0,0,0,.36);}
+select:hover{background-color:color-mix(in srgb, var(--salt-ink-on-accent) 36%, transparent);}
 option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
 option:checked{background-color:var(--salt-slate-light);}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
@@ -354,7 +354,7 @@ tr.tot td{font-weight:500;background:color-mix(in srgb, var(--salt-brass) 7%, tr
    the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
    rather than by reading this file, which is the only way a cascade fault of this shape shows. */
 tr.tot td.l{background:linear-gradient(color-mix(in srgb, var(--salt-brass) 7%, transparent),color-mix(in srgb, var(--salt-brass) 7%, transparent)),var(--panel);}
-tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
+tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, transparent);}
 .fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
 .fintab tr.tot td{border-top-color:var(--salt-brass);}
@@ -472,7 +472,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent);}
 .tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
 .tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
-.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),#c9d3d8);
+.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),color-mix(in srgb, var(--salt-product-salt) 76%, var(--salt-mist)));
   box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 40%, transparent);}
 .starpill{font-weight:700;letter-spacing:.12em;color:var(--salt-obsidian);}
 .starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
@@ -546,7 +546,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apday{border-color:var(--salt-line-faint);background:var(--salt-glass-faint);}
 .apday.aptoday{border-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday.aptoday .apdn{color:var(--salt-brass);}
-.apchip{font-weight:500;letter-spacing:.04em;background:rgba(228,233,236,.10);color:var(--salt-product-salt);}
+.apchip{font-weight:500;letter-spacing:.04em;background:color-mix(in srgb, var(--ice) 10%, transparent);color:var(--salt-product-salt);}
 .apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 14%, transparent);color:var(--salt-ember);}
 .apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-brass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
@@ -678,7 +678,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 /* v565: the ground moved from the container to each pill, because the fan is pills now. The last
    rule keyed on :last-child, which named More only while More happened to be last; it keys on the
    role. */
-.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent);}
 .lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 12%, transparent);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
