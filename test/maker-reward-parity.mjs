@@ -1,0 +1,211 @@
+import { readFileSync } from "node:fs";
+import { webcrypto } from "node:crypto";
+import { JSDOM } from "jsdom";
+import { landingPage } from "../stmt/page.js";
+import { readBook, pricingSnapshot } from "../tools/book.mjs";
+import { readBook as mirrorBook } from "../src/drafter.js";
+import { plan, apply } from "../tools/fold.mjs";
+import { queueSale, queueResourceTrades } from "../src/orders.js";
+import { admitInputs } from "../src/input-admission.js";
+import E from "../engine/position.mjs";
+import { world } from "./maker-trades.mjs";
+
+const copy = (value) => JSON.parse(JSON.stringify(value));
+const section = (doc, title) => [...doc.querySelectorAll("#makerInputs .maker-input")]
+  .find((node) => node.querySelector("h3")?.textContent === title);
+const button = (root, text) => [...root.querySelectorAll("button")].find((node) => node.textContent === text);
+const field = (root, text) => [...root.querySelectorAll("label")]
+  .find((node) => (node.querySelector(".lbl")?.textContent || node.firstChild.textContent) === text)?.querySelector("input,select");
+
+export async function fixture() {
+  const source = await readBook(), wd = world(), codes = ["CX1-ZED", "CX2-ZED", "CX3-ZED", "CX4-ZED", "CA1-ZED", "CA1-ZED-R"];
+  const sale = (id, code, more = {}) => ({ rid: id, customer: code, date: "2099-09-01", qty: 20,
+    total: 2800, cash: 2800, cost: 800, deliveredQty: 20, deliveredOn: "2099-09-01", ...more });
+  const rows = [sale("earn1", codes[0]), sale("earn2", codes[1], { coverUnits: 1.56, coverRM: 62.4 }),
+    sale("earn3", codes[2]), sale("earn4", codes[3]), sale("earna", codes[4]),
+    { rid: "advance", customer: codes[3], date: "2099-09-02", qty: 2, total: 300, cash: 0, cost: 80,
+      deliveredQty: 2, deliveredOn: "2099-09-02" }];
+  try {
+    source.w.eval(`sales.splice(0,sales.length,...${JSON.stringify(rows)});
+      BASE_SALES.splice(0,BASE_SALES.length,...${JSON.stringify(rows)});
+      purchases.length=0;BASE_PURCHASES.length=0;INTRODUCTIONS.length=0;
+      roster.splice(0,roster.length,...${JSON.stringify(codes)});associates.splice(0,associates.length,'CA1-ZED');
+      PEOPLE.departed=[{id:'CX3-ZED'}];PEOPLE.banned=[];
+      PROD_OPENING.salt.qty=100;PROD_OPENING.salt.costPerKg=40;
+      REWARD.stated.salt.margin=1000;REWARD.stated.salt.associate.margin=1000;
+      TIER_OF['CX1-ZED']={salt:-0.3};PROD='salt';recompute();`);
+    const pricing = pricingSnapshot(source.w);
+    pricing.v = wd.b.version;
+    const state = { ...copy(source.ledger), PRODUCTS: { salt: {}, oil: {} }, roster: codes,
+      associates: ["CA1-ZED"], INTRODUCTIONS: [], R0_NETWORK: {}, PEOPLE: { departed: [{ id: "CX3-ZED" }], banned: [] },
+      PROD_OPENING: { salt: { qty: 100, costPerKg: 40 } },
+      REWARD: { stated: { salt: { margin: 1000, associate: { margin: 1000 } } } }, PRICING: pricing };
+    for (const [key, value] of Object.entries(state))
+      wd.sqlite.prepare("INSERT OR REPLACE INTO state(key,doc) VALUES (?,?)").run(key, JSON.stringify(value));
+    for (const [seq, row] of rows.entries())
+      wd.sqlite.prepare("INSERT INTO entry(collection,seq,hash,doc) VALUES ('sales',?,'fixture',?)").run(seq, JSON.stringify(row));
+    const ask = source.w.eval("cardQuote('CX1-ZED',1)");
+    const nativeCover = JSON.parse(source.w.eval(`JSON.stringify(coverPlan('CX1-ZED',1,${ask - 30}))`));
+    const date = source.w.eval("TODAY.toISOString().slice(0,10)");
+    const nativeRedeem = (code) => JSON.parse(source.w.eval(`(function(){queue=[];
+      saveQueue=function(){};qPost=function(){return Promise.resolve(false)};switchTab=function(){};
+      redeemRebate('${code}');return JSON.stringify(queue[0]||null)})()`));
+    const foldBook = copy(source.ledger);
+    foldBook.sales = copy(rows); foldBook.purchases = []; foldBook.roster = codes;
+    foldBook.associates = ["CA1-ZED"]; foldBook.PEOPLE = state.PEOPLE; foldBook.INTRODUCTIONS = [];
+    foldBook.PROD_OPENING = state.PROD_OPENING; foldBook.REWARD = state.REWARD; foldBook.QUEUE_COMMITTED = "2099-01-01T00:00:00.000Z";
+    const trade = (at, patch = {}) => ({ at, product: "salt", party: "CX1-ZED", date: "2099-10-05",
+      qty: 1, total: ask - 30, cash: 0, movedUnits: 1, handover: "delivered", delivery: 40, ...patch });
+    return { ...wd, source, ask, nativeCover, date, nativeRedeem, foldBook, trade };
+  } catch (error) { source.w.close(); wd.sqlite.close(); throw error; }
+}
+
+async function owner(wd, pageWork) {
+  let work, lose = false;
+  const sent = [], dom = new JSDOM(landingPage("", "reward-parity", { master: "fixture", accounts: [] }), {
+    url: "https://counter.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {}; win.confirm = () => true;
+      const NativeDate = win.Date;
+      let tick = Date.parse("2099-10-05T01:00:00.000Z");
+      win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
+      win.fetch = async (path, init = {}) => {
+        if (/^\/all\/maker\/(inputs|trade-cover|drafts)/.test(String(path))) {
+          const body = init.body && JSON.parse(init.body);
+          if (body) sent.push({ path, body, bytes: init.body });
+          const response = await wd.call(String(path), body);
+          if (lose && path === "/all/maker/inputs/sale") { lose = false; throw new Error("Answer lost after drafting."); }
+          return response;
+        }
+        return Response.json({ ok: true, accounts: [], orders: [], drafts: [], claims: [], threads: [], pools: [], offers: [],
+          config: null, status: {}, bulletin: { lines: [] } });
+      };
+      work = pageWork(win);
+    }
+  });
+  dom.window.document.querySelector('[data-m="maker"]').click(); await work.quiet();
+  const set = (root, name, value) => {
+    const node = field(root, name); node.value = value;
+    node.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  };
+  return { dom, doc: dom.window.document, work, sent, set, lose: () => { lose = true; } };
+}
+
+export async function run({ ok, pageWork }) {
+  const wd = await fixture();
+  let ui;
+  try {
+    ui = await owner(wd, pageWork);
+    const rewards = () => section(ui.doc, "Reward redemption");
+    const holder = (code) => rewards().querySelector('[data-reward-holder="' + code + '"]');
+    ok(button(holder("CX1-ZED"), "Redeem 1 unit for CX1-ZED") && !holder("CX2-ZED").querySelector("button")
+      && /0.44 unit held/.test(holder("CX2-ZED").textContent),
+    "generated owner offers one whole customer unit at two, and no action at .44");
+    ok(/2 unit held while departed/.test(holder("CX3-ZED").textContent) && !holder("CX3-ZED").querySelector("button"),
+      "generated owner keeps departed earnings visible and offers no spend");
+    ok(button(holder("CX4-ZED"), "Offset reward for CX4-ZED"),
+      "generated owner names Offset for the customer holding an advance");
+    wd.sqlite.prepare("UPDATE state SET doc=? WHERE key='PEOPLE'").run(JSON.stringify({ departed: [], banned: [] }));
+    button(rewards(), "Read reward offers").click(); await ui.work.quiet();
+    ok(button(holder("CX3-ZED"), "Redeem 1 unit for CX3-ZED"), "returning restores the actual generated redemption offer");
+    ui.set(rewards(), "Date", wd.date);
+    const native = wd.nativeRedeem("CX4-ZED");
+    button(holder("CX4-ZED"), "Offset reward for CX4-ZED").click(); await ui.work.quiet();
+    const offset = wd.drafts().find((d) => d.entry.payload.party === "CX4-ZED");
+    ok(offset && JSON.stringify(offset.entry.payload) === JSON.stringify(native.payload)
+      && offset.entry.payload.rid === "advance" && offset.status === "pending",
+    "owner Offset crosses the real bridge to the native oldest-advance draft with unchanged payload");
+
+    const trade = section(ui.doc, "Sale or purchase");
+    for (const [name, value] of Object.entries({ Party: "CX1-ZED", Date: "2099-10-05", Units: "1",
+      "Goods total (RM)": String(wd.ask - 30), "Units moved": "1", "Delivery (RM)": "40", Handover: "delivered" }))
+      ui.set(trade, name, value);
+    await ui.work.quiet();
+    const cover = () => trade.querySelector("[data-reward-cover]");
+    ok(cover() && !cover().parentNode.hidden && !cover().checked
+      && trade.textContent.includes("Cover RM 30.00 with 0.75 unit reward")
+      && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
+    "generated cover is unticked and matches the native own-card gap at cost, delivery excluded: "
+      + JSON.stringify(wd.nativeCover) + " " + trade.textContent);
+    ui.set(trade, "Goods total (RM)", String(wd.ask)); await ui.work.quiet();
+    ok(cover().parentNode.hidden, "a sale at its own quote generates no cover offer");
+    ui.set(trade, "Book", "oil"); await ui.work.quiet();
+    ok(cover().parentNode.hidden, "a fixed nonreward book generates no cover offer");
+    ui.set(trade, "Book", "salt");ui.set(trade, "Party", "CA1-ZED");await ui.work.quiet();
+    ok(cover().parentNode.hidden, "an associate generates no customer cover offer");
+    ui.set(trade, "Party", "CX1-ZED"); ui.set(trade, "Goods total (RM)", String(wd.ask - 30));await ui.work.quiet();
+    button(trade, "Add another book").click();await ui.work.quiet();
+    const extra = trade.querySelector(".maker-extra-trade");
+    for (const [name, value] of Object.entries({ Units: "2", "Goods total (RM)": "30", "Units moved": "2" }))
+      ui.set(extra, name, value);
+    await ui.work.quiet();
+    cover().checked = true;ui.lose();
+    button(trade, "Send trade for review").click();await ui.work.quiet();
+    const salePosts = () => ui.sent.filter((p) => p.path === "/all/maker/inputs/sale");
+    const batch = wd.drafts().filter((d) => d.entry.payload.mode === "new");
+    ok(batch.length === 2 && batch[0].row.coverUnits === 0.75 && batch[0].row.coverRM === 30
+      && batch[0].entry.payload.coverFree === 2 && /covered by/.test(batch[0].entry.raw)
+      && batch[0].row.delivery === 40 && !batch[1].row.delivery && batch[0].row.trip === batch[1].row.trip,
+    "marked owner batch reaches native drafts carrying cover and one delivery on the unchanged trip carrier: "
+      + JSON.stringify(batch) + " " + trade.textContent);
+    ui.set(trade, "Goods total (RM)", "999");
+    button(trade, "Send trade for review").click();await ui.work.quiet();
+    ok(salePosts().length === 2 && salePosts()[0].bytes === salePosts()[1].bytes
+      && wd.drafts().filter((d) => d.entry.payload.mode === "new").length === 2 && !cover().checked,
+    "lost-answer owner retry sends immutable whole-batch bytes once and clears the checkbox on confirmation");
+    const changed = await wd.call("/all/maker/inputs/sale", { ...salePosts()[0].body, total: 999 });
+    ok(changed.status === 409, "changed input under the retained request timestamp is refused");
+    const approval = await wd.call("/all/maker/drafts/" + encodeURIComponent(batch[0]?.id || "missing") + "/approve", {});
+    const approved = wd.drafts().filter((d) => d.entry.payload.mode === "new");
+    ok(approval.status === 200 && approved.every((d) => d.status === "approved"),
+      "the actual owner approval decides every covered trip row together");
+    const staged = { ok: true, count: approved.length, approved: approved.map((d) => ({
+      id: d.id, collection: d.collection, row: d.row, entry: d.entry })) };
+    const book = copy(wd.foldBook), before = JSON.stringify(book.sales), planned = plan(book, staged, null);
+    const folded = apply(book, staged, { version: "v9999", date: "05 Oct 2099", title: "REWARD TEST",
+      notes: ["<b>TEST.</b> Nothing real."], rows: Object.fromEntries(approved.map((d) => [d.id, { note: "Test sale." }])),
+      stockNote: "" }, readFileSync(process.env.SALT_MASTER || new URL("../master/salt_command.html", import.meta.url), "utf8"));
+    ok(!planned.refused.length && folded.ok && JSON.stringify(book.sales.slice(0, wd.foldBook.sales.length)) === before
+      && book.sales.some((s) => s.coverUnits === 0.75 && s.coverRM === 30 && s.total === wd.ask - 30),
+    "native plan and apply fold the covered row without repricing it or changing any other sale: "
+      + JSON.stringify({ refused: planned.refused, ok: folded.ok, problems: folded.problems }));
+  } finally { ui?.dom.window.close(); wd.source.w.close(); wd.sqlite.close(); }
+
+  const race = await fixture();
+  try {
+    const at = "2099-10-05T03:00:00.000Z";
+    const result = await Promise.all([
+      race.call("/all/maker/inputs/redeem", { at, code: "CX1-ZED", date: "2099-10-05" }),
+      race.call("/all/maker/inputs/sale", race.trade("2099-10-05T03:00:01.000Z",
+        { total: race.ask - 60, cover: true, extras: [{ product: "oil", qty: 2, total: 30, cash: 0, movedUnits: 2 }] }))
+    ]);
+    const admitted = race.sqlite.prepare("SELECT SUM(amount) AS n FROM input_admission WHERE state='accepted'").get().n || 0;
+    ok(result.filter((r) => r.status === 200).length === 1 && admitted <= 2
+      && (race.drafts().length === 1 || race.drafts().length === 2),
+    "concurrent redemption and covered batch share one native balance and cannot overdraw it");
+    const before = JSON.stringify([...race.map]);
+    const book = await mirrorBook(race.desk.SALT_LEDGER);
+    const entries = ["CX1-ZED", "CX3-ZED"].map((party, i) => E.redeemEntry({
+      at: "2099-10-05T04:00:0" + i + ".000Z", product: "salt", party, date: "2099-10-05",
+      qty: 3, earned: 2, applied: 0, balance: 2 }));
+    const failure = await admitInputs(race.desk.SALT_LEDGER, entries, book, "device:fixture");
+    ok(failure.error && !race.sqlite.prepare("SELECT id FROM input_admission WHERE id=?").get(entries[0].at)
+      && !race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=?").get(entries[0].at)
+      && JSON.stringify([...race.map]) === before,
+    "an over-capacity batch leaves no partial claims, ownership or queue writes");
+    const covered = E.tradeEntry({ at: "2099-10-05T05:00:00.000Z", product: "salt", party: "CX1-ZED",
+      direction: "SELL", date: "2099-10-05", qty: 1, total: race.ask - 10, cash: 0, movedUnits: 1,
+      more: { coverUnits: 0.25, coverRM: 10 }, coverFree: 2 });
+    let refused = false;
+    try { await queueSale(race.desk, [covered], true); } catch (error) { refused = error.status === 400; }
+    ok(refused && !race.map.has("q:orders:" + covered.at),
+      "ordinary-trade batch rejection remains authoritative for resource input");
+    race.sqlite.prepare("INSERT INTO maker_request(id,operation,fingerprint) VALUES (?,?,?)")
+      .run("queue-withdraw:" + covered.at, "queue-withdraw", "fixture");
+    let fenced = false;
+    try { await queueResourceTrades(race.desk, [covered]); } catch (error) { fenced = error.status === 409; }
+    ok(fenced && !race.sqlite.prepare("SELECT id FROM input_admission WHERE id=?").get(covered.at),
+      "the atomic covered-batch insert respects an existing withdrawal tombstone");
+  } finally { race.source.w.close(); race.sqlite.close(); }
+}

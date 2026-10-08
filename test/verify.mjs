@@ -50434,6 +50434,11 @@ await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
 
+section("Counter reward parity: generated offers and covered resource batches");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).run({ ok, pageWork });
+})();
+
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
 await (async () => {
   await (await import("./d1-fail-closed.mjs")).run({ ok });

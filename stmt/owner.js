@@ -1322,14 +1322,35 @@ export const OWNER_JS = `
     var redeem=el('section','maker-input');redeem.appendChild(el('h3',null,'Reward redemption'));
     redeem.appendChild(el('p','msg','The Desk derives the balance. An outstanding advance is offset first; otherwise the reward is redeemed in kind.'));
     parent.appendChild(redeem);
-    var redeemParty=addSelect(redeem,'Party',partyItems), redeemDate=makerField(redeem,'Date','date',today),
-      redeemStatus=makerStatus(redeem);
-    makerButton(redeem,'Redeem or offset',async function(send){
-      redeemStatus.textContent='Checking the reward on the Desk…';
-      try{await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:redeemParty.value,date:redeemDate.value});
-        redeemStatus.textContent='Sent for review. The Desk chose the oldest advance or an in-kind redemption.';loadMaker();}
+    var redeemDate=makerField(redeem,'Date','date',today), redeemStatus=makerStatus(redeem),
+      redeemList=el('div','maker-rewards');
+    redeem.appendChild(redeemList);
+    function drawRewards(rewards){
+      redeemList.textContent='';
+      if(!rewards.length)redeemList.appendChild(el('p','msg','No reward is held.'));
+      rewards.forEach(function(offer){
+        var row=el('div','maker-reward');row.setAttribute('data-reward-holder',offer.code);
+        row.appendChild(el('p','maker-facts',offer.code+' · '+offer.held+' unit held'
+          +(offer.departed?' while departed':offer.free<offer.held?' · '+offer.free+' unit available after reservations':'')));
+        if(offer.action){
+          var status=makerStatus(row);
+          makerButton(row,offer.action+' '+(offer.action==='Redeem'&&!offer.associate?'1 unit':'reward')+' for '+offer.code,async function(send){
+            status.textContent='Checking the reward on the Desk…';
+            try{
+              await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
+              redeemStatus.textContent='Sent for review. It settles only when approved and folded.';
+              var read=await refs('/all/maker/inputs');drawRewards(read.catalog.rewards||[]);loadMaker();
+            }catch(error){status.textContent=error.message;}
+          },true);
+        }
+        redeemList.appendChild(row);
+      });
+    }
+    drawRewards(catalog.rewards||[]);
+    makerButton(redeem,'Read reward offers',async function(){
+      try{var read=await refs('/all/maker/inputs');drawRewards(read.catalog.rewards||[]);redeemStatus.textContent='Reward offers read.';}
       catch(error){redeemStatus.textContent=error.message;}
-    },true);
+    },false);
     var offsets=el('section','maker-input');offsets.appendChild(el('h3',null,'Automatic offsets'));
     offsets.appendChild(el('p','msg','What the Desk offers an associate holding a reward and an unpaid advance: one unit against the oldest order. A departed holder is never offered. Each tap waits for approval.'));
     parent.appendChild(offsets);
@@ -1887,6 +1908,34 @@ export const OWNER_JS = `
         var option=el('option',null,code); option.value=code; tradeDown.appendChild(option);
       });
       tradeStream.addEventListener('change',fillAttribution);
+      var coverChoices=[];
+      function coverChoice(root,bookControl,unitsControl,goodsControl){
+        var wrap=el('label','maker-cover'), check=el('input'), words=el('span'), note=el('p','msg'), revision=0;
+        check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;
+        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);root.appendChild(wrap);root.appendChild(note);
+        async function read(){
+          var ticket=++revision;check.checked=false;wrap.hidden=true;check.disabled=true;note.textContent='';
+          if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0))return;
+          note.textContent='Reading reward cover…';
+          try{
+            var result=await refs('/all/maker/trade-cover',{product:bookControl.value,party:tradeParty.value,
+              qty:Number(unitsControl.value),total:Number(goodsControl.value),stream:tradeStream.value||null});
+            if(ticket!==revision||!root.isConnected)return;
+            note.textContent='';
+            if(result.cover){
+              words.textContent='Cover RM '+result.cover.rm.toFixed(2)+' with '+result.cover.units+' unit reward'
+                +' · '+result.cover.free+' unit available · own quote RM '+result.cover.ask.toFixed(2);
+              check.disabled=false;wrap.hidden=false;
+            }
+          }catch(error){if(ticket===revision)note.textContent=error.message;}
+        }
+        var choice={check:check,read:read};coverChoices.push(choice);
+        [bookControl,unitsControl,goodsControl,tradeParty,tradeStream,direction].forEach(function(control){
+          control.addEventListener('input',read);control.addEventListener('change',read);
+        });
+        return choice;
+      }
+      var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal);
       var extraBooks=el('div','maker-extra-books'), extraTrades=[];
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Extra books share the party, date and handover. Each has its own goods, cash and units moved. Delivery sits on the first row alone; with a delivery, Approve takes the trip in one tap.');
@@ -1909,7 +1958,10 @@ export const OWNER_JS = `
           cash:makerField(row,'Cash recorded (RM)','number','0','0.01'),
           movedUnits:makerField(row,'Units moved','number','0','0.01')};
         extraTrades.push(extra); extraBooks.appendChild(row);
-        makerButton(row,'Remove book',function(){extraTrades.splice(extraTrades.indexOf(extra),1);row.remove();},false);
+        extra.cover=coverChoice(row,select,extra.qty,extra.total);
+        makerButton(row,'Remove book',function(){
+          extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
+        },false);
       },false);
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
@@ -1938,15 +1990,18 @@ export const OWNER_JS = `
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
           handover:handover.value||null};
         body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
+        if(isSale&&firstCover.check.checked)body.cover=true;
         if(isSale&&tradeStream.value){
           if(!tradeAssoc.value){tradeAnswer.textContent='Choose an associate first.';return;}
           body.assoc=tradeAssoc.value; body.stream=tradeStream.value;
           if(body.stream==='R2'){body.party=body.assoc;body.downstream=tradeDown.value||null;}
         }
         if(extraTrades.length) body.extras=extraTrades.map(function(extra){
-          return {product:extra.product.value,qty:extra.qty.value===''?null:Number(extra.qty.value),
+          var input={product:extra.product.value,qty:extra.qty.value===''?null:Number(extra.qty.value),
             total:extra.total.value===''?null:Number(extra.total.value),cash:extra.cash.value===''?null:Number(extra.cash.value),
             movedUnits:extra.movedUnits.value===''?null:Number(extra.movedUnits.value)};
+          if(isSale&&extra.cover.check.checked)input.cover=true;
+          return input;
         });
         if(confirmedTwin) Object.keys(confirmedTwin).forEach(function(index){
           if(Number(index)===0)body.second=confirmedTwin[index];
@@ -1974,7 +2029,7 @@ export const OWNER_JS = `
         tradePending=false;
       }
       makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true,function(){
-        tradeAt=null;tradeSignature='';
+        tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       var tierSection=el('section','maker-input');
       tierSection.appendChild(el('h3',null,'Customer tier'));
