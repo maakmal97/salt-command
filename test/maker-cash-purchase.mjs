@@ -103,7 +103,7 @@ export async function run({ ok }) {
   } finally { globalThis.fetch = originalFetch; }
 
   /* ---- the owner page's own controls, in the actual owner script ---- */
-  const posts = [], cashTimers = [];
+  const posts = [], cashTimers = [], cashRids = new Set();
   let failNext = 0;
   const claimAt = "2026-10-04T08:15:00.000Z";
   const reviewBody = { ok: true, drafts: [], orders: [
@@ -128,6 +128,10 @@ export async function run({ ok }) {
         if (init && init.method === "POST" && (where.startsWith("/all/maker/orders/") || where === "/all/maker/inputs/ledger-amend")) {
           posts.push({ path: where, body: JSON.parse(init.body) });
           if (failNext > 0) { failNext--; return Response.json({ ok: false, error: "The Desk did not answer." }, { status: 503 }); }
+          if (where.endsWith("/cash") && !cashRids.has(posts.at(-1).body.rid)) {
+            cashRids.add(posts.at(-1).body.rid);
+            reviewBody.orders[0].paid = (reviewBody.orders[0].paid || 0) + posts.at(-1).body.amount;
+          }
           return Response.json({ ok: true });
         }
         if (where === "/all/maker/review") return Response.json(reviewBody);

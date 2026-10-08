@@ -13,12 +13,13 @@ export function cashAnswer(path) {
   return { ok: true, accounts: [], claims: [], threads: [], bulletin: { lines: [] }, config: null, status: {} };
 }
 export async function run({ ok }) {
-  const fixture = async () => {
+  const fixture = async ({ storage = [], backend = { paid: 0, receipts: new Set(), failRead: false } } = {}) => {
     const posts = [], timers = [], intervals = [], pending = [];
     let now = 0, fail = false, defer = false;
     const dom = new JSDOM(cashPage(), {
       url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
       beforeParse(w) {
+        for (const [key, value] of storage) w.localStorage.setItem(key, value);
         Object.defineProperty(w, "crypto", { value: webcrypto });
         w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder;
         w.scrollTo = () => {}; w.confirm = () => true;
@@ -31,8 +32,15 @@ export async function run({ ok }) {
           if (init?.method === "POST") {
             posts.push({ path: String(path), body: JSON.parse(init.body), bytes: init.body, keepalive: init.keepalive });
             if (defer) await new Promise((resolve) => pending.push(resolve));
+            const body = posts.at(-1).body;
+            if (!backend.receipts.has(body.rid)) { backend.receipts.add(body.rid); backend.paid += body.amount; }
             if (fail) throw new Error("fixture lost answer");
             return Response.json({ ok: true, preapproval: { says: "Booked as it is drafted" } });
+          }
+          if (String(path) === "/all/maker/review") {
+            if (backend.failRead) throw new Error("fixture failed review read");
+            const answer = cashAnswer(String(path)); answer.orders[0].paid = backend.paid;
+            return Response.json(answer);
           }
           return Response.json(cashAnswer(String(path)));
         };
@@ -42,9 +50,9 @@ export async function run({ ok }) {
     const quiet = async () => { for (let i = 0; i < 40; i++) await Promise.resolve(); };
     d.querySelector('[data-m="maker"]').click(); await quiet();
     const card = () => [...d.querySelectorAll("#makerReview article")].find((n) => n.querySelector("h3")?.textContent === "cash-fixture-1");
-    const button = (text) => [...card().querySelectorAll("button")].find((n) => n.textContent === text);
-    const note = () => card().querySelector("[data-maker-cash-status]").textContent;
-    const cash = () => [...card().querySelectorAll("label")].find((n) => n.querySelector(".lbl")?.textContent === "Cash received (RM)")?.querySelector("input");
+    const button = (text) => [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
+    const note = () => card()?.querySelector("[data-maker-cash-status]")?.textContent || "";
+    const cash = () => [...(card()?.querySelectorAll("label") || [])].find((n) => n.querySelector(".lbl")?.textContent === "Cash received (RM)")?.querySelector("input");
     const tap = async (amount) => {
       const input = cash(), record = button("Record cash");
       if (!input || !record) return;
@@ -56,7 +64,8 @@ export async function run({ ok }) {
       for (const interval of intervals) if (!interval.off) interval.f();
       await quiet();
     };
-    return { w, d, posts, timers, pending, card, cash, button, note, tap, advance, quiet,
+    const stored = () => Object.keys(w.localStorage).map((key) => [key, w.localStorage.getItem(key)]);
+    return { w, d, posts, timers, pending, backend, stored, card, cash, button, note, tap, advance, quiet,
       failure: (v) => { fail = v; }, defer: (v) => { defer = v; } };
   };
   const f = await fixture();
@@ -130,8 +139,61 @@ export async function run({ ok }) {
       && /^[0-9a-f]{32}$/.test(retry.posts[0].body.rid) && retryButton?.disabled,
       "C14: a retry keeps immutable amount and rid, with no duplicate while in flight or on leave");
     retry.defer(false); retry.pending.shift()?.(); await retry.quiet();
-    await retry.tap(60); await retry.advance(10000);
+    await retry.tap(40); await retry.advance(10000);
     ok(retry.posts.length === 3 && retry.posts[2].body.rid !== retry.posts[0].body.rid,
       "C15: only confirmed cash frees the next tap to mint a new rid");
   } finally { retry.w.close(); }
+
+  const refresh = await fixture();
+  try {
+    const staleRecord = refresh.button("Record cash");
+    refresh.backend.failRead = true; await refresh.tap(40); await refresh.advance(10000);
+    const kept = refresh.stored();
+    staleRecord.click(); await refresh.advance(10000);
+    ok(refresh.posts.length === 1 && !refresh.button("Record cash") && !refresh.button("Retry cash")
+      && refresh.button("Refresh cash") && refresh.note() === "Recorded, refresh pending."
+      && JSON.stringify(refresh.stored()) === JSON.stringify(kept),
+      "C17: confirmed partial cash stays gated through a failed review; a stale second tap sends no new rid");
+    refresh.backend.failRead = false; refresh.button("Refresh cash")?.click(); await refresh.quiet();
+    const restored = !!refresh.button("Record cash") && !refresh.button("Refresh cash")
+      && refresh.note().includes("RM 60.00 still owed.") && refresh.stored().length === 0;
+    await refresh.tap(61);
+    const refused = refresh.posts.length === 1 && refresh.note().includes("RM 60.00 owed");
+    await refresh.tap(60); await refresh.advance(10000);
+    ok(restored && refused && refresh.posts.length === 2 && refresh.posts[1].body.amount === 60
+      && refresh.posts[1].body.rid !== refresh.posts[0].body.rid && refresh.backend.paid === 100,
+      "C18: only a fresh incorporated review restores cash at the correct RM 60 remaining");
+  } finally { refresh.w.close(); }
+
+  const lost = await fixture();
+  let reopened, confirmed;
+  try {
+    lost.failure(true); await lost.tap(40); await lost.advance(10000);
+    const original = lost.posts[0].bytes, storage = lost.stored();
+    lost.w.close();
+    reopened = await fixture({ storage, backend: lost.backend });
+    const retained = !!reopened.button("Retry cash") && !reopened.button("Undo") && !reopened.button("Record cash");
+    reopened.backend.failRead = true;
+    reopened.button("Retry cash")?.click(); await reopened.quiet();
+    ok(retained && reopened.posts.length === 1 && reopened.posts[0].bytes === original
+      && reopened.backend.paid === 40 && reopened.button("Refresh cash") && !reopened.button("Retry cash"),
+      "C19: reload after an uncertain POST recovers exact bytes/rid, has no Undo, and replays cash once");
+    const confirmedStorage = reopened.stored(); reopened.w.close();
+    confirmed = await fixture({ storage: confirmedStorage, backend: lost.backend });
+    const gated = !!confirmed.button("Refresh cash") && !confirmed.button("Retry cash") && !confirmed.button("Undo")
+      && !confirmed.button("Record cash") && confirmed.note() === "Recorded, refresh pending." && confirmed.posts.length === 0;
+    confirmed.backend.failRead = false; confirmed.button("Refresh cash")?.click(); await confirmed.quiet();
+    ok(gated && confirmed.posts.length === 0 && confirmed.button("Record cash") && confirmed.stored().length === 0
+      && confirmed.note().includes("RM 60.00 still owed."),
+      "C20: confirmed receipt survives reload/failed reads; Refresh never reposts, and incorporated review releases it");
+  } finally { lost.w.close(); reopened?.w.close(); confirmed?.w.close(); }
+  const storageFailure = await fixture(), prototype = storageFailure.w.Storage.prototype;
+  const set = prototype.setItem;
+  try {
+    prototype.setItem = function () { throw new Error("fixture device quota refused"); };
+    await storageFailure.tap(40); await storageFailure.advance(10000);
+    ok(storageFailure.posts.length === 0 && storageFailure.button("Retry cash") && !storageFailure.button("Record cash")
+      && storageFailure.note().includes("fixture device quota refused"),
+      "C21: a device retention failure refuses transport explicitly, never an unretained cash POST");
+  } finally { prototype.setItem = set; storageFailure.w.close(); }
 }
