@@ -3,13 +3,16 @@
    request id, the Desk's own route, the Desk's refusals (collection, floor, paid, claim, size under what is out), the order
    book's restate event, an acceptance order in its fixture alone, and the owner page's control. */
 import { webcrypto } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
 import { orderBook } from "./orderbook-harness.mjs";
 import * as O from "../stmt/orders.js";
 import { amendEntry } from "../src/orders.js";
-import { STAGE_OF } from "../src/drafter.js";
+import { STAGE_OF, withPending } from "../src/drafter.js";
+import PE from "../engine/position.mjs";
 import { landingPage } from "../stmt/page.js";
 import { TEST_USER, FIX_VERSION, fixKey, exampleAccount } from "../stmt/testfix.js";
 import { Store, ledger } from "./maker-order-controls.mjs";
@@ -152,6 +155,36 @@ export async function run({ ok }) {
     ok(exTap.status === 200 && exNow.total === 295 && exAgain.status === 200 && (await exAgain.json()).again === true
       && exBad.status === 400 && harness.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n === realEvents && L.requests.size === 0,
       "An acceptance order's amendment lands in its fixture alone, once under its id, and the same refusals hold there: " + JSON.stringify([exTap.status, exNow.total, exBad.status]));
+    /* 06 Oct 2026: AND UNDER WHAT THEY PAID, through Counter Admin with the Desk's mirror seeded (the stub D1 above cannot be): the
+       restate is taken and the answer names the refund the fold raises. The Desk's real-schema proof is in verify.mjs. */
+    let DatabaseSync = null;
+    try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+    if (DatabaseSync) {
+      const sq = new DatabaseSync(":memory:");
+      for (const f of readdirSync(join(import.meta.dirname, "..", "migrations")).filter((x) => /^[0-9]+_.*[.]sql$/.test(x)).sort()) sq.exec(readFileSync(join(import.meta.dirname, "..", "migrations", f), "utf8"));
+      const D1 = { prepare(sql) { const st = sq.prepare(sql);
+        const mk = (a) => ({ async run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+          async first() { const r = st.get(...a); return r === undefined ? null : r; }, async all() { return { results: st.all(...a) }; } });
+        const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("PRICING", JSON.stringify({ v: "v1", byProduct: { salt: { stockCost: 30, floors: { "3": { floor: 100 } }, inputs: null, sizes: [3] } } }));
+      const seedRow = { rid: "s90", customer: "CX1-AB", product: "salt", date: at.slice(0, 10), qty: 3, total: 285, cash: 280 };
+      sq.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0", JSON.stringify(seedRow));
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify(withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, seedRow).state.OPEN));
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("roster", JSON.stringify(["CX1-AB"]));
+      sq.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v1',NULL,?)").run(new Date().toISOString());
+      const seeded = { ...deskEnv, SALT_LEDGER: D1, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: { fetch: async () => new Response("", { status: 404 }) } };
+      const keep = env.DESK_MAKER;
+      env.DESK_MAKER = { fetch: (request) => desk.fetch(request, seeded, {}) };
+      try {
+        const idOver = make();
+        harness.book.append(null, u, idOver, { kind: "mark", at, mark: { ledgerKey: PE.ovKey(seedRow) } }, harness.book.order(u, idOver));
+        harness.book.append(null, u, idOver, { kind: "ledger", at, paid: 280, moved: 0 }, harness.book.order(u, idOver));
+        const over = await tap(idOver, { total: 270, rid: rid(11) });
+        const overBody = await over.json().catch(() => ({}));
+        ok(over.status === 200 && overBody.ok && overBody.preapproval && overBody.preapproval.refund === 10,
+          "Counter Admin amends a paid order to RM 270 under the RM 280 paid, and the answer names the RM 10 refund the fold raises: " + over.status + " " + JSON.stringify(overBody).slice(0, 240));
+      } finally { env.DESK_MAKER = keep; }
+    }
     void t0; void events;
   } finally { globalThis.fetch = originalFetch; }
 
