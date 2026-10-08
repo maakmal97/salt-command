@@ -1335,7 +1335,7 @@ export const OWNER_JS = `
     offsets.appendChild(el('p','msg','What the Desk offers an associate holding a reward and an unpaid advance: one unit against the oldest order. A departed holder is never offered. Each tap waits for approval.'));
     parent.appendChild(offsets);
     var offerDate=makerField(offsets,'Date','date',today), offerStatus=makerStatus(offsets),
-      offerList=el('div','maker-offers'), offerAt={};
+      offerList=el('div','maker-offers');
     offsets.appendChild(offerList);
     var offerLoad=async function(){
       offerStatus.textContent='Reading offers from the Desk…';
@@ -1346,12 +1346,10 @@ export const OWNER_JS = `
         read.offers.forEach(function(offer){
           var row=el('div','maker-offer');
           row.appendChild(el('p','maker-facts',offer.code+' · '+offer.units+' unit · RM '+offer.rm.toFixed(2)+' against the '+(offer.saleDate||'undated')+' order '+offer.rid));
-          makerButton(row,'Send offset for review',async function(){
-            var key=offer.code+'|'+offer.rid+'|'+offerDate.value, at=offerAt[key]||(offerAt[key]=new Date().toISOString());
+          makerButton(row,'Send offset for review',async function(send){
             offerStatus.textContent='Sending to the Desk…';
             try{
-              await refs('/all/maker/inputs/offset',{at:at,code:offer.code,rid:offer.rid,date:offerDate.value});
-              delete offerAt[key];
+              await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
               await offerLoad();
               offerStatus.textContent='Sent for review. It settles in kind only when approved and folded.';
               loadMaker();
@@ -1860,7 +1858,7 @@ export const OWNER_JS = `
         try{ await send('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. Review its row under Order review.'; loadMaker(); }
         catch(error){ answer.textContent=error.message; }
         pending=false; button.disabled=false;
-      },true);
+      },true,function(){ at=null; signature=''; });
       var catalog=context.catalog||{}, tradeSection=el('section','maker-input');
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and carriage stay separate. Notes are disabled here: this route cannot safely prove arbitrary prose contains no names or places.'));
@@ -2068,7 +2066,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }
           catch(error){ tierAnswer.textContent=error.message; }
           tierPending=false;
-        },true);
+        },true,function(){ tierAt=null; tierSignature=''; });
         /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone.
            Each new Accept is its own request; a retry is the button's retained request, which keeps the id it was sent under. */
         var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
@@ -2170,10 +2168,10 @@ export const OWNER_JS = `
           var body={product:houseProduct.value,hide:houseTicks.filter(function(t){ return !t.checked; }).map(function(t){ return Number(t.value); })};
           var check=JSON.stringify(body); if(check!==houseSignature){ houseSignature=check; houseAt=new Date().toISOString(); }
           body.at=houseAt; housePending=true;
-          try{ await send('/all/maker/inputs/house-sizes',body); houseAt=null; houseSignature=''; houseAnswer.textContent='Sent for review. The board prints these sizes once folded; no price moves.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/house-sizes',body); houseAnswer.textContent='Sent for review. The board prints these sizes once folded; no price moves.'; loadMaker(); }
           catch(error){ houseAnswer.textContent=error.message; }
           housePending=false;
-        },true);
+        },true,function(){ houseAt=null; houseSignature=''; });
       }
       box.appendChild(houseSection);
       /* A5: the Desk's Whiteboard hush. The tips are the ones the Desk is showing; a hush moves no figure. */
@@ -2199,7 +2197,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hushed. The Desk hides it when it next reads the hushes: on load, or on opening Whiteboard.'; loadMaker(); }
           catch(error){ tipAnswer.textContent=error.message; }
           tipPending=false;
-        },true);
+        },true,function(){ tipAt=null; tipSignature=''; });
       }
       makerOtherInputs(box,catalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';

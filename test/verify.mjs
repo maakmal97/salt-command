@@ -50449,6 +50449,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter input receipts: confirmed completion and immutable uncertain retries");
+await (async () => {
+  await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter multi-book trade: owner controls, shared trip and native fold");
 await (async () => {
   await (await import("./maker-trades.mjs")).run({ ok, pageWork });
