@@ -21,13 +21,18 @@ export async function admitInputs(db, entries, book, source) {
   if (!db || !book?.version || typeof db.batch !== "function")
     return fault("Durable input admission and a complete mirror are required.", 503);
   const claims = [];
+  const identities = new Map();
   for (const entry of entries) {
     const checked = await checkInputAdmission(db, entry, book);
     if (checked.error) return checked;
     if (checked.claim) {
-      const owned = await db.prepare("SELECT id FROM input_admission_source WHERE id=?1 AND source=?2")
-        .bind(entry.at, source).first();
-      claims.push({ entry, ...checked, owned: !!owned });
+      if (identities.has(entry.at)) {
+        if (identities.get(entry.at) !== checked.fingerprint)
+          return fault("That timestamp already names a different resource input.");
+        continue;
+      }
+      identities.set(entry.at, checked.fingerprint);
+      claims.push({ entry, ...checked });
     }
   }
   if (!claims.length) return {};
@@ -51,11 +56,11 @@ export async function admitInputs(db, entries, book, source) {
   const insert = db.prepare(incoming + `INSERT OR IGNORE INTO input_admission
     (id,fingerprint,resource,amount,snapshot,entry)
     SELECT id,fingerprint,resource,amount,snapshot,entry FROM incoming WHERE ` + allFit).bind(values);
-  const owner = db.prepare(incoming + `INSERT OR IGNORE INTO input_admission_source(id,source)
-    SELECT id,?2 FROM incoming WHERE NOT EXISTS
+  const owners = claims.map(({ entry }) => db.prepare(incoming + `INSERT OR IGNORE INTO input_admission_source(id,source)
+    SELECT id,?2 FROM incoming WHERE id=?3 AND NOT EXISTS
       (SELECT 1 FROM incoming i WHERE NOT EXISTS (SELECT 1 FROM input_admission a
-        WHERE a.id=i.id AND a.fingerprint=i.fingerprint AND a.state='accepted')) AND ` + allFit).bind(values, source);
-  await db.batch([insert, owner]);
+        WHERE a.id=i.id AND a.fingerprint=i.fingerprint AND a.state='accepted')) AND ` + allFit).bind(values, source, entry.at));
+  const results = await db.batch([insert, ...owners]);
   for (const { entry, fingerprint } of claims) {
     const accepted = await db.prepare(`SELECT fingerprint,state FROM input_admission WHERE id=?1
       AND NOT EXISTS (SELECT 1 FROM maker_request WHERE id='queue-withdraw:'||?1)`).bind(entry.at).first();
@@ -64,8 +69,8 @@ export async function admitInputs(db, entries, book, source) {
   }
   const current = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
   if (String(current?.v) !== String(book.version)) {
-    for (const { entry, owned } of claims)
-      if (!owned) await withdrawInputAdmission(db, entry.at, source);
+    for (const [i, { entry }] of claims.entries())
+      if (results[i + 1].meta.changes === 1) await withdrawInputAdmission(db, entry.at, source);
     return fault("The book changed during admission. This batch was not sent; retry the original request.");
   }
   return { accepted: true };

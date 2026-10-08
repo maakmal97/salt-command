@@ -353,5 +353,36 @@ export async function runAdmission({ ok }) {
       && race.sqlite.prepare("SELECT state FROM input_admission WHERE id=?").get(previous.at)?.state === "accepted"
       && race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=? AND source='device:fixture'").get(previous.at),
       "a reseed during atomic admission releases only newly acquired ownership and preserves a retained source");
+    race.sqlite.prepare("UPDATE snapshot SET v=? WHERE one=1").run(book.version);
+    const competing = E.redeemEntry({ ...retained.payload, at: "2099-10-05T08:00:00.000Z" });
+    let acquire = true;
+    const competingDb = { prepare: (...args) => race.desk.SALT_LEDGER.prepare(...args), async batch(statements) {
+      if (acquire) {
+        acquire = false;
+        await admitInputs(race.desk.SALT_LEDGER, [competing], book, "device:fixture");
+      }
+      const result = await race.desk.SALT_LEDGER.batch(statements);
+      race.sqlite.prepare("UPDATE snapshot SET v='changed' WHERE one=1").run();
+      return result;
+    } };
+    const concurrentRetry = await admitInputs(competingDb, [competing], book, "device:fixture");
+    ok(concurrentRetry.error
+      && race.sqlite.prepare("SELECT state FROM input_admission WHERE id=?").get(competing.at)?.state === "accepted"
+      && race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=? AND source='device:fixture'").get(competing.at),
+      "a reseed cannot release ownership acquired by a concurrent identical retry before this transaction");
+    race.sqlite.prepare("UPDATE snapshot SET v=? WHERE one=1").run(book.version);
+    const collision = E.redeemEntry({ ...retained.payload, at: "2099-10-05T09:00:00.000Z" });
+    const conflicting = E.redeemEntry({ ...collision.payload, at: collision.at, qty: 0.5 });
+    const collisionResult = await admitInputs(race.desk.SALT_LEDGER, [collision, conflicting], book, "device:fixture");
+    ok(collisionResult.error && !race.sqlite.prepare("SELECT id FROM input_admission WHERE id=?").get(collision.at)
+      && !race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=?").get(collision.at),
+      "a conflicting timestamp inside one resource batch refuses before any prefix is reserved");
+    const duplicate = E.redeemEntry({ ...retained.payload, party: "CX2-ZED", qty: 0.3,
+      at: "2099-10-05T10:00:00.000Z" });
+    const duplicateResult = await admitInputs(race.desk.SALT_LEDGER, [duplicate, duplicate], book, "device:fixture");
+    ok(duplicateResult.accepted
+      && race.sqlite.prepare("SELECT amount FROM input_admission WHERE id=?").get(duplicate.at)?.amount === 0.3
+      && race.sqlite.prepare("SELECT COUNT(*) AS n FROM input_admission_source WHERE id=?").get(duplicate.at)?.n === 1,
+      "an identical timestamp in a resource batch reserves its native amount once rather than counting a duplicate");
   } finally { race.source.w.close(); race.sqlite.close(); }
 }

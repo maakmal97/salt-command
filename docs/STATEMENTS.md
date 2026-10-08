@@ -1499,6 +1499,9 @@ read from `POST /all/maker/trade-cover` and sent only as `cover: true`. The Desk
 the shared engine decision against that customer's own card, shelf cost and available
 reward; delivery is outside the gap. Covered batches use all-or-none durable admission
 before queue transport, not an exception to the ordinary trade-batch resource refusal.
+Within a batch, an identical timestamp reserves once; conflicting bytes at that timestamp
+refuse the whole batch before insertion. A reseed releases only source ownership acquired
+by that transaction, not an identical retry's retained source.
 Native approval and fold remain required. No pricing rule, board or floor is changed,
 and these controls do not establish owner acceptance or retire the Desk controls.
 
