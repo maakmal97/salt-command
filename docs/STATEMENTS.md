@@ -1454,6 +1454,15 @@ Counter notes are disabled because these specific paths cannot prove arbitrary p
 free of names and places. `GET inputs` returns the active-book and roster catalog, including open
 loans for repayment selection.
 
+On **Amend a ledger row**, Cancellation hides and disables the movement fields and sends no
+cash or units. Its After reading comes from the private input catalog: the Desk mirror's
+Position Engine `txStat` / `poStat` on the cancelled row, and `refundOnCancel` for a sale's
+refund payable. A paid, unmoved sale reads Refund due, Undelivered, Cancelled and names what
+was paid; an unpaid pending sale reads Unpaid, Cancelled and names no refund. The browser
+renders this reading without deriving a pay state or a refund. An unavailable preview is
+explicit. This seeded preview authorizes nothing: sending re-reads the mirror through the
+native amendment and drafter checks, so goods moved since that reading still stop Cancellation.
+
 Counter Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
 Undo cancels that hold and sends nothing. Hiding or leaving the page flushes every unsent hold
 once with `keepalive`; expiry cannot send it again. The card disables other moves while cash is

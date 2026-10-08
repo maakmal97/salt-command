@@ -1405,6 +1405,7 @@ export const OWNER_JS = `
     var valueBox=el('div','maker-fields');patch.appendChild(valueBox);
     var editValue=null, changes={}, patchList=el('p','msg');patch.appendChild(patchList);
     var editStatus=makerStatus(editor);
+    var cancelPreview=el('div','maker-cancellation');cancelPreview.setAttribute('aria-live','polite');editor.appendChild(cancelPreview);
     var drawValue=function(){
       valueBox.replaceChildren();
       var definition=definitions.find(function(item){return item.field===editField.value;});
@@ -1443,8 +1444,19 @@ export const OWNER_JS = `
     };
     var drawKind=function(){var k=editKind.value;
       movement.style.display=(k==='Fulfilment'||k==='Payment'||k==='Receipt')?'':'none';
+      editCash.disabled=k==='Cancellation';editUnits.disabled=k==='Cancellation';
       editCash.parentNode.style.display=k==='Receipt'?'none':'';editUnits.parentNode.style.display=k==='Payment'?'none':'';
-      patch.style.display=k==='Correction'?'':'none';};
+      patch.style.display=k==='Correction'?'':'none';
+      cancelPreview.replaceChildren();cancelPreview.hidden=k!=='Cancellation';
+      if(k==='Cancellation'){
+        var row=rows.find(function(item){return item.rid===editRow.value;}), reading=row&&row.cancellation;
+        if(!reading){cancelPreview.appendChild(el('p','msg','Cancellation preview unavailable: the row is not open or goods have moved. Read the ledger again.'));return;}
+        cancelPreview.appendChild(el('p','maker-facts','After · '+reading.pay+' · '+reading.deliv+' · '+reading.order));
+        var refund=reading.refundRM;
+        cancelPreview.appendChild(el('p','msg','The row is marked cancelled outright'
+          +(refund!=null?', and RM '+refund+' already paid becomes a refund payable back to '+row.party:'')
+          +'. Cash and units are not used here: what is owed back is what was paid.'));
+      }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     var editorButton=makerButton(editor,'Send amendment for review',async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
