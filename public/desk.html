@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="255053440bb12f90";
+var SALT_BUILD_ID="4d4e8799a5ed55f7";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12243,13 +12243,15 @@ function badgeKey(){
 function railCounts(){
   const k=badgeKey();
   const was=railCounts._c;   /* on the function, as restockFor keeps its plan: a data-shaped global would be read as part of the book */
-  if(k!==null&&was&&was.k===k)return was;
+  /* and the identity of the readers it stands on: a function swapped (a test seam, a patch) is no data, so it is held beside the key */
+  const fns=[actions,boundaryScan,ordActs,forecast,restockFor,networkStats,approachSplit];
+  if(k!==null&&was&&was.k===k&&was.fns.every((f,i)=>f===fns[i]))return was;
   const open=sales.filter(t=>{const o=txStat(t).order;return o==='Pending'||/^Open/.test(o);}).length
     +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?1:0)
     /* v708: the mirror term. A default he is owed counted; money he owes BACK counted nothing, so
        the destination that holds it under-counted by exactly the one side he has to act on. */
     +((typeof customerRefunds!=='undefined'&&customerRefunds)?customerRefunds.filter(r=>!r.paidOn).length:0);
-  const c={k,open,today:allActions().filter(x=>x.sev==='now').length};
+  const c={k,fns,open,today:allActions().filter(x=>x.sev==='now').length};
   railCounts._c=k===null?null:c;
   return c;
 }

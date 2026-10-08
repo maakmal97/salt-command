@@ -12880,8 +12880,7 @@ await (async () => {
   try {
     /* ---- TODAY. One synthetic breach, so the old formula and the new one must differ by it. ---- */
     wB.eval(`window.__realScan = boundaryScan;
-      boundaryScan = function(){ return [{sev:'breach', rule:'Test rule', who:'CZ9-TST', what:'forced', why:'forced'}]; };
-      railCounts._c = null;   /* fold 5: the rail keeps its counts against the data, and a swapped function is no data */`);
+      boundaryScan = function(){ return [{sev:'breach', rule:'Test rule', who:'CZ9-TST', what:'forced', why:'forced'}]; };`);
     /* 26 Sep 2026 (plan fold 4.3): THE NOW LIST THE PAGE SHOWS is counted off Today as drawn, the rows under its Now
        heading, and never off actions() on the book in view: since v794 the badge counts every book, so a Now item oil
        raised on its own read here as a fault on the fold that booked it (4 and then 5 against 3, 24 Sep). */
@@ -12897,7 +12896,7 @@ await (async () => {
       "the breach is already in the NOW list as a rule row, which is why adding it again was a double count");
     ok(shown === nowN, `the Today badge reads the NOW list the page shows, every book's (${shown} against ${nowN} items drawn)`);
     ok(shown !== nowN + breachN, `and not the NOW list plus the breaches again (${nowN + breachN})`);
-    wB.eval("boundaryScan = window.__realScan; delete window.__realScan; railCounts._c = null;");
+    wB.eval("boundaryScan = window.__realScan; delete window.__realScan;");
 
     /* ---- ENTER. One entry queued on this phone AND drafted, keyed by the same `at`. ---- */
     const AT = "2026-09-11T01:00:00.000Z";
