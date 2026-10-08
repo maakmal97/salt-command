@@ -47161,6 +47161,62 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("Perf: every mutable global actions() can reach is in the rail badge's key, or allowed with a reason");
+await (async () => {
+  /* Fold 5 structural check. The key is only as good as its list, and the list was found by reading. This walks the master the
+     same way: every top-level `let`, the `function X(` calls followed transitively from actions, allActionsNow, ordActs,
+     boundaryScan and txStat, and each `let` the closure touches must be named in badgeKey's own text or allowed below. A new
+     mutable global read by actions() with no key term turns this red. Comments are stripped, so a name in prose counts for nothing. */
+  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const code = [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}])\/\/[^\n]*/g, "$1");
+  const body = Object.create(null), lets = new Set();
+  let cur = null;
+  for (const l of code.split("\n")) {
+    const f = /^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(l), d = /^(let|var|const)\s+(.*)/.exec(l);
+    if (f) { cur = f[1]; body[cur] = l + "\n"; continue; }
+    if (d) {
+      cur = null;
+      if (d[1] === "let") {
+        let depth = 0, item = "";
+        const items = [];
+        for (const ch of d[2].split(";")[0]) {
+          if ("([{".includes(ch)) depth++;
+          if (")]}".includes(ch)) depth--;
+          if (ch === "," && !depth) { items.push(item); item = ""; } else item += ch;
+        }
+        items.push(item);
+        items.forEach((i) => { const m = /^\s*([A-Za-z_$][\w$]*)/.exec(i); if (m) lets.add(m[1]); });
+      }
+      continue;
+    }
+    if (cur) body[cur] += l + "\n";
+  }
+  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat"], reached = new Set();
+  while (queue.length) {
+    const n = queue.shift();
+    if (seen.has(n)) continue;
+    seen.add(n);
+    for (const t of new Set((body[n] || "").match(/[A-Za-z_$][\w$]*/g) || [])) {
+      if (body[t] && !seen.has(t)) queue.push(t);
+      if (lets.has(t)) reached.add(t);
+    }
+  }
+  const keyText = body.badgeKey || "";
+  const ALLOWED = {
+    PRICE_TIERS: "rebuilt by recompute() from keyed inputs",
+    stockCounted: "set by recompute() from the walk of keyed inputs",
+    RENDER_MEMO: "the render's own memo, closed when it returns; holds only reads of keyed inputs",
+    vaultNames: "titles only; the cached figures are numbers", revealed: "titles only; the cached figures are numbers",
+    newIds: "titles only; the cached figures are numbers", newLocs: "titles only; the cached figures are numbers",
+  };
+  const missing = [...reached].filter((n) => !new RegExp("\\b" + n + "\\b").test(keyText) && !(n in ALLOWED)).sort();
+  ok(seen.size > 100 && reached.size >= 8 && keyText.length > 100,
+    "the walk reached the desk's readers and found its mutable globals, or this section proves nothing: " + JSON.stringify({ functions: seen.size, lets: [...reached].sort() }));
+  ok(missing.length === 0, "every mutable global actions() can reach is a term of badgeKey or allowed with a reason: " + JSON.stringify(missing));
+  ok(Object.keys(ALLOWED).every((n) => lets.has(n)), "and every allowed name is still a top-level let, so the list cannot go stale");
+})();
+
 section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
 await (async () => {
   /* HIS DECISION OF 27 SEP 2026. rewardMargin skipped every rebate-stamped row whole, so where the reward
