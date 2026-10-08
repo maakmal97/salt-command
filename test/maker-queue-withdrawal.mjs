@@ -330,6 +330,117 @@ export async function run({ ok, worker, handleMaker }) {
   ok(raced.ok && !w.db.prepare("SELECT id FROM draft WHERE id=?").get(raceAt),
   "a tombstone injected between the drafter's read and draft insert wins atomically and leaves no actionable draft");
 
+  const sourceAt = "2099-10-05T02:06:30.000Z";
+  w.db.prepare("INSERT INTO input_admission(id,fingerprint,resource,amount,snapshot,entry,state) VALUES (?,?,?,?,?,?,?)")
+    .run(sourceAt, "held-resource", "loan:held", 0.4, "queue-fixture",
+      JSON.stringify({ at: sourceAt, payload: { mode: "repay" } }), "accepted");
+  for (const source of ["orders", "drafter"])
+    w.db.prepare("INSERT INTO input_admission_source(id,source) VALUES (?,?)").run(sourceAt, source);
+  const sourcesRemain = () => {
+    const admission = w.db.prepare("SELECT state FROM input_admission WHERE id=?").get(sourceAt);
+    const owners = w.db.prepare("SELECT source FROM input_admission_source WHERE id=? ORDER BY source").all(sourceAt)
+      .map((row) => row.source);
+    return admission?.state === "accepted" && JSON.stringify(owners) === JSON.stringify(["drafter", "orders"]);
+  };
+  const pause = () => {
+    let enter, open;
+    const entered = new Promise((resolve) => { enter = resolve; });
+    const held = new Promise((resolve) => { open = resolve; });
+    return { entered, enter, held, open };
+  };
+  const uploadDevice = "phone-upload-race";
+  const uploadOther = { at: "2099-10-05T02:06:45.000Z", date: "2099-10-05", payload: { mode: "ordinary" } };
+  ok((await w.upload(uploadDevice, [uploadOther])).status === 200,
+    "the upload-lock interleaving starts with an unrelated held queue row");
+  const uploadRace = { at: "2099-10-05T02:06:50.000Z", date: "2099-10-05", payload: { mode: "ordinary" } };
+  const uploadFingerprint = await makerRequestFingerprint("server-queue-entry", uploadRace);
+  const uploadPause = pause();
+  const raceOriginalPut = w.kv.put;
+  let uploadPaused = false;
+  w.kv.put = async (key, value) => {
+    if (!uploadPaused && key === "q:" + uploadDevice
+      && JSON.parse(value).queue.some((entry) => entry.at === uploadRace.at)) {
+      uploadPaused = true;
+      w.memory.set(key, value);
+      uploadPause.enter();
+      await uploadPause.held;
+      return;
+    }
+    return raceOriginalPut.call(w.kv, key, value);
+  };
+  let uploading, uploadBlockedWithdrawal;
+  try {
+    uploading = w.upload(uploadDevice, [uploadOther, uploadRace]);
+    await uploadPause.entered;
+    uploadBlockedWithdrawal = await w.recover(uploadRace.at, uploadDevice, uploadFingerprint);
+  } finally {
+    w.kv.put = raceOriginalPut;
+    uploadPause.open();
+  }
+  const uploadBlockedBody = await uploadBlockedWithdrawal.json();
+  const queueWhileUploadHeld = JSON.parse(await w.kv.get("q:" + uploadDevice));
+  const noUploadRaceReceipt = !w.db.prepare("SELECT id FROM maker_request WHERE id=?")
+    .get("queue-withdraw:" + uploadRace.at);
+  const uploadResult = await uploading;
+  const uploadRetry = await w.recover(uploadRace.at, uploadDevice, uploadFingerprint);
+  const uploadRetryBody = await uploadRetry.json();
+  const queueAfterUploadRace = JSON.parse(await w.kv.get("q:" + uploadDevice));
+  ok(uploadBlockedWithdrawal.status === 409 && uploadBlockedBody.state === "withdrawal-pending"
+    && noUploadRaceReceipt && queueWhileUploadHeld.queue.some((entry) => entry.at === uploadRace.at)
+    && queueWhileUploadHeld.queue.some((entry) => entry.at === uploadOther.at)
+    && uploadResult.status === 200 && uploadRetry.status === 200 && uploadRetryBody.state === "withdrawn"
+    && !queueAfterUploadRace.queue.some((entry) => entry.at === uploadRace.at)
+    && queueAfterUploadRace.queue.some((entry) => entry.at === uploadOther.at)
+    && !w.db.prepare("SELECT id FROM draft WHERE id=?").get(uploadRace.at) && sourcesRemain(),
+  "withdrawal cannot delete an upload while its device lock spans owner receipt and KV write, then retries the recorded identity without losing other queue/resource owners");
+
+  const withdrawalDevice = "phone-withdraw-race";
+  const withdrawalOther = { at: "2099-10-05T02:07:00.000Z", date: "2099-10-05", payload: { mode: "ordinary" } };
+  const withdrawalRace = { at: "2099-10-05T02:07:15.000Z", date: "2099-10-05", payload: { mode: "ordinary" } };
+  ok((await w.upload(withdrawalDevice, [withdrawalOther, withdrawalRace])).status === 200,
+    "the withdrawal-lock interleaving starts with its target and an unrelated held queue row");
+  const withdrawalFingerprint = await makerRequestFingerprint("server-queue-entry", withdrawalRace);
+  const withdrawalPause = pause();
+  let withdrawalPaused = false;
+  w.kv.put = async (key, value) => {
+    if (!withdrawalPaused && key === "q:" + withdrawalDevice
+      && !JSON.parse(value).queue.some((entry) => entry.at === withdrawalRace.at)) {
+      withdrawalPaused = true;
+      w.memory.set(key, value);
+      withdrawalPause.enter();
+      await withdrawalPause.held;
+      return;
+    }
+    return raceOriginalPut.call(w.kv, key, value);
+  };
+  let withdrawing, uploadDuringWithdrawal;
+  try {
+    withdrawing = w.recover(withdrawalRace.at, withdrawalDevice, withdrawalFingerprint);
+    await withdrawalPause.entered;
+    uploadDuringWithdrawal = await w.upload(withdrawalDevice, [withdrawalOther, withdrawalRace]);
+  } finally {
+    w.kv.put = raceOriginalPut;
+    withdrawalPause.open();
+  }
+  const withdrawalInFlight = await w.db.prepare("SELECT operation,response FROM maker_request WHERE id=?")
+    .get("queue-withdraw:" + withdrawalRace.at);
+  const queueDuringWithdrawal = JSON.parse(await w.kv.get("q:" + withdrawalDevice));
+  const inFlightWithdrawBody = await withdrawing.then((response) => response.json());
+  const staleUploadAfterWithdrawal = await w.upload(withdrawalDevice, [withdrawalOther, withdrawalRace]);
+  const staleUploadBody = await staleUploadAfterWithdrawal.json();
+  const queueAfterWithdrawal = JSON.parse(await w.kv.get("q:" + withdrawalDevice));
+  ok(uploadDuringWithdrawal.status === 409 && withdrawalInFlight?.operation === "queue-withdraw"
+    && !withdrawalInFlight.response && inFlightWithdrawBody.state === "withdrawn"
+    && !queueDuringWithdrawal.queue.some((entry) => entry.at === withdrawalRace.at)
+    && queueDuringWithdrawal.queue.some((entry) => entry.at === withdrawalOther.at)
+    && staleUploadAfterWithdrawal.status === 200 && staleUploadBody.withdrawnAts.includes(withdrawalRace.at)
+    && !queueAfterWithdrawal.queue.some((entry) => entry.at === withdrawalRace.at)
+    && queueAfterWithdrawal.queue.some((entry) => entry.at === withdrawalOther.at)
+    && !w.db.prepare("SELECT id FROM draft WHERE id=?").get(withdrawalRace.at)
+    && !w.db.prepare("SELECT id FROM input_admission WHERE id=?").get(withdrawalRace.at)
+    && sourcesRemain(),
+  "withdrawal fences a concurrent and delayed upload, preserving unrelated queue rows and existing resource owners without drafting the withdrawn identity");
+
   const sent = [];
   const uiEntry = { id: "2099-10-05T02:07:00.000Z", date: "2099-10-05", state: "queued",
     device: "phone-UI", fingerprint: "a".repeat(64), canWithdraw: true, canRetry: false };
