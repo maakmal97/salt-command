@@ -124,6 +124,27 @@ function tierCards(book, roster, products) {
   return cards;
 }
 
+function driftCustomerCode(id) {
+  return typeof id === "string" && !id.startsWith("S") && !POSITION_ENGINE.isBucket(id);
+}
+
+/** The held override or effective record drift the Desk's drift card reads; no pricing is computed here. */
+function driftCards(book, roster, products) {
+  const driftProducts = products.filter((item) => item.drift).map((item) => item.product);
+  const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
+  const cards = [];
+  for (const id of roster.filter(driftCustomerCode)) {
+    for (const product of driftProducts) {
+      const set = object(held[id]) && Object.hasOwn(held[id], product)
+        && PRICING_ENGINE.driftOk(held[id][product]);
+      const drift = book.pricing.byProduct[product].drift;
+      const current = object(drift) && PRICING_ENGINE.driftOk(drift[id]) ? drift[id] : null;
+      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current });
+    }
+  }
+  return cards;
+}
+
 export function makerInputCatalog(book, hush = {}) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -141,12 +162,14 @@ export function makerInputCatalog(book, hush = {}) {
     associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
+    driftCustomers: roster.filter(driftCustomerCode),
     houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
       .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     tierCards: tierCards(book, roster, products),
+    driftCards: driftCards(book, roster, products),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -241,7 +264,7 @@ export function makerOffset(body, book, held) {
       + " order, RM" + offer.rm + " settled in kind" }), book);
 }
 
-/** One customer, one product; null clears the held tier, bands use the pricing engine's shape check. */
+/** One customer, one product; null clears its held level or drift through the same tierset road. */
 export function makerTierSet(body, book) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
     return { error: "A tier input carries only its timestamp, code, product and tier." };
@@ -253,10 +276,15 @@ export function makerTierSet(body, book) {
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
   if (!rule || rule.fixed) return { error: "This product has no customer tiers." };
-  if (rule.drift) return { error: "This product prices by each customer's drift, set on the desk." };
-  const names = (book.pricing && book.pricing.tierNames) || [];
-  if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
-    return { error: "Choose a tier or a set of small, mid and big tiers." };
+  if (rule.drift) {
+    if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
+    if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
+      return { error: "Choose a drift from -1 to +1, or clear it." };
+  } else {
+    const names = (book.pricing && book.pricing.tierNames) || [];
+    if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
+      return { error: "Choose a tier or a set of small, mid and big tiers." };
+  }
   return proposed(POSITION_ENGINE.tierSetEntry({
     at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
   }), book);

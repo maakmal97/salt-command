@@ -438,6 +438,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .maker-field .lbl{margin-top:0}
+.maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
+.maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-hours{display:grid;gap:6px;margin:14px 0}
 .maker-day{display:grid;grid-template-columns:44px minmax(72px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:8px;align-items:center}
 .maker-day input[type=checkbox]{width:44px;height:44px;margin:0}
