@@ -47170,13 +47170,14 @@ await (async () => {
   const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
   const code = [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n")
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}])\/\/[^\n]*/g, "$1");
-  const body = Object.create(null), lets = new Set();
+  const body = Object.create(null), lets = new Set(), consts = new Set();
   let cur = null;
   for (const l of code.split("\n")) {
     const f = /^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(l), d = /^(let|var|const)\s+(.*)/.exec(l);
     if (f) { cur = f[1]; body[cur] = l + "\n"; continue; }
     if (d) {
       cur = null;
+      if (d[1] === "const") { const m = /^([A-Za-z_$][\w$]*)/.exec(d[2]); if (m) consts.add(m[1]); }
       if (d[1] === "let") {
         let depth = 0, item = "";
         const items = [];
@@ -47192,7 +47193,7 @@ await (async () => {
     }
     if (cur) body[cur] += l + "\n";
   }
-  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat"], reached = new Set();
+  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat"], reached = new Set(), reachedC = new Set();
   while (queue.length) {
     const n = queue.shift();
     if (seen.has(n)) continue;
@@ -47200,6 +47201,7 @@ await (async () => {
     for (const t of new Set((body[n] || "").match(/[A-Za-z_$][\w$]*/g) || [])) {
       if (body[t] && !seen.has(t)) queue.push(t);
       if (lets.has(t)) reached.add(t);
+      if (consts.has(t)) reachedC.add(t);
     }
   }
   const keyText = body.badgeKey || "";
@@ -47214,6 +47216,15 @@ await (async () => {
   ok(seen.size > 100 && reached.size >= 8 && keyText.length > 100,
     "the walk reached the desk's readers and found its mutable globals, or this section proves nothing: " + JSON.stringify({ functions: seen.size, lets: [...reached].sort() }));
   ok(missing.length === 0, "every mutable global actions() can reach is a term of badgeKey or allowed with a reason: " + JSON.stringify(missing));
+  /* a const is mutable in place: one the walk reaches and the key does not name must never be written to anywhere in the master */
+  const written = [...reachedC].filter((n) => !new RegExp(String.raw`\b${n.replace(/\$/g, String.raw`\$`)}\b`).test(keyText)).filter((n) => {
+    const q = n.replace(/\$/g, String.raw`\$`), X = String.raw`(?<![\w$.])${q}`;
+    return new RegExp([X + String.raw`\.[\w$]+\s*(?:[-+*/|&]|\*\*)?=(?!=)`, X + String.raw`\[[^\]\n]*\]\s*[-+*/|&]?=(?!=)`,
+      X + String.raw`\.(?:push|splice|pop|shift|unshift|sort|reverse|fill)\(`, X + String.raw`\.length\s*=(?!=)`,
+      String.raw`Object\.assign\(\s*${q}\b`, String.raw`delete\s+${q}\b`].join("|")).test(code);
+  }).sort();
+  ok(reachedC.size > 50, "the walk reached the desk's constants, or the check below proves nothing: " + reachedC.size);
+  ok(written.length === 0, "no constant actions() reaches and the key leaves out is ever written to in place: " + JSON.stringify(written));
   ok(Object.keys(ALLOWED).every((n) => lets.has(n)), "and every allowed name is still a top-level let, so the list cannot go stale");
 })();
 
