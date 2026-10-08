@@ -79,6 +79,10 @@
   /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
   --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
   --salt-gradient-title: linear-gradient(135deg, #ffffff 30%, var(--salt-copper) 100%);
+  /* the desk bar's material: a sheen over a near-opaque fill, and the fill alone where glass is not drawn */
+  --salt-deskbar-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  --salt-deskbar-fill: rgba(13, 11, 9, 0.9);
+  --salt-deskbar-solid: rgb(18, 15, 12);
 
   /* Semantic aliases */
   --salt-surface: var(--salt-obsidian);
@@ -204,6 +208,9 @@
   --salt-panel: rgb(235, 227, 211);
   --salt-gradient: linear-gradient(135deg, #c5a059, #b8732f);
   --salt-gradient-title: linear-gradient(135deg, #1a1611 30%, #8a5618 100%);
+  --salt-deskbar-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
+  --salt-deskbar-fill: rgba(243, 239, 230, 0.9);
+  --salt-deskbar-solid: rgb(243, 239, 230);
   --salt-ink-on-accent: #1a1611;
   color-scheme: light;
 }
@@ -2153,7 +2160,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   gap: 10px 12px;
   margin: 0 0 18px;
   padding: 9px 8px 9px 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)), rgba(13, 11, 9, 0.9);
+  background: var(--salt-deskbar-sheen), var(--salt-deskbar-fill);
   border: 1px solid var(--salt-line);
   border-radius: var(--salt-radius-md);
   box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
@@ -2193,8 +2200,8 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 .salt-deskbar__tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 @media (max-width: 560px) { .salt-deskbar__meta { letter-spacing: 0.1em; } }
 .salt-deskbar .salt-orb { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: rgb(18, 15, 12); } }
-@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: rgb(18, 15, 12); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .salt-deskbar { background: var(--salt-deskbar-solid); } }
+@media (prefers-reduced-transparency: reduce) { .salt-deskbar { background: var(--salt-deskbar-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .salt-version {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);

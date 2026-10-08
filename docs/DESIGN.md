@@ -228,8 +228,11 @@ and when Day is held). 06 Oct 2026: the white and black tints and the light text
 are tokens (a white tint is `color-mix(in srgb, var(--salt-salt) N%, transparent)`, a black one the same on
 `--salt-ink-on-accent`, which is dark in every theme; `#e4e9ec` is `--ice`, `#e08a72` a mix of ember into salt);
 the suite fails if one returns, the print block excepted. Night measured the same by `renderdiff` (34 of 34).
-What remains before Day can show: the system's own `.salt-deskbar`, whose dark fill and title do not follow
-the theme. Then the attribute goes.
+09 Oct 2026: the system's own `.salt-deskbar` reads `--salt-deskbar-sheen`, `-fill` and `-solid` (Night's values on
+`:root`, paper restated for Day, in `Code\salt-ds`), so its ink title sits on paper in Day; Night, Dawn and Dusk
+measured the same by `renderdiff` (34 of 34 each). Nothing in the desk's own colours now holds Day back: the attribute
+goes on his word, with his two calls open (prose mapped to `--ice` reads about 3.7:1 on paper in Day, and the black-tint
+shadows are heavier than the system's own Day shadows).
 
 **The charts and the map read the theme** (06 Oct 2026). `tcol(role, alpha)` in the master reads a token off `<html>`
 when a chart or the map is drawn, and `chartTheme()` reads Chart.js's own text, border and tooltip colours the same way
