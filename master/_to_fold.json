@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-08T16:50:42.824Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CJ4-BJ",
+    "qty": 6.25,
+    "total": 500,
+    "cost": 362.5,
+    "cash": 400,
+    "handover": "delivered",
+    "coverUnits": 1.44,
+    "coverRM": 80.7,
+    "date": "2026-10-09",
+    "deliveredQty": 6.25,
+    "deliveredOn": "2026-10-09"
+   },
+   "reasoning": "Sold 6.25 unit of salt to CJ4-BJ for RM 500, RM 80/unit. Costed at RM 58/unit from COGS off the latest purchase p036 landed 2026-10-06: RM 1400 quote plus RM 50 freight over 25 unit, so RM 137.5 on the goods at 27.5%. RM 400 of RM 500 paid and delivered in full on 2026-10-09. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "The desk says CJ4-BJ held 1.44 unit of reward, and 1.44 unit of it covers RM 80.7 of this sale. Rewards are worked out on the desk, so that balance is its word.",
+    "CJ4-BJ typically pays about RM 72/unit for salt across 7 orders; this one is RM 80, 11.1% above that.",
+    "This is an ADVANCE: 6.25 unit goes out with RM 100 unpaid. Check it against CJ4-BJ's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-08T16:50:42.824Z",
+    "type": "SELL",
+    "party": "CJ4-BJ",
+    "qty": 6.25,
+    "total": 500,
+    "status": "partial",
+    "raw": "Sell 6.25 unit salt to CJ4-BJ for RM500 on 2026-10-09, delivered, RM400 cash, 6.25 unit moved → Open · Advance, covered by 1.44 unit reward, RM80.7",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "newId": null,
+     "date": "2026-10-09",
+     "qty": 6.25,
+     "total": 500,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 400,
+     "kg": 6.25,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null,
+     "more": {
+      "coverUnits": 1.44,
+      "coverRM": 80.7
+     },
+     "coverFree": 1.44
+    },
+    "makerRequest": "a579cac65c294f753299e76e5602bc25060a78db8da86efe10d1979f4aa73ba0"
+   },
+   "decidedAt": "2026-10-08T16:51:04.863Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
