@@ -50468,6 +50468,11 @@ await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
+await (async () => {
+  await (await import("./maker-addid-drift.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
@@ -52580,10 +52585,10 @@ await (async () => {
   const a11 = rd("(function(){try{cloudMode=function(){return true;};}catch(e){};setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();"
     + "var s=document.getElementById('wbApTier_salt');if(!s)return {s:false};var opts=[].map.call(s.options,function(o){return o.value;}),sel=s.value,z=wbTiersChosen();"
     + "s.value='-0.3';var a=wbTiersChosen();s.value='typed';var t=document.getElementById('wbApDrift_salt');t.value='0.15';var b=wbTiersChosen();"
-    + "t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,c:c};})()");
+    + "t.value='0.125';var precise=wbTiersChosen();t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,precise:precise,c:c};})()");
   ok(a11.s && JSON.stringify(a11.opts) === '["","-0.3","0","0.3","typed"]' && a11.sel === "" && !(a11.z && "salt" in a11.z)
-    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && !(a11.c && "salt" in a11.c),
-    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1: " + JSON.stringify(a11));
+    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && a11.precise.salt === 0.125 && !(a11.c && "salt" in a11.c),
+    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1 without rounding: " + JSON.stringify(a11));
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
