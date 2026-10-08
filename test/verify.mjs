@@ -2819,7 +2819,9 @@ await (async () => {
     const dcv = read("coverStats()");
     /* v824: the engine supplies free and the trigger's shortfall; the rate and the cover are the book's restock plan's */
     const rp = read("restockFor(PROD)");
-    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === rp.coverDays, `${p}: cover agrees`);
+    /* a free shelf that outlasts the plan's horizon has no coverDays; the desk then reads free over the rate (v1035: oil's 70 units) */
+    const wantDays = rp.coverDays != null ? rp.coverDays : +(Math.max(0, dcv.free) / rp.base).toFixed(1);
+    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === wantDays, `${p}: cover agrees (${dcv.days} days, plan ${rp.coverDays})`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
