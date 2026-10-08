@@ -468,7 +468,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
     }
   } catch (error) {
     const status = Number.isInteger(error && error.status) ? error.status : 503;
-    return json({ ok: false, error: String(error && error.message || error) }, status);
+    return json({ ok: false, error: String(error && error.message || error),
+      ...(error.twin ? { twin: error.twin } : {}),
+      ...(error.queuedTwin ? { queuedTwin: error.queuedTwin } : {}) }, status);
   }
   return json({ ok: false, error: "not found" }, 404);
 }

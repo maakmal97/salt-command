@@ -50449,6 +50449,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter multi-book trade: owner controls, shared trip and native fold");
+await (async () => {
+  await (await import("./maker-trades.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter blank-locality Add ID: owner device pair and real bridge");
 await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
@@ -51630,7 +51635,7 @@ await (async () => {
     tradeControls[7].value = "0";
     tradeControls[8].value = "";
     tradeControls[9].value = "0";
-    tradeSection.querySelector("button").click();
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
