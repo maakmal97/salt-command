@@ -29,7 +29,8 @@ export async function fixture() {
     { rid: "f20", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 50, settledRM: 100, deliveredQty: 0 },
     { rid: "f21", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 0, deliveredQty: 1 },
     { rid: "f22", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 0, deliveredQty: 0, defaulted: true },
-    { rid: "f23", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 0, deliveredQty: 0, cancelled: true }
+    { rid: "f23", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 0, deliveredQty: 0, cancelled: true },
+    { rid: "f25", date: "2026-08-30", customer, qty: 2, total: 450, cost: 64, cash: 450, deliveredQty: 0 }
   );
   ledger.purchases.push({ rid: "f24", date: "2026-08-30", supplier: ledger.purchases[0].supplier,
     qty: 2, total: 450, cash: 450, receivedQty: 0 });
@@ -66,7 +67,7 @@ export async function fixture() {
 }
 
 export async function run({ ok, pageWork }) {
-  const f = await fixture(), posts = [];
+  const f = await fixture(), posts = [], answers = [];
   let work;
   const browser = new JSDOM(f.html, {
     url: "https://counter.test/all", runScripts: "dangerously", pretendToBeVisual: true,
@@ -78,7 +79,9 @@ export async function run({ ok, pageWork }) {
         const route = String(path);
         if (route === "/all/maker/inputs" || route === "/all/maker/inputs/ledger-amend") {
           if (init?.method === "POST") posts.push(JSON.parse(init.body));
-          return f.call(route, init);
+          const response = await f.call(route, init);
+          if (init?.method === "POST") answers.push({ status: response.status, body: await response.clone().json() });
+          return response;
         }
         return Response.json({ ok: true, accounts: [], orders: [], drafts: [], claims: [], threads: [],
           bulletin: { lines: [] }, config: null, status: {} });
@@ -147,5 +150,20 @@ export async function run({ ok, pageWork }) {
     ok(!!drafted && payload.total === null, "v457.3f native cancellation payload total is null");
     ok(!!drafted && entry.qty === null, "v457.4a native cancellation top quantity is null");
     ok(!!drafted && entry.total === null, "v457.4b native cancellation top total is null");
+    const staleEditor = editor();
+    change(field(staleEditor, "Ledger row"), "f25");
+    change(field(staleEditor, "Amendment"), "Cancellation");
+    const shown = staleEditor.querySelector(".maker-cancellation").textContent;
+    const stored = f.db.prepare("SELECT seq,doc FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='f25'").get();
+    const moved = { ...JSON.parse(stored.doc), deliveredQty: 1 };
+    f.db.prepare("UPDATE entry SET doc=? WHERE collection='sales' AND seq=?").run(JSON.stringify(moved), stored.seq);
+    [...staleEditor.querySelectorAll("button")].find((b) => b.textContent === "Send amendment for review").click();
+    if (!await work.quiet()) throw new Error("Stale cancellation refusal did not settle.");
+    ok(/Refund due/.test(shown) && /RM 450 already paid becomes a refund payable/.test(shown)
+      && posts.length === 2 && posts[1].rid === "f25" && answers[1]?.status === 400
+      && /cannot cancel goods already handed over/.test(answers[1]?.body.error || "")
+      && /cannot cancel goods already handed over/.test(staleEditor.querySelector('[role="status"]').textContent)
+      && f.db.prepare("SELECT count(*) AS n FROM draft").get().n === 1,
+    "stale seeded refund disclosure authorizes nothing: actual UI send re-reads moved row, explicitly refuses, drafts nothing");
   } finally { browser.window.close(); f.db.close(); }
 }

@@ -1433,6 +1433,15 @@ the existing roster/rename/place entries. Request bodies are fixed field lists, 
 entries or unchecked notes. Each input button disables its controls while sending and persists the
 whole request (including timestamp and ciphertext) before transport. A retained input must be
 retried, reviewed or explicitly cancelled; editing the form does not replace that request.
+Record count, Send tier for review, Hush tip and Send board sizes for review release their
+timestamp/signature cache only on confirmed completion, including the button's direct retained
+retry. A subsequent intentional action with the same values gets a fresh timestamp. Automatic
+offsets use that same retained sender, not a date-keyed request rebuilt from the form: after a
+lost answer, a changed date still retries the original full body. A 200 without `ok: true` is
+uncertain, not completion. The offset device record carries only `at`, `code`, `rid` and `date`;
+unsupported metadata is refused before transport. The generated device validator includes the
+Desk's `TIP_ID` constant, so Hush can validate the tip and reach transport without weakening its
+id check. These are device recovery rules, not changes to the Worker, drafter, fold or pricing.
 Migration `0013_maker_requests.sql` adds durable request receipts: the
 Desk compares a canonical operation/body digest, replays completed requests even after the mirror
 moves, and refuses changed content under an old timestamp. An incomplete non-vault receipt
@@ -1448,7 +1457,8 @@ Position Engine `txStat` / `poStat` on the cancelled row, and `refundOnCancel` f
 refund payable. A paid, unmoved sale reads Refund due, Undelivered, Cancelled and names what
 was paid; an unpaid pending sale reads Unpaid, Cancelled and names no refund. The browser
 renders this reading without deriving a pay state or a refund. An unavailable preview is
-explicit; sending still goes through the native amendment and drafter checks.
+explicit. This seeded preview authorizes nothing: sending re-reads the mirror through the
+native amendment and drafter checks, so goods moved since that reading still stop Cancellation.
 
 Counter Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
 Undo cancels that hold and sends nothing. Hiding or leaving the page flushes every unsent hold

@@ -42,6 +42,7 @@
 - The endpoints above are keyed via `X-Salt-Key` except `/stmt/rev`, which uses `X-Stmt-Desk`.
 
 ## Counter maker
+- The count, tier, hush and printed-size forms retain timestamp/signature caches independently of the input button's durable body. Their completion hooks must run on the initial confirmed send and on the button's direct retained retry. Automatic offsets previously bypassed that sender; their device record needs the exact offset shape in `vaultPendingOk`. The generated Hush validator also lacked its `TIP_ID` dependency and threw before transport. Generated-page lifecycle checks and independent implementation mutations cover these prerequisites; this is not owner acceptance or clearance to retire Desk inputs.
 - `/all/maker/*` is Counter Admin behind verified Access identity and the exact owner email.
 - `POST /orders/<id>/amend` is the customer-session amendment path; Admin inputs stay under `/all/maker/inputs/*`.
 - Desk maker operations use the separate `DESK_MAKER` binding and `COUNTER_MAKER_KEY`; name and places vault reads return ciphertext only.
