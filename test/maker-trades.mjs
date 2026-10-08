@@ -351,4 +351,40 @@ export async function run({ ok, pageWork }) {
     ok(!r2Choices.includes("CX1-ZED") && r3Choices.includes("CX1-ZED") && !r3Choices.includes("SX1-ZED"),
       "multi-book associate catalog: actual controls include the incumbent introduction bench, exclude bans and require an R2 bucket");
   } finally { choicesPage.dom.window.close(); choicesWorld.sqlite.close(); }
+
+  for (const scenario of [
+    { name: "buyer", direction: "sale", field: "Party",
+      error: "Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code." },
+    { name: "supplier", direction: "purchase", field: "Party",
+      error: "Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code." },
+    { name: "end buyer", direction: "sale", stream: "R2", field: "End customer",
+      error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code." },
+    { name: "referrer", direction: "sale", stream: "R3", field: "Associate",
+      error: "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code." },
+    { name: "associate", direction: "sale", stream: "R2", field: "Associate",
+      error: "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code." }
+  ]) {
+    const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork);
+    try {
+      if (scenario.direction === "purchase") page.change("Entry", "purchase");
+      if (scenario.stream) {
+        page.change("Stream", scenario.stream); page.change("Associate", "CA1-ZED");
+      }
+      const forged = page.dom.window.document.createElement("option");
+      forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
+      field(page.section, scenario.field).appendChild(forged);
+      field(page.section, scenario.field).value = forged.value;
+      await page.send();
+      const request = page.sent.find((s) => s.path.endsWith("/" + scenario.direction));
+      const counts = ["maker_request", "input_admission", "input_admission_source", "draft"]
+        .map((table) => refusedWorld.sqlite.prepare("SELECT COUNT(*) AS n FROM " + table).get().n);
+      ok(request && (scenario.field === "End customer" ? request.body.downstream
+        : scenario.field === "Associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
+        && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
+        && page.section.querySelector('[role="status"]').textContent === scenario.error
+        && counts.every((n) => n === 0) && refusedWorld.puts.length === 0,
+        "trade unknown " + scenario.name + ": forged generated-owner input reaches the real bridge/Worker, shows precise Add ID guidance and writes no queue, draft or admission " +
+          JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));
+    } finally { page.dom.window.close(); refusedWorld.sqlite.close(); }
+  }
 }
