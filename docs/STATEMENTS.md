@@ -1442,6 +1442,22 @@ Counter notes are disabled because these specific paths cannot prove arbitrary p
 free of names and places. `GET inputs` returns the active-book and roster catalog, including open
 loans for repayment selection.
 
+Counter Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
+Undo cancels that hold and sends nothing. Hiding or leaving the page flushes every unsent hold
+once with `keepalive`; expiry cannot send it again. The card disables other moves while cash is
+held or sending. Once sent, Undo is gone: a lost or refused answer offers Retry cash with the
+same immutable amount and `rid`, not another editable cash tap. Only a confirmed answer frees
+the next tap to mint a new request **after a fresh review includes that cash**. A confirmed POST
+with a failed or not-yet-incorporated review says **Recorded, refresh pending** and offers
+Refresh cash, never another payment. Before POST, the exact request bytes, order id and prior
+paid amount are retained in this device's local storage (non-vault trade metadata, as with
+other retained inputs). Confirmation is retained separately from an uncertain answer. Reload
+recovers an uncertain request as Retry cash with its original bytes and id, never Undo; a
+confirmed receipt offers only Refresh cash until a read includes the amount. Storage failure
+prevents transport, and an unreadable retained record gates new cash explicitly. These are
+the Desk's twelve Cash Undo/flush parity behaviors,
+not an approved difference; Desk inputs remain until owner acceptance.
+
 The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
 envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
 derive codes and encrypt the name map on the device with the vault passphrase; the bridge receives
