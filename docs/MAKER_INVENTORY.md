@@ -90,13 +90,13 @@ No Desk input is retired on the strength of this inventory, a generated catalog,
 Maker input allowlist. Pricing rules, restricted amendment kinds and sealed history remain
 unchanged.
 
-The input-receipt sweep also blocks retirement: stock count, tier setting and tip hush retain
-their timestamp/signature after confirmation; printed board sizes release them only on the
-initial action, not a successful retained retry. Automatic offsets bypass the retained-send
-helper and key retries by the editable date. A separate bounded prerequisite owns these five
-forms; trade is owned by #79. Confirmed success must release the request, uncertain answers
-must retain its exact body, and edited fields must not change that uncertain request. The
-generated-page lifecycle and independent mutation proofs remain pending.
+Merged #81 resolves the five-form input-receipt sweep: stock count, tier setting, tip hush and
+printed board sizes release their timestamp/signature through the common confirmed-success
+hook, including a successful retained retry. Automatic offsets use the retained sender with
+the narrow canonical `{at,code,rid,date}` body. The generated geography seam includes `TIP_ID`;
+unsupported offset metadata and invalid tip IDs are refused before transport. Actual generated
+page lifecycle checks prove confirmed new intent and unchanged uncertain retries; the independent
+mutations are red. These implementation proofs are not owner acceptance.
 
 ## The Desk is a dashboard (his decision of 06 Oct 2026)
 
