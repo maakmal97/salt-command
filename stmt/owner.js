@@ -1857,6 +1857,36 @@ export const OWNER_JS = `
       });
       var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
       var carriage=makerField(tradeSection,'Delivery (RM)','number','0','0.01');
+      var attribution=el('div','maker-trade-attribution'), tradeStream=el('select','fld salt-field__input');
+      [['','No associate'],['R2','R2 resell'],['R3','R3 refer']].forEach(function(item){
+        var option=el('option',null,item[1]); option.value=item[0]; tradeStream.appendChild(option);
+      });
+      var streamLabel=el('label','maker-field','Stream'); streamLabel.appendChild(tradeStream); attribution.appendChild(streamLabel);
+      var tradeAssoc=el('select','fld salt-field__input'), tradeDown=el('select','fld salt-field__input');
+      var assocLabel=el('label','maker-field','Associate'), downLabel=el('label','maker-field','End customer');
+      assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
+      attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
+      var attributionNote=el('p','msg'); attribution.appendChild(attributionNote); tradeSection.appendChild(attribution);
+      function fillAttribution(){
+        var isSale=direction.value==='sale', stream=isSale?tradeStream.value:'', r2=stream==='R2', kept=tradeAssoc.value;
+        attribution.hidden=!isSale; assocLabel.hidden=!stream; downLabel.hidden=!r2;
+        partyLabel.hidden=r2;
+        partyLabel.firstChild.textContent=stream==='R3'?'Buyer (referred)':'Party';
+        tradeAssoc.textContent='';
+        var none=el('option',null,'Choose an associate'); none.value=''; tradeAssoc.appendChild(none);
+        (catalog.associates||[]).filter(function(item){return !r2||item.resaleReady;}).forEach(function(item){
+          var option=el('option',null,item.code); option.value=item.code; tradeAssoc.appendChild(option);
+        });
+        if(Array.from(tradeAssoc.options).some(function(option){return option.value===kept;}))tradeAssoc.value=kept;
+        attributionNote.textContent=r2
+          ?'R2: every book goes to the associate’s -R resale account, whether or not the end customer is named.'
+          :stream==='R3'?'R3: every book goes to the buyer; only the first row credits the introduction to the associate.':'';
+      }
+      var unnamed=el('option',null,'Not named'); unnamed.value=''; tradeDown.appendChild(unnamed);
+      (catalog.parties||[]).filter(function(code){return !/[-]R$/.test(code);}).forEach(function(code){
+        var option=el('option',null,code); option.value=code; tradeDown.appendChild(option);
+      });
+      tradeStream.addEventListener('change',fillAttribution);
       var extraBooks=el('div','maker-extra-books'), extraTrades=[];
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Extra books share the party, date and handover. Each has its own goods, cash and units moved. Delivery sits on the first row alone; with a delivery, Approve takes the trip in one tap.');
@@ -1895,6 +1925,7 @@ export const OWNER_JS = `
         });
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
+        fillAttribution();
       }
       direction.addEventListener('change',fillTradeChoices);
       tradeProduct.addEventListener('change',function(){extraTrades.forEach(function(extra){extraChoices(extra.product);});});
@@ -1907,6 +1938,11 @@ export const OWNER_JS = `
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
           handover:handover.value||null};
         body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
+        if(isSale&&tradeStream.value){
+          if(!tradeAssoc.value){tradeAnswer.textContent='Choose an associate first.';return;}
+          body.assoc=tradeAssoc.value; body.stream=tradeStream.value;
+          if(body.stream==='R2'){body.party=body.assoc;body.downstream=tradeDown.value||null;}
+        }
         if(extraTrades.length) body.extras=extraTrades.map(function(extra){
           return {product:extra.product.value,qty:extra.qty.value===''?null:Number(extra.qty.value),
             total:extra.total.value===''?null:Number(extra.total.value),cash:extra.cash.value===''?null:Number(extra.cash.value),
@@ -1937,7 +1973,9 @@ export const OWNER_JS = `
         }
         tradePending=false;
       }
-      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true);
+      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true,function(){
+        tradeAt=null;tradeSignature='';
+      });
       var tierSection=el('section','maker-input');
       tierSection.appendChild(el('h3',null,'Customer tier'));
       tierSection.appendChild(el('p','msg','Tiered books only. Set a held level or clear it; proposals do not move held tiers.'));

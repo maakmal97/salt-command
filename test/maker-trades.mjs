@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 import { handleMaker } from "../stmt/maker.js";
 import worker from "../src/worker.js";
+import { runDrafter } from "../src/drafter.js";
 import { makerTradeBatch } from "../src/maker-inputs.js";
 import { plan } from "../tools/fold.mjs";
 import E from "../engine/position.mjs";
@@ -16,7 +17,7 @@ const body = (patch = {}) => ({ at: AT, product: "salt", party: "CX1-ZED", date:
   extras: [{ product: "oil", qty: 2, total: 30, cash: 30, movedUnits: 2 }], ...patch });
 const book = () => ({ version: "trade-fixture", sales: [], purchases: [],
   state: { PRODUCTS: { salt: {}, oil: {}, spare: { retired: true } },
-    roster: ["CX1-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED"], associates: ["AX1-ZED"] },
+    roster: ["CX1-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED", "CA1-ZED", "CA1-ZED-R"], associates: ["AX1-ZED", "CA1-ZED"] },
   pricing: { v: "trade-fixture", byProduct: { salt: { stockCost: 40 }, oil: { stockCost: 8 } } } });
 
 export function world() {
@@ -46,6 +47,64 @@ export function world() {
   const drafts = () => sqlite.prepare("SELECT * FROM draft ORDER BY id").all().map((r) =>
     ({ ...r, row: JSON.parse(r.row), entry: JSON.parse(r.entry), flags: JSON.parse(r.flags) }));
   return { sqlite, b, kv, map, puts, desk, calls, call, drafts };
+}
+
+const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
+const field = (root, label) => [...root.querySelectorAll("label")]
+  .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
+async function ownerTrade(wd, pageWork) {
+  const sent = [];
+  let work, loseAnswer = false, tick = Date.parse(AT);
+  const dom = new JSDOM(landingPage("", "trade-nonce", { master: "fixture-master", accounts: [] }), {
+    url: "https://counter.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
+      win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
+      const NativeDate = win.Date;
+      win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
+      win.confirm = () => true;
+      win.fetch = async (path, init = {}) => {
+        if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
+          const input = init.body && JSON.parse(init.body);
+          if (input) sent.push({ path: String(path), bytes: init.body, body: input });
+          const response = await wd.call(String(path), input || undefined);
+          if (loseAnswer && String(path) === "/all/maker/inputs/sale") {
+            loseAnswer = false; throw new Error("Fixture lost the completed response.");
+          }
+          return response;
+        }
+        return new Response(JSON.stringify(String(path) === "/all/maker/review"
+          ? { ok: true, orders: [], drafts: wd.drafts(), refused: [] }
+          : { ok: true, accounts: [], orders: [], drafts: [], claims: [], threads: [],
+            pools: [], config: null, status: { open: true } }));
+      };
+      work = pageWork(win);
+    }
+  });
+  dom.window.document.querySelector('button[data-m="maker"]').click(); await work.quiet();
+  const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
+    .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
+  button(section, "Add another book").click(); await work.quiet();
+  for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
+    "Goods total (RM)": "130", "Cash recorded (RM)": "0", "Units moved": "1",
+    "Delivery (RM)": "40", Handover: "delivered" })) field(section, label).value = value;
+  const extra = section.querySelector(".maker-extra-trade");
+  for (const [label, value] of Object.entries({ Units: "2", "Goods total (RM)": "30",
+    "Cash recorded (RM)": "0", "Units moved": "2" })) field(extra, label).value = value;
+  const change = (label, value) => {
+    const control = field(section, label); control.value = value;
+    control.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  };
+  const send = async () => { button(section, "Send trade for review").click(); await work.quiet(); };
+  return { dom, section, sent, work, change, send, lose: () => { loseAnswer = true; } };
+}
+
+function foldRows(wd) {
+  const foldedBook = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  foldedBook.sales = []; foldedBook.roster = wd.b.state.roster;
+  const approved = wd.drafts().filter((r) => r.status === "approved")
+    .map((r) => ({ id: r.id, collection: r.collection, row: r.row, entry: r.entry }));
+  return plan(foldedBook, { ok: true, count: approved.length, approved }, null);
 }
 
 export async function run({ ok, pageWork }) {
@@ -203,4 +262,93 @@ export async function run({ ok, pageWork }) {
       && !E.vaultPendingOk({ path: "/all/maker/inputs/sale", body: body({ extras: [{ ...body().extras[0], note: "unchecked prose" }] }) }),
       "multi-book device recovery: the whole safe batch is retainable and an extra cannot hide prose");
   } finally { dom.window.close(); deviceWorld.sqlite.close(); }
+
+  const receiptWorld = world(), receiptPage = await ownerTrade(receiptWorld, pageWork);
+  try {
+    await receiptPage.send();
+    const original = receiptPage.sent.find((s) => s.path.endsWith("/sale"));
+    const approve = button(receiptPage.dom.window.document, "Approve trip");
+    if (approve) { approve.click(); await receiptPage.work.quiet(); }
+    for (const [i, row] of foldRows(receiptWorld).items.entries())
+      receiptWorld.sqlite.prepare("INSERT INTO entry(collection,seq,hash,doc) VALUES ('sales',?,?,?)")
+        .run(i, "confirmed-" + i, JSON.stringify(row.row));
+    receiptWorld.sqlite.exec("UPDATE draft SET committed_at='2099-10-05T02:00:00.000Z'");
+    receiptWorld.sqlite.prepare("INSERT INTO state(key,doc) VALUES ('QUEUE_COMMITTED',?)")
+      .run(JSON.stringify(receiptWorld.drafts().at(-1).id));
+    await runDrafter(receiptWorld.desk);
+    await receiptPage.send();
+    const requests = receiptPage.sent.filter((s) => s.path.endsWith("/sale"));
+    ok(original && requests[1]?.body.at !== original.body.at
+      && requests.at(-1)?.body.second && requests.at(-1)?.body.extras[0].second
+      && receiptWorld.drafts().length === 4,
+      "multi-book confirmed receipt: an identical intentional second batch gets fresh ids and its own twin confirmations " +
+        JSON.stringify({ requests, rows: receiptWorld.drafts().map((r) => r.row), answer: receiptPage.section.textContent }));
+  } finally { receiptPage.dom.window.close(); receiptWorld.sqlite.close(); }
+
+  const lostWorld = world(), lostPage = await ownerTrade(lostWorld, pageWork);
+  try {
+    lostPage.lose(); await lostPage.send();
+    const saved = lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale");
+    field(lostPage.section, "Goods total (RM)").value = "999";
+    field(lostPage.section, "Goods total (RM)").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
+    await lostPage.send();
+    const requests = lostPage.sent.filter((s) => s.path.endsWith("/sale"));
+    ok(saved && requests.length === 2 && requests[0].bytes === requests[1].bytes && lostWorld.drafts().length === 2
+      && lostWorld.drafts()[0].row.total === 130
+      && !lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale"),
+      "multi-book lost answer: edited controls retry the original whole batch byte-for-byte until confirmation");
+  } finally { lostPage.dom.window.close(); lostWorld.sqlite.close(); }
+
+  for (const [stream, buyer] of [["R2", "CX1-ZED"], ["R2", ""], ["R3", null]]) {
+    const attributed = world(), page = await ownerTrade(attributed, pageWork);
+    try {
+      page.change("Stream", stream); page.change("Associate", "CA1-ZED");
+      if (stream === "R2") page.change("End customer", buyer);
+      const party = [...page.section.querySelectorAll(":scope > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer (referred)" : "Party")));
+      ok((stream === "R2" ? party?.hidden && !field(page.section, "End customer").parentElement.hidden
+        : !party?.hidden && field(page.section, "End customer").parentElement.hidden)
+        && field(page.section, "Associate").value === "CA1-ZED",
+        "multi-book attribution controls: " + stream + " exposes its own party/end-customer conditions " + String(buyer));
+      await page.send();
+      const request = page.sent.find((s) => s.path.endsWith("/sale")), rows = attributed.drafts();
+      ok(request?.body.stream === stream && request.body.assoc === "CA1-ZED" && rows.length === 2
+        && (stream === "R2"
+          ? request.body.party === "CA1-ZED" && rows.every((r) => r.row.customer === "CA1-ZED-R"
+            && r.row.rev === "R2" && (r.row.downstream || null) === (buyer || null))
+          : request.body.party === "CX1-ZED" && rows.every((r) => r.row.customer === "CX1-ZED")
+            && rows[0].row.ref === "CA1-ZED" && !rows[1].row.ref),
+        "multi-book attributed UI route: " + stream + " owner controls reach real bridge/Worker/native drafts " + String(buyer) +
+          JSON.stringify({ request, rows: rows.map((r) => r.row), answer: page.section.textContent }));
+      const approve = button(page.dom.window.document, "Approve trip");
+      if (approve) { approve.click(); await page.work.quiet(); }
+      const folded = foldRows(attributed), sales = folded.items.map((item) => item.row);
+      ok(approve && attributed.drafts().every((r) => r.status === "approved")
+        && folded.refused.length === 0 && sales.length === 2
+        && (stream === "R2"
+          ? sales.every((r) => r.customer === "CA1-ZED-R" && r.rev === "R2" && (r.downstream || null) === (buyer || null))
+            && E.partyOwedRM(sales, "CA1-ZED-R") === 200 && E.partyOwedRM(sales, "CX1-ZED") === 0
+          : sales.every((r) => r.customer === "CX1-ZED") && sales[0].ref === "CA1-ZED" && !sales[1].ref
+            && E.partyOwedRM(sales, "CX1-ZED") === 200 && E.partyOwedRM(sales, "CA1-ZED") === 0),
+        "multi-book attributed approval/fold: " + stream + " books the correct account and credits no downstream buyer " + String(buyer));
+      page.change("Entry", "purchase");
+      ok(page.section.querySelector(".maker-trade-attribution").hidden
+        && !field(page.section, "Party").parentElement.hidden,
+        "multi-book attribution purchase boundary: sale-only controls disappear and Party returns " + stream + String(buyer));
+    } finally { page.dom.window.close(); attributed.sqlite.close(); }
+  }
+
+  const choicesWorld = world();
+  choicesWorld.sqlite.prepare("INSERT INTO state(key,doc) VALUES ('INTRODUCTIONS',?)")
+    .run(JSON.stringify([{ by: "CX1-ZED" }, { by: "SX1-ZED" }]));
+  choicesWorld.sqlite.prepare("INSERT INTO state(key,doc) VALUES ('PEOPLE',?)")
+    .run(JSON.stringify({ banned: [{ id: "SX1-ZED" }] }));
+  const choicesPage = await ownerTrade(choicesWorld, pageWork);
+  try {
+    choicesPage.change("Stream", "R2");
+    const r2Choices = [...field(choicesPage.section, "Associate").options].map((o) => o.value);
+    choicesPage.change("Stream", "R3");
+    const r3Choices = [...field(choicesPage.section, "Associate").options].map((o) => o.value);
+    ok(!r2Choices.includes("CX1-ZED") && r3Choices.includes("CX1-ZED") && !r3Choices.includes("SX1-ZED"),
+      "multi-book associate catalog: actual controls include the incumbent introduction bench, exclude bans and require an R2 bucket");
+  } finally { choicesPage.dom.window.close(); choicesWorld.sqlite.close(); }
 }

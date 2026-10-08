@@ -198,7 +198,7 @@ export function makerInputCatalog(book, hush = {}) {
     version: book.version, products, parties: roster,
     placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
       .filter(([id, point]) => roster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
-    associates: (book.state.associates || []).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
+    associates: associateCodes(book).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
       .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
     tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
     driftCustomers: roster.filter(driftCustomerCode),
