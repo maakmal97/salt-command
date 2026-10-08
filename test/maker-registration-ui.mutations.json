@@ -1,0 +1,8 @@
+[
+  {
+    "name": "confirmed Add ID does not refresh the trade selector",
+    "file": "stmt/owner.js",
+    "find": "await refreshTradeCatalog();",
+    "replace": ""
+  }
+]

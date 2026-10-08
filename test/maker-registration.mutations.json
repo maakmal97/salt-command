@@ -1,0 +1,134 @@
+[
+  {
+    "name": "verified non-bucket registrations omitted from native catalog",
+    "file": "src/maker-inputs.js",
+    "find": "const parties = [...new Set(bookRoster.concat(\n    verified.filter((item) => item.kind !== \"bucket\").map((item) => item.code)))];",
+    "replace": "const parties = bookRoster;"
+  },
+  {
+    "name": "same-value pair retry not recognized",
+    "file": "src/worker.js",
+    "find": "return json({ ok: true, replay: true, revision: receipt.revision, vaultOnly: !outbox,",
+    "replace": "return json({ ok: true, replay: false, revision: receipt.revision, vaultOnly: !outbox,"
+  },
+  {
+    "name": "changed pair retry accepted as replay",
+    "file": "src/worker.js",
+    "find": "if (receipt.request_fingerprint !== fingerprint || receipt.operation !== operation)",
+    "replace": "if (receipt.operation !== operation)"
+  },
+  {
+    "name": "rejected registration passes the verifier",
+    "file": "src/vault-pair.js",
+    "find": "|| ![\"pending\", \"approved\"].includes(draft.status)",
+    "replace": ""
+  },
+  {
+    "name": "incomplete outbox authorizes selection",
+    "file": "src/vault-pair.js",
+    "find": "|| !outbox || outbox.id !== draft.id || outbox.state !== \"complete\"\n    || typeof outbox.completed_at !== \"string\" || !Number.isFinite(Date.parse(outbox.completed_at)))",
+    "replace": "|| !outbox || outbox.id !== draft.id)"
+  },
+  {
+    "name": "duplicate registration codes not excluded",
+    "file": "src/vault-pair.js",
+    "find": "return verified.filter((registration) => counts.get(registration.code) === 1);",
+    "replace": "return verified;"
+  },
+  {
+    "name": "trade dependency not server-stamped",
+    "file": "src/maker-inputs.js",
+    "find": "if (dependencies.length) entry.registrationDependencies = dependencies;",
+    "replace": ""
+  },
+  {
+    "name": "verified party kinds narrowed against native membership",
+    "file": "src/maker-inputs.js",
+    "find": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];",
+    "replace": "const partyKinds = sale && body.stream === \"R2\" ? [\"reseller\"] : [\"customer\"];"
+  },
+  {
+    "name": "dependent trade planned ahead of registration",
+    "file": "tools/fold.mjs",
+    "find": "const next = waiting.findIndex((item) => !(dependencies.get(item.id) || []).some((id) => !applied.has(id)));",
+    "replace": "const next = 0;"
+  },
+  {
+    "name": "trade proceeds when approved registration plan is refused",
+    "file": "tools/fold.mjs",
+    "find": "if (failedDependency) {",
+    "replace": "if (false && failedDependency) {"
+  },
+  {
+    "name": "fold silently omits a refused dependency row",
+    "file": "tools/fold.mjs",
+    "find": "out.refused.push({ id: it.id, why: dependencyFaults.get(it.id) });",
+    "replace": "/* mutation: omit explicit refusal */"
+  },
+  {
+    "name": "changed outbox entry not matched to draft",
+    "file": "src/vault-pair.js",
+    "find": "if (!object(entry) || !object(queued) || !object(row) || !sameJson(entry, queued)) return null;",
+    "replace": "if (!object(entry) || !object(queued) || !object(row)) return null;"
+  },
+  {
+    "name": "pending Add ID allows trade approval",
+    "file": "src/worker.js",
+    "find": "|| registration.status !== \"approved\" || registration.id !== dependencies[0].id",
+    "replace": "|| registration.id !== dependencies[0].id"
+  },
+  {
+    "name": "existing Maker trades acquire a new fold prerequisite",
+    "file": "tools/fold.mjs",
+    "find": "if (!partyCodes.length) continue;",
+    "replace": "if (false && !partyCodes.length) continue;"
+  },
+  {
+    "name": "legacy hand-fold trades acquire the Counter prerequisite",
+    "file": "tools/fold.mjs",
+    "find": "if (![\"sales\", \"purchases\"].includes(item.collection)\n      || item.entry?.payload?.mode !== \"new\" || !item.entry?.makerRequest) continue;",
+    "replace": "if (![\"sales\", \"purchases\"].includes(item.collection) || item.entry?.payload?.mode !== \"new\") continue;"
+  },
+  {
+    "name": "Maker purchase amendments acquire the new-trade prerequisite",
+    "file": "tools/fold.mjs",
+    "find": "|| item.entry?.payload?.mode !== \"new\" || !item.entry?.makerRequest) continue;",
+    "replace": "|| !item.entry?.makerRequest) continue;"
+  },
+  {
+    "name": "verified suppliers cannot be selected for purchases",
+    "file": "src/maker-inputs.js",
+    "find": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];",
+    "replace": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"reseller\", \"referral\", \"downstream\"];"
+  },
+  {
+    "name": "ordinary purchases accept only supplier-kind registrations",
+    "file": "src/maker-inputs.js",
+    "find": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];",
+    "replace": "const partyKinds = !sale ? [\"supplier\"] : sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];"
+  },
+  {
+    "name": "verified customer cannot be the R3 trade party",
+    "file": "src/maker-inputs.js",
+    "find": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];",
+    "replace": "const partyKinds = sale && body.stream === \"R2\"\n    ? [\"reseller\"] : [\"supplier\", \"reseller\", \"referral\", \"downstream\"];"
+  },
+  {
+    "name": "verified bucket leaks into trade party catalog",
+    "file": "src/maker-inputs.js",
+    "find": "verified.filter((item) => item.kind !== \"bucket\").map((item) => item.code)",
+    "replace": "verified.map((item) => item.code)"
+  },
+  {
+    "name": "trade constructor admits a bucket-shaped party",
+    "file": "src/maker-inputs.js",
+    "find": "? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\"];",
+    "replace": "? [\"reseller\"] : [\"customer\", \"supplier\", \"reseller\", \"referral\", \"downstream\", \"bucket\"];"
+  },
+  {
+    "name": "extra trade rows lose verified registration dependencies",
+    "file": "src/maker-inputs.js",
+    "find": "makerTradeEntry(operation, input, book, trip, pending.concat(entries), registrations);",
+    "replace": "makerTradeEntry(operation, input, book, trip, pending.concat(entries), []);"
+  }
+]

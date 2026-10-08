@@ -1263,7 +1263,7 @@ export const OWNER_JS = `
       throw new Error('Paste a Maps or Waze link carrying a point or address, or clear the field.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
-  async function makerOtherInputs(parent,catalog){
+  async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
@@ -1568,7 +1568,13 @@ export const OWNER_JS = `
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
-        idName.value='';idPlace.value='';idLink.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
+        idName.value='';idPlace.value='';idLink.value='';
+        try{
+          await refreshTradeCatalog();
+          idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review and is now selectable.';
+        }catch(refreshError){
+          idStatus.textContent=code+' was filed for review, but the trade choices could not be refreshed: '+refreshError.message;
+        }
         loadMaker();
       }catch(error){idPass.value='';idStatus.textContent=error.message;}
       idBusy=false;
@@ -2005,18 +2011,28 @@ export const OWNER_JS = `
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
+        var keptProduct=tradeProduct.value, keptParty=tradeParty.value;
         tradeProduct.textContent='';
         (catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).forEach(function(item){
           var option=el('option',null,pshape(item.product)); option.value=item.product; tradeProduct.appendChild(option);
         });
+        if(Array.from(tradeProduct.options).some(function(option){return option.value===keptProduct;}))tradeProduct.value=keptProduct;
         tradeParty.textContent='';
         (catalog.parties||[]).forEach(function(code){
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
+        if(Array.from(tradeParty.options).some(function(option){return option.value===keptParty;}))tradeParty.value=keptParty;
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
+      }
+      async function refreshMakerTradeCatalog(){
+        var refreshed=await refs('/all/maker/inputs');
+        if(!refreshed.catalog||!Array.isArray(refreshed.catalog.parties))
+          throw new Error('The Desk returned no confirmed-party catalog.');
+        catalog=refreshed.catalog;
+        fillTradeChoices();
       }
       direction.addEventListener('change',fillTradeChoices);
       tradeProduct.addEventListener('change',function(){
@@ -2270,7 +2286,7 @@ export const OWNER_JS = `
           tipPending=false;
         },true,function(){ tipAt=null; tipSignature=''; });
       }
-      makerOtherInputs(box,catalog);
+      makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
       makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
   }

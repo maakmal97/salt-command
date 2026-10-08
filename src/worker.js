@@ -23,6 +23,7 @@ import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder,
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
+import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission,
   acquireDeviceQueueLock, releaseDeviceQueueLock, claimDeviceQueueWithdrawal, finishDeviceQueueWithdrawal,
@@ -529,8 +530,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
+    let registrations = [];
+    if (env.VAULT_STORE === "pair") {
+      try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
+      catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
+    }
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
-      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE), await reservedInputs(env.SALT_LEDGER, book)) });
+      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE), await reservedInputs(env.SALT_LEDGER, book), registrations) });
   }
   if (p === "/_internal/maker/trade-cover") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -632,13 +638,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     }
     const resourcePending = ["sale", "redeem"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
+    let registrations = [];
+    if (["sale", "purchase"].includes(operation) && env.VAULT_STORE === "pair") {
+      try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
+      catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
+    }
     const built = operation === "stock-count" ? makerStockCount(body)
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
-          : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending)
+          : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending, registrations)
           : makerLedgerInput(operation, body, book, resourcePending);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
     if (built.entries) {
@@ -1744,12 +1755,60 @@ async function redispatchStale(env, ctx, now) {
   return { did: true, waiting: r.n, newest: r.newest, tries: tries + 1, last: tries + 1 === REDISPATCH_MIN.length };
 }
 
+async function makerRegistrationApprovalFault(env, current) {
+  let entry, row;
+  try { entry = JSON.parse(current.entry || "{}"); row = JSON.parse(current.row || "{}"); }
+  catch { return { error: "The trade's Add ID dependency could not be read.", status: 409 }; }
+  const candidates = [entry];
+  if (entry.makerRequest && entry.payload?.direction === "SELL" && typeof row.trip === "string") {
+    const siblings = await env.SALT_LEDGER.prepare(`SELECT entry FROM draft
+      WHERE status='pending' AND committed_at IS NULL AND collection='sales' AND id<>?1
+        AND json_extract(row,'$.trip')=?2`).bind(current.id, row.trip).all();
+    try { candidates.push(...(siblings.results || []).map((item) => JSON.parse(item.entry || "{}"))); }
+    catch { return { error: "The shared trip's Add ID dependencies could not be read.", status: 503 }; }
+  }
+  const trades = candidates.filter((item) => item.makerRequest && item.payload?.mode === "new"
+    && ["BUY", "SELL"].includes(item.payload.direction));
+  if (!trades.length) return null;
+  const book = await readBook(env.SALT_LEDGER);
+  if (!book.version) return { error: "The Desk mirror is being seeded; the trade's Add ID cannot be verified yet.", status: 503 };
+  const roster = book.state.roster || [];
+  const codes = [...new Set(trades.flatMap((item) => [item.payload?.party, item.payload?.assoc, item.payload?.downstream]
+    .filter((code) => typeof code === "string" && !roster.includes(code))))];
+  if (!codes.length) return null;
+  if (env.VAULT_STORE !== "pair")
+    return { error: "This trade's new party needs a verified Add ID from the encrypted-pair store.", status: 503 };
+  let registrations;
+  try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
+  catch { return { error: "The trade's Add ID could not be verified against the vault receipts and outbox.", status: 503 }; }
+  for (const item of trades) {
+    const payload = item.payload || {};
+    const required = [...new Set([payload.party, payload.assoc, payload.downstream]
+      .filter((code) => typeof code === "string" && !roster.includes(code)))];
+    if (!required.length) continue;
+    const stated = item.registrationDependencies;
+    if (!Array.isArray(stated) || stated.length !== required.length
+      || stated.some((dependency) => !dependency || Object.keys(dependency).sort().join(",") !== "code,id"
+        || typeof dependency.code !== "string" || typeof dependency.id !== "string"))
+      return { error: "A new party needs its verified Add ID approved before this trade.", status: 409 };
+    for (const code of required) {
+      const dependencies = stated.filter((dependency) => dependency.code === code);
+      const matching = registrations.filter((registration) => registration.code === code);
+      const registration = matching.find((candidate) => candidate.id === dependencies[0]?.id);
+      if (dependencies.length !== 1 || matching.length !== 1 || !registration
+        || registration.status !== "approved" || registration.id !== dependencies[0].id)
+        return { error: code + " needs an approved, receipt- and outbox-matched Add ID before this trade.", status: 409 };
+    }
+  }
+  return null;
+}
+
 async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
   try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
-  const cur = await env.SALT_LEDGER.prepare("SELECT status,entry,row FROM draft WHERE id=?1").bind(id).first();
+  const cur = await env.SALT_LEDGER.prepare("SELECT id,status,collection,entry,row FROM draft WHERE id=?1").bind(id).first();
   if (!cur) return json({ ok: false, error: "no such draft" }, 404);
   /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
      double tap on a phone cannot flip an approval into a rejection. */
@@ -1765,6 +1824,10 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
     let yes = null;
     try { yes = await env.SALT_LEDGER.prepare("SELECT id FROM preapproval WHERE draft_id=?1").bind(id).first(); } catch (e) { yes = null; }
     if (!yes) return json({ ok: false, error: "a payment they say they sent is answered on its order's card, Received or Not found" }, 409);
+  }
+  if (decision === "approved") {
+    const dependency = await makerRegistrationApprovalFault(env, cur);
+    if (dependency) return json({ ok: false, error: dependency.error }, dependency.status);
   }
   const decide = env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"

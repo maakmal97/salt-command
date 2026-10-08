@@ -23,7 +23,7 @@ const proposed = (entry, book) => {
 };
 
 /** Dedicated trade inputs, not a queue-entry or row-patch forwarding road. */
-export function makerTradeEntry(operation, body, book, trip = null, pending = []) {
+export function makerTradeEntry(operation, body, book, trip = null, pending = [], registrations = []) {
   if (!["sale", "purchase"].includes(operation)) return { error: "Choose sale or purchase." };
   const sale = operation === "sale";
   const fields = ["at", "product", "party", "date", "qty", "total", "cash", "movedUnits", "handover", "second"]
@@ -35,8 +35,14 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
   const roster = book.state.roster || [];
+  const verified = registrations.filter((item) => item && code(item.code, [item.code])
+    && ["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(item.kind)
+    && ["pending", "approved"].includes(item.status));
   const partyKind = sale ? body.stream === "R2" ? "associate" : "buyer" : "supplier";
-  if (!code(body.party, roster)) return { error:
+  const partyKinds = sale && body.stream === "R2"
+    ? ["reseller"] : ["customer", "supplier", "reseller", "referral", "downstream"];
+  const partyRegistered = verified.some((item) => item.code === body.party && partyKinds.includes(item.kind));
+  if (!code(body.party, roster) && !partyRegistered) return { error:
     `Choose ${partyKind === "associate" ? "an" : "a"} ${partyKind} on the roster. Register a new ${partyKind} under Counter Admin > Add ID first, then pick the code.` };
   for (const key of ["qty", "total", "cash", "movedUnits"])
     if (!figure(body[key])) return { error: "Trade figures must be finite, non-negative numbers." };
@@ -47,8 +53,11 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
   if (body.handover !== undefined && body.handover !== null && !POSITION_ENGINE.HANDOVER.includes(body.handover))
     return { error: "Handover is delivered, collected or not stated." };
   const assoc = body.assoc || null, stream = body.stream || null, downstream = body.downstream || null;
+  const assocKind = stream === "R2" ? "reseller" : "referral";
   for (const key of ["assoc", "downstream"])
-    if (body[key] !== undefined && body[key] !== null && !code(body[key], roster))
+    if (body[key] !== undefined && body[key] !== null
+      && !code(body[key], roster) && !verified.some((item) => item.code === body[key]
+        && (key === "downstream" ? item.kind === "downstream" : item.kind === assocKind)))
       return { error: key === "downstream"
         ? "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code."
         : body.stream === "R3"
@@ -61,7 +70,8 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
   if (downstream && stream !== "R2") return { error: "An end buyer belongs to an R2 sale." };
   if (stream === "R2") {
     const bucket = POSITION_ENGINE.ownerCode(assoc) + POSITION_ENGINE.BUCKET_SFX;
-    if (!roster.includes(bucket)) return { error: "Register the associate's resale account first." };
+    const appointed = verified.some((item) => item.code === assoc && POSITION_ENGINE.ADDID_APPOINTS[item.kind]);
+    if (!roster.includes(bucket) && !appointed) return { error: "Register the associate's resale account first." };
     if (body.party !== assoc) return { error: "An R2 sale names its associate as the party." };
   }
   if (sale && !(costFor(book, body.product).cost > 0))
@@ -81,20 +91,35 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
   if (twin && body.second !== second)
     return { error: "A row with this party, date, units and total is already booked. Confirm a separate order.", twin: { second } };
   if (!twin && body.second != null) return { error: "The booked twin has changed. Read the trade again." };
-  return proposed(POSITION_ENGINE.tradeEntry({
+  const entry = POSITION_ENGINE.tradeEntry({
     at: body.at, product: body.product, direction: sale ? "SELL" : "BUY", party: body.party,
     date: body.date, qty: body.qty, total: body.total, cash: body.cash, movedUnits: body.movedUnits,
     delivery: sale ? body.delivery ?? 0 : 0, freight: sale ? 0 : body.freight ?? 0,
     handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null, trip,
     ...(cover ? { more: { coverUnits: cover.units, coverRM: cover.rm }, coverFree: cover.free } : {})
-  }), book);
+  });
+  const roles = [
+    [body.party, partyKinds],
+    [assoc, [assocKind]],
+    [downstream, ["downstream"]]
+  ];
+  const required = [...new Set(roles.filter(([value]) => value && !roster.includes(value)).map(([value]) => value))];
+  const dependencies = required.map((value) => {
+    const kinds = roles.filter(([candidate]) => candidate === value).flatMap(([, allowed]) => allowed);
+    const registration = verified.find((item) => item.code === value && kinds.includes(item.kind));
+    return registration && { id: registration.id, code: registration.code };
+  }).filter(Boolean);
+  if (required.length !== dependencies.length)
+    return { error: "The party's confirmed Add ID is no longer available. Read the catalog again." };
+  if (dependencies.length) entry.registrationDependencies = dependencies;
+  return proposed(entry, book);
 }
 
 /** The Workbench's extra books: validate all before queueing any; carriage belongs to the first row alone. */
-export function makerTradeBatch(operation, body, book, pending = []) {
+export function makerTradeBatch(operation, body, book, pending = [], registrations = []) {
   if (!object(body)) return { error: "Unsupported trade input fields." };
   const { extras, ...first } = body;
-  if (extras === undefined) return makerTradeEntry(operation, first, book, null, pending);
+  if (extras === undefined) return makerTradeEntry(operation, first, book, null, pending, registrations);
   if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8640000000000000 - 20)
     return { error: "A trade needs its canonical request timestamp." };
   if (!Array.isArray(extras) || !extras.length || extras.length > 19)
@@ -122,7 +147,7 @@ export function makerTradeBatch(operation, body, book, pending = []) {
   const trip = operation === "sale" && first.delivery > 0.005 ? "t" + start : null;
   const entries = [], drafts = [];
   for (const [i, input] of inputs.entries()) {
-    const made = makerTradeEntry(operation, input, book, trip, pending.concat(entries));
+    const made = makerTradeEntry(operation, input, book, trip, pending.concat(entries), registrations);
     if (made.error) return { ...made, ...(made.twin ? { twin: { ...made.twin, index: i } } : {}) };
     entries.push(made.entry); drafts.push(made.draft);
   }
@@ -216,9 +241,14 @@ export function makerCoverPlan(body, book, pending = []) {
   return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
 }
 
-export function makerInputCatalog(book, hush = {}, pending = []) {
+export function makerInputCatalog(book, hush = {}, pending = [], registrations = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
-  const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
+  const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
+  const verified = registrations.filter((item) => item && code(item.code, [item.code])
+    && ["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(item.kind)
+    && ["pending", "approved"].includes(item.status));
+  const parties = [...new Set(bookRoster.concat(
+    verified.filter((item) => item.kind !== "bucket").map((item) => item.code)))];
   const products = Object.keys(book.state.PRODUCTS || {}).filter((product) => active(product, book)).map((product) => {
     const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product];
     const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
@@ -231,8 +261,8 @@ export function makerInputCatalog(book, hush = {}, pending = []) {
       ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
-    version: book.version, products, parties: roster,
-    rewards: roster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
+    version: book.version, products, parties,
+    rewards: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
       const reward = rewardFree(book, id, "salt", pending);
       if (reward.earned == null || !(reward.earned || reward.applied)) return [];
       const free = reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;
@@ -242,18 +272,21 @@ export function makerInputCatalog(book, hush = {}, pending = []) {
         action: !reward.error && free > 0.009 ? sale ? "Offset" : "Redeem" : null }];
     }),
     placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
-      .filter(([id, point]) => roster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
-    associates: associateCodes(book).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
-      .map((value) => ({ code: value, resaleReady: roster.includes(value + POSITION_ENGINE.BUCKET_SFX) })),
-    tierCustomers: roster.filter((value) => !POSITION_ENGINE.isBucket(value)),
-    driftCustomers: roster.filter(driftCustomerCode),
+      .filter(([id, point]) => bookRoster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
+    associates: [...new Set(associateCodes(book).concat(verified.filter((item) =>
+      item.kind === "reseller" || item.kind === "referral")
+      .map((item) => item.code)))].filter((value) => code(value, parties) && !POSITION_ENGINE.isBucket(value))
+      .map((value) => ({ code: value, resaleReady: bookRoster.includes(value + POSITION_ENGINE.BUCKET_SFX)
+        || verified.some((item) => item.code === value && POSITION_ENGINE.ADDID_APPOINTS[item.kind]) })),
+    tierCustomers: bookRoster.filter((value) => !POSITION_ENGINE.isBucket(value)),
+    driftCustomers: bookRoster.filter(driftCustomerCode),
     houseBoards: Object.fromEntries(products.map((item) => [item.product, { sizes: houseRungs(book, item.product),
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
       .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
-    tierCards: tierCards(book, roster, products),
-    driftCards: driftCards(book, roster, products),
+    tierCards: tierCards(book, bookRoster, products),
+    driftCards: driftCards(book, bookRoster, products),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),

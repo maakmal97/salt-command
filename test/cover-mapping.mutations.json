@@ -1,0 +1,23 @@
+[
+  {
+    "name": "finite forecast cover is not replaced by fallback",
+    "find": "cv.days=r.coverDays!=null?r.coverDays:+(Math.max(0,cv.free)/r.base).toFixed(1);",
+    "replace": "cv.days=+(Math.max(0,cv.free)/r.base).toFixed(1);"
+  },
+  {
+    "name": "beyond-horizon cover uses measured base",
+    "find": "cv.days=r.coverDays!=null?r.coverDays:+(Math.max(0,cv.free)/r.base).toFixed(1);",
+    "replace": "cv.days=r.coverDays!=null?r.coverDays:+(Math.max(0,cv.free)/(r.base*2)).toFixed(1);"
+  },
+  {
+    "name": "zero measured base keeps native cover",
+    "find": "if(r&&!r.empty&&r.base>0){",
+    "replace": "if(r&&!r.empty&&r.base>=0){"
+  },
+  {
+    "name": "native beyond-horizon cover remains null",
+    "file": "engine\\position.mjs",
+    "find": "const reachD=reach(reorderUnits), coverD=reach(0);",
+    "replace": "const reachD=reach(reorderUnits), coverD=reach(0)??28;"
+  }
+]
