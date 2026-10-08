@@ -722,7 +722,12 @@ export function draftRow(entry, book) {
       const changed = (f) => chk.changes.some((c) => c.field === f);
       const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
       const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
-      if (changed("total") && isNum(after.total) && after.total < paid - 0.005) {
+      /* 06 Oct 2026: ON A SALE THE DIFFERENCE IS A REFUND THE FOLD RAISES (the engine's refundOnOverpay), so a close at what
+         was handed over or an amendment under what they paid is approved like any row, and the card says what opens */
+      const owedAfter = isSale && isNum(after.total) ? +after.total + (isNum(after.delivery) ? +after.delivery : 0) : null;
+      if (isSale && (changed("total") || changed("delivery")) && owedAfter != null && owedAfter < paid - 0.005) {
+        flags.push(`The corrected row comes to RM ${round(owedAfter)}, under the RM ${round(paid)} already paid: the fold raises a refund payable to the customer for RM ${round(paid - owedAfter)}, open and Now until it is returned (paidOn in the book).`);
+      } else if (!isSale && changed("total") && isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
       if (changed("qty") && isNum(after.qty) && after.qty < movedQty - 0.005) {
@@ -873,7 +878,8 @@ export function draftRow(entry, book) {
       flags.push(`Marks the lot as never delivered: the RM ${round(t.cash || 0)} already paid becomes a recoverable, not inventory, and the lot leaves the cost basis.`);
     } else if (isMove) {
       if (cash > oweRM + 0.005) {
-        flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
+        flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`
+          + (dir2 === "SELL" ? ` The fold raises a refund payable to the customer for it, open and Now until it is returned (paidOn in the book).` : ""));
       }
       if (moved > oweUnits + 0.005) {
         flags.push(`This hands over ${round(moved)} unit against ${round(oweUnits)} still to move, so ${round(moved - oweUnits)} unit more than the order calls for.`);

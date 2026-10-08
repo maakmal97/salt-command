@@ -964,8 +964,9 @@ its approved row again until `acked_at` says it was told. His approval under App
 
 **The later stages are one tap too** (S11 11.12): **Collected or Delivered** (`/handed {qty, close}`,
 the running total, in the order's own mode; `close` under the size is 11.9's close, previewed as the one
-Correction it makes, `closeEntry`, and offered again as Collected's; a close under what they have paid carries
-no yes and waits under Approve, since nothing books the difference as a refund yet), **Received** (`/received {amount}`, their recorded payment
+Correction it makes, `closeEntry`, and offered again as Collected's; a close under what they have paid files its yes
+like any other since 06 Oct 2026, the answer carrying `refund`, the difference opening as a `customerRefunds` row when
+the Correction folds, the engine's `refundOnOverpay`), **Received** (`/received {amount}`, their recorded payment
 in his bank; the site already counts it) and **Cash received** (`/cash {amount}`, money taken at the
 counter: the site's `cash` event marks the order paid at once, in cash and as his, which stops the chase,
 and moves the ledger's mark of the money by the same figure, because the Fulfilment is the desk's own

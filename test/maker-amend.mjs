@@ -94,13 +94,15 @@ export async function run({ ok }) {
     const claimText = (await claimed.json()).error || "";
     ok(claimed.status === 409 && /waits on this order|waits on/.test(claimText), "[" + claimed.status + " " + claimText + "] An order with a payment waiting on his answer is not amended until he answers it.");
 
-    /* what is paid and what is handed over are read on the Desk's road too, ahead of the mirror */
+    /* what is handed over is read on the Desk's road too, ahead of the mirror; under what is paid is no refusal since 06 Oct 2026
+       (the fold raises the refund), so that figure goes on to the mirror, unseeded here */
     const idSettled = make();
     harness.book.append(null, u, idSettled, { kind: "ledger", at, paid: 280, moved: 2 }, harness.book.order(u, idSettled));
     const underPaid = await tap(idSettled, { total: 270, rid: rid(9) });
+    const underPaidText = (await underPaid.json()).error || "";
     const underMoved = await tap(idSettled, { qty: 1, total: 95, rid: rid(10) });
-    ok(underPaid.status === 409 && /paid/.test((await underPaid.json()).error) && underMoved.status === 400 && /already handed over/.test((await underMoved.json()).error),
-      "The Desk refuses a figure under what is paid and a size under what is handed over: " + underPaid.status + " " + underMoved.status);
+    ok(underPaid.status === 503 && /being seeded/.test(underPaidText) && !/paid/.test(underPaidText) && underMoved.status === 400 && /already handed over/.test((await underMoved.json()).error),
+      "The Desk refuses a size under what is handed over, and a figure under what is paid is no refusal of its own: " + underPaid.status + " " + underPaidText + " / " + underMoved.status);
     const o = book(idReady), t0 = Date.now();
     const none = O.decideDesk({ ...o, status: "acknowledged" }, { restate: { qty: 3, total: 285, delivery: 0 } }, at);
     ok(none.none === true, "The order book takes an amendment that changes nothing as no event.");
@@ -111,10 +113,13 @@ export async function run({ ok }) {
       O.decideDesk({ ...o, moved: 2 }, { restate: { qty: 1, total: 95, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 0, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 285, delivery: 5 } }, at),
-      O.decideDesk({ ...o, paid: 280, delivery: 0 }, { restate: { qty: 3, total: 270, delivery: 0 } }, at),
       O.decideDesk({ ...o, payments: [{ claim: "waiting", amount: 10, at }] }, { restate: { qty: 3, total: 300, delivery: 0 } }, at)];
-    ok(refused.every((r) => r.error), "The order book refuses an amendment of a done order, a size under what is handed over, no goods price, a charge on a collection, a total under what is paid, or one with a claim waiting: "
+    ok(refused.every((r) => r.error), "The order book refuses an amendment of a done order, a size under what is handed over, no goods price, a charge on a collection, or one with a claim waiting: "
       + refused.map((r) => r.error || "accepted").join(" | "));
+    /* 06 Oct 2026: under what they paid is taken, as a close under it is; the ledger raises the refund for the difference */
+    const underPaidEv = O.decideDesk({ ...o, status: "ready", paid: 280, delivery: 0 }, { restate: { qty: 3, total: 270, delivery: 0 } }, at);
+    ok(underPaidEv.ev && underPaidEv.ev.kind === "restate" && underPaidEv.ev.total === 270,
+      "The order book takes an amendment under what they paid as a restate event: " + JSON.stringify(underPaidEv));
 
     /* the restate event moves the figures, never `closed`, and says so in the history the customer reads */
     harness.book.run("desk", { u, id: idReady, body: { restate: { qty: 3, total: 300, delivery: 0 } } });
