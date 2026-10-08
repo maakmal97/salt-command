@@ -960,6 +960,9 @@ export function apply(book, staged, notes, masterText) {
            now, and a payment over the row. The engine measures it against every refund the rid already carries. */
         const over = E.refundOnOverpay(book.customerRefunds, it.target, (it.pay && it.pay.date) || null);
         if (over) moves.push(`refund payable: ${over.party} RM ${over.amount}, paid past what the row comes to`);
+        /* and a refund the row no longer owes is flagged, never withdrawn: he removes it in ledger/book.json */
+        const stale = E.refundStale(book.customerRefunds, it.target);
+        if (stale) moves.push(`STALE refund on ${it.target.rid}: RM ${stale} of its open refunds is no longer owed; remove it in ledger/book.json`);
       }
       /* v496: the shelf's figure is RM per unit; the order's cost is absolute, so it is the shelf times the order's units. */
       /* 24 Sep 2026: A PENDING ORDER ALSO GOES OUT BY A CORRECTION, which raises deliveredQty and moves no kg,

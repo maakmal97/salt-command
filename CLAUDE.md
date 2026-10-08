@@ -148,7 +148,8 @@ directory. The leak checks exempt a directory place only when it IS an official 
 
 **Money he is holding that is somebody else's is Now**: an open `customerRefunds` row is severity
 `now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone**: add
-`paidOn` in `ledger/book.json`, `booksync --sync`, build.
+`paidOn` in `ledger/book.json`, `booksync --sync`, build. **A refund the book no longer owes is flagged, never withdrawn**
+(the engine's `refundStale`, a fold move and a provenance note): he removes the row in `ledger/book.json`.
 
 **A defaulted sale is written off**: `txAdvance` reads nothing owed on it and `txWrittenOff`
 carries it to every reading of what was lost, so no price moves. A new reader of what is owed uses
