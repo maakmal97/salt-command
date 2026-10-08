@@ -17,11 +17,11 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter, readBook, draftRow } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerInputCatalog, makerTradeEntry, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
@@ -578,9 +578,33 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "tier-set" ? makerTierSet(body, book)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
-          : ["sale", "purchase"].includes(operation) ? makerTradeEntry(operation, body, book)
+          : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book)
           : makerLedgerInput(operation, body, book);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
+    if (built.entries) {
+      const entries = built.entries;
+      entries.forEach((entry) => { entry.makerRequest = fingerprint; });
+      const queued = (await (await handleQueueGet(env, true)).json()).queue;
+      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+      const held = queued.concat((waiting.results || []).map((row) => JSON.parse(row.entry)));
+      for (const [i, entry] of entries.entries()) {
+        const stored = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(entry.at).first();
+        const others = held.concat(stored ? [JSON.parse(stored.entry)] : []);
+        const checked = makerQueuedTradeCheck(entry, others);
+        if (checked.error) return json({ ok: false, ...checked }, 409);
+        const reserved = POSITION_ENGINE.entryReservationFault(entry, others.concat(entries.slice(0, i)), book);
+        if (reserved) return json({ ok: false, error: reserved }, 409);
+        const fault = await tripCheck(env.SALT_LEDGER, book, built.drafts[i].row,
+          built.drafts.slice(0, i).map((draft) => draft.row), []);
+        if (fault) return json({ ok: false, error: fault }, 409);
+      }
+      if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint, entries)) {
+        const raced = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
+        if (raced?.pending) return resumeMakerInput(env, raced.pending, fingerprint);
+        return json(raced?.response || { ok: false, error: raced?.error || "Retry the original request." }, raced?.response ? 200 : 409);
+      }
+      return resumeMakerInput(env, entries, fingerprint);
+    }
     const entry = built.entry;
     if (built.vaultOnly) {
       if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint))
@@ -594,7 +618,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     }
 
     async function resumeMakerInput(env, entry, fingerprint) {
-      if (entry.makerRequest !== fingerprint)
+      const entries = Array.isArray(entry) ? entry : [entry];
+      if (entries.some((item) => item.makerRequest !== fingerprint))
         return json({ ok: false, error: "The retained Maker input fingerprint is invalid." }, 409);
       try { await queueSale(env, entry, true); }
       catch (error) {
@@ -602,11 +627,16 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         return json({ ok: false, error: error.message }, error.status);
       }
       await runDrafter(env);
-      const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(entry.at).first();
-      if (!draft || JSON.parse(draft.entry).makerRequest !== fingerprint)
-        return json({ ok: false, error: "The immutable input has not reached its draft. Keep the original request for recovery." }, 503);
-      const response = { ok: true, queued: false, draft: entry.at, status: draft.status };
-      await makerRequestFinish(env.SALT_LEDGER, entry.at, fingerprint, response);
+      const drafts = [];
+      for (const item of entries) {
+        const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(item.at).first();
+        if (!draft || JSON.parse(draft.entry).makerRequest !== fingerprint)
+          return json({ ok: false, error: "The immutable input has not reached its draft. Keep the original request for recovery." }, 503);
+        drafts.push({ id: item.at, status: draft.status });
+      }
+      const response = { ok: true, queued: false, draft: entries[0].at, status: drafts[0].status,
+        ...(Array.isArray(entry) ? { drafts, trip: entries[0].payload.trip || null } : {}) };
+      await makerRequestFinish(env.SALT_LEDGER, entries[0].at, fingerprint, response);
       return json(response);
     }
     entry.makerRequest = fingerprint;

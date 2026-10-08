@@ -157,7 +157,8 @@ export async function run({ ok }) {
       { name: "Cora", choice: "0", expected: { salt: 0 } },
       { name: "Dara", choice: "0.3", expected: { salt: 0.3 } },
       { name: "Eli", choice: "typed", value: "-1", expected: { salt: -1 } },
-      { name: "Faye", choice: "typed", value: "1", expected: { salt: 1 } }
+      { name: "Faye", choice: "typed", value: "1", expected: { salt: 1 } },
+      { name: "Gail", choice: "typed", value: "0.125", expected: { salt: 0.125 } }
     ];
     for (const outcome of outcomes) {
       fields[0].value = outcome.name; fields[1].value = ""; fields[2].value = pass;
@@ -178,6 +179,9 @@ export async function run({ ok }) {
         && body.pair?.expectedRevision === before + 1 && draftMatches && entry && names
         && Object.values(names).some((value) => value.includes(outcome.name)),
       "Add ID " + (outcome.choice || "automatic") + " choice traverses the encrypted pair, authenticated route and real draft");
+      if (outcome.name === "Gail")
+        check(body.tiers?.salt === 0.125 && draft?.payload.tiers?.salt === 0.125,
+          "typed Add ID drift preserves 0.125 precision like the incumbent Desk");
     }
 
     fields[0].value = "Gopal"; fields[1].value = ""; fields[2].value = pass;
