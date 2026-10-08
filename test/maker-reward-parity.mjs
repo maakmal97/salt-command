@@ -304,6 +304,20 @@ export async function runAdmission({ ok, worker }) {
     "concurrent redemption and covered batch share one native balance and cannot overdraw it");
     const before = JSON.stringify([...race.map]);
     const book = await mirrorBook(race.desk.SALT_LEDGER);
+    const ownerConflict = E.redeemEntry({ at: "2099-10-05T03:59:59.000Z", product: "salt",
+      party: "CX2-ZED", date: "2099-10-05", qty: 0.2, earned: 2, applied: 0, balance: 2 });
+    race.sqlite.prepare("INSERT INTO maker_request(id,operation,fingerprint,entry) VALUES (?,?,?,?)")
+      .run("queue-owner:" + ownerConflict.at, "queue-owner", "f".repeat(64),
+        JSON.stringify({ device: "other-device", fingerprint: "f".repeat(64) }));
+    const upload = await worker.fetch(new Request("https://desk.test/queue", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "fixture-device", queue: [ownerConflict] })
+    }), race.desk, { waitUntil() {} });
+    ok(upload.status === 409
+      && race.sqlite.prepare("SELECT state FROM input_admission WHERE id=?").get(ownerConflict.at)?.state === "withdrawn"
+      && !race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=? AND source='device:fixture-device'").get(ownerConflict.at)
+      && !race.map.has("q:fixture-device"),
+    "an owner-receipt conflict releases only this upload's newly admitted resource source and never queues it");
     const entries = ["CX1-ZED", "CX4-ZED"].map((party, i) => E.redeemEntry({
       at: "2099-10-05T04:00:0" + i + ".000Z", product: "salt", party, date: "2099-10-05",
       qty: 3, earned: 2, applied: 0, balance: 2 }));
@@ -385,19 +399,5 @@ export async function runAdmission({ ok, worker }) {
         && race.sqlite.prepare("SELECT amount FROM input_admission WHERE id=?").get(duplicate.at)?.amount === 0.3
         && race.sqlite.prepare("SELECT COUNT(*) AS n FROM input_admission_source WHERE id=?").get(duplicate.at)?.n === 1,
       "an identical timestamp in a resource batch reserves its native amount once rather than counting a duplicate");
-      const ownerConflict = E.redeemEntry({ ...retained.payload, at: "2099-10-05T11:00:00.000Z",
-        party: "CX2-ZED", qty: 0.2 });
-      race.sqlite.prepare("INSERT INTO maker_request(id,operation,fingerprint,entry) VALUES (?,?,?,?)")
-        .run("queue-owner:" + ownerConflict.at, "queue-owner", "f".repeat(64),
-          JSON.stringify({ device: "other-device", fingerprint: "f".repeat(64) }));
-      const upload = await worker.fetch(new Request("https://desk.test/queue", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ device: "fixture-device", queue: [ownerConflict] })
-      }), race.desk, { waitUntil() {} });
-      ok(upload.status === 409
-        && race.sqlite.prepare("SELECT state FROM input_admission WHERE id=?").get(ownerConflict.at)?.state === "withdrawn"
-        && !race.sqlite.prepare("SELECT id FROM input_admission_source WHERE id=? AND source='device:fixture-device'").get(ownerConflict.at)
-        && !race.map.has("q:fixture-device"),
-      "an owner-receipt conflict releases only this upload's newly admitted resource source and never queues it");
   } finally { race.source.w.close(); race.sqlite.close(); }
 }
