@@ -14,6 +14,7 @@ import { landingPage } from "../stmt/page.js";
 import { readBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
 import { apply } from "../tools/fold.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 class Store {
   values = new Map();
@@ -35,7 +36,10 @@ const SCENARIO = [
   row("rs2", "CM4-TO", "2026-09-01", 2, 220, unpaid),
   row("rs3", "CM4-TO", "2026-09-20", 1, 110, unpaid),
   row("rs4", "CS6-PER", "2026-08-20", 20, 3000),
-  row("rs5", "CK4-SEN", "2026-08-21", 20, 3000)
+  row("rs5", "CK4-SEN", "2026-08-21", 20, 3000),
+  row("rs6", "CZ9-SMALL", "2026-08-22", 1, 548, { coverUnits: 0.56 }),
+  row("rs7", "CZ9-ADV2", "2026-08-23", 1, 1048),
+  row("rs8", "CZ9-ADV2", "2026-09-02", 2, 220, unpaid)
 ].map((r) => JSON.parse(JSON.stringify(r)));
 const REPO = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
@@ -44,8 +48,10 @@ export async function run({ ok }) {
   const { w, version } = source;
   const ledger = JSON.parse(JSON.stringify(source.ledger));
   try {
-    w.eval(`(function(){var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
+    w.eval(`(function(){['CZ9-SMALL','CZ9-ADV2'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});
+      var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
       BASE_SALES.push(JSON.parse(JSON.stringify(r)));});recompute();})()`);
+    for (const code of ["CZ9-SMALL", "CZ9-ADV2"]) if (!ledger.roster.includes(code)) ledger.roster.push(code);
     const today = w.eval("TODAY.toISOString().slice(0,10)");
     /* what the Desk's own Redeem queues for a party on this book */
     const deskRedeem = (code) => JSON.parse(w.eval(`(function(){queue=[];saveQueue=function(){};switchTab=function(){};
@@ -88,7 +94,10 @@ export async function run({ ok }) {
       { code: "CS6-PER", at: "2026-10-06T01:01:00.000Z", what: "an associate owing nothing: every held unit is redeemed",
         expect: (e) => e.payload.mode === "redeem" && e.payload.qty > 1 },
       { code: "CK4-SEN", at: "2026-10-06T01:02:00.000Z", what: "a customer owing nothing: one whole unit is redeemed",
-        expect: (e) => e.payload.mode === "redeem" && e.payload.qty === 1 }
+        expect: (e) => e.payload.mode === "redeem" && e.payload.qty === 1 },
+      { code: "CZ9-ADV2", at: "2026-10-06T01:03:00.000Z", what: "a customer with an advance: one unit offsets the oldest row",
+        expect: (e) => e.payload.mode === "amend" && e.payload.kind === "Correction" && e.payload.rid === "rs8"
+          && e.payload.fields.rebateKg === 1 && e.payload.fields.settledRM === 110 }
     ];
     for (const c of cases) {
       const theirs = deskRedeem(c.code);
@@ -114,6 +123,22 @@ export async function run({ ok }) {
         : B.sales.length === before + 1 && target.customer === c.code && target.rebate === true && target.cash === 0 && target.qty === mine.payload.qty),
         "and the fold books it: " + (folded.ok ? JSON.stringify(target) : folded.problems.join("; ")));
     }
+
+    const small = POSITION_ENGINE.rewardAccount({
+      state: { REWARD: ledger.REWARD, roster: ledger.roster },
+      sales: SCENARIO,
+      purchases: ledger.purchases
+    }, "CZ9-SMALL");
+    const noWholeUnit = await call("/all/maker/inputs/redeem", {
+      at: "2026-10-06T01:04:00.000Z", code: "CZ9-SMALL", date: today
+    });
+    const noWholeBody = await noWholeUnit.json();
+    ok(small.earned === 1 && small.held === 0.44,
+      "the fixture holds less than one unspent unit: " + JSON.stringify(small));
+    ok(!deskRedeem("CZ9-SMALL") && noWholeUnit.status >= 400
+      && /whole reward unit/.test(noWholeBody.error || "") && drafts().length === cases.length,
+      "a customer below one whole unit is not offered Redeem and the Counter road refuses it: "
+      + noWholeUnit.status + " " + JSON.stringify(noWholeBody));
 
     /* once spent and waiting, the same reward is not spent again; a retry of the same request is answered from its receipt */
     const count = drafts().length;

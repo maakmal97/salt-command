@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import desk from "../src/worker.js";
 import { handleMaker } from "../stmt/maker.js";
 import { makerOffsetOffers, makerOffset } from "../src/maker-inputs.js";
+import { checkCorrection, draftRow } from "../src/drafter.js";
 import { readBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
 
@@ -70,6 +71,41 @@ export async function run({ ok }) {
     const deskList = desked(), workerList = worked(book);
     ok(JSON.stringify(sorted(workerList)) === JSON.stringify(sorted(deskList)) && workerList.length >= 2,
       "the list equals the Desk's autoOffsets over unpaid orders: " + JSON.stringify(sorted(workerList)) + " against " + JSON.stringify(sorted(deskList)));
+    const heldBook = JSON.parse(JSON.stringify(book));
+    heldBook.state.PEOPLE = heldBook.state.PEOPLE || {};
+    heldBook.state.PEOPLE.departed = [...(heldBook.state.PEOPLE.departed || []), { id: "CM4-TO", since: today }];
+    w.eval("PEOPLE.departed.push({id:'CM4-TO',since:" + JSON.stringify(today) + "});recompute();");
+    const heldStats = w.eval("(function(){var r=networkStats().find(function(x){return x.id==='CM4-TO';});return r?{earned:r.earned,margin:r.marginTotal}:null;})()");
+    const heldCard = String(w.eval("resellerCard(networkStats().find(function(x){return x.id==='CM4-TO';}))"));
+    const redemption = { at: "2026-10-05T01:02:30.000Z", payload: { mode: "redeem", product: "salt", party: "CM4-TO",
+      qty: 1, date: today, earned: 1, applied: 0, balance: 1 } };
+    const blockedRedemption = draftRow(redemption, heldBook);
+    const allowedRedemption = draftRow(redemption, { ...heldBook,
+      state: { ...heldBook.state, PEOPLE: { ...heldBook.state.PEOPLE, departed: [] } } });
+    const advance = heldBook.sales.find((sale) => sale.rid === "tx2");
+    const blockedOffset = checkCorrection({ settledRM: 110, rebate: true, rebateKg: 1 }, heldBook, advance, true).errs.join(" ");
+    const undoRedemption = checkCorrection({ rebate: false, rebateKg: 0 }, heldBook,
+      { ...advance, rebate: true, rebateKg: 1 }, true).errs.join(" ");
+    ok(heldStats && heldStats.earned > 0 && heldStats.margin > 0,
+      "a departed associate keeps earning from their recorded margin: " + JSON.stringify(heldStats));
+    ok(/has departed/.test(blockedRedemption.skip || ""),
+      "the drafter refuses a departed holder's redemption");
+    ok(!allowedRedemption.skip && allowedRedemption.row,
+      "the drafter drafts the same redemption after the holder returns");
+    ok(/has departed/.test(blockedOffset),
+      "the drafter refuses a reward offset while its holder is departed");
+    ok(!/has departed/.test(undoRedemption),
+      "the drafter allows undoing a booked redemption while its holder is departed");
+    ok(heldCard.includes("earned, held while departed") && !desked().some((o) => o.code === "CM4-TO")
+      && !JSON.parse(w.eval("(function(){queue=[];saveQueue=function(){};qPost=function(){return Promise.resolve(true);};redeemRebate('CM4-TO');return JSON.stringify(queue);})()")).length
+      && !worked(heldBook).some((o) => o.code === "CM4-TO")
+      && !!makerOffset({ at: "2026-10-05T01:03:00.000Z", code: "CM4-TO", rid: "tx2", date: today }, heldBook, []).error,
+      "the Desk shows the held balance without offering a spend, and Counter refuses both manual and automatic offsets");
+    ok(!String(w.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))")).includes("CM4-TO"),
+      "Today does not ask for a departed holder's reward");
+    w.eval("PEOPLE.departed.pop();recompute();");
+    ok(String(w.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))")).includes("CM4-TO"),
+      "Today offers the reward again after the associate returns");
     const toOffer = workerList.find((o) => o.code === "CM4-TO");
     ok(toOffer && toOffer.rid === "tx2" && toOffer.units === 1 && toOffer.held > 1,
       "the oldest unpaid order is offered, one unit though more is held: " + JSON.stringify(toOffer));

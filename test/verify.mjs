@@ -40935,6 +40935,7 @@ await (async () => {
      one at a time. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
+  w.eval(`(()=>{const base=actions;actions=function(){const rows=base();if(PROD==='salt')rows.push({sev:'watch',kind:'fixture',title:'Fixture salt-only warning',rm:0,why:'Test warning.',tab:'inventory'});return rows;};RENDER_MEMO=null;})()`);
   /* v798: a refund of its own, because the live book's last one closed on 23 Sep 2026 and the rule is not about that day */
   w.eval("customerRefunds.push({party:'CZ9-RF',amount:20,since:'2026-09-01'})");
   const v = JSON.parse(w.eval(`JSON.stringify((()=>{const txt=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent;};
@@ -40947,13 +40948,13 @@ await (async () => {
     return {per,live:liveBooks(),all:all.map(x=>({t:txt(x.title),books:x.books,sev:x.sev})),rows,band,badge,prod:PROD,scope:sec.querySelector('.pscope').textContent};})())`));
   const books = Object.keys(v.per);
   const everywhere = v.per.salt.filter((t) => books.every((p) => v.per[p].includes(t)));
-  const saltOnly = v.per.salt.filter((t) => !v.per.oil.includes(t));
   ok(everywhere.length > 0 && everywhere.every((t) => v.rows.filter((r) => r.t === t).length === 1 && v.rows.find((r) => r.t === t).tags.length === 0),
     "an item every book raises is listed once and carries no book: " + JSON.stringify(everywhere));
   /* a party's several items are one merged row, which stands for each of them */
   const stands = (t) => v.rows.some((r) => (r.t.includes(t) || ((t.match(/[A-Z]{2}\d-[A-Z]{2,3}/) || [""])[0] && r.t.includes((t.match(/[A-Z]{2}\d-[A-Z]{2,3}/) || [""])[0]) && /\d+ items/.test(r.t))) && JSON.stringify(r.tags) === '["Salt"]');
-  ok(saltOnly.length > 0 && saltOnly.every(stands),
-    "salt's own items are on Today with oil in view, each tagged Salt: " + JSON.stringify(saltOnly));
+  const saltOnly = v.rows.filter((r) => r.t === "Fixture salt-only warning");
+  ok(saltOnly.length === 1 && stands("Fixture salt-only warning"),
+    "a warning raised only by salt is listed once and tagged Salt: " + JSON.stringify(saltOnly));
   ok(JSON.stringify(v.band) === JSON.stringify(v.live.map((p) => p[0].toUpperCase() + p.slice(1))) && !v.live.includes("spare") && v.live.includes("rice"),
     "the band is one row a book with anything on it, and a book with nothing, spare, is left off: " + JSON.stringify(v.band));
   ok(!v.all.some((x) => x.books.includes("spare")), "and an empty book raises nothing on Today, not even its own trigger");
