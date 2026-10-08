@@ -165,6 +165,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button:hover{background:var(--salt-glass);}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
+/* Day: a book not in view is read at full strength (faded, it fell to about 1.9:1 on paper); the one in view keeps
+   its ink and its product border */
+:root[data-time="day"] .prodsw button:not(.live){opacity:1;}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 /* v779: FIVE BOOKS FIT ON A PHONE. Each button carries a dot, the book's name and that book's
    headline figure at a 150px minimum, and the strip wraps, so two books sat on one row and five
@@ -536,7 +539,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .nchip.nv{border-color:var(--salt-steel);color:var(--salt-steel);}
 .nchip.ng{border-color:var(--salt-verdigris);color:var(--salt-verdigris);}
 .nchip.ni{border-color:var(--salt-product-salt);color:var(--salt-product-salt);}
-.nchip.ngold{background:var(--salt-gradient);color:var(--salt-obsidian);border-color:transparent;box-shadow:none;}
+.nchip.ngold{background:var(--salt-gradient);color:var(--salt-ink-on-accent);border-color:transparent;box-shadow:none;}
 .nbranch{border-left-color:var(--salt-line-faint);}
 .mbar{background:var(--salt-well);}
 .mbar>span{background:linear-gradient(90deg,var(--salt-copper),var(--salt-brass));box-shadow:none;}
@@ -742,7 +745,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
    Day is hidden while the desk holds it back (html[data-time-day="off"]). */
-.railtheme{display:flex;gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
+/* five choices since Day shows (09 Oct 2026): three to a row, so every word fits and each is 44px both ways */
+.railtheme{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-md);background:var(--salt-well);}
 .railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
   color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
   transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}

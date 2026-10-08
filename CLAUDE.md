@@ -97,8 +97,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
    actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
    (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
-   own CSS is a token, never a literal, and Day stays held back (`data-time-day="off"`) until the
-   remaining tints are tokens too (`docs/DESIGN.md`). The Counter takes the tokens and five
+   own CSS is a token, never a literal. Day shows (his word of 09 Oct 2026; no `data-time-day` hold on the
+   desk), and every colour the Day palette lends to text holds 4.5:1 on each Day panel, which the suite
+   measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and

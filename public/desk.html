@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="3191628c3edc1056";
+var SALT_BUILD_ID="fd1f5946c677d685";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1929,27 +1929,29 @@ details.obs>summary{min-height:var(--tap);}
   --salt-panel: rgb(34, 28, 29);
 }
 :root[data-time="day"] {
+  /* 09 Oct 2026: every role that is read as text holds 4.5:1 or more on the Day panels (#e6e0d4 to #fcfaf5),
+     each darkened along its own hue; copper toward red-brown so it stays apart from brass */
   --salt-obsidian: #f3efe6;
   --salt-slate: #fcfaf5;
   --salt-slate-light: #ebe3d3;
   --salt-brass: #8a5618;
-  --salt-copper: #b8732f;
+  --salt-copper: #95511e;
   --salt-salt: #1a1611;
-  --salt-mist: #6f665a;
+  --salt-mist: #6a6156;
   --salt-mist-light: #524a40;
   --salt-mist-bright: #3d362e;
   --salt-edge-field: #9a7440;
   --salt-verdigris: #246e52;
-  --salt-ember: #b23e24;
+  --salt-ember: #ac3c23;
   --salt-steel: #45607a;
-  --salt-brass-soft: #7d6233;
-  --salt-alarm: #c4122f;
-  --salt-amber: #8a6400;
-  --salt-product-salt: #6b7b86;
-  --salt-product-oil: #a07a2c;
-  --salt-product-candy: #a8537f;
+  --salt-brass-soft: #785e31;
+  --salt-alarm: #c2122f;
+  --salt-amber: #7f5c02;
+  --salt-product-salt: #57646d;
+  --salt-product-oil: #7a5e24;
+  --salt-product-candy: #934a6e;
   --salt-product-rice: #4c58a6;
-  --salt-product-spare: #6b7330;
+  --salt-product-spare: #60662c;
   --salt-glass: rgba(26, 22, 17, 0.03);
   --salt-glass-faint: rgba(26, 22, 17, 0.02);
   --salt-line: rgba(138, 86, 24, 0.22);
@@ -4203,6 +4205,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button:hover{background:var(--salt-glass);}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
+/* Day: a book not in view is read at full strength (faded, it fell to about 1.9:1 on paper); the one in view keeps
+   its ink and its product border */
+:root[data-time="day"] .prodsw button:not(.live){opacity:1;}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 /* v779: FIVE BOOKS FIT ON A PHONE. Each button carries a dot, the book's name and that book's
    headline figure at a 150px minimum, and the strip wraps, so two books sat on one row and five
@@ -4574,7 +4579,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .nchip.nv{border-color:var(--salt-steel);color:var(--salt-steel);}
 .nchip.ng{border-color:var(--salt-verdigris);color:var(--salt-verdigris);}
 .nchip.ni{border-color:var(--salt-product-salt);color:var(--salt-product-salt);}
-.nchip.ngold{background:var(--salt-gradient);color:var(--salt-obsidian);border-color:transparent;box-shadow:none;}
+.nchip.ngold{background:var(--salt-gradient);color:var(--salt-ink-on-accent);border-color:transparent;box-shadow:none;}
 .nbranch{border-left-color:var(--salt-line-faint);}
 .mbar{background:var(--salt-well);}
 .mbar>span{background:linear-gradient(90deg,var(--salt-copper),var(--salt-brass));box-shadow:none;}
@@ -4780,7 +4785,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
    Day is hidden while the desk holds it back (html[data-time-day="off"]). */
-.railtheme{display:flex;gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-pill);background:var(--salt-well);}
+/* five choices since Day shows (09 Oct 2026): three to a row, so every word fits and each is 44px both ways */
+.railtheme{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-md);background:var(--salt-well);}
 .railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
   color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
   transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}
@@ -15872,7 +15878,7 @@ function costPanel(){
     return `<tr><td class="l">${units(q)}</td><td>${fmt0(price)}</td>
       <td><b>${fmt0(contrib)}</b></td>
       <td style="color:${perUnit<0?'var(--crim)':'var(--ink)'}">${fmt(perUnit)}</td>
-      <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--warn,#b87333)':'var(--ink)'}"><b>${mins==null?NIL:Math.round(mins)+' min'}</b></td></tr>`;}).join('');
+      <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--salt-copper)':'var(--ink)'}"><b>${mins==null?NIL:Math.round(mins)+' min'}</b></td></tr>`;}).join('');
 
   const stack=s0.perOrderParts.map(p=>`<tr><td class="l">${p.k}</td>
     <td>${p.rm!=null?fmt(p.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
@@ -17422,7 +17428,7 @@ function renderReveal(){
     <div class="note warn" style="margin:0 0 10px;border-color:rgba(184,115,51,.3);background:rgba(184,115,51,.08)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),#6f8398)':'transparent'};color:${revealed?'#fff':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
-      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:#05080a">Save</button>':''}
+      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Save</button>':''}
       ${NAME_VAULT?'<button id="vimport" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--gold);background:transparent;color:var(--gold)">Import old vault</button>':''}
     </div>`}
     ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;border:1px solid var(--brd);border-radius:8px;padding:8px 9px;font-size:16px;color:var(--ink);background:var(--wellbg)"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
@@ -17431,9 +17437,9 @@ function renderReveal(){
       <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--gold)">+ Add ID</summary>
       <div class="dsc" style="margin:7px 0 8px">A party is created <b>here</b>, by naming it, because a proper code is derived from a name and a place and this is the only panel that holds names. The code minted is the one the ledger carries from its first transaction, so there is <b>no placeholder and no re-key</b>.</div>
       <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
-        <input id="apLoc" placeholder="location; blank if to be confirmed" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
-        <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#05080a">
+        <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:var(--salt-obsidian)">
+        <input id="apLoc" placeholder="location; blank if to be confirmed" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:var(--salt-obsidian)">
+        <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:var(--salt-obsidian)">
           <option value="customer">Customer: buys direct</option>
           <option value="reseller">Associate, resells for you: R2</option>
           <option value="referral">Referrer, introduces buyers: R3</option>
@@ -17441,7 +17447,7 @@ function renderReveal(){
           <option value="bucket">An associate&rsquo;s end buyer you know NOTHING about: his &ldquo;-Gen&rdquo; bucket</option>
           <option value="supplier">Supplier</option>
         </select>
-        <select id="apParent" style="display:none;border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#05080a">
+        <select id="apParent" style="display:none;border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:var(--salt-obsidian)">
           <option value="">Which associate…</option>${byName(roster.filter(id=>!id.startsWith('S'))).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('')}
         </select>
         <button id="apAdd" class="vbtn salt-pill salt-pill--sm" style="align-self:flex-start">Create the ID</button>
@@ -22102,7 +22108,7 @@ function tabWorkbench(){
          appear when there is something queued for them to act on, which is also when their words mean
          anything. Nothing is hidden that could have been used: each already refused an empty queue. -->
     <div style="margin-top:13px">
-      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:#05080a">Record</button>
+      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Record</button>
       ${queue.length?`<button class="vbtn salt-pill salt-pill--sm" style="font-size:12px;margin-left:6px" onclick="if(queue.length&&confirm('Discard all '+queue.length+' uncommitted entries? The desk will fall back to the committed ledger.')){queue.length=0;saveQueue();applyOverlay();render();}">Clear queued</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbSave" style="font-size:12px;margin-left:6px">Save queue file</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>`:''}
