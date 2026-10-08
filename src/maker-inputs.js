@@ -1,7 +1,7 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
-import { rowRoom, siteWords } from "./orders.js";
+import { cardAt, rowRoom, siteWords } from "./orders.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
 const DESK_ONLY_FIELDS = ["note", "settle"];
@@ -23,11 +23,11 @@ const proposed = (entry, book) => {
 };
 
 /** Dedicated trade inputs, not a queue-entry or row-patch forwarding road. */
-export function makerTradeEntry(operation, body, book, trip = null) {
+export function makerTradeEntry(operation, body, book, trip = null, pending = []) {
   if (!["sale", "purchase"].includes(operation)) return { error: "Choose sale or purchase." };
   const sale = operation === "sale";
   const fields = ["at", "product", "party", "date", "qty", "total", "cash", "movedUnits", "handover", "second"]
-    .concat(sale ? ["delivery", "assoc", "stream", "downstream"] : ["freight"]);
+    .concat(sale ? ["delivery", "assoc", "stream", "downstream", "cover"] : ["freight"]);
   if (!object(body) || Object.keys(body).some((key) => !fields.includes(key)))
     return { error: "Unsupported trade input fields." };
   if (!timestamp(body.at)) return { error: "A trade needs its canonical request timestamp." };
@@ -66,6 +66,10 @@ export function makerTradeEntry(operation, body, book, trip = null) {
   }
   if (sale && !(costFor(book, body.product).cost > 0))
     return { error: "This product has no inventory cost yet. Record the lot first." };
+  if (body.cover !== undefined && typeof body.cover !== "boolean")
+    return { error: "Cover is a choice, never a typed reward figure." };
+  const cover = body.cover ? makerCoverPlan(body, book, pending) : null;
+  if (body.cover && !cover) return { error: "No reward cover is available for this sale. Read the offer again." };
   if (body.second !== undefined && body.second !== null && body.second !== true
     && (typeof body.second !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(body.second)))
     return { error: "A second order names its booked twin." };
@@ -81,7 +85,8 @@ export function makerTradeEntry(operation, body, book, trip = null) {
     at: body.at, product: body.product, direction: sale ? "SELL" : "BUY", party: body.party,
     date: body.date, qty: body.qty, total: body.total, cash: body.cash, movedUnits: body.movedUnits,
     delivery: sale ? body.delivery ?? 0 : 0, freight: sale ? 0 : body.freight ?? 0,
-    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null, trip
+    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null, trip,
+    ...(cover ? { more: { coverUnits: cover.units, coverRM: cover.rm }, coverFree: cover.free } : {})
   }), book);
 }
 
@@ -97,10 +102,10 @@ export function makerReenterSeed(draft) {
 }
 
 /** The Workbench's extra books: validate all before queueing any; carriage belongs to the first row alone. */
-export function makerTradeBatch(operation, body, book) {
+export function makerTradeBatch(operation, body, book, pending = []) {
   if (!object(body)) return { error: "Unsupported trade input fields." };
   const { extras, ...first } = body;
-  if (extras === undefined) return makerTradeEntry(operation, first, book);
+  if (extras === undefined) return makerTradeEntry(operation, first, book, null, pending);
   if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8640000000000000 - 20)
     return { error: "A trade needs its canonical request timestamp." };
   if (!Array.isArray(extras) || !extras.length || extras.length > 19)
@@ -110,7 +115,7 @@ export function makerTradeBatch(operation, body, book) {
   const start = Date.parse(first.at);
   for (const [i, extra] of extras.entries()) {
     if (!object(extra) || Object.keys(extra).some((key) =>
-      !["product", "qty", "total", "cash", "movedUnits", "second"].includes(key)))
+      !["product", "qty", "total", "cash", "movedUnits", "second", "cover"].includes(key)))
       return { error: "An extra book carries only its book, units, goods, cash, movement and booked-twin confirmation." };
     if (products.includes(extra.product)) return { error: "Choose each book once." };
     products.push(extra.product);
@@ -120,6 +125,7 @@ export function makerTradeBatch(operation, body, book) {
       at: new Date(start + i + 1).toISOString(), product: extra.product, party: first.party, date: first.date,
       qty: extra.qty, total: extra.total, cash: extra.cash, movedUnits: extra.movedUnits,
       handover: first.handover ?? null, [operation === "sale" ? "delivery" : "freight"]: 0,
+      ...(extra.cover === undefined ? {} : { cover: extra.cover }),
       ...(r2 ? { assoc: first.assoc, stream: "R2", downstream: first.downstream ?? null } : {}),
       ...(extra.second == null ? {} : { second: extra.second })
     });
@@ -127,7 +133,7 @@ export function makerTradeBatch(operation, body, book) {
   const trip = operation === "sale" && first.delivery > 0.005 ? "t" + start : null;
   const entries = [], drafts = [];
   for (const [i, input] of inputs.entries()) {
-    const made = makerTradeEntry(operation, input, book, trip);
+    const made = makerTradeEntry(operation, input, book, trip, pending.concat(entries));
     if (made.error) return { ...made, ...(made.twin ? { twin: { ...made.twin, index: i } } : {}) };
     entries.push(made.entry); drafts.push(made.draft);
   }
@@ -201,7 +207,27 @@ function driftCards(book, roster, products) {
   return cards;
 }
 
-export function makerInputCatalog(book, hush = {}) {
+function rewardFree(book, code, product, pending) {
+  const account = POSITION_ENGINE.rewardAccount(book, code, product);
+  const resource = "reward:" + product + ":" + code;
+  const reserved = pending.reduce((sum, entry) => {
+    const claim = POSITION_ENGINE.inputResource(entry, book);
+    return claim?.resource === resource ? sum + claim.amount : sum;
+  }, 0);
+  return { ...account, free: +Math.max(0, (account.held || 0) - reserved).toFixed(2) };
+}
+
+export function makerCoverPlan(body, book, pending = []) {
+  if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)
+    || !code(body.party, book.state.roster || [])) return null;
+  const reward = rewardFree(book, body.party, body.product, pending.filter((entry) => entry.at !== body.at));
+  const snapshot = book.pricing?.byProduct?.[body.product], inputs = snapshot?.inputs;
+  if (reward.error || reward.associate || !inputs || inputs.policy?.tierRule?.fixed) return null;
+  const ask = cardAt(book.pricing, body.party, body.product, body.qty).card;
+  return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
+}
+
+export function makerInputCatalog(book, hush = {}, pending = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
   const products = Object.keys(book.state.PRODUCTS || {}).filter((product) => active(product, book)).map((product) => {
@@ -217,6 +243,15 @@ export function makerInputCatalog(book, hush = {}) {
   });
   return {
     version: book.version, products, parties: roster,
+    rewards: roster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
+      const reward = rewardFree(book, id, "salt", pending);
+      if (reward.earned == null || !(reward.earned || reward.applied)) return [];
+      const free = reward.associate ? reward.free : reward.free >= 1 - 1e-9 ? 1 : 0;
+      const sale = book.sales.filter((row) => row.customer === id && (row.product || "salt") === "salt"
+        && POSITION_ENGINE.txAdvance(row) > 0.009).sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))[0];
+      return [{ code: id, held: reward.held, free: reward.free, associate: reward.associate, departed: !!reward.departed,
+        action: !reward.error && free > 0.009 ? sale ? "Offset" : "Redeem" : null }];
+    }),
     placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
       .filter(([id, point]) => roster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
     associates: associateCodes(book).filter((value) => code(value, roster) && !POSITION_ENGINE.isBucket(value))
@@ -593,7 +628,7 @@ export async function makerAmendmentRoom(db, entry, book) {
     : "";
 }
 
-export function makerLedgerInput(operation, body, book) {
+export function makerLedgerInput(operation, body, book, pending = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const roster = book.state.roster || [];
   if (!timestamp(body && body.at)) return { error: "The input needs its canonical request timestamp." };
@@ -634,10 +669,12 @@ export function makerLedgerInput(operation, body, book) {
   } else if (operation === "redeem") {
     if (!exact(body, ["at", "code", "date"]) || !realCode(body.code, roster) || POSITION_ENGINE.isBucket(body.code)
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
-    const state = POSITION_ENGINE.rewardAccount(book, body.code);
+    const state = rewardFree(book, body.code, "salt", pending.filter((entry) => entry.at !== body.at));
     if (state.error) return state;
-    const free = state.associate ? state.held : state.held >= 1 - 1e-9 ? 1 : 0;
-    if (!(free > 0.009)) return { error: "There is no whole reward unit available to redeem." };
+    const free = state.associate ? state.free : state.free >= 1 - 1e-9 ? 1 : 0;
+    if (!(free > 0.009)) return { error: state.held >= 1 - 1e-9
+      ? "The reward is already spent or reserved by another input awaiting its fold."
+      : "There is no whole reward unit available to redeem." };
     const advances = (book.sales || []).filter((sale) => sale && sale.customer === body.code
       && (sale.product || "salt") === "salt" && POSITION_ENGINE.txAdvance(sale) > 0.009)
       .sort((a, b) => !a.date ? (b.date ? 1 : 0) : !b.date ? -1 : a.date.localeCompare(b.date));

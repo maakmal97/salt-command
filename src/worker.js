@@ -21,11 +21,11 @@ import { runDrafter, dryRunDrafter, readBook, draftRow, tripCheck } from "./draf
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, makerExpectedFault } from "./maker.js";
-import { makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerReenterSeed } from "./maker-inputs.js";
+import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerReenterSeed } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
-import { queueSale } from "./orders.js";
+import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission } from "./input-admission.js";
+import { queueSale, queueResourceTrades } from "./orders.js";
 import { ciAccess, ownerAccess } from "./access.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
@@ -303,16 +303,9 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
       if (fault) return json({ ok: false, error: fault }, 409);
     }
   }
-  const admissions = [];
   if (reserved) {
-    for (const entry of kept) {
-      const result = await admitInput(env.SALT_LEDGER, entry, book, "device:" + payload.device);
-      if (result.error) {
-        for (const id of admissions) await withdrawInputAdmission(env.SALT_LEDGER, id, "device:" + payload.device);
-        return json({ ok: false, error: result.error }, result.status);
-      }
-      if (result.newSource) admissions.push(entry.at);
-    }
+    const result = await admitInputs(env.SALT_LEDGER, kept, book, "device:" + payload.device);
+    if (result.error) return json({ ok: false, error: result.error }, result.status);
   }
   // Per-device replace: this device's key holds its whole current queue, so an undo on
   // the device (which re-posts the shortened queue) is reflected rather than merged away.
@@ -354,6 +347,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
+    && p !== "/_internal/maker/trade-cover"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin" && p !== "/_internal/maker/expected"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
@@ -500,7 +494,22 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
-      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE)) });
+      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE), await reservedInputs(env.SALT_LEDGER, book)) });
+  }
+  if (p === "/_internal/maker/trade-cover") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    let body;
+    try { body = JSON.parse(await request.text()); }
+    catch { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!body || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).some((key) => !["product", "party", "qty", "total", "stream"].includes(key))
+      || typeof body.qty !== "number" || !Number.isFinite(body.qty) || body.qty <= 0 || body.qty > 1000000
+      || typeof body.total !== "number" || !Number.isFinite(body.total) || body.total < 0 || body.total > 1000000)
+      return json({ ok: false, error: "Choose a book, party, units and goods total for the cover reading." }, 400);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    return json({ ok: true, cover: makerCoverPlan(body, book, await reservedInputs(env.SALT_LEDGER, book)) });
   }
   if (p === "/_internal/maker/offsets") {
     /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
@@ -590,14 +599,15 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { held = await offsetHeld(env); }
       catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     }
+    const resourcePending = ["sale", "redeem"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
     const built = operation === "stock-count" ? makerStockCount(body)
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
-          : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book)
-          : makerLedgerInput(operation, body, book);
+          : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending)
+          : makerLedgerInput(operation, body, book, resourcePending);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
     if (built.entries) {
       const entries = built.entries;
@@ -639,7 +649,11 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       const entries = Array.isArray(entry) ? entry : [entry];
       if (entries.some((item) => item.makerRequest !== fingerprint))
         return json({ ok: false, error: "The retained Maker input fingerprint is invalid." }, 409);
-      try { await queueSale(env, entry, true); }
+      try {
+        if (Array.isArray(entry) && entry.some((item) => POSITION_ENGINE.inputConsumesResource(item)))
+          await queueResourceTrades(env, entry);
+        else await queueSale(env, entry, true);
+      }
       catch (error) {
         if (error.status !== 409 && error.status !== 503) throw error;
         return json({ ok: false, error: error.message }, error.status);
@@ -663,7 +677,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       return json({ ok: false, error: "File the encrypted vault on this device before adding the ID." }, 400);
     const proposed = draftRow(entry, book);
     if (proposed.skip) return json({ ok: false, error: proposed.skip }, 409);
-    if (operation === "ledger-amend" || operation === "offset") {
+    if (operation === "ledger-amend" || operation === "offset" || operation === "redeem" && entry.payload.mode === "amend") {
       const roomFault = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
       if (roomFault) return json({ ok: false, error: roomFault }, 409);
     }
