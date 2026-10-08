@@ -22171,7 +22171,11 @@ function cardQuote(code,q,t){
   if(!(q>0))return null;
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
   if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
-  const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
+  /* one render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and a drift book's row walks the whole
+     grid each time. The row is the book's at the size and nothing of the customer's: their held tier or band set, their drift,
+     a late offer and a partner's cost are all applied below, outside it. So its key is book, size and pxCost's own override
+     (cost, shrink); outside a render it is built fresh. */
+  const row=renderMemo('tierAt|'+PROD+'|'+q+'|'+pxOver.cost+'|'+pxOver.shrink,()=>PRICING_ENGINE.fiveTierAt(q,pxCost(),P));
   /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
      point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
      grid and the desk Worker's card read too. Never under the floor. */
