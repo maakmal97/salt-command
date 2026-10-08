@@ -50454,6 +50454,11 @@ await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
+await (async () => {
+  await (await import("./maker-addid-drift.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

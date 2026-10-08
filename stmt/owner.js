@@ -1265,6 +1265,7 @@ export const OWNER_JS = `
   async function makerOtherInputs(parent,catalog){
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
+    var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
@@ -1466,12 +1467,26 @@ export const OWNER_JS = `
       sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
       return {product:item.product,select:sel};
     });
+    var driftBooks=books.filter(function(item){return item.drift;});
+    var idDrifts=driftBooks.map(function(item){
+      var product=pshape(item.product), presets=item.driftPresets||[];
+      var select=addSelect(id,'Starting drift, '+product,[{value:'',label:product+': automatic'}]
+        .concat(presets.map(function(preset){return {value:String(preset.value),
+          label:product+': '+preset.name+', '+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)};}))
+        .concat([{value:'typed',label:product+': typed'}]));
+      var typed=makerField(id,'Typed starting drift, '+product,'number','',0.05);
+      typed.min='-1';typed.max='1';typed.step='0.05';typed.placeholder='-1 to 1';typed.closest('label').hidden=true;
+      select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
+      return {product:item.product,select:select,typed:typed};
+    });
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
       idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
-      idTiers.forEach(function(item){item.select.disabled=!(idKind.value==='customer'||idKind.value==='reseller'||idKind.value==='referral');});
+      var canStart=idCanStart(idKind.value);
+      idTiers.forEach(function(item){item.select.disabled=!canStart;});
+      idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
@@ -1480,6 +1495,22 @@ export const OWNER_JS = `
     makerButton(id,'Encrypt and send Add ID',async function(send){
       if(idBusy)return;idBusy=true;idStatus.textContent='Preparing the device-side vault…';
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
+      var tiers={};
+      if(idCanStart(kind)){
+        idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
+        for(var driftIndex=0;driftIndex<idDrifts.length;driftIndex++){
+          var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
+          if(choice==='typed'){
+            var raw=driftItem.typed.value.trim();driftValue=Number(raw);
+            if(!raw||!Number.isFinite(driftValue)||driftValue< -1||driftValue>1){
+              idStatus.textContent='Enter a drift from -1 to +1.';idBusy=false;return;
+            }
+          }else if(choice!=='')driftValue=Number(choice);
+          else continue;
+          tiers[driftItem.product]=driftValue;
+        }
+      }
+      if(!Object.keys(tiers).length)tiers=null;
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
@@ -1498,9 +1529,6 @@ export const OWNER_JS = `
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
         }
-        var tiers={};
-        if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
-        if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
           parent:parentCode,tiers:tiers,vault:envelope};
          if(geo)idBody.geo=geo;
