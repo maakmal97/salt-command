@@ -51834,7 +51834,7 @@ await (async () => {
     const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
     preview.click();
     for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    ok(/Margin/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
+    ok(/on RM 56\.00 cost/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
       && /Review preview flag/.test(cards[0].textContent) && !!doc.querySelector("[data-accept]"),
       "Accept appears only after the preview's native margin tile and flags are shown: "
         + JSON.stringify({ text: cards[0].textContent, accept: !!doc.querySelector("[data-accept]") }));

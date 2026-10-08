@@ -12,7 +12,7 @@ export async function run({ ok }) {
   let previewFail = 0, acceptFail = 0;
   const orderOf = (id, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 2, total: 200, status: "placed", mode: "deliver", history: [], ...patch });
   const reviewBody = { ok: true, drafts: [], orders: [orderOf("20261007090001-dlv")] };
-  const preview = (body) => ({
+  const preview = (body) => ({ cost: { unit: 80, total: 160, source: "purchase" },
     ok: true, quote: body.total, delivery: body.delivery, hash: "h-" + (posts.filter((p) => p.kind === "preview").length), row: { qty: 2, total: body.total },
     card: 190, cardNote: null, floor: { rm: 150, at: 2, exact: true }, margin: { rm: 40, pct: 21 },
     usual: { who: "CX1-AB", rate: 95, orders: 4, uniform: true, off: false, dir: 0, far: false }, flags: ["Check the quantity"] });
@@ -79,7 +79,7 @@ export async function run({ ok }) {
     ok(tile(id, "Their card today") && tile(id, "Their card today").querySelector(".salt-kpi__value").textContent === "RM 190.00"
       && /the quote is RM 200\.00/.test(tile(id, "Their card today").querySelector(".salt-kpi__note").textContent)
       && tile(id, "Margin") && tile(id, "Margin").querySelector(".salt-kpi__value").textContent === "RM 40.00"
-      && tile(id, "Margin").querySelector(".salt-kpi__note").textContent === "21%"
+      && tile(id, "Margin").querySelector(".salt-kpi__note").textContent === "on RM 160.00 cost · 21%"
       && tile(id, "Floor") && tile(id, "Floor").querySelector(".salt-kpi__value").textContent === "RM 150.00"
       && /the quote clears it/.test(tile(id, "Floor").querySelector(".salt-kpi__note").textContent)
       && tile(id, "Their usual") && tile(id, "Their usual").querySelector(".salt-kpi__value").textContent === "RM 95.00"

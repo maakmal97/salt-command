@@ -1033,7 +1033,7 @@ export const OWNER_JS = `
     else tiles.appendChild(kpiTile(quote==null||quote>=card?'steel':'copper','Their card today',rm(card),
       note('the quote is '+(quote==null?'not read':rm(quote))+(result.cardNote?' · '+result.cardNote:''))));
     if(margin==null) tiles.appendChild(kpiTile('mist','Margin','-',note('no cost on this book')));
-    else tiles.appendChild(kpiTile(margin.rm>0.004?'verdigris':'ember','Margin',rm(margin.rm),note(margin.pct+'%')));
+    else tiles.appendChild(kpiTile(margin.rm>0.004?'verdigris':'ember','Margin',rm(margin.rm),note((result.cost&&typeof result.cost.total==='number'?'on '+rm(result.cost.total)+' cost · ':'')+margin.pct+'%')));
     if(floor==null) tiles.appendChild(kpiTile('mist','Floor','-',note('no floor for this size')));
     else tiles.appendChild(kpiTile(quote!=null&&quote>=floor-0.004?'verdigris':'ember','Floor',rm(floor),
       note(quote!=null&&quote>=floor-0.004?'the quote clears it':'the quote is under it')));
