@@ -12096,6 +12096,36 @@ function allActionsNow(){
   list.forEach(x=>{if(x.books.length===ids.length)x.books=[];});
   return list.sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
 }
+/* FOLD 5 (09 Oct 2026): THE RAIL'S TODAY COUNT OUTLIVES A RENDER. navCounts ran allActions on every render, a fifth of a
+   pass over the desk (about 20 ms a part, measured as a share), though the number moves only when an input does. The two figures it
+   computes (numbers, never the list, so no name is kept) are held against badgeKey: every input allActions reads, found by walking
+   the functions it reaches. The mutable ones: the ledger arrays the overlay rebuilds (sales, purchases, customerRefunds,
+   loans, cashAdjust, selfUseLog, lostDemand, contacts, supplierReceivable, statedStockBy, PRICE_SET), the queue, the
+   orders and drafts the site-orders row reads (ORD_OPEN, AP_DRAFTS), the restock date (EXPECTED), the hushes, the book in view
+   and the cost overrides (PROD, pxOver), the roster Add ID extends, and the two clocks: TODAY, and the wall clock ordPriceAct
+   reads against an offer's end. The constants (RULES, TIER_OF, PRODUCTS, PEOPLE, PLACED) are keyed too, since the cost is nil.
+   A key that cannot be built (a read before the desk has loaded) caches nothing. The key is the text itself, never a hash. */
+function badgeKey(){
+  try{
+    const lapsed=(Array.isArray(ORD_OPEN)?ORD_OPEN:[]).map(o=>o&&o.price&&o.price.offer?(new Date().toISOString()>String(o.price.offer.until)?1:0):'-').join('');
+    return JSON.stringify([PROD,TODAY.getTime(),cloudMode(),EXPECTED_READ,EXPECTED,HUSH_READ,HUSH,sales,purchases,customerRefunds,loans,
+      cashAdjust,selfUseLog,lostDemand,contacts,supplierReceivable,statedStockBy,PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,
+      roster,associates,partners,addedParties,PB_MONDAY,RULES,TIER_OF,PRODUCTS,PEOPLE,PLACED]);
+  }catch(e){return null;}
+}
+function railCounts(){
+  const k=badgeKey();
+  const was=railCounts._c;   /* on the function, as restockFor keeps its plan: a data-shaped global would be read as part of the book */
+  if(k!==null&&was&&was.k===k)return was;
+  const open=sales.filter(t=>{const o=txStat(t).order;return o==='Pending'||/^Open/.test(o);}).length
+    +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?1:0)
+    /* v708: the mirror term. A default he is owed counted; money he owes BACK counted nothing, so
+       the destination that holds it under-counted by exactly the one side he has to act on. */
+    +((typeof customerRefunds!=='undefined'&&customerRefunds)?customerRefunds.filter(r=>!r.paidOn).length:0);
+  const c={k,open,today:allActions().filter(x=>x.sev==='now').length};
+  railCounts._c=k===null?null:c;
+  return c;
+}
 /* each live book's position, for the band under the list */
 function bookBand(){
   return eachBook(()=>{const f=forecast(),cv=coverStats();
@@ -25543,18 +25573,14 @@ function renderPart(tab,el,snap){
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
 let curAddr='today';  // v365: the PART showing, not just the view; #inventory and #sourcing share a view but not an address
 function navCounts(){
-  // live counts on the rail: open+pending positions, queued entries
-  const openN=sales.filter(t=>{const o=txStat(t).order;return o==='Pending'||/^Open/.test(o);}).length
-    +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?1:0)
-    /* v708: the mirror term. A default he is owed counted; money he owes BACK counted nothing, so
-       the destination that holds it under-counted by exactly the one side he has to act on. */
-    +((typeof customerRefunds!=='undefined'&&customerRefunds)?customerRefunds.filter(r=>!r.paidOn).length:0);
+  // live counts on the rail: open+pending positions, queued entries; fold 5 keeps the two figures it computes (railCounts)
+  const rc=railCounts();
   const put=(sel,n)=>{const b=document.querySelector('.tab[data-s="'+sel+'"]');if(!b)return;
     let c=b.querySelector('.navct');
     if(!n){if(c)c.remove();return;}
     if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.appendChild(c);}
     c.textContent=n;};
-  put('money',openN);
+  put('money',rc.open);
   /* v385: the Enter badge has ONE writer, and it is not this one. planN was computed here
      and never used, so the comment that stood above it -- plans must not inflate the count
      -- described an intention the line below it did not carry out. apBadge() counts what a
@@ -25567,7 +25593,7 @@ function navCounts(){
      rule row that names it: nine on the badge against the five items Today lists, measured 11 Sep.
      The badge is the NOW list the page shows, which already carries every breach. One predicate,
      the page's own, so the number on the rail is the number of things a visit finds. */
-  put('today',allActions().filter(x=>x.sev==='now').length);   /* v794: every book's Now, as Today lists them */
+  put('today',rc.today);   /* v794: every book's Now, as Today lists them; fold 5: kept against every input (railCounts) */
 }
 const VIEW_PART={};   /* v343: the part each view is showing; its lead until a part is chosen */
 function partOf(view){const V=VIEWS.find(v=>v.id===view);if(!V)return 'today';
