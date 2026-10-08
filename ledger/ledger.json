@@ -1,6 +1,6 @@
 {
- "v": "v1035",
- "stamped": "08 Oct 2026, 18:51 KL",
+ "v": "v1036",
+ "stamped": "08 Oct 2026, 22:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 70
+    "stated": 20
    },
    "candy": {
     "qty": 0,
@@ -6763,6 +6763,21 @@
     "paidOn": "2026-10-08",
     "note": "<b>CANDY SELL DATED 08 OCT: 1 UNIT FOR RM50, PAID AND COLLECTED ON THE DAY.</b> Booked to CE4-CHE, RM50 cash in and 1 unit handed over on 08 Oct, so nothing stays open. The rate is RM50 a unit. The floor for 1 unit is RM42 and the ask RM60, so the total is above the floor and RM10 below the ask. CE4-CHE has a median rate of RM92 across all products and a range of RM6 to RM107.5, nothing outstanding, 0 units on credit against a cap of 1. The row carries RM42 a unit, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged no committed candy order for CE4-CHE; the figures cannot answer that, as the median covers other products. Open: nothing.",
     "rid": "s241"
+   },
+   {
+    "customer": "CA7-AMP",
+    "qty": 50,
+    "total": 450,
+    "cost": 388.57,
+    "cash": 450,
+    "handover": "collected",
+    "product": "oil",
+    "date": "2026-10-08",
+    "deliveredQty": 50,
+    "deliveredOn": "2026-10-08",
+    "paidOn": "2026-10-08",
+    "note": "<b>OIL SELL DATED 08 OCT: 50 UNITS FOR RM450, PAID AND COLLECTED ON THE DAY.</b> Booked to CA7-AMP, RM450 cash in and 50 units handed over on 08 Oct, so nothing stays open. The rate is RM9 a unit. The floor for 50 units is RM388.57 and the ask RM450, so the total is above the floor and at the ask. CA7-AMP has a median rate of RM13 and a range of RM8.3 to RM135, nothing outstanding, 0 units on credit against a cap of 10. The row carries RM388.57, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged a rate 15.5% below the party's usual RM10.65 a unit; the figures only partly answer that, as RM9 is under the median but inside the range. Open: nothing.",
+    "rid": "s242"
    }
   ],
   "contacts": [
@@ -7402,9 +7417,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-08T10:31:29.905Z",
+  "QUEUE_COMMITTED": "2026-10-08T14:48:16.746Z",
   "PRICING": {
-   "takenAt": "2026-10-08T10:51:26.039Z",
+   "takenAt": "2026-10-08T14:49:35.484Z",
    "sizes": [
     0.5,
     1,
@@ -7448,7 +7463,7 @@
     {
      "id": "cust:cadence:oil",
      "sev": "watch",
-     "title": "2 customers are past their own habit on oil"
+     "title": "1 customer is past their own habit on oil"
     },
     {
      "id": "int:nocost",
@@ -7484,11 +7499,6 @@
      "id": "dup:CN3-WM-R:2026-09-11:2026-09-13:130",
      "sev": "note",
      "title": "CN3-WM-R bought the same thing twice in 2 days"
-    },
-    {
-     "id": "promo:revive:oil",
-     "sev": "note",
-     "title": "Two messages are worth about RM 114 on oil"
     },
     {
      "id": "dup:CN3-WM-R:2026-09-12:2026-09-12:110",
@@ -7989,6 +7999,38 @@
       "rare": false
      }
     },
+    "CA7-AMP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 38,
+      "sinceLastDays": 38,
+      "perMonth": 0.8,
+      "unitsPerMonth": 0.8,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true
+     },
+     "oil": {
+      "name": "large and regular",
+      "orders": 3,
+      "tenureDays": 38,
+      "sinceLastDays": 0,
+      "perMonth": 2.4,
+      "unitsPerMonth": 84.11,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CC9-OKR": {
      "salt": {
       "name": "small and often",
@@ -8200,38 +8242,6 @@
       "frequent": false,
       "small": false,
       "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CA7-AMP": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 38,
-      "sinceLastDays": 38,
-      "perMonth": 0.8,
-      "unitsPerMonth": 0.8,
-      "smallShare": 1,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": true
-     },
-     "oil": {
-      "name": "rare and large",
-      "orders": 2,
-      "tenureDays": 38,
-      "sinceLastDays": 30,
-      "perMonth": 1.6,
-      "unitsPerMonth": 44.06,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -9592,6 +9602,56 @@
         1080
        ]
       ],
+      "CA7-AMP": [
+       [
+        0.5,
+        70
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        190
+       ],
+       [
+        2,
+        240
+       ],
+       [
+        2.5,
+        280
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        930
+       ]
+      ],
       "CC9-OKR": [
        [
         0.5,
@@ -10090,56 +10150,6 @@
        [
         12.5,
         910
-       ]
-      ],
-      "CA7-AMP": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        190
-       ],
-       [
-        2,
-        240
-       ],
-       [
-        2.5,
-        280
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        930
        ]
       ],
       "CH6-SET": [
@@ -11010,6 +11020,7 @@
       "CE4-AD": -0.3031,
       "CM6-HCM": -0.0551,
       "CA4-DAM": 0.5,
+      "CA7-AMP": -0.2163,
       "CC9-OKR": -0.3328,
       "CA2-SEN": -0.1439,
       "CH4-KS": -0.2901,
@@ -11020,7 +11031,6 @@
       "CM6-PJ": -0.3384,
       "CG5-SB": -0.048,
       "CY2-NIL": -0.2885,
-      "CA7-AMP": -0.2163,
       "CH6-SET": -0.2777,
       "CE5-SA": -0.3455,
       "CA6-CYB": -0.1359,
@@ -11159,15 +11169,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.5
+         "v": 0.4444444444444444
         }
        },
        "attrib": 1,
        "shrinkRate": 0.2814457831325301,
        "avgDel": {
-        "n": 15,
-        "kg": 201,
-        "mean": 13.4
+        "n": 16,
+        "kg": 251,
+        "mean": 15.6875
        }
       },
       "policy": {
@@ -11583,6 +11593,28 @@
         450
        ]
       ],
+      "CA7-AMP": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CC9-OKR": [
        [
         10,
@@ -11782,28 +11814,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CA7-AMP": [
        [
         10,
         130
@@ -12713,6 +12723,28 @@
         1500
        ]
       ],
+      "CA7-AMP": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CC9-OKR": [
        [
         1,
@@ -12912,28 +12944,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CA7-AMP": [
        [
         1,
         60
@@ -13696,6 +13706,20 @@
         60
        ]
       ],
+      "CA7-AMP": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CC9-OKR": [
        [
         1,
@@ -13823,20 +13847,6 @@
        ]
       ],
       "CY2-NIL": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CA7-AMP": [
        [
         1,
         8
@@ -14256,10 +14266,10 @@
      ]
     }
    },
-   "v": "v1035"
+   "v": "v1036"
   },
   "OPEN": {
-   "at": "2026-10-08T10:51:26.591Z",
+   "at": "2026-10-08T14:49:36.227Z",
    "count": 11,
    "byKey": {
     "CE4-CHE|2026-10-06|240": {
@@ -14457,11 +14467,11 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 70,
-     "free": 70,
+     "onHand": 20,
+     "free": 20,
      "owedOut": 0,
-     "coverDays": 31.7,
-     "rate": 2.21,
+     "coverDays": 3.9,
+     "rate": 4.73,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -14507,7 +14517,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1035"
+   "v": "v1036"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14515,7 +14525,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1035"
+   "v": "v1036"
   },
   "REWARD": {
    "stated": {
@@ -14527,7 +14537,7 @@
      }
     }
    },
-   "v": "v1035"
+   "v": "v1036"
   }
  }
 }

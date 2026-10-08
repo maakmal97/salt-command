@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1036",
+  "d": "08 Oct 2026",
+  "t": "ONE OIL SALE FOLDED, PAID AND COLLECTED; SALT UNTOUCHED",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A sale of 50 units of oil to CA7-AMP for RM450, dated 08 Oct, paid in cash and collected on the day. It is appended to sales with its note, and nothing stays open on it. The cost is the drafter's COGS off the latest purchase, kept as drafted.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The rate of RM9 a unit is below this party's usual RM10.65 and median of RM13, though it meets the ask for 50 units. Oil leaves the book by 50 units. Nothing landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1035",
   "d": "08 Oct 2026",
   "t": "ONE OIL PURCHASE FROM SP7-PUD, PAID AND RECEIVED IN FULL",
