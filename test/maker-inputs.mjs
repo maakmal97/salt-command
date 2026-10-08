@@ -161,10 +161,12 @@ export async function run({ ok, KV } = {}) {
     "Tier input cannot forward prose or arbitrary tier maps.");
   const noRule = book(); delete noRule.pricing.byProduct.salt.inputs;
   check(!!tier({}, noRule).error, "Missing tier policy fails closed.");
-  /* 05 Oct 2026: on a drift book a customer's price is their drift, set on the desk; Add ID starts one on a drift */
+  /* 05 Oct 2026: on a drift book a customer's price is their held drift or the automatic record */
   const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: { up: 0.3, down: 0.2 } };
-  check(/drift/.test(tier({}, driftBook).error || "") && /drift/.test(tier({ tier: 0.3 }, driftBook).error || ""),
-    "On a drift book the tier input refuses a level and a drift alike: a drift is set on the desk.");
+  check(tier({ tier: 0.3 }, driftBook).draft?.row.tiers["CX1-ZED"].salt === 0.3
+    && tier({ tier: null }, driftBook).draft?.row.tiers["CX1-ZED"].salt === null
+    && !!tier({ tier: "Gold" }, driftBook).error,
+    "On a drift book the existing tier-set road accepts a drift and null clear, and refuses a level.");
   const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
     vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
   check(addDrift({ salt: -0.3 }).entry?.payload.tiers.salt === -0.3 && addDrift({ salt: -0.3 }).draft?.collection === "roster"

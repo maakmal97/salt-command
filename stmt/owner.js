@@ -1015,11 +1015,11 @@ export const OWNER_JS = `
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(reading.row){
-      var detail=el('details',''), summary=el('summary','','Proposed row');
+      var detail=el('details',''), summary=el('summary','salt-ghost','Proposed row');
       detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
     }
   }
-  function makerButton(parent, label, action, primary){
+  function makerButton(parent, label, action, primary, onSuccess){
     var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
     var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
     cancel.type='button';cancel.hidden=true;
@@ -1051,13 +1051,14 @@ export const OWNER_JS = `
       }
       return refs(pending.path,pending.body).then(function(result){
         if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');
-        makerClear(pending.path);pending=null;cancel.hidden=true;return result;
+        makerClear(pending.path);pending=null;cancel.hidden=true;if(onSuccess)onSuccess();return result;
       },function(error){
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
+          if(error.detail.twin){makerClear(path);cancel.hidden=true;}
           pending=null;
         }
         throw error;
@@ -1212,7 +1213,8 @@ export const OWNER_JS = `
   }
   function makerDerivedCode(name, locality, kind, roster, except, parent){
     var n=String(name||'').trim(), local=String(locality||'').split(',')[0].trim();
-    if(!n||!local) return null;
+    if(!n) return null;
+    local=local||'TBC';
     var bits=local.split(/\\s+/), suffix=(bits.length>1?bits.map(function(x){return x.charAt(0);}).join(''):local.slice(0,3)).toUpperCase();
     if(kind==='downstream'){
       if(!parent) return null;
@@ -1264,6 +1266,7 @@ export const OWNER_JS = `
   async function makerOtherInputs(parent,catalog){
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
+    var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
@@ -1320,19 +1323,40 @@ export const OWNER_JS = `
     var redeem=el('section','maker-input');redeem.appendChild(el('h3',null,'Reward redemption'));
     redeem.appendChild(el('p','msg','The Desk derives the balance. An outstanding advance is offset first; otherwise the reward is redeemed in kind.'));
     parent.appendChild(redeem);
-    var redeemParty=addSelect(redeem,'Party',partyItems), redeemDate=makerField(redeem,'Date','date',today),
-      redeemStatus=makerStatus(redeem);
-    makerButton(redeem,'Redeem or offset',async function(send){
-      redeemStatus.textContent='Checking the reward on the Desk…';
-      try{await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:redeemParty.value,date:redeemDate.value});
-        redeemStatus.textContent='Sent for review. The Desk chose the oldest advance or an in-kind redemption.';loadMaker();}
+    var redeemDate=makerField(redeem,'Date','date',today), redeemStatus=makerStatus(redeem),
+      redeemList=el('div','maker-rewards');
+    redeem.appendChild(redeemList);
+    function drawMakerRewards(rewards){
+      redeemList.textContent='';
+      if(!rewards.length)redeemList.appendChild(el('p','msg','No reward is held.'));
+      rewards.forEach(function(offer){
+        var row=el('div','maker-reward');row.setAttribute('data-reward-holder',offer.code);
+        row.appendChild(el('p','maker-facts',offer.code+' · '+offer.held+' unit held'
+          +(offer.departed?' while departed':offer.free<offer.held?' · '+offer.free+' unit available after reservations':'')));
+        if(offer.action){
+          var status=makerStatus(row);
+          makerButton(row,offer.action+' '+(offer.action==='Redeem'&&!offer.associate?'1 unit':'reward')+' for '+offer.code,async function(send){
+            status.textContent='Checking the reward on the Desk…';
+            try{
+              await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
+              redeemStatus.textContent='Sent for review. It settles only when approved and folded.';
+              var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);loadMaker();
+            }catch(error){status.textContent=error.message;}
+          },true);
+        }
+        redeemList.appendChild(row);
+      });
+    }
+    drawMakerRewards(catalog.rewards||[]);
+    makerButton(redeem,'Read reward offers',async function(){
+      try{var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);redeemStatus.textContent='Reward offers read.';}
       catch(error){redeemStatus.textContent=error.message;}
-    },true);
+    },false);
     var offsets=el('section','maker-input');offsets.appendChild(el('h3',null,'Automatic offsets'));
     offsets.appendChild(el('p','msg','What the Desk offers an associate holding a reward and an unpaid advance: one unit against the oldest order. A departed holder is never offered. Each tap waits for approval.'));
     parent.appendChild(offsets);
     var offerDate=makerField(offsets,'Date','date',today), offerStatus=makerStatus(offsets),
-      offerList=el('div','maker-offers'), offerAt={};
+      offerList=el('div','maker-offers');
     offsets.appendChild(offerList);
     var offerLoad=async function(){
       offerStatus.textContent='Reading offers from the Desk…';
@@ -1343,12 +1367,10 @@ export const OWNER_JS = `
         read.offers.forEach(function(offer){
           var row=el('div','maker-offer');
           row.appendChild(el('p','maker-facts',offer.code+' · '+offer.units+' unit · RM '+offer.rm.toFixed(2)+' against the '+(offer.saleDate||'undated')+' order '+offer.rid));
-          makerButton(row,'Send offset for review',async function(){
-            var key=offer.code+'|'+offer.rid+'|'+offerDate.value, at=offerAt[key]||(offerAt[key]=new Date().toISOString());
+          makerButton(row,'Send offset for review',async function(send){
             offerStatus.textContent='Sending to the Desk…';
             try{
-              await refs('/all/maker/inputs/offset',{at:at,code:offer.code,rid:offer.rid,date:offerDate.value});
-              delete offerAt[key];
+              await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
               await offerLoad();
               offerStatus.textContent='Sent for review. It settles in kind only when approved and folded.';
               loadMaker();
@@ -1376,6 +1398,7 @@ export const OWNER_JS = `
     var valueBox=el('div','maker-fields');patch.appendChild(valueBox);
     var editValue=null, changes={}, patchList=el('p','msg');patch.appendChild(patchList);
     var editStatus=makerStatus(editor);
+    var cancelPreview=el('div','maker-cancellation');cancelPreview.setAttribute('aria-live','polite');editor.appendChild(cancelPreview);
     var drawValue=function(){
       valueBox.replaceChildren();
       var definition=definitions.find(function(item){return item.field===editField.value;});
@@ -1414,8 +1437,19 @@ export const OWNER_JS = `
     };
     var drawKind=function(){var k=editKind.value;
       movement.style.display=(k==='Fulfilment'||k==='Payment'||k==='Receipt')?'':'none';
+      editCash.disabled=k==='Cancellation';editUnits.disabled=k==='Cancellation';
       editCash.parentNode.style.display=k==='Receipt'?'none':'';editUnits.parentNode.style.display=k==='Payment'?'none':'';
-      patch.style.display=k==='Correction'?'':'none';};
+      patch.style.display=k==='Correction'?'':'none';
+      cancelPreview.replaceChildren();cancelPreview.hidden=k!=='Cancellation';
+      if(k==='Cancellation'){
+        var row=rows.find(function(item){return item.rid===editRow.value;}), reading=row&&row.cancellation;
+        if(!reading){cancelPreview.appendChild(el('p','msg','Cancellation preview unavailable: the row is not open or goods have moved. Read the ledger again.'));return;}
+        cancelPreview.appendChild(el('p','maker-facts','After · '+reading.pay+' · '+reading.deliv+' · '+reading.order));
+        var refund=reading.refundRM;
+        cancelPreview.appendChild(el('p','msg','The row is marked cancelled outright'
+          +(refund!=null?', and RM '+refund+' already paid becomes a refund payable back to '+row.party:'')
+          +'. Cash and units are not used here: what is owed back is what was paid.'));
+      }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     var editorButton=makerButton(editor,'Send amendment for review',async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
@@ -1455,6 +1489,7 @@ export const OWNER_JS = `
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
     var idParent=addSelect(id,'Parent / associate',idParentItems);
     var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
+    idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the locality is confirmed.'));
     var idPass=makerField(id,'Vault passphrase','password','');
     var idLink=makerField(id,'Maps / Waze link (device only)','text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
@@ -1464,12 +1499,26 @@ export const OWNER_JS = `
       sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
       return {product:item.product,select:sel};
     });
+    var driftBooks=books.filter(function(item){return item.drift;});
+    var idDrifts=driftBooks.map(function(item){
+      var product=pshape(item.product), presets=item.driftPresets||[];
+      var select=addSelect(id,'Starting drift, '+product,[{value:'',label:product+': automatic'}]
+        .concat(presets.map(function(preset){return {value:String(preset.value),
+          label:product+': '+preset.name+', '+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)};}))
+        .concat([{value:'typed',label:product+': typed'}]));
+      var typed=makerField(id,'Typed starting drift, '+product,'number','',0.05);
+      typed.min='-1';typed.max='1';typed.step='0.05';typed.placeholder='-1 to 1';typed.closest('label').hidden=true;
+      select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
+      return {product:item.product,select:select,typed:typed};
+    });
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
       idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
-      idTiers.forEach(function(item){item.select.disabled=!(idKind.value==='customer'||idKind.value==='reseller'||idKind.value==='referral');});
+      var canStart=idCanStart(idKind.value);
+      idTiers.forEach(function(item){item.select.disabled=!canStart;});
+      idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
@@ -1478,29 +1527,43 @@ export const OWNER_JS = `
     makerButton(id,'Encrypt and send Add ID',async function(send){
       if(idBusy)return;idBusy=true;idStatus.textContent='Preparing the device-side vault…';
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
+      var tiers={};
+      if(idCanStart(kind)){
+        idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
+        for(var driftIndex=0;driftIndex<idDrifts.length;driftIndex++){
+          var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
+          if(choice==='typed'){
+            var raw=driftItem.typed.value.trim();driftValue=Number(raw);
+            if(!raw||!Number.isFinite(driftValue)||driftValue< -1||driftValue>1){
+              idStatus.textContent='Enter a drift from -1 to +1.';idBusy=false;return;
+            }
+          }else if(choice!=='')driftValue=Number(choice);
+          else continue;
+          tiers[driftItem.product]=driftValue;
+        }
+      }
+      if(!Object.keys(tiers).length)tiers=null;
       var name=idName.value.trim(), locality=idPlace.value.trim(), code;
       if(kind==='bucket') code=parentCode?parentCode+'-R':null;
       else code=makerDerivedCode(name,locality,kind,catalog.parties||[],null,parentCode);
-      if(!code){idStatus.textContent='Enter a name and locality, or choose the parent for a resale account.';idBusy=false;return;}
+      if(!code){idStatus.textContent='Enter a name, or choose the parent for a resale account.';idBusy=false;return;}
       var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
           var pass=idPass.value;
           if(!pass) throw new Error('Enter the vault passphrase on this device.');
-          geo=await makerLocalityPoint(locality);
+          if(locality)geo=await makerLocalityPoint(locality);
           var filed=await makerFiledLink(idLink.value);
           idDraft=await makerPairPrepare(pass,function(maps){
             if(Object.hasOwn(maps.names,code))throw new Error('That code is already filed in the vault. Keep this form and review its identity.');
-            maps.names[code]=name+' ('+locality+')';if(filed)maps.places[code]=filed;
+            maps.names[code]=name+' ('+(locality||'to be confirmed')+')';if(filed)maps.places[code]=filed;
           },idDraft);
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
           idPass.value='';pass='';
         }
-        var tiers={};
-        if(kind==='customer'||kind==='reseller'||kind==='referral')idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
-        if(!Object.keys(tiers).length)tiers=null;
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
-          parent:parentCode,geo:geo,tiers:tiers,vault:envelope};
+          parent:parentCode,tiers:tiers,vault:envelope};
+         if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
@@ -1524,7 +1587,7 @@ export const OWNER_JS = `
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
-      if(!to){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
+      if(!to||!locality){amendStatus.textContent='Enter a name and locality first.';amendBusy=false;return;}
       try{
         var pass=amendPass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
         var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
@@ -1619,6 +1682,118 @@ export const OWNER_JS = `
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
       Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+  }
+  var MAKER_CASH_MS=10000, makerCashHeld={}, makerCashSaid={};
+  var MAKER_CASH_PREFIX='saltMakerCash:', makerCashStorageError='';
+  function makerCashSave(id,held){
+    var key=MAKER_CASH_PREFIX+id, old=localStorage.getItem(key);
+    if(old&&JSON.parse(old).body!==held.body)throw new Error('Another cash request is retained for this order. Reload to recover it; nothing new was sent.');
+    localStorage.setItem(key,JSON.stringify({v:1,id:id,body:held.body,beforePaid:held.beforePaid,confirmed:!!held.confirmed}));
+  }
+  function makerCashRestore(){
+    try{
+      Object.keys(localStorage).filter(function(key){return key.indexOf(MAKER_CASH_PREFIX)===0;}).forEach(function(key){
+        var saved=JSON.parse(localStorage.getItem(key)), body=JSON.parse(saved.body), id=key.slice(MAKER_CASH_PREFIX.length);
+        if(saved.v!==1||saved.id!==id||typeof saved.confirmed!=='boolean'||!Number.isFinite(saved.beforePaid)||saved.beforePaid<0
+          ||!(/^[0-9a-f]{32}$/).test(body.rid)||!Number.isFinite(body.amount)||body.amount<=0.004
+          ||Object.keys(body).sort().join(',')!=='amount,rid')throw new Error('Retained cash is unreadable. No new cash can be sent until it is recovered.');
+        if(!makerCashHeld[id]){
+          makerCashHeld[id]={amount:body.amount,body:saved.body,beforePaid:saved.beforePaid,confirmed:saved.confirmed,sent:true,busy:false};
+          makerCashSaid[id]=saved.confirmed?'Recorded, refresh pending.':'Confirmation not received. Retry the same cash amount.';
+        }
+      });
+      makerCashStorageError='';
+    }catch(error){makerCashStorageError=error.message;}
+  }
+  function makerCashReconcile(data){
+    Object.keys(makerCashHeld).forEach(function(id){
+      var held=makerCashHeld[id], order=(data.orders||[]).filter(function(o){return o.id===id;})[0];
+      if(held.confirmed&&order&&Number(order.paid||0)+0.004>=held.beforePaid+held.amount){
+        localStorage.removeItem(MAKER_CASH_PREFIX+id);delete makerCashHeld[id];
+        makerCashSaid[id]='Recorded: '+rm(held.amount)+' in cash. '+rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))+' still owed.';
+      }
+    });
+  }
+  function makerCashLeft(id){
+    var held=makerCashHeld[id];
+    return held?Math.max(0,Math.ceil((held.until-Date.now())/1000)):0;
+  }
+  function makerCashHold(order,amount){
+    makerCashRestore();
+    if(makerCashStorageError){drawMaker();return;}
+    if(makerCashHeld[order.id]) return;
+    var due=Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0);
+    if(!Number.isFinite(amount)||amount<=0.004||amount>due+0.004){
+      makerCashSaid[order.id]='That is not a figure above RM 0 and up to the '+rm(due)+' owed. Nothing was sent.';drawMaker();return;
+    }
+    var held={amount:amount,beforePaid:Number(order.paid||0),until:Date.now()+MAKER_CASH_MS,sent:false,busy:false};
+    makerCashHeld[order.id]=held;delete makerCashSaid[order.id];
+    held.timer=setTimeout(function(){ makerCashGo(order.id); },MAKER_CASH_MS);
+    held.tick=setInterval(function(){
+      var node=document.querySelector('[data-maker-cash-left="'+order.id+'"]');
+      if(node)node.textContent=String(makerCashLeft(order.id));
+    },1000);
+    drawMaker();
+  }
+  function makerCashUndo(id){
+    var held=makerCashHeld[id];if(!held||held.sent)return;
+    clearTimeout(held.timer);clearInterval(held.tick);delete makerCashHeld[id];
+    makerCashSaid[id]='Undone: nothing was sent, and the order is as it was.';drawMaker();
+  }
+  async function makerCashGo(id){
+    var held=makerCashHeld[id];if(!held||held.busy||held.confirmed)return;
+    held.busy=true;held.sent=true;
+    clearTimeout(held.timer);clearInterval(held.tick);
+    /* After transport starts, every retry carries these exact bytes, never the edited field. */
+    if(!held.body)held.body=JSON.stringify({rid:mintRid(),amount:held.amount});
+    makerCashSaid[id]='Sending.';drawMaker();
+    try{
+      makerCashSave(id,held);
+      var response=await fetch('/all/maker/orders/'+encodeURIComponent(id)+'/cash',{
+        method:'POST',headers:{'content-type':'application/json'},body:held.body,redirect:'manual',keepalive:true
+      });
+      if(response.type==='opaqueredirect'||response.status===401){ended();throw new Error(ENDED);}
+      var result=await response.json();
+      if(!response.ok||!result.ok)throw new Error(result.error||'Cash confirmation was refused.');
+      held.confirmed=true;
+      makerCashSaid[id]='Recorded, refresh pending.';
+      makerCashSave(id,held);
+      await loadMaker();
+    }catch(error){
+      makerCashSaid[id]=(held.confirmed?'Recorded, refresh pending. ':'Confirmation not received. Retry the same cash amount: ')+error.message;
+    }finally{held.busy=false;drawMaker();}
+  }
+  function makerCashFlush(){
+    return Promise.all(Object.keys(makerCashHeld).filter(function(id){return !makerCashHeld[id].sent;}).map(makerCashGo));
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')makerCashFlush();});
+  window.addEventListener('pagehide',function(){makerCashFlush();});
+  function makerCashControls(card,order){
+    var held=makerCashHeld[order.id], note=el('p','salt-insight');
+    note.setAttribute('role','status');note.setAttribute('data-maker-cash-status',order.id);
+    if(held){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      if(!held.sent){
+        note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+': it goes in '));
+        var left=el('span',null,String(makerCashLeft(order.id)));left.setAttribute('data-maker-cash-left',order.id);
+        note.appendChild(left);note.appendChild(document.createTextNode(' s. Undo sends nothing.'));
+        makerClaimButton(card,'Undo',function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');
+      }else{
+        note.textContent=makerCashSaid[order.id]||'Sending.';
+        var retry=makerClaimButton(card,held.confirmed?'Refresh cash':'Retry cash',function(){
+          return held.confirmed?loadMaker():makerCashGo(order.id);
+        },true);
+        retry.disabled=held.busy;retry.setAttribute('data-maker-cash-retry','');
+      }
+    }else if(makerCashStorageError){
+      card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
+      note.textContent=makerCashStorageError;
+    }else{
+      var cash=makerField(card,'Cash received (RM)','number','');
+      makerButton(card,'Record cash',function(){makerCashHold(order,Number(cash.value));},false);
+      note.textContent=makerCashSaid[order.id]||'';
+    }
+    card.appendChild(note);
   }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
@@ -1716,7 +1891,7 @@ export const OWNER_JS = `
         try{ await send('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. Review its row under Order review.'; loadMaker(); }
         catch(error){ answer.textContent=error.message; }
         pending=false; button.disabled=false;
-      },true);
+      },true,function(){ at=null; signature=''; });
       var catalog=context.catalog||{}, tradeSection=el('section','maker-input');
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and carriage stay separate. Notes are disabled here: this route cannot safely prove arbitrary prose contains no names or places.'));
@@ -1741,6 +1916,91 @@ export const OWNER_JS = `
       });
       var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
       var carriage=makerField(tradeSection,'Delivery (RM)','number','0','0.01');
+      var attribution=el('div','maker-trade-attribution'), tradeStream=el('select','fld salt-field__input');
+      [['','No associate'],['R2','R2 resell'],['R3','R3 refer']].forEach(function(item){
+        var option=el('option',null,item[1]); option.value=item[0]; tradeStream.appendChild(option);
+      });
+      var streamLabel=el('label','maker-field','Stream'); streamLabel.appendChild(tradeStream); attribution.appendChild(streamLabel);
+      var tradeAssoc=el('select','fld salt-field__input'), tradeDown=el('select','fld salt-field__input');
+      var assocLabel=el('label','maker-field','Associate'), downLabel=el('label','maker-field','End customer');
+      assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
+      attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
+      var attributionNote=el('p','msg'); attribution.appendChild(attributionNote); tradeSection.appendChild(attribution);
+      function fillAttribution(){
+        var isSale=direction.value==='sale', stream=isSale?tradeStream.value:'', r2=stream==='R2', kept=tradeAssoc.value;
+        attribution.hidden=!isSale; assocLabel.hidden=!stream; downLabel.hidden=!r2;
+        partyLabel.hidden=r2;
+        partyLabel.firstChild.textContent=stream==='R3'?'Buyer (referred)':'Party';
+        tradeAssoc.textContent='';
+        var none=el('option',null,'Choose an associate'); none.value=''; tradeAssoc.appendChild(none);
+        (catalog.associates||[]).filter(function(item){return !r2||item.resaleReady;}).forEach(function(item){
+          var option=el('option',null,item.code); option.value=item.code; tradeAssoc.appendChild(option);
+        });
+        if(Array.from(tradeAssoc.options).some(function(option){return option.value===kept;}))tradeAssoc.value=kept;
+        attributionNote.textContent=r2
+          ?'R2: every book goes to the associate’s -R resale account, whether or not the end customer is named.'
+          :stream==='R3'?'R3: every book goes to the buyer; only the first row credits the introduction to the associate.':'';
+      }
+      var unnamed=el('option',null,'Not named'); unnamed.value=''; tradeDown.appendChild(unnamed);
+      (catalog.parties||[]).filter(function(code){return !/[-]R$/.test(code);}).forEach(function(code){
+        var option=el('option',null,code); option.value=code; tradeDown.appendChild(option);
+      });
+      tradeStream.addEventListener('change',fillAttribution);
+      var coverChoices=[];
+      function coverChoice(root,bookControl,unitsControl,goodsControl){
+        var wrap=el('label','maker-cover'), check=el('input'), words=el('span'), note=el('p','msg'), revision=0;
+        check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;
+        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);root.appendChild(wrap);root.appendChild(note);
+        async function readCoverChoice(){
+          var ticket=++revision;check.checked=false;wrap.hidden=true;check.disabled=true;note.textContent='';
+          if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0))return;
+          note.textContent='Reading reward cover…';
+          try{
+            var result=await refs('/all/maker/trade-cover',{product:bookControl.value,party:tradeParty.value,
+              qty:Number(unitsControl.value),total:Number(goodsControl.value),stream:tradeStream.value||null});
+            if(ticket!==revision||!root.isConnected)return;
+            note.textContent='';
+            if(result.cover){
+              words.textContent='Cover RM '+result.cover.rm.toFixed(2)+' with '+result.cover.units+' unit reward'
+                +' · '+result.cover.free+' unit available · own quote RM '+result.cover.ask.toFixed(2);
+              check.disabled=false;wrap.hidden=false;
+            }
+          }catch(error){if(ticket===revision)note.textContent=error.message;}
+        }
+        var choice={check:check,read:readCoverChoice};coverChoices.push(choice);
+        [bookControl,unitsControl,goodsControl,tradeParty,tradeStream,direction].forEach(function(control){
+          control.addEventListener('input',readCoverChoice);control.addEventListener('change',readCoverChoice);
+        });
+        return choice;
+      }
+      var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal);
+      var extraBooks=el('div','maker-extra-books'), extraTrades=[];
+      tradeSection.appendChild(extraBooks);
+      var tripNote=el('p','msg','Extra books share the party, date and handover. Each has its own goods, cash and units moved. Delivery sits on the first row alone; with a delivery, Approve takes the trip in one tap.');
+      tradeSection.appendChild(tripNote);
+      function extraChoices(select){
+        var kept=select.value; select.textContent='';
+        (catalog.products||[]).filter(function(item){
+          return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
+        }).forEach(function(item){
+          var option=el('option',null,pshape(item.product)); option.value=item.product; select.appendChild(option);
+        });
+        if(Array.from(select.options).some(function(option){return option.value===kept;})) select.value=kept;
+      }
+      makerButton(tradeSection,'Add another book',function(){
+        var row=el('section','maker-extra-trade'); row.appendChild(el('h4',null,'Extra book'));
+        var label=el('label','maker-field','Book'), select=el('select','fld salt-field__input');
+        label.appendChild(select); row.appendChild(label); extraChoices(select);
+        var extra={row:row,product:select,qty:makerField(row,'Units','number','1','0.01'),
+          total:makerField(row,'Goods total (RM)','number','','0.01'),
+          cash:makerField(row,'Cash recorded (RM)','number','0','0.01'),
+          movedUnits:makerField(row,'Units moved','number','0','0.01')};
+        extraTrades.push(extra); extraBooks.appendChild(row);
+        extra.cover=coverChoice(row,select,extra.qty,extra.total);
+        makerButton(row,'Remove book',function(){
+          extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
+        },false);
+      },false);
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
@@ -1754,8 +2014,15 @@ export const OWNER_JS = `
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
+        extraTrades.forEach(function(extra){extraChoices(extra.product);});
+        fillAttribution();
+        coverChoices.forEach(function(choice){choice.read();});
       }
       direction.addEventListener('change',fillTradeChoices);
+      tradeProduct.addEventListener('change',function(){
+        extraTrades.forEach(function(extra){extraChoices(extra.product);});
+        coverChoices.forEach(function(choice){choice.read();});
+      });
       fillTradeChoices();
       async function submitTrade(confirmedTwin,send){
         if(tradePending) return;
@@ -1765,7 +2032,23 @@ export const OWNER_JS = `
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
           handover:handover.value||null};
         body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
-        if(confirmedTwin) body.second=confirmedTwin;
+        if(isSale&&firstCover.check.checked)body.cover=true;
+        if(isSale&&tradeStream.value){
+          if(!tradeAssoc.value){tradeAnswer.textContent='Choose an associate first.';return;}
+          body.assoc=tradeAssoc.value; body.stream=tradeStream.value;
+          if(body.stream==='R2'){body.party=body.assoc;body.downstream=tradeDown.value||null;}
+        }
+        if(extraTrades.length) body.extras=extraTrades.map(function(extra){
+          var input={product:extra.product.value,qty:extra.qty.value===''?null:Number(extra.qty.value),
+            total:extra.total.value===''?null:Number(extra.total.value),cash:extra.cash.value===''?null:Number(extra.cash.value),
+            movedUnits:extra.movedUnits.value===''?null:Number(extra.movedUnits.value)};
+          if(isSale&&extra.cover.check.checked)input.cover=true;
+          return input;
+        });
+        if(confirmedTwin) Object.keys(confirmedTwin).forEach(function(index){
+          if(Number(index)===0)body.second=confirmedTwin[index];
+          else if(body.extras&&body.extras[Number(index)-1])body.extras[Number(index)-1].second=confirmedTwin[index];
+        });
         var check=JSON.stringify(body);
         if(check!==tradeSignature){ tradeSignature=check; tradeAt=new Date().toISOString(); }
         body.at=tradeAt;
@@ -1779,13 +2062,17 @@ export const OWNER_JS = `
         }catch(error){
           tradeAnswer.textContent=error.message;
           var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
-          if(twin&&!confirmedTwin&&window.confirm('A matching row is already booked. Record this as a separate order?')){
-            tradeSignature=''; tradePending=false; await submitTrade(twin,send); return;
+          var index=error.detail&&error.detail.twin&&error.detail.twin.index||0;
+          if(twin&&!(confirmedTwin&&confirmedTwin[index])&&window.confirm('A matching row is already booked. Record this as a separate order?')){
+            var confirmations=Object.assign({},confirmedTwin||{}); confirmations[index]=twin;
+            tradeSignature=''; tradePending=false; await submitTrade(confirmations,send); return;
           }
         }
         tradePending=false;
       }
-      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true);
+      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true,function(){
+        tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
+      });
       var tierSection=el('section','maker-input');
       tierSection.appendChild(el('h3',null,'Customer tier'));
       tierSection.appendChild(el('p','msg','Tiered books only. Set a held level or clear it; proposals do not move held tiers.'));
@@ -1850,7 +2137,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent for review. The held tier changes only when folded.'; loadMaker(); }
           catch(error){ tierAnswer.textContent=error.message; }
           tierPending=false;
-        },true);
+        },true,function(){ tierAt=null; tierSignature=''; });
         /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone.
            Each new Accept is its own request; a retry is the button's retained request, which keeps the id it was sent under. */
         var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
@@ -1863,6 +2150,65 @@ export const OWNER_JS = `
           catch(error){ allAnswer.textContent=error.message; }
           allPending=false;
         },false);
+      }
+      var driftSection=el('section','maker-input');
+      driftSection.appendChild(el('h3',null,'Customer drift'));
+      driftSection.appendChild(el('p','msg','Salt only. Zero is a held override; Clear returns the customer to automatic drift from the record.'));
+      tradeSection.parentNode.insertBefore(driftSection,tierSection.nextSibling);
+      var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
+      if(!driftCodes.length||!driftBooks.length){
+        driftSection.appendChild(el('p','msg','No drift customer input is available.'));
+      }else{
+        var driftCode=el('select','fld salt-field__input'), driftProduct=el('select','fld salt-field__input');
+        driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
+        driftBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; driftProduct.appendChild(option); });
+        [['Customer',driftCode],['Book',driftProduct]].forEach(function(item){
+          var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); driftSection.appendChild(wrap);
+        });
+        var driftValue=makerField(driftSection,'Drift from -1 to +1','number','','0.05');
+        driftValue.min='-1'; driftValue.max='1';
+        var driftState=el('p','msg'); driftSection.appendChild(driftState);
+        var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
+        var driftPending=false, driftAt=null, driftSignature='';
+        function driftReceiptComplete(){ driftAt=null; driftSignature=''; }
+        function driftCardOf(){
+          return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
+        }
+        function driftFormat(value){ return (value>=0?'+':'')+Number(value).toFixed(2); }
+        function driftRefresh(){
+          var card=driftCardOf();
+          if(card&&card.held) driftState.textContent='Held override: '+driftFormat(card.value)+'.';
+          else if(card&&typeof card.current==='number') driftState.textContent='Automatic from the record: '+driftFormat(card.current)+'.';
+          else driftState.textContent='Automatic from the record. No current drift is available in this snapshot.';
+          clearDrift.hidden=!(card&&card.held);
+        }
+        driftCode.addEventListener('change',driftRefresh); driftProduct.addEventListener('change',driftRefresh);
+        var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
+        makerButton(driftActions,'Set drift for review',async function(send){
+          if(driftPending) return;
+          var raw=driftValue.value.trim(), value=Number(raw);
+          if(!raw||!Number.isFinite(value)||value < -1||value > 1){
+            driftAnswer.textContent='Enter a drift from -1 to +1.';
+            return;
+          }
+          value=Number(value.toFixed(2));
+          var body={code:driftCode.value,product:driftProduct.value,tier:value};
+          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
+          body.at=driftAt; driftPending=true;
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent for review. The held drift changes only when folded.'; loadMaker(); }
+          catch(error){ driftAnswer.textContent=error.message; }
+          driftPending=false;
+        },true,driftReceiptComplete);
+        var clearDrift=makerButton(driftActions,'Clear held drift',async function(send){
+          if(driftPending) return;
+          var body={code:driftCode.value,product:driftProduct.value,tier:null};
+          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
+          body.at=driftAt; driftPending=true;
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Clear sent for review. Automatic drift returns when folded.'; loadMaker(); }
+          catch(error){ driftAnswer.textContent=error.message; }
+          driftPending=false;
+        },false,driftReceiptComplete);
+        driftRefresh();
       }
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=el('section','maker-input');
@@ -1893,10 +2239,10 @@ export const OWNER_JS = `
           var body={product:houseProduct.value,hide:houseTicks.filter(function(t){ return !t.checked; }).map(function(t){ return Number(t.value); })};
           var check=JSON.stringify(body); if(check!==houseSignature){ houseSignature=check; houseAt=new Date().toISOString(); }
           body.at=houseAt; housePending=true;
-          try{ await send('/all/maker/inputs/house-sizes',body); houseAt=null; houseSignature=''; houseAnswer.textContent='Sent for review. The board prints these sizes once folded; no price moves.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/house-sizes',body); houseAnswer.textContent='Sent for review. The board prints these sizes once folded; no price moves.'; loadMaker(); }
           catch(error){ houseAnswer.textContent=error.message; }
           housePending=false;
-        },true);
+        },true,function(){ houseAt=null; houseSignature=''; });
       }
       box.appendChild(houseSection);
       /* A5: the Desk's Whiteboard hush. The tips are the ones the Desk is showing; a hush moves no figure. */
@@ -1922,7 +2268,7 @@ export const OWNER_JS = `
           try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hushed. The Desk hides it when it next reads the hushes: on load, or on opening Whiteboard.'; loadMaker(); }
           catch(error){ tipAnswer.textContent=error.message; }
           tipPending=false;
-        },true);
+        },true,function(){ tipAt=null; tipSignature=''; });
       }
       makerOtherInputs(box,catalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
@@ -1979,13 +2325,20 @@ export const OWNER_JS = `
     var status=document.getElementById('makerReviewStatus');
     if(status) status.textContent='Reading orders and rows…';
     try{
-      makerData=await refs('/all/maker/review');
+      makerCashRestore();
+      var reading=await refs('/all/maker/review');
+      makerCashReconcile(reading);makerData=reading;
       drawMaker();
-    }catch(error){ if(status) status.textContent=error.message; }
+    }catch(error){ drawMaker();if(status) status.textContent=error.message; }
   }
   function drawMaker(){
     var root=document.getElementById('makerReview'), status=document.getElementById('makerReviewStatus');
-    if(!root||!makerData) return;
+    var queueRoot=document.getElementById('makerQueueReview');
+    if(!root) return;
+    if(!makerData){
+      if(!Object.keys(makerCashHeld).length&&!makerCashStorageError)return;
+      makerData={orders:[],drafts:[]};
+    }
     root.textContent='';
     var open=(makerData.orders||[]).filter(function(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; });
     if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
@@ -2045,10 +2398,6 @@ export const OWNER_JS = `
           if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
           makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
         },false).setAttribute('data-close','');
-        var cash=makerField(card,'Cash received (RM)','number','');
-        makerButton(card,'Record cash',function(){
-          makerTap(order,'cash',{amount:Number(cash.value)},'Cash sent to the Desk.');
-        },false);
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
@@ -2083,6 +2432,11 @@ export const OWNER_JS = `
       }
       makerAgain(card,order);
       makerOrderMoves(card,order);
+      if(order.status==='ready'&&!againAck)makerCashControls(card,order);
+    });
+    Object.keys(makerCashHeld).filter(function(id){return !open.some(function(o){return o.id===id;});}).forEach(function(id){
+      var card=makerCard(root);card.appendChild(el('h3',null,id));
+      makerCashControls(card,{id:id});
     });
     /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
     (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){
@@ -2097,15 +2451,26 @@ export const OWNER_JS = `
       card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
       card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
       makerReading(card,draft);
+      var trip=!entry.orderId&&!entry.claim&&!(entry.fulfil&&entry.fulfil.claim)&&draft.row&&draft.row.trip, siblings=trip?(makerData.drafts||[]).filter(function(item){
+        return item.status==='pending'&&item.collection==='sales'&&item.row&&item.row.trip===trip
+          &&!(item.entry||{}).orderId&&!((item.entry||{}).claim||item.entry&&item.entry.fulfil&&item.entry.fulfil.claim);
+      }):[];
+      if(siblings.length){
+        card.appendChild(el('p','salt-insight','Trip '+trip+' · '+siblings.length+' rows waiting. This tap decides every row of the trip.'));
+        siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
+          card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+item.qty+' units · RM '+Number(item.total||0).toFixed(2)));
+          makerReading(card,item);
+        });
+      }
       var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
-      var approve=makerButton(card,'Approve row',function(){
-        if(!window.confirm('Approve the proposed row shown here?')) return;
+      var approve=makerButton(card,siblings.length?'Approve trip':'Approve row',function(){
+        if(!window.confirm(siblings.length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.');
       },true);
       approve.disabled=!!claim;
-      makerButton(card,'Reject row',function(){
-        if(!window.confirm('Reject this Desk row?')) return;
+      makerButton(card,siblings.length?'Reject trip':'Reject row',function(){
+        if(!window.confirm(siblings.length?'Reject every row of this trip?':'Reject this Desk row?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.');
       },false);
     });
@@ -2113,6 +2478,44 @@ export const OWNER_JS = `
       var card=makerCard(root); card.appendChild(el('h3','','Refused entry'));
       card.appendChild(el('p','salt-insight',refused.why||'This entry was refused by the drafter.'));
     });
+    if(queueRoot){
+      queueRoot.textContent='';
+      var held=makerData.queue||[];
+      if(!held.length) queueRoot.appendChild(el('p','rnone','No server-held device entries or cloud refusals.'));
+      held.forEach(function(entry){
+        var card=makerCard(queueRoot), title=entry.state==='refused'?'Refused server entry':'Server-held device entry';
+        card.appendChild(el('h4','',title));
+        card.appendChild(el('p','maker-facts',entry.id+(entry.date?' · '+entry.date:'')+' · '+entry.state));
+        if(entry.device) card.appendChild(el('p','maker-facts','Device '+entry.device));
+        if(entry.refusalSource||entry.seenAt)
+          card.appendChild(el('p','maker-facts','Refusal source '+(entry.refusalSource||'unknown')
+            +(entry.seenAt?' · seen '+entry.seenAt:'')));
+        if(entry.why) card.appendChild(el('p','salt-insight',entry.why));
+        if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
+        if(entry.canWithdraw||entry.canRetry){
+          var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
+          var action=makerClaimButton(card,entry.canRetry?'Finish server withdrawal':'Withdraw server-held entry',function(button){
+            if(entry.canWithdraw&&!window.confirm('Withdraw this uploaded entry from the Desk server queue? This does not withdraw an unsent device entry.')) return;
+            button.disabled=true;
+            refs('/all/maker/queue/'+encodeURIComponent(entry.id)+'/withdraw',{fingerprint:entry.fingerprint})
+              .then(function(result){
+                var confirmed=result&&result.ok===true&&result.withdrawn===entry.id
+                  && (result.state==='withdrawn'&&result.confirmedAbsent===undefined
+                    || result.state==='rejected'&&result.confirmedAbsent===true)
+                  && (result.again===undefined||result.again===true);
+                if(!confirmed) throw new Error('The server did not return a matching withdrawal receipt. Refresh and retry.');
+                return loadMaker().then(function(){
+                  var current=document.getElementById('makerReviewStatus');
+                  if(current) current.textContent=result.state==='rejected'
+                    ?'Desk rejection confirmed; server-held entry is gone.'
+                    :'Server-held entry withdrawal confirmed.';
+                });
+              }).catch(function(error){ note.textContent=error.message; button.disabled=false; });
+          },false);
+          action.classList.add('maker-queue-action');
+        }
+      });
+    }
     makerButton(root,'Refresh',loadMaker,false);
   }
   function klInputValue(iso){

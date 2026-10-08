@@ -52,7 +52,7 @@ const rewardBook = (book, p) => {
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { admitInput, checkInputAdmission, finishInputAdmission } from "./input-admission.js";
+import { admitInput, checkInputAdmission, finishInputAdmission, queueWithdrawalKey } from "./input-admission.js";
 
 export async function readBook(db) {
   const rows = async (c) => {
@@ -1900,6 +1900,12 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
 
   const keysRead = [];
   const byAt = await queueEntries(env, keysRead);
+  const withdrawalRows = await env.SALT_LEDGER.prepare(
+    "SELECT id FROM maker_request WHERE operation='queue-withdraw'"
+  ).all();
+  const withdrawn = new Set((withdrawalRows.results || []).map((row) =>
+    row.id.slice("queue-withdraw:".length)));
+  for (const at of withdrawn) byAt.delete(at);
   const book = await readBook(env.SALT_LEDGER);
   /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
      first and writes it last (tools/d1.mjs buildSeed), so a mirror without one is being seeded or was never
@@ -1951,6 +1957,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const out = { ok: true, at: now(), considered: 0, drafted: 0, raced: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
+    if (await env.SALT_LEDGER.prepare(
+      "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+    ).bind(queueWithdrawalKey(at)).first()) continue;
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
@@ -1961,6 +1970,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
     if (tf) d = { skip: tf };
     if (d.skip) {
+      if (await env.SALT_LEDGER.prepare(
+        "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+      ).bind(queueWithdrawalKey(at)).first()) continue;
       out.skipped.push({ at, why: d.skip });
       /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */
       await env.SALT_LEDGER.prepare(
@@ -1976,7 +1988,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
       `INSERT OR IGNORE INTO draft
          (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,
           amends,amend_kind,drafter,drafted_at)
-       VALUES (?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`
+       SELECT ?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16
+       WHERE NOT EXISTS (SELECT 1 FROM maker_request WHERE id=?17 AND operation='queue-withdraw')`
     ).bind(
       at, d.collection, JSON.stringify(entry), JSON.stringify(d.row), d.reasoning,
       JSON.stringify(d.flags), d.row.customer || d.row.supplier || null,
@@ -1985,8 +1998,14 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
       /* NULL on a new row, set on an amendment. The commit run reads these to know whether to
          APPEND the row or apply a change to the one `amends` names. */
       d.amends || null, d.amendKind || null,
-      "cloud-drafter", now()
+      "cloud-drafter", now(), queueWithdrawalKey(at)
     ).run();
+    if ((!made || !made.meta || !made.meta.changes) && await env.SALT_LEDGER.prepare(
+      "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+    ).bind(queueWithdrawalKey(at)).first()) {
+      await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();
+      continue;
+    }
     /* If this id was refused on an earlier pass and now drafts, the refusal is stale the
        moment the row exists. Clearing it here keeps one entry from appearing in both lists. */
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();

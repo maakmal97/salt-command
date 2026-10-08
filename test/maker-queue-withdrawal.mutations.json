@@ -1,0 +1,8 @@
+[
+  {
+    "name": "mismatched claim may withdraw an admission",
+    "file": "src/input-admission.js",
+    "find": "AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1)\n      AND EXISTS (SELECT 1 FROM maker_request WHERE id=?2 AND operation='queue-withdraw'\n        AND fingerprint=?3 AND entry=?4)`)\n      .bind(id, key, fingerprint, entry)",
+    "replace": "AND NOT EXISTS (SELECT 1 FROM draft WHERE id=?1)`)\n      .bind(id)"
+  }
+]

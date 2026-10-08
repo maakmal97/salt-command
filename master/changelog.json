@@ -1,5 +1,59 @@
 [
  {
+  "v": "v1036",
+  "d": "08 Oct 2026",
+  "t": "ONE OIL SALE FOLDED, PAID AND COLLECTED; SALT UNTOUCHED",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A sale of 50 units of oil to CA7-AMP for RM450, dated 08 Oct, paid in cash and collected on the day. It is appended to sales with its note, and nothing stays open on it. The cost is the drafter's COGS off the latest purchase, kept as drafted.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The rate of RM9 a unit is below this party's usual RM10.65 and median of RM13, though it meets the ask for 50 units. Oil leaves the book by 50 units. Nothing landed, so the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1035",
+  "d": "08 Oct 2026",
+  "t": "ONE OIL PURCHASE FROM SP7-PUD, PAID AND RECEIVED IN FULL",
+  "n": [
+   "<b>FOLDED:</b> one row, a purchase of 70 unit of oil from SP7-PUD for RM532 on 08 Oct, with RM12 freight beside it. It was paid in cash and collected on the day, so nothing stays open. The drafter raised no flags, and approval was given by Counter Admin on 08 Oct.",
+   "<b>UNUSUAL AND INVENTORY:</b> nothing unusual. The rate of RM7.6 a unit sits inside the party's range of RM7 to RM8 and on its median. The dossier shows 70 unit of oil landed, but it gives no oil cost basis, so none is restated here. The salt position is untouched."
+  ]
+ },
+ {
+  "v": "v1034",
+  "d": "08 Oct 2026",
+  "t": "CANCELLATION OF CS6-PER ORDER S240, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED:</b> s240, CS6-PER's salt order of 1.5 units for RM210 dated 06 Oct, was withdrawn by the desk on 08 Oct. Nothing had been delivered or paid on it, so it now counts nowhere. The master's own amendment routine applies the change, not this fold.",
+   "<b>INVENTORY UNCHANGED:</b> no unit moved and no lot landed, so stock stays at 26.25 and the cost basis is untouched. The 1.5 units promised on the position are a matter for the desk; the dossier does not say whether they relate to this order."
+  ]
+ },
+ {
+  "v": "v1033",
+  "d": "08 Oct 2026",
+  "t": "ONE CANDY SALE FOLDED, PAID AND COLLECTED",
+  "n": [
+   "<b>FOLDED:</b> one new candy sale to CE4-CHE, 1 unit for RM50, dated 08 Oct, paid in cash and collected the same day. It was approved by the desk. The drafter flagged that CE4-CHE has no committed candy order on the book, so no rate of theirs exists to compare against.",
+   "<b>INVENTORY:</b> candy falls by 1 unit. Salt is untouched, with stock at 26.25 unit and the count dated 03 Oct. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1032",
+  "d": "07 Oct 2026",
+  "t": "CORRECTION ON CS6-PER SALT ORDER: DELIVERY CHARGE REMOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Row s240, CS6-PER, order 20261005120619-nmopxq, 1.5 unit of salt at RM140 a unit, dated 06 Oct. The correction sets delivery from RM10 to RM0 and keeps the total at RM210. It was preapproved by phone. It moves no cash and no stock, and the row stays pending with nothing paid and nothing handed over.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The drafter flagged the rate as 69.2% above CS6-PER's usual. The correction leaves the rate untouched, so the flag stands. The inventory did not move: stock stays 26.25 unit, cost basis RM56.1905 a unit, and the 1.5 unit promised remains promised."
+  ]
+ },
+ {
+  "v": "v1031",
+  "d": "07 Oct 2026",
+  "t": "SALT LOT LANDED, ONE PENDING SALE BOOKED, ONE PENDING ORDER CANCELLED",
+  "n": [
+   "<b>THREE ROWS FOLDED.</b> A salt purchase of 25 unit from SA5-BTR landed on 06 Oct, a pending salt sale of 1.5 unit to CS6-PER was booked, and CH5-KLC's pending order s226 was cancelled. Unusual: the CS6-PER rate is RM140 a unit, above his median of RM85.52 and above the top of his range, though preapproved by phone.",
+   "<b>INVENTORY.</b> The 25 unit lot rolls onto the shelf. The sale and the cancellation draw no stock, as both are pending and nothing moved."
+  ]
+ },
+ {
   "v": "v1030",
   "d": "06 Oct 2026",
   "t": "THREE COUNTS ON 06 OCT: OIL SHORT BY 20, RICE SHORT BY 5, CANDY EXACT",

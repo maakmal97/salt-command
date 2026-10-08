@@ -1,0 +1,20 @@
+[
+  {
+    "name": "an upload without its device lock can be withdrawn before its queue write finishes",
+    "file": "src/worker.js",
+    "find": "const queueLock = env.SALT_LEDGER\n    ? await acquireDeviceQueueLock(env.SALT_LEDGER, payload.device) : null;",
+    "replace": "const queueLock = env.SALT_LEDGER ? \"unlocked\" : null;"
+  },
+  {
+    "name": "withdrawal without its device lock races an in-flight queue upload",
+    "file": "src/worker.js",
+    "find": "const token = await acquireDeviceQueueLock(env.SALT_LEDGER, device);",
+    "replace": "const token = \"unlocked\";"
+  },
+  {
+    "name": "a delayed queue upload restores the tombstoned entry",
+    "file": "src/worker.js",
+    "find": "const kept = payload.queue.filter((entry) =>\n    !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));",
+    "replace": "const kept = payload.queue.filter((entry) => !(entry && gone.has(entry.at)));"
+  }
+]

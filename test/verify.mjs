@@ -1433,13 +1433,16 @@ await (async () => {
      statements the Worker actually issues, and throws on anything else rather than
      quietly returning nothing, which is how a mock hides a broken query. */
   class D1 {
-    constructor() { this.rows = new Map(); this.refusals = new Map(); }
+    constructor() { this.rows = new Map(); this.refusals = new Map(); this.makerRequests = new Map(); }
     prepare(sql) {
       const self = this, s = sql.replace(/\s+/g, " ").trim();
       let binds = [];
       const api = {
         bind(...a) { binds = a; return api; },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT id FROM input_admission WHERE id=/.test(s)) return null;
           if (/^SELECT status FROM draft WHERE id=/.test(s) || /^SELECT status,committed_at FROM draft WHERE id=/.test(s)) {
             return self.rows.get(binds[0]) || null;
@@ -1454,6 +1457,7 @@ await (async () => {
         async all() {
           if (/^SELECT .* FROM refused/.test(s)) return { results: [...self.refusals.values()] };
           if (/^SELECT id FROM input_admission_source WHERE source=/.test(s)) return { results: [] };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
           let out = [...self.rows.values()];
           if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
@@ -1461,6 +1465,15 @@ await (async () => {
           return { results: out };
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) {
             self.refusals.set(binds[0], {
               id: binds[0], entry: binds[1], why: binds[2], party: binds[3], source: binds[4], seen_at: binds[5]
@@ -1590,6 +1603,46 @@ await (async () => {
     globalThis.fetch = async () => { throw new Error("github is down"); };
     d = await decide(await draftNo(4), "approve", armed);
     ok(d.status === 200 && d.j.draft.status === "approved", "a dispatch fault never fails the approval");
+
+    /* 07 Oct 2026: THE GITHUB APP. With GH_APP_KEY the Worker signs as the app, trades the JWT for an
+       installation token, holds it, and dispatches with it; the PAT is ignored. */
+    {
+      const { generateKeyPairSync, createVerify } = await import("node:crypto");
+      const pair = generateKeyPairSync("rsa", { modulusLength: 2048 });
+      const pk8 = pair.privateKey.export({ type: "pkcs8", format: "pem" });
+      const appEnv = { ...armed, GH_APP_KEY: pk8 };
+      const seen = [], logs = [], realL = console.log;
+      globalThis.fetch = async (u, o = {}) => {
+        u = String(u); seen.push({ url: u, auth: o.headers && o.headers.authorization, body: o.body });
+        if (/\/repos\/maakmal97\/salt-command\/installation$/.test(u)) return Response.json({ id: 77 });
+        if (/\/app\/installations\/77\/access_tokens$/.test(u)) return Response.json({ token: "ghs-app", expires_at: new Date(Date.now() + 3600000).toISOString() }, { status: 201 });
+        return new Response(null, { status: 204 });
+      };
+      console.log = (...x) => logs.push(x.join(" "));
+      try {
+        await decide(await draftNo(5), "approve", appEnv);
+        await decide(await draftNo(6), "approve", appEnv);
+      } finally { console.log = realL; }
+      const jwt = (seen[0] && seen[0].auth || "").replace(/^Bearer /, "").split(".");
+      const claims = jwt.length === 3 ? JSON.parse(Buffer.from(jwt[1], "base64url").toString()) : {};
+      const signed = jwt.length === 3 && createVerify("RSA-SHA256").update(jwt[0] + "." + jwt[1]).verify(pair.publicKey, Buffer.from(jwt[2], "base64url"));
+      const disp = seen.filter((s) => /\/dispatches$/.test(s.url));
+      ok(signed && claims.iss === "5222854" && claims.exp - claims.iat <= 600,
+         "with GH_APP_KEY the Worker signs an RS256 JWT as app 5222854 that the app's public key verifies, inside GitHub's ten minutes: " + JSON.stringify(claims));
+      ok(seen.filter((s) => /access_tokens$/.test(s.url)).length === 1 && seen[1] && JSON.parse(seen[1].body).permissions.actions === "write"
+         && disp.length === 2 && disp.every((s) => s.auth === "Bearer ghs-app"),
+         "two approvals dispatch twice with the installation token, minted once and held, scoped to Actions write; the PAT is not used: " + JSON.stringify(seen.map((s) => [s.url.replace(/^https:\/\/api\.github\.com/, ""), s.auth && s.auth.slice(0, 12)])) + " " + JSON.stringify(logs));
+      globalThis.fetch = async () => new Response('{"message":"Unexpected inputs provided"}', { status: 422 });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(7), "approve", appEnv); } finally { console.log = realL; }
+      ok(logs.some((l) => /^stage dispatch: 422 .*Unexpected inputs provided/.test(l)),
+         "a refused dispatch logs GitHub's reason beside its status: " + JSON.stringify(logs));
+      const pk1 = pair.privateKey.export({ type: "pkcs1", format: "pem" });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(8), "approve", { ...own, GH_APP_KEY: pk1 }); } finally { console.log = realL; }
+      ok(logs.some((l) => /stage dispatch FAILED.*PKCS#1.*openssl pkcs8/.test(l)),
+         "a PKCS#1 key, as GitHub downloads it, fails saying to convert it, and needs no PAT to be armed: " + JSON.stringify(logs));
+    }
     globalThis.fetch = realFetch;
 
     /* the workflow's half, read as text because YAML cannot be run here */
@@ -2766,7 +2819,9 @@ await (async () => {
     const dcv = read("coverStats()");
     /* v824: the engine supplies free and the trigger's shortfall; the rate and the cover are the book's restock plan's */
     const rp = read("restockFor(PROD)");
-    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === rp.coverDays, `${p}: cover agrees`);
+    /* a free shelf that outlasts the plan's horizon has no coverDays; the desk then reads free over the rate (v1035: oil's 70 units) */
+    const wantDays = rp.coverDays != null ? rp.coverDays : +(Math.max(0, dcv.free) / rp.base).toFixed(1);
+    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === wantDays, `${p}: cover agrees (${dcv.days} days, plan ${rp.coverDays})`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
@@ -6357,11 +6412,12 @@ await (async () => {
      PAID must both reconcile to the book, row by row, with the gift rule the only permitted
      difference and that rule stated explicitly here rather than trusted. */
   const { stmtRows } = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
   /* THE SAME OPTIONS THE TOOL ITSELF PASSES. stmtRows takes three inclusion flags and a window,
      and with none of them every row is filtered out: calling it bare returns an empty array and
      every check over it passes on nothing. The "both branches exercised" assertion below is what
      caught that, which is the whole reason it is there. */
-  const SO = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true };
+  const SO = { from: null, to: null, completed: true, open: true, pending: true, dates: true };
   const bookM = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
   const parties = [...new Set((bookM.sales || []).map((x) => x.customer).filter(Boolean))];
   ok(parties.length > 5, `the book carries ${parties.length} customers to check`);
@@ -6369,6 +6425,10 @@ await (async () => {
   const bad = [], gifts = [], charged = [];
   for (const party of parties) {
     const rows = stmtRows(party, SO);
+    const missingRids = (bookM.sales || []).filter((src) => POS.ownsCode(party, src.customer)
+      && src.rid && !rows.some((r) => r.rid === src.rid)).map((src) => src.rid);
+    ok(missingRids.length === 0,
+      `${party}'s statement includes every RID in its sales rows: ` + JSON.stringify(missingRids));
     for (const r of rows) {
       /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MAL has two
          orders on 14 August of one unit each, RM 110 and RM 11.50. The first version of this check
@@ -11807,9 +11867,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -12947,9 +13009,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(state).map((k) => ({ key: k, doc: JSON.stringify(state[k]) })) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused].map(([id, r]) => ({ id, source: r.source })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: "vX", stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -33506,7 +33570,7 @@ await (async () => {
     state: { roster: ["CC9-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const mirrorN = (b) => {
-    const self = { drafts: new Map(), refused: new Map() };
+    const self = { drafts: new Map(), refused: new Map(), makerRequests: new Map() };
     self.prepare = (sql) => {
       const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
       const api = {
@@ -33519,12 +33583,24 @@ await (async () => {
           return { results: [] };
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           if (/COUNT\(\*\)/.test(s)) return { n: 0 };
           return null;
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
           return { meta: { changes: 0 } };
@@ -50381,9 +50457,17 @@ await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
   await (await import("./maker-claim-covered.mjs")).run({ ok });
 })();
+section("Counter maker cash Undo: ten seconds, hide and leave flush, immutable retry");
+await (async () => {
+  await (await import("./maker-cash-undo.mjs")).run({ ok });
+})();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });
+})();
+section("Counter cancellation disclosure: v457 actual amendment form and native catalog");
+await (async () => {
+  await (await import("./maker-cancellation.mjs")).run({ ok, pageWork });
 })();
 section("Counter maker revives a cancelled order; only a clean revival, as the one Correction");
 await (async () => {
@@ -50394,6 +50478,26 @@ await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
 
+section("Counter reward parity: generated offers and covered resource batches");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter extra-book cover: generated control to approved native fold");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runExtra({ ok, pageWork });
+})();
+
+section("Counter cover recovery: durable source before queue transport");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runRecovery({ ok });
+})();
+
+section("Counter resource batches: atomic capacity, ownership and withdrawal fence");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok, worker });
+})();
+
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
 await (async () => {
   await (await import("./d1-fail-closed.mjs")).run({ ok });
@@ -50402,6 +50506,31 @@ await (async () => {
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
+})();
+
+section("Counter Admin salt drift set and clear: the held override, automatic record and fixed-book boundary");
+await (async () => {
+  await (await import("./maker-drift.mjs")).run({ ok });
+})();
+
+section("Counter input receipts: confirmed completion and immutable uncertain retries");
+await (async () => {
+  await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter multi-book trade: owner controls, shared trip and native fold");
+await (async () => {
+  await (await import("./maker-trades.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter blank-locality Add ID: owner device pair and real bridge");
+await (async () => {
+  await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
+await (async () => {
+  await (await import("./maker-addid-drift.mjs")).run({ ok });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");
@@ -50434,7 +50563,8 @@ await (async () => {
     COUNTER_MAKER_KEY: key,
     DESK_MAKER: { fetch: async (request) => {
       calls.push({ path: new URL(request.url).pathname, method: request.method, key: request.headers.get("X-Counter-Maker-Key") });
-      return new Response(JSON.stringify({ ok: true, drafts: [], refused: [] }), { status: 200 });
+      return new Response(JSON.stringify(new URL(request.url).pathname === "/_internal/maker/queue"
+        ? { ok: true, entries: [] } : { ok: true, drafts: [], refused: [] }), { status: 200 });
     } }
   };
   const call = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
@@ -50443,8 +50573,10 @@ await (async () => {
   const reviewed = await call("/all/maker/review");
   const review = await reviewed.json();
   ok(reviewed.status === 200 && review.ok && review.orders.length === 0 && review.drafts.length === 0
-    && calls.length === 1 && calls[0].path === "/_internal/maker/drafts" && calls[0].key === key,
-    "the verified owner receives the unified order/draft review through the named Desk route");
+    && review.queue.length === 0 && calls.length === 2
+    && calls.some((item) => item.path === "/_internal/maker/drafts" && item.key === key)
+    && calls.some((item) => item.path === "/_internal/maker/queue" && item.key === key),
+    "the verified owner receives the unified order/draft/server-queue review through the two named Desk routes");
   const startCalls = calls.length;
   const denied = await handleMaker(new Request("https://counter.test/all/maker/review", {
     headers: { "X-User-Email": "maakmal97@icloud.com" }
@@ -51507,6 +51639,7 @@ await (async () => {
             parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
+            rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
             rows: [{ rid: "editor-sale", party: "CX1-AB", product: "salt", date: "2026-09-01", qty: 2, total: 200, open: true }],
             correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }]
           } }
@@ -51580,7 +51713,7 @@ await (async () => {
     tradeControls[7].value = "0";
     tradeControls[8].value = "";
     tradeControls[9].value = "0";
-    tradeSection.querySelector("button").click();
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
@@ -51778,6 +51911,11 @@ await (async () => {
       && !Object.hasOwn(sentFor.body, "master") && !Object.hasOwn(sentFor.body, "note"),
       "on-behalf UI sends the quote and replay id only to its protected route");
   } finally { admin.window.close(); }
+})();
+
+section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
+await (async () => {
+  await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
 })();
 
 section("Counter amendments: atomic replacement, review reservation and session ownership");
@@ -52223,11 +52361,12 @@ await (async () => {
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
     ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "orders", "a yellow light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
-    /* 06 Oct 2026: oil's light was pinned green, which held only while the live book had oil on its shelf; v1030's count
-       emptied it and the check went red with nothing wrong. Each book is now held to the stated rule over its OWN shelf and
-       commitments (red when out, yellow when promised past the shelf, else green), and oil's figures must not be salt's. */
-    const lights = read("expLights()"), rule = (b) => b.shelf < 0.005 ? "red" : b.commit - b.shelf > 0.005 ? "yellow" : "green";
-    ok(lights.salt.light === "yellow" && !!lights.oil && lights.oil.commit !== lights.salt.commit && lights.oil.light === rule(lights.oil), "the card reads each book's own light off the engine");
+    /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf and
+       commitments taken book by book, and none may carry salt's 1,000 promised units */
+    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
+    ok(L.salt.light === "yellow" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
+      && Object.keys(L).every((p) => JSON.stringify(L[p]) === JSON.stringify(own[p]) && (p === "salt" || L[p].commit < 1000)),
+      "the card reads each book's own light off the engine: " + JSON.stringify(L));
     w.eval("EXPECTED={salt:'2099-01-01'};");
     ok(rows().length === 0, "and the row falls once a day ahead is set");
     w.eval("EXPECTED={salt:'2020-01-01'};");
@@ -52411,18 +52550,20 @@ await (async () => {
   ok(forced.p === Math.floor(2 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
     `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under twice its RM ${forced.floor} floor`);
   /* THE AFTER-LEAK FIGURE, INFORMATION ONLY, beside the floor on a book losing a quarter or more of what it buys */
-  const shown = {};
-  for (const b of live) {
-    w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
-    const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
-    shown[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
-  }
+  /* which books lose a quarter is live data (the counts of 06 Oct 2026 took rice to 24.998%), so the line is driven at the
+     live quarter and at a line under every book's leak and over every book's: all shown, then none, whatever the book holds */
+  const shownAt = (from) => { const s = {}, was = w.eval("RULES.leakInfoFrom");
+    try { if (from != null) w.eval(`RULES.leakInfoFrom=${from};`);
+      for (const b of live) {
+        w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
+        const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
+        s[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
+      } } finally { w.eval(`RULES.leakInfoFrom=${was};`); }
+    return s; };
+  const shown = shownAt(null), shownAll = shownAt(0), shownNone = shownAt(2);
   const high = live.filter((b) => b.shrink >= b.leakFrom).map((b) => b.p).sort().join();
-  /* 06 Oct 2026: the books were pinned as "oil,rice", which held only while the live book's leak said so; v1030's count moved
-     rice under a quarter and the check went red with nothing wrong. The rule is held on every book instead, with at least
-     one book over the line so the shown side is proved too. */
-  ok(high.length > 0 && live.every((b) => shown[b.p] === (b.shrink >= b.leakFrom)),
-    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high}, and on no other: ${JSON.stringify(shown)}`);
+  ok(live.every((b) => b.leakFrom === 0.25 && shown[b.p] === (b.shrink >= b.leakFrom) && shownAll[b.p] && !shownNone[b.p]),
+    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high || "none today"}, and on no other; every book at a line of 0, none at 2: ${JSON.stringify({ shown, shownAll, shownNone })}`);
   w.eval("setProd('salt');recompute();");
 })();
 
@@ -52513,10 +52654,10 @@ await (async () => {
   const a11 = rd("(function(){try{cloudMode=function(){return true;};}catch(e){};setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();"
     + "var s=document.getElementById('wbApTier_salt');if(!s)return {s:false};var opts=[].map.call(s.options,function(o){return o.value;}),sel=s.value,z=wbTiersChosen();"
     + "s.value='-0.3';var a=wbTiersChosen();s.value='typed';var t=document.getElementById('wbApDrift_salt');t.value='0.15';var b=wbTiersChosen();"
-    + "t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,c:c};})()");
+    + "t.value='0.125';var precise=wbTiersChosen();t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,precise:precise,c:c};})()");
   ok(a11.s && JSON.stringify(a11.opts) === '["","-0.3","0","0.3","typed"]' && a11.sel === "" && !(a11.z && "salt" in a11.z)
-    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && !(a11.c && "salt" in a11.c),
-    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1: " + JSON.stringify(a11));
+    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && a11.precise.salt === 0.125 && !(a11.c && "salt" in a11.c),
+    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1 without rounding: " + JSON.stringify(a11));
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
