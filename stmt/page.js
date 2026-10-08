@@ -438,6 +438,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .maker-field .lbl{margin-top:0}
+.maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
+.maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
 .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-hours{display:grid;gap:6px;margin:14px 0}

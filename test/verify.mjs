@@ -50438,6 +50438,26 @@ await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
 
+section("Counter reward parity: generated offers and covered resource batches");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter extra-book cover: generated control to approved native fold");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runExtra({ ok, pageWork });
+})();
+
+section("Counter cover recovery: durable source before queue transport");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runRecovery({ ok });
+})();
+
+section("Counter resource batches: atomic capacity, ownership and withdrawal fence");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok });
+})();
+
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
 await (async () => {
   await (await import("./d1-fail-closed.mjs")).run({ ok });
@@ -51576,6 +51596,7 @@ await (async () => {
             parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
+            rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
             rows: [{ rid: "editor-sale", party: "CX1-AB", product: "salt", date: "2026-09-01", qty: 2, total: 200, open: true }],
             correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }]
           } }

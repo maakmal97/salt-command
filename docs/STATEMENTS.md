@@ -1495,6 +1495,20 @@ on the device and sends only code-to-point pairs rounded to 0.01 degrees. Addres
 names are never sent to Counter or Desk. There is no generic entry writer or arbitrary queue
 forwarding on this bridge.
 
+Maker's Reward redemption lists the held balance and native eligible action per holder,
+net of durable reservations. Departed balances stay visible without a spend; returning
+restores the offer, and a customer's action needs one whole unit. An unpaid advance offers
+Offset on its oldest row. Sale cover is an unticked choice on the first or extra book,
+read from `POST /all/maker/trade-cover` and sent only as `cover: true`. The Desk rechecks
+the shared engine decision against that customer's own card, shelf cost and available
+reward; delivery is outside the gap. Covered batches use all-or-none durable admission
+before queue transport, not an exception to the ordinary trade-batch resource refusal.
+Within a batch, an identical timestamp reserves once; conflicting bytes at that timestamp
+refuse the whole batch before insertion. A reseed releases only source ownership acquired
+by that transaction, not an identical retry's retained source.
+Native approval and fold remain required. No pricing rule, board or floor is changed,
+and these controls do not establish owner acceptance or retire the Desk controls.
+
 The Counter's `DESK_MAKER` binding and the Desk's `/_internal/maker/` routes form a dedicated
 Counter-to-Desk capability. `COUNTER_MAKER_KEY` must be a high-entropy value of at least 32
 characters provisioned as a Wrangler secret on both Workers; it is neither `STMT_DESK_KEY` nor
