@@ -2382,7 +2382,11 @@ export const OWNER_JS = `
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
         var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
         card.appendChild(form);
-        var deliver=order.mode==='deliver';
+        /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
+           the others hide the chips and send nought */
+        var group=open.filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
+        var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
+        var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
         var otherField=null, previewTurn=0, previewBtn=null;
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:

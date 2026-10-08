@@ -11,7 +11,7 @@ export async function run({ ok }) {
   const posts = [];
   let previewFail = 0, acceptFail = 0;
   const orderOf = (id, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 2, total: 200, status: "placed", mode: "deliver", history: [], ...patch });
-  const reviewBody = { ok: true, drafts: [], orders: [orderOf("20261007090001-dlv")] };
+  const reviewBody = { ok: true, drafts: [], orders: [orderOf("20261007090001-dlv", { sheet: "sh1" }), orderOf("20261007090002-dlv", { sheet: "sh1" })] };
   const preview = (body) => ({ cost: { unit: 80, total: 160, source: "purchase" },
     ok: true, quote: body.total, delivery: body.delivery, hash: "h-" + (posts.filter((p) => p.kind === "preview").length), row: { qty: 2, total: body.total },
     card: 190, cardNote: null, floor: { rm: 150, at: 2, exact: true }, margin: { rm: 40, pct: 21 },
@@ -126,5 +126,14 @@ export async function run({ ok }) {
     const [first, second] = acceptBody();
     ok(JSON.stringify(first.body) === JSON.stringify(second.body) && first.path === second.path,
       "A retried Accept, unchanged since its preview, sends the same body twice over: " + JSON.stringify(acceptBody()));
+
+    /* a sheet asks for the delivery charge once, on its first order: the second hides the chips and sends nought */
+    const later = "20261007090002-dlv";
+    ok(!radio(later, "RM 10") && !!radio(id, "RM 10") && button(later, "Preview") && !button(later, "Preview").disabled,
+      "Only the sheet's first order asks for a delivery charge; the others show no chips and Preview is open.");
+    button(later, "Preview").click();
+    await until(() => posts.some((p) => p.kind === "preview" && p.path.includes(later)));
+    const sent = posts.filter((p) => p.kind === "preview" && p.path.includes(later))[0];
+    ok(sent && sent.body.delivery === 0, "A later order on a sheet sends delivery 0: " + JSON.stringify(sent));
   } finally { browser.window.close(); }
 }
