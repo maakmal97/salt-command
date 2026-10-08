@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-08T14:48:16.746Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA7-AMP",
+    "qty": 50,
+    "total": 450,
+    "cost": 388.57,
+    "cash": 450,
+    "handover": "collected",
+    "product": "oil",
+    "date": "2026-10-08",
+    "deliveredQty": 50,
+    "deliveredOn": "2026-10-08",
+    "paidOn": "2026-10-08"
+   },
+   "reasoning": "Sold 50 unit of oil to CA7-AMP for RM 450, RM 9/unit. Costed at RM 7.77/unit from COGS off the latest purchase p037 landed 2026-10-08: RM 532 quote plus RM 12 freight over 70 unit, so RM 61.43 on the goods at 13.7%. Paid in full and delivered in full on 2026-10-08. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CA7-AMP typically pays about RM 10.65/unit for oil across 2 orders; this one is RM 9, 15.5% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-08T14:48:16.746Z",
+    "type": "SELL",
+    "party": "CA7-AMP",
+    "qty": 50,
+    "total": 450,
+    "status": "paid",
+    "raw": "Sell 50 unit to CA7-AMP for RM 450 on 2026-10-08, collected, RM 450 cash, 50 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CA7-AMP",
+     "newId": null,
+     "date": "2026-10-08",
+     "qty": 50,
+     "total": 450,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 450,
+     "kg": 50,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-10-08T14:48:42.961Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
