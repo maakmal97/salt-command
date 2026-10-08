@@ -6397,11 +6397,12 @@ await (async () => {
      PAID must both reconcile to the book, row by row, with the gift rule the only permitted
      difference and that rule stated explicitly here rather than trusted. */
   const { stmtRows } = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
   /* THE SAME OPTIONS THE TOOL ITSELF PASSES. stmtRows takes three inclusion flags and a window,
      and with none of them every row is filtered out: calling it bare returns an empty array and
      every check over it passes on nothing. The "both branches exercised" assertion below is what
      caught that, which is the whole reason it is there. */
-  const SO = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true };
+  const SO = { from: null, to: null, completed: true, open: true, pending: true, dates: true };
   const bookM = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
   const parties = [...new Set((bookM.sales || []).map((x) => x.customer).filter(Boolean))];
   ok(parties.length > 5, `the book carries ${parties.length} customers to check`);
@@ -6409,6 +6410,10 @@ await (async () => {
   const bad = [], gifts = [], charged = [];
   for (const party of parties) {
     const rows = stmtRows(party, SO);
+    const missingRids = (bookM.sales || []).filter((src) => POS.ownsCode(party, src.customer)
+      && src.rid && !rows.some((r) => r.rid === src.rid)).map((src) => src.rid);
+    ok(missingRids.length === 0,
+      `${party}'s statement includes every RID in its sales rows: ` + JSON.stringify(missingRids));
     for (const r of rows) {
       /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MAL has two
          orders on 14 August of one unit each, RM 110 and RM 11.50. The first version of this check
