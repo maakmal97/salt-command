@@ -82,5 +82,11 @@
     "file": "engine/position.mjs",
     "find": "||key==='id'&&TIP_ID.test(v)",
     "replace": "||key==='id'&&TIP_ID.test(v)\n      ||appointment&&key==='code'&&/^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/.test(v)"
+  },
+  {
+    "name": "A roster customer with no sales row stays eligible",
+    "file": "src/worker.js",
+    "find": "      || appointments.has(code)) return false;",
+    "replace": "      || !(book.sales || []).some((row) => row && row.customer === code) || appointments.has(code)) return false;"
   }
 ]

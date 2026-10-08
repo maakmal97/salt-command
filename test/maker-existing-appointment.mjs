@@ -151,11 +151,11 @@ export async function run({ ok }) {
     const visibleCodes = customer ? [...customer.options].map((option) => option.value).filter(Boolean) : [];
     const roleValues = role ? [...role.options].map((option) => option.value).filter(Boolean) : [];
     const selectorReady = !!customer && !!role && visibleCodes.includes("CJ4-RED") && visibleCodes.includes("CJ4-BLU")
-      && visibleCodes.includes("SZ4-CUS") && !visibleCodes.includes("SJ4-SUP")
+      && visibleCodes.includes("SZ4-CUS") && visibleCodes.includes("HJ4-NOS") && !visibleCodes.includes("SJ4-SUP")
       && [...customer.options].filter((option) => option.value).every((option) => option.textContent.trim() === option.value)
-      && !["CJ4-DWN", "DJ4-GON", "EJ4-BAN", "FJ4-ASS", "FJ4-ASS-R"].some((code) => visibleCodes.includes(code));
+      && !["DJ4-GON", "EJ4-BAN", "FJ4-ASS", "FJ4-ASS-R"].some((code) => visibleCodes.includes(code));
     check(selectorReady,
-      "the server-backed selector lists eligible customer codes, including S-prefixed customers; codes: "
+      "the server-backed selector lists every eligible roster customer, including S-prefixed ones and one with no sales row, as the Desk's Add ID does; codes: "
         + JSON.stringify(visibleCodes) + "; roles: " + JSON.stringify(role ? [...role.options].map((option) => option.value) : [])
         + "; people: " + wd.sqlite.prepare("SELECT doc FROM state WHERE key='PEOPLE'").get()?.doc
         + "; candidates: " + JSON.stringify(page.catalog?.appointmentCustomers));
@@ -183,7 +183,6 @@ export async function run({ ok }) {
       ["SJ4-SUP", "referral", "2099-10-05T00:58:01.000Z"],
       ["FJ4-ASS-R", "reseller", "2099-10-05T00:58:02.000Z"],
       ["FJ4-ASS", "referral", "2099-10-05T00:58:03.000Z"],
-      ["HJ4-NOS", "reseller", "2099-10-05T00:58:06.000Z"],
       ["CJ4-RED", null, "2099-10-05T00:58:04.000Z"],
       ["CJ4-RED", "reseller", "2099-10-05T00:58:05.000Z"]
     ]) {

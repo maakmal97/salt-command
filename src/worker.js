@@ -426,12 +426,11 @@ function makerAppointmentCandidates(book, parties, pending) {
   const banned = new Set(((state.PEOPLE && state.PEOPLE.banned) || [])
     .filter((person) => person && !person.lifted).map((person) => person.id));
   const suppliers = new Set((book.purchases || []).map((row) => row && row.supplier));
-  const customers = new Set((book.sales || []).map((row) => row && row.customer));
   const appointments = new Set(pending.filter((entry) => isMakerAppointment(entry)).map((entry) => entry.payload.code));
   return parties.filter((code) => {
     if (typeof code !== "string" || POSITION_ENGINE.isBucket(code)
       || suppliers.has(code) || departed.has(code) || banned.has(code)
-      || !customers.has(code) || appointments.has(code)) return false;
+      || appointments.has(code)) return false;
     return makerAppointmentKinds.some((kind) => {
       const plan = POSITION_ENGINE.addIdPlan(code, kind, state.roster || [], state.associates || []);
       return plan.known && plan.elevate && !plan.already && !!plan.resell;
