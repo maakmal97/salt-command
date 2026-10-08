@@ -1015,7 +1015,7 @@ export const OWNER_JS = `
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(reading.row){
-      var detail=el('details',''), summary=el('summary','','Proposed row');
+      var detail=el('details',''), summary=el('summary','salt-ghost','Proposed row');
       detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
     }
   }
@@ -1058,6 +1058,7 @@ export const OWNER_JS = `
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
+          if(error.detail.twin){makerClear(path);cancel.hidden=true;}
           pending=null;
         }
         throw error;
@@ -1856,6 +1857,30 @@ export const OWNER_JS = `
       });
       var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
       var carriage=makerField(tradeSection,'Delivery (RM)','number','0','0.01');
+      var extraBooks=el('div','maker-extra-books'), extraTrades=[];
+      tradeSection.appendChild(extraBooks);
+      var tripNote=el('p','msg','Extra books share the party, date and handover. Each has its own goods, cash and units moved. Delivery sits on the first row alone; with a delivery, Approve takes the trip in one tap.');
+      tradeSection.appendChild(tripNote);
+      function extraChoices(select){
+        var kept=select.value; select.textContent='';
+        (catalog.products||[]).filter(function(item){
+          return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
+        }).forEach(function(item){
+          var option=el('option',null,pshape(item.product)); option.value=item.product; select.appendChild(option);
+        });
+        if(Array.from(select.options).some(function(option){return option.value===kept;})) select.value=kept;
+      }
+      makerButton(tradeSection,'Add another book',function(){
+        var row=el('section','maker-extra-trade'); row.appendChild(el('h4',null,'Extra book'));
+        var label=el('label','maker-field','Book'), select=el('select','fld salt-field__input');
+        label.appendChild(select); row.appendChild(label); extraChoices(select);
+        var extra={row:row,product:select,qty:makerField(row,'Units','number','1','0.01'),
+          total:makerField(row,'Goods total (RM)','number','','0.01'),
+          cash:makerField(row,'Cash recorded (RM)','number','0','0.01'),
+          movedUnits:makerField(row,'Units moved','number','0','0.01')};
+        extraTrades.push(extra); extraBooks.appendChild(row);
+        makerButton(row,'Remove book',function(){extraTrades.splice(extraTrades.indexOf(extra),1);row.remove();},false);
+      },false);
       var tradeAnswer=el('p','msg'); tradeAnswer.setAttribute('role','status'); tradeSection.appendChild(tradeAnswer);
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
@@ -1869,8 +1894,10 @@ export const OWNER_JS = `
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
+        extraTrades.forEach(function(extra){extraChoices(extra.product);});
       }
       direction.addEventListener('change',fillTradeChoices);
+      tradeProduct.addEventListener('change',function(){extraTrades.forEach(function(extra){extraChoices(extra.product);});});
       fillTradeChoices();
       async function submitTrade(confirmedTwin,send){
         if(tradePending) return;
@@ -1880,7 +1907,15 @@ export const OWNER_JS = `
           cash:tradeCash.value===''?null:Number(tradeCash.value),movedUnits:tradeMoved.value===''?null:Number(tradeMoved.value),
           handover:handover.value||null};
         body[isSale?'delivery':'freight']=carriage.value===''?null:Number(carriage.value);
-        if(confirmedTwin) body.second=confirmedTwin;
+        if(extraTrades.length) body.extras=extraTrades.map(function(extra){
+          return {product:extra.product.value,qty:extra.qty.value===''?null:Number(extra.qty.value),
+            total:extra.total.value===''?null:Number(extra.total.value),cash:extra.cash.value===''?null:Number(extra.cash.value),
+            movedUnits:extra.movedUnits.value===''?null:Number(extra.movedUnits.value)};
+        });
+        if(confirmedTwin) Object.keys(confirmedTwin).forEach(function(index){
+          if(Number(index)===0)body.second=confirmedTwin[index];
+          else if(body.extras&&body.extras[Number(index)-1])body.extras[Number(index)-1].second=confirmedTwin[index];
+        });
         var check=JSON.stringify(body);
         if(check!==tradeSignature){ tradeSignature=check; tradeAt=new Date().toISOString(); }
         body.at=tradeAt;
@@ -1894,8 +1929,10 @@ export const OWNER_JS = `
         }catch(error){
           tradeAnswer.textContent=error.message;
           var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
-          if(twin&&!confirmedTwin&&window.confirm('A matching row is already booked. Record this as a separate order?')){
-            tradeSignature=''; tradePending=false; await submitTrade(twin,send); return;
+          var index=error.detail&&error.detail.twin&&error.detail.twin.index||0;
+          if(twin&&!(confirmedTwin&&confirmedTwin[index])&&window.confirm('A matching row is already booked. Record this as a separate order?')){
+            var confirmations=Object.assign({},confirmedTwin||{}); confirmations[index]=twin;
+            tradeSignature=''; tradePending=false; await submitTrade(confirmations,send); return;
           }
         }
         tradePending=false;
@@ -2278,15 +2315,26 @@ export const OWNER_JS = `
       card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
       card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
       makerReading(card,draft);
+      var trip=!entry.orderId&&!entry.claim&&!(entry.fulfil&&entry.fulfil.claim)&&draft.row&&draft.row.trip, siblings=trip?(makerData.drafts||[]).filter(function(item){
+        return item.status==='pending'&&item.collection==='sales'&&item.row&&item.row.trip===trip
+          &&!(item.entry||{}).orderId&&!((item.entry||{}).claim||item.entry&&item.entry.fulfil&&item.entry.fulfil.claim);
+      }):[];
+      if(siblings.length){
+        card.appendChild(el('p','salt-insight','Trip '+trip+' · '+siblings.length+' rows waiting. This tap decides every row of the trip.'));
+        siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
+          card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+item.qty+' units · RM '+Number(item.total||0).toFixed(2)));
+          makerReading(card,item);
+        });
+      }
       var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
-      var approve=makerButton(card,'Approve row',function(){
-        if(!window.confirm('Approve the proposed row shown here?')) return;
+      var approve=makerButton(card,siblings.length?'Approve trip':'Approve row',function(){
+        if(!window.confirm(siblings.length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.');
       },true);
       approve.disabled=!!claim;
-      makerButton(card,'Reject row',function(){
-        if(!window.confirm('Reject this Desk row?')) return;
+      makerButton(card,siblings.length?'Reject trip':'Reject row',function(){
+        if(!window.confirm(siblings.length?'Reject every row of this trip?':'Reject this Desk row?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.');
       },false);
     });

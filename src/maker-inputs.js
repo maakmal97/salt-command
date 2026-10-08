@@ -23,7 +23,7 @@ const proposed = (entry, book) => {
 };
 
 /** Dedicated trade inputs, not a queue-entry or row-patch forwarding road. */
-export function makerTradeEntry(operation, body, book) {
+export function makerTradeEntry(operation, body, book, trip = null) {
   if (!["sale", "purchase"].includes(operation)) return { error: "Choose sale or purchase." };
   const sale = operation === "sale";
   const fields = ["at", "product", "party", "date", "qty", "total", "cash", "movedUnits", "handover", "second"]
@@ -75,8 +75,47 @@ export function makerTradeEntry(operation, body, book) {
     at: body.at, product: body.product, direction: sale ? "SELL" : "BUY", party: body.party,
     date: body.date, qty: body.qty, total: body.total, cash: body.cash, movedUnits: body.movedUnits,
     delivery: sale ? body.delivery ?? 0 : 0, freight: sale ? 0 : body.freight ?? 0,
-    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null
+    handover: body.handover ?? null, assoc, stream, downstream, second: body.second ?? null, trip
   }), book);
+}
+
+/** The Workbench's extra books: validate all before queueing any; carriage belongs to the first row alone. */
+export function makerTradeBatch(operation, body, book) {
+  if (!object(body)) return { error: "Unsupported trade input fields." };
+  const { extras, ...first } = body;
+  if (extras === undefined) return makerTradeEntry(operation, first, book);
+  if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8640000000000000 - 20)
+    return { error: "A trade needs its canonical request timestamp." };
+  if (!Array.isArray(extras) || !extras.length || extras.length > 19)
+    return { error: "Choose one or more extra books, at most one row per book." };
+  const products = [first.product];
+  const inputs = [first];
+  const start = Date.parse(first.at);
+  for (const [i, extra] of extras.entries()) {
+    if (!object(extra) || Object.keys(extra).some((key) =>
+      !["product", "qty", "total", "cash", "movedUnits", "second"].includes(key)))
+      return { error: "An extra book carries only its book, units, goods, cash, movement and booked-twin confirmation." };
+    if (products.includes(extra.product)) return { error: "Choose each book once." };
+    products.push(extra.product);
+    if (!Number.isFinite(start + i + 1)) return { error: "A trade needs its canonical request timestamp." };
+    const r2 = first.stream === "R2";
+    inputs.push({
+      at: new Date(start + i + 1).toISOString(), product: extra.product, party: first.party, date: first.date,
+      qty: extra.qty, total: extra.total, cash: extra.cash, movedUnits: extra.movedUnits,
+      handover: first.handover ?? null, [operation === "sale" ? "delivery" : "freight"]: 0,
+      ...(r2 ? { assoc: first.assoc, stream: "R2", downstream: first.downstream ?? null } : {}),
+      ...(extra.second == null ? {} : { second: extra.second })
+    });
+  }
+  const trip = operation === "sale" && first.delivery > 0.005 ? "t" + start : null;
+  const entries = [], drafts = [];
+  for (const [i, input] of inputs.entries()) {
+    const made = makerTradeEntry(operation, input, book, trip);
+    if (made.error) return { ...made, ...(made.twin ? { twin: { ...made.twin, index: i } } : {}) };
+    entries.push(made.entry); drafts.push(made.draft);
+  }
+  const fault = trip && POSITION_ENGINE.tripFault(drafts.map((draft) => draft.row));
+  return fault ? { error: fault } : { entries, drafts, trip };
 }
 
 export function makerQueuedTradeCheck(entry, queue) {

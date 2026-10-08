@@ -17,6 +17,8 @@ export async function makerRequestRead(db, id, operation, fingerprint) {
   if (stored.operation !== operation || stored.fingerprint !== fingerprint)
     return { error: "That request timestamp already names another input. Restore the original input or start a new one." };
   if (stored.response) return { response: JSON.parse(stored.response) };
+  if (stored.entry && Array.isArray(JSON.parse(stored.entry)))
+    return { pending: JSON.parse(stored.entry) };
   const draft = await db.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(id).first();
   if (draft && JSON.parse(draft.entry).makerRequest === fingerprint)
     return { response: { ok: true, queued: false, draft: id, status: draft.status } };
