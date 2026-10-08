@@ -151,7 +151,9 @@ export const HANDOVER = POSITION_ENGINE.HANDOVER;
 export const CORRECTABLE = POSITION_ENGINE.CORRECTABLE;
 const CORRECT_REQUIRED = POSITION_ENGINE.CORRECT_REQUIRED;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/* A date is a REAL day in YYYY-MM-DD: the shape alone let 2026-02-30 and 2026-13-01 through the queue road to a
+ * row nothing could date-order. The Counter's inputs (maker-inputs.js, maker.js) already read it this way. */
+const DATE_RE = { test: (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v };
 
 /* Each field checked against the book it is going onto, so a correction is refused for the same
  * reasons a new row is: an unknown product cannot be costed, an unknown code cannot be credited.
@@ -613,6 +615,9 @@ const BUY_KINDS = ["Payment", "Receipt", "Default"];
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
+  /* ONE DATE GATE FOR EVERY MODE: a count, loss, loan, gift, redemption and the rest read pay.date unchecked, so an
+   * impossible day (2026-02-30) drafted, was approved and reached the fold. */
+  if (pay.date != null && pay.date !== "" && !DATE_RE.test(String(pay.date))) return { skip: `the date is not a date in YYYY-MM-DD: ${pay.date}` };
   /* THE REASON HAS TO NAME THE ACTUAL CASE. This once answered "amends an existing row" for
      every mode that was not `new`, so an ADDID, which registers a party and amends nothing,
      was reported as an amendment. That reads as a bug in the entry rather than a category the
