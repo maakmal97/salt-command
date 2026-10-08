@@ -103,7 +103,7 @@ export async function run({ ok }) {
   } finally { globalThis.fetch = originalFetch; }
 
   /* ---- the owner page's own controls, in the actual owner script ---- */
-  const posts = [];
+  const posts = [], cashTimers = [];
   let failNext = 0;
   const claimAt = "2026-10-04T08:15:00.000Z";
   const reviewBody = { ok: true, drafts: [], orders: [
@@ -115,6 +115,11 @@ export async function run({ ok }) {
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
+      const timeout = window.setTimeout.bind(window);
+      window.setTimeout = (fn, ms, ...args) => {
+        if (ms === 10000) { cashTimers.push(fn); return 9000 + cashTimers.length; }
+        return timeout(fn, ms, ...args);
+      };
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
       window.scrollTo = () => {}; window.confirm = () => true;
@@ -157,16 +162,15 @@ export async function run({ ok }) {
     /* Record cash: one id, kept across a failure */
     failNext = 1;
     fieldIn(card(), "Cash received (RM)").value = "60";
-    button((t) => t === "Record cash").click(); await settle(1);
-    await until(() => button((t) => t === "Record cash"));
-    fieldIn(card(), "Cash received (RM)").value = "60";
-    button((t) => t === "Record cash").click(); await settle(2);
+    button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(1);
+    await until(() => button((t) => t === "Retry cash") && !button((t) => t === "Retry cash").disabled);
+    button((t) => t === "Retry cash").click(); await settle(2);
     ok(posts[0].path === "/all/maker/orders/" + id + "/cash" && posts[0].body.amount === 60 && isRid(posts[0].body.rid)
       && posts[1].body.rid === posts[0].body.rid && Object.keys(posts[0].body).sort().join() === "amount,rid",
       "Record cash sends the amount under a request id, and its retry after a failure carries the same id: " + JSON.stringify(posts.slice(0, 2)));
     await until(() => button((t) => t === "Record cash"));
     fieldIn(card(), "Cash received (RM)").value = "60";
-    button((t) => t === "Record cash").click(); await settle(3);
+    button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(3);
     ok(isRid(posts[2].body.rid) && posts[2].body.rid !== posts[0].body.rid,
       "Once cash has landed, the next Record cash is a new request with its own id: " + JSON.stringify(posts[2]));
 
