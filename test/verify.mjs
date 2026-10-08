@@ -50449,6 +50449,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter input receipts: confirmed completion and immutable uncertain retries");
+await (async () => {
+  await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter blank-locality Add ID: owner device pair and real bridge");
 await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
