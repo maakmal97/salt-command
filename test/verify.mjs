@@ -47407,6 +47407,43 @@ await (async () => {
   ok(folded.ok && cl && cl.status === "settled" && cl.settledOn === "2099-06-03" && (cl.repaid || [])[0] && cl.repaid[0].rm === 400,
     "and settles the cash loan when the full ringgit owing is repaid");
 })();
+section("Loan readings: cash flow and remaining units survive input retirement");
+await (async () => {
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expression) => JSON.parse(String(w.eval("JSON.stringify(" + expression + ")")));
+  try {
+    w.eval("queue=[];applyOverlay();loans.length=0;setProd('salt');recompute();");
+    const base = read("cashFlow().net");
+    const borrowed = read("(function(){loans.push({rid:'lr-cin',direction:'in',form:'cash',valueKg:null,valueRM:500,status:'open'});return cashFlow().net;})()");
+    const lent = read("(function(){loans.push({rid:'lr-cout',direction:'out',form:'cash',valueKg:null,valueRM:200,status:'open'});return cashFlow().net;})()");
+    const settled = read("(function(){loans.push({rid:'lr-cdone',direction:'in',form:'cash',valueKg:null,valueRM:900,status:'settled'});return cashFlow().net;})()");
+    ok(Math.abs(borrowed - base - 500) < 0.005,
+      "an open cash borrowing adds its ringgit to the retained cash flow");
+    ok(Math.abs(borrowed - lent - 200) < 0.005,
+      "an open cash lending subtracts its ringgit from the retained cash flow");
+    ok(Math.abs(settled - lent) < 0.005,
+      "a settled cash loan changes neither side of the retained cash flow");
+    ok(read("loanOutUnits()+loanInUnits()") === 0,
+      "cash loans contribute no borrowed or lent inventory units");
+    const repaidCash = read("(function(){loans.find(function(l){return l.rid==='lr-cout';}).repaid=[{rm:150}];return cashFlow().net;})()");
+    ok(Math.abs(repaidCash - settled - 150) < 0.005,
+      "part repayment of cash lent out restores only the ringgit repaid to cash flow");
+    w.eval("loans.push({rid:'lr-in',direction:'in',form:'salt',valueKg:5,status:'open'},"
+      + "{rid:'lr-done',direction:'in',form:'salt',valueKg:1,status:'settled'},"
+      + "{rid:'lr-outdone',direction:'out',form:'salt',valueKg:3,status:'settled'},"
+      + "{rid:'lr-outpart',direction:'out',form:'salt',valueKg:4,status:'open',repaid:[{kg:1}]});");
+    const owing = read("[loanLeft(loans.find(function(l){return l.rid==='lr-in';})),"
+      + "cashLeft(loans.find(function(l){return l.rid==='lr-cout';})),"
+      + "loanLeft(loans.find(function(l){return l.rid==='lr-done';}))]");
+    ok(JSON.stringify(owing) === "[5,50,0]",
+      "remaining loan readings use their own form and settled loans owe nothing");
+    ok(read("loanOutUnits()") === 3,
+      "lent inventory counts the part-repaid remainder and excludes settled lending");
+    ok(read("loanInUnits()") === 5,
+      "borrowed inventory counts only the open units still owing");
+  } finally { w.close(); }
+})();
 section("v528: retained Coverage directs missing locations to Counter Admin");
 await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
