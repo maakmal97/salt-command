@@ -84,6 +84,8 @@ export async function run({ ok }) {
       state: { ...heldBook.state, PEOPLE: { ...heldBook.state.PEOPLE, departed: [] } } });
     const advance = heldBook.sales.find((sale) => sale.rid === "tx2");
     const blockedOffset = checkCorrection({ settledRM: 110, rebate: true, rebateKg: 1 }, heldBook, advance, true).errs.join(" ");
+    const allowedOffset = checkCorrection({ settledRM: 110, rebate: true, rebateKg: 1 },
+      { ...heldBook, state: { ...heldBook.state, PEOPLE: { ...heldBook.state.PEOPLE, departed: [] } } }, advance, true).errs.join(" ");
     const undoRedemption = checkCorrection({ rebate: false, rebateKg: 0 }, heldBook,
       { ...advance, rebate: true, rebateKg: 1 }, true).errs.join(" ");
     ok(heldStats && heldStats.earned > 0 && heldStats.margin > 0,
@@ -94,6 +96,8 @@ export async function run({ ok }) {
       "the drafter drafts the same redemption after the holder returns");
     ok(/has departed/.test(blockedOffset),
       "the drafter refuses a reward offset while its holder is departed");
+    ok(!/has departed/.test(allowedOffset),
+      "the same reward offset is not refused as departed after its holder returns");
     ok(!/has departed/.test(undoRedemption),
       "the drafter allows undoing a booked redemption while its holder is departed");
     ok(heldCard.includes("earned, held while departed") && !desked().some((o) => o.code === "CM4-TO")

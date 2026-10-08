@@ -81,7 +81,7 @@ export async function run({ ok }) {
       DESK_MAKER: { fetch: (request) => desk.fetch(request, deskEnv, { waitUntil() {} }) } };
     const call = (path, body, identity = { email: "maakmal97@icloud.com" }) => handleMaker(new Request("https://counter.test" + path,
       { method: "POST", body: JSON.stringify(body) }), counterEnv, path, identity);
-    const drafts = () => db.prepare("SELECT id,status,entry,row FROM draft ORDER BY id").all();
+    const drafts = () => db.prepare("SELECT id,status,entry,row,flags FROM draft ORDER BY id").all();
     const draftOf = (at) => drafts().find((d) => d.id === at) || null;
 
     const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
@@ -109,19 +109,36 @@ export async function run({ ok }) {
         "Counter Admin's Redeem builds the Desk's own entry for " + c.what + ": " + res.status + " "
         + JSON.stringify(mine && mine.payload) + " against " + JSON.stringify(theirs && theirs.payload));
       const drafted = d && d.row && JSON.parse(d.row);
-      const amends = mine && mine.payload.mode === "amend" ? "rs2" : null;
+      const amends = mine && mine.payload.mode === "amend" ? mine.payload.rid : null;
       ok(!!(d && d.status === "pending" && drafted && (amends || drafted.customer === c.code)),
         "and the drafter drafts it pending with its row, never refused: " + JSON.stringify(d && { status: d.status, row: drafted }));
+      if (!amends) {
+        const flags = JSON.parse(d.flags);
+        ok(drafted.rebate === true && drafted.qty === mine.payload.qty
+          && flags.some((flag) => flag.includes("held " + mine.payload.balance + " unit"))
+          && !flags.some((flag) => flag.includes("against the")),
+          "the redemption draft states its held balance without an over-balance warning for " + c.code);
+      }
       /* the fold writes the drafted row onto the book */
       const staged = { ok: true, count: 1, approved: [{ id: c.at, collection: "sales", amends, amendKind: amends ? "Correction" : null,
         row: drafted, entry: mine }] };
       const B = JSON.parse(JSON.stringify(book)), before = B.sales.length;
       const folded = drafted ? apply(B, staged, { version: "v9999", date: "06 Oct 2026", title: "A TEST REWARD SPEND",
         notes: ["<b>TEST.</b> Nothing real."], rows: { [c.at]: { note: "A reward spend." } }, stockNote: "" }, master) : { ok: false, problems: ["no row"] };
-      const target = amends ? B.sales.find((s) => s.rid === "rs2") : B.sales[B.sales.length - 1];
+      const target = amends ? B.sales.find((s) => s.rid === amends) : B.sales[B.sales.length - 1];
       ok(folded.ok && (amends ? B.sales.length === before && target && +target.settledRM > 0 && +target.rebateKg > 0
         : B.sales.length === before + 1 && target.customer === c.code && target.rebate === true && target.cash === 0 && target.qty === mine.payload.qty),
         "and the fold books it: " + (folded.ok ? JSON.stringify(target) : folded.problems.join("; ")));
+      if (amends) {
+        ok(target.rid === mine.payload.rid && target.customer === c.code
+          && target.settledRM === mine.payload.fields.settledRM
+          && target.rebateKg === mine.payload.fields.rebateKg
+          && B.sales.filter((sale) => sale.rid !== amends).every((sale) => {
+            const original = book.sales.find((other) => other.rid === sale.rid);
+            return JSON.stringify(sale) === JSON.stringify(original);
+          }),
+          "the reward offset folds onto " + mine.payload.rid + " for " + c.code + " and changes no other sale");
+      }
     }
 
     const small = POSITION_ENGINE.rewardAccount({
