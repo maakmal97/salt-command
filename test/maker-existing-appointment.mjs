@@ -16,16 +16,16 @@ let ownerPageCount = 0;
 
 function fixture() {
   const wd = world();
-  const roster = [...new Set([...wd.b.state.roster, "AJ4-RED", "BJ4-BLU", "SZ4-CUS", "CJ4-DWN", "DJ4-GON",
+  const roster = [...new Set([...wd.b.state.roster, "CJ4-RED", "CJ4-BLU", "SZ4-CUS", "CJ4-DWN", "DJ4-GON",
     "EJ4-BAN", "HJ4-NOS", "SJ4-SUP", "FJ4-ASS", "FJ4-ASS-R"])];
   const associates = [...new Set([...wd.b.state.associates, "FJ4-ASS"])];
   const people = { departed: [{ id: "DJ4-GON" }], banned: [{ id: "EJ4-BAN", lifted: false }] };
-  const placed = { "AJ4-RED": [3.14, 101.7], "BJ4-BLU": [3.15, 101.71] };
+  const placed = { "CJ4-RED": [3.14, 101.7], "CJ4-BLU": [3.15, 101.71] };
   for (const [key, value] of Object.entries({ roster, associates, PEOPLE: people, PLACED: placed }))
     wd.sqlite.prepare("INSERT OR REPLACE INTO state(key,doc) VALUES (?1,?2)").run(key, JSON.stringify(value));
   const sales = [
-    { rid: "s-fixture-a", customer: "AJ4-RED", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
-    { rid: "s-fixture-b", customer: "BJ4-BLU", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
+    { rid: "s-fixture-a", customer: "CJ4-RED", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
+    { rid: "s-fixture-b", customer: "CJ4-BLU", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
     { rid: "s-fixture-s", customer: "SZ4-CUS", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
     { rid: "s-fixture-supplier", customer: "SJ4-SUP", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
     { rid: "s-fixture-d", customer: "DJ4-GON", product: "salt", date: "2099-10-01", qty: 1, total: 100, cash: 100, deliveredQty: 1 },
@@ -136,6 +136,9 @@ export async function run({ ok }) {
   "the retained appointment whitelist rejects a non-canonical timestamp");
   check(!E.vaultPendingOk({ path: appointmentPath, body: { ...appointmentBody, kind: "downstream" } }),
     "the retained appointment whitelist rejects an unsupported appointment kind");
+  check(!E.vaultPendingOk({ path: appointmentPath, body: { ...appointmentBody, code: "AJ4-RED" } })
+    && E.vaultPendingOk({ path: appointmentPath, body: { ...appointmentBody, code: "CJ4-RED" } }),
+  "the retained appointment code follows the same [CS] prefix rule as every other retained input");
 
   const wd = fixture();
   const page = await ownerPage(wd, { loseAppointmentAnswer: true });
@@ -147,7 +150,7 @@ export async function run({ ok }) {
     const submit = button(section, "Send appointment for review");
     const visibleCodes = customer ? [...customer.options].map((option) => option.value).filter(Boolean) : [];
     const roleValues = role ? [...role.options].map((option) => option.value).filter(Boolean) : [];
-    const selectorReady = !!customer && !!role && visibleCodes.includes("AJ4-RED") && visibleCodes.includes("BJ4-BLU")
+    const selectorReady = !!customer && !!role && visibleCodes.includes("CJ4-RED") && visibleCodes.includes("CJ4-BLU")
       && visibleCodes.includes("SZ4-CUS") && !visibleCodes.includes("SJ4-SUP")
       && [...customer.options].filter((option) => option.value).every((option) => option.textContent.trim() === option.value)
       && !["CJ4-DWN", "DJ4-GON", "EJ4-BAN", "FJ4-ASS", "FJ4-ASS-R"].some((code) => visibleCodes.includes(code));
@@ -165,7 +168,7 @@ export async function run({ ok }) {
     const originalSales = wd.sqlite.prepare("SELECT COUNT(*) AS n FROM entry WHERE collection='sales'").get().n;
     wd.desk.VAULT_STORE = "kv";
     const generic = await wd.call("/all/maker/inputs/add-id", {
-      at: "2099-10-05T00:59:00.000Z", code: "AJ4-RED", kind: "customer",
+      at: "2099-10-05T00:59:00.000Z", code: "CJ4-RED", kind: "customer",
       parent: null, geo: null, tiers: null, vault: wd.envelope
     }, OWNER);
     wd.desk.VAULT_STORE = "pair";
@@ -181,8 +184,8 @@ export async function run({ ok }) {
       ["FJ4-ASS-R", "reseller", "2099-10-05T00:58:02.000Z"],
       ["FJ4-ASS", "referral", "2099-10-05T00:58:03.000Z"],
       ["HJ4-NOS", "reseller", "2099-10-05T00:58:06.000Z"],
-      ["AJ4-RED", null, "2099-10-05T00:58:04.000Z"],
-      ["AJ4-RED", "reseller", "2099-10-05T00:58:05.000Z"]
+      ["CJ4-RED", null, "2099-10-05T00:58:04.000Z"],
+      ["CJ4-RED", "reseller", "2099-10-05T00:58:05.000Z"]
     ]) {
       const body = { at, code, ...(kind ? { kind } : {}) };
       if (at.endsWith("05.000Z")) body.name = "Invented";
@@ -192,7 +195,7 @@ export async function run({ ok }) {
         "ineligible or widened appointment input is refused without a receipt or draft: " + code + " " + response.status);
     }
 
-    customer.value = "AJ4-RED";
+    customer.value = "CJ4-RED";
     role.value = "reseller";
     submit.click();
     await page.waitFor(() => page.requests.some((request) => request.path === "/all/maker/inputs/appoint-existing")
@@ -205,10 +208,10 @@ export async function run({ ok }) {
       return;
     }
     const firstDraft = wd.drafts().find((draft) => draft.id === first.body.at);
-    check(first.body.code === "AJ4-RED" && first.body.kind === "reseller"
+    check(first.body.code === "CJ4-RED" && first.body.kind === "reseller"
       && Object.keys(first.body).sort().join() === "at,code,kind"
       && !!retained && firstDraft?.status === "pending"
-      && firstDraft.entry.payload.mode === "addid" && firstDraft.entry.payload.code === "AJ4-RED"
+      && firstDraft.entry.payload.mode === "addid" && firstDraft.entry.payload.code === "CJ4-RED"
       && firstDraft.entry.payload.kind === "reseller" && firstDraft.entry.payload.tiers === null
       && firstDraft.entry.payload.geo === null
       && wd.sqlite.prepare("SELECT revision FROM vault_pair WHERE one=1").get().revision === originalNames.revision
@@ -225,11 +228,11 @@ export async function run({ ok }) {
       await retryPage.waitFor(() => !sectionOf(retryPage.dom.window.document, "Retained input"));
       const attempts = retryPage.requests.filter((request) => request.path === "/all/maker/inputs/appoint-existing");
       check(attempts.length === 1 && attempts[0].bytes === JSON.stringify(first.body)
-        && wd.drafts().filter((draft) => draft.entry.payload.code === "AJ4-RED").length === 1
+        && wd.drafts().filter((draft) => draft.entry.payload.code === "CJ4-RED").length === 1
         && wd.sqlite.prepare("SELECT COUNT(*) AS n FROM maker_request").get().n === 1,
         "retry after an uncertain answer resends identical bytes and the server answers the same single draft");
       const refreshed = sectionOf(retryPage.dom.window.document, "Appoint existing customer");
-      check(![...field(refreshed, "Existing customer").options].some((option) => option.value === "AJ4-RED"),
+      check(![...field(refreshed, "Existing customer").options].some((option) => option.value === "CJ4-RED"),
         "the accepted appointment disappears from the live selector while it waits for approval");
     } finally {
       retryPage.dom.window.close();
@@ -238,9 +241,9 @@ export async function run({ ok }) {
     const changed = await wd.call("/all/maker/inputs/appoint-existing",
       { ...first.body, kind: "referral" }, OWNER);
     const duplicate = await wd.call("/all/maker/inputs/appoint-existing",
-      { at: "2099-10-05T01:00:05.000Z", code: "AJ4-RED", kind: "referral" }, OWNER);
+      { at: "2099-10-05T01:00:05.000Z", code: "CJ4-RED", kind: "referral" }, OWNER);
     check(changed.status === 409 && duplicate.status === 409
-      && wd.drafts().filter((draft) => draft.entry.payload.code === "AJ4-RED").length === 1,
+      && wd.drafts().filter((draft) => draft.entry.payload.code === "CJ4-RED").length === 1,
       "changed content and a distinct request id cannot queue a second appointment: "
         + changed.status + ", " + duplicate.status + ", drafts " + wd.drafts().length);
 
@@ -252,14 +255,14 @@ export async function run({ ok }) {
         check(false, "a fresh owner page renders the appointment selectors");
         return;
       }
-      secondCustomer.value = "BJ4-BLU";
+      secondCustomer.value = "CJ4-BLU";
       secondRole.value = "referral";
       button(secondForm, "Send appointment for review").click();
       await secondPage.waitFor(() => secondPage.requests.some((request) =>
         request.path === "/all/maker/inputs/appoint-existing" && request.status !== undefined));
       const secondRequest = secondPage.requests.find((request) => request.path === "/all/maker/inputs/appoint-existing");
-      const secondDraft = wd.drafts().find((draft) => draft.entry.payload.code === "BJ4-BLU");
-      check(!!secondRequest && !!secondDraft && secondRequest.body.code === "BJ4-BLU" && secondRequest.body.kind === "referral"
+      const secondDraft = wd.drafts().find((draft) => draft.entry.payload.code === "CJ4-BLU");
+      check(!!secondRequest && !!secondDraft && secondRequest.body.code === "CJ4-BLU" && secondRequest.body.kind === "referral"
         && secondDraft?.entry.payload.rev === "R3" && secondDraft?.entry.payload.tiers === null
         && secondDraft.entry.payload.geo === null && secondDraft.entry.payload.parent === null
         && wd.drafts().filter((draft) => draft.status === "pending").length === 2,
@@ -293,21 +296,21 @@ export async function run({ ok }) {
     const currentVersion = Number((masterText.match(/const evolution=\[\{\s*"?v"?\s*:\s*['"]v(\d+)/) || [])[1]);
     const folded = apply(foldBook, staged, { version: "v" + (currentVersion + 1), title: "Appointment fixture",
       notes: ["Appointment fixture"], rows: {} }, masterText);
-    const users = { "AJ4-RED": "existing-account", "BJ4-BLU": "existing-account-b" };
+    const users = { "CJ4-RED": "existing-account", "CJ4-BLU": "existing-account-b" };
     const minted = mintUsernames(users, staged, folded.folded, ["2345-6789"]);
     const planResult = plan({ ...foldBook, roster: [...wd.roster], associates: [...wd.associates] }, staged, null);
     check(folded.ok && planResult.items.length === 2 && planResult.refused.length === 0
-      && foldBook.roster.filter((code) => code === "AJ4-RED").length === 1
-      && foldBook.roster.filter((code) => code === "BJ4-BLU").length === 1
-      && foldBook.roster.filter((code) => code === "AJ4-RED-R").length === 1
-      && foldBook.roster.filter((code) => code === "BJ4-BLU-R").length === 1
-      && foldBook.associates.includes("AJ4-RED") && foldBook.associates.includes("BJ4-BLU"),
+      && foldBook.roster.filter((code) => code === "CJ4-RED").length === 1
+      && foldBook.roster.filter((code) => code === "CJ4-BLU").length === 1
+      && foldBook.roster.filter((code) => code === "CJ4-RED-R").length === 1
+      && foldBook.roster.filter((code) => code === "CJ4-BLU-R").length === 1
+      && foldBook.associates.includes("CJ4-RED") && foldBook.associates.includes("CJ4-BLU"),
       "the approved native appointment fold elevates each existing customer once and adds each -R bucket");
     check(foldBook.sales.length === originalSales,
       "folding existing-customer appointments creates no downstream sales or money rows");
     const namesAfterFold = wd.sqlite.prepare("SELECT names,places,revision FROM vault_pair WHERE one=1").get();
     check(JSON.stringify(foldBook.PEOPLE) === identityBefore && JSON.stringify(foldBook.PLACED) === placedBefore
-      && minted.length === 0 && users["AJ4-RED"] === "existing-account" && users["BJ4-BLU"] === "existing-account-b"
+      && minted.length === 0 && users["CJ4-RED"] === "existing-account" && users["CJ4-BLU"] === "existing-account-b"
       && namesAfterFold.names === originalNames.names && namesAfterFold.places === originalNames.places
       && namesAfterFold.revision === originalNames.revision,
       "folding appointments preserves names, places, identity and existing account usernames without minting accounts");
@@ -319,10 +322,10 @@ export async function run({ ok }) {
   try {
     const at = ["2099-10-05T02:00:00.000Z", "2099-10-05T02:00:01.000Z"];
     const claims = await Promise.all(at.map((timestamp, index) => {
-      const entry = E.addIdEntry({ at: timestamp, code: "AJ4-RED", kind: "reseller",
+      const entry = E.addIdEntry({ at: timestamp, code: "CJ4-RED", kind: "reseller",
         parent: null, rev: "R2", geo: null, tiers: null });
       return makerAppointmentClaim(claimRace.desk.SALT_LEDGER, timestamp,
-        String(index + 1).repeat(64), entry, "AJ4-RED");
+        String(index + 1).repeat(64), entry, "CJ4-RED");
     }));
     check(claims.filter((claim) => claim.claimed).length === 1
       && claimRace.sqlite.prepare("SELECT COUNT(*) AS n FROM maker_request WHERE operation='appoint-existing'").get().n === 1,
@@ -332,13 +335,13 @@ export async function run({ ok }) {
   }
   const raced = fixture();
   try {
-    const body = (at) => ({ at, code: "AJ4-RED", kind: "reseller" });
+    const body = (at) => ({ at, code: "CJ4-RED", kind: "reseller" });
     const answers = await Promise.all([
       raced.call("/all/maker/inputs/appoint-existing", body("2099-10-05T02:00:00.000Z"), OWNER),
       raced.call("/all/maker/inputs/appoint-existing", body("2099-10-05T02:00:01.000Z"), OWNER)
     ]);
     check(answers.map((response) => response.status).sort().join() === "200,409"
-      && raced.drafts().filter((draft) => draft.entry.payload.code === "AJ4-RED").length === 1,
+      && raced.drafts().filter((draft) => draft.entry.payload.code === "CJ4-RED").length === 1,
       "concurrent distinct request ids reserve one existing-customer appointment and refuse the other");
   } finally {
     raced.sqlite.close();

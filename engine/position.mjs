@@ -1363,7 +1363,6 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(typeof v==='string')return offset&&key==='rid'&&/^[A-Za-z0-9_-]{1,64}$/.test(v)
       ||['rid','loan'].includes(key)&&/^[a-z][a-z0-9-]{0,60}$/.test(v)
       ||key==='id'&&TIP_ID.test(v)
-      ||appointment&&key==='code'&&/^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/.test(v)
       ||enumWords.includes(v)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(v)
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v)
       ||key==='orderCode'&&/^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/.test(v);
@@ -1383,7 +1382,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
     ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))
     ||new Date(record.body.at).toISOString()!==record.body.at
-    ||typeof record.body.code!=='string'||!/^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/.test(record.body.code)
+    ||typeof record.body.code!=='string'
     ||!['reseller','referral'].includes(record.body.kind)))return false;
   if(/\/offset$/.test(record.path)&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==4||Object.keys(record.body).some(k=>!['at','code','rid','date'].includes(k))
