@@ -52,6 +52,20 @@
   Approve decides every pending row of the trip** (`tripStmts`, in the tapped row's own batch), never a claim or a site order's
   row. The statement says "plus delivery RM x for one trip of n orders" on the carrier row. A
   lone trip row is no fault: it is the convention the four earlier hand-folded trips used.
+  Counter Admin's Add another book carries the same extra-book figures through its dedicated
+  sale/purchase inputs. `makerTradeBatch` checks every book before retaining the immutable
+  entries; `queueSale` writes the complete fixed trade batch in one queue document, then the
+  native drafter makes the rows. A retry resumes all retained entries, not merely the first
+  draft. Order review names Approve trip/Reject trip and shows the sibling readings; the native
+  decision still uses `tripStmts`. No delivery or a purchase mints no trip, as on the Workbench.
+  Stream offers No associate, R2 resell and R3 refer on sales only. R2 hides Party,
+  takes the associate as the party and offers an optional End customer; every extra books
+  to the associate's `-R` bucket, never to that buyer. R3 keeps Buyer (referred) and credits
+  the associate on the first row alone. The associate list reads the same bench sources
+  as `associateIds`, minus standing bans; R2 offers only a filed resale bucket.
+  The confirmed-success hook releases the trade's timestamp/signature only after the
+  whole-batch answer is confirmed. An uncertain send retains its exact original request,
+  including every extra, even when the controls have been edited.
 - **The ask IS the ladder's last level since v656** (his decision of 15 Sep 2026), so the line
   above describes the DERIVED figure, which is kept beside it as `priceLadder().derived`.
   `pxPolicy` carries `tierRule`; the override is the one line in `priceLadder`, and row zero of

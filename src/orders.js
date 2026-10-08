@@ -1686,6 +1686,30 @@ export function stageAt(order, job, now) {
  * shape, and for good once the draft table holds it: the drafter prunes a committed entry from the queue,
  * and a stage landing on its millisecond after that would be counted committed and never drafted. */
 export async function queueSale(env, entry, fixedId = false) {
+  if (Array.isArray(entry)) {
+    if (!fixedId || !entry.length || entry.some((e) => !e || POSITION_ENGINE.inputConsumesResource(e)))
+      throw Object.assign(new Error("A fixed trade batch carries ordinary trade entries only."), { status: 400 });
+    const key = OKEY(entry[0].at);
+    const kept = await env.SALT_QUEUE.get(key, "json");
+    if (kept && await makerRequestFingerprint("fixed-trades", kept.queue)
+      !== await makerRequestFingerprint("fixed-trades", entry))
+      throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+    for (const e of entry) {
+      const own = await env.SALT_QUEUE.get(OKEY(e.at), "json");
+      const hit = own && (own.queue || []).find((item) => item.at === e.at);
+      if (hit && await makerRequestFingerprint("fixed-input", hit)
+        !== await makerRequestFingerprint("fixed-input", e))
+        throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+      const draft = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE id=?1").bind(e.at).first();
+      if (draft && await makerRequestFingerprint("fixed-input", JSON.parse(draft.entry))
+        !== await makerRequestFingerprint("fixed-input", e))
+        throw Object.assign(new Error("That fixed request id already names different content."), { status: 409 });
+    }
+    if (kept) return false;
+    await env.SALT_QUEUE.put(key, JSON.stringify({ device: DEVICE, updated: new Date().toISOString(), queue: entry }));
+    noteQueued(env.SALT_QUEUE, key);
+    return true;
+  }
   const resourceInput = POSITION_ENGINE.inputConsumesResource(entry);
   const admissionCheck = async () => {
     if (!resourceInput) return;
