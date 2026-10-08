@@ -8404,6 +8404,15 @@ await (async () => {
     raw2 = (deskCss.replace(dayBlock, "").replace(/--(desk-[\w-]+):[^;}]+;?/g, (all, name) => dayVars.has(name) ? "" : all) + dayBlock).match(RAW) || [];
   ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
   ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
+  /* the system's desk bar was a fixed near-black fill, so in Day its ink title sat on a dark bar (09 Oct 2026): its
+     material is three tokens, Night's values on :root and paper restated for Day, and no raw fill is left */
+  const dsBase = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+  const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1], dayB = (dsBase.match(/:root\[data-time="day"\]\{([^}]*)\}/) || ["", ""])[1];
+  const barB = (dsBase.match(/\.salt-deskbar\{([^}]*)\}/) || ["", ""])[1];
+  const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`) || !dayB.includes(`--salt-deskbar-${k}:`));
+  const barRaw = dsBase.replace(/--salt-deskbar-\w+:[^;}]+;?/g, "").match(/rgba?\((13,11,9|18,15,12)[,)]/g) || [];
+  ok(barToks.length === 0 && barB.includes("background:var(--salt-deskbar-sheen),var(--salt-deskbar-fill)") && barRaw.length === 0,
+    `the desk bar's material is the theme's: sheen, fill and solid on :root and for Day, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
   /* the picker: five radios at the rail's foot, Day hidden while it is held back */
   const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
   const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
