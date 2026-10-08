@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="3a3ade3e98cc26b4";
+var SALT_BUILD_ID="45daa34ed67a1eae";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9017,7 +9017,7 @@ const NON_PLACE={"GEN":"a reseller general bucket, not a person or a place","R":
    yet, so there is nothing to look up.
    THEY STILL COUNT AS GENUINE GAPS, not as excluded by rule. A reseller account will never have
    a place of its own; these two will, the moment someone asks. Only the reason changes. */
-const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this party is, so there is nothing to look up. Ask, then set the location in Names & IDs."};
+const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this party is, so there is nothing to look up. Ask, then set the location in Counter Admin > Amend ID."};
 /* THE OVERRIDE, and only the override. From v347 locOf reads the locality out of the party
    code itself, which is where v237 put it, so this list is no longer the only source and a
    party added since it was last typed no longer falls off the map. It stays for the party
@@ -13228,7 +13228,7 @@ function mapPoints(){
     const role=isSup?'supplier':(a0.indexOf(id)>=0?'associate':'customer');
     const value=isSup?(sup[id]||0):(rev[id]||0);
     if(!pl){const sfx=id.split('-').pop();
-      miss.push({id,t,why:NON_PLACE[sfx]||PLACEHOLDER[sfx]||(t?`no point filed, and suffix "${t}" is not in the gazetteer: open the names and place parties from their recorded places, or use Amend ID`:'no location suffix')});return;}   // v633: the way to fix it
+      miss.push({id,t,why:NON_PLACE[sfx]||PLACEHOLDER[sfx]||(t?`no point filed, and suffix "${t}" is not in the gazetteer: set the location in Counter Admin > Amend ID`:'no location suffix')});return;}   // v633: the way to fix it
     /* placed, but not DRAWN: a party outside the frame is known precisely and is
        reported with distance and bearing rather than squeezed onto a metro canvas */
     if(!inMetro(pl)){far.push({id,role,value,place:pl,t,geo:farFrom(pl)});return;}

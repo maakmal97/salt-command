@@ -47384,17 +47384,21 @@ await (async () => {
   ok(folded.ok && cl && cl.status === "settled" && cl.settledOn === "2099-06-03" && (cl.repaid || [])[0] && cl.repaid[0].rm === 400,
     "and settles the cash loan when the full ringgit owing is repaid");
 })();
-section("v528: retained Coverage explains a to-be-confirmed place without an HTML entity");
+section("v528: retained Coverage directs missing locations to Counter Admin");
 await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   try {
-    w.eval("roster.push('CZ9-TBC');setProd('salt');recompute();switchTab('map');");
+    w.eval("roster.push('CZ9-TBC','CZ9-QZXV');setProd('salt');recompute();switchTab('map');");
     const text = String(w.eval("(document.querySelector('.sec.on')||{}).textContent||''"));
     ok(text.includes("CZ9-TBC") && text.includes("TBC is to be confirmed")
       && text.includes("nobody has recorded where this party is")
-      && text.includes("Names & IDs") && !text.includes("&amp;"),
-      "the retained Coverage reading explains the unfiled TBC place and prints Names & IDs without an entity");
+      && text.includes("Counter Admin > Amend ID") && !text.includes("Names & IDs") && !text.includes("&amp;"),
+      "the retained Coverage TBC reading preserves the missing-place reason and names the actual Counter Admin Amend ID destination");
+    const missing = JSON.parse(w.eval("JSON.stringify(mapPoints().miss.find(function(row){return row.id==='CZ9-QZXV';}))"));
+    ok(missing && missing.why.includes("no point filed") && missing.why.includes('suffix "QZXV" is not in the gazetteer')
+      && missing.why.includes("Counter Admin > Amend ID") && !missing.why.includes("open the names"),
+      "the retained Coverage gazetteer gap points to Counter Admin Amend ID without telling him to open retired names controls");
   } finally { w.close(); }
 })();
 
