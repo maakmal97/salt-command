@@ -1419,7 +1419,13 @@ and `/words` private routes carry the Maker review's offered-again stages and th
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
 checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
-and `inputs/place`. They use the existing Position Engine constructors and drafter checks, go
+and `inputs/place`. On the drift book, `inputs/tier-set` accepts the existing `tierset` shape with a
+numeric `-1..+1` override rounded to two decimals like the Desk (zero is held) or `null` to restore
+automatic record drift; supplier codes
+and resale buckets are excluded; level books retain their tier and band shapes, and fixed books
+remain refused. The Counter shows held versus automatic drift from the seeded snapshot and offers
+no control on fixed books. No pricing is done
+on this road. These inputs use the existing Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
 eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
