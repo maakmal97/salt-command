@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="46e72d262bdbe981";
+var SALT_BUILD_ID="dc9df7af32804971";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -284,11 +284,11 @@ body{margin:0;-webkit-font-smoothing:antialiased;}
    independently and neither one drags the other. */
 .rail{position:sticky;top:22px;
   max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;
-  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;}
+  scrollbar-width:thin;scrollbar-color:color-mix(in srgb, var(--salt-salt) 22%, transparent) transparent;}
 .rail::-webkit-scrollbar{width:7px;}
 .rail::-webkit-scrollbar-track{background:transparent;}
-.rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:999px;}
-.rail:hover::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);}
+.rail::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 16%, transparent);border-radius:999px;}
+.rail:hover::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 28%, transparent);}
 .railbrand{display:flex;align-items:center;gap:11px;padding:2px 4px 14px;border-bottom:1px solid var(--line);margin-bottom:12px;}
 .kick{font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--gold);font-weight:700;}
 .railtitle{font-size:14px;font-weight:800;letter-spacing:-.2px;color:var(--ink);margin-top:1px;}
@@ -296,11 +296,11 @@ body{margin:0;-webkit-font-smoothing:antialiased;}
 .railfoot{border-top:1px solid var(--line);padding-top:10px;margin-top:4px;}
 .tab{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;font-size:13px;font-weight:600;letter-spacing:.2px;padding:8px 11px;border-radius:9px;cursor:pointer;background:none;border:1px solid transparent;color:var(--mut);user-select:none;margin-bottom:2px;font-family:inherit;transition:background .12s,color .12s;}
 .tabghost{color:var(--dim);font-weight:600;}
-.navct{flex:0 0 auto;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:#ffffff14;color:var(--mut);}
+.navct{flex:0 0 auto;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:color-mix(in srgb, var(--salt-salt) 8%, transparent);color:var(--mut);}
 .main{flex:1;min-width:0;}
 h1{margin:2px 0 0;font-size:28px;}
 .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.chip{font-size:11px;padding:4px 10px;border-radius:999px;background:#140b26cc;border:1px solid var(--line);color:var(--mut);}
+.chip{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--salt-glass);border:1px solid var(--line);color:var(--mut);}
 .chip.stamp{margin-left:6px;color:var(--dim);font-variant-numeric:tabular-nums;}
 .chip b{color:var(--ice);}
 .metarow{display:flex;justify-content:space-between;align-items:center;gap:10px;}
@@ -397,19 +397,19 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
 .apcal{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:14px;padding:12px 13px;overflow:visible;}
 .apgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;overflow:visible;}
 .apdow{font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);text-align:center;padding:0 0 3px;}
-.apday{min-height:64px;border:1px solid var(--line);border-radius:8px;padding:3px 3px 4px;background:rgba(0,0,0,.16);position:relative;overflow:visible;}
+.apday{min-height:64px;border:1px solid var(--line);border-radius:8px;padding:3px 3px 4px;background:color-mix(in srgb, var(--salt-ink-on-accent) 16%, transparent);position:relative;overflow:visible;}
 .apday.appast{opacity:.42;}
 .apday.apblank{border-color:transparent;background:transparent;}
 .apday.aptoday{border-color:var(--gold);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday .apdn{font-size:10px;color:var(--dim);text-align:right;padding:1px 3px 2px;font-variant-numeric:tabular-nums;}
 .apday.aptoday .apdn{color:var(--gold);font-weight:600;}
-.apchip{display:block;width:100%;text-align:left;font-size:9px;font-weight:600;letter-spacing:.2px;border-radius:5px;padding:2px 4px;margin-top:2px;cursor:pointer;position:relative;border:1px solid transparent;background:rgba(228,233,236,.13);color:var(--ice);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.apchip{display:block;width:100%;text-align:left;font-size:9px;font-weight:600;letter-spacing:.2px;border-radius:5px;padding:2px 4px;margin-top:2px;cursor:pointer;position:relative;border:1px solid transparent;background:color-mix(in srgb, var(--ice) 13%, transparent);color:var(--ice);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 15%, transparent);color:var(--crim);}
 .apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 15%, transparent);color:var(--gold);}
 .apchip:hover,.apchip:focus{border-color:currentColor;outline:none;}
 .aprail{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
 .aprail .apchip{display:inline-block;width:auto;font-size:10px;padding:4px 8px;margin-top:0;}
-.appop{display:none;position:absolute;z-index:70;top:calc(100% + 5px);width:246px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;box-shadow:0 14px 34px rgba(0,0,0,.6);white-space:normal;cursor:default;font-weight:400;letter-spacing:0;color:var(--ink);}
+.appop{display:none;position:absolute;z-index:70;top:calc(100% + 5px);width:246px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;box-shadow:0 14px 34px color-mix(in srgb, var(--salt-ink-on-accent) 60%, transparent);white-space:normal;cursor:default;font-weight:400;letter-spacing:0;color:var(--ink);}
 .apchip:hover .appop,.apchip:focus .appop,.apchip:focus-within .appop{display:block;}
 .appop.apL{left:0;} .appop.apR{right:0;} .appop.apC{left:50%;transform:translateX(-50%);}
 .appop .apname{font-size:12px;font-weight:600;letter-spacing:.4px;margin-bottom:5px;}
@@ -437,14 +437,14 @@ thead th{position:sticky;top:0;background:var(--salt-slate);color:var(--gold);fo
    Measured at 375px: the six Customers sort headers were 30.9px against a 44px token. */
 table.sortt thead th{height:var(--tap);cursor:pointer;}
 th.l,td.l{text-align:left;color:var(--mut);font-weight:700;position:sticky;left:0;background:var(--salt-slate);}
-tbody td{border-bottom:1px solid #1c2628;color:var(--ink);font-weight:600;}
+tbody td{border-bottom:1px solid color-mix(in srgb, var(--salt-salt) 3%, var(--salt-slate-light));color:var(--ink);font-weight:600;}
 tr.tot td{font-weight:800;background:var(--salt-slate);}
 
 .mono{font-family:ui-monospace,'Cascadia Code',Consolas,'Segoe UI Mono',monospace;font-size:12px;color:var(--ice);}
 .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px;}
 .paid{background:color-mix(in srgb, var(--salt-verdigris) 16%, transparent);color:var(--grn);}
 .unpaid{background:color-mix(in srgb, var(--salt-copper) 16%, transparent);color:var(--amber);}
-.buy{background:rgba(228,233,236,.16);color:var(--ice);}
+.buy{background:color-mix(in srgb, var(--ice) 16%, transparent);color:var(--ice);}
 .sell{background:color-mix(in srgb, var(--salt-steel) 18%, transparent);color:var(--vio);}
 .inkind{background:color-mix(in srgb, var(--salt-brass) 16%, transparent);color:var(--gold);}
 .def{background:color-mix(in srgb, var(--salt-ember) 18%, transparent);color:var(--crim);}
@@ -541,7 +541,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
    INVISIBLE and 30.8px tall while still answering a hit test. A control that can be invisible and
    under the 44px tap contract is worse than a control that does not move, and the fan already
    reads as separate buttons because it is separate buttons. */
-.lmenu button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:var(--tap,44px);padding:0 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--bg0,var(--salt-obsidian));border:1px solid var(--line);border-radius:23px;box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.lmenu button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:var(--tap,44px);padding:0 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--bg0,var(--salt-obsidian));border:1px solid var(--line);border-radius:23px;box-shadow:0 8px 22px color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent);}
 .lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--gold);border-color:var(--gold);}
 .lmenu button.lmore{color:var(--mut);}
 .lpen::after{content:'';position:absolute;top:-5px;right:-3px;width:44px;height:44px;}
@@ -605,7 +605,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
    beneath: grey for a modification (the agreement changed), white for a correction (the record
    was wrong). No hue anywhere in it; the rail and the pill stay as they were, by his choice. */
 .lcol.cqty{display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1.25;}
-.lfig.struck{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.5);color:var(--dim);font-weight:500;}
+.lfig.struck{text-decoration:line-through;text-decoration-color:color-mix(in srgb, var(--salt-salt) 50%, transparent);color:var(--dim);font-weight:500;}
 .lof,.lwas{font-size:11px;font-weight:500;color:var(--dim);font-style:normal;}
 .lwas{text-decoration:line-through;}
 .lwas.corr{color:var(--ink);}
@@ -630,7 +630,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
 .lmove{padding:4px 8px;font-size:13px;color:var(--mut);}
 .lmove .lmdate{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;min-width:46px;white-space:nowrap;}
 .lmove .lmnote{font-size:11px;color:var(--dim);}
-.eref{font-size:11px;color:var(--ice);border:1px solid rgba(228,233,236,.4);border-radius:5px;padding:0 5px;margin-left:2px;white-space:nowrap;}
+.eref{font-size:11px;color:var(--ice);border:1px solid color-mix(in srgb, var(--ice) 40%, transparent);border-radius:5px;padding:0 5px;margin-left:2px;white-space:nowrap;}
 /* ============ A TAP HAS TWO DIMENSIONS, AND THE SECOND ONE COSTS SPACING ============
    THE HIT AREA IS EXTENDED, THE LINK IS NOT. An eref sits INLINE inside a note, so padding
    would paint: the pill has a border and a radius, and 13px of it would put a box the height
@@ -655,13 +655,13 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
   display:inline-block;min-width:var(--tap);text-align:center;}
 .eref.elink::after{content:"";position:absolute;left:0;right:0;top:50%;
   height:var(--tap);transform:translateY(-50%);}
-.eref.elink:hover{background:rgba(228,233,236,.14);}
+.eref.elink:hover{background:color-mix(in srgb, var(--ice) 14%, transparent);}
 .etype{font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:6px;white-space:nowrap;}
-.etype.efulfil{background:rgba(228,233,236,.14);color:var(--ice);}
+.etype.efulfil{background:color-mix(in srgb, var(--ice) 14%, transparent);color:var(--ice);}
 .etype.emod{background:color-mix(in srgb, var(--salt-steel) 16%, transparent);color:var(--vio);}
 .etype.ecancel{background:color-mix(in srgb, var(--salt-ember) 16%, transparent);color:var(--crim);}
 .etype.erewarded{background:color-mix(in srgb, var(--salt-brass) 16%, transparent);color:var(--gold);}
-.etype.elinked{background:rgba(228,233,236,.16);color:var(--ice);}
+.etype.elinked{background:color-mix(in srgb, var(--ice) 16%, transparent);color:var(--ice);}
 .pnil{color:var(--dim);}
 /* ============ LEDGER ON A PHONE (v307) ============
    The first tab taken to the lite treatment, and the job turned out to be a quarter of what
@@ -695,7 +695,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
 /* v493: the card's state tint moved to design/desk.css, the layer that owns colour. */
 .lopen,.lclose{border-left:0;}
 
-.insight{background:linear-gradient(120deg,rgba(228,233,236,.07),transparent);border:1px solid var(--line);border-left:3px solid var(--ice);border-radius:10px;padding:11px 14px;margin:10px 0;font-size:13px;color:#e4e9ec;}
+.insight{background:linear-gradient(120deg,color-mix(in srgb, var(--ice) 7%, transparent),transparent);border:1px solid var(--line);border-left:3px solid var(--ice);border-radius:10px;padding:11px 14px;margin:10px 0;font-size:13px;color:var(--ice);}
 .insight b{color:var(--ice);}
 /* v114: network stream diagram */
 .netmap{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:2px 0 0;}
@@ -711,7 +711,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
 .nchip{font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--ink);white-space:nowrap;}
 .nchip.nv{border-color:var(--vio);color:var(--salt-steel);}
 .nchip.ng{border-color:var(--grn);color:var(--salt-verdigris);}
-.nchip.ni{border-color:var(--ice);color:#e4e9ec;}
+.nchip.ni{border-color:var(--ice);color:var(--ice);}
 .nchip.ngold{background:linear-gradient(135deg,var(--gold),var(--amber));color:var(--salt-ink-on-accent);border-color:transparent;box-shadow:0 8px 20px -12px var(--gold);}
 .nop{font-size:15px;font-weight:800;color:var(--dim);}
 .nbranch{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-left:4px;padding-left:12px;border-left:1px dashed var(--line);}
@@ -730,7 +730,7 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
 
 
 
-.pend{margin-top:14px;border-radius:15px;padding:14px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(228,233,236,.08),color-mix(in srgb, var(--salt-verdigris) 5%, transparent));border:1px dashed rgba(228,233,236,.4);}
+.pend{margin-top:14px;border-radius:15px;padding:14px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb, var(--ice) 8%, transparent),color-mix(in srgb, var(--salt-verdigris) 5%, transparent));border:1px dashed color-mix(in srgb, var(--ice) 40%, transparent);}
 .pend.def{background:linear-gradient(135deg,color-mix(in srgb, var(--salt-ember) 12%, transparent),color-mix(in srgb, var(--salt-copper) 6%, transparent));border-color:color-mix(in srgb, var(--salt-ember) 50%, transparent);}
 .pend h3{margin:0 0 3px;font-size:14px;color:var(--ice);display:flex;align-items:center;gap:8px;}
 .pend.def h3{color:var(--crim);}
@@ -754,12 +754,12 @@ details.obsec>summary .ct.zero{color:var(--dim);}
 .vnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;}
 .vpill{font:inherit;font-size:12px;font-weight:700;letter-spacing:.2px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--salt-obsidian);color:var(--mut);cursor:pointer;transition:color .12s,border-color .12s;}
 .vpill:hover{color:var(--ink);}
-.vpill.on{border-color:var(--acc,var(--gold));color:var(--ink);background:rgba(255,255,255,.07);}
+.vpill.on{border-color:var(--acc,var(--gold));color:var(--ink);background:color-mix(in srgb, var(--salt-salt) 7%, transparent);}
 .subs{display:none;margin:-1px 0 7px 12px;padding-left:9px;border-left:1px solid var(--line);}
 .tab.on+.subs{display:block;}
 .sub{display:block;width:100%;text-align:left;font:inherit;font-size:11.5px;font-weight:600;color:var(--dim);background:none;border:1px solid transparent;padding:4px 8px;border-radius:7px;cursor:pointer;}
 .sub:hover{color:var(--ink);}
-.sub.on{color:var(--ink);background:rgba(255,255,255,.06);}
+.sub.on{color:var(--ink);background:color-mix(in srgb, var(--salt-salt) 6%, transparent);}
 /* v371: the sub-parts were hidden below 860px because they made no sense inside a flat
    strip of buttons. The narrow rail is the upright rail again, so they come back and the
    active view's parts are one tap away there exactly as they are on the wide desk. */
@@ -791,10 +791,10 @@ details.rcard>summary .rsum b{color:var(--ink);}
   border:1px solid currentColor;line-height:1.5;vertical-align:middle;
   margin-left:8px;margin-right:2px;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .tierpill .pd{width:5px;height:5px;border-radius:50%;background:currentColor;}
-.tierpill.t1{color:#e4e9ec;background:color-mix(in srgb, var(--salt-salt) 10%, transparent);
+.tierpill.t1{color:var(--ice);background:color-mix(in srgb, var(--salt-salt) 10%, transparent);
   box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 35%, transparent),0 0 14px -2px color-mix(in srgb, var(--salt-salt) 85%, transparent);}
-.tierpill.t2{color:var(--salt-brass-soft);background:rgba(216,199,156,.09);
-  box-shadow:0 0 0 1px rgba(216,199,156,.28),0 0 11px -3px rgba(216,199,156,.65);}
+.tierpill.t2{color:var(--salt-brass-soft);background:color-mix(in srgb, var(--salt-brass-soft) 9%, transparent);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-brass-soft) 28%, transparent),0 0 11px -3px color-mix(in srgb, var(--salt-brass-soft) 65%, transparent);}
 .tierpill.t3{color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);
   box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-brass) 20%, transparent),0 0 8px -3px color-mix(in srgb, var(--salt-brass) 45%, transparent);}
 @media (prefers-reduced-motion:no-preference){
@@ -844,7 +844,7 @@ details.rcard>summary .rsum b{color:var(--ink);}
 .exitbtn{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.4px;cursor:pointer;
   padding:4px 11px;border-radius:999px;background:transparent;border:1px solid var(--line);
   color:var(--dim);display:inline-flex;align-items:center;gap:5px;}
-.exitbtn:hover{color:#e08a72;border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
+.exitbtn:hover{color:color-mix(in srgb, var(--salt-ember) 75%, var(--salt-salt));border-color:color-mix(in srgb, var(--salt-ember) 55%, transparent);background:color-mix(in srgb, var(--salt-ember) 8%, transparent);}
 /* v257: PINNED TO THE VIEWPORT, NOT TO THE PAGE. In the header it scrolled away, so on a long
    tab the way out was wherever you had last scrolled from. Fixed at the top left it is in the
    same place from every tab and every scroll position.
@@ -887,25 +887,25 @@ td.l{white-space:nowrap;}
    not as another status pill competing with Pending and Completed. */
 .prodtag{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:800;
   letter-spacing:.9px;text-transform:uppercase;padding:3px 9px;border-radius:7px;
-  border:1px solid rgba(255,255,255,.09);vertical-align:middle;white-space:nowrap;
-  background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.015));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(0,0,0,.42),0 1px 2px rgba(0,0,0,.38);
-  text-shadow:0 1px 0 rgba(0,0,0,.5);}
+  border:1px solid color-mix(in srgb, var(--salt-salt) 9%, transparent);vertical-align:middle;white-space:nowrap;
+  background:linear-gradient(180deg,color-mix(in srgb, var(--salt-salt) 11%, transparent),color-mix(in srgb, var(--salt-salt) 1.5%, transparent));
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 24%, transparent),inset 0 -1px 0 color-mix(in srgb, var(--salt-ink-on-accent) 42%, transparent),0 1px 2px color-mix(in srgb, var(--salt-ink-on-accent) 38%, transparent);
+  text-shadow:0 1px 0 color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent);}
 .prodtag .gl{width:7px;height:7px;flex:0 0 auto;border-radius:50%;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 6px -1px currentColor;background:currentColor;}
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 50%, transparent),0 0 6px -1px currentColor;background:currentColor;}
 .lagreed{font-size:11px;color:var(--dim);}
 .lqb{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;
   padding:9px 14px;min-height:var(--tap);border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--mut);}
 .lqb:hover{border-color:currentColor;}
 .lqb.qpaid{color:var(--salt-verdigris);}
-.lqb.qdeliv{color:#e4e9ec;}
+.lqb.qdeliv{color:var(--ice);}
 .lqb.qdone{color:var(--gold);border-color:color-mix(in srgb, var(--salt-brass) 45%, transparent);}
 .lqb.qdone:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);}
-.gem{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:999px;color:var(--salt-ink-on-accent);background:linear-gradient(135deg,#e4e9ec,#e4e9ec);box-shadow:0 0 0 1px rgba(228,233,236,.55),0 2px 12px -2px rgba(228,233,236,.75);}
+.gem{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:999px;color:var(--salt-ink-on-accent);background:linear-gradient(135deg,var(--ice),var(--ice));box-shadow:0 0 0 1px color-mix(in srgb, var(--ice) 55%, transparent),0 2px 12px -2px color-mix(in srgb, var(--ice) 75%, transparent);}
 .starpill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px;color:var(--salt-ink-on-accent);}
 .starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:0 2px 10px -3px color-mix(in srgb, var(--salt-brass) 70%, transparent);}
 .starpill.s2{background:linear-gradient(135deg,var(--salt-copper),var(--salt-copper));box-shadow:0 2px 10px -3px color-mix(in srgb, var(--salt-copper) 70%, transparent);}
-.starpill.s3{background:linear-gradient(135deg,#e08a72,var(--salt-ember));box-shadow:0 2px 12px -2px color-mix(in srgb, var(--salt-ember) 80%, transparent);}
+.starpill.s3{background:linear-gradient(135deg,color-mix(in srgb, var(--salt-ember) 75%, var(--salt-salt)),var(--salt-ember));box-shadow:0 2px 12px -2px color-mix(in srgb, var(--salt-ember) 80%, transparent);}
 
 
 .quotecard{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;}
@@ -916,7 +916,7 @@ td.l{white-space:nowrap;}
 .qfield select:focus,.qfield input:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 18%, transparent);}
 .qout{margin-top:14px;}
 .qmeta{margin-top:11px;font-size:13px;color:var(--mut);}
-.warnpill{display:inline-block;background:color-mix(in srgb, var(--salt-ember) 14%, transparent);border:1px solid var(--crim);color:#e08a72;font-weight:700;font-size:12px;padding:5px 11px;border-radius:9px;}
+.warnpill{display:inline-block;background:color-mix(in srgb, var(--salt-ember) 14%, transparent);border:1px solid var(--crim);color:color-mix(in srgb, var(--salt-ember) 75%, var(--salt-salt));font-weight:700;font-size:12px;padding:5px 11px;border-radius:9px;}
 .badge{font-size:12px;font-weight:800;color:var(--salt-ink-on-accent);background:var(--gold);border-radius:8px;padding:4px 10px;}
 select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:14px;font-weight:600;color:var(--ink);background-color:var(--salt-obsidian);cursor:pointer;}
 .viewsw{display:inline-flex;background:var(--salt-obsidian);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
@@ -993,16 +993,16 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .fintab th,.fintab td{padding:7px 9px;font-size:13px;text-align:right;border-bottom:1px solid var(--line);}
 .fintab th.l,.fintab td.l{text-align:left;}
 .fintab th{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);}
-.fintab .fy{background:#ffffff08;font-weight:700;}
+.fintab .fy{background:color-mix(in srgb, var(--salt-salt) 3%, transparent);font-weight:700;}
 .fintab tr.tot td{border-top:1px solid var(--acc);border-bottom:none;}
 .fintab tr.grp td{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);border-top:1px solid var(--line);padding-top:12px;}
 .finpct{display:block;font-size:10px;font-style:normal;color:var(--dim);}
 .evo{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:14px;padding:6px 4px;}
-.evo .row{display:flex;gap:12px;padding:10px 14px;border-bottom:1px solid #1c2628;align-items:flex-start;}
+.evo .row{display:flex;gap:12px;padding:10px 14px;border-bottom:1px solid color-mix(in srgb, var(--salt-salt) 3%, var(--salt-slate-light));align-items:flex-start;}
 .evo .row:last-child{border-bottom:none;}
 .evo .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb, var(--salt-brass) 15%, transparent);}
 .evo .v{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--gold);flex:0 0 42px;margin-top:3px;}
-.evo .txt{font-size:13px;color:#e4e9ec;}
+.evo .txt{font-size:13px;color:var(--ice);}
 .evo .txt b{color:var(--ink);}
 .note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,color-mix(in srgb, var(--salt-brass) 8%, transparent),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .note b{color:var(--gold);}
@@ -1044,7 +1044,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   color:var(--sev,var(--dim));padding-top:3px;}
 .actt{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;}
 .actw{font-size:12px;color:var(--mut);line-height:1.55;margin-top:5px;}
-.actw b{color:#e4e9ec;}
+.actw b{color:var(--ice);}
 .actm{font-family:ui-monospace,Consolas,monospace;font-size:15px;font-weight:700;
   color:var(--ink);white-space:nowrap;text-align:right;padding-top:2px;}
 .actm.nil{color:var(--dim);font-weight:400;font-size:13px;}
@@ -1058,7 +1058,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .actp{font-size:12px;color:var(--dim);line-height:1.5;margin-top:6px;}
 /* share of the money at stake, drawn rather than ranked in the head. Pure CSS, so it
    survives Chart.js failing to load, which the charts on this desk cannot. */
-.actbar{grid-column:1/-1;height:3px;border-radius:99px;background:rgba(255,255,255,.05);
+.actbar{grid-column:1/-1;height:3px;border-radius:99px;background:color-mix(in srgb, var(--salt-salt) 5%, transparent);
   margin-top:10px;overflow:hidden;}
 .actbar i{display:block;height:100%;border-radius:99px;background:var(--sev,var(--dim));
   opacity:.55;}
@@ -1160,7 +1160,7 @@ td,th,.dsc,.evo .txt,.n,.rsum,.pend h3{overflow-wrap:break-word;}
 .chip,.sbadge,.viewsw,.navct{border-radius:var(--pill);}
 /* FOCUS. There was none. Every control is now keyboard-reachable with a visible ring. */
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{
-  outline:2px solid #e4e9ec;outline-offset:2px;border-radius:6px;}
+  outline:2px solid var(--ice);outline-offset:2px;border-radius:6px;}
 :where(a,button,summary,input,select,textarea):focus:not(:focus-visible){outline:none;}
 /* DROPDOWNS. Left native, a select is the one control on this page drawn from the SYSTEM
    palette: a bevelled grey button and a white, square-cornered option list with a blue
@@ -1203,9 +1203,9 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .prodsw{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px;}
 .prodsw button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:150px;min-height:var(--tap);
   padding:8px 10px;border-radius:10px;cursor:pointer;text-align:left;
-  background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--mut);
+  background:color-mix(in srgb, var(--salt-salt) 3%, transparent);border:1px solid var(--line);color:var(--mut);
   font:600 12.5px/1.2 inherit;letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s;}
-.prodsw button:hover{background:rgba(255,255,255,.06);color:var(--ink);}
+.prodsw button:hover{background:color-mix(in srgb, var(--salt-salt) 6%, transparent);color:var(--ink);}
 .prodsw button .pdot{width:8px;height:8px;border-radius:50%;flex:0 0 8px;}
 .prodsw button .pnm{flex:1;}
 .prodsw button .pv{font-weight:500;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums;}
@@ -1252,11 +1252,11 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
    rides a left edge rather than filling the card, so a tab of them still reads as a list
    instead of a set of alarms. */
 details.obs{border:1px solid var(--line);border-left:3px solid var(--sev,var(--ice));
-  border-radius:10px;margin-bottom:7px;background:rgba(0,0,0,.13);}
+  border-radius:10px;margin-bottom:7px;background:color-mix(in srgb, var(--salt-ink-on-accent) 13%, transparent);}
 details.obs>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;
   padding:10px 13px;font-size:13px;}
 details.obs>summary::-webkit-details-marker{display:none;}
-details.obs>summary:hover{background:#ffffff08;border-radius:8px;}
+details.obs>summary:hover{background:color-mix(in srgb, var(--salt-salt) 3%, transparent);border-radius:8px;}
 .obsk{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:800;color:var(--sev,var(--ice));
   flex:0 0 42px;}
 .obst{font-weight:600;color:var(--ink);flex:1;min-width:0;}
@@ -1264,7 +1264,7 @@ details.obs>summary:hover{background:#ffffff08;border-radius:8px;}
 .obsm.nil{color:var(--dim);font-weight:600;}
 .obsc{font-size:9px;letter-spacing:.8px;text-transform:uppercase;font-weight:700;color:var(--dim);
   border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;cursor:help;}
-.obsb{padding:2px 13px 13px;font-size:12.5px;color:#e4e9ec;line-height:1.55;}
+.obsb{padding:2px 13px 13px;font-size:12.5px;color:var(--ice);line-height:1.55;}
 .obsev{border-top:1px dashed var(--line);padding-top:9px;margin-top:4px;}
 .obsevh{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:5px;}
 .obsev ul{margin:0;padding-left:17px;}
@@ -1292,26 +1292,26 @@ details.obshush:hover{opacity:.85;}
 .totop{position:fixed;left:calc(22px + var(--safeleft));right:auto;bottom:calc(22px + var(--safebot));z-index:40;
   width:46px;height:46px;border-radius:50%;cursor:pointer;
   display:grid;place-items:center;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.20);
+  background:color-mix(in srgb, var(--salt-salt) 7%, transparent);
+  border:1px solid color-mix(in srgb, var(--salt-salt) 20%, transparent);
   color:var(--ice);font-size:17px;line-height:1;font-family:inherit;
   -webkit-backdrop-filter:blur(16px) saturate(1.6);backdrop-filter:blur(16px) saturate(1.6);
-  box-shadow:0 0 18px -2px rgba(228,233,236,.42), 0 10px 30px -12px rgba(0,0,0,.8),
-             inset 0 1px 0 rgba(255,255,255,.28);
+  box-shadow:0 0 18px -2px color-mix(in srgb, var(--ice) 42%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--salt-ink-on-accent) 80%, transparent),
+             inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 28%, transparent);
   opacity:0;pointer-events:none;transform:translateY(12px) scale(.9);
   transition:opacity .22s ease,transform .22s ease,box-shadow .22s ease,background .22s ease;}
 .totop.on{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);
   animation:totopGlow 3.2s ease-in-out infinite;}
-.totop:hover{background:rgba(255,255,255,.13);border-color:rgba(228,233,236,.5);
-  box-shadow:0 0 30px 0 rgba(228,233,236,.6), 0 12px 34px -12px rgba(0,0,0,.85),
-             inset 0 1px 0 rgba(255,255,255,.34);}
+.totop:hover{background:color-mix(in srgb, var(--salt-salt) 13%, transparent);border-color:color-mix(in srgb, var(--ice) 50%, transparent);
+  box-shadow:0 0 30px 0 color-mix(in srgb, var(--ice) 60%, transparent), 0 12px 34px -12px color-mix(in srgb, var(--salt-ink-on-accent) 85%, transparent),
+             inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 34%, transparent);}
 .totop:active{transform:translateY(1px) scale(.96);}
 .totop:focus-visible{outline:2px solid var(--ice);outline-offset:3px;}
 @keyframes totopGlow{
-  0%,100%{box-shadow:0 0 16px -3px rgba(228,233,236,.34), 0 10px 30px -12px rgba(0,0,0,.8),
-                     inset 0 1px 0 rgba(255,255,255,.28);}
-  50%    {box-shadow:0 0 27px 1px rgba(228,233,236,.58), 0 10px 30px -12px rgba(0,0,0,.8),
-                     inset 0 1px 0 rgba(255,255,255,.28);}}
+  0%,100%{box-shadow:0 0 16px -3px color-mix(in srgb, var(--ice) 34%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--salt-ink-on-accent) 80%, transparent),
+                     inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 28%, transparent);}
+  50%    {box-shadow:0 0 27px 1px color-mix(in srgb, var(--ice) 58%, transparent), 0 10px 30px -12px color-mix(in srgb, var(--salt-ink-on-accent) 80%, transparent),
+                     inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 28%, transparent);}}
 @media (prefers-reduced-transparency:reduce){
   .totop{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
     background:color-mix(in srgb, var(--salt-slate) 97%, transparent)!important;}}
@@ -1339,9 +1339,9 @@ details.obshush:hover{opacity:.85;}
    The rail becomes ONE scrolling row rather than a wrapped block of fifteen buttons, which
    on a 390px screen pushed the content most of a screen down before it began. */
 .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
-  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;}
+  scrollbar-width:thin;scrollbar-color:color-mix(in srgb, var(--salt-salt) 20%, transparent) transparent;}
 .tscroll::-webkit-scrollbar{height:6px;}
-.tscroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:999px;}
+.tscroll::-webkit-scrollbar-thumb{background:color-mix(in srgb, var(--salt-salt) 16%, transparent);border-radius:999px;}
 /* v773, HIS INSTRUCTION OF 21 SEP 2026, over a picture of the board with BRONZE half off the
    screen: THE COLUMN'S MEANING IS A HINT, NOT A SECOND LINE. Three headings carried a 9px line
    saying what the column was, and a nine-word line holds a column open at the width of its
@@ -1361,7 +1361,7 @@ details.obshush:hover{opacity:.85;}
   display:none;z-index:6;width:max-content;max-width:190px;white-space:normal;text-align:left;
   font-size:10.5px;font-weight:400;letter-spacing:0;text-transform:none;line-height:1.35;
   text-decoration:none;color:var(--ink);background:var(--pane);border:1px solid var(--line);
-  border-radius:7px;padding:5px 8px;box-shadow:0 8px 20px rgba(0,0,0,.45);}
+  border-radius:7px;padding:5px 8px;box-shadow:0 8px 20px color-mix(in srgb, var(--salt-ink-on-accent) 45%, transparent);}
 .pxboard th.hs:hover .hb,.pxboard th.hs:focus .hb,.pxboard th.hs:focus-within .hb{display:block;}
 .pxboard th.hs.r .hb{left:auto;right:0;transform:none;}
 
@@ -1549,7 +1549,7 @@ body.navopen .wrap{z-index:97;}
 .fabtn{position:fixed;z-index:96;width:46px;height:46px;border-radius:50%;cursor:pointer;padding:0;
   display:grid;place-items:center;color:var(--gold);font-family:inherit;
   background:linear-gradient(165deg,var(--railA,var(--salt-slate)),var(--railB,var(--salt-obsidian))),var(--bg0);
-  border:1px solid var(--line);box-shadow:0 14px 34px -12px #000,var(--gloss);
+  border:1px solid var(--line);box-shadow:0 14px 34px -12px var(--salt-ink-on-accent),var(--gloss);
   transition:transform .18s ease,border-color .18s ease;}
 .fabtn:hover{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);}
 .fabtn:active{transform:scale(.94);}
@@ -1642,7 +1642,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 /* METERS. A bar is a figure, so it gets the same care: a well-inset track, a lit fill,
    and a fill-from-zero settle. scaleX, not width, so nothing reflows. */
 .mbar{height:10px;border-radius:999px;background:var(--wellbg);
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.05);}
+  box-shadow:inset 0 1px 3px color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent),inset 0 0 0 1px color-mix(in srgb, var(--salt-salt) 5%, transparent);}
 .mbar>span{border-radius:999px;transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
 .actbar{height:4px;}
 .actbar i{transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
@@ -4049,7 +4049,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
    twice in the old layers, once as a radius and once as a fill; it is a radius here. ---- */
 html[data-tod="register"],:root{
   --bg0:var(--salt-obsidian);
-  --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
+  --card:var(--salt-glass);--card2:color-mix(in srgb, var(--salt-salt) 4.5%, transparent);--line:var(--salt-line);
   --ink:var(--salt-salt);--mut:var(--salt-mist-bright);--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
   /* ---- v557 (his instruction of 09 Sep 2026): a TRUE ALARM, clear of the decoration. --crim and --rose
@@ -4066,7 +4066,7 @@ html[data-tod="register"],:root{
   --r:var(--salt-radius-lg);--r-sm:var(--salt-radius-md);--pill:999px;--tap:var(--salt-tap);
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
-  --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
+  --railA:color-mix(in srgb, var(--salt-salt) 3.5%, transparent);--railB:color-mix(in srgb, var(--salt-salt) 2%, transparent);
   /* v567: THE STICKY TABLE SURFACES ARE WARM AND FULLY OPAQUE. --salt-veil is cold and floats OVER the
      page; these sit INSIDE a card the aurora lights warm, and he caught the ORDERS column legible through
      the band labels at .62, while the .86 it replaced already passed 14 per cent. The fill is the
@@ -4228,7 +4228,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 /* the parts strip is the system's .salt-tabs__pill (22 Sep 2026), its open pill read off aria-selected */
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
 .viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
-.viewsw button.on{background:rgba(255,255,255,.08);color:var(--salt-salt);}
+.viewsw button.on{background:color-mix(in srgb, var(--salt-salt) 8%, transparent);color:var(--salt-salt);}
 .viewsw.mini button{font-size:10.5px;}
 
 /* ---- 7. BUTTONS. The pill books or produces; everything else is a ghost. ---- */
@@ -4304,7 +4304,7 @@ input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
-select:hover{background-color:rgba(0,0,0,.36);}
+select:hover{background-color:color-mix(in srgb, var(--salt-ink-on-accent) 36%, transparent);}
 option,optgroup{background-color:var(--salt-slate);color:var(--salt-salt);}
 option:checked{background-color:var(--salt-slate-light);}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
@@ -4385,7 +4385,7 @@ tr.tot td{font-weight:500;background:color-mix(in srgb, var(--salt-brass) 7%, tr
    the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
    rather than by reading this file, which is the only way a cascade fault of this shape shows. */
 tr.tot td.l{background:linear-gradient(color-mix(in srgb, var(--salt-brass) 7%, transparent),color-mix(in srgb, var(--salt-brass) 7%, transparent)),var(--panel);}
-tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
+tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, transparent);}
 .fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
 .fintab tr.tot td{border-top-color:var(--salt-brass);}
@@ -4503,7 +4503,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent);}
 .tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
 .tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
-.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),#c9d3d8);
+.gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),color-mix(in srgb, var(--salt-product-salt) 76%, var(--salt-mist)));
   box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 40%, transparent);}
 .starpill{font-weight:700;letter-spacing:.12em;color:var(--salt-obsidian);}
 .starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
@@ -4577,7 +4577,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .apday{border-color:var(--salt-line-faint);background:var(--salt-glass-faint);}
 .apday.aptoday{border-color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
 .apday.aptoday .apdn{color:var(--salt-brass);}
-.apchip{font-weight:500;letter-spacing:.04em;background:rgba(228,233,236,.10);color:var(--salt-product-salt);}
+.apchip{font-weight:500;letter-spacing:.04em;background:color-mix(in srgb, var(--ice) 10%, transparent);color:var(--salt-product-salt);}
 .apchip.apowes{background:color-mix(in srgb, var(--salt-ember) 14%, transparent);color:var(--salt-ember);}
 .apchip.aplate{background:color-mix(in srgb, var(--salt-brass) 14%, transparent);color:var(--salt-brass);}
 .appop{background:var(--salt-veil);border-color:var(--salt-line-strong);}
@@ -4709,7 +4709,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 /* v565: the ground moved from the container to each pill, because the fan is pills now. The last
    rule keyed on :last-child, which named More only while More happened to be last; it keys on the
    role. */
-.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent);}
 .lmenu button:hover,.lmenu button:focus-visible{background:color-mix(in srgb, var(--salt-brass) 12%, transparent);color:var(--salt-brass);border-color:var(--salt-brass);}
 .lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}

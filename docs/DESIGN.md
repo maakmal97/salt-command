@@ -224,9 +224,12 @@ transparent)`, which is the same pixel at Night, and the ink on a filled control
 shot, which proves the instrument saw a theme.
 
 **Day is held back** (`<html data-time-day="off">`, which salt-time.js reads: Dawn stands in by the clock
-and when Day is held). What remains before it can show: the white and black tints (`rgba(255,255,255,a)`,
-`rgba(0,0,0,a)`), the light text hexes the older layers write (`#e4e9ec`, `#e08a72`), and the chart and map
-colours in the desk's script. That is the next fold; then the attribute goes.
+and when Day is held). 06 Oct 2026: the white and black tints and the light text hexes in the desk's own CSS
+are tokens (a white tint is `color-mix(in srgb, var(--salt-salt) N%, transparent)`, a black one the same on
+`--salt-ink-on-accent`, which is dark in every theme; `#e4e9ec` is `--ice`, `#e08a72` a mix of ember into salt);
+the suite fails if one returns, the print block excepted. Night measured the same by `renderdiff` (34 of 34).
+What remains before Day can show: the chart and map colours in the desk's script, and the system's own
+`.salt-deskbar`, whose dark fill and title do not follow the theme. Then the attribute goes.
 
 ## The brand
 
