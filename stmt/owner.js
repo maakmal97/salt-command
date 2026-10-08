@@ -1579,6 +1579,29 @@ export const OWNER_JS = `
       }catch(error){idPass.value='';idStatus.textContent=error.message;}
       idBusy=false;
     },true);
+    var appointment=el('section','maker-input');appointment.appendChild(el('h3',null,'Appoint existing customer'));
+    appointment.appendChild(el('p','msg','The existing ID, name and place stay as filed. The appointment changes no customer identity and waits for approval and folding.'));
+    parent.appendChild(appointment);
+    var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
+    var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':'No eligible customer'}]
+      .concat(appointmentCustomers.map(function(code){return {value:code,label:code};}));
+    var appointmentCustomer=addSelect(appointment,'Existing customer',appointmentCustomerItems);
+    var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
+      return {value:item.kind,label:item.kind.charAt(0).toUpperCase()+item.kind.slice(1)+' · '+item.stream};
+    });
+    var appointmentRoleItems=[{value:'',label:'Choose an appointment role'}].concat(appointmentKinds);
+    var appointmentRole=addSelect(appointment,'Appointment role',appointmentRoleItems);
+    var appointmentStatus=makerStatus(appointment);
+    makerButton(appointment,'Send appointment for review',async function(send){
+      var code=appointmentCustomer.value, kind=appointmentRole.value;
+      if(!code||!kind){appointmentStatus.textContent='Choose an existing customer and appointment role.';return;}
+      await send('/all/maker/inputs/appoint-existing',{at:new Date().toISOString(),code:code,kind:kind});
+      var option=[].filter.call(appointmentCustomer.options,function(item){return item.value===code;})[0];
+      if(option)option.remove();
+      appointmentCustomer.value='';
+      appointmentStatus.textContent='Sent for review. The existing identity is unchanged until the appointment is approved and folded.';
+      loadMaker();
+    },true);
     var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
     amend.appendChild(el('p','msg','Names and filed addresses are re-keyed and encrypted here. Choose the locality; an optional map link replaces the encrypted address. Only codes and the rounded locality point are queued.'));
     parent.appendChild(amend);

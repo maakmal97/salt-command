@@ -50692,6 +50692,11 @@ await (async () => {
   await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter existing-customer appointment: selector, immutable retry and native fold");
+await (async () => {
+  await (await import("./maker-existing-appointment.mjs")).run({ ok });
+})();
+
 section("Counter multi-book trade: owner controls, shared trip and native fold");
 await (async () => {
   await (await import("./maker-trades.mjs")).run({ ok, pageWork });

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Supplier exclusion uses purchase history",
+    "file": "src\\worker.js",
+    "find": "|| suppliers.has(code) ||",
+    "replace": "|| false ||"
+  },
+  {
+    "name": "Departed and banned customers stay out",
+    "file": "src\\worker.js",
+    "find": "|| departed.has(code) || banned.has(code)",
+    "replace": "|| false"
+  },
+  {
+    "name": "Appointment input rejects extra fields",
+    "file": "src\\worker.js",
+    "find": "Object.keys(body).length !== 3",
+    "replace": "Object.keys(body).length < 3"
+  },
+  {
+    "name": "Retained appointment records require the strict appointment whitelist",
+    "file": "engine\\position.mjs",
+    "find": "if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))",
+    "replace": "if(false&&(Object.keys(record).some(k=>!['path','body'].includes(k))"
+  },
+  {
+    "name": "Native fold applies an existing-customer appointment",
+    "file": "tools\\fold.mjs",
+    "find": "if (rr.appoint) {",
+    "replace": "if (false && rr.appoint) {"
+  },
+  {
+    "name": "Appointments do not create downstream money rows",
+    "file": "tools\\fold.mjs",
+    "find": "if (rr.appoint) {",
+    "replace": "if (rr.appoint) { book.sales.push({ rid: \"appointment-mutation\", customer: rr.code, product: \"salt\", date: \"2099-10-05\", qty: 0, total: 0, cash: 0 });"
+  },
+  {
+    "name": "Appointments do not overwrite an existing customer's place",
+    "file": "tools\\fold.mjs",
+    "find": "if (rr.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo; }",
+    "replace": "if (rr.geo || rr.appoint) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo || [0, 0]; }"
+  },
+  {
+    "name": "Appointment preserves an existing statement account",
+    "file": "tools\\fold.mjs",
+    "find": "&& !users[r.code]) {",
+    "replace": "&& true) {"
+  },
+  {
+    "name": "Only native appointment roles are offered",
+    "file": "src\\worker.js",
+    "find": "catalog.appointmentKinds = makerAppointmentKinds.map((kind) => ({",
+    "replace": "catalog.appointmentKinds = makerAppointmentKinds.concat('customer').map((kind) => ({"
+  },
+  {
+    "name": "Generic Add ID still rejects a roster duplicate",
+    "file": "src\\maker-inputs.js",
+    "find": "if (roster.includes(body.code)) return { error: \"That code is already on the roster.\" };",
+    "replace": "if (false) return { error: \"That code is already on the roster.\" };"
+  },
+  {
+    "name": "A request id cannot change appointment role",
+    "file": "src\\maker-request.js",
+    "find": "if (stored.operation !== operation || stored.fingerprint !== fingerprint)\n    return { error: \"That request timestamp already names another input. Restore the original input or start a new one.\" };",
+    "replace": "if (stored.operation !== operation)\n    return { error: \"That request timestamp already names another input. Restore the original input or start a new one.\" };"
+  },
+  {
+    "name": "Concurrent appointments reserve one code atomically",
+    "file": "src\\maker-request.js",
+    "find": "if (result.meta.changes === 1) return { claimed: true };",
+    "replace": "if (result.meta.changes >= 0) return { claimed: true };"
+  },
+  {
+    "name": "UI sends no name or place",
+    "file": "stmt\\owner.js",
+    "find": "kind:kind});",
+    "replace": "kind:kind,name:'Invented'});"
+  }
+]
