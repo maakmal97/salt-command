@@ -83,6 +83,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      27 Sep 2026). **A product with no tier or drift is not priced.** One rule, the engine's `cardPrice`:
      the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
      reads the snapshot's `cards` on a drift book.
+   - **A partner pays cost** (his decision of 06 Oct 2026): a party in the book's `partners` is quoted the floor itself, to the
+     sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
+     `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
+     walks every customer leaves them out. Set in `ledger/book.json` only; `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes
