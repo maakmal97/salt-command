@@ -317,6 +317,19 @@ export async function run({ ok }) {
     page.dom.window.close();
     wd.sqlite.close();
   }
+  const unreadable = fixture();
+  try {
+    unreadable.map.set("q:broken-device", "{not json");
+    const answer = await unreadable.call("/all/maker/inputs");
+    const read = await answer.json();
+    check(answer.status === 200 && read.ok === true && read.catalog.parties.length > 0
+      && Array.isArray(read.catalog.products) && Array.isArray(read.catalog.appointmentCustomers)
+      && read.catalog.appointmentCustomers.length === 0 && typeof read.catalog.appointmentNotice === "string",
+    "one unreadable queue key withholds the appointment list with a notice and leaves the trade catalogue whole: "
+      + answer.status);
+  } finally {
+    unreadable.sqlite.close();
+  }
   const claimRace = fixture();
   try {
     const at = ["2099-10-05T02:00:00.000Z", "2099-10-05T02:00:01.000Z"];

@@ -88,5 +88,11 @@
     "file": "src/worker.js",
     "find": "      || appointments.has(code)) return false;",
     "replace": "      || !(book.sales || []).some((row) => row && row.customer === code) || appointments.has(code)) return false;"
+  },
+  {
+    "name": "An unreadable queue key does not blank the catalogue",
+    "file": "src/worker.js",
+    "find": "      catalog.appointmentNotice = \"Appointments are unavailable until the Desk queue can be read.\";",
+    "replace": "      return json({ ok: false, error: String(error && error.message || error) }, 503);"
   }
 ]

@@ -601,7 +601,10 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         kind, stream: POSITION_ENGINE.ADDID_APPOINTS[kind]
       }));
     } catch (error) {
-      return json({ ok: false, error: String(error && error.message || error) }, 503);
+      /* the appointment list alone is withheld: an unreadable queue key must not blank the trade catalogue */
+      catalog.appointmentCustomers = [];
+      catalog.appointmentKinds = [];
+      catalog.appointmentNotice = "Appointments are unavailable until the Desk queue can be read.";
     }
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
       catalog });

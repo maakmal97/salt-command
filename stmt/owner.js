@@ -1583,7 +1583,7 @@ export const OWNER_JS = `
     appointment.appendChild(el('p','msg','The existing ID, name and place stay as filed. The appointment changes no customer identity and waits for approval and folding.'));
     parent.appendChild(appointment);
     var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
-    var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':'No eligible customer'}]
+    var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':catalog.appointmentNotice?'Appointments unavailable':'No eligible customer'}]
       .concat(appointmentCustomers.map(function(code){return {value:code,label:code};}));
     var appointmentCustomer=addSelect(appointment,'Existing customer',appointmentCustomerItems);
     var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
