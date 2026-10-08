@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1034",
+  "d": "08 Oct 2026",
+  "t": "CANCELLATION OF CS6-PER ORDER S240, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED:</b> s240, CS6-PER's salt order of 1.5 units for RM210 dated 06 Oct, was withdrawn by the desk on 08 Oct. Nothing had been delivered or paid on it, so it now counts nowhere. The master's own amendment routine applies the change, not this fold.",
+   "<b>INVENTORY UNCHANGED:</b> no unit moved and no lot landed, so stock stays at 26.25 and the cost basis is untouched. The 1.5 units promised on the position are a matter for the desk; the dossier does not say whether they relate to this order."
+  ]
+ },
+ {
   "v": "v1033",
   "d": "08 Oct 2026",
   "t": "ONE CANDY SALE FOLDED, PAID AND COLLECTED",
