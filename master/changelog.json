@@ -1,11 +1,20 @@
 [
  {
-  "v": "v1038",
+  "v": "v1039",
   "d": "09 Oct 2026",
   "t": "THE DRIFT CARD NAMES A PARTNER, AND THE PARTNER RULE IS RECORDED",
   "n": [
    "<b>Drift card.</b> A partner's row reads Partner, at cost, the floor to the sen, with the prices it quotes, and offers no drift to set: no drift moves a partner's price, so a box to set one would have done nothing. Everyone else's row is unchanged.",
    "<b>Recorded.</b> The rule is in the repo's CLAUDE.md under the price rule and in MEMORY.md; test/partner.mjs gains the Drift card case, proved red on its own. No price moved."
+  ]
+ },
+ {
+  "v": "v1038",
+  "d": "09 Oct 2026",
+  "t": "ONE SALT SALE TO CJ4-BJ, RM100 LEFT OPEN",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A salt sale of 6.25 unit to CJ4-BJ for RM500, dated 09 Oct, delivered the same day with RM400 cash in. It is an advance with RM100 unpaid. The drafter flagged the rate against his usual and the credit cap, and the desk's reward cover of RM80.7 is on the desk's word. Nothing else was folded.",
+   "<b>INVENTORY.</b> Salt goes down by 6.25 unit. The cost basis does not move, as no lot landed. Stock is now under the reorder point of 38.25."
   ]
  },
  {

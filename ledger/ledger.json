@@ -1,6 +1,6 @@
 {
- "v": "v1037",
- "stamped": "09 Oct 2026, 00:17 KL",
+ "v": "v1038",
+ "stamped": "09 Oct 2026, 00:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 25.25,
+  "STATED_STOCK": 19,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -6794,6 +6794,21 @@
     "deliveredOn": "2026-10-09",
     "note": "<b>SALT SELL DATED 09 OCT: 1 UNIT FOR RM80 PLUS RM10 DELIVERY, DELIVERED WITH ALL RM90 OUTSTANDING.</b> Booked to CM4-MK, delivered on 09 Oct with RM0 cash in. The rate is RM80 a unit. The floor for 1 unit is RM58 and the ask RM140, so it is above the floor and below the ask. CM4-MK has a median rate of RM103.33 and a range of RM85 to RM113.33, nothing outstanding before, 0 units on credit against a cap of 1. This sale takes him to the cap. The row carries RM58, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged a rate 21.7% below his usual RM102.17; the figures do not answer it, as RM80 is under his whole range. The desk's word is that 1.06 unit of his reward covers RM59.56. Open: RM90.",
     "rid": "s243"
+   },
+   {
+    "customer": "CJ4-BJ",
+    "qty": 6.25,
+    "total": 500,
+    "cost": 362.5,
+    "cash": 400,
+    "handover": "delivered",
+    "coverUnits": 1.44,
+    "coverRM": 80.7,
+    "date": "2026-10-09",
+    "deliveredQty": 6.25,
+    "deliveredOn": "2026-10-09",
+    "note": "<b>SALT SELL DATED 09 OCT: 6.25 UNIT FOR RM500, DELIVERED WITH RM100 OUTSTANDING.</b> Booked to CJ4-BJ, delivered on 09 Oct with RM400 cash in. The ladder for 6.25 unit has a floor of RM362.5 and an ask of RM600, so the total is above the floor and below the ask. CJ4-BJ has a median rate of RM72 and a range of RM64 to RM100, nothing outstanding before, 0 units on credit against a cap of 1. The row carries RM362.5, COGS off the latest purchase. The drafter flagged a rate 11.1% above his usual; RM80 is inside his range, so the figures answer it. The cap check is not answered by the dossier. On the desk's word, 1.44 unit of reward covers RM80.7. Open: RM100.",
+    "rid": "s244"
    }
   ],
   "contacts": [
@@ -7433,9 +7448,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-08T16:16:07.087Z",
+  "QUEUE_COMMITTED": "2026-10-08T16:50:42.824Z",
   "PRICING": {
-   "takenAt": "2026-10-08T16:17:28.553Z",
+   "takenAt": "2026-10-08T16:51:49.418Z",
    "sizes": [
     0.5,
     1,
@@ -7594,7 +7609,7 @@
     {
      "id": "rhythm:dow:salt",
      "sev": "note",
-     "title": "Monday is the busiest day, Sunday the quietest"
+     "title": "Friday is the busiest day, Sunday the quietest"
     },
     {
      "id": "rhythm:payday:salt",
@@ -7669,13 +7684,13 @@
     "CJ4-BJ": {
      "salt": {
       "name": "large and regular",
-      "orders": 7,
+      "orders": 8,
       "tenureDays": 103,
-      "sinceLastDays": 4,
-      "perMonth": 2.07,
-      "unitsPerMonth": 14.39,
-      "smallShare": 0.14,
-      "bigShare": 0.86,
+      "sinceLastDays": 0,
+      "perMonth": 2.36,
+      "unitsPerMonth": 16.24,
+      "smallShare": 0.13,
+      "bigShare": 0.88,
       "frequent": true,
       "small": false,
       "bigger": true,
@@ -8584,7 +8599,7 @@
    },
    "byProduct": {
     "salt": {
-     "stockCost": 56.0396,
+     "stockCost": 56,
      "replCost": 58,
      "floors": {
       "1": {
@@ -8723,15 +8738,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.3411764705882353
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08150208623087622,
        "avgDel": {
-        "n": 196,
-        "kg": 497.45,
-        "mean": 2.538
+        "n": 197,
+        "kg": 503.7,
+        "mean": 2.5569
        }
       },
       "policy": {
@@ -11029,7 +11044,7 @@
      ],
      "drift": {
       "CS6-BS": -0.4908,
-      "CJ4-BJ": 0.0885,
+      "CJ4-BJ": 0.0798,
       "CE4-CHE": -0.4865,
       "CS6-PER": -0.4459,
       "CM4-MK": 0.0318,
@@ -14287,11 +14302,11 @@
      ]
     }
    },
-   "v": "v1037"
+   "v": "v1038"
   },
   "OPEN": {
-   "at": "2026-10-08T16:17:29.109Z",
-   "count": 12,
+   "at": "2026-10-08T16:51:50.230Z",
+   "count": 13,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
      "d": "2026-10-09",
@@ -14310,6 +14325,23 @@
      "key": "CM4-MK|2026-10-09|90",
      "age": 0,
      "exp": 90
+    },
+    "CJ4-BJ|2026-10-09|500": {
+     "d": "2026-10-09",
+     "p": "CJ4-BJ",
+     "dir": "S",
+     "q": 6.25,
+     "t": 500,
+     "cash": 400,
+     "mv": 6.25,
+     "st": "dueMoney",
+     "oweRM": 100,
+     "rid": "s244",
+     "deliveredOn": "2026-10-09",
+     "handover": "delivered",
+     "key": "CJ4-BJ|2026-10-09|500",
+     "age": 0,
+     "exp": 100
     },
     "CE4-CHE|2026-10-06|240": {
      "d": "2026-10-06",
@@ -14495,12 +14527,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25.25,
-     "free": 13.25,
+     "onHand": 19,
+     "free": 7,
      "owedOut": 12,
-     "coverDays": 2.9,
-     "rate": 4.8,
-     "owedToYou": 570,
+     "coverDays": 1.5,
+     "rate": 5.1,
+     "owedToYou": 670,
      "promised": 12,
      "short": 0
     },
@@ -14556,7 +14588,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1037"
+   "v": "v1038"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14564,7 +14596,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1037"
+   "v": "v1038"
   },
   "REWARD": {
    "stated": {
@@ -14576,7 +14608,7 @@
      }
     }
    },
-   "v": "v1037"
+   "v": "v1038"
   }
  }
 }
