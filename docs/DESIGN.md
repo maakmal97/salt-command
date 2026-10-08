@@ -228,8 +228,17 @@ and when Day is held). 06 Oct 2026: the white and black tints and the light text
 are tokens (a white tint is `color-mix(in srgb, var(--salt-salt) N%, transparent)`, a black one the same on
 `--salt-ink-on-accent`, which is dark in every theme; `#e4e9ec` is `--ice`, `#e08a72` a mix of ember into salt);
 the suite fails if one returns, the print block excepted. Night measured the same by `renderdiff` (34 of 34).
-What remains before Day can show: the chart and map colours in the desk's script, and the system's own
-`.salt-deskbar`, whose dark fill and title do not follow the theme. Then the attribute goes.
+What remains before Day can show: the system's own `.salt-deskbar`, whose dark fill and title do not follow
+the theme. Then the attribute goes.
+
+**The charts and the map read the theme** (06 Oct 2026). `tcol(role, alpha)` in the master reads a token off `<html>`
+when a chart or the map is drawn, and `chartTheme()` reads Chart.js's own text, border and tooltip colours the same way
+on every call; `salt-time` (the event salt-time.js dispatches on `<html>`) draws the part showing again, for the parts
+that carry a chart or the map. The identity's hexes are the tokens, so Night is the pixel it was (the chart configs of
+43 charts and the map's attributes compared with the build before: the same). The grid and the map's own steps are the
+desk's tokens in `design/desk.css` (`--desk-chart-grid`, `--desk-map-0`, `-1`, `-edge`, `-name`, `-state`, `-void`,
+`-core`), Night as it was, Dawn and Dusk moved with the theme, Day mixed over paper; they are to be promoted into
+`Code\salt-ds` and pulled. A product's hue stays `PRODUCTS.accent` and does not move.
 
 ## The brand
 

@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="dfc5c685ac4e0859";
+var SALT_BUILD_ID="1807e506727a9f03";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4781,6 +4781,23 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .railtheme button[aria-checked="true"]{background:var(--salt-slate-light);color:var(--salt-salt);}
 .railtheme button:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
 html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
+/* 06 Oct 2026: THE CHARTS' GRID AND THE MAP'S OWN STEPS, as tokens, so the script reads them at draw time (tcol() in the
+   master) and the charts and the map follow the theme. The identity holds no token for them. Night is the value the
+   desk drew before, to the pixel; Dawn and Dusk are Night moved by what the theme moves its ground and its steel; Day is
+   the same steps mixed over paper, pale to dark. To be promoted into Code/salt-ds, then pulled. */
+:root{
+  --desk-chart-grid:rgba(255,255,255,0.07);  /* the gridline: white on a dark ground */
+  --desk-map-0:#34454d;     /* the map's two quietest steps, under steel, brass and ember */
+  --desk-map-1:#56697a;
+  --desk-map-edge:#1c2628;  /* a district around the one opened */
+  --desk-map-name:#e6ebee;  /* an area's name, and a party's dot */
+  --desk-map-state:#6f8398; /* a state's outline */
+  --desk-map-void:#ffffff05; /* an area with nothing in it */
+  --desk-map-core:#ffffff08; /* a district on the place picker */
+}
+:root[data-time="dawn"]{--desk-map-0:#43545f;--desk-map-1:#687b8e;--desk-map-edge:#283339;--desk-map-name:#e8eaea;--desk-map-state:#8397ad;}
+:root[data-time="dusk"]{--desk-map-0:#455054;--desk-map-1:#6a7785;--desk-map-edge:#2b2e2c;--desk-map-name:#eae7e2;--desk-map-state:#8694a6;}
+:root[data-time="day"]{--desk-map-void:#1a161105;--desk-map-core:#1a161108;--desk-chart-grid:rgba(26,22,17,0.08);--desk-map-0:#b3babe;--desk-map-1:#8796a3;--desk-map-edge:#d4d5d3;--desk-map-name:#25211c;--desk-map-state:#687d90;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -12293,9 +12310,9 @@ function drawTodayCharts(){
       const a=allActions(),B=bookBand(),rated=Object.keys(B).filter(p=>B[p].days!=null);
       const KIND={inventory:'Inventory',buy:'Buy',collect:'Collect',pay:'Pay',rule:'Rule',
                   call:'Call',reconnect:'Revive',reward:'Reward',queue:'Queue',plan:'Plan'};
-      const COL={collect:'#d4694c',buy:'#e4e9ec',pay:'#b87333',reconnect:'#8ea2b6',
-                 reward:'#c5a059',inventory:'#6fae97',rule:'rgba(242,244,245,0.40)',call:'#8ea2b6',
-                 queue:'#a6afb5',plan:'#d4694c'};
+      const COL={collect:tcol('ember'),buy:tcol('ice'),pay:tcol('copper'),reconnect:tcol('steel'),
+                 reward:tcol('brass'),inventory:tcol('verdigris'),rule:tcol('ink',0.40),call:tcol('steel'),
+                 queue:tcol('mist'),plan:tcol('ember')};
       const byKind={};
       a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
@@ -12307,14 +12324,14 @@ function drawTodayCharts(){
         }else{
           tdKindObj=new Chart(k,{type:'bar',data:{labels:keys.map(x=>KIND[x]||x),
             datasets:[{data:keys.map(x=>+byKind[x].toFixed(2)),
-              backgroundColor:keys.map(x=>COL[x]||'rgba(242,244,245,0.40)'),borderWidth:0,
+              backgroundColor:keys.map(x=>COL[x]||tcol('ink',0.40)),borderWidth:0,
               borderRadius:4,barThickness:16}]},
             options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
               plugins:{legend:{display:false},
                 tooltip:{callbacks:{label:i=>CUR+' '+Number(i.raw).toLocaleString('en-MY',{maximumFractionDigits:0})}}},
-              scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',
+              scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),
                         callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}},
-                      y:{grid:{display:false},ticks:{color:'rgba(242,244,245,0.66)',font:{size:11}}}}}});
+                      y:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:11}}}}}});
         }
       }
       if(c){
@@ -12325,16 +12342,16 @@ function drawTodayCharts(){
              against the one next to it; a book with no recent trade has no rate and is left off */
           const trig=p=>B[p].rate>0?+(B[p].trig/B[p].rate).toFixed(1):0;
           tdCoverObj=new Chart(c,{type:'bar',data:{labels:rated.map(p=>PRODUCTS[p].name),
-            datasets:[{label:'Cover',data:rated.map(p=>B[p].days),backgroundColor:rated.map(p=>B[p].below?'#d4694c':'#6fae97'),
+            datasets:[{label:'Cover',data:rated.map(p=>B[p].days),backgroundColor:rated.map(p=>B[p].below?tcol('ember'):tcol('verdigris')),
                        borderWidth:0,borderRadius:4,maxBarThickness:22},
-                      {label:'Trigger',data:rated.map(trig),backgroundColor:'rgba(242,244,245,0.40)',borderWidth:0,borderRadius:4,maxBarThickness:22}]},
+                      {label:'Trigger',data:rated.map(trig),backgroundColor:tcol('ink',0.40),borderWidth:0,borderRadius:4,maxBarThickness:22}]},
             options:{responsive:true,maintainAspectRatio:false,
               /* the key names the two series in their resting colours; a bar under its trigger turns red on its own */
-              plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11},generateLabels:()=>[['Cover','#6fae97'],['Trigger','rgba(242,244,245,0.40)']]
+              plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11},generateLabels:()=>[['Cover',tcol('verdigris')],['Trigger',tcol('ink',0.40)]]
                 .map((x,i)=>({text:x[0],fillStyle:x[1],strokeStyle:x[1],lineWidth:0,hidden:false,datasetIndex:i}))}},
                 tooltip:{callbacks:{label:i=>i.dataset.label+': '+Number(i.raw).toLocaleString('en-MY',{maximumFractionDigits:1})+' days'}}},
-              scales:{x:{grid:{display:false},ticks:{color:'rgba(242,244,245,0.66)',font:{size:11}}},
-                      y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>v+'d'},
+              scales:{x:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:11}}},
+                      y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>v+'d'},
                          beginAtZero:true}}}});
         }
       }
@@ -12439,12 +12456,12 @@ function drawFwdCharts(){
     try{
       const A=fwdAll(),f=A.cash,labs=f.rows.map(r=>r.d===0?'today':'d+'+r.d);
       /* v796: a book's colour is its token, read off the page, so the chart and the tags agree and no hex is written here */
-      const hue=p=>{const m=/var\((--[^)]+)\)/.exec(PRODUCTS[p].accent||'');return (m&&getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim())||'#8ea2b6';};
+      const hue=p=>{const m=/var\((--[^)]+)\)/.exec(PRODUCTS[p].accent||'');return (m&&getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim())||tcol('steel');};
       const opt=(t,pre,post)=>({responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,labels:{color:'rgba(242,244,245,0.66)',boxWidth:12,font:{size:11}}},
-                 title:{display:true,text:t,color:'#f2f4f5',font:{size:12}}},
-        scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',maxTicksLimit:12}},
-                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>pre+v+(post||'')}}}});
+        plugins:{legend:{display:true,labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}},
+                 title:{display:true,text:t,color:tcol('ink'),font:{size:12}}},
+        scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),maxTicksLimit:12}},
+                y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>pre+v+(post||'')}}}});
       if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}fwdStockObj=null;}
       if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}fwdCashObj=null;}
       /* each book as a share of what it holds today, committed orders first and then its rate; a book holding nothing is flat at nought */
@@ -12452,7 +12469,7 @@ function drawFwdCharts(){
         return {label:PRODUCTS[p].name,data:r.map(x=>h>0.009?+(x.inventory/h*100).toFixed(1):0),borderColor:hue(p),backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2};})
       },options:opt('Inventory left, as a share of what each book holds today','','%')});
       fwdCashObj=new Chart(k,{type:'line',data:{labels:labs,datasets:[
-        {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:'#b87333',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
+        {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:tcol('copper'),backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
       ]},options:opt(f.cashKnown?'Cash position (RM), every book':'Cash movement from today (RM), every book','')});
     }catch(e){                                     /* v385: same empty catch as Today's, same probe */
       try{console.error('drawFwdCharts threw',e);}catch(_){}
@@ -13087,7 +13104,7 @@ function drawAnalysis(){
        inside, the catch could not read it and every draw died on a ReferenceError instead. */
     let cur='anBridge';
     try{
-      const GRID='rgba(255,255,255,0.07)',TICK='rgba(242,244,245,0.66)',INK='#f2f4f5';
+      const GRID=tcol('grid'),TICK=tcol('ink',0.66),INK=tcol('ink');
       const base=t=>({responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},title:{display:true,text:t,color:INK,font:{size:12}}},
         scales:{x:{grid:{color:GRID},ticks:{color:TICK}},y:{grid:{color:GRID},ticks:{color:TICK}}}});
@@ -13098,8 +13115,8 @@ function drawAnalysis(){
       freshChart(blkEl('anBridge'),{type:'bar',
         data:{labels:['Revenue','Cost of goods','Gross margin',['Shrinkage, if recovered','already inside cost of goods']],
           datasets:[{data:[[0,revTotal],[gm,revTotal],[0,gm],[gm,gm+shrinkRM]],
-            backgroundColor:['#e4e9ec','#d4694c','#c5a059','rgba(142,162,182,.45)'],
-            borderColor:['#e4e9ec','#d4694c','#c5a059','#8ea2b6'],borderWidth:1,borderRadius:6}]},
+            backgroundColor:[tcol('ice'),tcol('ember'),tcol('brass'),tcol('steel',.45)],
+            borderColor:[tcol('ice'),tcol('ember'),tcol('brass'),tcol('steel')],borderWidth:1,borderRadius:6}]},
         options:Object.assign(base('Revenue to margin (RM)'),{plugins:{legend:{display:false},
           title:{display:true,text:'Revenue to margin (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>{const v=i.raw;return 'RM '+Math.abs(v[1]-v[0]).toLocaleString('en-MY',{maximumFractionDigits:0});}}}}})});
@@ -13113,9 +13130,9 @@ function drawAnalysis(){
       const floor=qs.map(q=>({x:q,y:+(floorTotal(q,c.eff)/q).toFixed(2)}));
       freshChart(blkEl('anScatter'),{type:'scatter',
         data:{datasets:[
-          {label:'Orders',data:dots,backgroundColor:'rgba(228,233,236,.55)',borderColor:'#e4e9ec',pointRadius:5},
-          {label:'Board today',data:line,type:'line',borderColor:'#c5a059',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
-          {label:'Walk away',data:floor,type:'line',borderColor:'#d4694c',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4],tension:.25}]},
+          {label:'Orders',data:dots,backgroundColor:tcol('ice',.55),borderColor:tcol('ice'),pointRadius:5},
+          {label:'Board today',data:line,type:'line',borderColor:tcol('brass'),backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
+          {label:'Walk away',data:floor,type:'line',borderColor:tcol('ember'),backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4],tension:.25}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
             title:{display:true,text:'Price paid against lot size (RM/unit)',color:INK,font:{size:12}},
@@ -13129,9 +13146,9 @@ function drawAnalysis(){
       const sh=stockHistory();
       freshChart(blkEl('anStock'),{type:'line',
         data:{labels:sh.map(r=>r.iso.slice(5)),datasets:[
-          {label:'On hand',data:sh.map(r=>r.lvl),borderColor:'#e4e9ec',backgroundColor:'rgba(228,233,236,.10)',fill:true,pointRadius:0,borderWidth:2,tension:.15},
-          {label:'Reorder trigger',data:sh.map(()=>reorderFor(PROD)),borderColor:'#c5a059',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]},
-          {label:'Impossible below here',data:sh.map(()=>0),borderColor:'#d4694c',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5}]},
+          {label:'On hand',data:sh.map(r=>r.lvl),borderColor:tcol('ice'),backgroundColor:tcol('ice',.10),fill:true,pointRadius:0,borderWidth:2,tension:.15},
+          {label:'Reorder trigger',data:sh.map(()=>reorderFor(PROD)),borderColor:tcol('brass'),backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]},
+          {label:'Impossible below here',data:sh.map(()=>0),borderColor:tcol('ember'),backgroundColor:'transparent',pointRadius:0,borderWidth:1.5}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
             title:{display:true,text:'Units on the inventory, reconstructed daily',color:INK,font:{size:12}}},
@@ -13159,8 +13176,8 @@ function drawAnalysis(){
          legend carried "Defaulted" for a series with no points in it, same shape as the
          one-off series drawEarnChart guards below. Salt's write-offs keep the entry. */
       const defBuys=buys.filter(b=>b.def);
-      const buySets=[{label:'Lots received',data:buys.filter(b=>!b.def),backgroundColor:'rgba(111,174,151,.35)',borderColor:'#6fae97',borderWidth:1.5}];
-      if(defBuys.length)buySets.push({label:'Defaulted',data:defBuys,backgroundColor:'rgba(212,105,76,.35)',borderColor:'#d4694c',borderWidth:1.5});
+      const buySets=[{label:'Lots received',data:buys.filter(b=>!b.def),backgroundColor:tcol('verdigris',.35),borderColor:tcol('verdigris'),borderWidth:1.5}];
+      if(defBuys.length)buySets.push({label:'Defaulted',data:defBuys,backgroundColor:tcol('ember',.35),borderColor:tcol('ember'),borderWidth:1.5});
       freshChart(blkEl('anBuys'),{type:'bubble',
         data:{datasets:buySets},
         options:{responsive:true,maintainAspectRatio:false,
@@ -13373,7 +13390,7 @@ function placePicks(){
 const areaName=a=>(!a.kind||a.short.toLowerCase().indexOf(a.kind+' ')===0)?a.short:a.kind.charAt(0).toUpperCase()+a.kind.slice(1)+' '+a.short;
 /* five steps on the square root of the share of the largest, so a small area still shows; the heat's own three
    colours with two between them */
-const MAPC=['#34454d','#56697a','#8ea2b6','#c5a059','#d4694c'];
+const MAPC=['desk-map-0','desk-map-1','salt-steel','salt-brass','salt-ember'];   /* token names, read at draw time by tcol(): the ramp follows the theme */
 const mapStep=(v,max)=>(v>0&&max>0)?Math.min(4,Math.floor(Math.sqrt(v/max)*5)):-1;
 function tabMap(){
   const {pts,miss,far}=mapPoints();
@@ -13411,12 +13428,12 @@ function tabMap(){
   const X=l=>ox+(l-x0)*kx*s,Y=l=>oy+(y1-l)*s;
   const path=rings=>rings.map(r=>'M'+r.map(([lg,la])=>X(lg).toFixed(1)+','+Y(la).toFixed(1)).join('L')+'Z').join('');
   /* the districts around the one opened, unshaded, so the eye knows where it is */
-  const around=dist?DISTRICTS.filter(x=>x.id!==dist.id).map(x=>`<path d="${path(areaShape(x).rings)}" fill="none" stroke="#1c2628" stroke-width="1"/>`).join(''):'';
+  const around=dist?DISTRICTS.filter(x=>x.id!==dist.id).map(x=>`<path d="${path(areaShape(x).rings)}" fill="none" stroke="${tcol('medge')}" stroke-width="1"/>`).join(''):'';
   const shapes=shown.map(a=>{
     const t=vals[a.id],k=mapStep(t?t.v:0,max),name=dist?areaName(a):a.name;
     const tip=name+': '+(t&&Math.abs(t.v)>0.009?mapFmt(t.v)+', '+t.n+(t.n===1?' party':' parties'):empty);
     const sel=dist&&a.id===MAP_PICK;   // v637: the area drilled into is outlined
-    return `<path class="marea${sel?' mpicked':''}" data-a="${a.id}" d="${path(areaShape(a).rings)}" fill="${k<0?'#ffffff05':MAPC[k]}" fill-opacity="${k<0?1:.82}" stroke="${sel?'#c5a059':'#0b1215'}" stroke-width="${sel?2.4:dist?0.8:1.2}" stroke-linejoin="round" onclick="${dist?`mapPick('${a.id}')`:`mapZoom('${a.id}')`}" style="cursor:pointer"><title>${esc(tip)}</title></path>`;
+    return `<path class="marea${sel?' mpicked':''}" data-a="${a.id}" d="${path(areaShape(a).rings)}" fill="${k<0?tcol('mvoid'):tcol(MAPC[k])}" fill-opacity="${k<0?1:.82}" stroke="${sel?tcol('brass'):tcol('slate')}" stroke-width="${sel?2.4:dist?0.8:1.2}" stroke-linejoin="round" onclick="${dist?`mapPick('${a.id}')`:`mapZoom('${a.id}')`}" style="cursor:pointer"><title>${esc(tip)}</title></path>`;
   }).join('');
   /* A NAME IS DRAWN WHERE IT FITS: inside the frame, over an area at least as wide as the name, and clear of every name
      already placed, the busiest areas first. The rest are named in their tooltips and in the table. */
@@ -13427,23 +13444,23 @@ function tabMap(){
     if(wide(a)*kx*s<w||box[0]<4||box[2]>W-4||box[1]<4||box[3]>H-4)return '';
     if(taken.some(o=>box[0]<o[2]&&box[2]>o[0]&&box[1]<o[3]&&box[3]>o[1]))return '';
     taken.push(box);
-    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="${fz}" fill="#e6ebee" stroke="#05080a" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(name)}</text>`;
+    return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="${fz}" fill="${tcol('mname')}" stroke="${tcol('obsidian')}" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(name)}</text>`;
   }).join('');
-  const states=dist?'':BASEMAP.map(f=>`<path d="${path(f.rings)}" fill="none" stroke="#6f8398" stroke-width="1.6" stroke-linejoin="round" style="pointer-events:none"/>`).join('');
+  const states=dist?'':BASEMAP.map(f=>`<path d="${path(f.rings)}" fill="none" stroke="${tcol('mstate')}" stroke-width="1.6" stroke-linejoin="round" style="pointer-events:none"/>`).join('');
   /* A PARTY IS A DOT, AND ONLY IN THE DISTRICT OPENED. Parties that share a place are set around it so each is seen;
      a supplier is a square. No dot carries a name. */
   const here=dist?onMap.filter(p=>p.district.id===dist.id):[],seat={};
   const dots=here.map(p=>{const key=p.place.lat+','+p.place.lng,i=(seat[key]=(seat[key]||0)+1)-1,ang=i*2.4,rad=i?5+3*Math.sqrt(i):0;
     const cx=X(p.place.lng)+Math.cos(ang)*rad,cy=Y(p.place.lat)+Math.sin(ang)*rad;
-    return p.role==='supplier'?`<rect class="mdot" x="${(cx-3.5).toFixed(1)}" y="${(cy-3.5).toFixed(1)}" width="7" height="7" fill="#a6afb5" stroke="#05080a" stroke-width="1"/>`
-      :`<circle class="mdot${p.area&&p.area.id===MAP_PICK?' mdotpick':''}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${p.area&&p.area.id===MAP_PICK?5:4}" fill="${p.area&&p.area.id===MAP_PICK?'#c5a059':'#e6ebee'}" stroke="#05080a" stroke-width="1.2"/>`;}).join('');
+    return p.role==='supplier'?`<rect class="mdot" x="${(cx-3.5).toFixed(1)}" y="${(cy-3.5).toFixed(1)}" width="7" height="7" fill="${tcol('mist')}" stroke="${tcol('obsidian')}" stroke-width="1"/>`
+      :`<circle class="mdot${p.area&&p.area.id===MAP_PICK?' mdotpick':''}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${p.area&&p.area.id===MAP_PICK?5:4}" fill="${p.area&&p.area.id===MAP_PICK?tcol('brass'):tcol('mname')}" stroke="${tcol('obsidian')}" stroke-width="1.2"/>`;}).join('');
   /* v638: the network, over the areas and under nothing, so a line is seen wherever it runs */
   const net=[],netMiss=[];
   if(MAP_NET){const intro=introductions(),bench=new Set(associateIds());
     Object.keys(intro).filter(a=>bench.has(a)).forEach(a=>intro[a].forEach(c=>{const pa=placeOf(a),pc=placeOf(c);
       if(pa&&pc)net.push({a:a,c:c,pa:pa,pc:pc});else netMiss.push(c);}));}
-  const netSvg=net.map(x=>`<g class="mnet"><title>${esc(codeOf(x.a))} brought in ${esc(codeOf(x.c))}</title><line x1="${X(x.pa.lng).toFixed(1)}" y1="${Y(x.pa.lat).toFixed(1)}" x2="${X(x.pc.lng).toFixed(1)}" y2="${Y(x.pc.lat).toFixed(1)}" stroke="#c5a059" stroke-opacity=".85" stroke-width="1.6" stroke-linecap="round"/><circle cx="${X(x.pc.lng).toFixed(1)}" cy="${Y(x.pc.lat).toFixed(1)}" r="2.6" fill="#c5a059"/></g>`).join('')
-    +[...new Set(net.map(x=>x.a))].map(a=>{const pa=placeOf(a);return `<circle class="mnetsrc" cx="${X(pa.lng).toFixed(1)}" cy="${Y(pa.lat).toFixed(1)}" r="5.5" fill="#05080a" stroke="#c5a059" stroke-width="2"><title>${esc(codeOf(a))}, an associate</title></circle>`;}).join('');
+  const netSvg=net.map(x=>`<g class="mnet"><title>${esc(codeOf(x.a))} brought in ${esc(codeOf(x.c))}</title><line x1="${X(x.pa.lng).toFixed(1)}" y1="${Y(x.pa.lat).toFixed(1)}" x2="${X(x.pc.lng).toFixed(1)}" y2="${Y(x.pc.lat).toFixed(1)}" stroke="${tcol('brass')}" stroke-opacity=".85" stroke-width="1.6" stroke-linecap="round"/><circle cx="${X(x.pc.lng).toFixed(1)}" cy="${Y(x.pc.lat).toFixed(1)}" r="2.6" fill="${tcol('brass')}"/></g>`).join('')
+    +[...new Set(net.map(x=>x.a))].map(a=>{const pa=placeOf(a);return `<circle class="mnetsrc" cx="${X(pa.lng).toFixed(1)}" cy="${Y(pa.lat).toFixed(1)}" r="5.5" fill="${tcol('obsidian')}" stroke="${tcol('brass')}" stroke-width="2"><title>${esc(codeOf(a))}, an associate</title></circle>`;}).join('');
   const netAssoc=new Set(net.map(x=>x.a)).size;
   const kmPx=111.32/s,barKm=[1,2,5,10,20,50,100].find(k=>k/kmPx>=70)||100,barPx=barKm/kmPx;
   /* a count is whole, so its steps are named by the counts that fall in them, and a step no count reaches is not listed */
@@ -13451,7 +13468,7 @@ function tabMap(){
     if(MAP_METRIC!=='customers')return k===4?mapFmt(max*0.64)+' and up':mapFmt(max*Math.pow(k/5,2))+' to '+mapFmt(max*Math.pow((k+1)/5,2));
     const cs=[];for(let c=1;c<=max;c++)if(mapStep(c,max)===k)cs.push(c);
     return cs.length?(cs.length>1?cs[0]+' to '+cs[cs.length-1]:String(cs[0])):null;};
-  const legend=MAPC.map((c,k)=>{const nm=stepName(k);return nm==null?'':`<span style="display:inline-flex;align-items:center;gap:6px;margin-right:13px;font-size:12px;color:var(--mut)"><span style="width:14px;height:11px;border-radius:3px;background:${c}"></span>${nm}</span>`;}).join('');
+  const legend=MAPC.map((c,k)=>{const nm=stepName(k);return nm==null?'':`<span style="display:inline-flex;align-items:center;gap:6px;margin-right:13px;font-size:12px;color:var(--mut)"><span style="width:14px;height:11px;border-radius:3px;background:${tcol(c)}"></span>${nm}</span>`;}).join('');
   const rows=shown.map(a=>({a:a,t:vals[a.id]})).filter(r=>r.t&&Math.abs(r.t.v)>0.009).sort((p,q)=>q.t.v-p.t.v);
   const total=rows.reduce((z,r)=>z+Math.max(0,r.t.v),0),top=rows[0]&&rows[0].t.v>0?rows[0]:null;
   const btn=(label,v,on)=>`<button${on?' class="on"':''} onclick="mapZoom(${v===null?'null':"'"+v+"'"})">${label}</button>`;
@@ -13469,7 +13486,7 @@ function tabMap(){
     const top=Math.max(0,...trend.map(x=>x.v)),bw=28,W2=Math.max(1,trend.length)*bw,H2=60;
     const inPeriod=k=>(!MAP_FROM||mapMonthEnd(k)>=MAP_FROM)&&(!MAP_TO||k+'-01'<=MAP_TO);
     const bars=trend.map((x,i)=>{const h=top>0&&x.v>0?Math.max(2,x.v/top*(H2-6)):0;
-      return `<rect class="mtbar" x="${i*bw+5}" y="${(H2-2-h).toFixed(1)}" width="${bw-10}" height="${h.toFixed(1)}" rx="2" fill="${inPeriod(x.k)?'#c5a059':'#56697a'}"><title>${MAP_MON[+x.k.slice(5,7)-1]} ${x.k.slice(0,4)}: ${mapFmt(x.v)}</title></rect>`;}).join('');
+      return `<rect class="mtbar" x="${i*bw+5}" y="${(H2-2-h).toFixed(1)}" width="${bw-10}" height="${h.toFixed(1)}" rx="2" fill="${inPeriod(x.k)?tcol('brass'):tcol('m1')}"><title>${MAP_MON[+x.k.slice(5,7)-1]} ${x.k.slice(0,4)}: ${mapFmt(x.v)}</title></rect>`;}).join('');
     const who=ids.map(id=>({id:id,v:val(id)})).sort((p,q)=>q.v-p.v),shownWho=who.slice(0,12);
     const name=isArea?areaName(pick):pick.name,plural=isArea?'areas':'districts';
     return `<div class="card mapdrill" style="margin-top:13px">
@@ -13510,17 +13527,17 @@ function tabMap(){
     ${Object.keys(vaultNames||{}).length?`<div style="margin-bottom:10px"><button class="vbtn salt-pill salt-pill--sm" onclick="mapPlaceFromVault()">Place parties from their recorded places</button></div>`:''}${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
     ${MAP_NET?`<div class="mapnetnote" style="margin-bottom:9px;font-size:12px;color:var(--mut)">Network: ${net.length} line${net.length===1?'':'s'} from ${netAssoc} associate${netAssoc===1?'':'s'} to the customers they brought in${netMiss.length?`; ${netMiss.length} not drawn, a party with no point`:''}.</div>`:''}
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#0b1215,#05080a);border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,${tcol('slate')},${tcol('obsidian')});border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
       ${around}${shapes}${states}${labels}${dots}${netSvg}
       <g transform="translate(18,${H-26})">
-        <line x1="0" y1="0" x2="${barPx.toFixed(1)}" y2="0" stroke="#a6afb5" stroke-width="2"/>
-        <line x1="0" y1="-4" x2="0" y2="4" stroke="#a6afb5" stroke-width="2"/>
-        <line x1="${barPx.toFixed(1)}" y1="-4" x2="${barPx.toFixed(1)}" y2="4" stroke="#a6afb5" stroke-width="2"/>
-        <text x="${(barPx/2).toFixed(1)}" y="-9" text-anchor="middle" font-size="11" fill="#a6afb5">${barKm} km</text>
+        <line x1="0" y1="0" x2="${barPx.toFixed(1)}" y2="0" stroke="${tcol('mist')}" stroke-width="2"/>
+        <line x1="0" y1="-4" x2="0" y2="4" stroke="${tcol('mist')}" stroke-width="2"/>
+        <line x1="${barPx.toFixed(1)}" y1="-4" x2="${barPx.toFixed(1)}" y2="4" stroke="${tcol('mist')}" stroke-width="2"/>
+        <text x="${(barPx/2).toFixed(1)}" y="-9" text-anchor="middle" font-size="11" fill="${tcol('mist')}">${barKm} km</text>
       </g>
       <g transform="translate(${W-34},26)">
-        <path d="M0,-14 L5,6 L0,1 L-5,6 Z" fill="#a6afb5"/>
-        <text x="0" y="20" text-anchor="middle" font-size="11" fill="#a6afb5">N</text>
+        <path d="M0,-14 L5,6 L0,1 L-5,6 Z" fill="${tcol('mist')}"/>
+        <text x="0" y="20" text-anchor="middle" font-size="11" fill="${tcol('mist')}">N</text>
       </g>
     </svg>
     <!-- the credits are licence conditions of drawing the areas, never method prose: no class stripMethod reads -->
@@ -15237,20 +15254,19 @@ function drawOutlookChart(){
          product's own name and the legend now does too. */
       freshChart(el,{type:'bar',data:{labels:rows.map(r=>r.date.slice(5)+' · '+units(r.left)),
         datasets:[
-          {label:'What the '+PRODUCTS[PROD].name.toLowerCase()+' cost',data:rows.map(r=>r.costLeft),backgroundColor:'rgba(242,244,245,0.40)',borderWidth:0},
-          {label:'Margin, expected',data:rows.map(r=>Math.max(0,r.expMar)),backgroundColor:'#6fae97',borderWidth:0},
-          {label:'Further margin at your best rate',data:rows.map(r=>Math.max(0,+(r.maxMar-r.expMar).toFixed(2))),backgroundColor:'#c5a059',borderWidth:0}]},
+          {label:'What the '+PRODUCTS[PROD].name.toLowerCase()+' cost',data:rows.map(r=>r.costLeft),backgroundColor:tcol('ink',0.40),borderWidth:0},
+          {label:'Margin, expected',data:rows.map(r=>Math.max(0,r.expMar)),backgroundColor:tcol('verdigris'),borderWidth:0},
+          {label:'Further margin at your best rate',data:rows.map(r=>Math.max(0,+(r.maxMar-r.expMar).toFixed(2))),backgroundColor:tcol('brass'),borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:'rgba(242,244,245,0.66)',boxWidth:12,font:{size:11}}},
+          plugins:{legend:{labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}},
             tooltip:{callbacks:{label:i=>i.dataset.label+': '+CUR+' '+Number(i.raw).toLocaleString('en-MY',{maximumFractionDigits:0})}}},
-          scales:{x:{stacked:true,grid:{display:false},ticks:{color:'rgba(242,244,245,0.66)',font:{size:10}}},
-                  y:{stacked:true,grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
+          scales:{x:{stacked:true,grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:10}}},
+                  y:{stacked:true,grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
     /* v385: was `catch(e){}`, same fault and same fix as the lot chart below. */
     }catch(err){chartEmpty(el,'This chart could not be drawn: '+((err&&err.message)||err)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 
-const CHART_INK={grid:'rgba(255,255,255,0.07)',tick:'rgba(242,244,245,0.66)'};
 function drawRecvCharts(){
   const el=blkEl('rcAgeChart');
   if(!el)return;
@@ -15270,12 +15286,12 @@ function drawRecvCharts(){
        ladder has taken off with age, so age is the axis it should be read down. */
     rows.sort((a,b)=>b.age-a.age||b.g-a.g);
     freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
-      {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(212,105,76,.35)',borderColor:'#d4694c',borderWidth:1,borderRadius:3},
-      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-x.pr)).toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:3}]},
+      {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:tcol('ember',.35),borderColor:tcol('ember'),borderWidth:1,borderRadius:3},
+      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-x.pr)).toFixed(2)),backgroundColor:tcol('ice'),borderWidth:0,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
-        scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
-                y:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
+        plugins:{legend:{labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}},
+                y:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:10}}}}}});
   });
 }
 function drawSourcingCharts(){
@@ -15296,14 +15312,14 @@ function drawSourcingCharts(){
       if(lgOrEmpty(el,lots.length))return;
       freshChart(el,{type:'bar',data:{labels:lots.map(x=>x.d.slice(5)+' · '+x.q),datasets:[
         {data:lots.map(x=>x.rate),
-         backgroundColor:lots.map(x=>x.def?'transparent':(x.sup.startsWith('SF')?'rgba(212,105,76,.55)':'rgba(228,233,236,.55)')),
-         borderColor:lots.map(x=>x.def?'#d4694c':(x.sup.startsWith('SF')?'#d4694c':'#e4e9ec')),
+         backgroundColor:lots.map(x=>x.def?'transparent':(x.sup.startsWith('SF')?tcol('ember',.55):tcol('ice',.55))),
+         borderColor:lots.map(x=>x.def?tcol('ember'):(x.sup.startsWith('SF')?tcol('ember'):tcol('ice'))),
          borderWidth:lots.map(x=>x.def?2:1),borderRadius:3}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>{const x=lots[i.dataIndex];
             return x.sup+': RM'+x.rate+'/unit for '+x.q+' unit'+(x.def?', DEFAULTED, never arrived':'');}}}},
-          scales:{x:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:9},maxRotation:60,minRotation:45}},
-                  y:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick,callback:v=>'RM'+v}}}}});
+          scales:{x:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:9},maxRotation:60,minRotation:45}},
+                  y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>'RM'+v}}}}});
     /* v385: was `catch(e){}`. v384 opened drawPerProduct's empty catch for the same reason and
        this one sat one level inside it, so a throw here was still silent: the canvas stayed
        blank and the caption underneath went on describing bars nobody could see. */
@@ -15339,13 +15355,13 @@ function drawNetworkCharts(){
       if(lgOrEmpty(el,rs.length))return;
       if(nwPartnerObj){try{nwPartnerObj.destroy();}catch(e){}}
       nwPartnerObj=new Chart(el,{type:'bar',data:{labels:rs.map(r=>codeOf(r.id)),datasets:[
-        {label:'Bought himself',data:rs.map(r=>+(r.direct||0).toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0},
-        {label:'Sold for you',data:rs.map(r=>+(r.indirect||0).toFixed(2)),backgroundColor:'#8ea2b6',borderWidth:0},
-        {label:'Brought you',data:rs.map(r=>+(r.r3||0).toFixed(2)),backgroundColor:'#c5a059',borderWidth:0}]},
+        {label:'Bought himself',data:rs.map(r=>+(r.direct||0).toFixed(2)),backgroundColor:tcol('ice'),borderWidth:0},
+        {label:'Sold for you',data:rs.map(r=>+(r.indirect||0).toFixed(2)),backgroundColor:tcol('steel'),borderWidth:0},
+        {label:'Brought you',data:rs.map(r=>+(r.r3||0).toFixed(2)),backgroundColor:tcol('brass'),borderWidth:0}]},
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
-          scales:{x:{stacked:true,grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
-                  y:{stacked:true,grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
+          plugins:{legend:{labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}}},
+          scales:{x:{stacked:true,grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}},
+                  y:{stacked:true,grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:10}}}}}});
     /* v385: THIS CATCH WAS EMPTY, so a chart that threw drew nothing and said nothing, and
        neither of v384's reporters could see it: a catch INSIDE the ensureChart callback
        fires before anything outside the callback runs. The fix has to be per function for
@@ -15387,13 +15403,13 @@ function drawLedgerCharts(){
       if(!days.length){chartEmpty(el,'No dated sale in this selection.');return;}
       if(lgTimeObj){try{lgTimeObj.destroy();}catch(e){}}
       lgTimeObj=new Chart(el,{data:{labels:days.map(d=>d.slice(5)),datasets:[
-        {type:'bar',label:'RM written',data:days.map(d=>+by[d].rm.toFixed(2)),backgroundColor:'rgba(228,233,236,.5)',borderWidth:0,borderRadius:2},
-        {type:'line',label:'Units',data:days.map(d=>+by[d].k.toFixed(2)),yAxisID:'y1',borderColor:'#c5a059',backgroundColor:'transparent',pointRadius:2,borderWidth:2,tension:.25}]},
+        {type:'bar',label:'RM written',data:days.map(d=>+by[d].rm.toFixed(2)),backgroundColor:tcol('ice',.5),borderWidth:0,borderRadius:2},
+        {type:'line',label:'Units',data:days.map(d=>+by[d].k.toFixed(2)),yAxisID:'y1',borderColor:tcol('brass'),backgroundColor:'transparent',pointRadius:2,borderWidth:2,tension:.25}]},
         options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
-          scales:{x:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:9},maxRotation:60,minRotation:45}},
-                  y:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
-                  y1:{position:'right',grid:{display:false},ticks:{color:'#c5a059'}}}}});
+          plugins:{legend:{labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}}},
+          scales:{x:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:9},maxRotation:60,minRotation:45}},
+                  y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}},
+                  y1:{position:'right',grid:{display:false},ticks:{color:tcol('brass')}}}}});
     }catch(e){chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
@@ -15412,12 +15428,12 @@ function drawFinCharts(){
     const multi=new Set(keys.map(k=>k.slice(0,4))).size>1;
     const lab=keys.map(k=>MAP_MON[+k.slice(5,7)-1]+(multi?' '+k.slice(2,4):''));
     freshChart(el,{type:'bar',data:{labels:lab,datasets:[
-      {label:'Revenue',data:rows.map(([,v])=>+v.rev.toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:4},
-      {label:'Gross margin',data:rows.map(([,v])=>+(v.rev-v.cogs).toFixed(2)),backgroundColor:'#c5a059',borderWidth:0,borderRadius:4}]},
+      {label:'Revenue',data:rows.map(([,v])=>+v.rev.toFixed(2)),backgroundColor:tcol('ice'),borderWidth:0,borderRadius:4},
+      {label:'Gross margin',data:rows.map(([,v])=>+(v.rev-v.cogs).toFixed(2)),backgroundColor:tcol('brass'),borderWidth:0,borderRadius:4}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:'rgba(242,244,245,0.66)',boxWidth:12,font:{size:11}}}},
-        scales:{x:{grid:{display:false},ticks:{color:'rgba(242,244,245,0.66)'}},
-                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
+        plugins:{legend:{labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{display:false},ticks:{color:tcol('ink',0.66)}},
+                y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
   });
 }
 /* The statement, presented the way a reader who knows the standards expects to see it. */
@@ -19002,23 +19018,45 @@ function ensureChart(cb){
   s.onerror=()=>done(false);
   document.head.appendChild(s);
 }
+/* 06 Oct 2026: THE CHARTS AND THE MAP READ THE THEME, NEVER A LITERAL. tcol(role) is a colour of the identity read off
+   the page's tokens when it is drawn, so the Dawn, Dusk and Night themes (and Day, when it is let in) each draw
+   their own; tcol(role,a) is the same colour at alpha a. A role is the short name below, or any --token without its
+   dashes. The tokens at Night are the identity's hexes, so a chart at Night is the pixel it was. The chart ink and
+   the map's own steps are the desk's tokens in design/desk.css (--desk-chart-grid, --desk-map-*), since the
+   identity holds no token for them. A page with no stylesheet reads '' and Chart.js keeps its own default. */
+function tcol(role,a){
+  const R={ink:'salt-salt',brass:'salt-brass',copper:'salt-copper',verdigris:'salt-verdigris',ember:'salt-ember',steel:'salt-steel',
+    ice:'salt-product-salt',mist:'salt-mist-light',soft:'salt-brass-soft',obsidian:'salt-obsidian',slate:'salt-slate',
+    grid:'desk-chart-grid',mvoid:'desk-map-void',mcore:'desk-map-core',m0:'desk-map-0',m1:'desk-map-1',
+    medge:'desk-map-edge',mname:'desk-map-name',mstate:'desk-map-state'};
+  let v='';
+  try{v=getComputedStyle(document.documentElement).getPropertyValue('--'+(R[role]||role)).trim();}catch(e){}
+  if(a==null||!v)return v;
+  let m=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v),c=null;
+  if(m){const h=m[1].length===3?m[1].replace(/./g,'$&$&'):m[1];c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
+  else{m=/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/.exec(v);if(m)c=[+m[1],+m[2],+m[3]];}
+  return c?'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')':v;
+}
 /* v281: ONE LOOK FOR EVERY CHART. Set once on the loaded library so all of the desk's
    charts inherit its type, a glass tooltip and the reduced-motion setting, instead of
    each options block half-repeating it. Anything a chart states locally still wins. */
 function chartTheme(){
-  if(!window.Chart||Chart.__salted)return; Chart.__salted=true;
+  if(!window.Chart)return;
+  try{   /* the colours are read again on every call, so a theme that changed since the last draw is the one drawn */
+    const D=Chart.defaults,T=D.plugins.tooltip;
+    D.color=tcol('ink',0.66);D.borderColor=tcol('brass',0.14);
+    T.backgroundColor=tcol('obsidian',0.92);T.borderColor=tcol('brass',0.45);T.titleColor=tcol('ink');T.bodyColor=tcol('ink',0.85);
+  }catch(e){}
+  if(Chart.__salted)return; Chart.__salted=true;
   try{
     const D=Chart.defaults;
     D.font.family="'JetBrains Mono','Cascadia Mono',Consolas,monospace";   /* v472: figures are mono, charts included */
     D.font.size=11;
-    D.color='rgba(242,244,245,0.66)';
-    D.borderColor='rgba(197,160,89,0.14)';
     if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)D.animation=false;
     else{D.animation.duration=420;D.animation.easing='easeOutQuart';}
     const T=D.plugins.tooltip;
-    T.backgroundColor='rgba(5,8,10,0.92)';T.borderColor='rgba(197,160,89,0.45)';T.borderWidth=1;
+    T.borderWidth=1;
     T.cornerRadius=10;T.padding=10;T.caretSize=5;T.boxPadding=4;
-    T.titleColor='#f2f4f5';T.bodyColor='rgba(242,244,245,0.85)';
     T.titleFont={weight:'700',size:11};T.bodyFont={size:11};
     const L=D.plugins.legend.labels;
     L.usePointStyle=true;L.pointStyle='circle';L.boxWidth=7;L.boxHeight=7;
@@ -19094,10 +19132,10 @@ function drawInvChart(ic){
      the chart after the table above it was fixed. `opening` is Salt's 4.9 unit under BOTH
      books, so Oil's movement bar opened on Salt's lot and the walk missed by exactly that
      difference: 4.9 + 100 - 71 - 34 = -0.1 against a counted 0. With Oil's own 5 it closes. */
-  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[openingFor(PROD).qty,buyUnits,-(soldUnits-(loanOut-loanIn)),-selfUse,currentStock],cols=['#c5a059','#e4e9ec','#d4694c','#b87333','#6fae97'];
-  if(loanOut>0){labs.splice(3,0,'Loan out');vals.splice(3,0,-loanOut);cols.splice(3,0,'#8ea2b6');}  // the walk splits it; the chart should too
-  if(loanIn>0){labs.splice(2,0,'Borrowed in');vals.splice(2,0,loanIn);cols.splice(2,0,'#8ea2b6');}   // v518: lands beside Received
-  freshChart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:'#f2f4f5',font:{size:12}}},scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}}}}});
+  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[openingFor(PROD).qty,buyUnits,-(soldUnits-(loanOut-loanIn)),-selfUse,currentStock],cols=[tcol('brass'),tcol('ice'),tcol('ember'),tcol('copper'),tcol('verdigris')];
+  if(loanOut>0){labs.splice(3,0,'Loan out');vals.splice(3,0,-loanOut);cols.splice(3,0,tcol('steel'));}  // the walk splits it; the chart should too
+  if(loanIn>0){labs.splice(2,0,'Borrowed in');vals.splice(2,0,loanIn);cols.splice(2,0,tcol('steel'));}   // v518: lands beside Received
+  freshChart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:tcol('ink'),font:{size:12}}},scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}},y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}}}}});
 }
 
 /* ============ TAB SWITCH + RENDER ============ */
@@ -19710,21 +19748,21 @@ function drawConcCharts(){
     if(!ok){[p,s].forEach(el=>{chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
       const c=concentration();
-      const GRID='rgba(255,255,255,0.07)',TICK='rgba(242,244,245,0.66)';
+      const GRID=tcol('grid'),TICK=tcol('ink',0.66);
       [ccParetoObj,ccScatterObj].forEach(o=>{if(o){try{o.destroy();}catch(e){}}});
       if(p){
         let run=0;const cum=c.bc.map(x=>{run+=x.rev;return +(run/c.tot*100).toFixed(1);});
         ccParetoObj=new Chart(p,{data:{labels:c.bc.map(x=>codeOf(x.id)),datasets:[
           {type:'bar',label:'Revenue',data:c.bc.map(x=>+x.rev.toFixed(2)),
-           backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:3,order:2},
-          {type:'line',label:'Cumulative share',data:cum,yAxisID:'y1',borderColor:'#c5a059',
+           backgroundColor:tcol('ice'),borderWidth:0,borderRadius:3,order:2},
+          {type:'line',label:'Cumulative share',data:cum,yAxisID:'y1',borderColor:tcol('brass'),
            backgroundColor:'transparent',pointRadius:2,borderWidth:2,tension:.2,order:1}]},
           options:{responsive:true,maintainAspectRatio:false,
             plugins:{legend:{labels:{color:TICK,boxWidth:12,font:{size:11}}}},
             scales:{x:{grid:{display:false},ticks:{color:TICK,font:{size:10},maxRotation:60,minRotation:45}},
               y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}},
               y1:{position:'right',min:0,max:100,grid:{display:false},
-                  ticks:{color:'#c5a059',callback:v=>v+'%'}}}}});
+                  ticks:{color:tcol('brass'),callback:v=>v+'%'}}}}});
       }
       if(s){
         /* ============ REVENUE AGAINST MARGIN (v260) ============
@@ -19754,9 +19792,9 @@ function drawConcCharts(){
           return Math.round((below+same/2)/n*100);};
         const wAvg=raw.reduce((a,x)=>a+x.mar,0)/Math.max(0.01,raw.reduce((a,x)=>a+x.rev,0))*100;
         const band=q=>q>=75?'top':q<=25?'bottom':'mid';
-        const BANDCOL={top:{f:'rgba(197,160,89,.55)',b:'#c5a059',lab:'high value customer'},
-                       mid:{f:'rgba(228,233,236,.45)',b:'#e4e9ec',lab:'the middle of the book'},
-                       bottom:{f:'rgba(142,162,182,.55)',b:'#8ea2b6',lab:'high value relationship'}};
+        const BANDCOL={top:{f:tcol('brass',.55),b:tcol('brass'),lab:'high value customer'},
+                       mid:{f:tcol('ice',.45),b:tcol('ice'),lab:'the middle of the book'},
+                       bottom:{f:tcol('steel',.55),b:tcol('steel'),lab:'high value relationship'}};
         /* area, not radius, carries the value: doubling revenue should double the ink, and
            radius-proportional bubbles overstate a big customer by the square */
         const pts=raw.map(x=>{const q=pctlOf(x.pct);
@@ -19771,7 +19809,7 @@ function drawConcCharts(){
         ccScatterObj=new Chart(s,{data:{datasets:[
           {type:'line',label:'Average margin '+wAvg.toFixed(1)+'%',
            data:[{x:xlo,y:+wAvg.toFixed(1)},{x:xhi,y:+wAvg.toFixed(1)}],
-           borderColor:'#d8c79c',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:1},
+           borderColor:tcol('soft'),borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:1},
           {type:'bubble',label:'Customers',data:pts,order:2,
            backgroundColor:pts.map(q=>BANDCOL[q.band].f),
            borderColor:pts.map(q=>BANDCOL[q.band].b),borderWidth:1}]},
@@ -23289,7 +23327,7 @@ function drawEarnChart(){
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       const c=pxCost(),E=earnedPerUnit();
-      const GRID='rgba(255,255,255,0.07)',TICK='rgba(242,244,245,0.66)',INK='#f2f4f5';
+      const GRID=tcol('grid'),TICK=tcol('ink',0.66),INK=tcol('ink');
       /* v385: was PX.sizes, salt's hardcoded 0.5-to-25 list, so the "Board today" line on the
          OIL chart ran across sizes oil does not sell and stopped at 25 while the orders
          plotted beside it sit at 10 to 70. Same per-book list the board uses, priced by the
@@ -23305,10 +23343,10 @@ function drawEarnChart(){
          there are only six orders to look at. Chart.js names an empty dataset and draws nothing.
          Same shape as the empty band and the empty tier series: a set with nothing in it printing
          as though it were a real one. */
-      const sets=[{type:'line',label:'Board today',data:line,borderColor:'#c5a059',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25}];
-      if(dots.length)sets.push({type:'scatter',label:'Orders written',data:dots,backgroundColor:'rgba(228,233,236,.55)',borderColor:'#e4e9ec',pointRadius:5});
-      if(off.length)sets.push({type:'scatter',label:'One-off',data:off,backgroundColor:'rgba(197,160,89,.5)',borderColor:'#c5a059',pointRadius:6,pointStyle:'triangle'});
-      sets.push({type:'line',label:'Replacement cost',data:_sz.map(q=>({x:q,y:0})),borderColor:'#d4694c',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]});
+      const sets=[{type:'line',label:'Board today',data:line,borderColor:tcol('brass'),backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25}];
+      if(dots.length)sets.push({type:'scatter',label:'Orders written',data:dots,backgroundColor:tcol('ice',.55),borderColor:tcol('ice'),pointRadius:5});
+      if(off.length)sets.push({type:'scatter',label:'One-off',data:off,backgroundColor:tcol('brass',.5),borderColor:tcol('brass'),pointRadius:6,pointStyle:'triangle'});
+      sets.push({type:'line',label:'Replacement cost',data:_sz.map(q=>({x:q,y:0})),borderColor:tcol('ember'),backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]});
       freshChart(el,{data:{datasets:sets},options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
           title:{display:true,text:'Profit per unit against lot size (RM)',color:INK,font:{size:12}},
@@ -23423,7 +23461,7 @@ function priceNote(){
    The reference is priceLadder, the same call the board makes, rather than the retired tier
    card lookup that has returned null since v326. */
 function pxBands(){
-  const col=['#e4e9ec','#d8c79c','#c5a059'];   // kept local: a top-level array would read as a ledger declaration
+  const col=[tcol('ice'),tcol('soft'),tcol('brass')];   // kept local: a top-level array would read as a ledger declaration
   const s=((typeof shownSizes==='function'&&shownSizes(PROD))||[]).slice().sort((a,b)=>a-b);
   if(s.length<3)return [];
   const cut=[Math.ceil(s.length/3),Math.ceil(s.length*2/3)];
@@ -23437,7 +23475,7 @@ function drawBoardCharts(){
   if(!a&&!b)return;
   ensureChart(ok=>{
     if(!ok){[a,b].forEach(c=>{if(c)chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
-    const GRID='rgba(255,255,255,0.07)',TICK='rgba(242,244,245,0.66)',INK='#f2f4f5';
+    const GRID=tcol('grid'),TICK=tcol('ink',0.66),INK=tcol('ink');
     const base=t=>({responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:TICK,boxWidth:10,font:{size:10}}},
                title:{display:true,text:t,color:INK,font:{size:12}}},
@@ -23473,7 +23511,7 @@ function drawBoardCharts(){
           /* v566: the label is conditional, as every other tier-facing string on this view is. It
              was hardcoded, so OIL's chart carried a legend reading "Tier 2 ask" on a book whose own
              table head three inches above reads "Ask" and which has no second tier at all. */
-          {label:T1chart?'Tier 2 ask':'ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
+          {label:T1chart?'Tier 2 ask':'ask',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           /* v567: ONE LINE, NAMED FOR ALL THREE THINGS IT IS. v566 swept a duplicate floor series
              off this chart and left its TWIN standing one line below: "effective cost" drew
@@ -23484,11 +23522,11 @@ function drawBoardCharts(){
              which is the fault v566 said it was fixing. His report, 10 Sep 2026: "floor and eff.
              cost being the same". The board's own column three inches above has carried all three
              names on one figure since v552 and this now reads the same way. */
-          {label:'floor, eff. cost, break-even',borderColor:'#d4694c',borderDash:[5,4],borderWidth:1.5,pointRadius:0,
+          {label:'floor, eff. cost, break-even',borderColor:tcol('ember'),borderDash:[5,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>+(r.floor/r.q).toFixed(2))}
         ];
         if(T1chart)
-          ds.splice(1,0,{label:'Tier 1',borderColor:'#b87333',borderDash:[6,3],tension:.25,pointRadius:3,borderWidth:2,
+          ds.splice(1,0,{label:'Tier 1',borderColor:tcol('copper'),borderDash:[6,3],tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{const t=priceLadder(r.q).tier1;p=t?t.rate:null;}catch(e){}return p;})});
         freshChart(a,{type:'line',data:{labels:tb.map(r=>units(r.q)),datasets:ds},
           options:Object.assign(base('The board and its floor, per unit (RM/unit)'),{})});
@@ -23545,10 +23583,10 @@ function drawPriceCharts(){
     try{
       const pts=priceBuckets(),labs=pts.map(x=>'RM '+x.p);
       const opt=t=>({responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},title:{display:true,text:t,color:'#f2f4f5',font:{size:12}}},
-        scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}}}});
-      freshChart(q,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.kg.toFixed(2)),backgroundColor:'#e4e9ec',borderRadius:6}]},options:opt('Volume sold at each price (unit)')});
-      freshChart(r,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.rm.toFixed(2)),backgroundColor:'#8ea2b6',borderRadius:6}]},options:opt('Revenue at each price (RM)')});
+        plugins:{legend:{display:false},title:{display:true,text:t,color:tcol('ink'),font:{size:12}}},
+        scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}},y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66)}}}});
+      freshChart(q,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.kg.toFixed(2)),backgroundColor:tcol('ice'),borderRadius:6}]},options:opt('Volume sold at each price (unit)')});
+      freshChart(r,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.rm.toFixed(2)),backgroundColor:tcol('steel'),borderRadius:6}]},options:opt('Revenue at each price (RM)')});
     /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
        callback, so it fires after those have returned and neither of them can ever see it. An
        empty one here is the same silence in a place the fix did not reach. */
@@ -24028,10 +24066,10 @@ function placePicker(pt){
   const s=Math.min(W/((x1-x0)*kx),H/(y1-y0)),ox=(W-(x1-x0)*kx*s)/2,oy=(H-(y1-y0)*s)/2;
   PICK={x0:x0,y1:y1,kx:kx,s:s,ox:ox,oy:oy,W:W,H:H};
   const X=l=>ox+(l-x0)*kx*s,Y=l=>oy+(y1-l)*s,path=rings=>rings.map(r=>'M'+r.map(([lg,la])=>X(lg).toFixed(1)+','+Y(la).toFixed(1)).join('L')+'Z').join('');
-  return `<svg class="mpick" viewBox="0 0 ${W} ${H}" onclick="pickPlace(event)" style="width:100%;max-width:${W}px;height:auto;display:block;margin-top:9px;cursor:crosshair;background:#05080a;border:1px solid var(--line);border-radius:10px" role="img" aria-label="Tap where they are">
-    ${core.map(d=>`<path d="${path(areaShape(d).rings)}" fill="#ffffff08" stroke="#34454d" stroke-width="1"/>`).join('')}
-    ${core.filter(d=>(areaShape(d).box[2]-areaShape(d).box[0])*kx*s>d.name.length*5.6).map(d=>`<text x="${X(d.label[0]).toFixed(1)}" y="${Y(d.label[1]).toFixed(1)}" text-anchor="middle" font-size="10" fill="#8ea2b6" style="pointer-events:none">${esc(d.name)}</text>`).join('')}
-    ${pt?`<circle class="mpickpt" cx="${X(pt[1]).toFixed(1)}" cy="${Y(pt[0]).toFixed(1)}" r="6" fill="#d4694c" stroke="#05080a" stroke-width="2"/>`:''}
+  return `<svg class="mpick" viewBox="0 0 ${W} ${H}" onclick="pickPlace(event)" style="width:100%;max-width:${W}px;height:auto;display:block;margin-top:9px;cursor:crosshair;background:${tcol('obsidian')};border:1px solid var(--line);border-radius:10px" role="img" aria-label="Tap where they are">
+    ${core.map(d=>`<path d="${path(areaShape(d).rings)}" fill="${tcol('mcore')}" stroke="${tcol('m0')}" stroke-width="1"/>`).join('')}
+    ${core.filter(d=>(areaShape(d).box[2]-areaShape(d).box[0])*kx*s>d.name.length*5.6).map(d=>`<text x="${X(d.label[0]).toFixed(1)}" y="${Y(d.label[1]).toFixed(1)}" text-anchor="middle" font-size="10" fill="${tcol('steel')}" style="pointer-events:none">${esc(d.name)}</text>`).join('')}
+    ${pt?`<circle class="mpickpt" cx="${X(pt[1]).toFixed(1)}" cy="${Y(pt[0]).toFixed(1)}" r="6" fill="${tcol('ember')}" stroke="${tcol('obsidian')}" stroke-width="2"/>`:''}
   </svg><div style="margin-top:4px;font-size:11px;color:var(--mut)">${esc(AREAS_META.attribution[0])}. ${esc(GAZ_META.attribution)}.</div>`;
 }
 function pickPlace(e){
@@ -25664,6 +25702,16 @@ function railSubs(){
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
 function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
+/* 06 Oct 2026: A THEME CHANGE DRAWS THE CHARTS AND THE MAP AGAIN. salt-time.js sets data-time on <html> and tells it with
+   a salt-time event; a chart holds the colours it was built with and the map is a string, so the part showing is
+   rendered once more in the new theme's tokens. A part with no chart and no map (Enter's forms, Approve, the order
+   book) is left alone: it follows the theme through CSS and nothing in it would change. */
+const THEME_PARTS=new Set(['today','overview','forward','receivables','financials','inventory','sourcing','pricing','concentration','network','map','ledger','analysis']);
+function themeRedraw(){
+  try{chartTheme();if(typeof curTab==='undefined'||!THEME_PARTS.has(partOf(curTab)))return;render();}
+  catch(e){try{console.error('themeRedraw threw',e);}catch(_){}}
+}
+document.documentElement.addEventListener('salt-time',themeRedraw);
 function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
