@@ -35,7 +35,9 @@ export function makerTradeEntry(operation, body, book, trip = null) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
   const roster = book.state.roster || [];
-  if (!code(body.party, roster)) return { error: "Choose a party on the roster." };
+  const partyKind = sale ? body.stream === "R2" ? "associate" : "buyer" : "supplier";
+  if (!code(body.party, roster)) return { error:
+    `Choose ${partyKind === "associate" ? "an" : "a"} ${partyKind} on the roster. Register a new ${partyKind} under Counter Admin > Add ID first, then pick the code.` };
   for (const key of ["qty", "total", "cash", "movedUnits"])
     if (!figure(body[key])) return { error: "Trade figures must be finite, non-negative numbers." };
   if (!(body.qty > 0)) return { error: "Units must be above zero." };
@@ -47,7 +49,11 @@ export function makerTradeEntry(operation, body, book, trip = null) {
   const assoc = body.assoc || null, stream = body.stream || null, downstream = body.downstream || null;
   for (const key of ["assoc", "downstream"])
     if (body[key] !== undefined && body[key] !== null && !code(body[key], roster))
-      return { error: "Choose an associate and end buyer from the roster." };
+      return { error: key === "downstream"
+        ? "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code."
+        : body.stream === "R3"
+          ? "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code."
+          : "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code." };
   if (body.stream !== undefined && body.stream !== null && !["R2", "R3"].includes(body.stream))
     return { error: "Choose R2 or R3." };
   if (assoc ? !["R2", "R3"].includes(stream) : stream || downstream)
