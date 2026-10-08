@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ba0be24f574632dd";
+var SALT_BUILD_ID="97a8102158c89825";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6591,7 +6591,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
-    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode'];
+    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
@@ -6609,6 +6609,9 @@ function vaultPendingOk(record,publicWord=()=>false){
       ||/^\d{4}-\d\d-\d\d(?:T[\d:.]+Z)?$/.test(v)||/^[a-z][0-9]+$/.test(v)
       ||key==='orderCode'&&/^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/.test(v);
     if(key==='hide')return house&&Array.isArray(v)&&v.length<=50&&v.every(n=>typeof n==='number'&&Number.isFinite(n)&&n>0);
+    if(key==='extras')return /\/inputs\/(sale|purchase)$/.test(record.path)&&Array.isArray(v)&&v.length>0&&v.length<=19
+      &&v.every(n=>object(n)&&Object.keys(n).every(k=>['product','qty','total','cash','movedUnits','second'].includes(k))
+        &&safe(n,'trade'));
     if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
       ||i===2&&typeof n==='string'&&publicWord(n));
     return object(v)&&Object.entries(v).every(([k,n])=>
