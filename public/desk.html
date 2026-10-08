@@ -184,7 +184,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7f24144e96ef2b32";
+var SALT_BUILD_ID="b66e565709a58e83";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -21775,14 +21775,7 @@ const ADDID_KIND_LABEL={customer:'Customer, buys direct',reseller:'Associate, re
    WHICH KIND APPOINTS IS THE ENGINE'S TABLE, not a fourth copy: the drafter and the fold read
    the same ADDID_APPOINTS, and the whole point of this version is that the Kind means the same
    thing at the form, at the gate and at the fold. */
-function addIdPlan(code,kind){
-  const stream=(POSITION_ENGINE.ADDID_APPOINTS||{})[kind]||null;
-  const known=!!code&&roster.indexOf(code)>=0;
-  const resell=POSITION_ENGINE.appointBucket(kind,code);   /* v610: every appointment mints the bucket */
-  return {stream:stream,known:known,elevate:!!stream&&known,
-    already:!!stream&&!!code&&associates.indexOf(code)>=0,
-    resell:(resell&&roster.indexOf(resell)<0)?resell:null};
-}
+function addIdPlan(code,kind){return POSITION_ENGINE.addIdPlan(code,kind,roster,associates);}
 /* v587: THE CODE THIS PANE WILL REGISTER. An appointment names someone on the roster, picked under Who; a
    bucket is its associate's -Gen, as Names & IDs makes it; everyone else is derived from the name and the
    place, a blank place being TBC, by the same deriveFreeCode the laptop calls, so a code minted here and
