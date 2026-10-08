@@ -435,6 +435,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 #oMaker input{max-width:100%}
 .maker-card{margin:14px 0;padding:16px}
 .maker-card>*+*{margin-top:12px}
+.maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .maker-field .lbl{margin-top:0}
@@ -1123,7 +1124,10 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
         + '<section aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
         + '<p class="lead" id="makerReviewStatus">Reading orders and rows…</p>'
-        + '<div id="makerReview"></div></section>'
+        + '<div id="makerReview"></div>'
+        + '<h3 id="makerQueueTitle">Server-held queue</h3>'
+        + '<p class="lead">Only entries already uploaded to the Desk server appear here. The Counter cannot read a device’s unsent queue; Cancel retained input is local only, not server withdrawal.</p>'
+        + '<div id="makerQueueReview" aria-live="polite"></div></section>'
         + '<section aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'

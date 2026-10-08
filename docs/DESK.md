@@ -194,7 +194,8 @@
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
-  `/_internal/maker/drafts`, draft decisions, named order-stage actions, and typed
+  `/_internal/maker/drafts`, `/_internal/maker/queue` and its timestamped withdraw action,
+  draft decisions, named order-stage actions, and typed
   `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`, `inputs/loan`,
   `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id` and
   `inputs/place` and `inputs/ledger-amend` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
@@ -215,6 +216,24 @@
   shared admission and drafter; success requires the matching real draft, never just a queue
   write. Concurrent retries share one admission and one primary-keyed draft. If the book no
   longer permits the retained entry, recovery refuses explicitly rather than rebuilding it.
+  The Counter's server-held queue review derives the owning device by finding exactly one
+  `q:<device>` record; it never accepts a device chosen by the caller. Identified device uploads
+  keep an immutable `queue-owner:<at>` receipt in `maker_request`; the same-origin Desk recovery
+  route `POST /queue/<at>/withdraw` requires that existing device id and the entry fingerprint.
+  The Counter route infers the same owner from the server-held queue. Both roads recheck under the
+  per-device lock, bind the timestamp, entry fingerprint and owner in `maker_request`, remove only
+  that device's copy, and clear its resource-admission source plus a racing drafter reservation.
+  The durable `queue-withdraw:<at>` tombstone also blocks a delayed queue POST, resource admission and the
+  drafter's atomic draft insert. Only a saved `withdrawn` receipt, or a matching owner/fingerprint
+  readback of an already rejected draft with no remaining server copy, confirms completion;
+  retries replay the same result. If the Desk's submitted fingerprint differs, `409 entry-changed`
+  includes `serverFingerprint` only while the unique current device queue row agrees with its
+  durable owner receipt; that response makes no change and requires a separate confirmation tap.
+  No fingerprint is returned when the queue copy or ownership agreement is absent. A pending draft
+  remains under native Reject; an approved or committed row cannot be withdrawn. Refusal reason,
+  source and seen time come from the Desk
+  mirror. The Counter cannot read the phone's unsent local queue: Cancel retained input is
+  device-local and is not server withdrawal.
   `0014_input_admission.sql` adds atomic resource receipts, claims and per-road ownership for
   loan repayments and reward draws; both migrations were applied individually on 03 Oct 2026,
   with readback preserving the existing draft indexes. The shared admission
