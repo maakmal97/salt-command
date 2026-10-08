@@ -1326,7 +1326,7 @@ export const OWNER_JS = `
     var redeemDate=makerField(redeem,'Date','date',today), redeemStatus=makerStatus(redeem),
       redeemList=el('div','maker-rewards');
     redeem.appendChild(redeemList);
-    function drawRewards(rewards){
+    function drawMakerRewards(rewards){
       redeemList.textContent='';
       if(!rewards.length)redeemList.appendChild(el('p','msg','No reward is held.'));
       rewards.forEach(function(offer){
@@ -1340,16 +1340,16 @@ export const OWNER_JS = `
             try{
               await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
               redeemStatus.textContent='Sent for review. It settles only when approved and folded.';
-              var read=await refs('/all/maker/inputs');drawRewards(read.catalog.rewards||[]);loadMaker();
+              var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);loadMaker();
             }catch(error){status.textContent=error.message;}
           },true);
         }
         redeemList.appendChild(row);
       });
     }
-    drawRewards(catalog.rewards||[]);
+    drawMakerRewards(catalog.rewards||[]);
     makerButton(redeem,'Read reward offers',async function(){
-      try{var read=await refs('/all/maker/inputs');drawRewards(read.catalog.rewards||[]);redeemStatus.textContent='Reward offers read.';}
+      try{var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);redeemStatus.textContent='Reward offers read.';}
       catch(error){redeemStatus.textContent=error.message;}
     },false);
     var offsets=el('section','maker-input');offsets.appendChild(el('h3',null,'Automatic offsets'));
@@ -1951,7 +1951,7 @@ export const OWNER_JS = `
         var wrap=el('label','maker-cover'), check=el('input'), words=el('span'), note=el('p','msg'), revision=0;
         check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;
         wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);root.appendChild(wrap);root.appendChild(note);
-        async function read(){
+        async function readCoverChoice(){
           var ticket=++revision;check.checked=false;wrap.hidden=true;check.disabled=true;note.textContent='';
           if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0))return;
           note.textContent='Reading reward cover…';
@@ -1967,9 +1967,9 @@ export const OWNER_JS = `
             }
           }catch(error){if(ticket===revision)note.textContent=error.message;}
         }
-        var choice={check:check,read:read};coverChoices.push(choice);
+        var choice={check:check,read:readCoverChoice};coverChoices.push(choice);
         [bookControl,unitsControl,goodsControl,tradeParty,tradeStream,direction].forEach(function(control){
-          control.addEventListener('input',read);control.addEventListener('change',read);
+          control.addEventListener('input',readCoverChoice);control.addEventListener('change',readCoverChoice);
         });
         return choice;
       }

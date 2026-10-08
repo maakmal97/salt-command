@@ -51596,6 +51596,7 @@ await (async () => {
             parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
+            rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
             rows: [{ rid: "editor-sale", party: "CX1-AB", product: "salt", date: "2026-09-01", qty: 2, total: 200, open: true }],
             correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }]
           } }
