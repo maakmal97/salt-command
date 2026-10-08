@@ -1864,6 +1864,64 @@ export const OWNER_JS = `
           allPending=false;
         },false);
       }
+      var driftSection=el('section','maker-input');
+      driftSection.appendChild(el('h3',null,'Customer drift'));
+      driftSection.appendChild(el('p','msg','Salt only. Zero is a held override; Clear returns the customer to automatic drift from the record.'));
+      tradeSection.parentNode.insertBefore(driftSection,tierSection.nextSibling);
+      var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
+      if(!driftCodes.length||!driftBooks.length){
+        driftSection.appendChild(el('p','msg','No drift customer input is available.'));
+      }else{
+        var driftCode=el('select','fld salt-field__input'), driftProduct=el('select','fld salt-field__input');
+        driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
+        driftBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; driftProduct.appendChild(option); });
+        [['Customer',driftCode],['Book',driftProduct]].forEach(function(item){
+          var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); driftSection.appendChild(wrap);
+        });
+        var driftValue=makerField(driftSection,'Drift from -1 to +1','number','','0.05');
+        driftValue.min='-1'; driftValue.max='1';
+        var driftState=el('p','msg'); driftSection.appendChild(driftState);
+        var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
+        var driftPending=false, driftAt=null, driftSignature='';
+        function driftCardOf(){
+          return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
+        }
+        function driftFormat(value){ return (value>=0?'+':'')+Number(value).toFixed(2); }
+        function driftRefresh(){
+          var card=driftCardOf();
+          if(card&&card.held) driftState.textContent='Held override: '+driftFormat(card.value)+'.';
+          else if(card&&typeof card.current==='number') driftState.textContent='Automatic from the record: '+driftFormat(card.current)+'.';
+          else driftState.textContent='Automatic from the record. No current drift is available in this snapshot.';
+          clearDrift.hidden=!(card&&card.held);
+        }
+        driftCode.addEventListener('change',driftRefresh); driftProduct.addEventListener('change',driftRefresh);
+        var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
+        makerButton(driftActions,'Set drift for review',async function(send){
+          if(driftPending) return;
+          var raw=driftValue.value.trim(), value=Number(raw);
+          if(!raw||!Number.isFinite(value)||value < -1||value > 1){
+            driftAnswer.textContent='Enter a drift from -1 to +1.';
+            return;
+          }
+          value=Number(value.toFixed(2));
+          var body={code:driftCode.value,product:driftProduct.value,tier:value};
+          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
+          body.at=driftAt; driftPending=true;
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent for review. The held drift changes only when folded.'; loadMaker(); }
+          catch(error){ driftAnswer.textContent=error.message; }
+          driftPending=false;
+        },true);
+        var clearDrift=makerButton(driftActions,'Clear held drift',async function(send){
+          if(driftPending) return;
+          var body={code:driftCode.value,product:driftProduct.value,tier:null};
+          var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
+          body.at=driftAt; driftPending=true;
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Clear sent for review. Automatic drift returns when folded.'; loadMaker(); }
+          catch(error){ driftAnswer.textContent=error.message; }
+          driftPending=false;
+        },false);
+        driftRefresh();
+      }
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=el('section','maker-input');
       houseSection.appendChild(el('h3',null,'Printed board sizes'));

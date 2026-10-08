@@ -50440,6 +50440,11 @@ await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
 })();
 
+section("Counter Admin salt drift set and clear: the held override, automatic record and fixed-book boundary");
+await (async () => {
+  await (await import("./maker-drift.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
