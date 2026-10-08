@@ -8,6 +8,78 @@ const normalized = (entry) => {
   return body;
 };
 
+export async function reservedInputs(db, book) {
+  const rows = await db.prepare(`SELECT id,entry FROM input_admission
+    WHERE state='accepted' OR state='committed' AND snapshot=?1
+    UNION ALL SELECT id,entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')
+      AND id NOT IN (SELECT id FROM input_admission)`).bind(String(book.version)).all();
+  return (rows.results || []).map((row) => JSON.parse(row.entry));
+}
+
+/** One conditional insertion admits the complete set or none; source ownership shares that transaction. */
+export async function admitInputs(db, entries, book, source) {
+  if (!db || !book?.version || typeof db.batch !== "function")
+    return fault("Durable input admission and a complete mirror are required.", 503);
+  const claims = [];
+  const identities = new Map();
+  for (const entry of entries) {
+    const checked = await checkInputAdmission(db, entry, book);
+    if (checked.error) return checked;
+    if (checked.claim) {
+      if (identities.has(entry.at)) {
+        if (identities.get(entry.at) !== checked.fingerprint)
+          return fault("That timestamp already names a different resource input.");
+        continue;
+      }
+      identities.set(entry.at, checked.fingerprint);
+      claims.push({ entry, ...checked });
+    }
+  }
+  if (!claims.length) return {};
+  const values = JSON.stringify(claims.map(({ entry, claim, fingerprint }) => [
+    entry.at, fingerprint, claim.resource, claim.amount, String(book.version),
+    JSON.stringify(normalized(entry)), claim.available
+  ]));
+  const incoming = `WITH incoming(id,fingerprint,resource,amount,snapshot,entry,available) AS (
+    SELECT json_extract(value,'$[0]'),json_extract(value,'$[1]'),json_extract(value,'$[2]'),
+      json_extract(value,'$[3]'),json_extract(value,'$[4]'),json_extract(value,'$[5]'),
+      json_extract(value,'$[6]') FROM json_each(?1)) `;
+  const allFit = `NOT EXISTS (SELECT 1 FROM incoming i WHERE
+    NOT EXISTS (SELECT 1 FROM snapshot WHERE one=1 AND v=i.snapshot)
+    OR EXISTS (SELECT 1 FROM input_admission a WHERE a.id=i.id AND (a.fingerprint<>i.fingerprint OR a.state<>'accepted'))
+    OR EXISTS (SELECT 1 FROM draft d WHERE d.id=i.id AND (d.status='rejected' OR d.committed_at IS NOT NULL))
+    OR EXISTS (SELECT 1 FROM maker_request WHERE id='queue-withdraw:'||i.id)
+    OR (SELECT COALESCE(SUM(j.amount),0) FROM incoming j WHERE j.resource=i.resource
+        AND j.id NOT IN (SELECT id FROM input_admission))
+      + (SELECT COALESCE(SUM(a.amount),0) FROM input_admission a WHERE a.resource=i.resource
+        AND (a.state='accepted' OR a.state='committed' AND a.snapshot=i.snapshot)) > i.available + 0.005)`;
+  const insert = db.prepare(incoming + `INSERT OR IGNORE INTO input_admission
+    (id,fingerprint,resource,amount,snapshot,entry)
+    SELECT id,fingerprint,resource,amount,snapshot,entry FROM incoming WHERE ` + allFit).bind(values);
+  const owners = claims.map(({ entry }) => db.prepare(incoming + `INSERT OR IGNORE INTO input_admission_source(id,source)
+    SELECT id,?2 FROM incoming WHERE id=?3 AND NOT EXISTS
+      (SELECT 1 FROM incoming i WHERE NOT EXISTS (SELECT 1 FROM input_admission a
+        WHERE a.id=i.id AND a.fingerprint=i.fingerprint AND a.state='accepted')) AND ` + allFit).bind(values, source, entry.at));
+  const results = await db.batch([insert, ...owners]);
+  for (const { entry, fingerprint } of claims) {
+    const accepted = await db.prepare(`SELECT fingerprint,state FROM input_admission WHERE id=?1
+      AND NOT EXISTS (SELECT 1 FROM maker_request WHERE id='queue-withdraw:'||?1)`).bind(entry.at).first();
+    if (!accepted || accepted.fingerprint !== fingerprint || accepted.state !== "accepted")
+      return fault("The book changed or this batch's balance is already reserved. Retry the original request.");
+  }
+  const current = await db.prepare("SELECT v FROM snapshot WHERE one=1").first();
+  if (String(current?.v) !== String(book.version)) {
+    for (const [i, { entry }] of claims.entries())
+      if (results[i + 1].meta.changes === 1) await withdrawInputAdmission(db, entry.at, source);
+    return fault("The book changed during admission. This batch was not sent; retry the original request.");
+  }
+  return {
+    accepted: true,
+    newSources: claims.filter((_, index) => results[index + 1].meta.changes === 1)
+      .map(({ entry }) => entry.at)
+  };
+}
+
 export async function checkInputAdmission(db, entry, book) {
   if (!E.inputConsumesResource(entry)) return {};
   const claim = E.inputResource(entry, book);

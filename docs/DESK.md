@@ -234,6 +234,20 @@
   source and seen time come from the Desk
   mirror. The Counter cannot read the phone's unsent local queue: Cancel retained input is
   device-local and is not server withdrawal.
+  Reward redemption shows the native held balance per holder, net of durable reservations:
+  a departed holder keeps their earnings visible without an action, returning restores the
+  offer, and a customer needs one whole unit. An unpaid advance offers Offset, otherwise Redeem.
+  Sale cover is an unticked choice on the first or an extra book. The read-only
+  `POST /all/maker/trade-cover` bridge reads the party's own snapshot card and the shared
+  Position Engine `coverPlan`: goods only, shelf cost, capped to available reward and floored
+  to hundredths of a unit. Delivery, the floor and the board are unchanged. The request carries
+  only `cover: true`; the Desk builds the native cover fields and checks eligibility again.
+  Covered multi-book requests take a dedicated resource road: one conditional D1 insertion
+  admits all claims or none, with durable `orders` ownership before queue transport, and the
+  exact `queue-withdraw:<at>` fence. Phone queues use the same batch admission with
+  `device:<id>` ownership. Ordinary trade batches still refuse resource entries. A reseed
+  during admission releases only new ownership; an uncertain transport keeps the original
+  whole batch and reservation for retry. No new migration or live acceptance is implied.
   `0014_input_admission.sql` adds atomic resource receipts, claims and per-road ownership for
   loan repayments and reward draws; both migrations were applied individually on 03 Oct 2026,
   with readback preserving the existing draft indexes. The shared admission

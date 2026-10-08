@@ -67,6 +67,7 @@ async function deskCall(env, path, method, body) {
   if (secret.length < 32 || !env.DESK_MAKER) throw new Error("The private Desk maker bridge is not configured.");
   const allowed = path === "/_internal/maker/drafts" && method === "GET"
     || path === "/_internal/maker/queue" && method === "GET"
+    || path === "/_internal/maker/trade-cover" && method === "POST"
     || path === "/_internal/maker/inputs" && method === "GET"
     || path === "/_internal/maker/vault" && method === "GET"
     || path === "/_internal/maker/vault/addr" && method === "GET"
@@ -183,6 +184,7 @@ async function makerHours(request, env, method) {
 }
 
 function internalOperation(path) {
+  if (path === "/all/maker/trade-cover") return { kind: "trade-cover" };
   if (path === "/all/maker/review") return { kind: "review" };
   if (path === "/all/maker/queue") return { kind: "queue" };
   const withdrawal = /^\/all\/maker\/queue\/([^/]+)\/withdraw$/.exec(path);
@@ -230,6 +232,12 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
   if (!op) return json({ ok: false, error: "not found" }, 404);
   const method = request.method;
   try {
+    if (op.kind === "trade-cover") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      return json(await deskCall(env, "/_internal/maker/trade-cover", "POST", parsed.body));
+    }
     if (op.kind === "hours") return await makerHours(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
        Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through
