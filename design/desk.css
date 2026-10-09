@@ -60,7 +60,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
 h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
-.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.vpill,.viewsw button,
+.sbadge,.pbadge,.pscope,.prodsw button,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
@@ -72,7 +72,7 @@ details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
 .dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
-details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,
+details.rcard>summary .rname,.kpi .n,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -473,9 +473,10 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
 .starpill.s2{background:linear-gradient(135deg,var(--salt-brass),var(--salt-copper));box-shadow:none;}
 .starpill.s3{background:linear-gradient(135deg,var(--salt-copper),var(--salt-ember));box-shadow:none;}
-.prodtag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;box-shadow:none;text-shadow:none;
-  border:1px solid var(--salt-line-faint);border-radius:6px;}
-.prodtag .gl{box-shadow:0 0 6px -1px currentColor;}
+/* the product stamp on a ledger row is the system's .salt-producttag, bare: the ledger's rows carry the dot and the
+   name and no frame (the recipe has one; this placement does not), so the frame is this layer's alone */
+.prodtag{font-size:10px;}  /* the stamp sits beside 11px copy in a row; the system's tag is its smallest token, 11px */
+.ledwrap .prodtag{background:none;border:0;padding:0;box-shadow:none;}
 .sbadge{font-size:10px;font-weight:500;letter-spacing:.1em;}
 .bloyal{--bc:var(--salt-verdigris);}
 .breg{--bc:var(--salt-product-salt);}
@@ -483,9 +484,6 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .bhi{--bc:var(--salt-brass);}
 .bthin{--bc:var(--salt-ember);color:var(--salt-ember);}
 .bdorm{--bc:var(--salt-mist);}
-.prodhd{font-size:12.5px;font-weight:500;letter-spacing:.14em;color:var(--salt-salt);}
-.prodhd .sub{letter-spacing:0;color:var(--salt-mist);}
-.prodhd .rule{background:linear-gradient(90deg,var(--salt-line),transparent);}
 .prodblock+.prodblock{border-top-color:var(--salt-line-faint);}
 .pbadge{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 .pscope,.pscopen,.pbadgeo{font-size:11px;color:var(--salt-mist);}

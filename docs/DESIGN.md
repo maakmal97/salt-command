@@ -206,6 +206,19 @@ the first run differed on Concentration's customer column until the tint was in 
 because the system's floor is its 11px `--salt-text-xs` (the suite reads it) and the desk's measured face is half a pixel under;
 moving to 11px would widen every pill by about 4px and is his call. The suite section "Tier pill" proves it.
 
+**The product bands and tags group (09 Oct 2026, unbumped, for his word).** The heading that says which book a block
+draws is the system's `.salt-product` (`__dot`, `__sub`, `__rule`) and the stamp on a row its `.salt-producttag`
+(`__dot`), beside `prodhd` and `prodtag`, which the suite and the parts still query. The book's accent reaches both as
+`--salt-hue` on the element, never a colour written in the desk. Deleted: the band's and the stamp's older-layer rules
+(the 800-weight embossed stamp, its inset highlights, the `pd` and `gl` dots), their entries in the face lists and
+`design/desk.css`'s two override blocks. The recipe was synced to the desk, not the desk to it: no glow on the band's
+dot, 3px 9px on the stamp, and the stamp's name takes `--salt-hue` as its dot does. Measured: a probe of every
+`.prodhd`, `.prodtag` and child on all 17 parts at 1280 and 375 (1,374 elements, 35 computed properties each) reads
+no difference, and `renderdiff` reads 34 of 34 the same. Left on the layer: the stamp's 10px (the system's tag is its
+smallest token, 11px, and the suite forbids type under it), and the ledger's bare stamp (no frame, no padding), both
+scoped to the stamp in `design/desk.css` with the reason beside them. The consolidated band's hollow ring is inline,
+a token. The product switch (`.prodsw`) is another group. The suite section "Product bands" proves it.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="5acc28b404eca439";
+var SALT_BUILD_ID="8d45a2a9471d416a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -451,7 +451,6 @@ tr.tot td{font-weight:800;background:var(--salt-slate);}
 .ledwrap .tag.paid{color:var(--grn);} .ledwrap .tag.open{color:var(--amber);} .ledwrap .tag.pendingt{color:var(--vio);}
 .ledwrap .tag.inkind{color:var(--gold);} .ledwrap .tag.def{color:var(--crim);} .ledwrap .tag.prov{color:var(--gold);}
 .ledwrap .etype{background:none;padding:0;border-radius:0;}
-.ledwrap .prodtag{background:none;border:0;padding:0;box-shadow:none;}
 .ledwrap .lqb{border:0;padding:0;background:none;font-weight:500;text-decoration:underline;text-underline-offset:2px;}
 .ledwrap .lqb:hover{background:none;}
 .lgroup{display:contents;}
@@ -742,25 +741,13 @@ td.l{white-space:nowrap;}
    easy to mistake for the whole. A product band now heads each block instead. */
 .prodblock{margin-top:16px;}
 .prodblock+.prodblock{margin-top:26px;padding-top:20px;border-top:1px solid var(--line);}
-.prodhd{display:flex;align-items:center;gap:9px;margin:0 0 10px;font-size:12px;font-weight:800;
-  letter-spacing:1.1px;text-transform:uppercase;color:var(--ink);}
-.prodhd .pd{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
-.prodhd .sub{font-weight:600;letter-spacing:.4px;text-transform:none;color:var(--dim);font-size:11.5px;}
-.prodhd .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
+/* 09 Oct 2026: the band (.prodhd) and the stamp (.prodtag) are the design system's .salt-product and .salt-producttag recipes */
 .conso{margin-bottom:4px;}
 /* ============ WHICH PRODUCT, ON THE ROW (v266) ============
    The ledger is the one consolidated tab, so a row for 10 unit at RM10 sat next to one for
    10 unit at RM68 with nothing to say why. Embossed rather than flat: a lit top edge and a
    dark under-edge, the way the Diamond badge is built, so it reads as a stamp on the row and
    not as another status pill competing with Pending and Completed. */
-.prodtag{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:800;
-  letter-spacing:.9px;text-transform:uppercase;padding:3px 9px;border-radius:7px;
-  border:1px solid color-mix(in srgb, var(--salt-salt) 9%, transparent);vertical-align:middle;white-space:nowrap;
-  background:linear-gradient(180deg,color-mix(in srgb, var(--salt-salt) 11%, transparent),color-mix(in srgb, var(--salt-salt) 1.5%, transparent));
-  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 24%, transparent),inset 0 -1px 0 color-mix(in srgb, var(--salt-ink-on-accent) 42%, transparent),0 1px 2px color-mix(in srgb, var(--salt-ink-on-accent) 38%, transparent);
-  text-shadow:0 1px 0 color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent);}
-.prodtag .gl{width:7px;height:7px;flex:0 0 auto;border-radius:50%;
-  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--salt-salt) 50%, transparent),0 0 6px -1px currentColor;background:currentColor;}
 .lagreed{font-size:11px;color:var(--dim);}
 .lqb{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;
   padding:9px 14px;min-height:var(--tap);border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--mut);}
@@ -3327,12 +3314,13 @@ label.salt-field__label {
 .salt-product--candy { --salt-hue: var(--salt-product-candy); }
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
-.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
+.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
-   already draws one; its hue is the modifier's, or the tag's own colour where none is set. ---- */
+   already draws one; its hue is --salt-hue (the modifier's, or set on the tag by a page whose book
+   carries its own accent), and the name takes it too. Synced to the desk's measured stamp: 3px 9px. ---- */
 
 .salt-producttag {
   display: inline-flex;
@@ -3343,11 +3331,11 @@ label.salt-field__label {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--salt-salt);
+  color: var(--salt-hue, var(--salt-salt));
   background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   white-space: nowrap;
   vertical-align: middle;
   box-shadow: none;
@@ -3851,7 +3839,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
 h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
-.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.vpill,.viewsw button,
+.sbadge,.pbadge,.pscope,.prodsw button,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
@@ -3863,7 +3851,7 @@ details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
 .dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
-details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,
+details.rcard>summary .rname,.kpi .n,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -4264,9 +4252,10 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .starpill.s1{background:linear-gradient(135deg,var(--salt-brass-soft),var(--salt-brass));box-shadow:none;}
 .starpill.s2{background:linear-gradient(135deg,var(--salt-brass),var(--salt-copper));box-shadow:none;}
 .starpill.s3{background:linear-gradient(135deg,var(--salt-copper),var(--salt-ember));box-shadow:none;}
-.prodtag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;box-shadow:none;text-shadow:none;
-  border:1px solid var(--salt-line-faint);border-radius:6px;}
-.prodtag .gl{box-shadow:0 0 6px -1px currentColor;}
+/* the product stamp on a ledger row is the system's .salt-producttag, bare: the ledger's rows carry the dot and the
+   name and no frame (the recipe has one; this placement does not), so the frame is this layer's alone */
+.prodtag{font-size:10px;}  /* the stamp sits beside 11px copy in a row; the system's tag is its smallest token, 11px */
+.ledwrap .prodtag{background:none;border:0;padding:0;box-shadow:none;}
 .sbadge{font-size:10px;font-weight:500;letter-spacing:.1em;}
 .bloyal{--bc:var(--salt-verdigris);}
 .breg{--bc:var(--salt-product-salt);}
@@ -4274,9 +4263,6 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .bhi{--bc:var(--salt-brass);}
 .bthin{--bc:var(--salt-ember);color:var(--salt-ember);}
 .bdorm{--bc:var(--salt-mist);}
-.prodhd{font-size:12.5px;font-weight:500;letter-spacing:.14em;color:var(--salt-salt);}
-.prodhd .sub{letter-spacing:0;color:var(--salt-mist);}
-.prodhd .rule{background:linear-gradient(90deg,var(--salt-line),transparent);}
 .prodblock+.prodblock{border-top-color:var(--salt-line-faint);}
 .pbadge{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 .pscope,.pscopen,.pbadgeo{font-size:11px;color:var(--salt-mist);}
@@ -14489,8 +14475,8 @@ function wireLedger(){
 function prodTag(t){
   const pr=prodOf(t.type==='BUY'?(t._buy||t):t), P=PRODUCTS[pr];
   if(!P)return '';
-  return `<span class="prodtag" style="color:${P.accent}" title="${esc(P.name)}">`
-    +`<span class="gl"></span>${esc(P.name)}</span>`;
+  return `<span class="prodtag salt-producttag" style="--salt-hue:${P.accent}" title="${esc(P.name)}">`
+    +`<span class="salt-producttag__dot" aria-hidden="true"></span>${esc(P.name)}</span>`;
 }
 /* ============ WHAT THE FILTER COMES TO ============
    The toolbar could isolate a party, a month, a state or a product, and then said only how
@@ -25095,10 +25081,10 @@ function perProduct(builder,opts){
   const sw=ids.length<2?'':`<div class="prodsw" role="group" aria-label="Product">${ids.map(pr=>`<button type="button" class="${pr===shown?'live':''}" aria-pressed="${pr===shown}" data-show="${pr}" style="--pacc:${PRODUCTS[pr].accent}" onclick="setProdView('${pr}')"><span class="pdot" style="background:${PRODUCTS[pr].accent}"></span><span class="pnm">${esc(PRODUCTS[pr].name)}</span><span class="pv">${fig[pr]}</span></button>`).join('')}</div>`;
   PROD=shown; recompute();
   const P=PRODUCTS[shown];
-  const out=sw+`<div class="prodblock" data-prod="${shown}"><div class="prodhd">`
-    +`<span class="pd" style="background:${P.accent}"></span>${esc(P.name)}`
-    +(opts.sub?`<span class="sub">${opts.sub()}</span>`:'')
-    +`<span class="rule"></span></div>${builder()}</div>`;
+  const out=sw+`<div class="prodblock" data-prod="${shown}"><div class="prodhd salt-product" style="--salt-hue:${P.accent}">`
+    +`<span class="salt-product__dot"></span>${esc(P.name)}`
+    +(opts.sub?`<span class="salt-product__sub">${opts.sub()}</span>`:'')
+    +`<span class="salt-product__rule"></span></div>${builder()}</div>`;
   PROD=keep; recompute();
   return out;
 }
@@ -25140,7 +25126,7 @@ const codeOfProd=id=>esc((PRODUCTS[id]&&PRODUCTS[id].name)||id);
    which is a note to whoever next edits the desk, not a figure anyone reads twice. It is
    argued at length in the comment above consoCashBlock() and in the changelog, and it cost
    43px, 43px and 60px of head against 18px for a bare one. */
-function consoHd(t,sub){return `<div class="prodhd"><span class="pd" style="background:none;box-shadow:inset 0 0 0 2px var(--ice)"></span>${t}${sub?`<span class="sub">${esc(sub)}</span>`:''}<span class="rule"></span></div>`;}
+function consoHd(t,sub){return `<div class="prodhd salt-product"><span class="salt-product__dot" style="background:none;box-shadow:inset 0 0 0 2px var(--ice)"></span>${t}${sub?`<span class="salt-product__sub">${esc(sub)}</span>`:''}<span class="salt-product__rule"></span></div>`;}
 /* THE ORDER BOOK'S OWN HEAD (v385). This part opened on consoBlock(): revenue, cash collected,
    gross margin, inventory spend. Those are the right four figures for the Financials part beneath
    it and an answer to a question the Order book does not ask. Its question is who owes what,

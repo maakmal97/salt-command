@@ -8400,6 +8400,50 @@ await (async () => {
   ok(Object.values(seen).every((s) => s.dot.width === "5px" && s.dot.borderRadius === "50%"), "the dot is the recipe's 5px circle");
 })();
 
+section("Product bands: the system's .salt-product and .salt-producttag recipes own the band and the stamp");
+await (async () => {
+  /* 09 Oct 2026: the product bands and tags group of the migration (CLAUDE.md rule 6). The heading that says which book a
+     block draws is the system's .salt-product (a dot in the book's hue, the name in mono caps, a rule running out) and the
+     stamp on a row its .salt-producttag; the desk's own rules keep only the ledger's bare stamp. The book's accent reaches
+     the recipe through --salt-hue, a custom property, never a colour written in the desk's CSS. */
+  const mP = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bP = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  for (const [nm, src] of [["master", mP], ["build", bP]]) {
+    ok(/<div class="prodhd salt-product" style="--salt-hue:\$\{P\.accent\}">`\s*\+`<span class="salt-product__dot"><\/span>/.test(src), `${nm}: a book's band carries .salt-product, its dot, and the accent as --salt-hue`);
+    ok(/<div class="prodhd salt-product"><span class="salt-product__dot"[^>]*><\/span>\$\{t\}[\s\S]{0,120}salt-product__rule/.test(src), `${nm}: the consolidated band (every book) carries the recipe's dot and rule`);
+    ok(/<span class="prodtag salt-producttag" style="--salt-hue:\$\{P\.accent\}"[^>]*>`\s*\+`<span class="salt-producttag__dot" aria-hidden="true"><\/span>/.test(src), `${nm}: a row's stamp carries .salt-producttag, its dot element and the accent as --salt-hue`);
+    ok(!src.includes('class="prodhd">') && !src.includes('class="gl"') && !src.includes('<span class="rule"></span></div>${builder'), `${nm}: no band or stamp is drawn from the desk's own classes alone (prodhd bare, gl, rule)`);
+  }
+  /* no desk rule restates what the recipes draw: the older layers and design/desk.css, the generated blocks out */
+  const a = mP.indexOf("<style>"), b = mP.indexOf("</style>", a);
+  const own = mP.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "");
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) for (const sel of m[1].split(",").map((x) => x.trim())) {
+    if (/\.prodhd\b|\.prodtag\b|\.salt-product|\.salt-producttag/.test(sel) && sel !== ".ledwrap .prodtag" && !(sel === ".prodtag" && /^\s*font-size:10px;\s*$/.test(m[2]))) restated.push(sel);
+  }
+  ok(restated.length === 0, `no desk rule styles .prodhd, .prodtag or the recipes' own classes but the ledger's bare stamp (found ${restated.join(" | ") || "none"})`);
+  const led = [...css.matchAll(/\.ledwrap \.prodtag\s*\{([^{}]*)\}/g)];
+  ok(led.length === 1 && /border:0/.test(led[0][1]) && /padding:0/.test(led[0][1]), "and that one bare stamp is declared once, with its reason beside it in desk.css");
+  /* what the recipes draw, read off the cascade in the desk's window: a higher-specificity older rule would outrank them */
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const { w: wB } = await omB(process.env.SALT_MASTER || undefined);
+  const dom = wB.document, host = dom.createElement("div");
+  host.innerHTML = wB.eval("consoHd('Every book')") + wB.eval("prodTag({type:'SELL',product:'oil'})") + `<div class="ledwrap">${wB.eval("prodTag({type:'SELL',product:'oil'})")}</div>`;
+  dom.body.appendChild(host);
+  const cs = (sel) => { const e = host.querySelector(sel); return e ? wB.getComputedStyle(e) : {}; };
+  const band = cs(".prodhd"), tag = cs(".prodtag"), dot = cs(".salt-product__dot"), tdot = cs(".salt-producttag__dot");
+  ok(band.fontSize === "12.5px" && band.fontWeight === "500" && band.letterSpacing === "1.75px" && band.textTransform === "uppercase", `the band is the recipe's mono caps (${band.fontSize}, ${band.fontWeight}, ${band.letterSpacing}, ${band.textTransform})`);
+  ok(band.marginBottom === "10px" && band.display === "flex" && dot.width === "9px" && dot.height === "9px", "and its dot is 9px on a flex row with the recipe's margin");
+  ok(tag.fontSize === "10px" && tag.paddingTop === "3px" && tag.paddingLeft === "9px" && tag.borderRadius === "6px" && tag.letterSpacing === "1.4px", `the stamp is the recipe's 10px, 3px 9px, 6px radius (${tag.fontSize}, ${tag.paddingTop} ${tag.paddingLeft}, ${tag.borderRadius})`);
+  ok(tdot.width === "7px" && tdot.height === "7px", "and its dot is 7px");
+  const bare = cs(".ledwrap .prodtag");
+  ok(bare.paddingLeft === "0px" && bare.borderTopWidth === "0px", `inside the ledger the stamp is bare (padding ${bare.paddingLeft}, border ${bare.borderTopWidth})`);
+  const stl = (host.querySelector(".prodtag") || dom.body).getAttribute("style") || "";
+  ok(stl.includes("--salt-hue:") && !/(^|;)\s*color\s*:/.test(stl), "the book's accent is --salt-hue on the stamp, and no inline colour paints it");
+  host.remove();
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as

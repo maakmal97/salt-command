@@ -1700,12 +1700,13 @@ label.salt-field__label {
 .salt-product--candy { --salt-hue: var(--salt-product-candy); }
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
-.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
+.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
-   already draws one; its hue is the modifier's, or the tag's own colour where none is set. ---- */
+   already draws one; its hue is --salt-hue (the modifier's, or set on the tag by a page whose book
+   carries its own accent), and the name takes it too. Synced to the desk's measured stamp: 3px 9px. ---- */
 
 .salt-producttag {
   display: inline-flex;
@@ -1716,11 +1717,11 @@ label.salt-field__label {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--salt-salt);
+  color: var(--salt-hue, var(--salt-salt));
   background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   white-space: nowrap;
   vertical-align: middle;
   box-shadow: none;
