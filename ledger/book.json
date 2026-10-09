@@ -491,7 +491,8 @@
     "CJ2-KUC",
     "CA6-CYB",
     "CE5-SA-R",
-    "CA6-CYB-R"
+    "CA6-CYB-R",
+    "CM4-TO-R"
   ],
   "associates": [
     "CS6-BS",
@@ -502,7 +503,8 @@
     "CE4-AD",
     "CR3-DAM",
     "CE5-SA",
-    "CA6-CYB"
+    "CA6-CYB",
+    "CM4-TO"
   ],
   "partners": [
     "CM4-TO"

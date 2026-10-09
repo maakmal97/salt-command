@@ -50588,6 +50588,10 @@ section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, n
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
 })();
+section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
+await (async () => {
+  await (await import("./partner-control.mjs")).run({ ok });
+})();
 section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes, their Accept or No thanks");
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });

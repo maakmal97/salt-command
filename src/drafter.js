@@ -1233,6 +1233,27 @@ export function draftRow(entry, book) {
   /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for
      each product, code to product to level, a null clearing a product's tier. Codes, products and level names only, the
      names checked against the ones the desk's PRICING snapshot carries. */
+  /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. The row is a roster row for someone already on the roster: the fold
+     appoints them on the R2 stream with their -R account if they are no associate yet, and files them in `partners`, which the
+     engine quotes at the floor. No name travels; the code is the whole of it. */
+  if (pay.mode === "partner") {
+    const code = String(pay.code || "").trim().toUpperCase();
+    const roster = (book.state && book.state.roster) || [];
+    const associates = (book.state && book.state.associates) || [];
+    const partners = (book.state && book.state.partners) || [];
+    if (!code || !roster.includes(code)) return { skip: `${code || "the code"} is not on the roster, so there is no one to make a partner` };
+    if (code[0] !== "C" || POSITION_ENGINE.isBucket(code) || /-Gen$/.test(code) || /-d+-/.test(code)) return { skip: `${code} is not a customer's own code: a partner is a person, never a supplier, a resale account or an end buyer` };
+    if (partners.includes(code)) return { skip: `${code} is already a partner` };
+    const resell = POSITION_ENGINE.appointBucket("reseller", code), isAssoc = associates.includes(code);
+    return {
+      collection: "roster",
+      row: { code, kind: "reseller", parent: null, note: null, partner: true },
+      flags: [],
+      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the floor itself to the sen (COGS times the size), no profit and no rounding up to the ten, and the Drift card sets no drift for them.`
+        + (isAssoc ? " They are an associate already, so nothing is appointed twice." : ` They are no associate yet, so this APPOINTS them on the R2 stream${resell && !roster.includes(resell) ? `, and ${resell} joins the roster as their resell account` : ""}: the associate credit cap, hurdles and bench come with it.`)
+        + " It moves no stock and no cash, and carries no name.",
+    };
+  }
   if (pay.mode === "tierset") {
     const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
     const tiers = isObj(pay.tiers) ? pay.tiers : {};
