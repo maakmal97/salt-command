@@ -1,5 +1,40 @@
 [
  {
+  "v": "v1048",
+  "d": "09 Oct 2026",
+  "t": "FREE REDEMPTION OF 0.86 UNIT SALT FOR CR3-DAM, BOOKED AS COST",
+  "n": [
+   "<b>FOLDED: ONE ROW.</b> A salt redemption for CR3-DAM, 0.86 unit, RM48.16 of goods, dated 09 Oct and approved by the desk. It is settled by the reward with no cash, and it is booked as an expense rather than revenue, on his ruling of 11 Sep 2026, because the row carries goodwill as well as rebate. It is appended to sales with its note.",
+   "<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD.</b> The desk says CR3-DAM held 0.86 unit earned and unredeemed, from 2 earned and 1.14 already used. The drafter cannot check this, as rewards are worked out on the desk. <b>INVENTORY:</b> the salt leaves the shelf by 0.86 unit and the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1047",
+  "d": "09 Oct 2026",
+  "t": "FULFILMENT OF RM0.40 SETTLES S245 IN FULL",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A cash fulfilment of RM0.4 on CR3-DAM's order s245, preapproved by phone, which the drafter flagged as settling the order in full. It moves no units, so the inventory did not change and no lot landed."
+  ]
+ },
+ {
+  "v": "v1046",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: REWARD OFFSET RECORDED, NO CASH OR STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> It patches CR3-DAM's order s245 of 0.5 unit for RM70, dated 09 Oct, to show RM19.60 settled in kind against a reward of 0.14 unit. Nothing else is in the batch. The offset was raised automatically against that day's order, and the fold applies the patch rather than rewriting the row by hand.",
+   "<b>UNUSUAL: THE RATE.</b> The drafter flagged RM140 a unit on s245, 75% above CR3-DAM's usual RM80, and the history does not answer it. <b>INVENTORY UNCHANGED.</b> The correction moves no cash and no stock; it changes only what the row says about itself. Stock stays at 13 and the cost basis at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1045",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: SALT COLLECTED BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> s245, CR3-DAM's SELL of 0.5 unit for RM70 dated 09 Oct, now reads 0.5 unit delivered on 09 Oct and handed over as collected. It was preapproved by phone. It moves no cash and changes no price. The row's trail of 2 steps no longer adds up to the corrected figure, and the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> Salt rolls by 0.5 unit, out to CR3-DAM, the difference the correction states. No lot landed, so the cost basis is unchanged. The last salt count was on 03 Oct. The RM20 still unpaid on s245 is left open as an advance."
+  ]
+ },
+ {
   "v": "v1044",
   "d": "09 Oct 2026",
   "t": "FULFILMENT OF 2.5 UNIT ON CE4-CHE'S ORDER S238 SETTLES IT IN FULL",
