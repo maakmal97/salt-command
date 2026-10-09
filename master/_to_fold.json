@@ -1,0 +1,51 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-09T05:27:17.649Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CR3-DAM",
+    "qty": 0.86,
+    "total": 48.16,
+    "cost": 48.16,
+    "cash": 0,
+    "settledRM": 48.16,
+    "rebate": true,
+    "rebateKg": 0.86,
+    "goodwill": true,
+    "deliveredQty": 0.86,
+    "deliveredOn": "2026-10-09",
+    "date": "2026-10-09"
+   },
+   "reasoning": "Redeems 0.86 unit of salt free to CR3-DAM on 2026-10-09, settled by the reward rather than in cash. Booked as a cost and not as revenue, on his ruling of 11 Sep 2026: the row carries goodwill as well as rebate, so it stays out of revenue and its RM 48.16 of cost is an expense. The salt leaves the inventory and the fold rolls the stated shelf by it.",
+   "flags": [
+    "The desk says CR3-DAM held 0.86 unit earned and unredeemed when this was pressed (2 earned, 1.14 already used). Rewards are worked out on the desk, not here, so that figure is the desk's word and the drafter cannot check it."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-09T05:27:17.649Z",
+    "type": "REDEEM",
+    "party": "CR3-DAM",
+    "qty": 0.86,
+    "total": 0,
+    "status": "inkind",
+    "raw": "Redeem 0.86 free unit salt for CR3-DAM on 2026-10-09",
+    "payload": {
+     "mode": "redeem",
+     "product": "salt",
+     "party": "CR3-DAM",
+     "qty": 0.86,
+     "date": "2026-10-09",
+     "earned": 2,
+     "applied": 1.14,
+     "balance": 0.86
+    }
+   },
+   "decidedAt": "2026-10-09T05:27:35.001Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
