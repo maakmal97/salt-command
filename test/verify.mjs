@@ -11394,10 +11394,10 @@ await (async () => {
   const w = S.costsFrom(syn, { gone: 50, fresh: 1234.4, a: 3, b: "slow" });
   ok(JSON.stringify(w) === JSON.stringify({ a: 10, fresh: 1230 }), "--write-costs keeps only the sections verify.mjs has, in its order, in whole tens of milliseconds: " + JSON.stringify(w));
 
-  /* the shard count: three asked, three on four cores and two on two; the laptop's own counts as they were */
+  /* the shard count: three asked, three on four cores and two on two; unasked, the laptop runs four (09 Oct 2026) */
   const got = { four: S.jobsFor(["--jobs", "3"], 4), two: S.jobsFor(["--jobs", "3"], 2), laptop12: S.jobsFor(["--jobs", "12"], 16), laptop: S.jobsFor([], 16), runner: S.jobsFor([], 4) };
-  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 8, runner: 2 }),
-    "three shards asked run three on four cores and two on two, and the laptop's own counts are unchanged: " + JSON.stringify(got));
+  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 4, runner: 2 }),
+    "three shards asked run three on four cores and two on two, twelve asked run twelve, and unasked the laptop runs four: " + JSON.stringify(got));
 
   /* both suite steps ask for three, and the file reaches the runner */
   const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());
