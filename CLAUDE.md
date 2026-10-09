@@ -114,7 +114,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
    then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
-   never a list of triggers. The hourly run passes `--no-retire`. `tools/update.mjs` is the laptop
+   never a list of triggers. The scheduled run passes `--no-retire`. `tools/update.mjs` is the laptop
    half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
    Workers Builds deploys the tip of master and stops**: it never folds, marks or writes D1 or KV,
    and its failure is SILENT. Its build command is `npm ci && node tools/gate.mjs`, then `npx
@@ -171,7 +171,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
-| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); hourly at :23 as the last net |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); every two hours at :23 as the last net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
 | Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
