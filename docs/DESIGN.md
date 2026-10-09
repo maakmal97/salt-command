@@ -248,6 +248,26 @@ where it had a faint one; an Undo's 50% brass edge becomes the same brass tone. 
 word "Go") grow to 44px wide, which no live button was. `.exitbtn` stays on the layer: a fixed corner control with
 its own 22%-opacity shape, under 44px, which the group did not take. The suite section "Ghosts: the system" proves it.
 
+**The tables group (09 Oct 2026, unbumped, for his word).** Every data table carries the recipe's `salt-table` beside
+its own classes (60 tables) and every label cell `salt-table__label` beside `l` (231 cells); the two key-and-value
+lists in the calendar popover are not data tables and stay off it. The mist caps head, the salt figures, the faint
+hairline, the opaque warm panel under the sticky head and label column and the total row's wash layered over it (v567)
+are the recipe's, and the desk's copies are deleted: section 9 of `design/desk.css` bar the statements, and the generic
+`table`, `th`, `td`, `tbody td`, `tr.tot td` and `th.l,td.l` rules, the `fintab` head rules, the phone's `table`,
+`th,td` and `th{font-size:11px !important}` rules and the label wrap rules of the older layers. The recipe in
+`Codesalt-ds` was synced to the desk, not the other way: a label cell wraps (`white-space: normal`) and a phone
+closes the gutters to 7px 8px. A recipe at (0,1,1) loses to nothing earlier at the same weight, because the DESIGN base
+block sits after the older layer, so the older `.fintab`, `.istmt` and `.pxboard` gutters and the board's wrapping
+heads moved into `design/desk.css`, which sits after it. Left on the layer, scoped, because the recipe has no word for
+them: the sticky head and pinned label column (`thead th`, `th.l,td.l`, in the master's older layer), the statements'
+gutters (7px 9px, 6px 9px), their brass hairline and 13px figures, the year column, the group rows and the total rule,
+the pivot grid's 6px and 4px gutters, a code cell's salt-product ink (`.mono`), and a statement's first head in mist
+where every other label head is mist-light. Measured: the computed style of every cell, 27 properties, before and after,
+on 2,922 table instances and 87,702 cells over both widths and every view button: identical but for two properties of the
+<table> element itself (the popover lists' font size and the recipe's tabular figures), which no cell reads; the page never scrolls sideways at 375px on any part; the 34
+renderdiff shots read 0 pixels apart. The suite section "Tables: the system" proves it, and v567's sticky-fill checks now
+read the recipe.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

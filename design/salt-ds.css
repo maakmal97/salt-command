@@ -1132,11 +1132,13 @@ label.salt-field__label {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
-.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; }
+.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; white-space: normal; overflow-wrap: break-word; }
 .salt-table tbody td { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
 .salt-table tr.tot td { font-weight: 500; background: rgba(197, 160, 89, 0.07); }
 .salt-table tr.tot .salt-table__label { background: linear-gradient(rgba(197, 160, 89, 0.07), rgba(197, 160, 89, 0.07)), var(--salt-panel); }
 .salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
+/* a phone: the gutters close up, as the desk draws them (7px 8px) */
+@media (max-width: 560px) { .salt-table th, .salt-table td { padding: 7px 8px; } }
 
 /* ---- Logo ---- */
 

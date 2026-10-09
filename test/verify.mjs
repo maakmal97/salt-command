@@ -3705,7 +3705,7 @@ await (async () => {
     /* 27 Sep 2026: READ IN THE CLOSING ROW, NEVER AS A BARE SUBSTRING OF THE PAGE. Salt's 5.5 unit at oil's RM 8 is 44, which
        the page prints inside 15,449 and 10.44%, so "never at another book's" went red on a shelf valued rightly (run
        36254718923). The row's CY cell is the figure and its caption the rate, each held to this book's and not another's. */
-    const closing = (fin.match(/<td class="l">Closing inventory<div[\s\S]*?<\/tr>/) || [""])[0];
+    const closing = (fin.match(/<td class="l[^"]*">Closing inventory<div[\s\S]*?<\/tr>/) || [""])[0];
     const cell = (/<td class="fy">([^<]*)<\/td><\/tr>$/.exec(closing) || [])[1];
     ok(cell === right && closing.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
        `${pr}: closing stock is valued at this book's own shelf rate (${right}, the row printing ${cell})`);
@@ -8548,6 +8548,68 @@ await (async () => {
   }
 })();
 
+section("Tables: the system's .salt-table recipe owns the material of every data table");
+await (async () => {
+  /* 09 Oct 2026: the tables group of the migration (CLAUDE.md rule 6). Every data table carries the recipe's `salt-table`
+     beside its own classes and every label cell `salt-table__label` beside `l`; the mist caps head, the salt figures, the faint
+     hairline, the opaque warm panel under the sticky head and label column and the total row's wash layered over it are the
+     recipe's (design/salt-ds.css). The desk keeps the sticky geometry, the statements' gutters and the cells it owns. */
+  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const dsT = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  ok(/\.salt-table \.salt-table__label \{[^}]*background: var\(--salt-panel\)/.test(mT) && /\.salt-table thead th \{/.test(mT), "the recipe is in the DESIGN base block");
+  /* the markup: every <table> after the style block, but the calendar popover's two key-and-value lists (not data tables) */
+  const tail = (h) => h.slice(h.indexOf("END DESIGN desk"));
+  const tabs = (h) => [...tail(h).matchAll(/<table\b[^>]*>/g)];
+  const bare = tabs(mT).filter((m) => !/class="[^"]*\bsalt-table\b/.test(m[0]));
+  const inPop = bare.filter((m) => /class="appop ap\$\{side\}"/.test(tail(mT).slice(Math.max(0, m.index - 2500), m.index)));
+  ok(tabs(mT).length > 50 && bare.length === inPop.length && inPop.length === 2, `every data table carries salt-table; the two popover lists do not (${tabs(mT).length} tables, ${bare.length} without, ${inPop.length} in the popover)`);
+  const lbl = [...tail(mT).matchAll(/<(?:th|td) class="l(?:[ "])[^>]*>/g)];
+  const lblBad = lbl.filter((m) => !/\bsalt-table__label\b/.test(m[0]));
+  ok(lbl.length > 200 && lblBad.length === 0, `and every label cell carries salt-table__label beside l (${lbl.length} cells, ${lblBad.length} without${lblBad[0] ? ": " + lblBad[0][0] : ""})`);
+  ok(tabs(bT).length === tabs(mT).length && [...tail(bT).matchAll(/salt-table__label/g)].length === [...tail(mT).matchAll(/salt-table__label/g)].length, "and the build carries the same");
+  /* the desk's own CSS, the generated blocks taken out, the way the Fields section reads it */
+  const a = mT.indexOf("<style>"), b = mT.indexOf("</style>", a);
+  const own = mT.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const BARE = /^(?:table|thead(?: th)?|tbody(?: td)?|tr\.tot td(?:\.l)?|tbody tr:hover td(?::not\(\.l\))?|th(?:\.l)?|td(?:\.l)?)$/;
+  const MATERIAL = /(^|;)\s*(background(-color|-image)?|border(-[a-z]+)*|color|font-(size|weight|family|variant-numeric)|letter-spacing|text-transform|text-align|padding(-[a-z]+)?|white-space|width)\s*:/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => BARE.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no rule on a bare table, head, cell or total row restates the recipe's material (found ${restated.join(" | ") || "none"})`);
+  /* what the recipe cannot own stays the page's: the sticky head and the pinned label column, which the tables scroll under */
+  ok(/(^|\n)thead th\{position:sticky;top:0;\}/.test(mT) && /(^|\n)th\.l,td\.l\{position:sticky;left:0;\}/.test(mT), "the page keeps the sticky head and the pinned label column");
+  /* the cascade, read in the desk's own window: jsdom takes the last declaration and keeps a custom property as itself, and
+     drops a background it cannot resolve, so the fills are proved above from the recipe and here the rest of the recipe is shown
+     to REACH real cells: caps, weight and the ink on a head, a left label in its ink on the pinned column, and the page's
+     sticky geometry on both. A cell without the class, or a later desk rule restating it, reads otherwise. */
+  const { openMaster: omT } = await import("../tools/payload.mjs");
+  const { w: wT } = await omT(process.env.SALT_MASTER || undefined);
+  const q = JSON.parse(wT.eval(`JSON.stringify((function(){var out={heads:0,labels:0,tots:0,badHead:[],badLabel:[],badTot:[],sticky:[],plain:0};
+    ["financials","pricing","receivables","concentration"].forEach(function(p){switchTab(p);});
+    [].forEach.call(document.querySelectorAll('table.salt-table'),function(t){
+      [].forEach.call(t.querySelectorAll('thead th'),function(c){out.heads++;var s=getComputedStyle(c);
+        if(s.textTransform!=='uppercase'||s.fontWeight!=='500')out.badHead.push(c.textContent.trim().slice(0,12)+':'+s.textTransform+'/'+s.fontWeight);
+        if(s.position!=='sticky'&&!c.classList.contains('hs'))out.sticky.push('th');});
+      [].forEach.call(t.querySelectorAll('td.salt-table__label'),function(c){var s=getComputedStyle(c),tot=c.parentNode.classList.contains('tot');
+        if(tot)out.tots++;else out.labels++;
+        if(s.textAlign!=='left'||(s.color!=='var(--salt-mist-light)'&&!c.parentNode.classList.contains('grp'))||s.fontWeight!=='500'||s.whiteSpace!=='normal')(tot?out.badTot:out.badLabel).push(c.textContent.trim().slice(0,12)+':'+s.textAlign+'/'+s.color+'/'+s.fontWeight+'/'+s.whiteSpace);
+        if(c.classList.contains('l')&&s.position!=='sticky')out.sticky.push('td.l');});});
+    out.plain=document.querySelectorAll('table:not(.salt-table):not(.appop table)').length;return out;})())`));
+  ok(q.heads > 20 && q.labels > 50 && q.tots > 3, `the cascade was read on real tables (${q.heads} heads, ${q.labels} label cells, ${q.tots} total-row labels)`);
+  ok(q.badHead.length === 0 && q.badLabel.length === 0 && q.badTot.length === 0, `every head is mist caps in the recipe's weight and every label cell is left, in its ink, in the recipe's weight (${[...q.badHead, ...q.badLabel, ...q.badTot].slice(0, 3).join(" | ") || "none out"})`);
+  ok(q.sticky.length === 0, `and every head and every pinned label cell is still sticky (${q.sticky.slice(0, 3).join(", ") || "none out"})`);
+  ok(q.plain === 0, `and no table in the desk's window is without the recipe but the popover's lists (${q.plain})`);
+  /* the statements keep their own gutters and rule, scoped to `.fintab` and `.istmt` in the layer */
+  const dk = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  ok(/\.fintab th,\.fintab td\{padding:7px 9px;\}/.test(dk) && /\.istmt td\{padding:6px 9px;\}/.test(dk) && /\.fintab tbody td\{border-bottom-color:var\(--salt-line\);\}/.test(dk), "the statements keep their denser gutters and brass hairline, scoped to .fintab and .istmt");
+  /* a phone: the recipe closes the gutters up to 7px 8px, as the desk drew them */
+  ok(/@media \(max-width: 560px\) \{ \.salt-table th, \.salt-table td \{ padding: 7px 8px; \} \}/.test(dsT), "the recipe closes the gutters up on a phone");
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
@@ -12619,20 +12681,20 @@ await (async () => {
     const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(s || "");
     return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
   };
+  /* 09 Oct 2026: the tables moved onto the system's .salt-table (the Tables section below), so the fills are read out of the
+     recipe in design/salt-ds.css; the desk layer no longer declares them */
   const ruleBg = (sel) => {
-    const i = desk7.indexOf(sel + "{");
-    if (i < 0) return null;
-    const body = desk7.slice(i + sel.length + 1, desk7.indexOf("}", i));
-    const m = /background:\s*([^;]+);/.exec(body);
-    return m ? m[1].trim() : null;
+    const m = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}").exec(ds7);
+    const b = m ? /background:\s*([^;]+);/.exec(m[1]) : null;
+    return b ? b[1].trim() : null;
   };
-  for (const [sel, why] of [["thead th", "every table head"], ["th.l,td.l", "every label column"]]) {
+  for (const [sel, why] of [[".salt-table thead th", "every table head"], [".salt-table .salt-table__label", "every label column"]]) {
     const bg = ruleBg(sel);
     ok(!!bg, `${sel} declares a background (${bg || "none found"})`);
     const varName = (/var\(--([\w-]+)\)/.exec(bg || "") || [])[1];
     ok(!!varName, `and takes it from a token rather than a literal (${bg})`);
-    const c = rgba(tok(varName));
-    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName)})`);
+    const c = rgba(tok(varName, ds7));
+    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName, ds7)})`);
     /* THE FAULT WAS THE HUE, NOT THE WEIGHT. --salt-veil is rgba(5,8,10,.86): b above r, a cold
        near-black, and the identity documents it for surfaces that float OVER content. These sit
        INSIDE a card the aurora lights warm, so they must be warm too. Red before: 5 > 10 is false. */
@@ -12658,9 +12720,9 @@ await (async () => {
      over the panel rather than stand in for it. Found by computing all 232 sticky cells in a
      browser; reading this file would not have shown it, and the assertion below is a reminder of
      the rule rather than the instrument that catches the next one. */
-  const totL = ruleBg("tr.tot td.l");
-  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tr.tot td.l rule"})`);
-  ok(!!totL && /var\(--panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
+  const totL = ruleBg(".salt-table tr.tot .salt-table__label");
+  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tot label rule"})`);
+  ok(!!totL && /var\(--salt-panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
   ok(/\.menu\{[^}]*background:var\(--salt-veil\)/.test(desk7),
     "and --salt-veil keeps the one job it is documented for, the menu that really does float over the page");
 

@@ -63,12 +63,12 @@ h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
 .sbadge,.pbadge,.pscope,.prodsw button,.vpill,.viewsw button,
 .vbtn,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
-.kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
+.kpi .l,.kpi .v,.cardh .sub,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
 .evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
 .provbar,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
-details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
+details.rcard>summary .rsum,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
 .dsclead,.dsc,.insight,.note,.stand-note,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
@@ -335,27 +335,24 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .dtoday:hover{background:color-mix(in srgb, var(--salt-brass) 10%, transparent);color:var(--salt-salt);}
 .dtoday:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
 @media(max-width:560px){.dtoday{font-size:11px;}}
-/* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
-table{font-size:13px;}
-thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--panel);border-bottom:1px solid var(--salt-line);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-th.l,td.l{background:var(--panel);color:var(--salt-mist-light);font-weight:500;}
-tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
-tr.tot td{font-weight:500;background:color-mix(in srgb, var(--salt-brass) 7%, transparent);}
-/* v567: AND THE TOTAL ROW'S BRASS WASH MAY NOT UN-PAINT THE STICKY LABEL COLUMN. This rule sits
-   after th.l,td.l and REPLACED its fill, so on every total row the sticky label cell dropped to a
-   7 per cent wash and passed 93 per cent of whatever scrolled under it: 14 such cells on the Price
-   view, and they were as leaky at the .86 this fix replaced as they are obvious now. The wash is
-   layered OVER the panel instead of standing in for it, so the tint is unchanged to the eye and
-   the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
-   rather than by reading this file, which is the only way a cascade fault of this shape shows. */
-tr.tot td.l{background:linear-gradient(color-mix(in srgb, var(--salt-brass) 7%, transparent),color-mix(in srgb, var(--salt-brass) 7%, transparent)),var(--panel);}
-tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, transparent);}
-.fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
+/* ---- 9. TABLES: the material is the system's .salt-table (mist caps heads over a brass rule, salt figures, faint
+   hairlines, the opaque warm panel under the sticky head and label column, the total row's wash layered over it,
+   v567); this layer keeps only what is the desk's own: the statements' denser gutters, the year column, the total
+   rule and the group rows. The markup carries `salt-table` on the table and `salt-table__label` beside `l` ---- */
+/* a code cell (the .mono class) keeps the salt product's hue, as a code does everywhere; a label cell keeps the recipe's */
+.salt-table td.mono:not(.salt-table__label){color:var(--salt-product-salt);}
+/* the statements are denser than a table of orders, and their rule is the brass hairline, not the faint one:
+   .salt-table sits before this layer, so these tie it and win */
+.fintab th,.fintab td{padding:7px 9px;}
+.fintab td{font-size:var(--salt-text-sm);}
+.fintab tbody td{border-bottom-color:var(--salt-line);}
+.fintab thead th.l{color:var(--salt-mist);}
+.istmt td{padding:6px 9px;}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
+.fintab tr.tot td.fy{background:var(--salt-glass);}
 .fintab tr.tot td{border-top-color:var(--salt-brass);}
 .fintab tr.grp td{color:var(--salt-mist);letter-spacing:.12em;}
-.istmt .tot td{border-top-color:var(--salt-line);font-weight:500;}
+.istmt .tot td{border-top-color:var(--salt-line);}
 .lhead{font-size:11px;font-weight:500;letter-spacing:.1em;color:var(--salt-mist);border-bottom-color:var(--salt-line);}
 .lhead .lcol,.lhead .lstate{font-weight:500;color:var(--salt-mist);}
 .lsb:hover,.lsb.on{color:var(--salt-salt);}
@@ -554,6 +551,9 @@ details.obs>summary:hover{background:var(--salt-glass);}
      11px all measure 337). Three-pixel gutters bring it to 325, exactly the card. */
   .pxboard{font-size:12.5px;}
   .pxboard th,.pxboard td{padding-left:3px;padding-right:3px;}
+  /* v393: the board's headings wrap onto two lines, so the five columns come to 322px inside the 325px a card gives
+     at 375px; th is nowrap in the recipe, and this layer sits after it */
+  .pxboard th{white-space:normal;}
 }
 /* ---- 14. PRINT: the page is white; the layer above already strips the frost ---- */
 @media print{
@@ -671,7 +671,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   .fgsw{display:inline-flex;margin:0 0 10px;}
   .fintab.pgrid.fg-pm .pq,.fintab.pgrid.fg-pm .ph,.fintab.pgrid.fg-pq .pm,.fintab.pgrid.fg-pq .ph,
   .fintab.pgrid.fg-ph .pm,.fintab.pgrid.fg-ph .pq,.fintab.pgrid .pold{display:none;}
-  .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;font-size:12px;}
+  .fintab.pgrid th,.fintab.pgrid td{padding-left:4px;padding-right:4px;}
+  .fintab.pgrid td{font-size:12px;}
 }
 
 /* S11 11.4 (24 Sep 2026): SITE ORDERS OPENS ON WAITING ON YOU. The rows are the system's Inbox row and the
