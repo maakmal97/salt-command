@@ -8444,6 +8444,49 @@ await (async () => {
   host.remove();
 })();
 
+section("Actions: the system's .salt-action recipe owns the Today action card");
+await (async () => {
+  /* 09 Oct 2026: the actions group of the migration (CLAUDE.md rule 6). The card carries the system's .salt-action classes
+     beside the desk's own (.act, .actk, .actt, .actw, .actm, .actb, .actbar); the recipe draws the grid, the rail, the kind,
+     the title, the why, the money and the bar, and the desk keeps only the bar's settle (motion). The Journal has no desk
+     markup since v802, so its recipe has nothing to carry. */
+  const mA = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const PAIRS = [["act", "salt-action"], ["actk", "salt-action__kind"], ["actt", "salt-action__title"], ["actw", "salt-action__why"],
+    ["actm", "salt-action__money"], ["actb", "salt-action__go"], ["actbar", "salt-action__bar"]];
+  /* two templates draw a card (the action list's row and the shelf call), so each pair is in both; the bar only in the row */
+  for (const [o, n] of PAIRS) ok((mA.match(new RegExp(`class="${o} ${n}[" $]`, "g")) || []).length >= (o === "actbar" ? 1 : 2), `the action markup carries ${n} beside ${o}, in the row and in the shelf call`);
+  ok(/<div class="salt-action__body">/.test(mA) && /--salt-sev:\$\{ACTSEV\[x\.sev\]\.c\}/.test(mA), "the body is the recipe's and the row sets the recipe's severity variable");
+  const a = mA.indexOf("<style>"), b = mA.indexOf("</style>", a);
+  const own = mA.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "");
+  const CARD = /(^|[\s>+~])\.(act|actk|actt|actw|actm|actb|actbar)(\.nil)?(\s+(b|i))?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => CARD.test(x));
+    const decl = m[2].split(";").map((x) => x.split(":")[0].trim()).filter(Boolean);
+    /* the bar's settle is the desk's own; a flex item's min-width:0 is a guard, not a drawing */
+    if (sels.length && !decl.every((d) => /^(animation|transform-origin|min-width)$/.test(d))) restated.push(sels[0] + " {" + decl.join(",") + "}");
+  }
+  ok(restated.length === 0, `no desk rule draws what the .salt-action recipe draws (found ${restated.join(" | ") || "none"})`);
+  /* behaviour, read off the cascade in the desk's own window: the grid and the radius are the recipe's, the severity the row sets
+     is the variable the kind, the bar and the rule chips read (a chip reading the old --sev lost its colour once) */
+  const { openMaster: omA } = await import("../tools/payload.mjs");
+  const { w: wA } = await omA(process.env.SALT_MASTER || undefined);
+  wA.eval("setProd('salt');recompute();switchTab('today');");
+  const doc = wA.document, cs = (e, p) => wA.getComputedStyle(e)[p];
+  const acts = [...doc.querySelectorAll(".act")];
+  ok(acts.length > 0 && acts.every((e) => e.classList.contains("salt-action") && e.style.getPropertyValue("--salt-sev")), `every action card is a .salt-action with its severity set (${acts.length} cards)`);
+  const c0 = acts[0];
+  ok(cs(c0, "gridTemplateColumns") === "66px minmax(0, 1fr) auto auto" && cs(c0, "borderRadius") === "var(--salt-radius-sm)", `the card's grid and radius come from the recipe (${cs(c0, "gridTemplateColumns")}, ${cs(c0, "borderRadius")})`);
+  ok(/var\(--salt-sev/.test(cs(c0.querySelector(".actk"), "color")), "the kind reads the severity variable");
+  const bar = doc.querySelector(".act .actbar");
+  ok(!!bar && cs(bar, "height") === "4px" && /var\(--salt-sev/.test(cs(bar.querySelector("i"), "background")), "the bar is the recipe's 4px and its fill reads the severity variable");
+  const chips = [...doc.querySelectorAll(".act .rchip")];
+  const unbound = chips.filter((c) => { const v = /var\((--[\w-]+)/.exec(cs(c, "color")); return !v || !c.closest(".act").style.getPropertyValue(v[1]); });
+  ok(chips.length > 0 && unbound.length === 0, `every rule chip reads a severity variable its card sets (${chips.length} chips, ${unbound.length} unbound)`);
+  ok(!/class="[^"]*\bsalt-journal\b/.test(mA.slice(0, mA.indexOf("<style>")) + mA.slice(mA.indexOf("</style>"))), "the desk draws no Journal entry markup, so the Journal recipe has nothing to carry");
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as

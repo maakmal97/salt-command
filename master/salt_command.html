@@ -765,31 +765,14 @@ select{width:100%;padding:8px 9px;font-size:14px;font-weight:600;cursor:pointer;
    where the eye can run down it, and enough space between them to stop the list reading
    as a wall. */
 .acts{display:flex;flex-direction:column;gap:8px;}
-.act{display:grid;grid-template-columns:66px minmax(0,1fr) auto auto;gap:16px;align-items:start;
-  background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);
-  border-left:3px solid var(--sev,var(--dim));border-radius:12px;padding:13px 16px;}
-.actk{font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
-  color:var(--sev,var(--dim));padding-top:3px;}
-.actt{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;}
-.actw{font-size:12px;color:var(--mut);line-height:1.55;margin-top:5px;}
-.actw b{color:var(--ice);}
-.actm{font-family:ui-monospace,Consolas,monospace;font-size:15px;font-weight:700;
-  color:var(--ink);white-space:nowrap;text-align:right;padding-top:2px;}
-.actm.nil{color:var(--dim);font-weight:400;font-size:13px;}
-.actb{align-self:center;}
+/* the card itself is the design system's .salt-action recipe (the markup carries both names); this layer keeps the list's gap */
 /* rule chips: the names of the rules broken, so one man reads as one decision instead of
    four paragraphs. The argument for each lives in Boundaries on the Overview tab. */
 .rchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
 .rchip{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
-  color:var(--sev,var(--dim));border:1px solid var(--sev,var(--line));border-radius:99px;
+  color:var(--salt-sev,var(--dim));border:1px solid var(--salt-sev,var(--line));border-radius:99px;
   padding:2px 8px;opacity:.92;white-space:nowrap;}
 .actp{font-size:12px;color:var(--dim);line-height:1.5;margin-top:6px;}
-/* share of the money at stake, drawn rather than ranked in the head. Pure CSS, so it
-   survives Chart.js failing to load, which the charts on this desk cannot. */
-.actbar{grid-column:1/-1;height:3px;border-radius:99px;background:color-mix(in srgb, var(--salt-salt) 5%, transparent);
-  margin-top:10px;overflow:hidden;}
-.actbar i{display:block;height:100%;border-radius:99px;background:var(--sev,var(--dim));
-  opacity:.55;}
 .tdsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:6px 0 4px;}
 @media (max-width:820px){.tdsplit{grid-template-columns:1fr;}}
 .sevh{display:flex;align-items:baseline;gap:11px;margin:24px 0 11px;}
@@ -809,13 +792,6 @@ select{width:100%;padding:8px 9px;font-size:14px;font-weight:600;cursor:pointer;
 .pchip.good{color:var(--grn);border-color:color-mix(in srgb, var(--salt-verdigris) 40%, transparent);}
 .pchip.warn{color:var(--amber);border-color:color-mix(in srgb, var(--salt-copper) 45%, transparent);}
 .pchip.bad{color:var(--crim);border-color:color-mix(in srgb, var(--salt-ember) 50%, transparent);}
-@media(max-width:860px){
-  .act{grid-template-columns:1fr auto;gap:6px 12px;}
-  .actk{grid-column:1/2;padding-top:0;}
-  .actm{grid-column:2/3;grid-row:1;}
-  .act>div:nth-child(2){grid-column:1/3;}
-  .actb{grid-column:1/3;justify-self:start;margin-top:4px;}
-}
 @media(max-width:860px){.kpis,.kpis.k2,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:repeat(2,minmax(0,1fr));}.two,.qrow{grid-template-columns:minmax(0,1fr);}
   .chartbox{height:260px;}.chartbox.tall{height:340px;}
   /* THE STRUCTURAL CAP, and it belongs HERE rather than at 560 because this was the line
@@ -1206,7 +1182,7 @@ details.obshush:hover{opacity:.85;}
      minimum-font-size and raising everything would inflate a design that is mostly fine.
      These are the classes measured under 10.5px across Today, Overview, Financials,
      Pricing, Customers, Ledger, Sourcing and Network at 375px. */
-  .plbl,.actk,.navct,.sbadge,.iref,.sub,.sub2,.rchip,
+  .plbl,.navct,.sbadge,.iref,.sub,.sub2,.rchip,
   .vbtn,.tag,.rtag,.finpct,.label,.apm{font-size:11px !important;}
 
   /* A SECONDARY LINE INSIDE A TABLE CELL, which is where the rest of the 10px lived: the
@@ -1214,11 +1190,6 @@ details.obshush:hover{opacity:.85;}
      there were 96 of them on that tab alone. Reached through the cell rather than by class,
      because they have none. */
   td > div,.qfield > label,.obsk,.obsc,.obsevh{font-size:11px !important;}
-
-  /* A FOUR-COLUMN ACTION ROW CANNOT BE FOUR COLUMNS HERE. It was resolving to
-     297px and 7px, which is a column crushed to nothing rather than a layout. */
-  .act{grid-template-columns:1fr auto;gap:8px 10px;}
-  .act>*:nth-child(1){grid-column:1 / -1;}
 
   /* Wide content scrolls in its own box, never the page. */
   .tscroll,.chartbox{max-width:100%;overflow-x:auto;}
@@ -1372,7 +1343,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 .mbar{height:10px;border-radius:999px;background:var(--wellbg);
   box-shadow:inset 0 1px 3px color-mix(in srgb, var(--salt-ink-on-accent) 50%, transparent),inset 0 0 0 1px color-mix(in srgb, var(--salt-salt) 5%, transparent);}
 .mbar>span{border-radius:999px;transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
-.actbar{height:4px;}
+/* the bar's own height is the .salt-action recipe's; the settle is the desk's */
 .actbar i{transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
 @keyframes barin{from{transform:scaleX(0)}}
 /* SCROLL HINTS, BOTH SIDES: .more (right) has said so since v276; .morel says there is
@@ -3095,9 +3066,11 @@ label.salt-field__label {
   color: var(--salt-mist-bright);
 }
 
-/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there,
+/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there (__go),
    and its share of the money as a bar. Severity is one variable, --salt-sev, which the modifiers set
-   and a consumer may bind (the desk sets --sev on the row). Synced to the desk 22 Sep 2026. ---- */
+   and a consumer may bind (the desk sets --salt-sev on the row). Synced to the desk 22 Sep 2026 and
+   again 09 Oct 2026 (the radius, the why's gap, the bar, __go and the narrow layout, which is the
+   desk's own at 860 and 560). ---- */
 
 .salt-action {
   --salt-sev: var(--salt-brass);
@@ -3108,7 +3081,7 @@ label.salt-field__label {
   background: var(--salt-glass);
   border: 1px solid var(--salt-line);
   border-left: 2px solid var(--salt-sev);
-  border-radius: var(--salt-radius-md);
+  border-radius: var(--salt-radius-sm);
   padding: 13px 16px;
   box-shadow: inset 0 1px 0 var(--salt-highlight);
 }
@@ -3127,7 +3100,7 @@ label.salt-field__label {
   padding-top: 3px;
 }
 .salt-action__title { font-family: var(--salt-font-display); font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
-.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 5px; }
 .salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
@@ -3141,20 +3114,28 @@ label.salt-field__label {
 }
 .salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
 .salt-action__body { min-width: 0; }
+.salt-action__go { align-self: center; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
 .salt-action__bar {
   grid-column: 1 / -1;
-  height: 3px;
+  height: 4px;
   border-radius: 99px;
   background: var(--salt-well);
   overflow: hidden;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 .salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; box-shadow: none; }
-@media (max-width: 720px) {
-  .salt-action { grid-template-columns: minmax(0, 1fr) auto; }
-  .salt-action__kind { grid-column: 1 / -1; padding-top: 0; }
+@media (max-width: 860px) {
+  .salt-action { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .salt-action__kind { grid-column: 1 / 2; padding-top: 0; }
+  .salt-action__money { grid-column: 2 / 3; grid-row: 1; }
+  .salt-action__body { grid-column: 1 / 3; }
+  .salt-action__go { grid-column: 1 / 3; justify-self: start; margin-top: 4px; }
   .salt-action__chips { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .salt-action { gap: 8px 10px; }
+  .salt-action__kind { grid-column: 1 / -1; }
 }
 
 /* ---- Status chip, the added tones ---- */
@@ -3716,13 +3697,13 @@ h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
-.lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
+.lof,.lwas,.submar,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
 .evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
 .provbar,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
+.dsclead,.dsc,.insight,.note,.stand-note,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
 details.rcard>summary .rname,.kpi .n,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
@@ -4147,16 +4128,8 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
 /* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
-.act{background:var(--salt-glass);border:1px solid var(--salt-line);border-left:2px solid var(--sev,var(--salt-brass));
-  box-shadow:inset 0 1px 0 var(--salt-highlight);}
-.actk{font-size:11px;font-weight:500;letter-spacing:.14em;}
-.actt{font-size:16px;font-weight:400;}
-.actw{color:var(--mut);font-size:13.5px;line-height:1.55;}
-.actw b{color:var(--salt-salt);font-weight:500;}
-.actm{font-size:16px;font-weight:500;}
-.actm.nil{color:var(--salt-mist);}
-.actbar{background:var(--salt-well);}
-.actbar i{box-shadow:none;opacity:.6;}
+/* the action card (.act, .actk, .actt, .actw, .actm, .actbar) is the system's .salt-action recipe, carried by the markup beside
+   the desk's names: this layer draws none of it. The list's severity header and the observations stay here. */
 .sevh .cnt{letter-spacing:.16em;}
 details.obs{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-left:2px solid var(--sev,var(--salt-steel));}
 details.obs>summary:hover{background:var(--salt-glass);}
@@ -11839,12 +11812,12 @@ function tabToday(){
   /* the biggest single figure on the tab, so every bar is a share of the same thing and
      the widths mean something across severities rather than only inside one */
   const peak=a.reduce((m,x)=>Math.max(m,x.rm),0);
-  const row=x=>`<div class="act" style="--sev:${ACTSEV[x.sev].c}">
-    <div class="actk">${KIND[x.kind]||'Item'}</div>
-    <div><div class="actt">${x.title}${x.books.length?' '+x.books.map(p=>prodTag({product:p})).join(' '):''}</div><div class="actw">${x.why}</div></div>
-    <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):NIL}</div>
-    <div class="actb">${x.copy?`<button class="navlink" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}<button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
-    ${x.rm>0.009&&peak>0?`<div class="actbar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
+  const row=x=>`<div class="act salt-action" style="--salt-sev:${ACTSEV[x.sev].c}">
+    <div class="actk salt-action__kind">${KIND[x.kind]||'Item'}</div>
+    <div class="salt-action__body"><div class="actt salt-action__title">${x.title}${x.books.length?' '+x.books.map(p=>prodTag({product:p})).join(' '):''}</div><div class="actw salt-action__why">${x.why}</div></div>
+    <div class="actm salt-action__money${x.rm>0.009?'':' salt-action__money--nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):NIL}</div>
+    <div class="actb salt-action__go">${x.copy?`<button class="navlink" data-remind="${tdRemind.push(x.copy)-1}" onclick="copyRemind(+this.dataset.remind,this)">Copy reminder</button> `:''}<button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
+    ${x.rm>0.009&&peak>0?`<div class="actbar salt-action__bar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
   /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
      stand above the list are gone as duplicates, and on a book with nothing due this week
      they were the only thing that said so: the block simply did not render, and an absent
@@ -13324,11 +13297,11 @@ function tabInventory(){
      "Still unexplained: none", which reads as fully explained when it is over-subscribed by
      half a unit. A decomposition that does not tie should say which way it misses. */
   const resid=+(selfUse-suUnits).toFixed(2);
-  return `<div class="acts"><div class="act" style="--sev:${call.sev}">
-    <div class="actk">${call.k}</div>
-    <div><div class="actt">${call.t}</div><div class="actw">${call.w}</div></div>
-    <div class="actm">${call.f}</div>
-    ${(call.k==='Clear'||call.k==='Quiet')?'':`<div class="actb"><button class="navlink" onclick="switchTab('sourcing')">Sourcing &rarr;</button></div>`}
+  return `<div class="acts"><div class="act salt-action" style="--salt-sev:${call.sev}">
+    <div class="actk salt-action__kind">${call.k}</div>
+    <div class="salt-action__body"><div class="actt salt-action__title">${call.t}</div><div class="actw salt-action__why">${call.w}</div></div>
+    <div class="actm salt-action__money">${call.f}</div>
+    ${(call.k==='Clear'||call.k==='Quiet')?'':`<div class="actb salt-action__go"><button class="navlink" onclick="switchTab('sourcing')">Sourcing &rarr;</button></div>`}
   </div></div>
   ${restockCard()}
   <h2 style="margin-top:18px">What is on the inventory <span class="rule"></span></h2>

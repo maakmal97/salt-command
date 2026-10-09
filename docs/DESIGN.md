@@ -219,6 +219,20 @@ smallest token, 11px, and the suite forbids type under it), and the ledger's bar
 scoped to the stamp in `design/desk.css` with the reason beside them. The consolidated band's hollow ring is inline,
 a token. The product switch (`.prodsw`) is another group. The suite section "Product bands" proves it.
 
+**The actions group (09 Oct 2026, unbumped, for his word).** The Today action card carries the system's `.salt-action`
+beside the desk's names (`salt-action__kind`, `__title`, `__why`, `__money` and `--nil`, `__go`, `__bar`, and the body),
+in the action list's row and in the shelf call. The row sets the recipe's `--salt-sev` where it set `--sev`, and the
+rule chips in its why read `--salt-sev` too (they went uncoloured in the first shot, which the suite now catches). The
+recipe was synced to the desk first: radius `--salt-radius-sm` (12px, was md), the why's gap 5px, the bar 4px with a 10px
+gap, a new `__go` cell for the way there (`align-self: center`; `ActionCard` takes a `go` prop), and the narrow layout at
+860 and 560 (money beside the kind, body and way there across, gaps 6px 12px then 8px 10px), which was the desk's own.
+Deleted: the card's rules in the older layer and in section 11 of `design/desk.css`, its two media rules, `.actk` from
+the 11px list and the actk, actm, actt and actw names from the font lists. Left: `.acts` (the list's gap), the bar's
+settle animation (motion the recipe does not carry), `.sevh` and the observations. Measured: 34 of 34 shots the same, and
+a computed-style census of all 18 cards and their parts at 375, 800, 1000 and 1280 differing in one property only, the
+money's `font-variant-numeric` (tabular, which the mono face already is). The Journal has had no desk markup since v802, so
+`.salt-journal` has nothing to carry; the suite section "Actions: the system" says so and proves the rest.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

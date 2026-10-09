@@ -64,13 +64,13 @@ h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
-.lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
+.lof,.lwas,.submar,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
 .evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
 .provbar,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,
+.dsclead,.dsc,.insight,.note,.stand-note,.actp,.obst,.obsb,.obsev li,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
 details.rcard>summary .rname,.kpi .n,.appop .apact,
 .cardh{font-family:var(--salt-font-display);}
@@ -495,16 +495,8 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
 /* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
-.act{background:var(--salt-glass);border:1px solid var(--salt-line);border-left:2px solid var(--sev,var(--salt-brass));
-  box-shadow:inset 0 1px 0 var(--salt-highlight);}
-.actk{font-size:11px;font-weight:500;letter-spacing:.14em;}
-.actt{font-size:16px;font-weight:400;}
-.actw{color:var(--mut);font-size:13.5px;line-height:1.55;}
-.actw b{color:var(--salt-salt);font-weight:500;}
-.actm{font-size:16px;font-weight:500;}
-.actm.nil{color:var(--salt-mist);}
-.actbar{background:var(--salt-well);}
-.actbar i{box-shadow:none;opacity:.6;}
+/* the action card (.act, .actk, .actt, .actw, .actm, .actbar) is the system's .salt-action recipe, carried by the markup beside
+   the desk's names: this layer draws none of it. The list's severity header and the observations stay here. */
 .sevh .cnt{letter-spacing:.16em;}
 details.obs{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-left:2px solid var(--sev,var(--salt-steel));}
 details.obs>summary:hover{background:var(--salt-glass);}
