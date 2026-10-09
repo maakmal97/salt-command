@@ -1847,8 +1847,8 @@ label.salt-field__label {
 .salt-queue--syncing::before { background: var(--salt-brass); }
 .salt-queue--offline::before { background: var(--salt-ember); }
 
-/* ---- Tier pill: a word with a dot in its colour and a hairline, never a fill, the brightest first
-   because that is the order they earn (synced to the desk 22 Sep 2026) ---- */
+/* ---- Tier pill: a word with a dot in its colour, a hairline and a faint tint of that colour, the brightest first
+   because that is the order they earn (synced to the desk 22 Sep 2026; the tint is the one the desk draws; the desk sets its own face at 10.5px, under the system's floor) ---- */
 
 .salt-tier {
   display: inline-flex;
@@ -1865,12 +1865,13 @@ label.salt-field__label {
   background: transparent;
   line-height: 1.5;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   vertical-align: middle;
 }
 .salt-tier__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
-.salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
-.salt-tier--2 { color: var(--salt-brass-soft); box-shadow: none; }
-.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; box-shadow: none; }
+.salt-tier--1 { color: var(--salt-salt); background: color-mix(in srgb, var(--salt-salt) 10%, transparent); box-shadow: 0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent); }
+.salt-tier--2 { color: var(--salt-brass-soft); background: color-mix(in srgb, var(--salt-brass-soft) 9%, transparent); box-shadow: none; }
+.salt-tier--3 { color: var(--salt-brass); background: color-mix(in srgb, var(--salt-brass) 7%, transparent); opacity: 0.85; box-shadow: none; }
 
 /* ---- Plan: a headline with the reasoning behind it, folded ---- */
 

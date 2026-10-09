@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="fb66681f9a88ff2e";
+var SALT_BUILD_ID="5acc28b404eca439";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -667,36 +667,11 @@ details.rcard>summary .rname{font-size:14px;font-weight:800;color:var(--ink);}
 details.rcard>summary .rsum{margin-left:auto;font-size:12px;color:var(--mut);}
 details.rcard>summary .rsum b{color:var(--ink);}
 .rtag{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);}
-/* ============ THE TIER PILL (v245) ============
-   Built like .gem, which is the Diamond badge, because he asked for the tier to read the
-   way the associate ranks already do: a lit chip rather than a word in a table. The glow
-   is the tier's own colour at two radii, a hairline ring and a soft cast, so it lifts off
-   a dark card without shouting. Tier I is brightest and Tier III is dimmest, which is the
-   order they earn, so brightness carries the same information as the numeral. */
-/* v259: IT SAT AGAINST THE NAME AND IT BROKE IN TWO. .sbadge beside it has carried
-   margin-left:8px since it was written and this did not, so a name and its tier read as one
-   word. And with no nowrap the pill folded onto a second line inside the narrow sticky
-   customer column on Reconnect, which doubled the row height to no purpose. Liquid Glass is
-   explicit that labels wrap and figures do not; a two-word pill is a label in name only, so
-   it holds one line and the column takes the width instead. */
-.tierpill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;
-  letter-spacing:.7px;text-transform:uppercase;padding:2px 9px;border-radius:999px;
-  border:1px solid currentColor;line-height:1.5;vertical-align:middle;
-  margin-left:8px;margin-right:2px;white-space:nowrap;font-variant-numeric:tabular-nums;}
-.tierpill .pd{width:5px;height:5px;border-radius:50%;background:currentColor;}
-.tierpill.t1{color:var(--ice);background:color-mix(in srgb, var(--salt-salt) 10%, transparent);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 35%, transparent),0 0 14px -2px color-mix(in srgb, var(--salt-salt) 85%, transparent);}
-.tierpill.t2{color:var(--salt-brass-soft);background:color-mix(in srgb, var(--salt-brass-soft) 9%, transparent);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-brass-soft) 28%, transparent),0 0 11px -3px color-mix(in srgb, var(--salt-brass-soft) 65%, transparent);}
-.tierpill.t3{color:var(--salt-brass);background:color-mix(in srgb, var(--salt-brass) 7%, transparent);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-brass) 20%, transparent),0 0 8px -3px color-mix(in srgb, var(--salt-brass) 45%, transparent);}
-@media (prefers-reduced-motion:no-preference){
-  .tierpill.t1{animation:tierglow 3.2s ease-in-out infinite;}
-}
-@keyframes tierglow{
-  0%,100%{box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 35%, transparent),0 0 14px -2px color-mix(in srgb, var(--salt-salt) 85%, transparent);}
-  50%    {box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 55%, transparent),0 0 20px -1px color-mix(in srgb, var(--salt-salt) 100%, transparent);}
-}
+/* ============ THE TIER PILL ============
+   The pill is the system's .salt-tier recipe (the DESIGN base block): a word and a dot in the tier's colour
+   inside a hairline, never a fill. The desk owns only its place: v259 sat it 8px off the name, as .sbadge is,
+   because a name and its tier read as one word; the pill itself holds one line (the recipe's nowrap). */
+.tierpill{margin-left:8px;margin-right:2px;}
 /* ============ QUICK MARK ON A PENDING LEDGER CARD (v253) ============
    Three buttons, and they are deliberately quiet: a pending order is the one state where the
    next action is obvious, so the card offers it rather than making him cross to Transaction,
@@ -3499,8 +3474,8 @@ label.salt-field__label {
 .salt-queue--syncing::before { background: var(--salt-brass); }
 .salt-queue--offline::before { background: var(--salt-ember); }
 
-/* ---- Tier pill: a word with a dot in its colour and a hairline, never a fill, the brightest first
-   because that is the order they earn (synced to the desk 22 Sep 2026) ---- */
+/* ---- Tier pill: a word with a dot in its colour, a hairline and a faint tint of that colour, the brightest first
+   because that is the order they earn (synced to the desk 22 Sep 2026; the tint is the one the desk draws; the desk sets its own face at 10.5px, under the system's floor) ---- */
 
 .salt-tier {
   display: inline-flex;
@@ -3517,12 +3492,13 @@ label.salt-field__label {
   background: transparent;
   line-height: 1.5;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   vertical-align: middle;
 }
 .salt-tier__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
-.salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
-.salt-tier--2 { color: var(--salt-brass-soft); box-shadow: none; }
-.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; box-shadow: none; }
+.salt-tier--1 { color: var(--salt-salt); background: color-mix(in srgb, var(--salt-salt) 10%, transparent); box-shadow: 0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent); }
+.salt-tier--2 { color: var(--salt-brass-soft); background: color-mix(in srgb, var(--salt-brass-soft) 9%, transparent); box-shadow: none; }
+.salt-tier--3 { color: var(--salt-brass); background: color-mix(in srgb, var(--salt-brass) 7%, transparent); opacity: 0.85; box-shadow: none; }
 
 /* ---- Plan: a headline with the reasoning behind it, folded ---- */
 
@@ -3874,7 +3850,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
-h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,.starpill,
+h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.gem,.starpill,
 .prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
@@ -4276,13 +4252,12 @@ tbody tr:hover td:not(.l){background:color-mix(in srgb, var(--salt-salt) 3%, tra
 .def{color:var(--salt-ember);}
 .prov{color:var(--salt-brass);}
 .mod,.pendingt{color:var(--salt-steel);}
+/* the tier pill is the system's .salt-tier recipe; the desk keeps its measured 10.5px face, which is under the system's 11px floor, so
+   it is the one value of the pill's the layer states (the recipe is read at the floor) */
+.tierpill{font-size:10.5px;}
 .provbar{font-size:11px;letter-spacing:.06em;background:color-mix(in srgb, var(--salt-brass) 8%, transparent);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .ubtn{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);color:var(--salt-brass);}
-.tierpill{font-size:10.5px;font-weight:500;letter-spacing:.14em;background:transparent;animation:none!important;}
-.tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent);}
-.tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
-.tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
 .gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),color-mix(in srgb, var(--salt-product-salt) 76%, var(--salt-mist)));
   box-shadow:0 0 0 1px color-mix(in srgb, var(--salt-salt) 40%, transparent);}
 .starpill{font-weight:700;letter-spacing:.12em;color:var(--salt-obsidian);}
@@ -11854,8 +11829,8 @@ const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 const tierPill=id=>{
   const t=(typeof custTier==='function')?custTier(id):null;
   if(!t)return '';
-  const cls=t.code==='T1'?'t1':t.code==='T2'?'t2':'t3';
-  return `<span class="tierpill ${cls}" title="${esc(t.name)}: ${esc(t.why||'')}"><span class="pd"></span>${esc(t.name)}</span>`;
+  const cls=t.code==='T1'?'salt-tier--1':t.code==='T2'?'salt-tier--2':'salt-tier--3';
+  return `<span class="tierpill salt-tier ${cls}" title="${esc(t.name)}: ${esc(t.why||'')}"><span class="salt-tier__dot"></span>${esc(t.name)}</span>`;
 };
 /* noHi drops the High-margin badge. The database row prints cumulative margin in its own
    column and sorts on it, so the badge there restates the neighbouring cell and costs 18px

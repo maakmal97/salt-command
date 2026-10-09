@@ -196,6 +196,16 @@ note and the price book's customer select. Visible at Night: the resting edge is
 dimmed; inline fields under 16px (Add ID, vault, editor, price book) are 16px. Not touched: the date field's
 Today button, `.qask`, labels. The suite section "Fields: the system" proves it.
 
+**The tier pill group (09 Oct 2026, unbumped, for his word).** `tierPill()` carries the system's `.salt-tier`
+recipe (`salt-tier salt-tier--1` to `--3`, the dot `salt-tier__dot`) beside the desk's `tierpill`, which keeps only the margin
+beside the name. Deleted: the v245 pill, its three tier rules and the `tierglow` keyframes in the older layer, the desk's
+four restatements in `design/desk.css` and the pill's entry in the mono list. The recipe was changed to the desk, not the desk to the
+recipe: the three tints the desk drew (10, 9 and 7% of the tier's colour, which the old section-10 `background:transparent`
+never beat, as `.tierpill.t1` outranks it), tabular figures, and the glow as a token mix. Measured: 34 of 34 shots the same;
+the first run differed on Concentration's customer column until the tint was in the recipe. Left on the layer: `.tierpill{font-size:10.5px}`,
+because the system's floor is its 11px `--salt-text-xs` (the suite reads it) and the desk's measured face is half a pixel under;
+moving to 11px would widen every pill by about 4px and is his call. The suite section "Tier pill" proves it.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

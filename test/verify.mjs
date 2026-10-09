@@ -8356,6 +8356,50 @@ await (async () => {
   for (const k of ["const box='", "const bx='"]) { const at = mF.indexOf(k); const q = mF.slice(at, mF.indexOf("';", at)); ok(!/border|background|color/.test(q) && /font-size:16px/.test(q), `${k.slice(6, 9)} (the editor's and the update box's field style) sets size only, at 16px`); }
 })();
 
+section("Tier pill: the system's .salt-tier recipe owns the pill's material");
+await (async () => {
+  /* 09 Oct 2026: the tier pill group of the migration (CLAUDE.md rule 6). tierPill() carries the system's `.salt-tier`
+     recipe beside the desk's own `.tierpill`, which keeps only the pill's place (the margin beside the name) and its measured 10.5px face, under the system's 11px floor;
+     the hairline, the tint, the glow, the dot, the weight and the spacing are the recipe's. */
+  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const mark = (s) => /class="tierpill salt-tier \$\{cls\}"/.test(s) && /<span class="salt-tier__dot">/.test(s)
+    && /'salt-tier--1'/.test(s) && /'salt-tier--2'/.test(s) && /'salt-tier--3'/.test(s);
+  ok(mark(mT) && mark(bT), "the pill's markup carries .salt-tier, its dot and its tier modifier, in the master and in the build");
+  ok(/\.salt-tier--1 \{/.test(mT) && /\.salt-tier__dot \{/.test(mT), "and the recipe it names is in the DESIGN base block");
+  const a = mT.indexOf("<style>"), b = mT.indexOf("</style>", a);
+  const own = mT.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "");
+  const restated = [];
+  for (const m of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+    if (!/\.tierpill|\.salt-tier/.test(m[1])) continue;
+    const props = m[2].split(";").map((x) => x.split(":")[0].trim()).filter((x) => x && !/^(margin-(left|right)|flex|font-size)$/.test(x));
+    if (props.length) restated.push(`${m[1].trim().slice(0, 40)} {${props.join(",")}}`);
+  }
+  ok(restated.length === 0, `no desk rule restates the pill's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  ok(!/@keyframes tierglow|animation:\s*tierglow/.test(css), "the retired glow animation is not carried in the desk's own layers");
+  const { openMaster: omT } = await import("../tools/payload.mjs");
+  const { w: wT } = await omT(process.env.SALT_MASTER || undefined);
+  wT.eval("setProd('salt');recompute();");
+  const by = wT.eval("(()=>{const r={};for(const id of [...new Set(pricedSales.map(s=>s.customer))]){const t=custTier(id);if(t&&!r[t.code])r[t.code]=id}return r})()");
+  const seen = {};
+  for (const [code, id] of Object.entries(by)) {
+    const host = wT.document.createElement("div");
+    host.innerHTML = wT.eval(`tierPill(${JSON.stringify(id)})`);
+    wT.document.body.appendChild(host);
+    const e = host.firstElementChild, cs = wT.getComputedStyle(e);
+    seen[code] = { e, cs, cls: e.className, dot: wT.getComputedStyle(e.firstElementChild) };
+  }
+  ok(["T1", "T2", "T3"].every((c) => seen[c] && seen[c].cls === `tierpill salt-tier salt-tier--${c[1]}`), `each tier draws its own modifier (${Object.entries(seen).map(([c, s]) => `${c} ${s.cls}`).join("; ")})`);
+  const same = (k, v) => Object.values(seen).every((s) => s.cs[k] === v);
+  ok(same("fontSize", "10.5px") && same("fontWeight", "500") && same("textTransform", "uppercase") && same("letterSpacing", "1.47px") && same("paddingLeft", "9px") && same("whiteSpace", "nowrap"),
+    `the cascade gives every pill the desk's measured face and padding (${seen.T1?.cs.fontSize}, ${seen.T1?.cs.fontWeight}, ${seen.T1?.cs.letterSpacing}, ${seen.T1?.cs.paddingLeft})`);
+  ok(same("marginLeft", "8px") && same("animationName", "none"), "and the desk's own place beside the name, with no animation");
+  ok(seen.T1.cs.color === "var(--salt-salt)" && seen.T2.cs.color === "var(--salt-brass-soft)" && seen.T3.cs.color === "var(--salt-brass)", "tier one is salt, two soft brass and three brass");
+  ok(/55%/.test(seen.T1.cs.boxShadow) && seen.T2.cs.boxShadow === "none" && seen.T3.cs.boxShadow === "none" && seen.T1.cs.opacity === "1" && seen.T3.cs.opacity === "0.85", "only the first tier glows, and the third is dimmed");
+  ok(Object.values(seen).every((s) => s.dot.width === "5px" && s.dot.borderRadius === "50%"), "the dot is the recipe's 5px circle");
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
