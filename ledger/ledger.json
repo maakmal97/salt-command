@@ -1,6 +1,6 @@
 {
- "v": "v1040",
- "stamped": "09 Oct 2026, 09:07 KL",
+ "v": "v1042",
+ "stamped": "09 Oct 2026, 11:12 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6842,6 +6842,16 @@
     "deliveredOn": "2026-10-09",
     "note": "<b>SALT SELL DATED 09 OCT: 6.25 UNIT FOR RM500, DELIVERED WITH RM100 OUTSTANDING.</b> Booked to CJ4-BJ, delivered on 09 Oct with RM400 cash in. The ladder for 6.25 unit has a floor of RM362.5 and an ask of RM600, so the total is above the floor and below the ask. CJ4-BJ has a median rate of RM72 and a range of RM64 to RM100, nothing outstanding before, 0 units on credit against a cap of 1. The row carries RM362.5, COGS off the latest purchase. The drafter flagged a rate 11.1% above his usual; RM80 is inside his range, so the figures answer it. The cap check is not answered by the dossier. On the desk's word, 1.44 unit of reward covers RM80.7. Open: RM100.",
     "rid": "s244"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 0.5,
+    "total": 70,
+    "cash": 0,
+    "date": "2026-10-09",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 09 OCT: 0.5 UNIT FOR RM70, PENDING, NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CR3-DAM from an order on the statements site, to collect, priced at RM70 on this order and placed at RM80. The ladder for 0.5 unit has a floor of RM29 and an ask of RM80, so the total is above the floor and below the ask. CR3-DAM has a median rate of RM80 and a range of RM80 to RM110, RM25 outstanding before, 0.27 unit on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase, not the inventory's own RM56. The drafter flagged RM140 a unit, 75% above his usual; that is above his range, so the figures do not answer it. Open: RM70 and 0.5 unit.",
+    "rid": "s245"
    }
   ],
   "contacts": [
@@ -7483,9 +7493,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-08T23:47:45.760Z",
+  "QUEUE_COMMITTED": "2026-10-09T03:12:11.964Z",
   "PRICING": {
-   "takenAt": "2026-10-09T01:20:48.992Z",
+   "takenAt": "2026-10-09T03:12:57.972Z",
    "sizes": [
     0.5,
     1,
@@ -7891,6 +7901,23 @@
       "rare": false
      }
     },
+    "CR3-DAM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 19,
+      "tenureDays": 102,
+      "sinceLastDays": 9,
+      "perMonth": 5.67,
+      "unitsPerMonth": 7.61,
+      "smallShare": 0.79,
+      "bigShare": 0.05,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false
+     }
+    },
     "CM4-TO": {
      "salt": {
       "name": "large and regular",
@@ -7920,23 +7947,6 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false
-     }
-    },
-    "CR3-DAM": {
-     "salt": {
-      "name": "small and often",
-      "orders": 19,
-      "tenureDays": 102,
-      "sinceLastDays": 9,
-      "perMonth": 5.67,
-      "unitsPerMonth": 7.61,
-      "smallShare": 0.79,
-      "bigShare": 0.05,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": true,
       "rare": false
      }
     },
@@ -9323,56 +9333,6 @@
         1080
        ]
       ],
-      "CM4-TO": [
-       [
-        0.5,
-        29
-       ],
-       [
-        1,
-        58
-       ],
-       [
-        1.5,
-        87
-       ],
-       [
-        2,
-        116
-       ],
-       [
-        2.5,
-        145
-       ],
-       [
-        3,
-        174
-       ],
-       [
-        3.5,
-        203
-       ],
-       [
-        4,
-        232
-       ],
-       [
-        4.5,
-        261
-       ],
-       [
-        5,
-        290
-       ],
-       [
-        6.25,
-        362.5
-       ],
-       [
-        12.5,
-        725
-       ]
-      ],
       "CR3-DAM": [
        [
         0.5,
@@ -9421,6 +9381,56 @@
        [
         12.5,
         990
+       ]
+      ],
+      "CM4-TO": [
+       [
+        0.5,
+        29
+       ],
+       [
+        1,
+        58
+       ],
+       [
+        1.5,
+        87
+       ],
+       [
+        2,
+        116
+       ],
+       [
+        2.5,
+        145
+       ],
+       [
+        3,
+        174
+       ],
+       [
+        3.5,
+        203
+       ],
+       [
+        4,
+        232
+       ],
+       [
+        4.5,
+        261
+       ],
+       [
+        5,
+        290
+       ],
+       [
+        6.25,
+        362.5
+       ],
+       [
+        12.5,
+        725
        ]
       ],
       "CZ4-MK": [
@@ -11084,8 +11094,8 @@
       "CS6-PER": -0.4459,
       "CM4-MK": 0.0318,
       "CN3-WM": 0.5,
-      "CM4-TO": "partner",
       "CR3-DAM": 0.0737,
+      "CM4-TO": "partner",
       "CZ4-MK": -0.3046,
       "CK4-SEN": -0.4058,
       "CE4-AD": -0.3016,
@@ -11510,28 +11520,6 @@
         450
        ]
       ],
-      "CM4-TO": [
-       [
-        10,
-        77.71
-       ],
-       [
-        20,
-        155.43
-       ],
-       [
-        30,
-        233.14
-       ],
-       [
-        40,
-        310.86
-       ],
-       [
-        50,
-        388.57
-       ]
-      ],
       "CR3-DAM": [
        [
         10,
@@ -11552,6 +11540,28 @@
        [
         50,
         450
+       ]
+      ],
+      "CM4-TO": [
+       [
+        10,
+        77.71
+       ],
+       [
+        20,
+        155.43
+       ],
+       [
+        30,
+        233.14
+       ],
+       [
+        40,
+        310.86
+       ],
+       [
+        50,
+        388.57
        ]
       ],
       "CZ4-MK": [
@@ -12640,28 +12650,6 @@
         1500
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        42
-       ],
-       [
-        5,
-        210
-       ],
-       [
-        10,
-        420
-       ],
-       [
-        20,
-        840
-       ],
-       [
-        30,
-        1260
-       ]
-      ],
       "CR3-DAM": [
        [
         1,
@@ -12682,6 +12670,28 @@
        [
         30,
         1500
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        42
+       ],
+       [
+        5,
+        210
+       ],
+       [
+        10,
+        420
+       ],
+       [
+        20,
+        840
+       ],
+       [
+        30,
+        1260
        ]
       ],
       "CZ4-MK": [
@@ -13679,20 +13689,6 @@
         60
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        3.4
-       ],
-       [
-        5,
-        17
-       ],
-       [
-        10,
-        34
-       ]
-      ],
       "CR3-DAM": [
        [
         1,
@@ -13705,6 +13701,20 @@
        [
         10,
         60
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        3.4
+       ],
+       [
+        5,
+        17
+       ],
+       [
+        10,
+        34
        ]
       ],
       "CZ4-MK": [
@@ -14337,11 +14347,11 @@
      ]
     }
    },
-   "v": "v1040"
+   "v": "v1042"
   },
   "OPEN": {
-   "at": "2026-10-09T01:20:49.383Z",
-   "count": 10,
+   "at": "2026-10-09T03:12:58.757Z",
+   "count": 11,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
      "d": "2026-10-09",
@@ -14377,6 +14387,20 @@
      "key": "CJ4-BJ|2026-10-09|500",
      "age": 0,
      "exp": 100
+    },
+    "CR3-DAM|2026-10-09|70": {
+     "d": "2026-10-09",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 0.5,
+     "t": 70,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 70,
+     "oweUnits": 0.5,
+     "rid": "s245",
+     "key": "CR3-DAM|2026-10-09|70"
     },
     "CE4-CHE|2026-10-06|240": {
      "d": "2026-10-06",
@@ -14515,9 +14539,9 @@
      "free": 7,
      "owedOut": 12,
      "coverDays": 1.5,
-     "rate": 5.1,
+     "rate": 5.13,
      "owedToYou": 430,
-     "promised": 12,
+     "promised": 12.5,
      "short": 0
     },
     "oil": {
@@ -14572,7 +14596,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1040"
+   "v": "v1042"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14580,7 +14604,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1040"
+   "v": "v1042"
   },
   "REWARD": {
    "stated": {
@@ -14592,7 +14616,7 @@
      }
     }
    },
-   "v": "v1040"
+   "v": "v1042"
   }
  }
 }
