@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-09T03:27:49.045Z",
+   "collection": "sales",
+   "row": {
+    "qty": 2.5,
+    "total": 240,
+    "cash": 240,
+    "date": "2026-10-06",
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Fulfilment against CE4-CHE's order of 2.5 unit for RM 240 agreed 2026-10-06. RM 0 and 2.5 unit move on 2026-10-07, against RM 0 and 2.5 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s238",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-09T03:27:49.045Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 2.5,
+    "total": 0,
+    "status": "unpaid",
+    "raw": "Fulfilment on CE4-CHE s238: 2.5 unit moved, recorded 2026-10-07",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "product": "salt",
+     "rid": "s238",
+     "orderKey": "CE4-CHE|2026-10-06|240",
+     "date": "2026-10-07",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 2.5,
+     "total": 0,
+     "cash": 0,
+     "kg": 2.5
+    }
+   },
+   "decidedAt": "2026-10-09T03:28:37.745Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
