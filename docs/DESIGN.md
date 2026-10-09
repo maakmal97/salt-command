@@ -233,6 +233,21 @@ a computed-style census of all 18 cards and their parts at 375, 800, 1000 and 12
 money's `font-variant-numeric` (tabular, which the mono face already is). The Journal has had no desk markup since v802, so
 `.salt-journal` has nothing to carry; the suite section "Actions: the system" says so and proves the rest.
 
+**The ghosts group (09 Oct 2026, unbumped, for his word).** `.navlink`, `.ubtn`, `.obsbtn` and `.updchip` carry
+`.salt-ghost` beside their own name in every producer (19 class attributes), so the edge, the ink, the 11px mono
+uppercase face, the 44px tap both ways, the hover and the pressed state are the recipe's. Deleted: those classes'
+material in the older layers and in section 7 of `design/desk.css`, the `.updchip.on` rule (the chip now sets
+`aria-pressed` beside `.on`, which the recipe reads), and every `.lqb` and `.lquick` rule, a pair of classes no
+markup has made since v495. Kept on the layer, because the recipe draws one padding: each placement's own padding
+(navlink 6/11, ubtn 3/9, obsbtn 5/10, updchip 6/13), the hush row's 10.5px, and `.ubtn{--salt-ghost-tone}` bound to
+brass, as a tile's tone is bound. The recipe was not changed, so the Counter's `stmt/statement-css.js` did not move.
+Measured in a browser at 375 and 1280: all 386 live ghosts across the 17 parts are 44px by 44px or more, and read
+the recipe's type, case, weight, radius and padding as before. What moved: the resting edge is the recipe's
+brass-toned `--salt-edge-field` where it was a 6% white hairline (1.1:1), and a chip that is chosen has a brass edge
+where it had a faint one; an Undo's 50% brass edge becomes the same brass tone. Buttons narrower than 44px (a one
+word "Go") grow to 44px wide, which no live button was. `.exitbtn` stays on the layer: a fixed corner control with
+its own 22%-opacity shape, under 44px, which the group did not take. The suite section "Ghosts: the system" proves it.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier

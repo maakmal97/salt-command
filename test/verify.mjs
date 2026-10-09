@@ -4634,8 +4634,8 @@ await (async () => {
 
   /* sixty of them on the Whiteboard, each one dismissing or deferring a finding, in a row
      beside a .navlink that has been 44px since v392. */
-  ok(/\.obsbtn\{[^}]*min-height:var\(--tap\)/.test(m),
-    "the Whiteboard's hush controls read --tap, not the 27px they carried");
+  ok(/class="obsbtn salt-ghost"/.test(m) && !/\.obsbtn\{[^}]*min-height/.test(m),
+    "the Whiteboard's hush controls are the ghost recipe, which reads --tap (the Ghosts section reads it off the cascade), not the 27px they carried");
 
   /* v387 retired the phone app: /desk is the one surface, and the laptop copy of Approve
      was still sending the reader to a second one. */
@@ -5213,7 +5213,7 @@ await (async () => {
       "the thirty-field sheet is still there, closed, one fold below the panel");
     ok(w.eval("!!document.getElementById('ed_party') && !!document.getElementById('ed_cost')"),
       "and every EDFORM control is still in the DOM for edSubmit to read");
-    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "44px",
+    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "var(--salt-tap)" && /--salt-tap: 44px;/.test(rf(M, "utf8")),
       "the chips meet the 44px tap contract");
   }
   for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
@@ -8485,6 +8485,67 @@ await (async () => {
   const unbound = chips.filter((c) => { const v = /var\((--[\w-]+)/.exec(cs(c, "color")); return !v || !c.closest(".act").style.getPropertyValue(v[1]); });
   ok(chips.length > 0 && unbound.length === 0, `every rule chip reads a severity variable its card sets (${chips.length} chips, ${unbound.length} unbound)`);
   ok(!/class="[^"]*\bsalt-journal\b/.test(mA.slice(0, mA.indexOf("<style>")) + mA.slice(mA.indexOf("</style>"))), "the desk draws no Journal entry markup, so the Journal recipe has nothing to carry");
+})();
+
+section("Ghosts: the system's .salt-ghost recipe owns the material of every quiet button");
+await (async () => {
+  /* 09 Oct 2026: the ghost group of the migration (CLAUDE.md rule 6). The desk's quiet buttons (.navlink, .ubtn, .obsbtn,
+     .updchip) carry the system's `.salt-ghost` beside their own name, so the edge, the ink, the type, the 44px tap, the hover
+     and the pressed state are the recipe's; the desk keeps each placement's padding, the hush row's 10.5px and the brass
+     tone of an Undo or Clear. .lqb had no markup and its rules are gone. */
+  const GH = ["navlink", "ubtn", "obsbtn", "updchip"];
+  const mG = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bG = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const markup = (t) => { const out = []; for (const m of t.slice(t.indexOf("</style>")).matchAll(/class=(["'])([^"']*?)\1/g)) { const c = m[2].split(/\s+/); if (c.some((x) => GH.includes(x))) out.push(c); } return out; };
+  const mk = markup(mG), bk = markup(bG);
+  ok(mk.length >= 15 && mk.every((c) => c.includes("salt-ghost")), `every class attribute naming a desk ghost also carries salt-ghost (${mk.length} in the master)`);
+  ok(bk.length === mk.length, `and the build carries the same ${bk.length}`);
+  /* no desk rule restates what the recipe draws: the edge, the ink, the type, the tap and the fill belong to .salt-ghost */
+  const a = mG.indexOf("<style>"), b = mG.indexOf("</style>", a);
+  const own = mG.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const MATERIAL = /(^|;)\s*(background(-color)?|border(-[a-z]+)*|color|outline|box-shadow|text-transform|letter-spacing|min-height|min-width|font-weight|text-decoration)\s*:/;
+  const GHOSTSEL = /(^|[\s>+~])\.(navlink|ubtn|obsbtn|updchip|lqb)(\.on|:hover|:focus-visible)?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => GHOSTSEL.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no desk rule restates a ghost's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  ok(!/\.lqb\b/.test(css), ".lqb, a class no markup makes, has no rule left");
+  ok(/--salt-tap: 44px;/.test(mG), "and the recipe's tap token is the 44px, so min-height and min-width on every ghost are 44 both ways");
+  /* read off the cascade in the desk's own window: each ghost draws what a bare .salt-ghost draws, to the 44px tap */
+  const { openMaster: omG } = await import("../tools/payload.mjs");
+  const { w: wG } = await omG(process.env.SALT_MASTER || undefined);
+  const dG = wG.document;
+  const make = (c) => { const e = dG.createElement("button"); e.className = c; dG.body.appendChild(e); return e; };
+  const SAME = ["color", "minHeight", "minWidth", "borderRadius", "textTransform", "fontWeight", "cursor", "letterSpacing"];
+  const refG = wG.getComputedStyle(make("salt-ghost"));
+  const bad = [];
+  for (const c of GH) {
+    const cs = wG.getComputedStyle(make(c + " salt-ghost"));
+    for (const p of SAME) if (cs[p] !== refG[p] && !(c === "obsbtn" && p === "letterSpacing")) bad.push(`${c}.${p} ${cs[p]} vs ${refG[p]}`);
+    if (cs.minHeight !== "var(--salt-tap)" || cs.minWidth !== "var(--salt-tap)") bad.push(`${c} tap ${cs.minHeight} x ${cs.minWidth}`);
+  }
+  ok(bad.length === 0, `every desk ghost draws the recipe's ink, tap, radius, case and weight (differs: ${bad.join(" | ") || "none"})`);
+  const tone = (c) => wG.getComputedStyle(make(c + " salt-ghost")).getPropertyValue("--salt-ghost-tone").trim();
+  ok(tone("ubtn") === "var(--salt-brass)" && ["navlink", "obsbtn", "updchip"].every((c) => tone(c) === "var(--salt-mist)"), "an Undo or Clear binds the recipe's tone to brass; the others keep its mist");
+  const press = make("updchip salt-ghost"); press.setAttribute("aria-pressed", "true");
+  ok(wG.getComputedStyle(press).color === "var(--salt-salt)", "a chip with aria-pressed=true reads the recipe's pressed ink");
+  /* the update panel's chips say which is chosen through aria-pressed, which the recipe reads, and move it with the choice */
+  const rid = wG.eval("(sales.filter(function(s){return !s.cancelled&&s.rid;})[0]||{}).rid");
+  ok(!!rid, "a sale exists to open the update panel on");
+  if (rid) {
+    wG.eval("ledEdit(" + JSON.stringify(rid) + ",'SELL');");
+    const chips = () => [...dG.querySelectorAll(".updchips .updchip")];
+    const pressed = () => chips().map((x, i) => x.getAttribute("aria-pressed") === "true" ? i : -1).filter((i) => i >= 0);
+    ok(chips().length >= 2 && chips().every((x) => x.classList.contains("salt-ghost") && x.getAttribute("aria-pressed") === "false"), `the panel's ${chips().length} chips start unpressed, as ghosts`);
+    chips()[0].click();
+    const p1 = pressed(), on1 = chips().map((x, i) => x.classList.contains("on") ? i : -1).filter((i) => i >= 0);
+    chips()[1].click();
+    const p2 = pressed();
+    ok(p1.join() === "0" && on1.join() === "0" && p2.join() === "1", `choosing a chip presses that one alone and moves with the choice (${p1} then ${p2}; class on ${on1})`);
+  }
 })();
 
 section("v472: the desk in the Salt identity");
