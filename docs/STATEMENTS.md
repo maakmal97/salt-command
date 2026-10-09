@@ -1058,7 +1058,9 @@ no entry, row or note reads it, and a rating queues no stage (`orderWork`). A wo
 at, msgs[], quiet?}`, folded in the order book from `tsay` and `tmark` events under oid `thread`, one row an account in
 its own table `thr`, written behind to `thr:<username>` in the week of reading both. The KV road has no reader: there a
 line is refused (`e.threadOff`, 503) and the read is empty. Routes: `GET` and `POST /thread` on their session (a line
-under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders; `GET
+under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders (the orders,
+the claims and the thread read from the book in ONE round trip, the book's `mine` through `accountBook`, since 06 Oct 2026;
+it was three, every ten seconds for every open page); `GET
 /desk/threads` (every thread, newest first) and `POST /desk/threads/<u>` `{message}` or `{noReply: true}` on the desk key.
 Theirs: 200 characters, 20 a Kuala Lumpur day (`e.threadCap`); his uncapped; the last 200 lines kept. A line of theirs marks
 `last-said` and touches no order; his wakes them as kind `message` (`Counter says:` and his words in quotation marks, tag

@@ -83,6 +83,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      27 Sep 2026). **A product with no tier or drift is not priced.** One rule, the engine's `cardPrice`:
      the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
      reads the snapshot's `cards` on a drift book.
+   - **A partner pays cost** (his decision of 06 Oct 2026): a party in the book's `partners` is quoted the floor itself, to the
+     sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
+     `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
+     walks every customer leaves them out. A partner is an associate: set from the Drift card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes
@@ -93,8 +97,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
    actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
    (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
-   own CSS is a token, never a literal, and Day stays held back (`data-time-day="off"`) until the
-   remaining tints are tokens too (`docs/DESIGN.md`). The Counter takes the tokens and five
+   own CSS is a token, never a literal. Day shows (his word of 09 Oct 2026; no `data-time-day` hold on the
+   desk), and every colour the Day palette lends to text holds 4.5:1 on each Day panel, which the suite
+   measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and

@@ -8373,7 +8373,19 @@ await (async () => {
   const headAt = m.indexOf("<head>"), timeAt = m.indexOf("/* ==== DESIGN time:"), styleAt = m.indexOf("<style>");
   ok(headAt > 0 && timeAt > headAt && timeAt < styleAt && m.lastIndexOf("<script>", timeAt) > headAt,
     "the time script is in <head>, inside a <script>, before the stylesheet: the theme is set before the first paint");
-  ok(/<html [^>]*data-time-day="off"/.test(m.slice(0, headAt)), "Day is held back on the desk (<html data-time-day=\"off\") until its own tints are tokens");
+  /* 09 Oct 2026, his word: Day shows. The hold is gone from <html>, and every colour the Day palette lends to text holds
+     4.5:1 on each Day panel (the ground, the slate and the lit slate), measured here off design/salt-ds.css itself */
+  ok(!/data-time-day/.test(m.slice(0, headAt)), "Day shows on the desk: <html> carries no data-time-day hold");
+  {
+    const ds = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), dayB = (ds.match(/:root\[data-time="day"\]\s*\{([^}]*)\}/) || ["", ""])[1];
+    const decl = Object.fromEntries([...dayB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
+    const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const grounds = ["obsidian", "slate", "slate-light"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
+      "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
+    const weak = TEXT.filter((k) => !tok(k) || grounds.some((g) => !g || ratio(tok(k), g) < 4.5)).map((k) => k + " " + (tok(k) ? Math.min(...grounds.map((g) => ratio(tok(k), g))).toFixed(2) : "missing"));
+    ok(grounds.every(Boolean) && weak.length === 0, `every Day text colour holds 4.5:1 on the Day ground, slate and lit slate (short: ${weak.join(", ") || "none"})`);
+  }
   ok(/:root\[data-time="dawn"\]/.test(m) && /:root\[data-time="dusk"\]/.test(m) && /--salt-ink-on-accent:/.test(m), "the four themes and the pill's own ink are in the design system's block");
   /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
   const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
@@ -8404,19 +8416,28 @@ await (async () => {
     raw2 = (deskCss.replace(dayBlock, "").replace(/--(desk-[\w-]+):[^;}]+;?/g, (all, name) => dayVars.has(name) ? "" : all) + dayBlock).match(RAW) || [];
   ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
   ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
+  /* the system's desk bar was a fixed near-black fill, so in Day its ink title sat on a dark bar (09 Oct 2026): its
+     material is three tokens, Night's values on :root and paper restated for Day, and no raw fill is left */
+  const dsBase = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+  const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1], dayB = (dsBase.match(/:root\[data-time="day"\]\{([^}]*)\}/) || ["", ""])[1];
+  const barB = (dsBase.match(/\.salt-deskbar\{([^}]*)\}/) || ["", ""])[1];
+  const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`) || !dayB.includes(`--salt-deskbar-${k}:`));
+  const barRaw = dsBase.replace(/--salt-deskbar-\w+:[^;}]+;?/g, "").match(/rgba?\((13,11,9|18,15,12)[,)]/g) || [];
+  ok(barToks.length === 0 && barB.includes("background:var(--salt-deskbar-sheen),var(--salt-deskbar-fill)") && barRaw.length === 0,
+    `the desk bar's material is the theme's: sheen, fill and solid on :root and for Day, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
   /* the picker: five radios at the rail's foot, Day hidden while it is held back */
   const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
   const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
   ok(/role="radiogroup"/.test(pick) && sets.join(",") === "auto,dawn,day,dusk,night", `the rail carries the theme picker: Auto, Dawn, Day, Dusk, Night (read ${sets.join(",") || "none"})`);
-  ok(/html\[data-time-day="off"\] \.railtheme \[data-time-set="day"\]\{display:none;\}/.test(m), "and Day's button is hidden while the desk holds Day back");
+  ok(/\.railtheme\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(m), "and the five sit three to a row, so each word fits and each button keeps 44px across");
   /* behaviour, in the desk's own window */
   const { openMaster: omV2 } = await import("../tools/payload.mjs");
   const { w: wV2 } = await omV2();
   const st = String(wV2.eval("document.documentElement.getAttribute('data-time')"));
-  /* which theme it opens on depends on the hour the suite runs; that Day never shows is the held-Day check below */
-  ok(["dawn", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
+  /* which theme it opens on depends on the hour the suite runs */
+  ok(["dawn", "day", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
   wV2.eval("window.saltTime.set('day')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dawn", "Day held by hand reads Dawn on the desk while Day is held back");
+  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "day", "Day held by hand holds, now the desk shows Day");
   wV2.eval("window.saltTime.set('dusk')");
   ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dusk", "Dusk held by hand holds");
   wV2.eval("window.saltTime.set('auto')");
@@ -50130,6 +50151,78 @@ await (async () => {
   bk3.book.run("drop", { u: U });
   ok(bk3.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0, "an account unmade takes its thread with it");
 })();
+
+section("Perf (06 Oct 2026): GET /orders reads a customer's orders, claims and thread from the order book in one round trip, answering the same bytes");
+await (async () => {
+  /* The page polls GET /orders every ten seconds while open, and the route made three round trips to the one Durable
+     Object: orders, claims, thread. accountBook asks the book once (`mine`); each list is what its own reader answers. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the one-call read was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const T = await import("../stmt/testfix.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "pq7r-st8v", U2 = "vw9x-yz2a", rid = (s) => s.repeat(16).slice(0, 32);
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, text: await r.text() };
+  };
+  /* the answer as the route composed it before, from the three readers it used, byte for byte */
+  const threeWay = async (env, u) => JSON.stringify(Object.assign({ ok: true },
+    await T.withExamples(env, u, (await O.ordersOf(env, u)).map(O.customerView), (await O.claimsOf(env, u)).map(O.claimView)),
+    { thread: O.threadView(await O.threadOf(env, u)) }));
+  const place = (i) => ({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, rid: rid(i) });
+  const fill = async (env, tok, tok2, book) => {
+    for (const i of ["a1", "b2", "c3"]) await call(env, tok, "/orders", place(i));
+    const mine = JSON.parse((await call(env, tok, "/orders")).text).orders;
+    await call(env, tok, "/orders/" + mine[0].id + "/cancel", { rid: rid("d4") });
+    await call(env, "desk", "/desk/orders/" + U + "/" + mine[1].id, { status: "acknowledged" });
+    await call(env, tok, "/claims", { amount: 50, method: "tngbiz", rid: rid("e5") });
+    await call(env, tok2, "/orders", place("f6"));   /* another customer's, which must never ride along */
+    await call(env, tok2, "/claims", { amount: 30, method: "tngbiz", rid: rid("h8") });   /* and their claim, which must not either */
+    if (book) { await call(env, tok, "/thread", { text: "Open on Sunday?", rid: rid("g7") }); await call(env, "desk", "/desk/threads/" + U, { message: "Yes, from nine." }); }
+  };
+
+  /* THE OBJECT ROAD: one call to the book, the same bytes */
+  const kv = new KV(), bk = H.orderBook({});
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const tok = await O.mintSession(env, U), tok2 = await O.mintSession(env, U2);
+  await fill(env, tok, tok2, true);
+  const was = await threeWay(env, U), c0 = bk.calls(), got = await call(env, tok, "/orders"), calls = bk.calls() - c0;
+  const body = JSON.parse(got.text);
+  ok(got.status === 200 && body.orders.length === 3 && body.claims.length === 1 && body.thread.msgs.length === 2 && body.orders.every((o) => o.u === U),
+    "the fixture is wide enough: three orders of theirs, one cancelled, a claim and a thread of two lines, and nothing of the other customer's: "
+    + JSON.stringify({ orders: body.orders.map((o) => o.status), claims: body.claims.length, thread: body.thread.msgs.length }));
+  ok(got.text === was, "on the object road GET /orders answers byte for byte what the three readers composed");
+  ok(calls === 1, "and asks the order book ONCE for it, not three times: " + calls + " call(s)");
+  const one = bk.book.run("mine", { u: U });
+  ok(JSON.stringify(one.orders) === JSON.stringify(bk.book.run("orders", { u: U }).orders) && JSON.stringify(one.claims) === JSON.stringify(bk.book.run("claims", { u: U }).claims)
+    && JSON.stringify(one.thread) === JSON.stringify(bk.book.run("thread", { u: U }).thread) && bk.book.run("claims", {}).claims.length === 2,
+    "the book's `mine` is its own three reads to the byte, and `claims` with no customer still lists every claim");
+
+  /* THE KV ROAD: both lists from KV, no thread, as the three readers answer there */
+  const kvB = new KV(), envB = { STMT: kvB, STMT_DESK_KEY: "desk-key" };
+  const tokB = await O.mintSession(envB, U), tokB2 = await O.mintSession(envB, U2);
+  await fill(envB, tokB, tokB2, false);
+  /* a thr: key left by the week of reading both is read by nothing on the KV road (Step 7) */
+  await kvB.put("thr:" + U, JSON.stringify({ id: "thread", u: U, at: "2026-10-06T01:00:00.000Z", msgs: [{ at: "2026-10-06T01:00:00.000Z", by: "customer", text: "Behind" }] }));
+  const gotB = await call(envB, tokB, "/orders"), bodyB = JSON.parse(gotB.text);
+  ok(gotB.status === 200 && bodyB.orders.length === 3 && bodyB.claims.length === 1 && bodyB.thread.msgs.length === 0 && gotB.text === await threeWay(envB, U),
+    "on the KV road GET /orders answers the same bytes as before: the two lists, and an empty thread whatever thr: holds");
+
+  /* THE WEEK OF READING BOTH with the book unreachable: KV answers all three, the thread from thr:<username> */
+  const down = { idFromName: () => ({}), get: () => ({ fetch: async () => { throw new Error("the object is unreachable"); } }) };
+  const envC = { STMT: kvB, STMT_DESK_KEY: "desk-key", ORDERBOOK: down, ORDER_STORE: "object+kv" };
+  const realLog = console.log; console.log = (...x) => { if (!/^orders: /.test(x.join(" "))) realLog(...x); };
+  let gotC, wasC;
+  try { gotC = await call(envC, tokB, "/orders"); wasC = await threeWay(envC, U); } finally { console.log = realLog; }
+  const bodyC = JSON.parse(gotC.text);
+  ok(gotC.status === 200 && bodyC.orders.length === 3 && bodyC.claims.length === 1 && bodyC.thread.msgs.length === 1 && bodyC.thread.msgs[0].text === "Behind" && gotC.text === wasC,
+    "with the book unreachable in the week of reading both, KV answers all three as the readers did, the thread included: " + JSON.stringify(bodyC.thread));
+})();
 section("D1 and D2 (29 Sep 2026): no part prints a stored date or an em dash; one dShow and one NIL");
 await (async () => {
   /* THE FAULT LIST'S D1 AND D2. The desk printed 2026-09-28 across Stock, Record, the Order book and Pricing, and an em
@@ -50579,9 +50672,17 @@ section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, n
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
 })();
+section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
+await (async () => {
+  await (await import("./partner-control.mjs")).run({ ok });
+})();
 section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes, their Accept or No thanks");
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
+})();
+section("06 Oct 2026: a clipped line never ends on half an emoji");
+await (async () => {
+  await (await import("./clip-text.mjs")).run({ ok });
 })();
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {

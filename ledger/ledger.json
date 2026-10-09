@@ -1,6 +1,6 @@
 {
- "v": "v1038",
- "stamped": "09 Oct 2026, 00:51 KL",
+ "v": "v1044",
+ "stamped": "09 Oct 2026, 11:29 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 19,
+  "STATED_STOCK": 13.5,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -5308,11 +5308,28 @@
     "cash": 750,
     "handover": "collected",
     "date": "2026-09-23",
-    "deliveredQty": 3,
+    "deliveredQty": 6,
     "deliveredOn": "2026-09-23",
     "paidOn": "2026-09-23",
     "note": "<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.",
-    "rid": "s194"
+    "rid": "s194",
+    "amend": [
+     {
+      "date": "2026-09-23",
+      "kind": "Fulfilment",
+      "cash": 750,
+      "kg": 3,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-08",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 3,
+      "cost": 144,
+      "note": "<b>FULFILMENT ON S194 DATED 08 OCT: 3 UNIT HANDED OVER, NO MONEY MOVED.</b> Against CM4-TO's salt sell of 23 Sep, 12.5 unit for RM750 at RM60 a unit, paid in full in cash that day. The fulfilment moves 3 unit and RM0, against 9.5 unit outstanding, and leaves 6.5 unit to hand over and no money owed. Decided by the desk. The dossier gives no floor or ask for this size, so the rate is not tested against them. CM4-TO has a median rate of RM52 and a range of RM5 to RM65, RM0 outstanding and no units on credit. The drafter raised no flags. The order's own note names CM3-OUG, not CM4-TO, which the dossier does not explain. Open: 6.5 unit."
+     }
+    ]
    },
    {
     "customer": "CM4-TO",
@@ -5509,7 +5526,7 @@
     "customer": "CR3-DAM",
     "qty": 1.5,
     "total": 130,
-    "cash": 110,
+    "cash": 130,
     "date": "2026-09-25",
     "deliveredQty": 1.5,
     "note": "<b>AMENDED 26 SEP: HANDED OVER IN FULL, PAID NOTHING.</b> <b>CORRECTION ON s202: 1.5 UNIT COLLECTED 26 SEP, NOT A SEN IN.</b> Against CR3-DAM's SELL of 1.5 unit for RM130 dated 25 Sep 2026, order 20260925115016-gqlz1q, at RM86.67 a unit. The patch moves deliveredQty 0 to 1.5, deliveredOn unset to 26 Sep 2026 and handover unset to collected, preapproved by phone. Cash stays at RM0, so the whole RM130 stands open as an advance on top of RM155 outstanding, 0.27 unit on credit before this, none defaulted on 17 orders. Median rate RM80, range RM80 to RM92.50. Associate, on the roster. Costed at RM48 a unit, the desk's own inventory cost; the drafter flagged that RM48 is a blend across lot rates and the credit cap needs checking, and these figures settle neither. <b>SALT SELL DATED 25 SEP, ACKNOWLEDGED AND PENDING: NOTHING PAID, NOTHING MOVED.</b> Booked to CR3-DAM from the statements site, order 20260925115016-gqlz1q, 1.5 unit for RM130 at RM86.67 a unit, to collect, RM0 in and 0 unit out, so the whole RM130 stands open. Costed at RM48 a unit from the desk's own inventory cost, RM58 on the goods at 44.6%. The total clears the RM85.07 floor for 1.5 unit and sits RM80 under the RM210 ask, ceiling RM230. Across 16 orders their median rate is RM80, range RM80 to RM92.50, RM25 outstanding, none defaulted, 0.27 unit on credit against a cap of 2. An associate, on the roster. The drafter flagged RM48 as a blended average across more than one lot rate; these figures do not settle it.",
@@ -5538,9 +5555,17 @@
       "cash": 110,
       "kg": 0,
       "note": "<b>PAYMENT OF RM110 ON s202, PART SETTLEMENT, RM20 STILL OPEN.</b> CR3-DAM paid RM110 by QR via Maybank on 04 Oct against s202, 1.5 units for RM130 agreed on 25 Sep, a rate of RM86.67 a unit. The row was collected on 26 Sep with nothing paid. The dossier gives no floor or ask for this size, so none is quoted. CR3-DAM: median RM80 a unit over 19 orders, range RM80 to RM110, RM375 outstanding and 3.77 units on credit before this payment, no default. The drafter raised no flags. The payment moves no units and carries no new cost. Outstanding: RM20 on s202."
+     },
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 20,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s202 DATED 09 OCT: RM20 PAID, ORDER SETTLED IN FULL.</b> CR3-DAM's SELL of 1.5 unit for RM130 dated 25 Sep had RM110 in and 1.5 unit collected, so RM20 stood open. This payment of RM20 by QR via Maybank clears it, preapproved by phone. No unit moves. The order was RM86.67 a unit; the party's median rate is RM80, range RM80 to RM110, with RM265 outstanding before this and 2.5 units on credit. The row keeps its own cost. The drafter's flag, that this settles the order in full, is answered: nothing is left outstanding on s202."
      }
     ],
-    "cost": 72
+    "cost": 72,
+    "paidOn": "2026-10-09"
    },
    {
     "customer": "CA2-SEN",
@@ -5940,7 +5965,7 @@
     "customer": "CR3-DAM",
     "qty": 1,
     "total": 110,
-    "cash": 0,
+    "cash": 110,
     "date": "2026-09-28",
     "deliveredQty": 1,
     "note": "<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance. <b>SALT SELL DATED 28 SEP: 1 UNIT FOR RM110, PENDING, NOTHING PAID OR HANDED OVER.</b> Booked to CR3-DAM from the statements site, order 20260928095231-jvkptq, acknowledged and to collect, no delivery. RM110 clears the desk's floor of RM68.67 for 1 unit but sits below its ask of RM140. CR3-DAM: 17 orders, median RM80 a unit, range RM80 to RM92.5, RM155 outstanding and 1.77 unit on credit before this batch, against a credit cap of 2. Costed at RM56 a unit, the inventory's own, leaving RM54 at 49.1% by the drafter's figures. The drafter flagged the rate as 37.5% above the party's usual RM80; the figures bear that out, above the top of the range. Preapproved by phone. Outstanding: RM110 and 1 unit to collect.",
@@ -5963,9 +5988,17 @@
       "kg": 1,
       "note": "<b>CORRECTION ON s214: 1 UNIT COLLECTED 28 SEP, NOTHING PAID.</b> Against CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep, order 20260928095231-jvkptq. The patch sets deliveredQty from 0 to 1, deliveredOn to 28 Sep and handover to collected. No cash moves. RM110 clears the desk's floor of RM68.67 for 1 unit. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 1.77 units on credit before this batch. The dossier gives no cap. The correction carries no cost of its own. The drafter flagged RM110 as 37.5% above a usual RM80. The dossier's median agrees, and the rate is the top of his range. Preapproved by phone. Outstanding: RM110 on the row, now an advance.",
       "cost": 56
+     },
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s214 DATED 09 OCT: RM110 PAID, ORDER SETTLED IN FULL.</b> CR3-DAM's SELL of 1 unit for RM110 dated 28 Sep was collected the same day with nothing paid. This payment of RM110 by QR via Maybank clears it, preapproved by phone. No unit moves. At RM110 a unit the order sits at the top of the party's range of RM80 to RM110, against a median of RM80. Before this CR3-DAM had RM265 outstanding and 2.5 units on credit. The drafter's flag, that this settles the order in full, is answered: nothing is left outstanding on s214."
      }
     ],
-    "cost": 56
+    "cost": 56,
+    "paidOn": "2026-10-09"
    },
    {
     "customer": "CH4-KS",
@@ -6134,13 +6167,30 @@
     "qty": 1,
     "total": 110,
     "cost": 56,
-    "cash": 0,
+    "cash": 110,
     "handover": "collected",
     "date": "2026-09-30",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-30",
     "note": "<b>SALT SELL DATED 30 SEP: 1 UNIT FOR RM110, COLLECTED, NOTHING PAID.</b> Booked to CR3-DAM at RM110 a unit, RM0 cash and 1 unit delivered the same day, approved by the desk. For 1 unit it clears the floor of RM68.62 and sits below the ask of RM140 and the ceiling of RM180. CR3-DAM: 18 orders, median RM80 a unit, range RM80 to RM110, RM265 outstanding and 2.77 units on credit before this row, against a credit cap of 2. Costed at RM56 a unit, RM56 in all, the desk's own inventory cost. The drafter flagged the rate as 37.5% above his median; the figures answer that, since it is under the ask. It also flagged the advance against the cap: he is already over it, and the flag stands. Outstanding: RM110 on this row.",
-    "rid": "s220"
+    "rid": "s220",
+    "amend": [
+     {
+      "date": "2026-09-30",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s220 DATED 09 OCT: RM110 PAID, ORDER SETTLED IN FULL.</b> CR3-DAM's SELL of 1 unit for RM110 dated 30 Sep was collected the same day with nothing paid. This payment of RM110 by QR via Maybank clears it, preapproved by phone. No unit moves. At RM110 a unit the order is at the top of the party's range of RM80 to RM110, against a median of RM80. Before this CR3-DAM had RM265 outstanding and 2.5 units on credit. The drafter's flag, that this settles the order in full, is answered: nothing is left outstanding on s220."
+     }
+    ],
+    "paidOn": "2026-10-09"
    },
    {
     "customer": "CC9-OKR",
@@ -6692,10 +6742,28 @@
     "cash": 240,
     "handover": "collected",
     "date": "2026-10-06",
-    "deliveredQty": 0,
+    "deliveredQty": 2.5,
     "paidOn": "2026-10-06",
-    "note": "<b>SALT SELL DATED 06 OCT: 2.5 UNIT FOR RM240, PAID IN FULL, NOTHING HANDED OVER.</b> Booked to CE4-CHE as RM96 a unit, RM240 cash in on 06 Oct, collected, 0 unit moved, so the row stays open. The floor for 2.5 unit is RM160 and the ask RM330, so the total sits above the floor and below the ask. CE4-CHE has a median of RM92, range RM10 to RM107.5, RM0 outstanding and 0 units on credit against a cap of 1. The row carries a cost of RM160, set at COGS off the latest purchase p035 at RM64 a unit, not the stock's own RM60. The drafter raised no flags. 2.5 unit is left to hand over.",
-    "rid": "s238"
+    "note": "<b>FULFILMENT OF 2.5 UNIT ON 07 OCT, ORDER SETTLED.</b> <b>SALT SELL DATED 06 OCT: 2.5 UNIT FOR RM240, PAID IN FULL, NOTHING HANDED OVER.</b> Booked to CE4-CHE as RM96 a unit, RM240 cash in on 06 Oct, collected, 0 unit moved, so the row stays open. The floor for 2.5 unit is RM160 and the ask RM330, so the total sits above the floor and below the ask. CE4-CHE has a median of RM92, range RM10 to RM107.5, RM0 outstanding and 0 units on credit against a cap of 1. The row carries a cost of RM160, set at COGS off the latest purchase p035 at RM64 a unit, not the stock's own RM60. The drafter raised no flags. 2.5 unit is left to hand over.",
+    "rid": "s238",
+    "amend": [
+     {
+      "date": "2026-10-06",
+      "kind": "Fulfilment",
+      "cash": 240,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-07",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2.5,
+      "cost": 160,
+      "note": "<b>FULFILMENT ON S238 RECORDED 07 OCT: 2.5 UNIT HANDED OVER, ORDER SETTLED.</b> CE4-CHE's salt order of 2.5 unit for RM240 was agreed and paid in full on 06 Oct at RM96 a unit, with nothing moved until now. The floor for 2.5 unit is RM160 and the ask RM330, so the total sits above the floor and below the ask. CE4-CHE has a median rate of RM92 and a range of RM6 to RM107.5, RM0 outstanding before and no units on credit. The row keeps the cost it already carries. The drafter flagged that this settles the order in full; the figures answer it, as RM0 and 0 unit remain. Open: nothing."
+     }
+    ],
+    "deliveredOn": "2026-10-07"
    },
    {
     "customer": "CE4-CHE",
@@ -6809,6 +6877,32 @@
     "deliveredOn": "2026-10-09",
     "note": "<b>SALT SELL DATED 09 OCT: 6.25 UNIT FOR RM500, DELIVERED WITH RM100 OUTSTANDING.</b> Booked to CJ4-BJ, delivered on 09 Oct with RM400 cash in. The ladder for 6.25 unit has a floor of RM362.5 and an ask of RM600, so the total is above the floor and below the ask. CJ4-BJ has a median rate of RM72 and a range of RM64 to RM100, nothing outstanding before, 0 units on credit against a cap of 1. The row carries RM362.5, COGS off the latest purchase. The drafter flagged a rate 11.1% above his usual; RM80 is inside his range, so the figures answer it. The cap check is not answered by the dossier. On the desk's word, 1.44 unit of reward covers RM80.7. Open: RM100.",
     "rid": "s244"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 0.5,
+    "total": 70,
+    "cash": 50,
+    "date": "2026-10-09",
+    "deliveredQty": 0,
+    "note": "<b>SALT SELL DATED 09 OCT: 0.5 UNIT FOR RM70, PENDING, NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CR3-DAM from an order on the statements site, to collect, priced at RM70 on this order and placed at RM80. The ladder for 0.5 unit has a floor of RM29 and an ask of RM80, so the total is above the floor and below the ask. CR3-DAM has a median rate of RM80 and a range of RM80 to RM110, RM25 outstanding before, 0.27 unit on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase, not the inventory's own RM56. The drafter flagged RM140 a unit, 75% above his usual; that is above his range, so the figures do not answer it. Open: RM70 and 0.5 unit.",
+    "rid": "s245",
+    "amend": [
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 50,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM50 ON S245 DATED 09 OCT: NO UNIT HANDED OVER.</b> Against CR3-DAM's salt order of 0.5 unit for RM70, placed at RM80, paid by QR via Maybank on the statements site, order 20261009015806-blxd6q, preapproved by phone. The row moves RM50 and 0 unit, against RM70 and 0.5 unit outstanding, and leaves RM20 and 0.5 unit outstanding. The dossier gives no floor or ask for 0.5 unit here, so the rate is not tested against them. CR3-DAM has a median rate of RM80 and a range of RM80 to RM140, RM95 outstanding before, 0.27 unit on credit against a cap of 2. The drafter raised no flags. Open: RM20 and 0.5 unit."
+     }
+    ]
    }
   ],
   "contacts": [
@@ -7000,7 +7094,8 @@
    "CJ2-KUC",
    "CA6-CYB",
    "CE5-SA-R",
-   "CA6-CYB-R"
+   "CA6-CYB-R",
+   "CM4-TO-R"
   ],
   "associates": [
    "CS6-BS",
@@ -7011,7 +7106,8 @@
    "CE4-AD",
    "CR3-DAM",
    "CE5-SA",
-   "CA6-CYB"
+   "CA6-CYB",
+   "CM4-TO"
   ],
   "partners": [
    "CM4-TO"
@@ -7448,9 +7544,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-08T16:50:42.824Z",
+  "QUEUE_COMMITTED": "2026-10-09T03:27:49.045Z",
   "PRICING": {
-   "takenAt": "2026-10-08T16:51:49.418Z",
+   "takenAt": "2026-10-09T03:29:21.318Z",
    "sizes": [
     0.5,
     1,
@@ -7499,7 +7595,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -7856,6 +7952,23 @@
       "rare": false
      }
     },
+    "CR3-DAM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 20,
+      "tenureDays": 102,
+      "sinceLastDays": 0,
+      "perMonth": 5.97,
+      "unitsPerMonth": 7.76,
+      "smallShare": 0.8,
+      "bigShare": 0.05,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false
+     }
+    },
     "CM4-TO": {
      "salt": {
       "name": "large and regular",
@@ -7885,23 +7998,6 @@
       "small": false,
       "bigger": true,
       "loyal": false,
-      "rare": false
-     }
-    },
-    "CR3-DAM": {
-     "salt": {
-      "name": "small and often",
-      "orders": 19,
-      "tenureDays": 102,
-      "sinceLastDays": 9,
-      "perMonth": 5.67,
-      "unitsPerMonth": 7.61,
-      "smallShare": 0.79,
-      "bigShare": 0.05,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": true,
       "rare": false
      }
     },
@@ -8738,15 +8834,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3411764705882353
+         "v": 0.3372093023255814
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08150208623087622,
        "avgDel": {
-        "n": 197,
-        "kg": 503.7,
-        "mean": 2.5569
+        "n": 198,
+        "kg": 509.2,
+        "mean": 2.5717
        }
       },
       "policy": {
@@ -9288,6 +9384,56 @@
         1080
        ]
       ],
+      "CR3-DAM": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        200
+       ],
+       [
+        2,
+        250
+       ],
+       [
+        2.5,
+        300
+       ],
+       [
+        3,
+        340
+       ],
+       [
+        3.5,
+        380
+       ],
+       [
+        4,
+        420
+       ],
+       [
+        4.5,
+        460
+       ],
+       [
+        5,
+        500
+       ],
+       [
+        6.25,
+        600
+       ],
+       [
+        12.5,
+        990
+       ]
+      ],
       "CM4-TO": [
        [
         0.5,
@@ -9336,56 +9482,6 @@
        [
         12.5,
         725
-       ]
-      ],
-      "CR3-DAM": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        200
-       ],
-       [
-        2,
-        260
-       ],
-       [
-        2.5,
-        310
-       ],
-       [
-        3,
-        350
-       ],
-       [
-        3.5,
-        390
-       ],
-       [
-        4,
-        430
-       ],
-       [
-        4.5,
-        470
-       ],
-       [
-        5,
-        510
-       ],
-       [
-        6.25,
-        610
-       ],
-       [
-        12.5,
-        1060
        ]
       ],
       "CZ4-MK": [
@@ -11045,12 +11141,12 @@
      "drift": {
       "CS6-BS": -0.4908,
       "CJ4-BJ": 0.0798,
-      "CE4-CHE": -0.4865,
+      "CE4-CHE": -0.4875,
       "CS6-PER": -0.4459,
       "CM4-MK": 0.0318,
       "CN3-WM": 0.5,
+      "CR3-DAM": 0.073,
       "CM4-TO": "partner",
-      "CR3-DAM": 0.3766,
       "CZ4-MK": -0.3046,
       "CK4-SEN": -0.4058,
       "CE4-AD": -0.3016,
@@ -11475,28 +11571,6 @@
         450
        ]
       ],
-      "CM4-TO": [
-       [
-        10,
-        77.71
-       ],
-       [
-        20,
-        155.43
-       ],
-       [
-        30,
-        233.14
-       ],
-       [
-        40,
-        310.86
-       ],
-       [
-        50,
-        388.57
-       ]
-      ],
       "CR3-DAM": [
        [
         10,
@@ -11517,6 +11591,28 @@
        [
         50,
         450
+       ]
+      ],
+      "CM4-TO": [
+       [
+        10,
+        77.71
+       ],
+       [
+        20,
+        155.43
+       ],
+       [
+        30,
+        233.14
+       ],
+       [
+        40,
+        310.86
+       ],
+       [
+        50,
+        388.57
        ]
       ],
       "CZ4-MK": [
@@ -12605,28 +12701,6 @@
         1500
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        42
-       ],
-       [
-        5,
-        210
-       ],
-       [
-        10,
-        420
-       ],
-       [
-        20,
-        840
-       ],
-       [
-        30,
-        1260
-       ]
-      ],
       "CR3-DAM": [
        [
         1,
@@ -12647,6 +12721,28 @@
        [
         30,
         1500
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        42
+       ],
+       [
+        5,
+        210
+       ],
+       [
+        10,
+        420
+       ],
+       [
+        20,
+        840
+       ],
+       [
+        30,
+        1260
        ]
       ],
       "CZ4-MK": [
@@ -13644,20 +13740,6 @@
         60
        ]
       ],
-      "CM4-TO": [
-       [
-        1,
-        3.4
-       ],
-       [
-        5,
-        17
-       ],
-       [
-        10,
-        34
-       ]
-      ],
       "CR3-DAM": [
        [
         1,
@@ -13670,6 +13752,20 @@
        [
         10,
         60
+       ]
+      ],
+      "CM4-TO": [
+       [
+        1,
+        3.4
+       ],
+       [
+        5,
+        17
+       ],
+       [
+        10,
+        34
        ]
       ],
       "CZ4-MK": [
@@ -14302,11 +14398,11 @@
      ]
     }
    },
-   "v": "v1038"
+   "v": "v1044"
   },
   "OPEN": {
-   "at": "2026-10-08T16:51:50.230Z",
-   "count": 13,
+   "at": "2026-10-09T03:29:22.115Z",
+   "count": 10,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
      "d": "2026-10-09",
@@ -14343,20 +14439,19 @@
      "age": 0,
      "exp": 100
     },
-    "CE4-CHE|2026-10-06|240": {
-     "d": "2026-10-06",
-     "p": "CE4-CHE",
+    "CR3-DAM|2026-10-09|70": {
+     "d": "2026-10-09",
+     "p": "CR3-DAM",
      "dir": "S",
-     "q": 2.5,
-     "t": 240,
-     "cash": 240,
+     "q": 0.5,
+     "t": 70,
+     "cash": 50,
      "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2.5,
-     "rid": "s238",
-     "paidOn": "2026-10-06",
-     "handover": "collected",
-     "key": "CE4-CHE|2026-10-06|240"
+     "st": "part",
+     "oweRM": 20,
+     "oweUnits": 0.5,
+     "rid": "s245",
+     "key": "CR3-DAM|2026-10-09|70"
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -14393,57 +14488,6 @@
      "age": 4,
      "exp": 0
     },
-    "CR3-DAM|2026-09-30|110": {
-     "d": "2026-09-30",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 110,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 110,
-     "rid": "s220",
-     "deliveredOn": "2026-09-30",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-09-30|110",
-     "age": 9,
-     "exp": 0
-    },
-    "CR3-DAM|2026-09-28|110": {
-     "d": "2026-09-28",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 110,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 110,
-     "rid": "s214",
-     "deliveredOn": "2026-09-28",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-09-28|110",
-     "age": 11,
-     "exp": 0
-    },
-    "CR3-DAM|2026-09-25|130": {
-     "d": "2026-09-25",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1.5,
-     "t": 130,
-     "cash": 110,
-     "mv": 1.5,
-     "st": "dueMoney",
-     "oweRM": 20,
-     "rid": "s202",
-     "deliveredOn": "2026-09-26",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-09-25|130",
-     "age": 13,
-     "exp": 0
-    },
     "CM4-TO|2026-09-23|750": {
      "d": "2026-09-23",
      "p": "CM4-TO",
@@ -14451,9 +14495,9 @@
      "q": 12.5,
      "t": 750,
      "cash": 750,
-     "mv": 3,
+     "mv": 6,
      "st": "oweStock",
-     "oweUnits": 9.5,
+     "oweUnits": 6.5,
      "rid": "s194",
      "paidOn": "2026-09-23",
      "deliveredOn": "2026-09-23",
@@ -14527,13 +14571,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 19,
-     "free": 7,
-     "owedOut": 12,
-     "coverDays": 1.5,
-     "rate": 5.1,
-     "owedToYou": 670,
-     "promised": 12,
+     "onHand": 13.5,
+     "free": 6.64,
+     "owedOut": 6.86,
+     "coverDays": 1.4,
+     "rate": 5.13,
+     "owedToYou": 430,
+     "promised": 7,
      "short": 0
     },
     "oil": {
@@ -14588,7 +14632,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1038"
+   "v": "v1044"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14596,7 +14640,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1038"
+   "v": "v1044"
   },
   "REWARD": {
    "stated": {
@@ -14608,7 +14652,7 @@
      }
     }
    },
-   "v": "v1038"
+   "v": "v1044"
   }
  }
 }
