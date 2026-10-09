@@ -86,7 +86,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    - **A partner pays cost** (his decision of 06 Oct 2026): a party in the book's `partners` is quoted the floor itself, to the
      sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
      `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
-     walks every customer leaves them out. Set in `ledger/book.json` only; `docs/DESK.md`.
+     walks every customer leaves them out. A partner is an associate: set from the Drift card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes

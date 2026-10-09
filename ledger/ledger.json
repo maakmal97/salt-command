@@ -7033,7 +7033,8 @@
    "CJ2-KUC",
    "CA6-CYB",
    "CE5-SA-R",
-   "CA6-CYB-R"
+   "CA6-CYB-R",
+   "CM4-TO-R"
   ],
   "associates": [
    "CS6-BS",
@@ -7044,7 +7045,8 @@
    "CE4-AD",
    "CR3-DAM",
    "CE5-SA",
-   "CA6-CYB"
+   "CA6-CYB",
+   "CM4-TO"
   ],
   "partners": [
    "CM4-TO"
@@ -7483,7 +7485,7 @@
   ],
   "QUEUE_COMMITTED": "2026-10-08T23:47:45.760Z",
   "PRICING": {
-   "takenAt": "2026-10-09T01:07:21.918Z",
+   "takenAt": "2026-10-09T01:20:48.992Z",
    "sizes": [
     0.5,
     1,
@@ -14338,7 +14340,7 @@
    "v": "v1040"
   },
   "OPEN": {
-   "at": "2026-10-09T01:07:22.711Z",
+   "at": "2026-10-09T01:20:49.383Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
