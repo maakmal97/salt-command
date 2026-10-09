@@ -12,7 +12,7 @@
 # WHAT IS UNCHANGED. The credential does the mechanical things (read D1, deploy, mark
 # committed); the JUDGEMENT stays with the agent, which writes the notes and the version
 # entry. The stage still refuses to trample an unfolded batch. The deploy still proves the
-# phone is serving the build before any row is marked committed. The hourly net and the
+# phone is serving the build before any row is marked committed. The two-hourly net and the
 # daily ship check stand.
 #
 # THE FOLD IS ONE CALL (v521, step 3): tools/foldcall.mjs builds the dossier, asks Claude once
@@ -42,14 +42,19 @@ name: Cloud commit
 
 on:
   schedule:
-    # HOURLY NET. Stages and folds anything an approval's dispatch missed. The clock is not
-    # the guard: the guard is in the job, which refuses to overwrite an unfolded batch.
+    # TWO-HOURLY NET (09 Oct 2026; hourly before). Stages and folds anything an approval's dispatch
+    # missed. The clock is not the guard: the guard is in the job, which refuses to overwrite an
+    # unfolded batch. WHY TWO HOURS: the repo is now private and billed for Actions minutes; Cloud commit
+    # used about 1,111 of ~1,900 wall minutes from 01 to 09 Oct. THE TRADE-OFF: an approval every
+    # dispatch missed waits up to two hours for this last net (the desk Worker's re-dispatches at 15,
+    # 30 and 60 minutes still come first), and a price change that touches no statements path can
+    # leave customers' published price lists stale for up to two hours instead of one.
     # MINUTE 23, NOT 5 (26 Sep 2026). GitHub names the start of every hour as its high load, when a
     # scheduled run is delayed or dropped: at :05 this ran 3 to 7 times a day of 24 (15 to 24 Sep).
     # 23 is not a round minute, where schedules crowd, and is clear of the desk's quarter-hour
     # drafter net. The desk Worker's minute cron re-dispatches a stale approval first (15, 30 and
     # 60 minutes after it); this is the last net.
-    - cron: '23 * * * *'
+    - cron: '23 */2 * * *'
   push:
     branches: [master]
     paths:
@@ -527,10 +532,10 @@ jobs:
       # 100 unit) or v655 (the best-rate rule) touched a statements path, so each left the customers'
       # pages on the lists sealed at v651 while the desk quoted something else, silently. The cost of
       # publishing anyway is one bulk call and about ten seconds of jsdom.
-      # v698: ON EVERY DEPLOY, AND ON EVERY HOUR. An hourly run passes --no-retire, because the
+      # v698: ON EVERY DEPLOY, AND ON EVERY SCHEDULED RUN. A scheduled run passes --no-retire, because the
       # publish retires an account whose record the newest issue does not carry, and that judgement
       # belongs to a deploy he made, not to a clock. A partial or botched issue read would otherwise
-      # retire accounts twenty-four times a day instead of once. Writing is hourly; retiring is not.
+      # retire accounts twelve times a day instead of once. Writing is scheduled; retiring is not.
       - name: Publish the statements, live
         if: steps.plan.outputs.publish == '1'
         # BOUNDED (05 Oct 2026, his word): the publish takes under a minute; v1022's run hung here
