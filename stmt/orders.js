@@ -1548,6 +1548,15 @@ export async function threadOf(env, u) {
   const r = await bookRead(env, "thread", { u }, async () => ({ thread: await env.STMT.get("thr:" + u, "json") }));
   return (r && r.thread) || null;
 }
+/** One customer's orders, claims and thread, what GET /orders hands their page: on the object road ONE round trip to the
+ *  book (06 Oct 2026; it was three, `ordersOf`, `claimsOf` and `threadOf`, every ten seconds for every open page), each
+ *  list exactly what its own reader answers; on the KV road the two lists, and no thread, as the three answer there. */
+export async function accountBook(env, u) {
+  const fromKv = async () => ({ orders: await listOrders(env, "order:" + u + ":"), claims: await listOrders(env, "aclaim:" + u + ":"),
+    thread: onBook(env) ? await env.STMT.get("thr:" + u, "json") : null });
+  const r = onBook(env) ? await bookRead(env, "mine", { u }, fromKv) : await fromKv();
+  return { orders: (r && r.orders) || [], claims: (r && r.claims) || [], thread: (r && r.thread) || null };
+}
 /** Every account's thread, newest first: the desk's read. */
 export async function allThreads(env) {
   if (!onBook(env)) return [];

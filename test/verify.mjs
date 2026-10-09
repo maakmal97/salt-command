@@ -50151,6 +50151,78 @@ await (async () => {
   bk3.book.run("drop", { u: U });
   ok(bk3.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0, "an account unmade takes its thread with it");
 })();
+
+section("Perf (06 Oct 2026): GET /orders reads a customer's orders, claims and thread from the order book in one round trip, answering the same bytes");
+await (async () => {
+  /* The page polls GET /orders every ten seconds while open, and the route made three round trips to the one Durable
+     Object: orders, claims, thread. accountBook asks the book once (`mine`); each list is what its own reader answers. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the one-call read was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const T = await import("../stmt/testfix.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "pq7r-st8v", U2 = "vw9x-yz2a", rid = (s) => s.repeat(16).slice(0, 32);
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, text: await r.text() };
+  };
+  /* the answer as the route composed it before, from the three readers it used, byte for byte */
+  const threeWay = async (env, u) => JSON.stringify(Object.assign({ ok: true },
+    await T.withExamples(env, u, (await O.ordersOf(env, u)).map(O.customerView), (await O.claimsOf(env, u)).map(O.claimView)),
+    { thread: O.threadView(await O.threadOf(env, u)) }));
+  const place = (i) => ({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, rid: rid(i) });
+  const fill = async (env, tok, tok2, book) => {
+    for (const i of ["a1", "b2", "c3"]) await call(env, tok, "/orders", place(i));
+    const mine = JSON.parse((await call(env, tok, "/orders")).text).orders;
+    await call(env, tok, "/orders/" + mine[0].id + "/cancel", { rid: rid("d4") });
+    await call(env, "desk", "/desk/orders/" + U + "/" + mine[1].id, { status: "acknowledged" });
+    await call(env, tok, "/claims", { amount: 50, method: "tngbiz", rid: rid("e5") });
+    await call(env, tok2, "/orders", place("f6"));   /* another customer's, which must never ride along */
+    await call(env, tok2, "/claims", { amount: 30, method: "tngbiz", rid: rid("h8") });   /* and their claim, which must not either */
+    if (book) { await call(env, tok, "/thread", { text: "Open on Sunday?", rid: rid("g7") }); await call(env, "desk", "/desk/threads/" + U, { message: "Yes, from nine." }); }
+  };
+
+  /* THE OBJECT ROAD: one call to the book, the same bytes */
+  const kv = new KV(), bk = H.orderBook({});
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const tok = await O.mintSession(env, U), tok2 = await O.mintSession(env, U2);
+  await fill(env, tok, tok2, true);
+  const was = await threeWay(env, U), c0 = bk.calls(), got = await call(env, tok, "/orders"), calls = bk.calls() - c0;
+  const body = JSON.parse(got.text);
+  ok(got.status === 200 && body.orders.length === 3 && body.claims.length === 1 && body.thread.msgs.length === 2 && body.orders.every((o) => o.u === U),
+    "the fixture is wide enough: three orders of theirs, one cancelled, a claim and a thread of two lines, and nothing of the other customer's: "
+    + JSON.stringify({ orders: body.orders.map((o) => o.status), claims: body.claims.length, thread: body.thread.msgs.length }));
+  ok(got.text === was, "on the object road GET /orders answers byte for byte what the three readers composed");
+  ok(calls === 1, "and asks the order book ONCE for it, not three times: " + calls + " call(s)");
+  const one = bk.book.run("mine", { u: U });
+  ok(JSON.stringify(one.orders) === JSON.stringify(bk.book.run("orders", { u: U }).orders) && JSON.stringify(one.claims) === JSON.stringify(bk.book.run("claims", { u: U }).claims)
+    && JSON.stringify(one.thread) === JSON.stringify(bk.book.run("thread", { u: U }).thread) && bk.book.run("claims", {}).claims.length === 2,
+    "the book's `mine` is its own three reads to the byte, and `claims` with no customer still lists every claim");
+
+  /* THE KV ROAD: both lists from KV, no thread, as the three readers answer there */
+  const kvB = new KV(), envB = { STMT: kvB, STMT_DESK_KEY: "desk-key" };
+  const tokB = await O.mintSession(envB, U), tokB2 = await O.mintSession(envB, U2);
+  await fill(envB, tokB, tokB2, false);
+  /* a thr: key left by the week of reading both is read by nothing on the KV road (Step 7) */
+  await kvB.put("thr:" + U, JSON.stringify({ id: "thread", u: U, at: "2026-10-06T01:00:00.000Z", msgs: [{ at: "2026-10-06T01:00:00.000Z", by: "customer", text: "Behind" }] }));
+  const gotB = await call(envB, tokB, "/orders"), bodyB = JSON.parse(gotB.text);
+  ok(gotB.status === 200 && bodyB.orders.length === 3 && bodyB.claims.length === 1 && bodyB.thread.msgs.length === 0 && gotB.text === await threeWay(envB, U),
+    "on the KV road GET /orders answers the same bytes as before: the two lists, and an empty thread whatever thr: holds");
+
+  /* THE WEEK OF READING BOTH with the book unreachable: KV answers all three, the thread from thr:<username> */
+  const down = { idFromName: () => ({}), get: () => ({ fetch: async () => { throw new Error("the object is unreachable"); } }) };
+  const envC = { STMT: kvB, STMT_DESK_KEY: "desk-key", ORDERBOOK: down, ORDER_STORE: "object+kv" };
+  const realLog = console.log; console.log = (...x) => { if (!/^orders: /.test(x.join(" "))) realLog(...x); };
+  let gotC, wasC;
+  try { gotC = await call(envC, tokB, "/orders"); wasC = await threeWay(envC, U); } finally { console.log = realLog; }
+  const bodyC = JSON.parse(gotC.text);
+  ok(gotC.status === 200 && bodyC.orders.length === 3 && bodyC.claims.length === 1 && bodyC.thread.msgs.length === 1 && bodyC.thread.msgs[0].text === "Behind" && gotC.text === wasC,
+    "with the book unreachable in the week of reading both, KV answers all three as the readers did, the thread included: " + JSON.stringify(bodyC.thread));
+})();
 section("D1 and D2 (29 Sep 2026): no part prints a stored date or an em dash; one dShow and one NIL");
 await (async () => {
   /* THE FAULT LIST'S D1 AND D2. The desk printed 2026-09-28 across Stock, Record, the Order book and Pricing, and an em
