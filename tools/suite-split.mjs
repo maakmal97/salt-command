@@ -21,9 +21,12 @@
  * It is `npm test` (his instruction of 24 Sep 2026), here and in CI. No machine runs more shards than its cores less one
  * (never fewer than two): a hosted runner's memory comes with its cores, and each shard may take a 4 GB heap.
  *
- * FOUR SHARDS AT MOST UNASKED (09 Oct 2026, his instruction). Eight shards on the laptop's sixteen cores came to 8 to 10 GB a
- * run, so three worktrees testing at once took 21 GB of its 31.5 and left it 0.7 GB free. Unasked, a machine runs half its
- * cores, at most four; --jobs still asks for more. The 4 GB heap cap stays: it is a ceiling, not what a shard uses.
+ * SHARDS FIT THE MACHINE'S MEMORY AS WELL AS ITS CORES (09 Oct 2026, his instruction). Eight shards on the laptop's sixteen
+ * cores, three worktrees testing at once, took 21 GB of its 31.5 and left it 0.7 GB free. A shard and the tools it spawns
+ * peak near 1.8 GB (four shards measured 7.3 GB), so unasked a machine runs the fewest of: half its cores; what lets two runs
+ * share half its memory; and what three quarters of the memory free right now holds; never fewer than two, at most ten.
+ * The laptop runs four, a 24-core 128 GB machine ten, and a run started beside two others takes what is left. --jobs still
+ * asks for any count. The 4 GB heap cap stays: it is a ceiling, not what a shard uses.
  * `npm run test:serial` is the one-process road.
  *
  * ONE PART A RUNNER IN CI (05 Oct 2026, his instruction). Once the repo went private on 01 Oct its runners had two cores, so
@@ -31,7 +34,7 @@
  * runners, each with --part i/3: the build phase, then shard i of the same three-way packing, in one process. A part packs
  * by the committed costs alone, never a machine's own times, so all three cut the suite alike and the parts cover it once.
  *
- *   node tools/suite-split.mjs                 shards = half the cores, at most 4
+ *   node tools/suite-split.mjs                 shards to fit the cores and the memory, 2 to 10
  *   node tools/suite-split.mjs --jobs 12
  *   node tools/suite-split.mjs --part 2/3      the build phase and the second of three shards (CI, one runner a part)
  *   node tools/suite-split.mjs --write-costs   test/suite-costs.json from this machine's last run; runs nothing
@@ -40,7 +43,7 @@ import { readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { cpus } from "node:os";
+import { cpus, totalmem, freemem } from "node:os";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VERIFY = join(REPO, "test", "verify.mjs"), TIMES = join(REPO, "test", ".suite-times.json");
@@ -136,10 +139,15 @@ export function runShard(suite, name, blocks, line = () => {}, env = {}) {
   });
 }
 
-/* shards: --jobs, else half the cores, at most 4; never more than the cores less one, never fewer than two */
-export function jobsFor(argv, cores) {
+/* shards: --jobs, else the fewest that half the cores, two runs in half the memory and the memory free now allow, 2 to 10;
+   asked, never more than the cores less one, never fewer than one */
+export const SHARD_GB = 1.8, GB = 1024 ** 3;
+export function jobsFor(argv, cores, mem = { total: totalmem(), free: freemem() }) {
   const ji = argv.indexOf("--jobs");
-  if (ji < 0) return Math.max(2, Math.min(4, Math.floor(cores / 2)));
+  if (ji < 0) {
+    const byMemory = Math.floor(mem.total / GB / 4 / SHARD_GB), byFree = Math.floor((mem.free / GB) * 0.75 / SHARD_GB);
+    return Math.max(2, Math.min(10, Math.floor(cores / 2), byMemory, byFree));
+  }
   return Math.max(1, Math.min(+argv[ji + 1], Math.max(2, cores - 1)));
 }
 
@@ -185,6 +193,7 @@ if (isMain) {
   if (part && part.bad !== undefined) { console.log(`  FAIL  --part takes i/n, 1 <= i <= n <= 10: ${part.bad}`); process.exit(1); }
   /* a part packs by the committed costs alone, so every runner cuts the suite the same way */
   const JOBS = part ? part.n : jobsFor(process.argv.slice(2), cpus().length);
+  if (!part) console.log(`${cpus().length} cores, ${(totalmem() / GB).toFixed(1)} GB, ${(freemem() / GB).toFixed(1)} GB free: ${JOBS} shards`);
   const p = plan(text, { jobs: JOBS, past: part ? {} : past, costs });
   if (!p) { console.log("  FAIL  cannot find the sections or the footer in test/verify.mjs"); process.exit(1); }
   const { prelude, footer, blocks, serial, cost } = p;
