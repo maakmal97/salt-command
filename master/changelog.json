@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1045",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: SALT COLLECTED BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> s245, CR3-DAM's SELL of 0.5 unit for RM70 dated 09 Oct, now reads 0.5 unit delivered on 09 Oct and handed over as collected. It was preapproved by phone. It moves no cash and changes no price. The row's trail of 2 steps no longer adds up to the corrected figure, and the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> Salt rolls by 0.5 unit, out to CR3-DAM, the difference the correction states. No lot landed, so the cost basis is unchanged. The last salt count was on 03 Oct. The RM20 still unpaid on s245 is left open as an advance."
+  ]
+ },
+ {
   "v": "v1044",
   "d": "09 Oct 2026",
   "t": "FULFILMENT OF 2.5 UNIT ON CE4-CHE'S ORDER S238 SETTLES IT IN FULL",
