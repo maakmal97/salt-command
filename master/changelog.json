@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1044",
+  "d": "09 Oct 2026",
+  "t": "FULFILMENT OF 2.5 UNIT ON CE4-CHE'S ORDER S238 SETTLES IT IN FULL",
+  "n": [
+   "<b>ONE AMENDMENT FOLDED.</b> A fulfilment on s238, CE4-CHE's salt order of 2.5 unit for RM240, paid in full on 06 Oct and collected. The desk recorded 2.5 unit moving on 07 Oct, decided on 09 Oct. The row itself is applied by the master's own amend routine, not recomputed in this fold.",
+   "<b>NOTHING UNUSUAL, STOCK MOVES ONCE.</b> The order is left with RM0 and 0 unit outstanding. The only inventory move is salt out, 2.5 unit on 07 Oct, to CE4-CHE. No lot landed, so the cost basis stays where it was."
+  ]
+ },
+ {
   "v": "v1043",
   "d": "09 Oct 2026",
   "t": "TWO FULFILMENTS ON SALT ORDERS: CM4-TO COLLECTION AND CR3-DAM PART PAYMENT",
