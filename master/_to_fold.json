@@ -1,0 +1,55 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-09T05:12:08.643Z",
+   "collection": "sales",
+   "row": {
+    "qty": 0.5,
+    "total": 70,
+    "cash": 69.6,
+    "date": "2026-10-09",
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Fulfilment against CR3-DAM's order of 0.5 unit for RM 70 agreed 2026-10-09. RM 0.4 and 0 unit move on 2026-10-09, against RM 0.4 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s245",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-09T05:12:08.643Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 0.4,
+    "status": "Payment",
+    "by": "desk",
+    "raw": "Payment of RM 0.4 on CR3-DAM, order 20261009015806-blxd6q, by cash at the counter",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": null,
+     "orderKey": "CR3-DAM|2026-10-09|70",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-09",
+     "qty": 0,
+     "total": 0,
+     "cash": 0.4,
+     "kg": 0,
+     "note": "Cash received at the handover, recorded on the desk, order 20261009015806-blxd6q."
+    },
+    "orderId": "20261009015806-blxd6q",
+    "counter": true
+   },
+   "decidedAt": "2026-10-09T05:12:11.754Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
