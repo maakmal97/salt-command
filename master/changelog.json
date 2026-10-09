@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1046",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: REWARD OFFSET RECORDED, NO CASH OR STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> It patches CR3-DAM's order s245 of 0.5 unit for RM70, dated 09 Oct, to show RM19.60 settled in kind against a reward of 0.14 unit. Nothing else is in the batch. The offset was raised automatically against that day's order, and the fold applies the patch rather than rewriting the row by hand.",
+   "<b>UNUSUAL: THE RATE.</b> The drafter flagged RM140 a unit on s245, 75% above CR3-DAM's usual RM80, and the history does not answer it. <b>INVENTORY UNCHANGED.</b> The correction moves no cash and no stock; it changes only what the row says about itself. Stock stays at 13 and the cost basis at RM56 a unit."
+  ]
+ },
+ {
   "v": "v1045",
   "d": "09 Oct 2026",
   "t": "CORRECTION ON S245: SALT COLLECTED BY CR3-DAM",

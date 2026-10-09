@@ -1,6 +1,6 @@
 {
- "v": "v1045",
- "stamped": "09 Oct 2026, 13:07 KL",
+ "v": "v1046",
+ "stamped": "09 Oct 2026, 13:09 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6885,7 +6885,7 @@
     "cash": 50,
     "date": "2026-10-09",
     "deliveredQty": 0.5,
-    "note": "<b>CORRECTION ON s245: 0.5 UNIT COLLECTED 09 OCT, PREAPPROVED BY PHONE.</b> Against CR3-DAM's SELL of 0.5 unit for RM70. It sets deliveredQty from 0 to 0.5, deliveredOn to 09 Oct and handover to collected. For 0.5 unit the total is above the floor of RM29 and below the ask of RM80. CR3-DAM has a median rate of RM80, a range of RM80 to RM140, RM45 outstanding before, 0.27 unit on credit against a cap of 2. Drafter flags: RM140 a unit, 75% above his usual, which the history does not answer; the RM20 advance, which sits within the cap; the 2-step trail no longer adding up. Open: RM20. <b>SALT SELL DATED 09 OCT: 0.5 UNIT FOR RM70, PENDING, NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CR3-DAM from an order on the statements site, to collect, priced at RM70 on this order and placed at RM80. The ladder for 0.5 unit has a floor of RM29 and an ask of RM80, so the total is above the floor and below the ask. CR3-DAM has a median rate of RM80 and a range of RM80 to RM110, RM25 outstanding before, 0.27 unit on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase, not the inventory's own RM56. The drafter flagged RM140 a unit, 75% above his usual; that is above his range, so the figures do not answer it. Open: RM70 and 0.5 unit.",
+    "note": "<b>CORRECTION ON s245: REWARD OFFSET OF 0.14 UNIT, RM19.60 SETTLED IN KIND.</b> Against CR3-DAM's SELL of 0.5 unit for RM70 dated 09 Oct, approved by the desk. It sets settledRM from unset to 19.6, rebate from false to true and rebateKg from unset to 0.14. The dossier gives no floor or ask for this size, so the rate cannot be placed against them. CR3-DAM has 20 orders, a median rate of RM80, a range of RM80 to RM140, RM45 outstanding before and 0.41 unit on credit before. The dossier gives no cap figure. The cost carried is unchanged. Drafter flag: RM140 a unit, 75% above his usual, which the history does not answer. Open: the row shows RM50 cash against RM70, and the dossier states no remainder. <b>CORRECTION ON s245: 0.5 UNIT COLLECTED 09 OCT, PREAPPROVED BY PHONE.</b> Against CR3-DAM's SELL of 0.5 unit for RM70. It sets deliveredQty from 0 to 0.5, deliveredOn to 09 Oct and handover to collected. For 0.5 unit the total is above the floor of RM29 and below the ask of RM80. CR3-DAM has a median rate of RM80, a range of RM80 to RM140, RM45 outstanding before, 0.27 unit on credit against a cap of 2. Drafter flags: RM140 a unit, 75% above his usual, which the history does not answer; the RM20 advance, which sits within the cap; the 2-step trail no longer adding up. Open: RM20. <b>SALT SELL DATED 09 OCT: 0.5 UNIT FOR RM70, PENDING, NOTHING PAID AND NOTHING HANDED OVER.</b> Booked to CR3-DAM from an order on the statements site, to collect, priced at RM70 on this order and placed at RM80. The ladder for 0.5 unit has a floor of RM29 and an ask of RM80, so the total is above the floor and below the ask. CR3-DAM has a median rate of RM80 and a range of RM80 to RM110, RM25 outstanding before, 0.27 unit on credit against a cap of 2. The row carries RM58 a unit, COGS off the latest purchase, not the inventory's own RM56. The drafter flagged RM140 a unit, 75% above his usual; that is above his range, so the figures do not answer it. Open: RM70 and 0.5 unit.",
     "rid": "s245",
     "amend": [
      {
@@ -6909,12 +6909,22 @@
       "kg": 0.5,
       "note": "<b>CORRECTION ON s245: 0.5 UNIT COLLECTED 09 OCT, PREAPPROVED BY PHONE.</b> Against CR3-DAM's SELL of 0.5 unit for RM70. It sets deliveredQty from 0 to 0.5, deliveredOn to 09 Oct and handover to collected. For 0.5 unit the total is above the floor of RM29 and below the ask of RM80. CR3-DAM has a median rate of RM80, a range of RM80 to RM140, RM45 outstanding before, 0.27 unit on credit against a cap of 2. Drafter flags: RM140 a unit, 75% above his usual, which the history does not answer; the RM20 advance, which sits within the cap; the 2-step trail no longer adding up. Open: RM20.",
       "cost": 29
+     },
+     {
+      "date": "2026-10-09",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s245: REWARD OFFSET OF 0.14 UNIT, RM19.60 SETTLED IN KIND.</b> Against CR3-DAM's SELL of 0.5 unit for RM70 dated 09 Oct, approved by the desk. It sets settledRM from unset to 19.6, rebate from false to true and rebateKg from unset to 0.14. The dossier gives no floor or ask for this size, so the rate cannot be placed against them. CR3-DAM has 20 orders, a median rate of RM80, a range of RM80 to RM140, RM45 outstanding before and 0.41 unit on credit before. The dossier gives no cap figure. The cost carried is unchanged. Drafter flag: RM140 a unit, 75% above his usual, which the history does not answer. Open: the row shows RM50 cash against RM70, and the dossier states no remainder."
      }
     ],
     "deliveredOn": "2026-10-09",
     "handover": "collected",
-    "mod": "corrected on 2026-10-09: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-09; handover (unset) to collected",
-    "cost": 29
+    "mod": "corrected on 2026-10-09: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-09; handover (unset) to collected, then corrected on 2026-10-09: settledRM (unset) to 19.6; rebateKg (unset) to 0.14; rebate (unset) to true",
+    "cost": 29,
+    "settledRM": 19.6,
+    "rebateKg": 0.14,
+    "rebate": true
    }
   ],
   "contacts": [
@@ -7556,9 +7566,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-09T05:06:40.681Z",
+  "QUEUE_COMMITTED": "2026-10-09T05:07:43.206Z",
   "PRICING": {
-   "takenAt": "2026-10-09T05:07:29.445Z",
+   "takenAt": "2026-10-09T05:09:25.672Z",
    "sizes": [
     0.5,
     1,
@@ -14410,10 +14420,10 @@
      ]
     }
    },
-   "v": "v1045"
+   "v": "v1046"
   },
   "OPEN": {
-   "at": "2026-10-09T05:07:30.134Z",
+   "at": "2026-10-09T05:09:26.466Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
@@ -14457,16 +14467,20 @@
      "dir": "S",
      "q": 0.5,
      "t": 70,
-     "cash": 50,
+     "cash": 69.6,
      "mv": 0.5,
      "st": "dueMoney",
-     "oweRM": 20,
+     "oweRM": 0.4,
      "rid": "s245",
+     "cashRaw": 50,
      "deliveredOn": "2026-10-09",
      "handover": "collected",
+     "rebate": true,
+     "settledRM": 19.6,
+     "rebateKg": 0.14,
      "key": "CR3-DAM|2026-10-09|70",
      "age": 0,
-     "exp": 20
+     "exp": 0.4
     },
     "CN3-WM|2026-10-05|130": {
      "d": "2026-10-05",
@@ -14590,8 +14604,8 @@
      "free": 6.5,
      "owedOut": 6.5,
      "coverDays": 1.4,
-     "rate": 5.13,
-     "owedToYou": 450,
+     "rate": 5.1,
+     "owedToYou": 430.4,
      "promised": 6.5,
      "short": 0
     },
@@ -14647,7 +14661,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1045"
+   "v": "v1046"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14655,7 +14669,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1045"
+   "v": "v1046"
   },
   "REWARD": {
    "stated": {
@@ -14667,7 +14681,7 @@
      }
     }
    },
-   "v": "v1045"
+   "v": "v1046"
   }
  }
 }
