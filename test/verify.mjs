@@ -8373,7 +8373,19 @@ await (async () => {
   const headAt = m.indexOf("<head>"), timeAt = m.indexOf("/* ==== DESIGN time:"), styleAt = m.indexOf("<style>");
   ok(headAt > 0 && timeAt > headAt && timeAt < styleAt && m.lastIndexOf("<script>", timeAt) > headAt,
     "the time script is in <head>, inside a <script>, before the stylesheet: the theme is set before the first paint");
-  ok(/<html [^>]*data-time-day="off"/.test(m.slice(0, headAt)), "Day is held back on the desk (<html data-time-day=\"off\") until its own tints are tokens");
+  /* 09 Oct 2026, his word: Day shows. The hold is gone from <html>, and every colour the Day palette lends to text holds
+     4.5:1 on each Day panel (the ground, the slate and the lit slate), measured here off design/salt-ds.css itself */
+  ok(!/data-time-day/.test(m.slice(0, headAt)), "Day shows on the desk: <html> carries no data-time-day hold");
+  {
+    const ds = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), dayB = (ds.match(/:root\[data-time="day"\]\s*\{([^}]*)\}/) || ["", ""])[1];
+    const decl = Object.fromEntries([...dayB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
+    const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const grounds = ["obsidian", "slate", "slate-light"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
+      "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
+    const weak = TEXT.filter((k) => !tok(k) || grounds.some((g) => !g || ratio(tok(k), g) < 4.5)).map((k) => k + " " + (tok(k) ? Math.min(...grounds.map((g) => ratio(tok(k), g))).toFixed(2) : "missing"));
+    ok(grounds.every(Boolean) && weak.length === 0, `every Day text colour holds 4.5:1 on the Day ground, slate and lit slate (short: ${weak.join(", ") || "none"})`);
+  }
   ok(/:root\[data-time="dawn"\]/.test(m) && /:root\[data-time="dusk"\]/.test(m) && /--salt-ink-on-accent:/.test(m), "the four themes and the pill's own ink are in the design system's block");
   /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
   const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
@@ -8417,15 +8429,15 @@ await (async () => {
   const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
   const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
   ok(/role="radiogroup"/.test(pick) && sets.join(",") === "auto,dawn,day,dusk,night", `the rail carries the theme picker: Auto, Dawn, Day, Dusk, Night (read ${sets.join(",") || "none"})`);
-  ok(/html\[data-time-day="off"\] \.railtheme \[data-time-set="day"\]\{display:none;\}/.test(m), "and Day's button is hidden while the desk holds Day back");
+  ok(/\.railtheme\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(m), "and the five sit three to a row, so each word fits and each button keeps 44px across");
   /* behaviour, in the desk's own window */
   const { openMaster: omV2 } = await import("../tools/payload.mjs");
   const { w: wV2 } = await omV2();
   const st = String(wV2.eval("document.documentElement.getAttribute('data-time')"));
-  /* which theme it opens on depends on the hour the suite runs; that Day never shows is the held-Day check below */
-  ok(["dawn", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
+  /* which theme it opens on depends on the hour the suite runs */
+  ok(["dawn", "day", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
   wV2.eval("window.saltTime.set('day')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dawn", "Day held by hand reads Dawn on the desk while Day is held back");
+  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "day", "Day held by hand holds, now the desk shows Day");
   wV2.eval("window.saltTime.set('dusk')");
   ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dusk", "Dusk held by hand holds");
   wV2.eval("window.saltTime.set('auto')");

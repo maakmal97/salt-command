@@ -223,16 +223,25 @@ transparent)`, which is the same pixel at Night, and the ink on a filled control
 `RENDER_HIDE=".railtheme"` read 34 of 34 shots the same as the build before; Dawn and Dusk differ on every
 shot, which proves the instrument saw a theme.
 
-**Day is held back** (`<html data-time-day="off">`, which salt-time.js reads: Dawn stands in by the clock
-and when Day is held). 06 Oct 2026: the white and black tints and the light text hexes in the desk's own CSS
+**Day was held back** (`<html data-time-day="off">`, which salt-time.js reads: Dawn stands in by the clock
+and when Day is held) until 09 Oct 2026. 06 Oct 2026: the white and black tints and the light text hexes in the desk's own CSS
 are tokens (a white tint is `color-mix(in srgb, var(--salt-salt) N%, transparent)`, a black one the same on
 `--salt-ink-on-accent`, which is dark in every theme; `#e4e9ec` is `--ice`, `#e08a72` a mix of ember into salt);
 the suite fails if one returns, the print block excepted. Night measured the same by `renderdiff` (34 of 34).
 09 Oct 2026: the system's own `.salt-deskbar` reads `--salt-deskbar-sheen`, `-fill` and `-solid` (Night's values on
 `:root`, paper restated for Day, in `Code\salt-ds`), so its ink title sits on paper in Day; Night, Dawn and Dusk
-measured the same by `renderdiff` (34 of 34 each). Nothing in the desk's own colours now holds Day back: the attribute
-goes on his word, with his two calls open (prose mapped to `--ice` reads about 3.7:1 on paper in Day, and the black-tint
-shadows are heavier than the system's own Day shadows).
+measured the same by `renderdiff` (34 of 34 each).
+
+**Day shows** (09 Oct 2026, his word: the attribute is gone). Measured first in a browser, every part at 1280 and 375
+wide: 2,828 text elements fell under 4.5:1 in Day against 197 at Night, nearly all from five roles. The Day palette in
+`Code\salt-ds` was darkened along each hue until every colour read as text holds 4.5:1 on the ground, the slate and the
+lit slate (copper toward red-brown, `#95511e`, so it stays apart from brass); the suite measures that off
+`design/salt-ds.css`. The rest went to 182, mostly chips on their own tint (4.0 to 4.4:1) and rows dimmed on purpose,
+which read as low at Night too. Three fixes in the desk: the theme picker sits three to a row (five words no longer fit
+on one, and each keeps 44px); a book not in view on the product switch is read at full strength in Day (faded, it fell
+to about 1.9:1); the gold chip and the names editor's fields read tokens (paper text on gold, a black field). The
+heavier black-tint shadows stay: his call, they read as daylight. In Auto, Day still yields to Dawn on a device set
+to dark (`salt-time.js`).
 
 **The charts and the map read the theme** (06 Oct 2026). `tcol(role, alpha)` in the master reads a token off `<html>`
 when a chart or the map is drawn, and `chartTheme()` reads Chart.js's own text, border and tooltip colours the same way

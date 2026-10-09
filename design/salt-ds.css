@@ -170,27 +170,29 @@
   --salt-panel: rgb(34, 28, 29);
 }
 :root[data-time="day"] {
+  /* 09 Oct 2026: every role that is read as text holds 4.5:1 or more on the Day panels (#e6e0d4 to #fcfaf5),
+     each darkened along its own hue; copper toward red-brown so it stays apart from brass */
   --salt-obsidian: #f3efe6;
   --salt-slate: #fcfaf5;
   --salt-slate-light: #ebe3d3;
   --salt-brass: #8a5618;
-  --salt-copper: #b8732f;
+  --salt-copper: #95511e;
   --salt-salt: #1a1611;
-  --salt-mist: #6f665a;
+  --salt-mist: #6a6156;
   --salt-mist-light: #524a40;
   --salt-mist-bright: #3d362e;
   --salt-edge-field: #9a7440;
   --salt-verdigris: #246e52;
-  --salt-ember: #b23e24;
+  --salt-ember: #ac3c23;
   --salt-steel: #45607a;
-  --salt-brass-soft: #7d6233;
-  --salt-alarm: #c4122f;
-  --salt-amber: #8a6400;
-  --salt-product-salt: #6b7b86;
-  --salt-product-oil: #a07a2c;
-  --salt-product-candy: #a8537f;
+  --salt-brass-soft: #785e31;
+  --salt-alarm: #c2122f;
+  --salt-amber: #7f5c02;
+  --salt-product-salt: #57646d;
+  --salt-product-oil: #7a5e24;
+  --salt-product-candy: #934a6e;
   --salt-product-rice: #4c58a6;
-  --salt-product-spare: #6b7330;
+  --salt-product-spare: #60662c;
   --salt-glass: rgba(26, 22, 17, 0.03);
   --salt-glass-faint: rgba(26, 22, 17, 0.02);
   --salt-line: rgba(138, 86, 24, 0.22);
