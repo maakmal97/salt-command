@@ -1,6 +1,6 @@
 {
- "v": "v1047",
- "stamped": "09 Oct 2026, 13:12 KL",
+ "v": "v1048",
+ "stamped": "09 Oct 2026, 13:28 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13,
+  "STATED_STOCK": 12.14,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -6932,6 +6932,22 @@
     "settledRM": 19.6,
     "rebateKg": 0.14,
     "rebate": true
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 0.86,
+    "total": 48.16,
+    "cost": 48.16,
+    "cash": 0,
+    "settledRM": 48.16,
+    "rebate": true,
+    "rebateKg": 0.86,
+    "goodwill": true,
+    "deliveredQty": 0.86,
+    "deliveredOn": "2026-10-09",
+    "date": "2026-10-09",
+    "note": "<b>SALT REDEMPTION DATED 09 OCT: 0.86 UNIT FREE, SETTLED BY REWARD, NO CASH IN.</b> CR3-DAM takes 0.86 unit, RM48.16 of goods, all RM48.16 settled by the reward, RM0 cash, delivered the same day, approved by the desk. Booked as cost and not revenue, on his ruling of 11 Sep 2026, as the row carries goodwill and rebate. For this size the dossier gives a floor of RM49.88 and an ask of RM120; no cash rate arises. CR3-DAM has 20 orders, a median rate of RM80, a range of RM80 to RM110, RM25 outstanding before and 0.27 unit on credit before, against a cap of 2 units. The cost carried is the inventory's own. Drafter flag: the desk says 0.86 unit was earned and unredeemed (2 earned, 1.14 used); the figures cannot answer it. Open: nothing outstanding on the row.",
+    "rid": "s246"
    }
   ],
   "contacts": [
@@ -7573,9 +7589,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-09T05:12:08.643Z",
+  "QUEUE_COMMITTED": "2026-10-09T05:27:17.649Z",
   "PRICING": {
-   "takenAt": "2026-10-09T05:12:50.875Z",
+   "takenAt": "2026-10-09T05:28:19.447Z",
    "sizes": [
     0.5,
     1,
@@ -8869,9 +8885,9 @@
        "attrib": 1,
        "shrinkRate": 0.08150208623087622,
        "avgDel": {
-        "n": 199,
-        "kg": 509.7,
-        "mean": 2.5613
+        "n": 200,
+        "kg": 510.56,
+        "mean": 2.5528
        }
       },
       "policy": {
@@ -14427,10 +14443,10 @@
      ]
     }
    },
-   "v": "v1047"
+   "v": "v1048"
   },
   "OPEN": {
-   "at": "2026-10-09T05:12:51.713Z",
+   "at": "2026-10-09T05:28:20.277Z",
    "count": 9,
    "byKey": {
     "CM4-MK|2026-10-09|90": {
@@ -14586,10 +14602,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13,
-     "free": 6.5,
+     "onHand": 12.14,
+     "free": 5.64,
      "owedOut": 6.5,
-     "coverDays": 1.4,
+     "coverDays": 1.1,
      "rate": 5.1,
      "owedToYou": 430,
      "promised": 6.5,
@@ -14647,7 +14663,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1047"
+   "v": "v1048"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14655,7 +14671,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1047"
+   "v": "v1048"
   },
   "REWARD": {
    "stated": {
@@ -14667,7 +14683,7 @@
      }
     }
    },
-   "v": "v1047"
+   "v": "v1048"
   }
  }
 }
