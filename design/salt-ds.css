@@ -127,129 +127,13 @@
   --salt-radius-xl: 36px;
   --salt-radius-pill: 100px;
 
-  /* THE TIME OF DAY (05 Oct 2026, his approval of the version 2 design). The six colours and the
-     materials above are ROLES from here on: obsidian is the ground, slate the raised surface, salt the
-     text, mist the captions, brass the accent. A theme below re-points the roles, so every recipe and
-     every consumer that reads a token follows it with no rule of its own. Night is this block, unchanged.
-     Three tokens do not follow a theme: the ink on a filled control (dark on the brass pill in every
-     theme) and the QR's field and ink, which stay light and dark so a code always scans. */
+  /* One theme (his word of 09 Oct 2026): the identity as drawn, obsidian ground and salt text. The four
+     times of day of 05 Oct 2026 are retired. Three tokens name a fixed use: the ink on a filled control
+     (dark on the brass pill) and the QR's field and ink, light and dark so a code always scans. */
   --salt-ink-on-accent: var(--salt-obsidian);
   --salt-qr-field: #f2f4f5;
   --salt-qr-ink: #0b1215;
-  --salt-theme-fade: 1200ms;
   color-scheme: dark;
-}
-
-/* Four themes, six hours each, on the viewer's own clock: Dawn 04:00, Day 10:00, Dusk 16:00, Night
-   22:00. salt-time.js sets data-time on <html> before the first paint and again at each boundary. Every
-   text and ground pair below was computed before it was written: text, captions and the three semantic
-   words at 4.5:1 or more on the ground and on the raised surface, accents and field edges at 3:1, and the
-   ink on both ends of the pill's gradient at 4.5:1. Day is the one light theme, for a phone read outdoors
-   at the market in full sun. */
-:root[data-time="dawn"] {
-  --salt-obsidian: #0f131a;
-  --salt-slate: #171d26;
-  --salt-slate-light: #222a35;
-  --salt-brass: #e4a67c;
-  --salt-copper: #c77a52;
-  --salt-salt: #f4f2f0;
-  --salt-mist: #8d95a1;
-  --salt-mist-light: #b7bcc5;
-  --salt-mist-bright: #c6cad1;
-  --salt-edge-field: #a77c60;
-  --salt-verdigris: #80c3a7;
-  --salt-ember: #f09576;
-  --salt-steel: #a5b8cc;
-  --salt-brass-soft: #f0c9ad;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(228, 166, 124, 0.24);
-  --salt-line-strong: rgba(228, 166, 124, 0.45);
-  --salt-veil: rgba(15, 19, 26, 0.86);
-  --salt-scrim: rgba(15, 19, 26, 0.55);
-  --salt-pane: rgba(23, 29, 38, 0.66);
-  --salt-panel: rgb(34, 28, 29);
-}
-:root[data-time="day"] {
-  /* 09 Oct 2026: every role that is read as text holds 4.5:1 or more on the Day panels (#e6e0d4 to #fcfaf5),
-     each darkened along its own hue; copper toward red-brown so it stays apart from brass */
-  --salt-obsidian: #f3efe6;
-  --salt-slate: #fcfaf5;
-  --salt-slate-light: #ebe3d3;
-  --salt-brass: #8a5618;
-  --salt-copper: #95511e;
-  --salt-salt: #1a1611;
-  --salt-mist: #6a6156;
-  --salt-mist-light: #524a40;
-  --salt-mist-bright: #3d362e;
-  --salt-edge-field: #9a7440;
-  --salt-verdigris: #246e52;
-  --salt-ember: #ac3c23;
-  --salt-steel: #45607a;
-  --salt-brass-soft: #785e31;
-  --salt-alarm: #c2122f;
-  --salt-amber: #7f5c02;
-  --salt-product-salt: #57646d;
-  --salt-product-oil: #7a5e24;
-  --salt-product-candy: #934a6e;
-  --salt-product-rice: #4c58a6;
-  --salt-product-spare: #60662c;
-  --salt-glass: rgba(26, 22, 17, 0.03);
-  --salt-glass-faint: rgba(26, 22, 17, 0.02);
-  --salt-line: rgba(138, 86, 24, 0.22);
-  --salt-line-faint: rgba(26, 22, 17, 0.08);
-  --salt-line-strong: rgba(138, 86, 24, 0.45);
-  --salt-glass-hover: rgba(26, 22, 17, 0.05);
-  --salt-highlight: rgba(255, 255, 255, 0.6);
-  --salt-shadow: 0 32px 64px rgba(40, 30, 10, 0.18);
-  --salt-shadow-desk: 0 18px 40px rgba(40, 30, 10, 0.14);
-  --salt-well: rgba(26, 22, 17, 0.06);
-  --salt-well-hover: rgba(26, 22, 17, 0.09);
-  --salt-veil: rgba(243, 239, 230, 0.9);
-  --salt-scrim: rgba(26, 22, 17, 0.35);
-  --salt-pane: rgba(252, 250, 245, 0.82);
-  --salt-panel: rgb(235, 227, 211);
-  --salt-gradient: linear-gradient(135deg, #c5a059, #b8732f);
-  --salt-gradient-title: linear-gradient(135deg, #1a1611 30%, #8a5618 100%);
-  --salt-deskbar-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
-  --salt-deskbar-fill: rgba(243, 239, 230, 0.9);
-  --salt-deskbar-solid: rgb(243, 239, 230);
-  --salt-ink-on-accent: #1a1611;
-  color-scheme: light;
-}
-:root[data-time="dusk"] {
-  --salt-obsidian: #120d0b;
-  --salt-slate: #1c1512;
-  --salt-slate-light: #2a201b;
-  --salt-brass: #dba35f;
-  --salt-copper: #c46a37;
-  --salt-salt: #f6f0e8;
-  --salt-mist: #9a8878;
-  --salt-mist-light: #c3b3a5;
-  --salt-mist-bright: #d0c2b5;
-  --salt-edge-field: #a17a48;
-  --salt-verdigris: #80c2a8;
-  --salt-ember: #ef9372;
-  --salt-steel: #a7b6c7;
-  --salt-brass-soft: #ecd0a6;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(219, 163, 95, 0.24);
-  --salt-line-strong: rgba(219, 163, 95, 0.45);
-  --salt-veil: rgba(18, 13, 11, 0.86);
-  --salt-scrim: rgba(18, 13, 11, 0.55);
-  --salt-pane: rgba(28, 21, 18, 0.66);
-  --salt-panel: rgb(42, 28, 18);
-}
-/* The change of theme is a slow cross-fade, set by salt-time.js for the length of the fade only. */
-:root.salt-theming,
-:root.salt-theming * {
-  transition: background-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    border-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    fill var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    stroke var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1) !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  :root.salt-theming, :root.salt-theming * { transition: none !important; }
 }
 
 /* ---- Root ---- */
@@ -292,8 +176,6 @@
   pointer-events: none;
   z-index: 0;
 }
-/* Day is flat paper: the aurora's light would read as a stain on it. */
-:root[data-time="day"] .salt-aurora { opacity: 0; }
 .salt-aurora__blob {
   position: absolute;
   border-radius: 50%;

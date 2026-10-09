@@ -200,7 +200,19 @@ What was not done that day: the brand fonts. They followed as v785, above.
   which is compositing rounding. After any type change probe `document.documentElement.scrollWidth`
   per part at 375px.
 
-## 05 Oct 2026: the time of day (version 2, step 1)
+## 09 Oct 2026: one theme, Night
+
+His word: remove the four themes and keep one default. Night is the design system's `:root`, the identity as
+drawn. Retired in `Code\salt-ds`: the Dawn, Day and Dusk blocks (the desk bar's Day tokens with them), the
+cross-fade, `salt-time.js`, `SALT_THEMES`, `SALT_TIME_HOURS` and `timeOf`. Retired here: the `DESIGN time` block
+(`designsync --check` now fails if its marker is left in the master), the rail's picker, the redraw on a theme
+change, the Day, Dawn and Dusk values of the `--desk-*` tokens, and Day's product switch rule. The tokens stay:
+every colour in the desk's own CSS is still a token, and a `--desk-*` declaration is the one place its literal
+lives. Night's text colours measured on its panels: all 4.5:1 or more on the ground and the slate; on the lit
+slate, mist (4.44) and copper (4.36) fall just short, which is the identity as drawn. A device's `salt-time` key in
+localStorage is left behind and read by nothing. The record below is history.
+
+## 05 Oct 2026: the time of day (version 2, step 1), retired 09 Oct 2026
 
 His approval of the version 2 design: four themes that follow the viewer's clock, six hours each. Dawn
 from 04:00 (cool slate, rose-gold accent), Day from 10:00 (the one light theme: salt paper and deep copper

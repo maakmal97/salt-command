@@ -12,113 +12,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>
-/* ==== DESIGN time: generated from design/salt-time.js, vendored from Code/salt-ds src/salt-time.js, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
-/* salt-time.js: the theme follows the viewer's clock (05 Oct 2026).
- *
- * Four themes, six hours each, on the viewer's own local time: Dawn from 04:00, Day from 10:00, Dusk
- * from 16:00, Night from 22:00. It sets data-time on <html>, which re-points the identity's roles in
- * styles.css. Run it in <head>, before the body paints, so a page never flashes the wrong theme.
- *
- * It arms one timer to the next boundary (never a poll) and re-reads on every return to the page. A
- * change while the page is open cross-fades for --salt-theme-fade (the class salt-theming, removed
- * when the fade ends); the first paint never fades. A choice of the viewer's (Auto, or one theme held)
- * is kept in localStorage under salt-time; Auto is the default. In Auto, a phone set to dark mode is
- * never given the light Day theme: Dawn stands in for it, as it does on a surface marked
- * data-time-day="off" while its own colours are still being turned into tokens.
- *
- * A consumer that draws its own colours (a chart, a canvas) listens for the salt-time event on
- * document.documentElement and redraws once. window.saltTime.set('auto' | 'dawn' | 'day' | 'dusk' |
- * 'night') is the one way to change the choice.
- *
- * Vendored by each surface's own sync: the desk inlines it in the master, the Counter carries it inside
- * its page script, QR Command inside app.js (its CSP refuses an inline script). It is ES5 with no
- * backslash and no backtick, because the Counter ships it inside a template literal. */
-(function () {
-  var KEY = 'salt-time';
-  var HOURS = [[4, 'dawn'], [10, 'day'], [16, 'dusk'], [22, 'night']];
-  var GROUND = { dawn: '#0f131a', day: '#f3efe6', dusk: '#120d0b', night: '#05080a' };
-  var root = document.documentElement;
-  var timer = 0, fading = 0;
-
-  function byClock(d) {
-    var h = d.getHours(), t = 'night';
-    for (var i = 0; i < HOURS.length; i++) if (h >= HOURS[i][0]) t = HOURS[i][1];
-    return t;
-  }
-  function choice() {
-    var v = null;
-    try { v = localStorage.getItem(KEY); } catch (e) {}
-    return v === 'dawn' || v === 'day' || v === 'dusk' || v === 'night' ? v : 'auto';
-  }
-  function prefersDark() {
-    try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
-  }
-  /* A surface whose own colours are not yet all tokens marks <html data-time-day="off">: it is never
-     given the light theme, held or by the clock, and Dawn stands in for it. */
-  function dayOff() { return root.getAttribute('data-time-day') === 'off'; }
-  function resolve(d) {
-    var c = choice();
-    if (c !== 'auto') return c === 'day' && dayOff() ? 'dawn' : c;
-    var t = byClock(d || new Date());
-    return t === 'day' && (prefersDark() || dayOff()) ? 'dawn' : t;
-  }
-  function paint(t, fade) {
-    if (root.getAttribute('data-time') === t) return;
-    if (fade && root.hasAttribute('data-time')) {
-      root.classList.add('salt-theming');
-      clearTimeout(fading);
-      fading = setTimeout(function () { root.classList.remove('salt-theming'); }, 1300);
-    }
-    root.setAttribute('data-time', t);
-    bar();
-    var ev;
-    try { ev = new CustomEvent('salt-time', { detail: { time: t } }); } catch (e) { ev = null; }
-    if (ev) root.dispatchEvent(ev);
-  }
-  /* the browser's bar takes the ground; a theme-color meta written after this script (a build that
-     injects one later in <head>) is set again once the document is parsed */
-  function bar() {
-    var t = root.getAttribute('data-time'), metas = document.querySelectorAll('meta[name="theme-color"]');
-    for (var i = 0; i < metas.length; i++) metas[i].setAttribute('content', GROUND[t] || GROUND.night);
-  }
-  function untilNext(d) {
-    var h = d.getHours(), next = -1;
-    for (var i = 0; i < HOURS.length; i++) if (HOURS[i][0] > h) { next = HOURS[i][0]; break; }
-    var n = new Date(d.getTime());
-    if (next < 0) { n.setDate(n.getDate() + 1); next = HOURS[0][0]; }
-    n.setHours(next, 0, 0, 0);
-    return n.getTime() - d.getTime();
-  }
-  function arm() {
-    clearTimeout(timer);
-    timer = setTimeout(function () { paint(resolve(), true); arm(); }, Math.min(untilNext(new Date()) + 500, 2147483000));
-  }
-
-  paint(resolve(), false);
-  arm();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bar);
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { paint(resolve(), true); arm(); }
-  });
-
-  window.saltTime = {
-    hours: HOURS,
-    byClock: byClock,
-    choice: choice,
-    get: function () { return root.getAttribute('data-time'); },
-    set: function (v) {
-      try {
-        if (v === 'dawn' || v === 'day' || v === 'dusk' || v === 'night') localStorage.setItem(KEY, v);
-        else localStorage.removeItem(KEY);
-      } catch (e) {}
-      paint(resolve(), true);
-      arm();
-    }
-  };
-})();
-/* ==== END DESIGN time ==== */
-</script>
 <title>Salt Command</title>
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <!-- Chart.js is NOT loaded here (v176). It used to sit in the head as a BLOCKING request
@@ -1759,129 +1652,13 @@ details.obs>summary{min-height:var(--tap);}
   --salt-radius-xl: 36px;
   --salt-radius-pill: 100px;
 
-  /* THE TIME OF DAY (05 Oct 2026, his approval of the version 2 design). The six colours and the
-     materials above are ROLES from here on: obsidian is the ground, slate the raised surface, salt the
-     text, mist the captions, brass the accent. A theme below re-points the roles, so every recipe and
-     every consumer that reads a token follows it with no rule of its own. Night is this block, unchanged.
-     Three tokens do not follow a theme: the ink on a filled control (dark on the brass pill in every
-     theme) and the QR's field and ink, which stay light and dark so a code always scans. */
+  /* One theme (his word of 09 Oct 2026): the identity as drawn, obsidian ground and salt text. The four
+     times of day of 05 Oct 2026 are retired. Three tokens name a fixed use: the ink on a filled control
+     (dark on the brass pill) and the QR's field and ink, light and dark so a code always scans. */
   --salt-ink-on-accent: var(--salt-obsidian);
   --salt-qr-field: #f2f4f5;
   --salt-qr-ink: #0b1215;
-  --salt-theme-fade: 1200ms;
   color-scheme: dark;
-}
-
-/* Four themes, six hours each, on the viewer's own clock: Dawn 04:00, Day 10:00, Dusk 16:00, Night
-   22:00. salt-time.js sets data-time on <html> before the first paint and again at each boundary. Every
-   text and ground pair below was computed before it was written: text, captions and the three semantic
-   words at 4.5:1 or more on the ground and on the raised surface, accents and field edges at 3:1, and the
-   ink on both ends of the pill's gradient at 4.5:1. Day is the one light theme, for a phone read outdoors
-   at the market in full sun. */
-:root[data-time="dawn"] {
-  --salt-obsidian: #0f131a;
-  --salt-slate: #171d26;
-  --salt-slate-light: #222a35;
-  --salt-brass: #e4a67c;
-  --salt-copper: #c77a52;
-  --salt-salt: #f4f2f0;
-  --salt-mist: #8d95a1;
-  --salt-mist-light: #b7bcc5;
-  --salt-mist-bright: #c6cad1;
-  --salt-edge-field: #a77c60;
-  --salt-verdigris: #80c3a7;
-  --salt-ember: #f09576;
-  --salt-steel: #a5b8cc;
-  --salt-brass-soft: #f0c9ad;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(228, 166, 124, 0.24);
-  --salt-line-strong: rgba(228, 166, 124, 0.45);
-  --salt-veil: rgba(15, 19, 26, 0.86);
-  --salt-scrim: rgba(15, 19, 26, 0.55);
-  --salt-pane: rgba(23, 29, 38, 0.66);
-  --salt-panel: rgb(34, 28, 29);
-}
-:root[data-time="day"] {
-  /* 09 Oct 2026: every role that is read as text holds 4.5:1 or more on the Day panels (#e6e0d4 to #fcfaf5),
-     each darkened along its own hue; copper toward red-brown so it stays apart from brass */
-  --salt-obsidian: #f3efe6;
-  --salt-slate: #fcfaf5;
-  --salt-slate-light: #ebe3d3;
-  --salt-brass: #8a5618;
-  --salt-copper: #95511e;
-  --salt-salt: #1a1611;
-  --salt-mist: #6a6156;
-  --salt-mist-light: #524a40;
-  --salt-mist-bright: #3d362e;
-  --salt-edge-field: #9a7440;
-  --salt-verdigris: #246e52;
-  --salt-ember: #ac3c23;
-  --salt-steel: #45607a;
-  --salt-brass-soft: #785e31;
-  --salt-alarm: #c2122f;
-  --salt-amber: #7f5c02;
-  --salt-product-salt: #57646d;
-  --salt-product-oil: #7a5e24;
-  --salt-product-candy: #934a6e;
-  --salt-product-rice: #4c58a6;
-  --salt-product-spare: #60662c;
-  --salt-glass: rgba(26, 22, 17, 0.03);
-  --salt-glass-faint: rgba(26, 22, 17, 0.02);
-  --salt-line: rgba(138, 86, 24, 0.22);
-  --salt-line-faint: rgba(26, 22, 17, 0.08);
-  --salt-line-strong: rgba(138, 86, 24, 0.45);
-  --salt-glass-hover: rgba(26, 22, 17, 0.05);
-  --salt-highlight: rgba(255, 255, 255, 0.6);
-  --salt-shadow: 0 32px 64px rgba(40, 30, 10, 0.18);
-  --salt-shadow-desk: 0 18px 40px rgba(40, 30, 10, 0.14);
-  --salt-well: rgba(26, 22, 17, 0.06);
-  --salt-well-hover: rgba(26, 22, 17, 0.09);
-  --salt-veil: rgba(243, 239, 230, 0.9);
-  --salt-scrim: rgba(26, 22, 17, 0.35);
-  --salt-pane: rgba(252, 250, 245, 0.82);
-  --salt-panel: rgb(235, 227, 211);
-  --salt-gradient: linear-gradient(135deg, #c5a059, #b8732f);
-  --salt-gradient-title: linear-gradient(135deg, #1a1611 30%, #8a5618 100%);
-  --salt-deskbar-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
-  --salt-deskbar-fill: rgba(243, 239, 230, 0.9);
-  --salt-deskbar-solid: rgb(243, 239, 230);
-  --salt-ink-on-accent: #1a1611;
-  color-scheme: light;
-}
-:root[data-time="dusk"] {
-  --salt-obsidian: #120d0b;
-  --salt-slate: #1c1512;
-  --salt-slate-light: #2a201b;
-  --salt-brass: #dba35f;
-  --salt-copper: #c46a37;
-  --salt-salt: #f6f0e8;
-  --salt-mist: #9a8878;
-  --salt-mist-light: #c3b3a5;
-  --salt-mist-bright: #d0c2b5;
-  --salt-edge-field: #a17a48;
-  --salt-verdigris: #80c2a8;
-  --salt-ember: #ef9372;
-  --salt-steel: #a7b6c7;
-  --salt-brass-soft: #ecd0a6;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(219, 163, 95, 0.24);
-  --salt-line-strong: rgba(219, 163, 95, 0.45);
-  --salt-veil: rgba(18, 13, 11, 0.86);
-  --salt-scrim: rgba(18, 13, 11, 0.55);
-  --salt-pane: rgba(28, 21, 18, 0.66);
-  --salt-panel: rgb(42, 28, 18);
-}
-/* The change of theme is a slow cross-fade, set by salt-time.js for the length of the fade only. */
-:root.salt-theming,
-:root.salt-theming * {
-  transition: background-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    border-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    fill var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    stroke var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1) !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  :root.salt-theming, :root.salt-theming * { transition: none !important; }
 }
 
 /* ---- Root ---- */
@@ -1924,8 +1701,6 @@ details.obs>summary{min-height:var(--tap);}
   pointer-events: none;
   z-index: 0;
 }
-/* Day is flat paper: the aurora's light would read as a stain on it. */
-:root[data-time="day"] .salt-aurora { opacity: 0; }
 .salt-aurora__blob {
   position: absolute;
   border-radius: 50%;
@@ -4078,9 +3853,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button:hover{background:var(--salt-glass);}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
-/* Day: a book not in view is read at full strength (faded, it fell to about 1.9:1 on paper); the one in view keeps
-   its ink and its product border */
-:root[data-time="day"] .prodsw button:not(.live){opacity:1;}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 /* v779: FIVE BOOKS FIT ON A PHONE. Each button carries a dot, the book's name and that book's
    headline figure at a 150px minimum, and the strip wraps, so two books sat on one row and five
@@ -4656,21 +4428,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordpart{display:flex;flex-direction:column;gap:8px;}
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
-/* 05 Oct 2026: the theme picker at the rail's foot, a segmented control: a well, the held one raised.
-   Day is hidden while the desk holds it back (html[data-time-day="off"]). */
-/* five choices since Day shows (09 Oct 2026): three to a row, so every word fits and each is 44px both ways */
-.railtheme{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:4px;margin-top:8px;border-radius:var(--salt-radius-md);background:var(--salt-well);}
-.railtheme button{flex:1 1 0;min-width:0;min-height:var(--salt-tap);padding:0 4px;border:0;border-radius:var(--salt-radius-pill);background:transparent;
-  color:var(--salt-mist-light);font-family:var(--salt-font-display);font-size:var(--salt-text-sm);cursor:pointer;
-  transition:background-color 160ms cubic-bezier(.2,0,0,1),color 160ms cubic-bezier(.2,0,0,1);}
-.railtheme button:hover{color:var(--salt-salt);}
-.railtheme button[aria-checked="true"]{background:var(--salt-slate-light);color:var(--salt-salt);}
-.railtheme button:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px;}
-html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
 /* 06 Oct 2026: THE CHARTS' GRID AND THE MAP'S OWN STEPS, as tokens, so the script reads them at draw time (tcol() in the
-   master) and the charts and the map follow the theme. The identity holds no token for them. Night is the value the
-   desk drew before, to the pixel; Dawn and Dusk are Night moved by what the theme moves its ground and its steel; Day is
-   the same steps mixed over paper, pale to dark. To be promoted into Code/salt-ds, then pulled. */
+   master). The identity holds no token for them. One theme since 09 Oct 2026 (Night). To be promoted into Code/salt-ds,
+   then pulled. */
 :root{
   --desk-chart-grid:rgba(255,255,255,0.07);  /* the gridline: white on a dark ground */
   --desk-map-0:#34454d;     /* the map's two quietest steps, under steel, brass and ember */
@@ -4681,9 +4441,6 @@ html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
 }
-:root[data-time="dawn"]{--desk-map-0:#43545f;--desk-map-1:#687b8e;--desk-map-edge:#283339;--desk-map-name:#e8eaea;--desk-map-state:#8397ad;}
-:root[data-time="dusk"]{--desk-map-0:#455054;--desk-map-1:#6a7785;--desk-map-edge:#2b2e2c;--desk-map-name:#eae7e2;--desk-map-state:#8694a6;}
-:root[data-time="day"]{--desk-map-void:#1a161105;--desk-map-core:#1a161108;--desk-chart-grid:rgba(26,22,17,0.08);--desk-map-0:#b3babe;--desk-map-1:#8796a3;--desk-map-edge:#d4d5d3;--desk-map-name:#25211c;--desk-map-state:#687d90;}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -4715,15 +4472,6 @@ html[data-time-day="off"] .railtheme [data-time-set="day"]{display:none;}
       <button class="tab salt-rail__tab" data-s="enter">Enter</button>
     </div>
     <div class="railfoot salt-rail__foot">
-    </div>
-    <!-- 05 Oct 2026, the version 2 design: the theme follows the clock (DESIGN time block in <head>); this holds
-         one or goes back to Auto, kept on this device. Day shows once the desk's own colours are all tokens. -->
-    <div class="railtheme" role="radiogroup" aria-label="Theme">
-      <button type="button" role="radio" data-time-set="auto">Auto</button>
-      <button type="button" role="radio" data-time-set="dawn">Dawn</button>
-      <button type="button" role="radio" data-time-set="day">Day</button>
-      <button type="button" role="radio" data-time-set="dusk">Dusk</button>
-      <button type="button" role="radio" data-time-set="night">Night</button>
     </div>
   </nav>
   <main class="main">
@@ -25625,16 +25373,6 @@ function railSubs(){
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
 function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
-/* 06 Oct 2026: A THEME CHANGE DRAWS THE CHARTS AND THE MAP AGAIN. salt-time.js sets data-time on <html> and tells it with
-   a salt-time event; a chart holds the colours it was built with and the map is a string, so the part showing is
-   rendered once more in the new theme's tokens. A part with no chart and no map (Enter's forms, Approve, the order
-   book) is left alone: it follows the theme through CSS and nothing in it would change. */
-const THEME_PARTS=new Set(['today','overview','forward','receivables','financials','inventory','sourcing','pricing','concentration','network','map','ledger','analysis']);
-function themeRedraw(){
-  try{chartTheme();if(typeof curTab==='undefined'||!THEME_PARTS.has(partOf(curTab)))return;render();}
-  catch(e){try{console.error('themeRedraw threw',e);}catch(_){}}
-}
-document.documentElement.addEventListener('salt-time',themeRedraw);
 function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
@@ -26028,15 +25766,6 @@ window.addEventListener('hashchange',()=>{
   window.addEventListener('load',function(){ setTimeout(follow,120); });
 })();
 
-/* 05 Oct 2026, the version 2 design: the theme picker at the rail's foot holds one theme or goes back to Auto,
-   through window.saltTime (the DESIGN time block in <head>); the held one is marked, and stays marked when the
-   clock moves the theme. */
-(function(){
-  var box=document.querySelector('.railtheme');if(!box||!window.saltTime)return;
-  function mark(){var c=window.saltTime.choice();[].forEach.call(box.querySelectorAll('[data-time-set]'),function(b){b.setAttribute('aria-checked',b.getAttribute('data-time-set')===c?'true':'false');});}
-  box.addEventListener('click',function(e){var b=e.target.closest('[data-time-set]');if(!b)return;window.saltTime.set(b.getAttribute('data-time-set'));mark();});
-  document.documentElement.addEventListener('salt-time',mark);mark();
-})();
 </script>
 </body>
 </html>

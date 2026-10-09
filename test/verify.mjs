@@ -8356,37 +8356,35 @@ await (async () => {
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 })();
 
-section("v2 design: the theme follows the clock (Dawn, Dusk, Night; Day held back)");
+section("one theme: Night, the time of day retired (09 Oct 2026)");
 await (async () => {
-  /* His approval of the version 2 design, 05 Oct 2026, step 1: the tokens and the time of day. The identity's
-     tokens became roles a theme re-points (Code/salt-ds src/styles.css), salt-time.js sets data-time on <html>
-     before the first paint, and the desk's own literal colours read the tokens, so Night renders as it did
-     (renderdiff: 34 of 34 shots the same) and Dawn and Dusk follow. Day, the light theme, is held back by
-     data-time-day="off" until the desk's remaining white and black tints are tokens too. Each check below was
-     proved red on a SALT_MASTER copy (or a changed design/desk.css) before its green was trusted. */
+  /* His word of 09 Oct 2026: remove the four themes, keep one default. Night is the design system's :root as drawn;
+     the Dawn, Day and Dusk blocks, salt-time.js, the DESIGN time block and the rail's picker are gone (Code/salt-ds
+     and here). Each check below was proved red on a SALT_MASTER copy (or a changed design file) before its green was
+     trusted. */
   const MV2 = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const m = readFileSync(MV2, "utf8");
   let dchk = "";
   try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8", env: { ...process.env, SALT_MASTER: "" } }); }
   catch (e) { dchk = String((e && e.stdout) || e); }
-  ok(/ok\s+time:/.test(dchk), "tools/designsync.mjs --check: the DESIGN time block in the master is design/salt-time.js");
-  const headAt = m.indexOf("<head>"), timeAt = m.indexOf("/* ==== DESIGN time:"), styleAt = m.indexOf("<style>");
-  ok(headAt > 0 && timeAt > headAt && timeAt < styleAt && m.lastIndexOf("<script>", timeAt) > headAt,
-    "the time script is in <head>, inside a <script>, before the stylesheet: the theme is set before the first paint");
-  /* 09 Oct 2026, his word: Day shows. The hold is gone from <html>, and every colour the Day palette lends to text holds
-     4.5:1 on each Day panel (the ground, the slate and the lit slate), measured here off design/salt-ds.css itself */
-  ok(!/data-time-day/.test(m.slice(0, headAt)), "Day shows on the desk: <html> carries no data-time-day hold");
+  ok(!/FAIL/.test(dchk) && /ok\s+base:/.test(dchk) && !/\btime:/.test(dchk), "tools/designsync.mjs --check passes and carries no time block");
+  const THEME = /data-time|salt-time|saltTime|railtheme|salt-theming|theme-fade|DESIGN time/;
+  const dsCss = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), deskCss0 = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  ok(!THEME.test(m), `the master carries no theme machinery: no clock script, no data-time rule, no picker (read ${(m.match(THEME) || ["none"])[0]})`);
+  ok(!THEME.test(dsCss) && !THEME.test(deskCss0), "nor do design/salt-ds.css and design/desk.css");
+  ok(!existsSync(join(REPO, "design", "salt-time.js")), "design/salt-time.js is gone");
   {
-    const ds = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), dayB = (ds.match(/:root\[data-time="day"\]\s*\{([^}]*)\}/) || ["", ""])[1];
-    const decl = Object.fromEntries([...dayB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
+    /* Night's text colours on its ground and its slate, measured off design/salt-ds.css itself */
+    const ds = dsCss.replace(/\/\*[\s\S]*?\*\//g, ""), rootB = (ds.match(/:root\s*\{([^}]*)\}/) || ["", ""])[1];
+    const decl = Object.fromEntries([...rootB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
     const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
     const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-    const grounds = ["obsidian", "slate", "slate-light"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
+    const grounds = ["obsidian", "slate"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
       "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
     const weak = TEXT.filter((k) => !tok(k) || grounds.some((g) => !g || ratio(tok(k), g) < 4.5)).map((k) => k + " " + (tok(k) ? Math.min(...grounds.map((g) => ratio(tok(k), g))).toFixed(2) : "missing"));
-    ok(grounds.every(Boolean) && weak.length === 0, `every Day text colour holds 4.5:1 on the Day ground, slate and lit slate (short: ${weak.join(", ") || "none"})`);
+    ok(grounds.every(Boolean) && weak.length === 0, `every Night text colour holds 4.5:1 on the ground and the slate (short: ${weak.join(", ") || "none"})`);
   }
-  ok(/:root\[data-time="dawn"\]/.test(m) && /:root\[data-time="dusk"\]/.test(m) && /--salt-ink-on-accent:/.test(m), "the four themes and the pill's own ink are in the design system's block");
+  ok(/--salt-ink-on-accent:/.test(m), "the pill's own ink is in the design system's block");
   /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
   const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
   const litIn = (css) => {
@@ -8407,53 +8405,40 @@ await (async () => {
     while ((at = out.search(/@media\s+print\s*\{/)) >= 0) { let d = 0, i = out.indexOf("{", at); for (; i < out.length; i++) { if (out[i] === "{") d++; else if (out[i] === "}" && --d === 0) break; } out = out.slice(0, at) + out.slice(i + 1); }
     return out.replace(/\s+/g, ""); };
   const RAW = /rgba\((255,255,255|0,0,0|228,233,236|216,199,156),|#(e4e9ec|e08a72|1c2628|ffffff[0-9a-f]{2}|140b26cc|000|c9d3d8)\b/gi;
-  /* a desk token restated for Day (the charts' grid and the map's steps, 06 Oct 2026) is Day-correct by its own Day value,
-     so its Night literal stands; one without a Day value is still a literal */
+  /* a --desk-* token's own value is where its literal lives (the charts' grid and the map's steps, 06 Oct 2026); a
+     literal anywhere else is a fault */
   const deskCss = noPrint(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
-  const dayBlock = (deskCss.match(/:root\[data-time="day"\]\{[^}]*\}/) || [""])[0];
-  const dayVars = new Set([...dayBlock.matchAll(/--(desk-[\w-]+):/g)].map((x) => x[1]));
   const raw1 = noPrint(ownCss).match(RAW) || [],
-    raw2 = (deskCss.replace(dayBlock, "").replace(/--(desk-[\w-]+):[^;}]+;?/g, (all, name) => dayVars.has(name) ? "" : all) + dayBlock).match(RAW) || [];
+    raw2 = deskCss.replace(/--desk-[\w-]+:[^;}]+;?/g, "").match(RAW) || [];
   ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
   ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
-  /* the system's desk bar was a fixed near-black fill, so in Day its ink title sat on a dark bar (09 Oct 2026): its
-     material is three tokens, Night's values on :root and paper restated for Day, and no raw fill is left */
-  const dsBase = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
-  const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1], dayB = (dsBase.match(/:root\[data-time="day"\]\{([^}]*)\}/) || ["", ""])[1];
+  /* the system's desk bar reads its material from three tokens on :root (09 Oct 2026), and no raw fill is left */
+  const dsBase = dsCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+  const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];
   const barB = (dsBase.match(/\.salt-deskbar\{([^}]*)\}/) || ["", ""])[1];
-  const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`) || !dayB.includes(`--salt-deskbar-${k}:`));
+  const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`));
   const barRaw = dsBase.replace(/--salt-deskbar-\w+:[^;}]+;?/g, "").match(/rgba?\((13,11,9|18,15,12)[,)]/g) || [];
   ok(barToks.length === 0 && barB.includes("background:var(--salt-deskbar-sheen),var(--salt-deskbar-fill)") && barRaw.length === 0,
-    `the desk bar's material is the theme's: sheen, fill and solid on :root and for Day, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
-  /* the picker: five radios at the rail's foot, Day hidden while it is held back */
-  const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
-  const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
-  ok(/role="radiogroup"/.test(pick) && sets.join(",") === "auto,dawn,day,dusk,night", `the rail carries the theme picker: Auto, Dawn, Day, Dusk, Night (read ${sets.join(",") || "none"})`);
-  ok(/\.railtheme\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(m), "and the five sit three to a row, so each word fits and each button keeps 44px across");
-  /* behaviour, in the desk's own window */
+    `the desk bar's material is three tokens on :root, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
+  /* behaviour, in the desk's own window: nothing sets a theme, and Night is what is drawn */
   const { openMaster: omV2 } = await import("../tools/payload.mjs");
-  const { w: wV2 } = await omV2();
-  const st = String(wV2.eval("document.documentElement.getAttribute('data-time')"));
-  /* which theme it opens on depends on the hour the suite runs */
-  ok(["dawn", "day", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
-  wV2.eval("window.saltTime.set('day')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "day", "Day held by hand holds, now the desk shows Day");
-  wV2.eval("window.saltTime.set('dusk')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dusk", "Dusk held by hand holds");
-  wV2.eval("window.saltTime.set('auto')");
+  const { w: wV2 } = await omV2(MV2);
+  ok(wV2.eval("document.documentElement.getAttribute('data-time')") === null && String(wV2.eval("typeof window.saltTime")) === "undefined",
+    "the desk opens with no data-time on <html> and no saltTime: one theme, set by nothing");
+  ok(wV2.document.querySelector(".railtheme") === null && wV2.document.querySelector("[data-time-set]") === null, "and the rail carries no theme picker");
   /* the bar's colour: the build's default is obsidian, never the violet retired at v472 */
   const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
-  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color starts at obsidian; salt-time.js sets it to the theme's ground");
+  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color is obsidian, the one theme's ground");
 })();
 
-section("v2 design: the charts and the map read the theme's tokens");
+section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
      which is what held Day back. They read tcol(), a token off <html> at draw time, and a theme change draws the part
      showing again. Proved in the desk's own window with a recording Chart: at Night every colour is the literal it was
      (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
-     token stubbed to a colour of its own no literal is drawn at all; Dawn, Dusk and a held Day draw their own; and a
-     theme change redraws without a call. Each check was proved red by a mutation of the master. */
+     token stubbed to a colour of its own no literal is drawn at all. One theme since 09 Oct 2026, so no theme change
+     to redraw on. Each check was proved red by a mutation of the master. */
   const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const { openMaster: omD } = await import("../tools/payload.mjs");
   const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
@@ -8479,11 +8464,9 @@ await (async () => {
     return seen.map(norm);
   };
   const setOf = (a) => [...new Set(a)].sort();
-  const T = (t) => w.eval(`window.saltTime.set('${t}')`);
   const root = (k, v) => w.eval(`document.documentElement.style.setProperty('${k}','${v}')`);
   const unroot = (k) => w.eval(`document.documentElement.style.removeProperty('--${k}')`);
 
-  T("night");
   const nightSeen = drawAll();
   ok(nightSeen.length > 300, `the eleven parts on two books draw their charts and every colour is read (${nightSeen.length} values)`);
   const nightSet = setOf(nightSeen), want = setOf(NIGHT.map(norm));
@@ -8511,35 +8494,8 @@ await (async () => {
     "and the tooltip and the text defaults follow them too: " + JSON.stringify(dn));
   Object.keys(STUB).forEach(unroot);
 
-  /* Dawn, Dusk and a held Day draw their own */
-  T("dawn");
-  const dawnSeen = setOf(drawAll());
-  T("dusk");
-  const duskSeen = setOf(drawAll());
-  w.eval("document.documentElement.setAttribute('data-time','day')");
-  const daySeen = setOf(drawAll());
-  T("night");
-  ok(dawnSeen.includes("#e4a67c") && dawnSeen.includes("#f09576") && dawnSeen.includes("rgba(244,242,240,0.66)") && !dawnSeen.includes("#d4694c"),
-    `Dawn draws Dawn's brass, ember and salt (${dawnSeen.slice(0, 6).join(" ")}...)`);
-  ok(duskSeen.includes("#dba35f") && duskSeen.includes("#ef9372") && duskSeen.includes("rgba(246,240,232,0.66)") && !duskSeen.includes("#d4694c"),
-    "Dusk draws Dusk's brass, ember and salt");
-  ok(daySeen.includes("#8a5618") && daySeen.includes("rgba(26,22,17,0.08)") && !daySeen.includes("rgba(255,255,255,0.07)"),
-    "and Day, held back from the clock, has its own ink and a dark grid on paper");
-  /* a book's own hue stays its product token: candy's rose and rice's indigo do not move with the theme */
-  ok(duskSeen.includes("#7b86cc") && duskSeen.includes("#cf8fb4"), "the product hues are PRODUCTS.accent and do not move with the theme");
-
-  /* a change of theme draws the part showing again, with nobody calling it */
-  w.eval("window.__cfgs=[];setProd('salt');recompute();switchTab('financials');");
-  const before = JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm);
-  w.eval("window.__cfgs=[];");
-  T("dusk");
-  const after = JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm);
-  ok(before.includes("#c5a059") && after.length === before.length && after.includes("#dba35f") && !after.includes("#c5a059"),
-    `a theme change redraws the part showing in the new theme (${before.length} colours before, ${after.length} after)`);
-  /* and a part with no chart or map is not touched by it */
-  w.eval("switchTab('add');window.__cfgs=[];");
-  T("night");
-  ok(Number(w.eval("window.__cfgs.length")) === 0, "Enter, which draws no chart, is not redrawn by a theme change");
+  /* a book's own hue is its product token: candy's rose and rice's indigo */
+  ok(nightSet.includes("#7b86cc") && nightSet.includes("#cf8fb4"), "the product hues are PRODUCTS.accent");
 
   /* THE MAP: the fills and strokes read the tokens, the ground behind it and the legend too */
   const mapInk = () => JSON.parse(w.eval(`(function(){var s=document.querySelector('.sec.on'),o=[];
@@ -8549,7 +8505,6 @@ await (async () => {
   const drawMap = () => { w.eval("setProd('salt');recompute();MAP_VIEW='*';MAP_PICK=null;switchTab('map');"); return mapInk(); };
   const MAPN = ["#05080a", "#0b1215", "#34454d", "#56697a", "#6f8398", "#8ea2b6", "#a6afb5", "#c5a059", "#d4694c", "#e6ebee", "#ffffff05",
     "rgb(142,162,182)", "rgb(197,160,89)", "rgb(212,105,76)", "rgb(52,69,77)", "rgb(86,105,122)"];
-  T("night");
   const mapNight = drawMap(), fillsN = setOf(mapNight);
   ok(mapNight.length > 40 && fillsN.every((c) => MAPN.includes(c)) && ["#34454d", "#56697a", "#6f8398", "#e6ebee", "#0b1215", "#05080a", "#ffffff05", "#a6afb5"].every((c) => fillsN.includes(c)),
     `at Night the map is the colours it was: the steps, the states, the names, the ground (${fillsN.join(" ")})`);
@@ -8559,12 +8514,6 @@ await (async () => {
   const mfor = setOf(mapStub).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
   ok(mapStub.length === mapNight.length && mfor.length === 0, `with every token stubbed the map draws no literal (foreign: ${mfor.join(" ") || "none"})`);
   Object.keys(MSTUB).forEach(unroot);
-  T("dusk");
-  const mapDusk = setOf(mapInk());
-  ok(["#455054", "#6a7785", "#8694a6", "#eae7e2", "#1c1512", "#120d0b", "#c3b3a5"].every((c) => mapDusk.includes(c)) && !mapDusk.includes("#34454d") && !mapDusk.includes("#0b1215"),
-    `a theme change redraws the map in Dusk's own steps (${mapDusk.join(" ")})`);
-  T("night");
-  ok(JSON.stringify(setOf(mapInk())) === JSON.stringify(fillsN), "and Night returns the map to what it was");
 })();
 
 section("v1022 hang: a tool that opens the desk and never closes it still exits");
@@ -8575,10 +8524,10 @@ await (async () => {
   const MH = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const r = spawnSync(process.execPath, ["--input-type=module", "-e",
     'const { openMaster } = await import("./tools/payload.mjs"); const { w } = await openMaster(process.argv[1]);'
-    + ' console.log(w.document.documentElement.getAttribute("data-time") || "");', MH],
+    + ' console.log(w.document.documentElement.getAttribute("data-time") === null ? "none" : "set");', MH],
     { cwd: REPO, encoding: "utf8", timeout: 60000 });
   ok(!r.error && r.status === 0, "a tool that opens the desk and leaves the window open exits on its own (" + (r.error ? r.error.code : "status " + r.status) + ")");
-  ok(/^(dawn|day|dusk|night)$/.test(String(r.stdout).trim()), "…and the desk's time script still sets a theme in that window (" + String(r.stdout).trim() + ")");
+  ok(String(r.stdout).trim() === "none", "…and nothing in that window sets a theme: one theme, no clock script (" + String(r.stdout).trim() + ")");
 })();
 
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
@@ -14789,7 +14738,6 @@ await (async () => {
 
   const { openMaster: om30 } = await import("../tools/payload.mjs");
   const { w: w30 } = await om30();
-  w30.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd30 = (e) => JSON.parse(String(w30.eval("JSON.stringify(" + e + ")")));
   const sec30 = () => String(w30.eval("(document.querySelector('.sec.on')||{}).innerHTML||''"));
   try {
@@ -15138,7 +15086,6 @@ await (async () => {
      found. Each assertion was proved red by mutation. */
   const { openMaster: om35 } = await import("../tools/payload.mjs");
   const { w: w35 } = await om35();
-  w35.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd35 = (e) => JSON.parse(String(w35.eval("JSON.stringify(" + e + ")")));
   try {
     const row35 = (o) => JSON.stringify(Object.assign({ product: "salt", date: "2026-09-01", deliveredOn: "2026-09-01" }, o));
@@ -15192,7 +15139,6 @@ await (async () => {
      than waited on, and ticked by hand. The state is forced, never found. Each assertion was proved red by mutation. */
   const { openMaster: om36 } = await import("../tools/payload.mjs");
   const { w: w36 } = await om36();
-  w36.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd36 = (e) => JSON.parse(String(w36.eval("JSON.stringify(" + e + ")")));
   try {
     const row36 = (o) => JSON.stringify(Object.assign({ product: "salt", qty: 1, cost: 10, deliveredQty: 1 }, o));
@@ -15262,7 +15208,6 @@ await (async () => {
      red by mutation. */
   const { openMaster: om37 } = await import("../tools/payload.mjs");
   const { w: w37 } = await om37();
-  w37.eval("window.saltTime.set('night')");   /* the map reads the theme (06 Oct 2026): the colours asserted below are Night's, whatever hour the suite runs */
   const rd37 = (e) => JSON.parse(String(w37.eval("JSON.stringify(" + e + ")")));
   try {
     const row37 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 10, deliveredQty: o.qty }, o, { cash: o.total, deliveredOn: o.date }));
