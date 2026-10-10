@@ -5921,7 +5921,10 @@ function correctionFaults(row,fields,isSale){
     const bareD=Object.assign({},after);delete bareD.defaulted;
     if(isSale){
       if(txEffDeliv(bareD)<=0.009)out.push('a sale nothing has been handed over on cannot default: cancel it instead');
-      else if(!after.unpriced&&txPaid(bareD)>=(+after.total||0)-0.009)out.push('a sale paid in full has nothing to default on');}
+      /* 06 Oct 2026: paid in full is the goods AND the delivery (txOwed), as txStat and txAdvance have read it since v741. On the
+         goods alone a delivered order whose charge was never paid read as paid in full, so the RM it still owed could not be
+         written off: txAdvance said money owed and this line said nothing to default on. */
+      else if(!after.unpriced&&txPaid(bareD)>=txOwed(bareD)-0.009)out.push('a sale paid in full has nothing to default on');}
     else{const rcv=poRecvUnits(bareD);if(rcv>0.009)out.push('a lot that has received '+rcv+' unit cannot be defaulted on');}}
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */
@@ -9040,7 +9043,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1056","d":"10 Oct 2026","t":"FULFILMENT OF RM90 CASH ON CZ5-TM ORDER S247, NO STOCK MOVED","n":["<b>ONE ROW FOLDED.</b> A cash fulfilment of RM90 on 10 Oct against order s247, CZ5-TM's order of 2 units for RM190. The drafter raised no flags. The row itself is applied by the master's amend routine, not recomputed here.","<b>INVENTORY UNCHANGED.</b> No units moved with this fulfilment, so salt stock stays at 12.14 and the cost basis stays at RM56 a unit. The 2 units remain to be handed over."]}];
+const evolution=[{"v":"v1057","d":"10 Oct 2026","t":"A SALE PAID IN FULL IS THE GOODS AND THE DELIVERY, IN THE DEFAULT GUARD AND THE UNDATED CARD","n":["<b>The default guard reads what is owed.</b> A Default on a sale was measured against its total alone, so a delivered order with its goods paid and its delivery charge unpaid read as paid in full and could not be written off, while the account said RM owed. The guard reads the engine's txOwed now, as txStat and txAdvance have since v741.","<b>The undated-delivery card follows.</b> Its short-money figure and evidence line read txOwed too. Counter Admin sends a sale Correction through the same engine guard, and a sale Default is refused there. No row, price or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9191,7 +9194,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 14:52 KL';
+const LAST_UPDATED='10 Oct 2026, 15:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16143,7 +16146,7 @@ function observations(){
     if((s.amend||[]).some(a=>a.kind==='Fulfilment'))return false;
     const settled=(+s.cash||0)+(+s.settledRM||0);
     const lateMoney=s.paidOn&&s.paidOn!==s.date;
-    const shortMoney=settled<(+s.total||0)-0.009;
+    const shortMoney=settled<txOwed(s)-0.009;   /* 06 Oct 2026: short of the goods and the delivery, never the goods alone */
     return !!(lateMoney||shortMoney);
   });
   if(undated.length){
@@ -16151,7 +16154,7 @@ function observations(){
       title:`${undated.length} ${undated.length===1?'delivery is':'deliveries are'} dated by assumption on a day that was not clean`,
       why:`Salt went out and the money did not follow on the same day, yet no delivery date is recorded, so txDates falls back to the order date and marks it assumed. That is the case where the assumption can actually be wrong. It matters because the inventory walk consumes lots in delivery order: a wrong date consumes the wrong lot, mis-costs the sale, and can drive the reconstructed inventory below zero, which then reads as a stockout when it is a dating fault. Rows paid in full on the day are excluded, because there the assumption cannot be wrong.`,
       ev:undated.slice(0,8).map(s=>{const settled=(+s.cash||0)+(+s.settledRM||0);
-        return `${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.deliveredQty)} out, ${settled<(+s.total||0)-0.009?`only ${fmt0(settled)} of ${fmt0(+s.total)} received`:`paid ${esc(s.paidOn)}`}`;})});
+        return `${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.deliveredQty)} out, ${settled<txOwed(s)-0.009?`only ${fmt0(settled)} of ${fmt0(txOwed(s))} received`:`paid ${esc(s.paidOn)}`}`;})});
   }
   /* PENDING GOING STALE. Pending counts nowhere, which is right, and is exactly why it can
      sit unnoticed for weeks. */

@@ -3265,7 +3265,9 @@ await (async () => {
     const DB = JSON.parse(JSON.stringify(book));
     DB.sales.push({ rid: "sX40", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 0, deliveredQty: 2, date: "2026-08-20", deliveredOn: "2026-08-20", product: "salt", note: "fixture." },
       { rid: "sX41", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 0, deliveredQty: 0, date: "2026-08-20", product: "salt", note: "fixture." },
-      { rid: "sX42", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 200, deliveredQty: 2, date: "2026-08-20", product: "salt", note: "fixture." });
+      { rid: "sX42", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 200, deliveredQty: 2, date: "2026-08-20", product: "salt", note: "fixture." },
+      { rid: "sX43", customer: "CX9-TESTDEF", qty: 2, total: 200, delivery: 30, cash: 200, deliveredQty: 2, date: "2026-08-20", product: "salt", note: "fixture." },
+      { rid: "sX44", customer: "CX9-TESTDEF", qty: 2, total: 200, delivery: 30, cash: 230, deliveredQty: 2, date: "2026-08-20", product: "salt", note: "fixture." });
     DB.purchases.push({ rid: "pX40", date: "2026-07-02", supplier: "SA5-BTR", qty: 5, total: 250, status: "paid", note: "fixture." });
     const dcorr = (at, rid, coll, dirn, fields) => ({ ok: true, count: 1, approved: [{
       id: ID(at), collection: coll, amends: rid, amendKind: "Correction",
@@ -3277,6 +3279,15 @@ await (async () => {
     ok(pend.items.length === 0 && /cancel it instead/.test(why(pend)), "a default on a sale nothing was handed over on is refused, to be cancelled instead" + (pend.items.length ? " (it was planned)" : ""));
     const paid = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:02", "sX42", "sales", "SELL", { defaulted: true }), null);
     ok(paid.items.length === 0 && /paid in full/.test(why(paid)), "a default on a sale paid in full is refused: there is nothing to default on");
+    /* 06 Oct 2026: PAID IN FULL IS THE GOODS AND THE DELIVERY. A delivered order whose goods are paid and whose charge is not
+       still owes the charge (txAdvance reads it), so it can default; measured on the goods alone it read as paid in full and
+       the RM 30 could never be written off. The twin with the charge paid is the control. */
+    const dlv = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:03", "sX43", "sales", "SELL", { defaulted: true }), null);
+    ok(dlv.items.length === 1 && dlv.refused.length === 0, "a default on a delivered sale whose goods are paid and whose delivery charge is not is planned: the charge is still owed" + (dlv.refused.length ? ": " + why(dlv).slice(0, 90) : ""));
+    const dlvRow = DB.sales.find((s) => s.rid === "sX43"), dlvPaid = DB.sales.find((s) => s.rid === "sX44");
+    ok(X.txAdvance(dlvRow) > 29.99 && X.correctionFaults(dlvRow, { defaulted: true }, true).length === 0, "the engine's guard agrees with txAdvance on that row: RM " + X.txAdvance(dlvRow) + " owed, no fault");
+    const dlvFull = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:06", "sX44", "sales", "SELL", { defaulted: true }), null);
+    ok(dlvFull.items.length === 0 && /paid in full/.test(why(dlvFull)) && X.txAdvance(dlvPaid) < 0.009, "while its twin with the charge paid too is refused as paid in full");
     const already = (DB.purchases || []).find((p) => p.defaulted);
     ok(!!already && X.correctionFaults(already, { note: "x" }, false).length === 0, "and a note edit on the book's defaulted lot is not refused: the rule reads the flag being set, not the flag carried");
     const lot = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:04", "pX40", "purchases", "BUY", { defaulted: true }), null);
@@ -13929,6 +13940,17 @@ await (async () => {
       `the no-cost card gains the two delivered sales and not the pending order: ${count(before, "int:nocost")} to ${count(after, "int:nocost")}`);
     ok(nc && / no cost of their own$/.test(nc.title), "and says their own of more than one: " + (nc && nc.title));
     ok(nc && !/RM64|RM47/.test(nc.why), "and its reason states no buying rate by hand");
+    /* 06 Oct 2026: THE UNDATED-DELIVERY CARD READS WHAT THE ORDER OWES, goods and delivery. A delivery with no day of its own
+       whose goods were paid and whose charge was not is money that did not follow the goods, which is the card's own rule;
+       measured on the goods alone it passed as a clean day. The twin with the charge paid too is the control. */
+    const UND = "(function(){var c=observations().all.filter(function(c){return c.id==='int:undated';})[0];return c?{n:parseInt(c.title,10),ev:c.ev}:{n:0,ev:[]};})()";
+    const undBefore = rdW(UND);
+    wW.eval("(function(){sales.push({customer:'CZ7-DLV',qty:1,total:100,delivery:20,cash:100,deliveredQty:1,date:'" + day + "',cost:50});"
+      + "sales.push({customer:'CZ8-DLV',qty:1,total:100,delivery:20,cash:120,deliveredQty:1,date:'" + day + "',cost:50});})()");
+    const undAfter = rdW(UND);
+    ok(undAfter.n - undBefore.n === 1, `the undated-delivery card gains the one delivery whose charge is unpaid, not its twin paid in full: ${undBefore.n} to ${undAfter.n}`);
+    const undEv = undAfter.ev.find((e) => /CZ7-DLV/.test(e)) || "";
+    ok(/only \D*100 of \D*120 received/.test(undEv) && !undAfter.ev.some((e) => /CZ8-DLV/.test(e)), "and its evidence states what the order owes, goods and delivery: " + (undEv || undAfter.ev.join(" | ")));
   } finally { try { wW.close(); } catch (e) { /* best effort */ } }
 })();
 
