@@ -11,6 +11,8 @@ import E from "../engine/position.mjs";
 import { world } from "./maker-trades.mjs";
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
+const seal = (text) => ({ v: 1, salt: Buffer.alloc(16, 1).toString("base64"),
+  iv: Buffer.alloc(12, 2).toString("base64"), ct: Buffer.from(text.padEnd(16, ".")).toString("base64") });
 const master = () => readFileSync(process.env.SALT_MASTER || new URL("../master/salt_command.html", import.meta.url), "utf8");
 const section = (doc, title) => [...doc.querySelectorAll("#makerInputs .maker-input")]
   .find((node) => node.querySelector("h3")?.textContent === title);
@@ -168,6 +170,28 @@ export async function run({ ok, pageWork }) {
     const unmarked = wd.drafts().find((d) => d.entry.payload.mode === "new");
     ok(unmarked && !unmarked.row.coverUnits && !unmarked.entry.payload.more,
       "the generated unticked trade sends no cover and reserves no reward");
+    wd.desk.VAULT_STORE = "pair";
+    wd.sqlite.prepare("INSERT INTO vault_pair(one,revision,names,places,updated) VALUES (1,1,?,?,?)")
+      .run(JSON.stringify(seal("base-names")), null, "2099-10-05T01:30:00.000Z");
+    const registrationAt = "2099-10-05T02:00:00.000Z", registrationVault = seal("encrypted-CX8-SEN");
+    const registration = await wd.call("/all/maker/inputs/add-id", { at: registrationAt, code: "CX8-SEN",
+      kind: "customer", parent: null, tiers: null, vault: registrationVault,
+      pair: { expectedRevision: 1, names: registrationVault, places: null } });
+    const refreshed = await (await wd.call("/all/maker/inputs")).json();
+    const registeredTradeAt = "2099-10-05T02:00:00.001Z";
+    const registeredTradeResponse = await wd.call("/all/maker/inputs/sale", {
+      at: registeredTradeAt, product: "salt", party: "CX8-SEN", date: wd.date,
+      qty: 1, total: wd.ask, cash: 0, movedUnits: 0, handover: null, delivery: 0
+    });
+    const registeredTrade = wd.drafts().find((d) => d.id === registeredTradeAt);
+    ok(registration.status === 200 && refreshed.catalog.parties.includes("CX8-SEN")
+      && registeredTradeResponse.status === 200 && registeredTrade?.entry.registrationDependencies?.[0]?.id === registrationAt,
+      "pair-backed Add ID is returned by the refreshed native catalog and admits a server-stamped trade before fold");
+    const reservationAt = "2099-10-05T02:00:00.002Z";
+    const reservation = await wd.call("/all/maker/inputs/redeem",
+      { at: reservationAt, code: "CX1-ZED", date: wd.date });
+    ok(reservation.status === 200 && wd.drafts().some((d) => d.id === reservationAt && d.status === "pending"),
+      "an actual pending redemption reserves reward capacity before the covered trade batch");
     ui.set(trade, "Date", "2099-10-05");
     button(trade, "Add another book").click();await ui.work.quiet();
     const extra = trade.querySelector(".maker-extra-trade");
@@ -179,9 +203,9 @@ export async function run({ ok, pageWork }) {
     const salePosts = () => ui.sent.filter((p) => p.path === "/all/maker/inputs/sale" && p.body.extras);
     const batch = wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip);
     ok(batch.length === 2 && batch[0].row.coverUnits === 0.75 && batch[0].row.coverRM === 30
-      && batch[0].entry.payload.coverFree === 2 && /covered by/.test(batch[0].entry.raw)
+      && batch[0].entry.payload.coverFree === 1 && /covered by/.test(batch[0].entry.raw)
       && batch[0].row.delivery === 40 && !batch[1].row.delivery && batch[0].row.trip === batch[1].row.trip,
-    "marked owner batch reaches native drafts carrying cover and one delivery on the unchanged trip carrier");
+    "marked owner batch keeps pending reward reservations and one delivery on the unchanged trip carrier when verified registrations are present");
     ui.set(trade, "Goods total (RM)", "999");
     button(trade, "Send trade for review").click();await ui.work.quiet();
     ok(salePosts().length === 2 && salePosts()[0].bytes === salePosts()[1].bytes
@@ -203,9 +227,13 @@ export async function run({ ok, pageWork }) {
       && book.sales.some((s) => s.coverUnits === 0.75 && s.coverRM === 30 && s.total === wd.ask - 30),
     "native plan and apply fold the covered row without repricing it or changing any other sale: "
       + JSON.stringify({ refused: planned.refused, ok: folded.ok, problems: folded.problems }));
-    button(holder("CX1-ZED"), "Redeem 1 unit for CX1-ZED")?.click();await ui.work.quiet();
-    ok(!holder("CX1-ZED").querySelector("button") && /0.25 unit available after reservations/.test(holder("CX1-ZED").textContent),
-      "actual generated offers net approved cover and pending redemption reservations before offering another spend");
+    button(rewards(), "Read reward offers").click();await ui.work.quiet();
+    ok(!button(holder("CX1-ZED"), "Redeem 1 unit for CX1-ZED")
+      && /0.25 unit available after reservations/.test(holder("CX1-ZED").textContent),
+      "actual generated offers net approved cover and pending redemption reservations before offering another spend: "
+        + JSON.stringify({ holder: holder("CX1-ZED").textContent, drafts: wd.drafts().map((d) => ({
+          id: d.id, status: d.status, mode: d.entry.payload.mode, coverUnits: d.row.coverUnits,
+          qty: d.row.qty, party: d.row.customer, product: d.row.product })) }));
     wd.sqlite.prepare("UPDATE state SET doc=? WHERE key='PRODUCTS'").run(JSON.stringify({
       salt: { reward: false }, oil: { reward: false } }));
     button(rewards(), "Read reward offers").click();await ui.work.quiet();

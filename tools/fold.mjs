@@ -59,6 +59,7 @@ const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift "
   : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { nextRid } from "./rid.mjs";
 import { userFor, usersJson } from "./stmt-crypto.mjs";
 import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
@@ -154,7 +155,7 @@ function describe(item) {
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
+    case "roster": if (r.partner) return `PARTNER ${r.code}: pays cost`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
     case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLevel(v)).join(" ")).join(", ")}`;
@@ -166,7 +167,59 @@ function describe(item) {
 /* ---- the plan: what each item would do, and what is refused ----------------------------- */
 export function plan(book, staged, notes) {
   const out = { items: [], refused: [], moves: [] };
-  const rows = (staged && staged.approved) || [];
+  let rows = (staged && staged.approved) || [];
+  const registrations = rows.flatMap((item) => {
+    if (item.status !== "approved") return [];
+    const proof = verifiedVaultRegistration(item, item.vaultReceipt, item.vaultOutbox);
+    return proof ? [{ item, proof }] : [];
+  });
+  const registrationIds = new Set(registrations.map((registration) => registration.item.id));
+  const plannedRegistrations = new Set();
+  const registrationsByCode = new Map();
+  for (const registration of registrations) {
+    const known = registrationsByCode.get(registration.proof.code) || [];
+    known.push(registration);
+    registrationsByCode.set(registration.proof.code, known);
+  }
+  const dependencies = new Map(), dependencyFaults = new Map();
+  for (const item of rows) {
+    if (!["sales", "purchases"].includes(item.collection)
+      || item.entry?.payload?.mode !== "new" || !item.entry?.makerRequest) continue;
+    const payload = item.entry.payload || {};
+    const partyCodes = [...new Set([payload.party, payload.assoc, payload.downstream]
+      .filter((value) => typeof value === "string" && !(book.roster || []).includes(value)))];
+    if (!partyCodes.length) continue;
+    const stated = item.entry.registrationDependencies;
+    if (!Array.isArray(stated) || stated.length !== partyCodes.length
+      || stated.some((dependency) => !dependency || Object.keys(dependency).sort().join(",") !== "code,id"
+        || typeof dependency.code !== "string" || typeof dependency.id !== "string")) {
+      dependencyFaults.set(item.id, "a Counter trade names a party not on the book and has no server-verified Add ID dependency");
+      continue;
+    }
+    const required = [];
+    for (const code of partyCodes) {
+      const matching = registrationsByCode.get(code) || [];
+      const declared = stated.filter((dependency) => dependency.code === code);
+      const registration = matching.find((candidate) => candidate.proof.id === declared[0]?.id);
+      if (declared.length !== 1 || matching.length !== 1 || !registration
+        || registration.item.status !== "approved"
+        || registration.item.id !== registration.proof.id) {
+        dependencyFaults.set(item.id, `${code} needs one approved, receipt- and outbox-matched Add ID in this batch`);
+        break;
+      }
+      required.push(registration.item.id);
+    }
+    if (!dependencyFaults.has(item.id)) dependencies.set(item.id, required);
+  }
+  const ordered = [], waiting = rows.slice(), applied = new Set();
+  while (waiting.length) {
+    const next = waiting.findIndex((item) => !(dependencies.get(item.id) || []).some((id) => !applied.has(id)));
+    if (next < 0) break;
+    const [item] = waiting.splice(next, 1);
+    ordered.push(item);
+    applied.add(item.id);
+  }
+  rows = ordered.concat(waiting);
   /* v742: WHAT EACH ROW HAS MOVED SO FAR IN THIS BATCH, keyed on the book row, so a second amendment on one row in
      one batch is struck from where the first left it and not from the book as it stood before the batch: a handover
      in two stages inside one hour stages two corrections, and the site's running total would have rolled twice. The
@@ -184,6 +237,16 @@ export function plan(book, staged, notes) {
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
+    if (dependencyFaults.has(it.id)) {
+      out.refused.push({ id: it.id, why: dependencyFaults.get(it.id) });
+      continue;
+    }
+    const failedDependency = (dependencies.get(it.id) || []).find((id) => !plannedRegistrations.has(id));
+    if (failedDependency) {
+      out.refused.push({ id: it.id,
+        why: `the approved Add ID ${failedDependency} was refused by the native fold plan; this trade remains staged until its registration can be applied` });
+      continue;
+    }
     const resourceEntry = it.collection === "repayment" ? { at: it.id,
       payload: { mode: "repay", loan: r.loan, kg: r.kg, rm: r.rm } } : it.entry;
     const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
@@ -402,14 +465,19 @@ export function plan(book, staged, notes) {
          appointment mints it, a referrer's included. Their own buying and their buying to sell on
          are one stream for the reward and any associate may resell; the engine's appointBucket is
          the one answer this, the drafter and the Add ID preview all read. */
-      const appoints = !!APPOINTS[r.kind];
+      const partner = r.partner === true;
+      if (r.partner != null && !partner) { out.refused.push({ id: it.id, why: "partner is true or absent" }); continue; }
+      const appoints = !!APPOINTS[r.kind] && !(partner && (book.associates || []).includes(r.code));   // a partner already appointed is not appointed twice
       const onRoster = (book.roster || []).includes(r.code);
-      if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
+      if (partner && (!APPOINTS[r.kind] || !onRoster)) { out.refused.push({ id: it.id, why: `${r.code} must be on the roster and appointed on an associate kind to be made a partner` }); continue; }
+      if (partner && (book.partners || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already a partner` }); continue; }
+      if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null };
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
+      if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
@@ -479,6 +547,7 @@ export function plan(book, staged, notes) {
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
+    if (it.collection === "roster" && registrationIds.has(it.id)) plannedRegistrations.add(it.id);
     if (resourceEntry) reservedEntries.push(resourceEntry);
   }
   /* 05 Oct 2026: A TRIP IS STAGED TOGETHER. A refused row of a trip holds back its siblings in this batch, so the row that
@@ -1028,6 +1097,10 @@ export function apply(book, staged, notes, masterText) {
       if (rr.appoint) {
         book.associates = book.associates || [];
         if (!book.associates.includes(rr.code)) book.associates.push(rr.code);
+      }
+      if (rr.partner) {   // 09 Oct 2026: a partner pays cost
+        book.partners = book.partners || [];
+        if (!book.partners.includes(rr.code)) book.partners.push(rr.code);
       }
     } else if (it.priceset) {
       const ps = it.priceset;

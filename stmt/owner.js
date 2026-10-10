@@ -1263,7 +1263,7 @@ export const OWNER_JS = `
       throw new Error('Paste a Maps or Waze link carrying a point or address, or clear the field.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
-  async function makerOtherInputs(parent,catalog){
+  async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
@@ -1568,10 +1568,39 @@ export const OWNER_JS = `
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
-        idName.value='';idPlace.value='';idLink.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
+        idName.value='';idPlace.value='';idLink.value='';
+        try{
+          await refreshTradeCatalog();
+          idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review and is now selectable.';
+        }catch(refreshError){
+          idStatus.textContent=code+' was filed for review, but the trade choices could not be refreshed: '+refreshError.message;
+        }
         loadMaker();
       }catch(error){idPass.value='';idStatus.textContent=error.message;}
       idBusy=false;
+    },true);
+    var appointment=el('section','maker-input');appointment.appendChild(el('h3',null,'Appoint existing customer'));
+    appointment.appendChild(el('p','msg','The existing ID, name and place stay as filed. The appointment changes no customer identity and waits for approval and folding.'));
+    parent.appendChild(appointment);
+    var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
+    var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':catalog.appointmentNotice?'Appointments unavailable':'No eligible customer'}]
+      .concat(appointmentCustomers.map(function(code){return {value:code,label:code};}));
+    var appointmentCustomer=addSelect(appointment,'Existing customer',appointmentCustomerItems);
+    var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
+      return {value:item.kind,label:item.kind.charAt(0).toUpperCase()+item.kind.slice(1)+' · '+item.stream};
+    });
+    var appointmentRoleItems=[{value:'',label:'Choose an appointment role'}].concat(appointmentKinds);
+    var appointmentRole=addSelect(appointment,'Appointment role',appointmentRoleItems);
+    var appointmentStatus=makerStatus(appointment);
+    makerButton(appointment,'Send appointment for review',async function(send){
+      var code=appointmentCustomer.value, kind=appointmentRole.value;
+      if(!code||!kind){appointmentStatus.textContent='Choose an existing customer and appointment role.';return;}
+      await send('/all/maker/inputs/appoint-existing',{at:new Date().toISOString(),code:code,kind:kind});
+      var option=[].filter.call(appointmentCustomer.options,function(item){return item.value===code;})[0];
+      if(option)option.remove();
+      appointmentCustomer.value='';
+      appointmentStatus.textContent='Sent for review. The existing identity is unchanged until the appointment is approved and folded.';
+      loadMaker();
     },true);
     var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
     amend.appendChild(el('p','msg','Names and filed addresses are re-keyed and encrypted here. Choose the locality; an optional map link replaces the encrypted address. Only codes and the rounded locality point are queued.'));
@@ -2005,18 +2034,28 @@ export const OWNER_JS = `
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
+        var keptProduct=tradeProduct.value, keptParty=tradeParty.value;
         tradeProduct.textContent='';
         (catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).forEach(function(item){
           var option=el('option',null,pshape(item.product)); option.value=item.product; tradeProduct.appendChild(option);
         });
+        if(Array.from(tradeProduct.options).some(function(option){return option.value===keptProduct;}))tradeProduct.value=keptProduct;
         tradeParty.textContent='';
         (catalog.parties||[]).forEach(function(code){
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
+        if(Array.from(tradeParty.options).some(function(option){return option.value===keptParty;}))tradeParty.value=keptParty;
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
+      }
+      async function refreshMakerTradeCatalog(){
+        var refreshed=await refs('/all/maker/inputs');
+        if(!refreshed.catalog||!Array.isArray(refreshed.catalog.parties))
+          throw new Error('The Desk returned no confirmed-party catalog.');
+        catalog=refreshed.catalog;
+        fillTradeChoices();
       }
       direction.addEventListener('change',fillTradeChoices);
       tradeProduct.addEventListener('change',function(){
@@ -2270,7 +2309,7 @@ export const OWNER_JS = `
           tipPending=false;
         },true,function(){ tipAt=null; tipSignature=''; });
       }
-      makerOtherInputs(box,catalog);
+      makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
       makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
   }

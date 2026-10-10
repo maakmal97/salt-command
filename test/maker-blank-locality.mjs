@@ -68,7 +68,7 @@ export async function run({ ok, pageWork }) {
     const row = sqlite.prepare("SELECT entry,row FROM draft WHERE id=?").get(at);
     return row ? { entry: JSON.parse(row.entry), row: JSON.parse(row.row) } : null;
   };
-  const device = async ({ name = "Test Person", locality = "", link = "", kind = "customer" } = {}) => {
+  const device = async ({ name = "Test Person", locality = "", link = "", kind = "customer" } = {}, retain = false) => {
     const calls = [];
     let work;
     const dom = new JSDOM(landingPage("", "blank-locality-nonce", { master: "fixture-master", accounts: [] }), {
@@ -78,7 +78,7 @@ export async function run({ ok, pageWork }) {
         win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
         win.fetch = async (path, init = {}) => {
           const p = String(path);
-          if (p === "/all/maker/inputs" || p.startsWith("/all/maker/vault") || p === route) {
+          if (p === "/all/maker/inputs" || p.startsWith("/all/maker/inputs/") || p.startsWith("/all/maker/vault") || p === route) {
             if (p === route) calls.push(JSON.parse(init.body));
             return handleMaker(new Request("https://counter.test" + p, init), counterEnv, p,
               { email: "maakmal97@icloud.com" });
@@ -102,15 +102,16 @@ export async function run({ ok, pageWork }) {
       section.querySelector("button").click();
       if (!await work.quiet()) throw new Error("Add ID did not settle.");
       return { body: calls[0], status: section.querySelector('[role="status"]').textContent,
-        password: fields[2].value };
-    } finally { dom.window.close(); }
+        password: fields[2].value, ...(retain ? { dom, work, close: () => dom.window.close() } : {}) };
+    } finally { if (!retain) dom.window.close(); }
   };
   try {
-    const blank = await device();
+    const blank = await device({}, true);
     const filed = pair(), names = await crypt(JSON.parse(filed.names), true), places = await crypt(JSON.parse(filed.places), true);
     ok(blank.body?.code === "CT11-TBC" && names["CT11-TBC"] === "Test Person (to be confirmed)"
       && blank.password === "" && /queued for review/.test(blank.status),
-      "blank-locality device/pair: the actual owner script derives CT11-TBC and encrypts the incumbent to-be-confirmed name");
+      "blank-locality device/pair: the actual owner script derives CT11-TBC and encrypts the incumbent to-be-confirmed name: "
+        + JSON.stringify({ code: blank.body?.code, name: names["CT11-TBC"], cleared: blank.password === "", status: blank.status }));
     ok(blank.body && !Object.hasOwn(blank.body, "geo") && !Object.hasOwn(blank.body, "locality")
       && !Object.hasOwn(blank.body, "addrVault") && !JSON.stringify(blank.body).includes("Test Person")
       && JSON.stringify(places) === JSON.stringify(originalPlaces),
@@ -120,6 +121,31 @@ export async function run({ ok, pageWork }) {
       && sqlite.prepare("SELECT state FROM vault_outbox WHERE id=?").get(blank.body?.at || "")?.state === "complete"
       && bridgeCalls.some((c) => c.path === "/_internal/maker/inputs/add-id" && c.body?.code === "CT11-TBC"),
       "blank-locality bridge: the actual Counter/Desk routes file the pair and finish one Add ID outbox with no geography");
+    const tradeSection = [...blank.dom.window.document.querySelectorAll("#makerInputs .maker-input")]
+      .find((section) => section.querySelector("h3")?.textContent === "Sale or purchase");
+    const field = (label) => [...tradeSection.querySelectorAll("label")]
+      .find((item) => item.firstChild.textContent === label)?.querySelector("input,select");
+    const party = field("Party"), tradeDate = field("Date");
+    const selectability = !!party && [...party.options].some((option) => option.value === "CT11-TBC");
+    if (selectability) {
+      party.value = "CT11-TBC";
+      tradeDate.value = new Date().toISOString().slice(0, 10);
+      field("Units").value = "1"; field("Goods total (RM)").value = "130";
+      field("Cash recorded (RM)").value = "0"; field("Units moved").value = "0";
+      field("Delivery (RM)").value = "0";
+      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
+      if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");
+    }
+    const trade = blank.body && sqlite.prepare("SELECT id,status,entry FROM draft WHERE collection='sales' AND id<>? ORDER BY drafted_at DESC LIMIT 1")
+      .get(blank.body.at);
+    ok(selectability && trade?.status === "pending" && JSON.parse(trade.entry).registrationDependencies?.[0]?.code === "CT11-TBC"
+      && sqlite.prepare("SELECT state FROM vault_outbox WHERE id=?").get(blank.body?.at || "")?.state === "complete",
+      "blank-locality Counter: confirmed Add ID refreshes the actual party selector and the selected trade reaches a pending native draft: "
+        + JSON.stringify({ selectable: selectability, trade: trade?.status,
+          dependency: trade && JSON.parse(trade.entry).registrationDependencies,
+          answer: tradeSection?.querySelector('[role="status"]')?.textContent,
+          drafts: sqlite.prepare("SELECT id,collection,status FROM draft ORDER BY drafted_at").all() }));
+    blank.close();
     if (blank.body) {
       const replay = await call(blank.body), changed = await call({ ...blank.body, geo: [3.1, 101.7] });
       ok(replay.status === 200 && (await replay.json()).replay === true && changed.status === 409

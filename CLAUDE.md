@@ -86,7 +86,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    - **A partner pays cost** (his decision of 06 Oct 2026): a party in the book's `partners` is quoted the floor itself, to the
      sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
      `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
-     walks every customer leaves them out. Set in `ledger/book.json` only; `docs/DESK.md`.
+     walks every customer leaves them out. A partner is an associate: set from the Drift card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes
@@ -95,10 +95,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
    recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
-   actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
-   (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
-   own CSS is a token, never a literal, and Day stays held back (`data-time-day="off"`) until the
-   remaining tints are tokens too (`docs/DESIGN.md`). The Counter takes the tokens and five
+   actions) migrates in one version, one commit per group (his word of 09 Oct 2026). **One theme:
+   Night**, the design system's `:root` (his word of 09 Oct 2026; the four times of day, `salt-time.js`
+   and the picker are retired, and the suite fails if any returns): a colour in the desk's own CSS is a
+   token, never a literal, and every text colour holds 4.5:1 on the ground and the slate, which the
+   suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and
@@ -113,12 +114,19 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
    then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
-   never a list of triggers. The hourly run passes `--no-retire`. `tools/update.mjs` is the laptop
+   never a list of triggers. A run that did not deploy passes `--no-retire`. **A publish follows a
+   change, not the clock** (his choice of 10 Oct 2026): a version moves `public/rev.json`, and that push
+   publishes; a desk write outside git (`/expected`) marks KV `publish:wanted`, and the desk's minute
+   cron sends one `stage_only` dispatch for it, five minutes apart at most, as it does once each Kuala
+   Lumpur day between 00:05 and 03:00 MYT; GitHub's schedule, four a day, is the net. A dispatch names
+   its `reason`, the run's name and nothing else. `tools/update.mjs` is the laptop
    half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
    Workers Builds deploys the tip of master and stops**: it never folds, marks or writes D1 or KV,
    and its failure is SILENT. Its build command is `npm ci && node tools/gate.mjs`, then `npx
    wrangler deploy`. Actions runs only on a push touching `public/rev.json` or the statements
-   paths, so a push touching `src/` or the master alone ships through Workers Builds only. **Read
+   paths. A `src/*.js` or master change moves `rev.json`'s id and the gate refuses it unbuilt, so it
+   carries the rebuilt `public/` and runs Actions too; only a push touching neither (docs, tests,
+   most tools, `public/_headers`, `wrangler.jsonc`) ships through Workers Builds alone. **Read
    its config back through the Cloudflare API**, never the dashboard or the MCP builds tool
    (`docs/DESK.md`). Never point anything on the laptop at `salt_sync.ps1`: a fourth deployer.
 
@@ -171,9 +179,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
-| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); hourly at :23 as the last net |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); at 00:23, 06:23, 12:23 and 18:23 MYT as the last net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
+| Publish with nothing to fold | a `stage_only` run of the same job | the desk's minute cron, after a write outside git marks `publish:wanted` (`publishWanted`), and once each Kuala Lumpur day from 00:05 MYT |
 | Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 
@@ -492,7 +501,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
   may instead name its introducer and follow them, recomputed every publish as `gboard:<id>`.
-- **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time.
+- **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time. A new input
+  to a sealed document that lives outside git calls `wantPublish` at its write road, or the lists go stale.
 
 ## Files that carry a rule
 
@@ -535,7 +545,8 @@ skips Cloudflare and the fetch).
 
 ## How a fold is sized
 
-- **Smaller folds.** One thing, shipped; a fold that cannot be described in one sentence is two.
+- **One version, many commits** (his word of 09 Oct 2026). A piece of work ships as one version, one
+  commit per part; a commit that cannot be described in one sentence is two.
 - **Sweep the class before shipping a fix.** Grep the pattern across the whole file first.
 - **A round points at the newest code.** Attack the fix; older code is regression only.
 - **An instrument is proved red before its green is trusted**, each mutation on its own. Reading

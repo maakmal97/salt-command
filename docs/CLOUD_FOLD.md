@@ -46,7 +46,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
 
 | When | Who | What |
 |---|---|---|
-| on a tap, and hourly | `cloud-commit.yml`, job `chain`, then job `suite` | `chain`, holding the lock: reads the approved rows out of D1 into `master/_to_fold.json`, commits, then folds with the agent, gates the tree once (the Gate step stands down on the tree the Fold step's gate passed), deploys, proves the phone is serving it (reading `/rev` every 2 s for up to a minute), sends the folded-row banner, marks the ids committed with the clock, re-seeds the mirror and publishes the statements; `suite`, outside the lock and only after a deploy: runs the suite on the sha chain proved |
+| on a tap; on a publish the desk asks for (a write outside git, the Kuala Lumpur day); and at 00:23, 06:23, 12:23 and 18:23 MYT as the net | `cloud-commit.yml`, job `chain`, then job `suite` | `chain`, holding the lock: reads the approved rows out of D1 into `master/_to_fold.json`, commits, then folds with the agent, gates the tree once (the Gate step stands down on the tree the Fold step's gate passed), deploys, proves the phone is serving it (reading `/rev` every 2 s for up to a minute), sends the folded-row banner, marks the ids committed with the clock, re-seeds the mirror and publishes the statements; `suite`, outside the lock and only after a deploy: runs the suite on the sha chain proved |
 | on demand | **the agent, asked to fold** | folds with the tool, builds, tests, commits, pushes; the push runs the deploy steps alone |
 | 11:00 MYT | `ship-check.yml` | proves the repo and the live Worker agree |
 
@@ -71,7 +71,15 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    one already on the book (same party, date, size and total), and a payment measured before other
    money reached its row that would now take the row past what it owes (the engine's `payFault`,
    28 Sep 2026: s210's RM 210 twice). That last is the same money by two roads: ask him which
-   payment stands. If anything is refused, report it
+   payment stands. A Counter trade admitted against a verified pending Add ID also carries that
+   registration's server-made dependency: it cannot be approved until the Add ID is approved and its
+   completed encrypted-pair receipt and outbox entry still match. At fold it must sit beside that
+   approved Add ID, which is applied first regardless of staged order. Without that match, the trade
+   is explicitly refused and the whole batch stays staged. Existing on-book approvals and unrelated
+   hand-fold rows are unchanged. A batch staged before this change carries no `item.status`, so a
+   dependent trade in such a batch is refused; re-stage it. An existing-customer appointment
+   (`appoint-existing`) writes no vault receipt, so the new associate is not R2-selectable until the
+   appointment is folded. If anything is refused, report it
    and stop; do not edit the
    batch to get past it. A day with no commit is cheap and a wrong row is not.
 
@@ -102,7 +110,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    `COUNT_ON`, appends a loss to `selfUseLog` and a lost sale to `lostDemand`, adds a registration
    to the roster, re-keys a rename (v628, Amend ID) wherever the book holds the code AFTER every other
    row in the batch, with its statement key, place override and the suite's fixtures, files a party's
-   point on the map in `PLACED` from a `place` entry or the `geo` a registration or rename carries (v633),
+   point on the map in `PLACED` from a `place` entry or the `geo` a registration or rename carries (v633), applies a verified Add ID before the Counter trades that depend on it,
    files a customer's tier for each product in `TIER_OF` from a `tierset` entry (v643, per product since v646, a null
    clearing one) or the starting tiers a registration carries (v645),
    **rolls the stated stock for what physically moved** (a roll and not a count;
