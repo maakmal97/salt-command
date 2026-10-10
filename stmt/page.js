@@ -3570,7 +3570,7 @@ const CLIENT_JS = `
     if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return tw('hist.closed',{a:Uq(+m[1],oUnit(o)), b:m[2]});
     if((m=/^amended to ([0-9.]+) unit, ([0-9.]+) goods, ([0-9.]+) delivery$/.exec(n))) return tw('hist.amended',{a:Uq(+m[1],oUnit(o)), g:rm(+m[2]), d:rm(+m[3])});
     if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return tw('hist.'+m[2],{a:Uq(+m[1],oUnit(o))});
-    if((m=/^price (asked|offered|taken|passed|withdrawn)(, order cancelled)?$/.exec(n))) return tw('hist.price.'+m[1]+(m[2]?'Cx':''));
+    if((m=/^price (asked|offered|confirm|taken|passed|withdrawn)(, order cancelled)?$/.exec(n))) return tw('hist.price.'+m[1]+(m[2]?'Cx':''));
     if(x.method) return tw('hist.chose'+by,how);
     return n?tw('hist.withNote',{s:oWord(x.status,o,x.by), n:n}):oWord(x.status,o,x.by);
   }
@@ -4031,6 +4031,28 @@ const CLIENT_JS = `
   function oPrice(o){
     var w=el('div','oprice'), p=o.price; if(!p||o.status!=='placed') return w;
     var lapsed=p.state==='offered'&&!oOfferOpen(o), tp=oTap(o);
+    /* VERSION 2 (10 Oct 2026): HIS ACCEPT FOR THEIR YES, the whole order as he would agree it: the goods beside what they placed
+       it at, his delivery charge and the window. Yes takes it; No thanks withdraws the order, at no cost */
+    if(p.from==='accept'){
+      if(p.state==='offered'&&!lapsed){
+        w.appendChild(el('p','salt-insight',tw('np.cAsk')));
+        var same=Math.abs((+p.total||0)-(+o.total||0))<0.005;
+        w.appendChild(kpiTile('brass',tw('np.cGoods'),rm(p.total),same?tw('np.cSame'):tw('np.cWas',{rm:rm(o.total)})));
+        if(o.mode==='deliver') w.appendChild(el('p','sub2',tw('np.cDeliv',{rm:rm(+p.delivery||0)})));
+        if(p.slot&&p.slotSpan){ var wl=el('p','sub2'); setW(wl,'np.cWin',{a:esch(winPart(p.slotSpan,0)), b:esch(winPart(p.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(p.slot),L)); }}); w.appendChild(wl); }
+        w.appendChild(el('p','sub2',tw('np.until',{t:Dd(stamp,p.until)})));
+        if(!view){
+          var cy=el('button','salt-pill salt-pill--md',tw('np.cYes')); cy.type='button'; cy.disabled=draft.offerBusy===o.id;
+          cy.addEventListener('click',function(){ offerAnswer(o,'take'); });
+          var cn=el('button','salt-ghost',tw('np.cNo')); cn.type='button'; cn.disabled=draft.offerBusy===o.id;
+          cn.addEventListener('click',function(){ offerAnswer(o,'pass'); });
+          var cr=el('div','oact'); cr.appendChild(cy); cr.appendChild(cn); w.appendChild(cr);
+        }
+      }
+      else w.appendChild(el('p','sub2',tw(lapsed?'np.cLapsed':p.state==='withdrawn'?'np.cWithdrawn':'np.cTaken')));
+      if(tp.k==='price'&&tp.t) w.appendChild(statusLine(tp.t));
+      return w;
+    }
     if(p.state==='asked') w.appendChild(el('p','salt-insight',tw('np.asked')));
     else if(p.state==='offered'&&!lapsed){
       w.appendChild(kpiTile('brass',tw('np.offer'),rm(p.total),tw('np.unit',{rm:rm(+(p.total/(+o.qty||1)).toFixed(2))})));
@@ -4176,7 +4198,8 @@ const CLIENT_JS = `
   function kpiTile(tone,label,value,note){
     var k=el('div','salt-kpi salt-kpi--'+tone);
     k.appendChild(el('span','salt-kpi__label',label)); k.appendChild(el('span','salt-kpi__value',value));
-    if(note){ var n=el('span','salt-kpi__note'); n.appendChild(note); k.appendChild(n); }
+    /* a note is a node or plain words: the offer tiles (Negotiate and his Accept for their yes) pass words */
+    if(note){ var n=el('span','salt-kpi__note'); n.appendChild(typeof note==='string'?document.createTextNode(note):note); k.appendChild(n); }
     return k;
   }
   /* S6 6.7: the overdue figure, the line, and whether a claim waiting on him has lifted it. The owner's view holds too. */

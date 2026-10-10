@@ -232,6 +232,7 @@ export async function run({ ok, skip }) {
   const pvH4 = await call("/orders/" + h2.id + "/preview", { total: 180 });
   const offH = await call("/orders/" + h2.id + "/offer", { total: 180, delivery: 0, hash: pvH4.j.offerHash, rid: rid() });
   const siteOff = O.decideDesk(await orderOf(h2.id), { offer: { id: "anotherOffer0000001", total: 180, until: "2099-01-01T00:00:00.000Z" } }, new Date().toISOString());
-  ok(offH.status === 409 && /the ask is closed: the order stands at its listed price, so Accept or decline it/.test(offH.j.error || "") && /the ask is closed/.test(siteOff.error || ""),
+  ok(offH.status === 409 && /nothing here needs their yes: Accept it/.test(offH.j.error || "") && /the ask is closed/.test(siteOff.error || ""),
+    /* version 2 (10 Oct 2026): on the desk a closed ask is an order at its listed price, which only a raise sends for their yes */
     "and a closed ask takes no new offer, on the desk or on the site: " + JSON.stringify([offH.status, offH.j.error, siteOff.error]));
 }

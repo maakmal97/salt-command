@@ -9096,7 +9096,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1067","d":"10 Oct 2026","t":"DELIVERY OF 2 UNITS TO CF5-WM RECORDED AND THE RM215 PAID IN CASH","n":["<b>TWO AMENDMENTS ON S250, BOTH PREAPPROVED BY PHONE.</b> A correction records the 2 units delivered on 10 Oct and a fulfilment records RM215 received in cash at the counter. The drafter flagged an advance against the credit cap, but the cash settles the order, so nothing is left outstanding. The shelf rolls by 2 units out to CF5-WM. The cost basis does not move."]}];
+const evolution=[{"v":"v1068","d":"10 Oct 2026","t":"A RAISE OR ANOTHER WINDOW GOES TO THEM FOR THEIR YES","n":["<b>Your Accept never raises their price or moves their window alone.</b> Goods above what they placed it at, to the sen, or a window other than the one they chose, goes to them as Send for their yes: the goods, your delivery charge and the window, open until the window starts or 48 hours. Your first delivery charge, a window on an as-soon-as order and a lower price need no yes.","<b>Their answer is the order's.</b> Yes moves it to acknowledged at the offer, its row drafted and approved only if it equals what you sent; No thanks withdraws the order at no cost. Withdraw, or the offer lapsing, leaves it as they placed it, yours to Accept, send again or decline.","<b>A day and its windows</b> on the card and in Counter Admin, today and the seven days after; a sheet that would need their yes is refused, and Counter Admin sends and withdraws as the Desk does.","<b>Nothing prices by it.</b> The floor holds, the board is untouched, and their phone is woken in words only."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9247,7 +9247,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 20:33 KL';
+const LAST_UPDATED='10 Oct 2026, 20:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -20469,9 +20469,12 @@ const ordClaims=o=>((o&&o.payments)||[]).filter(p=>p&&p.claim==='waiting');
    they said no thanks to, he withdrew, or that lapsed. An offer open is theirs to answer; one taken is his yes on its way. */
 /* 06 Oct 2026: an ask is open while asked, offered or taken; No thanks or his withdrawal closes it, and the order is a New one
    again at its listed price */
-function ordAsking(o){const p=o&&o.status==='placed'&&o.price;return !!p&&['asked','offered','taken'].includes(p.state);}
+function ordAsking(o){const p=o&&o.status==='placed'&&o.price;if(p&&p.from==='accept')return ordAccOpen(o)||p.state==='taken';return !!p&&['asked','offered','taken'].includes(p.state);}
+/* VERSION 2 (10 Oct 2026): his Accept sent for their yes holds the order while it is open; said no to, withdrawn or lapsed, it is
+   gone, and the order is his to Accept at their terms, send again, or decline */
+function ordAccOpen(o){const p=o&&o.status==='placed'&&o.price;return !!p&&p.from==='accept'&&p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until);}
 const ordYes=o=>o&&o.yes==='offer'&&!ordAsking(o)?'':(o&&o.yes)||'';   /* an offer's yes left over from a closed ask is none */
-function ordPriceAct(o){const p=o&&o.status==='placed'&&o.price;if(!p||o.yes==='waiting'||o.yes==='differs')return false;
+function ordPriceAct(o){const p=o&&o.status==='placed'&&o.price;if(!p||p.from==='accept'||o.yes==='waiting'||o.yes==='differs')return false;
   if(p.state==='asked')return true;
   return p.state==='offered'&&!!p.offer&&new Date().toISOString()>String(p.offer.until);}
 function ordAsked(o){const m=(o&&o.msgs)||[],l=m[m.length-1];return !!(l&&l.by==='customer'&&!(o.quiet&&String(o.quiet)>=String(l.at)));}
@@ -20527,22 +20530,29 @@ async function ordTell(){
 let ORD_PV={},ORD_PV_GEN=0;
 /* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
 let ORD_CHIP={};
-/* 10 Oct 2026 (his Q3): the window he answers an as-soon-as delivery with, per order; none until he picks one */
-let ORD_WIN={};
-/* the next occurrence of each four-hour window, Kuala Lumpur time, its start ahead: the Counter cuts it to its hours */
-function ordWinPicks(now){
-  const H=36e5,day=x=>new Date(x+8*H).toISOString().slice(0,10),out=[];
-  for(const w of [0,4,8,12,16,20]){let d=day(now),s=Date.parse(d+'T00:00:00Z')+(w-8)*H;if(s<=now){s+=24*H;d=day(s);}
-    const p=n=>String(n).padStart(2,'0');out.push({slot:d+'T'+p(w),at:s,label:(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1]+', '+p(w)+':00 to '+p(w+4)+':00'});}
-  return out.sort((a,b)=>a.at-b.at);
-}
+/* 10 Oct 2026 (his Q3): the window he answers an as-soon-as delivery with, per order; none until he picks one. Version 2: and a
+   window other than the one they chose, which goes to them for their yes; the day he looks at, per order */
+let ORD_WIN={},ORD_WIN_DAY={};
+const ordDayLabel=d=>(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1];
+/* today and the seven days after it, Kuala Lumpur, each with a window still to start */
+function ordWinDays(now){const out=[];for(let i=0;i<8;i++){const d=new Date(now+8*36e5+i*864e5).toISOString().slice(0,10);if(ordWinOn(d,now).length)out.push(d);}return out;}
+/* a day's six windows whose start is ahead: the Counter cuts each to its hours */
+function ordWinOn(day,now){const p=n=>String(n).padStart(2,'0');
+  return [0,4,8,12,16,20].map(w=>({slot:day+'T'+p(w),at:Date.parse(day+'T00:00:00Z')+(w-8)*36e5,label:p(w)+':00 to '+p(w+4)+':00'})).filter(x=>x.at>now);}
+function ordWinDay(o,now){const days=ordWinDays(now),k=ORD_WIN_DAY[o.id],theirs=o.slot?String(o.slot).slice(0,10):'';
+  return days.includes(k)?k:days.includes(theirs)?theirs:days[0]||'';}
 function ordWinUi(o){
-  const v=ORD_WIN[o.id]||'',picks=ordWinPicks(Date.now());
+  const now=Date.now(),v=ORD_WIN[o.id]||'',day=ordWinDay(o,now),sp=/^([0-9:]{5})-([0-9:]{5})$/.exec(String(o.slotSpan||''));
   const opt=(val,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="win-${esc(o.id)}" value="${esc(val)}" data-winpick="${esc(o.id)}"${v===val?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${esc(w)}</span></span></label>`;
+  const own=o.slot&&sp?'Theirs, '+sp[1]+' to '+sp[2]+' on '+ordDayLabel(String(o.slot).slice(0,10)):'As soon as it can';
   return `<fieldset class="salt-options ordwin"><legend class="salt-options__legend">Delivery time</legend>
-    <div class="salt-options__grid salt-options__grid--2">${opt('','As soon as it can')+picks.map(p=>opt(p.slot,p.label)).join('')}</div>
-    <p class="salt-approve__reason">They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.</p></fieldset>`;
+    <label class="salt-field"><span class="salt-field__label">Day</span><select class="salt-field__input" data-winday="${esc(o.id)}">${ordWinDays(now).map(d=>`<option value="${d}"${d===day?' selected':''}>${ordDayLabel(d)}</option>`).join('')}</select></label>
+    <div class="salt-options__grid salt-options__grid--2">${opt('',own)+ordWinOn(day,now).filter(x=>x.slot!==o.slot).map(x=>opt(x.slot,x.label)).join('')}</div>
+    <p class="salt-approve__reason">${o.slot?'Their window stands. Another goes to them for their yes before it is agreed.':'They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.'}</p></fieldset>`;
 }
+/* WHAT NEEDS THEIR YES, the Worker's needsYes: goods above what they placed it at, or a window other than theirs */
+function ordNeedsYes(o,win){const pr=ordPriceNow(o),w=win!=null?win:(ORD_WIN[o.id]||'');
+  return (pr!=null&&pr>(+o.total||0)+0.004)||(!!w&&!!o.slot&&w!==o.slot);}
 /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON ONE ORDER at Accept, the goods for that order alone, up or down and
    never under the floor, which the desk Worker checks. Kept per order while it waits; none set is the price they placed at.
    The board, their tier and the pricing state never move by it. */
@@ -20628,6 +20638,11 @@ function ordOfferBlock(o,when){const p=o.price||{},q=+o.qty||0,t=+o.total||0;
   const rec=sg?' Record: '+sg.orders+' order'+(sg.orders===1?'':'s')+', '+sg.onTime+' of '+sg.settled+' paid on time'+(sg.late?', paying late now':'')+'.':'';
   const lines=['They asked for a price on '+units(q)+(typeof p.proposed==='number'?', suggesting '+fmt(p.proposed)+' for the goods':'')+'. '+auto+'.'
     +(dr&&typeof dr.d==='number'?' Their drift '+(dr.d>0?'+':'')+(+dr.d).toFixed(2)+'.':'')+rec];
+  if(p.from==='accept'){const f=p.offer||{},sp=/^([0-9:]{5})-([0-9:]{5})$/.exec(String(f.slotSpan||''));
+    const what='goods '+fmt(+f.total||0)+(Math.abs((+f.total||0)-t)>0.004?' (they placed it at '+fmt(t)+')':'')+(o.mode==='deliver'?', delivery '+fmt(+f.delivery||0):'')
+      +(f.slot&&sp?', delivery between '+sp[1]+' and '+sp[2]+' on '+ordDayLabel(String(f.slot).slice(0,10)):'');
+    return `<p class="salt-approve__reason ordask">${esc(p.state==='taken'?'They said yes to '+what+'. Its row is drafted at it and booked as it lands if it is the row you sent; otherwise it waits under Approve, marked.'
+      :'You sent '+what+' for their yes, open until '+when(f.until)+'. No thanks from them withdraws the order.')}</p>`;}
   const lapsed=p.state==='offered'&&p.offer&&new Date().toISOString()>String(p.offer.until);
   if(p.state==='offered'&&p.offer)lines.push(lapsed?'Your offer of '+fmt(+p.offer.total)+' lapsed '+when(p.offer.until)+'. Offer again, or decline.'
     :'You offered '+fmt(+p.offer.total)+' for the goods, open until '+when(p.offer.until)+': waiting on their answer.');
@@ -21065,6 +21080,7 @@ function ordCard(o){
   else if(pa)acts=ordOfferActs(o,pvOk,sum);
   else if(o.status==='placed'&&sSib)acts=btn('declined','Decline',true);
   else if(o.status==='placed'&&sLead)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-sheet="1" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk&&pvAll&&ORD_SHEET_BUSY!==o.sheet?'':' disabled'}>Accept all ${G.length}, ${fmt(sumAll)}</button>`+btn('declined','Decline',true);
+  else if(o.status==='placed'&&ordNeedsYes(o))acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="offer" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Send for their yes, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(o.status==='placed')acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept, ${fmt(sum)}</button>`+btn('declined','Decline',true);
   else if(againAck)acts=`<button class="vbtn salt-pill salt-pill--sm" data-ord="acknowledged" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${pvOk?'':' disabled'}>Accept again, ${fmt(sum)}</button>`+(moved>0||c0?'':btn('cancelled','Cancel',true));
   else if(o.status==='done'&&c0)acts=claimBtns;   /* S6 fix: money he recorded another way may have completed it */
@@ -21101,7 +21117,7 @@ function ordCard(o){
         <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
           <input type="number" inputmode="decimal" min="0" step="0.5" value="${fCar?fOff.fee:chip==='other'&&ORD_PUT[o.id]!=null?ORD_PUT[o.id]:''}" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label>
         ${fSay?`<p class="salt-approve__reason ordfeeby" data-feeby="${esc(o.id)}">${esc(fSay)}</p>`:''}</fieldset>` : '';
-  const winUi=o.status==='placed'&&o.mode==='deliver'&&!sSib&&!pa&&!yes&&!o.slot&&!o.wantBy?ordWinUi(o):'';
+  const winUi=o.status==='placed'&&o.mode==='deliver'&&!sSib&&!pa&&!yes&&!o.wantBy?ordWinUi(o):'';
   /* 28 Sep 2026: the "Other amount" field for Cash received, the same shape as the fee's Other, RM box */
   const cash=cashNow
     ? `<label class="salt-field ordother"${cashPart?'':' hidden'}><span class="salt-field__label">Cash received, RM</span>
@@ -21284,6 +21300,7 @@ function ordDraw(){
   box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
   box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
   box.querySelectorAll('input[data-winpick]').forEach(i=>{i.onchange=()=>{ORD_WIN[i.dataset.winpick]=i.value;ordDraw();};});
+  box.querySelectorAll('select[data-winday]').forEach(i=>{i.onchange=()=>{ORD_WIN_DAY[i.dataset.winday]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -21330,9 +21347,11 @@ async function ordAct(b){
     if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
     const pv=ORD_PV[id],pr=ordPriceNow(o),t=pr!=null?pr:+o.total||0;
     if(!(t>0))return refuse('Type your price for the goods first; nothing moved.');
+    /* version 2: for their yes, the window he picked rides with it */
+    const win=!o.price||o.price.from==='accept'||['passed','withdrawn'].includes(o.price.state)?(ORD_WIN[id]||''):'';
     /* the tap's own id, kept until it lands, so an Offer sent twice files one offer */
-    const rid=ORD_RID[id+':offer:'+t]||(ORD_RID[id+':offer:'+t]=ordRid());
-    body=JSON.stringify({delivery:d,total:t,rid,hash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.offerHash)||null});
+    const rid=ORD_RID[id+':offer:'+t+':'+win]||(ORD_RID[id+':offer:'+t+':'+win]=ordRid());
+    body=JSON.stringify(Object.assign({delivery:d,total:t,rid,hash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.offerHash)||null},win&&o.mode==='deliver'?{slot:win}:{}));
     url='orders/'+encodeURIComponent(id)+'/offer';
   }else if(st==='withdraw'){
     body=JSON.stringify({rid:ORD_RID[id+':withdraw']||(ORD_RID[id+':withdraw']=ordRid())});url='orders/'+encodeURIComponent(id)+'/withdraw';
@@ -21419,6 +21438,7 @@ async function ordAct(b){
       :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
         :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Sent until you approve it there.'
         :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
+      :st==='offer'&&j.offer&&j.offer.kind==='accept'?'Sent for their yes, open until '+new Date(j.offer.until).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})+'. Your yes is filed and spent only if the row equals this one. '+told
       :st==='offer'?'Offered '+fmt(JSON.parse(body).total)+' for the goods. They have 48 hours to accept; your yes is filed and spent only if the row equals this one. '+told
       :st==='withdraw'?'Offer withdrawn. Nothing is booked, and they see it withdrawn.'
       :st==='say'?'Sent. '+told
@@ -21458,6 +21478,7 @@ async function ordSheetAct(b){
   const st=b.dataset.ord,fee=st==='acknowledged'?(o.mode==='deliver'?ordFeeNow(o):0):null;
   const stop=t=>{ORD_SAID={id:o.id,t};ordDraw();return false;};
   if(st==='acknowledged'&&fee==null)return stop('Choose the delivery charge first; nothing moved.');
+  if(st==='acknowledged'&&G.some(x=>ordNeedsYes(x,ORD_WIN[o.id]||'')))return stop('A sheet is agreed by one Accept, and this would need their yes: lower it to what they placed, keep their window, or decline; nothing moved.');
   /* each order's row as he was shown it, fixed now: a reload between moves drafts the next one afresh */
   const hs={};
   if(st==='acknowledged'){for(const x of G){const p=ORD_PV[x.id],d=x.id===o.id?fee:0;hs[x.id]=(p&&p.st==='ok'&&ordPvFits(p,d,x)&&p.j&&p.j.hash)||'';}

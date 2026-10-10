@@ -25403,7 +25403,8 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  ok(!own.length && kinds.length === 19 && seen.length === 27 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner */
+  ok(!own.length && kinds.length === 20 && seen.length === 28 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -51571,6 +51572,10 @@ await (async () => {
 section("10 Oct 2026: his Accept carries the window on a delivery asked for as soon as it can, and reminds them to pay now");
 await (async () => {
   await (await import("./delivery-accept-window.mjs")).run({ ok, KV, assets });
+})();
+section("10 Oct 2026: a raise or another window goes to them for their yes, and their answer is the order's");
+await (async () => {
+  await (await import("./delivery-yes.mjs")).run({ ok });
 })();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
