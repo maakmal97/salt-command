@@ -110,6 +110,9 @@ jobs:
       # pattern is cloud-commit's on.push.paths exactly (`**` is `.*`), and the suite holds the two
       # lists together. It fails toward running: a first push, a compare that errors, or a push of
       # 300 files or more (the API's cap) reads as not covered. The token is the run's own, read only.
+      # THE OTHER DIRECTION (10 Oct 2026): cloud-commit's job suite stands down when a run of this workflow
+      # passed verify and all three parts of job tests on the tree it deployed (tools/suite-proved.mjs). A run
+      # where this guard stood Tests down proves nothing there, so the two never both stand down on one tree.
       - name: Is cloud-commit testing this push?
         id: chain
         if: github.event_name == 'push'

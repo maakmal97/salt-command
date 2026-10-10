@@ -112,7 +112,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
 8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
    deploys, proves the phone serves the build, marks the folded rows committed, re-seeds the D1
    mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
-   then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
+   then job `suite` runs the suite on the sha chain proved, outside the lock, **unless CI already
+   passed it on that tree**: a ci.yml run whose `verify` and three `tests` parts each passed, on a
+   commit with that tree holding every parent of it (`tools/suite-proved.mjs`, chain's last step), so
+   a merge level with master stands it down and a fold, a merge master moved under, or any doubt runs
+   it; the run's summary names the CI run that proved it. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
    never a list of triggers. A run that did not deploy passes `--no-retire`. **A publish follows a
    change, not the clock** (his choice of 10 Oct 2026): a version moves `public/rev.json`, and that push
@@ -183,7 +187,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
 | Publish with nothing to fold | a `stage_only` run of the same job | the desk's minute cron, after a write outside git marks `publish:wanted` (`publishWanted`), and once each Kuala Lumpur day from 00:05 MYT |
-| Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
+| Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed, unless a full green CI run already proved that tree (rule 8) |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 
 - **Every task starts level with GitHub.** Before any task: `git fetch` and fast-forward to

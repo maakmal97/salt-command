@@ -25,6 +25,8 @@
 # locked run it held the lock for its two to five minutes: from 19 to 24 Sep, 22 of 59 folding
 # runs queued, 20 of them behind a suite. The suite job takes no lock, checks out the sha chain
 # proved the phone serving, and writes or clears its notice only while the phone still serves it.
+# Since 10 Oct 2026 it stands down when CI already passed the whole suite on that tree (chain's last
+# step, `Has CI already run the suite on this tree?`): a merge level with master is not tested again.
 #
 # SETUP, AND IT IS THE ONE THING ONLY HE CAN DO. The repo holds these six secrets and no other
 # (05 Oct 2026); a secret no step reads is deleted, never kept "in case":
@@ -107,14 +109,20 @@ jobs:
     concurrency:
       group: cloud-commit
       cancel-in-progress: false
+    # actions, pull-requests and issues, read only, for `Has CI already run the suite on this tree?` alone (10 Oct 2026).
     permissions:
       contents: write
       id-token: write
-    # What the suite job needs: whether this run deployed, and the tree it proved the phone serving.
+      actions: read
+      pull-requests: read
+      issues: read
+    # What the suite job needs: whether this run deployed, the tree it proved the phone serving, and
+    # the CI run that already passed the whole suite on that tree, if one did (empty: the suite runs).
     outputs:
       deploy: ${{ steps.plan.outputs.deploy }}
       sha: ${{ steps.tip.outputs.sha }}
       rev: ${{ steps.tip.outputs.rev }}
+      proved: ${{ steps.proved.outputs.proved }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09      # v5, which runs on Node 24; v4 targeted the retired Node 20 (09 Sep 2026)
         with: { ref: master }
@@ -567,6 +575,25 @@ jobs:
             node tools/stmt-publish.mjs --no-retire
           fi
 
+      # ONE SUITE RUN PER MERGE (10 Oct 2026, his yes: "Yes, skip duplicate run"). A pull request merges only level
+      # with master, so the squash commit's tree is the head's, and ci.yml has already run verify and all three test
+      # parts on it; job suite ran them a third time. tools/suite-proved.mjs asks the API for a ci.yml run that passed
+      # verify and tests (1), (2) and (3), not one whose tests stood down, on a commit whose tree is the tree of the
+      # sha proved live and which holds every parent of it. Found, `proved` names the run and job suite stands down;
+      # the run's summary names that run and its commit. Anything else runs the suite as before: every phone fold (a
+      # new commit no CI run saw), a merge after master moved under the pull request, and any API error or doubt,
+      # since the tool writes the output only when proved and this step may fail without failing chain.
+      - name: Has CI already run the suite on this tree?
+        id: proved
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          node tools/suite-proved.mjs --sha "${{ steps.tip.outputs.sha }}"
+
       # NOTHING RETIRES DESK KEYS BY PREFIX HERE, and nothing may be added that does (10 Sep 2026).
       # A step stood here from 03 Sep that listed the desk's store for the prefix "stmt" and deleted
       # what it found. It was written as a one-off, to clear the old route's stmt:, stmtfail: and
@@ -585,8 +612,9 @@ jobs:
   # refusals under a synthetic id above the watermark, seen on the Approve view until a suite passes.
   suite:
     needs: chain
-    # A job-level `if` drops the implied success(), so chain's own success is named.
-    if: needs.chain.result == 'success' && needs.chain.outputs.deploy == '1'
+    # A job-level `if` drops the implied success(), so chain's own success is named. It stands down when
+    # CI has already passed the whole suite on this tree (chain's `proved`, 10 Oct 2026): a skip, never red.
+    if: needs.chain.result == 'success' && needs.chain.outputs.deploy == '1' && needs.chain.outputs.proved == ''
     runs-on: ubuntu-latest
     # ONE PART A RUNNER (05 Oct 2026, his instruction). The repo went private on 01 Oct and its runners
     # have two cores since, so three shards ran as two fighting over them: the suite went from about
@@ -672,9 +700,10 @@ jobs:
 
       # v805, HIS WORD OF 23 SEP 2026: "I never know what to do with this." A test notice waited for the next FOLD to clear it,
       # so one raised by a failing suite stayed on the phone through every green run after it, as suite:v791 did through
-      # six. It goes the moment a later run's suite passes, which is the thing it was about.
+      # six. It goes the moment a later run's suite passes, which is the thing it was about, or CI's passed on this
+      # very tree and job suite stood down for it (10 Oct 2026); a skip without that proof is not a pass.
       - name: Clear a test notice once the suite passes
-        if: needs.suite.result == 'success' && steps.live.outputs.same == '1'
+        if: steps.live.outputs.same == '1' && (needs.suite.result == 'success' || needs.chain.outputs.proved != '')
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
