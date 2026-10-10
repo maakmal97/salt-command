@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1056",
+  "d": "10 Oct 2026",
+  "t": "FULFILMENT OF RM90 CASH ON CZ5-TM ORDER S247, NO STOCK MOVED",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A cash fulfilment of RM90 on 10 Oct against order s247, CZ5-TM's order of 2 units for RM190. The drafter raised no flags. The row itself is applied by the master's amend routine, not recomputed here.",
+   "<b>INVENTORY UNCHANGED.</b> No units moved with this fulfilment, so salt stock stays at 12.14 and the cost basis stays at RM56 a unit. The 2 units remain to be handed over."
+  ]
+ },
+ {
   "v": "v1055",
   "d": "10 Oct 2026",
   "t": "PART PAYMENT OF RM100 ON CZ5-TM'S ORDER FOR 2 UNITS OF SALT",

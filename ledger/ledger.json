@@ -1,6 +1,6 @@
 {
- "v": "v1055",
- "stamped": "10 Oct 2026, 13:50 KL",
+ "v": "v1056",
+ "stamped": "10 Oct 2026, 14:52 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6970,7 +6970,7 @@
     "customer": "CZ5-TM",
     "qty": 2,
     "total": 190,
-    "cash": 100,
+    "cash": 190,
     "date": "2026-10-10",
     "deliveredQty": 0,
     "note": "<b>SALT SALE DATED 10 OCT: 2 UNITS TO CZ5-TM AT RM190, PENDING, NOTHING PAID OR HANDED OVER.</b> Order 20261009164607-zasz2w, acknowledged, to collect, preapproved by phone. For 2 units the dossier gives a floor of RM116 and an ask of RM250, so RM190 clears the floor and stays under the ask. CZ5-TM has 3 orders, a median rate of RM110, a range of RM110 to RM110, RM0 outstanding before and 0 units on credit before, against a cap of 1 unit. The cost carried is RM58 a unit off the latest purchase, p036, not the inventory's own RM56. Drafter flag: RM95 a unit against RM110 on every earlier order; the figures confirm the lower rate but give no reason for it. The order was placed at RM240. Open: RM190 unpaid and 2 units to collect.",
@@ -6989,8 +6989,16 @@
       "cash": 100,
       "kg": 0,
       "note": "<b>PAYMENT ON S247, 10 OCT: RM100 FROM CZ5-TM AGAINST 2 UNITS OF SALT AT RM190.</b> Order 20261009164607-zasz2w, paid by QR via TNG on the statements site, preapproved by phone. The order stood at RM0 paid and nothing handed over. The sale rate sits against the desk's floor of RM116 and ask of RM250 for 2 units. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM190 outstanding before this payment, 0 units on credit and RM0 defaulted. The drafter raised no flags. The payment moves no units and carries no cost of its own. Open: RM90 unpaid and 2 units still to hand over."
+     },
+     {
+      "date": "2026-10-10",
+      "kind": "Fulfilment",
+      "cash": 90,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON 10 OCT: RM90 CASH AGAINST CZ5-TM ORDER S247.</b> The order is 2 units of salt for RM190, dated 10 Oct. This fulfilment moves RM90 and 0 units, against RM90 and 2 units outstanding, and leaves RM0 and 2 units outstanding. For 2 units the desk's floor is RM116 and its ask RM250, so the order total of RM190 clears the floor and stays under the ask. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM90 outstanding before this row and 0 units on credit. The dossier gives no credit cap. The drafter raised no flag. The order row shows RM100 cash against the RM90 entered here, and the dossier gives no reason. The fulfilment carries no cost. Open: the 2 units still to hand over."
      }
-    ]
+    ],
+    "paidOn": "2026-10-10"
    },
    {
     "customer": "CS6-BS",
@@ -7678,9 +7686,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T05:48:23.956Z",
+  "QUEUE_COMMITTED": "2026-10-10T06:51:32.570Z",
   "PRICING": {
-   "takenAt": "2026-10-10T05:51:01.850Z",
+   "takenAt": "2026-10-10T06:52:44.968Z",
    "sizes": [
     0.5,
     1,
@@ -14532,10 +14540,10 @@
      ]
     }
    },
-   "v": "v1055"
+   "v": "v1056"
   },
   "OPEN": {
-   "at": "2026-10-10T05:51:02.667Z",
+   "at": "2026-10-10T06:52:45.783Z",
    "count": 11,
    "byKey": {
     "CZ5-TM|2026-10-10|190": {
@@ -14544,12 +14552,12 @@
      "dir": "S",
      "q": 2,
      "t": 190,
-     "cash": 100,
+     "cash": 190,
      "mv": 0,
-     "st": "part",
-     "oweRM": 90,
+     "st": "oweStock",
      "oweUnits": 2,
      "rid": "s247",
+     "paidOn": "2026-10-10",
      "key": "CZ5-TM|2026-10-10|190"
     },
     "CS6-BS|2026-10-10|110": {
@@ -14716,9 +14724,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 12.14,
-     "free": 4.59,
-     "owedOut": 7.55,
-     "coverDays": 1.2,
+     "free": 3.64,
+     "owedOut": 8.5,
+     "coverDays": 1,
      "rate": 5.05,
      "owedToYou": 340,
      "promised": 10.5,
@@ -14776,7 +14784,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1055"
+   "v": "v1056"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14784,7 +14792,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1055"
+   "v": "v1056"
   },
   "REWARD": {
    "stated": {
@@ -14796,7 +14804,7 @@
      }
     }
    },
-   "v": "v1055"
+   "v": "v1056"
   }
  }
 }
