@@ -25,9 +25,11 @@ export async function run({ ok, KV, assets }) {
   ok(said({ slot: "2026-10-10T10" }, dlv) === 400 && said({ slot: 12 }, dlv) === 400 && said({ slot: "2026-10-10T04" }, dlv) === 400
     && said({ slot: "2026-10-19T00" }, dlv) === 400,
     "a window is refused that is not one of the six, has ended, or starts more than eight days off");
-  ok(said({ slot: "2026-10-10T12" }, { mode: "collect" }) === 400 && said({ slot: "2026-10-10T12" }, { mode: "deliver", slot: "2026-10-11T08" }) === 409
-    && said({ slot: "2026-10-10T12" }, { mode: "deliver", wantBy: "2026-10-12" }) === 409 && said({}, { mode: "deliver", slot: "2026-10-11T08" }) === null,
-    "only a delivery takes one, and never one that asked for its own time or day: theirs stands");
+  const other = D.slotOf({ slot: "2026-10-10T12" }, { mode: "deliver", slot: "2026-10-11T08" }, at), same = D.slotOf({ slot: "2026-10-11T08" }, { mode: "deliver", slot: "2026-10-11T08" }, at);
+  ok(said({ slot: "2026-10-10T12" }, { mode: "collect" }) === 400 && other.slot === "2026-10-10T12" && other.change === true && same.slot === null
+    && said({ slot: "2026-10-10T12" }, { mode: "deliver", wantBy: "2026-10-12" }) === 409 && said({}, { mode: "deliver", slot: "2026-10-11T08" }) === null
+    && D.slotOf({ slot: "2026-10-10T12" }, dlv, at).change === false,
+    "only a delivery takes one; a day they asked for stands, their own window named again is no change, and another is a change for their yes");
 
   /* 2. THE COUNTER'S SIDE: the acknowledgement takes a window it can trust, and leaves out anything else rather than refuse */
   const base = { id: "o1", u: "abcd-efgh", status: "placed", mode: "deliver", qty: 1, total: 100, history: [], msgs: [] };
@@ -156,19 +158,26 @@ export async function run({ ok, KV, assets }) {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
   const rd = (e) => JSON.parse(String(mw.eval("JSON.stringify(" + e + ")")));
-  const picks = rd("ordWinPicks(Date.now())"), t0 = Date.now();
-  ok(picks.length === 6 && picks.every((p, i) => p.at > t0 - 1000 && p.at <= t0 + 24 * H && (i === 0 || p.at > picks[i - 1].at) && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(p.slot)
-    && Date.parse(p.slot.slice(0, 10) + "T00:00:00Z") + (+p.slot.slice(11, 13) - 8) * H === p.at && new RegExp(", " + p.slot.slice(11, 13) + ":00 to ").test(p.label))
-    && picks.every((p) => p.slot === Wn.slotNext(+p.slot.slice(11, 13), null, t0).slot),
-    "the desk offers the next of each of the six windows, soonest first, as the Counter counts them: " + JSON.stringify(picks.map((p) => p.label)));
+  const t0 = Date.now(), days = rd("ordWinDays(" + t0 + ")"), picks = days.flatMap((d) => rd("ordWinOn('" + d + "'," + t0 + ")"));
+  const klToday = new Date(t0 + 8 * H).toISOString().slice(0, 10), now0 = new Date(t0);
+  ok(days.length >= 7 && days.length <= 8 && days.every((d, i) => i === 0 || Date.parse(d) - Date.parse(days[i - 1]) === 864e5) && days[0] >= klToday
+    && picks.every((p, i) => p.at > t0 && (i === 0 || p.at > picks[i - 1].at) && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(p.slot)
+      && Date.parse(p.slot.slice(0, 10) + "T00:00:00Z") + (+p.slot.slice(11, 13) - 8) * H === p.at && new RegExp("^" + p.slot.slice(11, 13) + ":00 to ").test(p.label)
+      && D.slotOf({ slot: p.slot }, dlv, now0).slot === p.slot)
+    && picks.length >= 42 && picks.filter((p) => p.slot.slice(0, 10) === days[1]).length === 6,
+    "the desk offers each day of the coming week and its six windows still to start, every one a window the Worker takes: " + JSON.stringify([days, picks.length]));
+  const day0 = days[0], on0 = rd("ordWinOn('" + day0 + "'," + t0 + ")");
   const card = (o) => { mw.eval("ORD_OPEN=" + JSON.stringify([o]) + ";"); return String(mw.eval("ordCard(ORD_OPEN[0])")); };
   const P = { id: "20261010050000-dwin", u: "dwab-cdef", code: "CZ2-DW", status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, at: "2026-10-10T05:00:00Z", history: [], msgs: [] };
   const c1 = card(P), radios = (c1.match(/data-winpick="20261010050000-dwin"/g) || []).length;
-  ok(/<legend class="salt-options__legend">Delivery time<\/legend>/.test(c1) && radios === 7 && /As soon as it can/.test(c1) && /needs no yes of theirs/.test(c1),
-    "a placed delivery asked for as soon as it can offers As soon as it can and the six windows: " + radios);
-  ok(!/data-winpick/.test(card(Object.assign({}, P, { slot: s8(), slotSpan: "08:00-12:00" }))) && !/data-winpick/.test(card(Object.assign({}, P, { mode: "collect" })))
+  ok(/<legend class="salt-options__legend">Delivery time<\/legend>/.test(c1) && radios === 1 + on0.length && /As soon as it can/.test(c1) && /needs no yes of theirs/.test(c1)
+    && (c1.match(/<option value="/g) || []).length === days.length,
+    "a placed delivery asked for as soon as it can offers As soon as it can, a day of the coming week and that day's windows: " + radios);
+  const cOwn = card(Object.assign({}, P, { slot: s8(), slotSpan: "09:00-12:00" }));
+  ok(/Theirs, 09:00 to 12:00 on /.test(cOwn) && /goes to them for their yes/.test(cOwn) && !new RegExp('value="' + s8() + '" data-winpick').test(cOwn)
+    && !/data-winpick/.test(card(Object.assign({}, P, { mode: "collect" })))
     && !/data-winpick/.test(card(Object.assign({}, P, { wantBy: "2026-10-12" }))) && !/data-winpick/.test(card(Object.assign({}, P, { status: "acknowledged" }))),
-    "and never on an order that chose its own time or day, a collection, or one already agreed");
+    "an order with its own window offers it first as theirs and any other for their yes; never on a collection, a day asked for, or one already agreed");
   function s8() { return Wn.slotNext(8, null, Date.now()).slot; }
   /* Accept sends the window he picked; a sheet's tap hands every line its first order's */
   mw.eval("window.__sent=[];window.fetch=function(u,o){window.__sent.push({u:String(u),b:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,approved:true});}});};"
@@ -231,18 +240,21 @@ export async function run({ ok, KV, assets }) {
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
     doc.querySelector('[data-m="maker"]').click();
     await wait(() => button(A, "Preview"));
-    const labels = picks.map((p) => p.label), now2 = rd("ordWinPicks(Date.now())").map((p) => p.label);
-    ok(JSON.stringify(wins(A)) === JSON.stringify(["As soon as it can"].concat(now2)) && wins(B).length === 0 && wins(T).length === 0,
-      "Counter Admin offers the first order of a sheet the same windows as the Desk, and none on its other lines or on an order with its own: "
-      + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), desk: labels }));
+    const dNow = rd("ordWinDays(Date.now())"), deskOn = rd("ordWinOn('" + dNow[0] + "',Date.now())"), now2 = deskOn.map((p) => p.label);
+    const tDay = s12w().slice(0, 10), tOn = rd("ordWinOn('" + tDay + "',Date.now())").filter((p) => p.slot !== s12w()).map((p) => p.label);
+    const dayOpts = (id) => acard(id) ? [...acard(id).querySelectorAll("select[data-winday] option")].map((x) => x.value) : [];
+    ok(JSON.stringify(wins(A)) === JSON.stringify(["As soon as it can"].concat(now2)) && JSON.stringify(dayOpts(A)) === JSON.stringify(dNow) && wins(B).length === 0
+      && JSON.stringify(wins(T)) === JSON.stringify(["Theirs, 12:00 to 16:00 on " + rd("ordDayLabel('" + tDay + "')")].concat(tOn)),
+      "Counter Admin offers the same days and windows as the Desk, none on a sheet's other lines, and theirs first on an order with its own: "
+      + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), desk: now2 }));
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* an Accept reloads the review, so each card is found again once the reload has settled */
     const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); button(id, "Preview").click(); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
       await wait(() => posts.some((p) => p.kind === "accept" && p.path.includes(id))); return posts.filter((p) => p.kind === "accept" && p.path.includes(id)).pop().body; };
-    pick(A, "makerFee", "RM 10"); pick(A, "makerWin", now2[1]);
+    pick(A, "makerFee", "RM 10"); pick(A, "makerWin", now2[0]);
     pick(T, "makerFee", "RM 0");
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
-    const want = rd("ordWinPicks(Date.now())")[1].slot;
+    const want = deskOn[0].slot;
     ok(bA.slot === want && bB.slot === want && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
       "Counter Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
     ok(/Location shared, sealed: the Desk opens it/.test(acard(PN).textContent) && !/Location shared/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),

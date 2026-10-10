@@ -256,10 +256,31 @@ export function slotOf(b, o, at) {
   if (s === undefined || s === null || s === "") return { slot: null };
   if (typeof s !== "string" || !ACCEPT_SLOT_RE.test(s)) return { error: "a time window is a day and one of the six four-hour windows", status: 400 };
   if (!o || o.mode !== "deliver") return { error: "only a delivery takes a time window", status: 400 };
-  if (o.slot || o.wantBy) return { error: "they chose their own time, and it stands", status: 409 };
+  if (o.wantBy) return { error: "they chose their own day, and it stands", status: 409 };
+  if (o.slot === s) return { slot: null };   /* their own window, named again: it stands as it is */
   const start = Date.parse(s.slice(0, 10) + "T00:00:00Z") + (+s.slice(11, 13) - 8) * 3600e3, now = at.getTime();
   if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3) return { error: "that window has passed or is more than a week off: choose another", status: 400 };
-  return { slot: s };
+  return { slot: s, change: !!o.slot };
+}
+/* VERSION 2 (his decisions of 10 Oct 2026): WHAT NEEDS THEIR YES. Goods above what they placed it at, to the sen, or a window
+   other than the one they chose (Q2's window stays fixed once agreed). Never his first delivery charge (Q1), never a window
+   on an order that asked for none (Q3), never a lower price. Needed, Accept is refused and the card sends it as an offer. */
+export function needsYes(o, x) {
+  const total = x && x.total, slot = x && x.slot;
+  return (typeof total === "number" && total > (+o.total || 0) + 0.004) || (!!slot && !!o.slot && slot !== o.slot);
+}
+/* an offer for their yes (`from: "accept"`) that no longer holds the order: they said no (which cancels it), he withdrew it,
+   or it lapsed. It never freezes the order: he Accepts at their terms, offers again, or Declines. The desk reads the lapse a
+   minute late (ACCEPT_GRACE), so a take the Counter stamped by `until` always lands before his Accept can (Fable's review) */
+const ACCEPT_GRACE = 60e3;
+export const acceptClosed = (o, at) => !!(o && o.price && o.price.from === "accept" && (["passed", "withdrawn"].includes(o.price.state)
+  || (o.price.state === "offered" && o.price.offer && (at || new Date()).getTime() > Date.parse(o.price.offer.until) + ACCEPT_GRACE)));
+/* the window's lapse for an offer: 48 hours, or the window's start when that is at least an hour ahead and sooner, else its end */
+export function acceptUntil(at, slot) {
+  const t = at.getTime(), max = t + OFFER_HOURS * 3600e3;
+  if (!slot) return new Date(max).toISOString();
+  const start = Date.parse(slot.slice(0, 10) + "T00:00:00Z") + (+slot.slice(11, 13) - 8) * 3600e3, end = start + 4 * 3600e3;
+  return new Date(start - t >= 3600e3 ? Math.min(start, max) : Math.min(end, max)).toISOString();
 }
 /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER at its acknowledgement, the goods to 2 dp. Absent, the
    order's own total; present and not a figure above nothing, refused. The board, the tiers and the pricing state never move. */
@@ -390,8 +411,9 @@ export async function previewOrder(env, id, body, now) {
   if (!p.ok) return p;
   /* 05 Oct 2026 (Negotiate): on an order whose price they asked for, the digest his Offer sends back is the offer's own,
      on the row's figures and flags (offerDigest), and the ask rides along for the card: their own figure, if they gave one */
-  if (o.price && o.status === "placed") Object.assign(p, { offerHash: await offerDigest(p.entry, { collection: "sales", row: p.row, flags: p.flags }),
-    ask: { state: o.price.state, proposed: typeof o.price.proposed === "number" ? o.price.proposed : null } });
+  /* version 2: and on any placed order, since a raise or a changed window goes to them as an offer */
+  if (o.status === "placed") Object.assign(p, { offerHash: await offerDigest(p.entry, { collection: "sales", row: p.row, flags: p.flags }) },
+    o.price && o.price.from !== "accept" ? { ask: { state: o.price.state, proposed: typeof o.price.proposed === "number" ? o.price.proposed : null } } : {});
   delete p.entry;   /* what Accept will queue is Accept's to build again; the card holds the digest */
   return Object.assign(p, { again, chargeChosen: again || o.mode !== "deliver" || chargeOf(body) != null });
 }
@@ -428,6 +450,8 @@ const markOrder = (env, u, id, mark) => site(env, "/desk/orders/" + encodeURICom
 /** An approved pending row the desk queued moves its order: the row's key and moment are marked first, so no pass
  *  of the reconcile can queue a second pending row, and then the order is acknowledged with the charge it carries.
  *  Until both are done the yes is not `acked_at`, and the desk's pass tells the order again every minute (deskPass). */
+/* the window his yes carries: Accept's own, or an offer's they took (version 2) */
+const slotShown = (sh) => [sh && sh.slot, sh && sh.offer && sh.offer.slot].find((x) => typeof x === "string" && ACCEPT_SLOT_RE.test(x)) || null;
 export async function ackOnApproval(env, pre) {
   const entry = typeof pre.entry === "string" ? JSON.parse(pre.entry) : pre.entry;
   let shown = {};
@@ -443,7 +467,7 @@ export async function ackOnApproval(env, pre) {
          figure (an older entry's shape) sends none, and the order keeps its own */
       typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {},
       /* 10 Oct 2026: the window he chose at Accept, from what he was shown, never a body: this runs minutes later */
-      typeof shown.slot === "string" && ACCEPT_SLOT_RE.test(shown.slot) ? { slot: shown.slot } : {}));
+      slotShown(shown) ? { slot: slotShown(shown) } : {}));
   /* told once the move is made, or refused for good: the order ended, or was moved already */
   if ((r.ok || r.status === 409) && env.SALT_LEDGER)
     await env.SALT_LEDGER.prepare("UPDATE preapproval SET acked_at=?1 WHERE id=?2").bind(new Date().toISOString(), pre.id).run();
@@ -462,13 +486,14 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Accept answers a preview: send the digest the preview gave" };
   /* 05 Oct 2026 (Negotiate): an order whose price they asked for is agreed only by an offer of his that they take, while the
      ask is open; after No thanks or his withdrawal (06 Oct 2026) it is back at its listed price and Accept is his as ever */
-  if (o.price && o.status === "placed" && ASKING.includes(o.price.state)) return { ok: false, status: 409, error: o.price.state === "taken"
+  if (o.price && o.status === "placed" && ASKING.includes(o.price.state) && !acceptClosed(o, at)) return { ok: false, status: 409, error: o.price.state === "taken"
     ? "they have taken your offer: its row is drafted at it, so there is nothing to accept here"
+    : o.price.from === "accept" ? "an offer is open on this order, waiting on their answer"
     : "they asked for a price on this order: send them an offer, which they take or decline" };
   /* one pending row an order: a yes already given is followed, never given twice; an offer they declined or he withdrew is
      no longer his yes, and goes here rather than at the minute's pass */
   let live = await livePre(db, id, "ack");
-  if (live && isOfferPre(live) && live.status === "waiting" && !live.entry && o.price && !ASKING.includes(o.price.state)) {
+  if (live && isOfferPre(live) && live.status === "waiting" && !live.entry && o.price && (!ASKING.includes(o.price.state) || acceptClosed(o, at))) {
     await voidOffers(db, id, at.toISOString()); live = await livePre(db, id, "ack");
   }
   if (live && live.status === "applied") return o.status === "placed"
@@ -484,6 +509,8 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   if (pr.error) return { ok: false, status: 400, error: pr.error };
   const win = again ? { slot: null } : slotOf(body, o, at);
   if (win.error) return { ok: false, status: win.status, error: win.error };
+  if (!again && needsYes(o, { total: pr.price, slot: win.slot }))
+    return { ok: false, status: 409, needsYes: true, error: "this raises their price or changes their window: send it to them for their yes" };
   const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price, mirror);
   if (!pv.ok) return pv;
   const entry = pv.entry;
@@ -537,7 +564,13 @@ export async function offerOrder(env, id, body, by, now) {
   const o = f.order, db = env.SALT_LEDGER;
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
-  if (o.status !== "placed" || !o.price) return { ok: false, status: 409, error: "no price was asked for on this order, so there is nothing to offer" };
+  if (o.status !== "placed") return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to offer" };
+  /* version 2: an order they asked no price for, or whose offer for their yes is closed, takes his Accept as an offer */
+  if (!o.price || acceptClosed(o, at) || (o.price.from !== "accept" && ["passed", "withdrawn"].includes(o.price.state) && +o.total > 0))
+    return acceptOffer(env, f, body, by, at);
+  /* a retried Send for their yes whose first tap landed is answered with the offer it filed (Fable's review) */
+  if (o.price.from === "accept" && body && typeof body.rid === "string" && o.price.offer && o.price.offer.id === body.rid) return { ok: true, again: true, order: o, offer: o.price.offer };
+  if (o.price.from === "accept") return { ok: false, status: 409, error: o.price.state === "taken" ? "they have said yes already: its row is drafted at it" : "an offer is open on this order, waiting on their answer" };
   if (o.price.state === "taken") return { ok: false, status: 409, error: "they have taken your offer already: its row is drafted at it" };
   if (!ASKING.includes(o.price.state)) return { ok: false, status: 409, error: "the ask is closed: the order stands at its listed price, so Accept or decline it" };
   /* a tap that already landed is answered with the offer it filed, never filed twice */
@@ -565,6 +598,42 @@ export async function offerOrder(env, id, body, by, now) {
      of the old offer landing between found no yes on file and stranded the order at taken. A refused move now leaves the old
      yes standing, and a take that still finds none is queued to wait under Approve (queueOffer) */
   const r = await moveOrder(env, o.u, id, { offer: { id: offer.id, total: offer.total, until }, rid });
+  if (!r.ok) return r;
+  await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash, entry: null, at: at.toISOString(), by,
+    shown: { from: "placed", offer, row: pv.row, flags: pv.flags, prepay: !!entry.prepay } });
+  return { ok: true, order: r.order, offer, push: r.push || null, preview: pv };
+}
+/* VERSION 2: HIS ACCEPT, FOR THEIR YES. What needsYes says they must agree to goes to them as an offer of the whole order as he
+   would accept it: the goods, his delivery charge and the window, open until acceptUntil. The row is drafted at it now, as
+   Accept drafts it (never under the floor), and his yes waits on theirs exactly as Negotiate's does: their Accept is a take,
+   their No thanks withdraws the order, and his own withdrawal or its lapse leaves the order as it was, his to Accept again.
+   Refused when nothing needs their yes, and on a sheet of several lines, which one take cannot answer (his Q7). */
+async function acceptOffer(env, f, body, by, at) {
+  const o = f.order, db = env.SALT_LEDGER, id = o.id;
+  if (body && typeof body.rid === "string" && o.price && o.price.offer && o.price.offer.id === body.rid) return { ok: true, again: true, order: o, offer: o.price.offer };
+  const pr = priceOf(body);
+  if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const delivery = o.mode === "deliver" ? chargeOf(body) : 0;
+  if (delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
+  const win = slotOf(body, o, at);
+  if (win.error) return { ok: false, status: win.status, error: win.error };
+  if (!needsYes(o, { total: pr.price, slot: win.slot })) return { ok: false, status: 409, error: "nothing here needs their yes: Accept it" };
+  if (o.sheet && f.orders.some((x) => x.id !== o.id && x.u === o.u && x.sheet === o.sheet && x.status === "placed"))
+    return { ok: false, status: 409, error: "a sheet of several lines is agreed by one Accept: lower it to what they placed, keep their window, or Decline" };
+  if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "an offer answers a preview: send the digest the preview gave" };
+  const live = await livePre(db, id, "ack");
+  if (live && !isOfferPre(live)) return { ok: false, status: 409, error: "a yes of yours on this order is already on its way to its row" };
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, pr.price);
+  if (!pv.ok) return pv;
+  const entry = pv.entry;
+  delete pv.entry;
+  const hash = await offerDigest(entry, { collection: "sales", row: pv.row, flags: pv.flags });
+  if (hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the row has changed since the card drew it: look at it again before you send it", preview: Object.assign(pv, { offerHash: hash }) };
+  const rid = typeof body.rid === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(body.rid) ? body.rid : "f" + at.getTime().toString(36) + Math.random().toString(36).slice(2, 12).padEnd(10, "0");
+  const total = pr.price != null ? pr.price : +o.total;
+  const offer = { id: rid, kind: "accept", total, delivery, slot: win.slot, until: acceptUntil(at, win.slot), qty: +o.qty, product: o.product || "salt" };
+  /* the site first, his yes second, as for Negotiate */
+  const r = await moveOrder(env, o.u, id, { offer: { id: offer.id, kind: "accept", total, delivery, slot: win.slot, until: offer.until }, rid });
   if (!r.ok) return r;
   await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash, entry: null, at: at.toISOString(), by,
     shown: { from: "placed", offer, row: pv.row, flags: pv.flags, prepay: !!entry.prepay } });
