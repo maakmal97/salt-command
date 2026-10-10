@@ -5071,6 +5071,9 @@ await (async () => {
       const g0 = text.indexOf("/* ==== GEO: generated"), g1 = text.indexOf("/* ==== END GEO ==== */");
       if (g0 >= 0 && g1 > g0) text = text.slice(0, g0) + text.slice(g1);
     }
+    /* 10 Oct 2026: a fold-made order id (14 digits, a dash, six base-36 characters) is data, never an identifier;
+       v1050's order id ended in a digit and five letters starting with the two banned ones, and read as an identifier */
+    text = text.replace(/\b\d{14}-[0-9a-z]{6}\b/g, "");
     for (const m of text.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
       if (bannedWord(m[0])) offenders.push(f + ": " + m[0]);
     }
@@ -15952,7 +15955,9 @@ await (async () => {
     ok(card46 && card46.PSs && lead46(card46.PSs) === "proposed" && card46.PSo === null
       && card46.NBs && card46.NBs.sel === "" && card46.NBs.state === "not set" && card46.NBo === null,
       "the Tiers card lists a customer who has bought nothing yet, reads not set where nobody has bought or set, and draws no oil tier: " + JSON.stringify(card46));
-    const acc46 = rd46("(function(){queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;})()");
+    /* 10 Oct 2026: Accept reads the rules (ruleProposal), and a live slowdown on salt (his rule 4, counted back from today) lifts
+       every proposal a level; held off here, so this reads only which products are proposed, whatever the day */
+    const acc46 = rd46("(function(){var kS=slowdown;slowdown=function(){return {on:false,since:null,lastLot:null};};try{queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;}finally{slowdown=kS;}})()");
     ok(acc46 && acc46["CZ9-PS"] && acc46["CZ9-PS"].salt === pr46.salt && !("oil" in acc46["CZ9-PS"]) && !("CZ9-NB" in acc46),
       "and Accept takes only the proposals there are, passing over a product proposed nothing: " + JSON.stringify(acc46 && acc46["CZ9-PS"]));
     const set46 = rd46("(function(){queue=[];TIER_OF['CZ9-PS']={salt:'Gold'};render();var s=function(p,v){document.getElementById('tierSel_CZ9-PS_'+p).value=v;};var out=[];"
@@ -17629,11 +17634,14 @@ await (async () => {
        unit and Silver at twelve and a half; the same profile on a customer HOLDING Gold is quoted Gold at both. No orders, so no
        rate of their own lowers either price and the level binds. */
     const live = rd71("(function(){['CZ9-RUL','CZ9-HLD'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-HLD']={salt:'Gold'};setProd('salt');recompute();"
-      + "var kT=tierProposal,kB=buyerProfile;tierProposal=function(){return 'Gold';};"
+      + "var kT=tierProposal,kB=buyerProfile,kS=slowdown,kL=lateOf;tierProposal=function(){return 'Gold';};"
+      /* 10 Oct 2026: the slowdown and the late payer held off too, as __ask71 does, so a live slowdown (counted back from
+         today) does not lift the small band and turn this red on a quiet week */
+      + "slowdown=function(){return {on:false,since:null,lastLot:null};};lateOf=function(){return {on:false};};"
       + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false};};"
       + "try{var row=function(q){return PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());};"
       + "return {rul1:cardQuote('CZ9-RUL',1),rul12:cardQuote('CZ9-RUL',12.5),hld12:cardQuote('CZ9-HLD',12.5),gold1:row(1).prices[3],gold12:row(12.5).prices[3],silver12:row(12.5).prices[4]};"
-      + "}finally{tierProposal=kT;buyerProfile=kB;delete TIER_OF['CZ9-HLD'];}})()");
+      + "}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;lateOf=kL;delete TIER_OF['CZ9-HLD'];}})()");
     ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
