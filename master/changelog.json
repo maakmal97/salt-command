@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1057",
+  "d": "10 Oct 2026",
+  "t": "A SALE PAID IN FULL IS THE GOODS AND THE DELIVERY, IN THE DEFAULT GUARD AND THE UNDATED CARD",
+  "n": [
+   "<b>The default guard reads what is owed.</b> A Default on a sale was measured against its total alone, so a delivered order with its goods paid and its delivery charge unpaid read as paid in full and could not be written off, while the account said RM owed. The guard reads the engine's txOwed now, as txStat and txAdvance have since v741.",
+   "<b>The undated-delivery card follows.</b> Its short-money figure and evidence line read txOwed too. Counter Admin sends a sale Correction through the same engine guard, and a sale Default is refused there. No row, price or stock figure moves."
+  ]
+ },
+ {
   "v": "v1056",
   "d": "10 Oct 2026",
   "t": "FULFILMENT OF RM90 CASH ON CZ5-TM ORDER S247, NO STOCK MOVED",
