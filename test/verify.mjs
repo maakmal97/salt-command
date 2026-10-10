@@ -53266,5 +53266,27 @@ await (async () => {
     "a room handed the list answers as the room that read it: " + JSON.stringify(read(key)) + " / " + JSON.stringify(hand(key)));
 })();
 
+section("Drafter: an impossible calendar day is refused in every mode and in a correction");
+await (async () => {
+  const { draftRow, checkCorrection } = await import("../src/drafter.js");
+  const shelf = { version: "v1", pricing: { v: "v1", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 79.5 } } } } },
+    purchases: [{ date: "2026-07-28", qty: 100, total: 4700, receivedOn: "2026-07-28" }], sales: [],
+    state: { roster: ["CC9-OKR"], PRODUCTS: { salt: { name: "Salt" } },
+      OPEN: { v: "vT", byKey: {}, position: { salt: { onHand: 8, owedOut: 0, promised: 0, free: 8 } }, countedOn: {} } } };
+  const bad = ["2026-02-30", "2026-13-01", "2026-00-10", "2026-04-31"];
+  const refused = (r) => /not a date in YYYY-MM-DD/.test((r && r.skip) || "");
+  for (const date of bad) {
+    ok(refused(draftRow({ at: "x", payload: { mode: "new", direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date } }, shelf)), "a new sale dated " + date + " is refused");
+    ok(refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date } }, shelf)), "a count dated " + date + " is refused");
+    ok(refused(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 1, why: "spillage", date } }, shelf)), "a loss dated " + date + " is refused");
+  }
+  for (const mode of ["amend", "loan", "repay", "lost", "redeem", "gift", "addid", "rename", "place", "tierset", "price"])
+    ok(refused(draftRow({ at: "x", payload: { mode, party: "CC9-OKR", product: "salt", qty: 1, total: 90, date: "2026-02-30" } }, shelf)), "a " + mode + " dated 2026-02-30 is refused");
+  ok(!refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date: "2026-02-28" } }, shelf)), "a real day still drafts a count");
+  ok(!refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date: "2028-02-29" } }, shelf)), "a leap day still drafts");
+  const chk = checkCorrection({ date: "2026-02-30" }, shelf, { date: "2026-07-28", qty: 100, total: 4700 }, false);
+  ok(/date in YYYY-MM-DD/.test(JSON.stringify(chk)), "a correction to an impossible day is refused: " + JSON.stringify(chk).slice(0, 120));
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
