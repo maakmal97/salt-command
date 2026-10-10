@@ -9096,7 +9096,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1067","d":"10 Oct 2026","t":"DELIVERY OF 2 UNITS TO CF5-WM RECORDED AND THE RM215 PAID IN CASH","n":["<b>TWO AMENDMENTS ON S250, BOTH PREAPPROVED BY PHONE.</b> A correction records the 2 units delivered on 10 Oct and a fulfilment records RM215 received in cash at the counter. The drafter flagged an advance against the credit cap, but the cash settles the order, so nothing is left outstanding. The shelf rolls by 2 units out to CF5-WM. The cost basis does not move."]}];
+const evolution=[{"v":"v1068","d":"10 Oct 2026","t":"A RAISE OR ANOTHER WINDOW GOES TO THEM FOR THEIR YES","n":["<b>Your Accept never raises their price or moves their window alone.</b> Goods above what they placed it at, to the sen, or a window other than the one they chose, goes to them as Send for their yes: the goods, your delivery charge and the window, open until the window starts or 48 hours. Your first delivery charge, a window on an as-soon-as order and a lower price need no yes.","<b>Their answer is the order's.</b> Yes moves it to acknowledged at the offer, its row drafted and approved only if it equals what you sent; No thanks withdraws the order at no cost. Withdraw, or the offer lapsing, leaves it as they placed it, yours to Accept, send again or decline.","<b>A day and its windows</b> on the card and in Counter Admin, today and the seven days after; a sheet that would need their yes is refused, and Counter Admin sends and withdraws as the Desk does.","<b>Nothing prices by it.</b> The floor holds, the board is untouched, and their phone is woken in words only."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9247,7 +9247,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 20:33 KL';
+const LAST_UPDATED='10 Oct 2026, 20:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
