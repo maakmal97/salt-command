@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1059",
+  "d": "10 Oct 2026",
+  "t": "CORRECTION: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 10 OCT",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s247 for CZ5-TM, 2 units for RM190, is marked as collected on 10 Oct: delivered quantity 2, delivered on 10 Oct, handover collected. No cash moves. The drafter flagged that the row's trail of 3 steps will no longer add up to the corrected figure, and that RM95 a unit is below the party's usual rate.",
+   "<b>SHELF ROLLED.</b> Salt goes out by 2 units to CZ5-TM, the difference the correction states. The stated shelf of 12.14 units is rolled down by that amount by the tool, and the stock cost of RM56 is untouched."
+  ]
+ },
+ {
   "v": "v1058",
   "d": "10 Oct 2026",
   "t": "ONE RENDER BUILDS A CARD'S TIER ROW ONCE PER BOOK AND SIZE",

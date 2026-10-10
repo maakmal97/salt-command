@@ -1,6 +1,6 @@
 {
- "v": "v1056",
- "stamped": "10 Oct 2026, 14:52 KL",
+ "v": "v1059",
+ "stamped": "10 Oct 2026, 15:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 12.14,
+  "STATED_STOCK": 10.14,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -6972,8 +6972,8 @@
     "total": 190,
     "cash": 190,
     "date": "2026-10-10",
-    "deliveredQty": 0,
-    "note": "<b>SALT SALE DATED 10 OCT: 2 UNITS TO CZ5-TM AT RM190, PENDING, NOTHING PAID OR HANDED OVER.</b> Order 20261009164607-zasz2w, acknowledged, to collect, preapproved by phone. For 2 units the dossier gives a floor of RM116 and an ask of RM250, so RM190 clears the floor and stays under the ask. CZ5-TM has 3 orders, a median rate of RM110, a range of RM110 to RM110, RM0 outstanding before and 0 units on credit before, against a cap of 1 unit. The cost carried is RM58 a unit off the latest purchase, p036, not the inventory's own RM56. Drafter flag: RM95 a unit against RM110 on every earlier order; the figures confirm the lower rate but give no reason for it. The order was placed at RM240. Open: RM190 unpaid and 2 units to collect.",
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON S247, 10 OCT: 2 UNITS OF SALT COLLECTED BY CZ5-TM.</b> Order 20261009164607-zasz2w, 2 units for RM190, preapproved by phone. Delivered quantity moves from 0 to 2, delivered on is set to 10 Oct and handover to collected. It moves no cash; it records the handover and rolls the shelf by 2 units. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding and 0 units on credit. Drafter flags: the row's trail of 3 steps will no longer add up to the corrected figure, and RM95 a unit is 13.6% below his usual RM110. The figures confirm the second: RM95 is the bottom of his range. The correction sets no cost of its own. Open: nothing, the order is paid and handed over. <b>SALT SALE DATED 10 OCT: 2 UNITS TO CZ5-TM AT RM190, PENDING, NOTHING PAID OR HANDED OVER.</b> Order 20261009164607-zasz2w, acknowledged, to collect, preapproved by phone. For 2 units the dossier gives a floor of RM116 and an ask of RM250, so RM190 clears the floor and stays under the ask. CZ5-TM has 3 orders, a median rate of RM110, a range of RM110 to RM110, RM0 outstanding before and 0 units on credit before, against a cap of 1 unit. The cost carried is RM58 a unit off the latest purchase, p036, not the inventory's own RM56. Drafter flag: RM95 a unit against RM110 on every earlier order; the figures confirm the lower rate but give no reason for it. The order was placed at RM240. Open: RM190 unpaid and 2 units to collect.",
     "rid": "s247",
     "amend": [
      {
@@ -6996,9 +6996,21 @@
       "cash": 90,
       "kg": 0,
       "note": "<b>FULFILMENT ON 10 OCT: RM90 CASH AGAINST CZ5-TM ORDER S247.</b> The order is 2 units of salt for RM190, dated 10 Oct. This fulfilment moves RM90 and 0 units, against RM90 and 2 units outstanding, and leaves RM0 and 2 units outstanding. For 2 units the desk's floor is RM116 and its ask RM250, so the order total of RM190 clears the floor and stays under the ask. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM90 outstanding before this row and 0 units on credit. The dossier gives no credit cap. The drafter raised no flag. The order row shows RM100 cash against the RM90 entered here, and the dossier gives no reason. The fulfilment carries no cost. Open: the 2 units still to hand over."
+     },
+     {
+      "date": "2026-10-10",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON S247, 10 OCT: 2 UNITS OF SALT COLLECTED BY CZ5-TM.</b> Order 20261009164607-zasz2w, 2 units for RM190, preapproved by phone. Delivered quantity moves from 0 to 2, delivered on is set to 10 Oct and handover to collected. It moves no cash; it records the handover and rolls the shelf by 2 units. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding and 0 units on credit. Drafter flags: the row's trail of 3 steps will no longer add up to the corrected figure, and RM95 a unit is 13.6% below his usual RM110. The figures confirm the second: RM95 is the bottom of his range. The correction sets no cost of its own. Open: nothing, the order is paid and handed over.",
+      "cost": 116
      }
     ],
-    "paidOn": "2026-10-10"
+    "paidOn": "2026-10-10",
+    "deliveredOn": "2026-10-10",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-10: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-10; handover (unset) to collected",
+    "cost": 116
    },
    {
     "customer": "CS6-BS",
@@ -7686,9 +7698,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T06:51:32.570Z",
+  "QUEUE_COMMITTED": "2026-10-10T07:49:11.799Z",
   "PRICING": {
-   "takenAt": "2026-10-10T06:52:44.968Z",
+   "takenAt": "2026-10-10T07:49:53.682Z",
    "sizes": [
     0.5,
     1,
@@ -7737,7 +7749,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -8976,15 +8988,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.32954545454545453
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08150208623087622,
        "avgDel": {
-        "n": 200,
-        "kg": 510.56,
-        "mean": 2.5528
+        "n": 201,
+        "kg": 512.56,
+        "mean": 2.55
        }
       },
       "policy": {
@@ -14540,26 +14552,12 @@
      ]
     }
    },
-   "v": "v1056"
+   "v": "v1059"
   },
   "OPEN": {
-   "at": "2026-10-10T06:52:45.783Z",
-   "count": 11,
+   "at": "2026-10-10T07:49:54.507Z",
+   "count": 10,
    "byKey": {
-    "CZ5-TM|2026-10-10|190": {
-     "d": "2026-10-10",
-     "p": "CZ5-TM",
-     "dir": "S",
-     "q": 2,
-     "t": 190,
-     "cash": 190,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2,
-     "rid": "s247",
-     "paidOn": "2026-10-10",
-     "key": "CZ5-TM|2026-10-10|190"
-    },
     "CS6-BS|2026-10-10|110": {
      "d": "2026-10-10",
      "p": "CS6-BS",
@@ -14723,13 +14721,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 12.14,
+     "onHand": 10.14,
      "free": 3.64,
-     "owedOut": 8.5,
+     "owedOut": 6.5,
      "coverDays": 1,
      "rate": 5.05,
      "owedToYou": 340,
-     "promised": 10.5,
+     "promised": 8.5,
      "short": 0
     },
     "oil": {
@@ -14784,7 +14782,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1056"
+   "v": "v1059"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14792,7 +14790,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1056"
+   "v": "v1059"
   },
   "REWARD": {
    "stated": {
@@ -14804,7 +14802,7 @@
      }
     }
    },
-   "v": "v1056"
+   "v": "v1059"
   }
  }
 }
