@@ -1,0 +1,8 @@
+[
+  {
+    "name": "verified registrations displace pending resource reservations in trade batches",
+    "file": "src/worker.js",
+    "find": "makerTradeBatch(operation, body, book, resourcePending, registrations)",
+    "replace": "makerTradeBatch(operation, body, book, registrations, resourcePending)"
+  }
+]

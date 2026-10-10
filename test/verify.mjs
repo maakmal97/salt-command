@@ -2224,7 +2224,7 @@ await (async () => {
   ok(/--from-queue/.test(d), "the laptop queue can be routed through the same gate");
   ok(/import\("\.\.\/src\/drafter\.js"\)/.test(d), "and it imports the SAME draftRow, rather than a second copy of the logic");
   ok(/'pending'/.test(d.slice(d.indexOf("async function fromQueue"))), "a laptop entry arrives PENDING, never pre-approved");
-  ok(/status='approved' AND committed_at IS NULL/.test(d), "the run is offered only approved, uncommitted rows");
+  ok(/d\.status='approved' AND d\.committed_at IS NULL/.test(d), "the run is offered only approved, uncommitted rows");
 
   /* 16 Sep 2026: AND IT READS THE BOOK THROUGH WRANGLER, NOT THE KEYED ENDPOINTS. --from-queue
      took the book over /ledger, an open read when it was written and keyed since 16 Aug 2026,
@@ -2821,12 +2821,55 @@ await (async () => {
     /* v824: the engine supplies free and the trigger's shortfall; the rate and the cover are the book's restock plan's */
     const rp = read("restockFor(PROD)");
     /* a free shelf that outlasts the plan's horizon has no coverDays; the desk then reads free over the rate (v1035: oil's 70 units) */
-    const wantDays = rp.coverDays != null ? rp.coverDays : +(Math.max(0, dcv.free) / rp.base).toFixed(1);
-    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === wantDays, `${p}: cover agrees (${dcv.days} days, plan ${rp.coverDays})`);
+    const measuredCover = rp && !rp.empty && rp.base > 0;
+    const expectedDays = measuredCover
+      ? rp.coverDays != null ? rp.coverDays : +(Math.max(0, cv.free) / rp.base).toFixed(1)
+      : cv.days;
+    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy
+      && dcv.rate === (measuredCover ? rp.base : cv.rate) && dcv.days === expectedDays, `${p}: cover agrees (${dcv.days} days, plan ${rp.coverDays})`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
   try { w.close(); } catch (e) { }
+})();
+
+section("Cover mapping: finite horizon, beyond horizon and zero base");
+await (async () => {
+  const { default: E } = await import("../engine/position.mjs");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const today = new Date("2026-10-08T00:00:00.000Z");
+    const rows = Array.from({ length: 28 }, (_, age) => ({
+      date: new Date(today.getTime() - age * 86400000).toISOString().slice(0, 10), qty: 1
+    }));
+    const finite = E.restockPlan({ rows, today, free: 5, reviewDays: 9,
+      rhythm: { dow: Array(7).fill(2), pay: 1, mid: 1 } });
+    const beyond = E.restockPlan({ rows, today, free: 70, reviewDays: 9 });
+    const zero = E.restockPlan({ rows: [{ date: "2099-10-08", qty: 1 }], today, free: 70, reviewDays: 9 });
+    w.eval(`var coverMappingSaved={restock:restockFor,stock:currentStock,deferred:defUnits,priced:pricedSales};
+      pricedSales=[{date:'2026-10-08',qty:14,total:140,cash:140,deliveredQty:14}];defUnits=0;`);
+    const draw = (plan, free) => {
+      w.__coverMappingPlan = plan;
+      w.eval(`currentStock=${free};restockFor=function(){return window.__coverMappingPlan;};`);
+      return JSON.parse(w.eval("JSON.stringify(coverStats())"));
+    };
+    const a = draw(finite, 5);
+    ok(finite.base === 1 && finite.coverDays === 2.5 && a.rate === 1 && a.days === 2.5,
+      "finite native forecast cover is retained exactly by the Desk");
+    const b = draw(beyond, 70);
+    ok(beyond.base === 1 && beyond.coverDays === null && b.rate === 1 && b.days === 70,
+      "beyond the 28-day horizon native cover stays null and the Desk uses exact free/base cover");
+    const c = draw(zero, 70);
+    ok(!zero.empty && zero.base === 0 && zero.coverDays === null
+      && c.rate === 1 && c.days === 70 && w.eval("Number.isFinite(coverStats().days)"),
+      "zero measured base keeps native transaction cover instead of dividing by zero");
+  } finally {
+    w.eval(`if(typeof coverMappingSaved!=='undefined'){
+      restockFor=coverMappingSaved.restock;currentStock=coverMappingSaved.stock;
+      defUnits=coverMappingSaved.deferred;pricedSales=coverMappingSaved.priced;}`);
+    w.close();
+  }
 })();
 
 /* ---- the geography as data ------------------------------------------------------------ */
@@ -51245,6 +51288,16 @@ await (async () => {
 section("Counter multi-book trade: owner controls, shared trip and native fold");
 await (async () => {
   await (await import("./maker-trades.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter approved registration staging: actual mixed-status SQLite selection");
+await (async () => {
+  await (await import("./maker-registration.mjs")).runApprovedSelection({ ok });
+})();
+
+section("Counter confirmed Add ID selectability and dependent fold");
+await (async () => {
+  await (await import("./maker-registration.mjs")).run({ ok });
 })();
 
 section("Counter blank-locality Add ID: owner device pair and real bridge");

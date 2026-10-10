@@ -59,6 +59,7 @@ const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift "
   : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { nextRid } from "./rid.mjs";
 import { userFor, usersJson } from "./stmt-crypto.mjs";
 import { freeSpares, oneCodeEach } from "./stmt-pool.mjs";
@@ -166,7 +167,59 @@ function describe(item) {
 /* ---- the plan: what each item would do, and what is refused ----------------------------- */
 export function plan(book, staged, notes) {
   const out = { items: [], refused: [], moves: [] };
-  const rows = (staged && staged.approved) || [];
+  let rows = (staged && staged.approved) || [];
+  const registrations = rows.flatMap((item) => {
+    if (item.status !== "approved") return [];
+    const proof = verifiedVaultRegistration(item, item.vaultReceipt, item.vaultOutbox);
+    return proof ? [{ item, proof }] : [];
+  });
+  const registrationIds = new Set(registrations.map((registration) => registration.item.id));
+  const plannedRegistrations = new Set();
+  const registrationsByCode = new Map();
+  for (const registration of registrations) {
+    const known = registrationsByCode.get(registration.proof.code) || [];
+    known.push(registration);
+    registrationsByCode.set(registration.proof.code, known);
+  }
+  const dependencies = new Map(), dependencyFaults = new Map();
+  for (const item of rows) {
+    if (!["sales", "purchases"].includes(item.collection)
+      || item.entry?.payload?.mode !== "new" || !item.entry?.makerRequest) continue;
+    const payload = item.entry.payload || {};
+    const partyCodes = [...new Set([payload.party, payload.assoc, payload.downstream]
+      .filter((value) => typeof value === "string" && !(book.roster || []).includes(value)))];
+    if (!partyCodes.length) continue;
+    const stated = item.entry.registrationDependencies;
+    if (!Array.isArray(stated) || stated.length !== partyCodes.length
+      || stated.some((dependency) => !dependency || Object.keys(dependency).sort().join(",") !== "code,id"
+        || typeof dependency.code !== "string" || typeof dependency.id !== "string")) {
+      dependencyFaults.set(item.id, "a Counter trade names a party not on the book and has no server-verified Add ID dependency");
+      continue;
+    }
+    const required = [];
+    for (const code of partyCodes) {
+      const matching = registrationsByCode.get(code) || [];
+      const declared = stated.filter((dependency) => dependency.code === code);
+      const registration = matching.find((candidate) => candidate.proof.id === declared[0]?.id);
+      if (declared.length !== 1 || matching.length !== 1 || !registration
+        || registration.item.status !== "approved"
+        || registration.item.id !== registration.proof.id) {
+        dependencyFaults.set(item.id, `${code} needs one approved, receipt- and outbox-matched Add ID in this batch`);
+        break;
+      }
+      required.push(registration.item.id);
+    }
+    if (!dependencyFaults.has(item.id)) dependencies.set(item.id, required);
+  }
+  const ordered = [], waiting = rows.slice(), applied = new Set();
+  while (waiting.length) {
+    const next = waiting.findIndex((item) => !(dependencies.get(item.id) || []).some((id) => !applied.has(id)));
+    if (next < 0) break;
+    const [item] = waiting.splice(next, 1);
+    ordered.push(item);
+    applied.add(item.id);
+  }
+  rows = ordered.concat(waiting);
   /* v742: WHAT EACH ROW HAS MOVED SO FAR IN THIS BATCH, keyed on the book row, so a second amendment on one row in
      one batch is struck from where the first left it and not from the book as it stood before the batch: a handover
      in two stages inside one hour stages two corrections, and the site's running total would have rolled twice. The
@@ -184,6 +237,16 @@ export function plan(book, staged, notes) {
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
+    if (dependencyFaults.has(it.id)) {
+      out.refused.push({ id: it.id, why: dependencyFaults.get(it.id) });
+      continue;
+    }
+    const failedDependency = (dependencies.get(it.id) || []).find((id) => !plannedRegistrations.has(id));
+    if (failedDependency) {
+      out.refused.push({ id: it.id,
+        why: `the approved Add ID ${failedDependency} was refused by the native fold plan; this trade remains staged until its registration can be applied` });
+      continue;
+    }
     const resourceEntry = it.collection === "repayment" ? { at: it.id,
       payload: { mode: "repay", loan: r.loan, kg: r.kg, rm: r.rm } } : it.entry;
     const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
@@ -484,6 +547,7 @@ export function plan(book, staged, notes) {
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
+    if (it.collection === "roster" && registrationIds.has(it.id)) plannedRegistrations.add(it.id);
     if (resourceEntry) reservedEntries.push(resourceEntry);
   }
   /* 05 Oct 2026: A TRIP IS STAGED TOGETHER. A refused row of a trip holds back its siblings in this batch, so the row that

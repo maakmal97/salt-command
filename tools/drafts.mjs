@@ -24,6 +24,7 @@
 import { againIfLapsed } from "./cloudflare.mjs";
 import { d1Rows } from "./d1json.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
@@ -349,21 +350,38 @@ function approve() {
 /* What the commit run asks for: approved and not yet folded into the master. Approved and
    committed are different questions, because an approved row stays approved forever. */
 function approved() {
-  const rows = query("SELECT id,collection,row,reasoning,flags,amends,amend_kind,entry,decided_at,decided_by FROM draft"
-    + " WHERE status='approved' AND committed_at IS NULL ORDER BY drafted_at");
+  const rows = query(`SELECT d.id,d.status,d.collection,d.row,d.reasoning,d.flags,d.amends,d.amend_kind,d.entry,d.decided_at,d.decided_by,
+      r.id AS receipt_id,r.fingerprint AS receipt_fingerprint,r.request_fingerprint,r.revision AS receipt_revision,
+      r.operation AS receipt_operation,o.id AS outbox_id,o.entry AS outbox_entry,o.state AS outbox_state,
+      o.completed_at AS outbox_completed_at
+    FROM draft d LEFT JOIN vault_receipt r ON r.id=d.id LEFT JOIN vault_outbox o ON o.id=d.id
+    WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY d.drafted_at`);
   if (!rows) return;
-  const out = rows.map((r) => {
+  console.log(JSON.stringify({ ok: true, count: rows.length, approved: approvedRows(rows) }, null, 1));
+}
+
+export function approvedRows(rows) {
+  return rows.map((r) => {
     const parse = (s, d) => { try { return s == null ? d : JSON.parse(s); } catch (e) { return d; } };
     /* amends/amendKind are NULL on a new row and set on an amendment. The fold reads them to
        know whether to APPEND `row` or apply a change to the row `amends` names. Carrying them
        here rather than leaving the fold to re-query is what lets the cloud agent, which has no
        credentials, do the whole job from the staged file. */
-    return { id: r.id, collection: r.collection, row: parse(r.row, null), reasoning: r.reasoning,
-             flags: parse(r.flags, []), amends: r.amends || null, amendKind: r.amend_kind || null,
-             entry: parse(r.entry, null),
-             decidedAt: r.decided_at, decidedBy: r.decided_by };
+    const item = { id: r.id, status: r.status, collection: r.collection, row: parse(r.row, null), reasoning: r.reasoning,
+      flags: parse(r.flags, []), amends: r.amends || null, amendKind: r.amend_kind || null,
+      entry: parse(r.entry, null), decidedAt: r.decided_at, decidedBy: r.decided_by };
+    if (r.receipt_id) {
+      const receipt = { id: r.receipt_id, fingerprint: r.receipt_fingerprint,
+        request_fingerprint: r.request_fingerprint, revision: r.receipt_revision, operation: r.receipt_operation };
+      const outbox = { id: r.outbox_id, entry: parse(r.outbox_entry, null),
+        state: r.outbox_state, completed_at: r.outbox_completed_at };
+      if (verifiedVaultRegistration(item, receipt, outbox)) {
+        item.vaultReceipt = receipt;
+        item.vaultOutbox = outbox;
+      }
+    }
+    return item;
   });
-  console.log(JSON.stringify({ ok: true, count: out.length, approved: out }, null, 1));
 }
 
 /* ---- committed ----------------------------------------------------------------------- */
