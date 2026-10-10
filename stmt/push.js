@@ -25,6 +25,7 @@
  */
 
 import { NEWS, CASES, TEXT_KINDS, LINE_KINDS, TEXT_MAX } from "./sw.js";
+import { clip } from "./words.js";
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -130,7 +131,7 @@ export async function listSubs(env, u) {
 export function sealedNews(news, o) {
   const out = { k: news.k, o };
   if (CASES.includes(news.v)) out.v = news.v;
-  if (TEXT_KINDS.includes(news.k) && typeof news.t === "string" && news.t.trim()) out.t = news.t.trim().slice(0, TEXT_MAX);
+  if (TEXT_KINDS.includes(news.k) && typeof news.t === "string" && news.t.trim()) out.t = clip(news.t.trim(), TEXT_MAX);
   if (LINE_KINDS.includes(news.k) && typeof news.m === "string" && /^[0-9TZ:.-]{10,30}$/.test(news.m)) out.m = news.m;
   return out;
 }

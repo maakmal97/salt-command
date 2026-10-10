@@ -15,11 +15,15 @@
  * 2026 every job must carry `timeout-minutes`: GitHub's default is six hours, and the chain holds
  * one concurrency slot with every later approval queued behind it.
  *
+ * Since 10 Oct 2026 the file is PARSED by the `yaml` devDependency: the checks below read lines, and
+ * a plain scalar holding ": " (`run-name: a: b`) passed all of them while GitHub could not load it.
+ *
  *   node tools/lint-workflows.mjs [dir]     dir defaults to .github/workflows
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { parseDocument } from "yaml";
 
 /* The jobs under `jobs:`, each with its timeout-minutes, null when it has none in whole minutes.
    Read by indentation, not by a YAML parser: a job is a key one level under `jobs:`, and its own
@@ -56,6 +60,13 @@ if (isMain) {
     const path = join(DIR, f);
     const text = readFileSync(path, "utf8");
     const lines = text.split(/\r?\n/);
+
+    /* 0. It parses as one YAML document. Every check below reads lines and cannot see the grammar. */
+    for (const e of parseDocument(text).errors) {
+      console.log(`  FAIL  ${path}:${e.linePos ? e.linePos[0].line : "?"}  is not valid YAML; GitHub cannot load it`);
+      console.log(`          ${e.message.split("\n")[0]}`);
+      bad++;
+    }
 
     /* 1. `secrets` in an if condition. GitHub rejects the file outright. */
     lines.forEach((l, i) => {

@@ -885,6 +885,13 @@ export function unitsIn(one, many, q, u) {
   return +q > 1 && u.slice(-1) === "s" ? q + " " + u : fill(+q > 1 ? many : one, { n: q, u: u });
 }
 
+/** A line cut to `max` UTF-16 units, never between the two halves of one character: a lone half is a replacement mark to
+ *  every encoder after it (the push payload, the order book's text, a ledger tool). */
+export const clip = (s, max) => {
+  const t = String(s == null ? "" : s).slice(0, max), last = t.charCodeAt(t.length - 1);
+  return last >= 0xD800 && last <= 0xDBFF ? t.slice(0, -1) : t;
+};
+
 /** A refusal a customer can meet: its English and its code, and its slots where it has any, for the page to word. */
 export function refusal(code, vars) {
   const w = EN["e." + code];

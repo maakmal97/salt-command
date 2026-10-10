@@ -21,7 +21,7 @@
  * means on this book.
  */
 import { sendPush } from "./push.js";
-import { readBook, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
+import { readBook, bookOnce, draftRow, cogsFor, floorFor, usualFor, pricingOf, stageDigest, runDrafter, settlePre, withPending, noteQueued, offerDigest, isOfferPre } from "./drafter.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
@@ -271,14 +271,15 @@ function quoteOff(snap, code, qty) {
   try { const v = PRICING_ENGINE.quoteAt(qty, PRICING_ENGINE.costStack(I.cost), I.policy, d); return v != null && isFinite(v) && v > 0 ? v : null; }
   catch (e) { return null; }
 }
-async function previewAck(env, o, code, delivery, now, ctx, price) {
+/* `mirror`, here and below: the invocation's one reader of the mirror (bookOnce, 06 Oct 2026); without one, a read of its own */
+async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
      price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
   const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 }, price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});
   const entry = pendingEntry(agreed, code, now);
   entry.orderId = o.id;
-  const book = await readBook(env.SALT_LEDGER);
+  const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const product = o.product || "salt", qty = +o.qty, goods = +(+agreed.total).toFixed(2);
@@ -423,11 +424,12 @@ export async function ackOnApproval(env, pre) {
 }
 
 /** POST /orders/<id>/accept {delivery, hash}. Returns { ok, approved, differs?, waiting?, order?, draft, drafted? }. */
-export async function acceptOrder(env, id, body, by, now) {
+export async function acceptOrder(env, id, body, by, now, mirror) {
   const at = now || new Date();
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, db = env.SALT_LEDGER;
+  mirror = mirror || (db ? bookOnce(db) : null);
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   if (!body || typeof body.hash !== "string") return { ok: false, status: 400, error: "Accept answers a preview: send the digest the preview gave" };
@@ -453,7 +455,7 @@ export async function acceptOrder(env, id, body, by, now) {
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const pr = again ? { price: null } : priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price, mirror);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
@@ -465,12 +467,15 @@ export async function acceptOrder(env, id, body, by, now) {
   }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash: pv.hash, entry, at: at.toISOString(), by,
     shown: { from: o.status, row: pv.row, flags: pv.flags, pricing: pv.pricing } });
-  await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
+  await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
   await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), preId).run();
-  const drafted = await runDrafter(env);
+  /* D6: THE DRAFTER READS THE MIRROR FOR ITSELF, never the card's read above, so a mirror that moved under the tap drafts
+     a row that differs from what he saw and waits under Approve (S11 11.11); the yes it tests shares the drafter's read */
+  const fresh = bookOnce(db);
+  const drafted = await runDrafter(env, { mirror: fresh });
   /* a pass that drafted it before the pre-approval knew its id tests it here instead, on the row as stored */
   let pre = await preById(db, preId);
-  if (pre.status === "waiting") { await settlePre(db, pre, await readBook(db)); pre = await preById(db, preId); }
+  if (pre.status === "waiting") { await settlePre(db, pre, await fresh()); pre = await preById(db, preId); }
   const out = { draft: entry.at, drafted };
   if (pre.status === "applied") return Object.assign(out, { approved: true }, await ackOnApproval(env, pre));
   if (pre.status === "differs") {
@@ -547,16 +552,17 @@ export async function withdrawOffer(env, id, body) {
   return { ok: true, order: r.order };
 }
 /** THEIR ACCEPT, followed: the row drafted at the offer and queued, approved where it lands only if it equals what he offered. */
-export async function takeOffer(env, id, now) {
+export async function takeOffer(env, id, now, mirror) {
   const at = now || new Date();
   const f = await findOrder(env, id);
   if (!f.ok) return f;
   const o = f.order, db = env.SALT_LEDGER;
   if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
+  mirror = mirror || bookOnce(db);
   if (!o.code) return { ok: false, status: 409, error: "no desk code is mapped to this account yet: publish the statements again" };
   if (!o.price || o.price.state !== "taken") return { ok: false, status: 409, error: "no offer of yours is taken on this order" };
   const pre = await livePre(db, id, "ack");
-  if (!pre || !isOfferPre(pre)) return o.status === "placed" ? queueOffer(env, f, null, "no yes of yours was on file for the offer they took", at)
+  if (!pre || !isOfferPre(pre)) return o.status === "placed" ? queueOffer(env, f, null, "no yes of yours was on file for the offer they took", at, mirror)
     : { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to take" };
   if (pre.status === "applied") return o.status === "placed" ? Object.assign({ approved: true, again: true, draft: pre.draft_id }, await ackOnApproval(env, pre))
     : { ok: true, approved: true, again: true, draft: pre.draft_id, order: o };
@@ -572,21 +578,22 @@ export async function takeOffer(env, id, now) {
        moves a second entry to a free millisecond, never dropping it, so two takes would be two rows) */
     const v = await db.prepare("UPDATE preapproval SET status='void', decided_at=?1 WHERE id=?2 AND status='waiting'").bind(at.toISOString(), pre.id).run();
     if (!(v && v.meta && v.meta.changes === 1)) return { ok: true, again: true };
-    return queueOffer(env, f, off, bad, at);
+    return queueOffer(env, f, off, bad, at, mirror);
   }
   if (!pre.entry_at) {
-    const pv = await previewAck(env, o, o.code, off.delivery || 0, at, { orders: f.orders }, off.total);
+    const pv = await previewAck(env, o, o.code, off.delivery || 0, at, { orders: f.orders }, off.total, mirror);
     if (!pv.ok) {
       await markOrder(env, o.u, id, { sync: { state: "waiting", why: "they took your offer, but its row could not be drafted: " + pv.error, at: new Date().toISOString() } });
       return pv;
     }
     const entry = pv.entry;
-    await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
+    await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), pre.id).run();
   }
-  const drafted = await runDrafter(env);
+  const fresh = bookOnce(db);   /* D6, as at Accept: the drafter's own read, shared with the yes it tests */
+  const drafted = await runDrafter(env, { mirror: fresh });
   let p = await preById(db, pre.id);
-  if (p.status === "waiting") { await settlePre(db, p, await readBook(db)); p = await preById(db, pre.id); }
+  if (p.status === "waiting") { await settlePre(db, p, await fresh()); p = await preById(db, pre.id); }
   const out = { draft: p.entry_at, drafted };
   if (p.status === "applied") return Object.assign(out, { approved: true }, await ackOnApproval(env, p));
   if (p.status === "differs") {
@@ -598,25 +605,25 @@ export async function takeOffer(env, id, now) {
 /* A TAKEN OFFER WITH NO YES THAT FITS IT IS NEVER STRANDED (06 Oct 2026, Fable's review): its row is queued at the offer's
    figure under a yes that cannot match (its reason for a digest), so the drafter marks it and it waits under Approve, where
    approving it moves the order as any Accept that came out other than he saw. Once queued, a take finds that yes. */
-async function queueOffer(env, f, off, why, at) {
+async function queueOffer(env, f, off, why, at, mirror) {
   const o = f.order, db = env.SALT_LEDGER, offer = o.price.offer || {};
   const delivery = off && typeof off.delivery === "number" ? off.delivery : 0;
   const say = (w) => markOrder(env, o.u, o.id, { sync: { state: "waiting", why: w, at: new Date().toISOString() } });
-  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, +offer.total);
+  const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders }, +offer.total, mirror);
   if (!pv.ok) { await say("they took your offer, but its row could not be drafted: " + pv.error); return pv; }
   const entry = pv.entry;
-  await queueSale(env, entry);   /* which may move entry.at to a free millisecond */
+  await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
   const preId = await recordPre(db, { order_id: o.id, u: o.u, stage: "ack", hash: "unmatched: " + why, entry, at: at.toISOString(), by: "take",
     shown: { from: "placed", offer: Object.assign({ product: o.product, qty: +o.qty, delivery }, offer), row: pv.row, flags: pv.flags, unmatched: why } });
   await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), preId).run();
-  const drafted = await runDrafter(env);
+  const drafted = await runDrafter(env);   /* D6: the drafter's own read */
   await say("they took your offer, but " + why + ", so its row waits under Approve" + (o.mode === "deliver" ? " at no delivery charge" : "")
     + "; approving it there moves the order");
   return { ok: true, approved: false, differs: true, unmatched: why, draft: entry.at, drafted };
 }
 /* the minute's net for the offers: a take not followed yet is followed, and an offer they declined or he withdrew lets its yes
    go. An offer past its lapse is left: it is read at a take and nowhere else. */
-async function offerPass(env, now) {
+async function offerPass(env, now, mirror) {
   const db = env.SALT_LEDGER;
   let rows = [];
   try { rows = (await db.prepare("SELECT order_id FROM preapproval WHERE stage='ack' AND status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NOT NULL").all()).results || []; }
@@ -628,7 +635,7 @@ async function offerPass(env, now) {
   for (const { order_id: id } of rows) {
     const o = all.orders.find((x) => x.id === id);
     if (o && o.status === "placed" && o.price && o.price.state === "taken") {
-      try { const r = await takeOffer(env, id, now); if (r && r.approved && r.draft) taken.push(r.draft); } catch (e) { /* the next minute tries again */ }
+      try { const r = await takeOffer(env, id, now, mirror); if (r && r.approved && r.draft) taken.push(r.draft); } catch (e) { /* the next minute tries again */ }
     } else if (!o || o.status !== "placed" || !o.price || ["passed", "withdrawn"].includes(o.price.state)) await voidOffers(db, id, (now || new Date()).toISOString());
   }
   return taken;
@@ -689,9 +696,9 @@ export async function amendOrder(env, id, body) {
  * date, figures and every flag. So a stage that waits on the first row NEVER WAITS SILENTLY: it is booked
  * when that row lands, and the card can say so ("waits": true). The pricing version is not part of it,
  * because the first row landing is itself a fold. */
-async function stagePreview(env, o, stage, entry) {
+async function stagePreview(env, o, stage, entry, mirror) {
   const db = env.SALT_LEDGER;
-  const book = await readBook(db);
+  const book = await (mirror ? mirror() : readBook(db));
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
   let against = book, waits = false;
   let rd = null;
@@ -729,7 +736,7 @@ async function stagePreview(env, o, stage, entry) {
   return { ok: true, waits, d, hash: await stageDigest(stage, entry, d, null) };
 }
 const yesWords = (waits) => (waits ? "Booked when the first row lands" : "Booked as it is drafted");
-async function stageTap(env, id, body, by, now, stage, build) {
+async function stageTap(env, id, body, by, now, stage, build, mirror) {
   const at = now || new Date();
   const f = await findOrder(env, id);
   if (!f.ok) return f;
@@ -741,7 +748,8 @@ async function stageTap(env, id, body, by, now, stage, build) {
   const b = build(o, at);
   if (b.again) return againOrder(env, id, { stage: b.again }, by, now);
   if (b.error) return { ok: false, status: b.status || 400, error: b.error };
-  const pv = await stagePreview(env, o, stage, b.entry);
+  mirror = mirror || (db ? bookOnce(db) : null);   /* the tap's one read: the preview, the yes it tests and the route's tail */
+  const pv = await stagePreview(env, o, stage, b.entry, mirror);
   if (!pv.ok) return pv;
   /* a row that leaves money owed back is never approved on a tap: it waits under Approve with the drafter's own flags */
   if (b.hold) {
@@ -766,14 +774,14 @@ async function stageTap(env, id, body, by, now, stage, build) {
   /* a row already drafted (a payment of theirs, drafted a minute before his Received) is tested now, and only that
      row: a stage the site makes is queued after this, so any row of its stage drafted before it is an older one */
   const pre = await preById(db, preId);
-  const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await readBook(db)) : null;
+  const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await mirror()) : null;
   return { ok: true, order: o, push, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
     draft: spent ? (await preById(db, preId)).draft_id : null } };
 }
 const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
 
 /** POST /orders/<id>/handed {qty, close}: Collected or Delivered, in the order's own mode, the running total handed over. */
-export async function handedOrder(env, id, body, by, now) {
+export async function handedOrder(env, id, body, by, now, mirror) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "move");
   return stageTap(env, id, body, by, now, "move", (o, at) => {
     const qty = body && body.qty;
@@ -800,11 +808,12 @@ export async function handedOrder(env, id, body, by, now) {
     const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;
     const hold = over > 0.004 ? "they have paid " + rm(+o.paid || 0) + ", " + rm(over) + " more than it now comes to, and the book carries no refund for that" : "";
     return { entry, hold, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing } };
-  });
+  }, mirror);
 }
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
-export async function receivedOrder(env, id, body, by, now) {
+export async function receivedOrder(env, id, body, by, now, mirror) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the tap's are one */
   if (body && body.covered === true) return notFoundOrder(env, id, body, now, true);   /* S6 fix: on the book already */
   const rej = await rejectedOf(env.SALT_LEDGER, id, "pay");
   /* their payment may be drafted already (the reconcile queues it within the minute once the row is on the book),
@@ -820,9 +829,9 @@ export async function receivedOrder(env, id, body, by, now) {
     way = await paysOnWay(env.SALT_LEDGER);   /* read once: the claims' rows and the room both take it */
     onRows = await acctInFlight(env.SALT_LEDGER, null, way);
   }
-  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way) : null;
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way, mirror) : null;
   /* 28 Sep 2026, s210: whichever entry his yes answers, it answers to what the row can still take */
-  return stageTap(env, id, body, by, now, "pay", (o, at) => { const b = payTap(o, at); return (b.entry && pastRoom(room, o, b.entry, "received", !!b.site)) || b; });
+  return stageTap(env, id, body, by, now, "pay", (o, at) => { const b = payTap(o, at); return (b.entry && pastRoom(room, o, b.entry, "received", !!b.site)) || b; }, mirror);
   function payTap(o, at) {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
@@ -971,9 +980,9 @@ async function acctInFlight(db, except, way) {
    knows its own moves at once and a claim against the account never; the mirror knows every folded row and nothing on its
    way; a tap that books money answers to both. null where the mirror has no row by that key yet, and there the fold's own
    rule measures. */
-export async function rowRoom(db, direction = "SELL", onWay) {
+export async function rowRoom(db, direction = "SELL", onWay, mirror) {
   /* 30 Sep 2026: the book and the payments on their way are two reads that wait on nothing of each other, so both go at once */
-  const [book, way] = await Promise.all([readBook(db).catch(() => null), onWay || paysOnWay(db, direction)]);
+  const [book, way] = await Promise.all([(mirror ? mirror() : readBook(db)).catch(() => null), onWay || paysOnWay(db, direction)]);
   const isSale = direction !== "BUY";
   const sales = ((book && book[isSale ? "sales" : "purchases"]) || []).filter((s) => s && !s.cancelled);
   const keyOf = rowKeyer(sales), byRid = new Map(sales.filter((s) => s.rid).map((s) => [s.rid, s]));
@@ -1114,7 +1123,7 @@ async function claimBooked(db, id) {
     return { key: sh.row || null, date: sh.date || null, owed: sh.owed != null ? sh.owed : null, rm: +((sh.figures || {}).amount) || 0, flags: sh.flags || [], state: p.status }; });
 }
 /** POST /claims/<id>/preview: the rows the claim settles, drafted, stored nowhere; or, once Received booked them, those rows. */
-export async function claimPreview(env, id) {
+export async function claimPreview(env, id, mirror) {
   const f = await findClaim(env, id);
   if (!f.ok) return f;
   const c = f.claim, db = env.SALT_LEDGER;
@@ -1123,7 +1132,7 @@ export async function claimPreview(env, id) {
   if (c.state !== "waiting") return { ok: false, status: 409, error: "that claim is answered already" };
   const booked = await claimBooked(db, c.id);
   if (booked) return { ok: true, claim: c, rows: booked, left: 0, booked: true, own: [] };
-  const book = await readBook(db);
+  const book = await (mirror ? mirror() : readBook(db));
   const fl = await inFlight(env, db, c, book.sales || []);
   if (!fl) return { ok: false, status: 503, error: "the site's orders could not be read, so the rows it settles cannot be drawn" };
   const { alloc, entries } = claimRows(book, c, fl);
@@ -1139,9 +1148,10 @@ export async function claimPreview(env, id) {
   return { ok: true, claim: c, rows, left: alloc.left, hash, own };
 }
 /** POST /claims/<id>/received {hash}: his one tap on the rows drawn. */
-export async function claimReceived(env, id, body, by, now) {
+export async function claimReceived(env, id, body, by, now, mirror) {
   const at = now || new Date();
-  const pv = await claimPreview(env, id);
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const pv = await claimPreview(env, id, mirror);
   if (!pv.ok) return pv;
   const own = pv.own, db = env.SALT_LEDGER;
   delete pv.own;
@@ -1168,12 +1178,13 @@ export async function claimReceived(env, id, body, by, now) {
     if (was && was.status === "rejected") return { ok: false, status: 409, error: "the row of " + (pv.rows[i].date || "no date") + " was rejected: answer it under Approve" };
     const preId = await recordPre(db, { order_id: id, u: pv.claim.u, stage: "pay", hash: own[i].digest, entry: e, by,
       at: new Date(at.getTime() + i).toISOString(), shown: { claim: id, figures: { amount: e.payload.cash }, row: pv.rows[i].key, date: pv.rows[i].date || null, owed: pv.rows[i].owed, flags: own[i].flags } });
-    if (!was) await queueSale(env, e);
+    if (!was) await queueSale(env, e, false, mirror);
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(e.at, JSON.stringify(e), preId).run();
     pres.push(preId);
   }
-  const drafted = pres.length ? await runDrafter(env) : null;
-  const book = pres.length ? await readBook(db) : null;
+  const fresh = bookOnce(db);   /* D6, as at Accept: the drafter's own read, shared with the yes each row tests */
+  const drafted = pres.length ? await runDrafter(env, { mirror: fresh }) : null;
+  const book = pres.length ? await fresh() : null;
   const rows = [];
   for (const preId of pres) {
     let pre = await preById(db, preId);
@@ -1205,9 +1216,10 @@ export async function moveClaim(env, u, id, body) {
 
 /** POST /orders/<id>/cash {amount}: cash taken at the counter. The site's cash event marks the order paid at once, which
  *  stops the chase, and the Fulfilment is the desk's own entry, queued when the first row is on the book (deskPass). */
-export async function cashOrder(env, id, body, by, now) {
+export async function cashOrder(env, id, body, by, now, mirror) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the tap's are one */
   const rej = await rejectedOf(env.SALT_LEDGER, id, "cash");
-  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER) : null;
+  const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", undefined, mirror) : null;
   return stageTap(env, id, body, by, now, "cash", (o, at) => {
     const amount = body && body.amount;
     if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
@@ -1230,17 +1242,18 @@ export async function cashOrder(env, id, body, by, now) {
     /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
        by the same figure, because this Fulfilment is the desk's own and the reconcile must not queue it again */
     return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
-  });
+  }, mirror);
 }
 
 /** POST /orders/<id>/restate {qty, total, delivery}: his decision of 06 Oct 2026, that EVERYTHING ON AN AGREED ORDER IS AMENDABLE,
  *  the size, the goods' price and the delivery charge. One Correction restating the row, for approval, the digest of what he
  *  was shown; the floor holds at the size and the board is never repriced, the row cannot be taken under what is paid or on
  *  its way to it (rowRoom, which the fold's payFault repeats), and one amendment is in flight at a time. */
-export async function restateOrder(env, id, body, by, now) {
+export async function restateOrder(env, id, body, by, now, mirror) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read, the book's and the tap's are one */
   const db = env.SALT_LEDGER;
-  const room = db ? await rowRoom(db) : null;
-  const book = db ? await readBook(db).catch(() => null) : null;
+  const room = db ? await rowRoom(db, "SELL", undefined, mirror) : null;
+  const book = mirror ? await mirror().catch(() => null) : null;
   const earlier = db ? await db.prepare("SELECT id,status,committed_at FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all().catch(() => ({ results: [] })) : { results: [] };
   const live = db ? await livePre(db, id, "amend").catch(() => null) : null;
   return stageTap(env, id, body, by, now, "amend", (o, at) => {
@@ -1280,7 +1293,7 @@ export async function restateOrder(env, id, body, by, now) {
     const entry = amendEntry(o, o.code, figs, was, at);
     entry.orderId = o.id;
     return { entry, queueIt: true, site: { restate: figs }, shown: Object.assign({ was }, figs) };
-  });
+  }, mirror);
 }
 /** The amendment as a Correction restating the row's size, the goods' price and the delivery charge. */
 export function amendEntry(order, code, figs, was, now) {
@@ -1343,7 +1356,8 @@ export async function againOf(db, ids) {
   return out;
 }
 /** POST /orders/<id>/again {stage}: a payment, cash payment, handover or cancellation he rejected, offered again. */
-export async function againOrder(env, id, body, by, now) {
+export async function againOrder(env, id, body, by, now, mirror) {
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the preview's are one */
   const at = now || new Date();
   const stage = String((body && body.stage) || "");
   if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
@@ -1362,8 +1376,8 @@ export async function againOrder(env, id, body, by, now) {
   /* V4a: a move rejected before the row key named the product is offered again under the key as it is now */
   if (entry.payload && entry.payload.orderKey) entry.payload = Object.assign({}, entry.payload, { orderKey: POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product) });
   /* 28 Sep 2026, s210: a payment offered again answers to what the row can still take, as the tap that made it does now */
-  if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
-  const pv = await stagePreview(env, o, stage, entry);
+  if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db, "SELL", undefined, mirror), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
+  const pv = await stagePreview(env, o, stage, entry, mirror);
   if (!pv.ok) return pv;
   /* a close offered again restates the row once more, so later stages wait for it under the name it will leave, as the
      reconcile had them wait when it first queued it */
@@ -1388,9 +1402,10 @@ export async function againOrder(env, id, body, by, now) {
  *   pass that drafted it before the yes knew its id) is spent on that row now, and the approvals are returned for
  *   the caller to follow (afterApproval);
  *   an Accept whose row is approved but whose order was never told (the mark or the move failed) is told again. */
-export async function deskPass(env, now) {
+export async function deskPass(env, now, mirror) {
   const db = env.SALT_LEDGER;
   if (!db) return { ok: true, queued: 0 };
+  mirror = mirror || bookOnce(db);
   let pres = [], untold = [];
   try {
     pres = (await db.prepare("SELECT * FROM preapproval WHERE status IN ('waiting','differs') AND entry IS NOT NULL ORDER BY at").all()).results || [];
@@ -1398,17 +1413,17 @@ export async function deskPass(env, now) {
   } catch (e) { return { ok: true, queued: 0 }; }   /* before migrations/0011 */
   for (const p of untold) { try { await ackOnApproval(env, p); } catch (e) { /* the next minute tries again */ } }
   /* 05 Oct 2026 (Negotiate): an offer they took, followed, and one they declined or he withdrew, let go */
-  const offered = await offerPass(env, now);
+  const offered = await offerPass(env, now, mirror);
   if (!pres.length) return Object.assign({ ok: true, queued: 0 }, offered.length ? { approved: offered } : {});
   let queued = 0; const dropped = [], approved = offered.slice(); let open = null;
   for (const p of pres.filter((x) => !x.entry_at)) {
     const entry = JSON.parse(p.entry);
     /* an amendment the desk made itself (cash taken, 11.12) waits for its row exactly as a stage the site made does */
     if (p.stage !== "ack") {
-      if (!open) { const bk = await readBook(db).catch(() => null); open = (bk && bk.state && bk.state.OPEN && bk.state.OPEN.byKey) || {}; }
+      if (!open) { const bk = await mirror().catch(() => null); open = (bk && bk.state && bk.state.OPEN && bk.state.OPEN.byKey) || {}; }
       if (!open[entry.payload.orderKey]) continue;
     }
-    await queueSale(env, entry);
+    await queueSale(env, entry, false, mirror);
     await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), p.id).run();
     p.entry_at = entry.at;   /* a row already drafted from it is tested below, in this pass */
     queued++;
@@ -1428,7 +1443,7 @@ export async function deskPass(env, now) {
   }
   const unspent = pres.filter((x) => x.status === "waiting" && x.entry_at && !dropped.includes(x.order_id));
   if (unspent.length) {
-    const book = await readBook(db);
+    const book = await mirror();
     for (const p of unspent) if ((await settlePre(db, p, book)) === "applied") approved.push(p.entry_at);
   }
   return Object.assign({ ok: true, queued }, dropped.length ? { dropped } : {}, approved.length ? { approved } : {});
@@ -1728,7 +1743,7 @@ export async function queueResourceTrades(env, entries) {
   });
 }
 
-export async function queueSale(env, entry, fixedId = false) {
+export async function queueSale(env, entry, fixedId = false, mirror = null) {
   if (Array.isArray(entry)) {
     if (!fixedId || !entry.length || entry.some((e) => !e || POSITION_ENGINE.inputConsumesResource(e)))
       throw Object.assign(new Error("A fixed trade batch carries ordinary trade entries only."), { status: 400 });
@@ -1737,7 +1752,7 @@ export async function queueSale(env, entry, fixedId = false) {
   const resourceInput = POSITION_ENGINE.inputConsumesResource(entry);
   const admissionCheck = async () => {
     if (!resourceInput) return;
-    const book = env.SALT_LEDGER ? await readBook(env.SALT_LEDGER) : null;
+    const book = env.SALT_LEDGER ? await (mirror ? mirror() : readBook(env.SALT_LEDGER)) : null;
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "orders");
     if (admission.error) throw Object.assign(new Error(admission.error), { status: admission.status });
   };
@@ -1784,7 +1799,7 @@ export async function queueSale(env, entry, fixedId = false) {
  * A MINUTE IS NOT A DELAY THAT MATTERS: the entry still has to be drafted and then approved under
  * Approve, and the customer's card says so while it waits.
  */
-export async function reconcileOrders(env, read) {
+export async function reconcileOrders(env, read, mirror) {
   /* fold 5.6: the minute's one read carries the owed orders (tickRead); any other caller, or a Counter that sent none, asks */
   let owing = read && read.ok && Array.isArray(read.owing) ? read.owing : null;
   if (!owing) {
@@ -1802,7 +1817,8 @@ export async function reconcileOrders(env, read) {
      early. So the same question the drafter would ask is asked one step earlier, and a stage that
      cannot land yet simply stays owed. A mirror that cannot be read holds everything, rather than
      queueing what would be refused. */
-  const book = await readBook(env.SALT_LEDGER).catch(() => null);
+  mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+  const book = mirror ? await mirror().catch(() => null) : null;
   const onBook = (book && book.state && book.state.OPEN && book.state.OPEN.byKey) || null;
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
@@ -1856,7 +1872,7 @@ export async function reconcileOrders(env, read) {
           for (const p of (o.tell && o.tell.claims) || []) {
             const c = claimEntry(Object.assign({}, order, { code }), p);
             while (used.has(c.at)) c.at = new Date(Date.parse(c.at) + 1).toISOString();
-            if (await queueSale(env, c)) queued++;
+            if (await queueSale(env, c, false, mirror)) queued++;
             used.add(c.at);
             (mark.claims = mark.claims || []).push({ at: p.at, draft: c.at });
           }
@@ -1880,7 +1896,7 @@ export async function reconcileOrders(env, read) {
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
         /* counted only when it was actually appended; queueSale may move e.at to a free millisecond, so
            the marks are read off the entry AFTER it */
-        if (await queueSale(env, e)) queued++;
+        if (await queueSale(env, e, false, mirror)) queued++;
         used.add(e.at);
         if (job === "ack") { mark.ledgerKey = e.orderKey; order.ledgerKey = e.orderKey; mark.ack = e.at; }
         else if (job === "pay") mark.paid = +((+q.paid || 0) + told).toFixed(2);
@@ -2120,7 +2136,7 @@ async function followRows(env, orders, idx) {
   }
   return { followed, failed };
 }
-export async function tellSite(env, fixes) {
+export async function tellSite(env, fixes, mirror) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first(); } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
@@ -2129,7 +2145,7 @@ export async function tellSite(env, fixes) {
   if ((await env.SALT_QUEUE.get(TOLD_MARK)) === v) return { ok: true, told: 0, v };
   const r = await listOrders(env, true);   /* every order: a finished one follows its row too */
   if (!r.ok) return { ok: false, error: r.error };
-  const book = await readBook(env.SALT_LEDGER).catch(() => null);
+  const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   const sales = (book && book.sales) || [];
   if (!sales.length) return { ok: true, told: 0, v };
   const byKey = new Map(), rows = new Map(), byRid = new Map();

@@ -282,7 +282,7 @@ of the master (a master stating none stops the publish): the last day it can be 
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
 late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
-publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
+publishes, once a Kuala Lumpur day at least, soon after 00:05 MYT; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
 breach and its chase on Today count the same way (his answer of 28 Sep 2026): past the term from the handover the chase
 is Now and carries the reminder, inside it This week, and the suite holds the desk's breaches to the parties `payDue`
 seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten days from the order date, for its own
@@ -387,6 +387,28 @@ and `master/salt_command.html` out of the checkout, never `public/`, so it depen
 fold, the build nor the deploy, and the checkout, `setup-node` and `npm ci` above it are themselves
 unconditional. `cloud-commit.yml`'s `plan` step carries a third output, `publish`, which is 1 unless
 the run is a `probe_key` dispatch; the publish step reads it instead of `deploy`.
+
+**WHAT ASKS FOR A PUBLISH (10 Oct 2026, his choice).** Every input a sealed statement, price list, board or card
+reads, and what moves it:
+
+| Input | Where it lives | What publishes it |
+|---|---|---|
+| The rows, roster, tiers and drifts held, `TERMS`, `RULES`, the ladder and boards, `_users.json` and the issue's `_kv` | git: `ledger/book.json`, the master, `statements/` | the push: a version moves `public/rev.json`, and a statements path is on the push paths |
+| Site orders, claims and messages | the Counter's order book | nothing: none is sealed, and an order reaches a list once it is a row on the book, so through git |
+| The restock date | the Counter's KV `expected`, written only through the desk's `/expected` | the desk marks KV `publish:wanted`, and its minute cron dispatches |
+| The day: the drift's days since the last order and oldest overdue, the restock date's lapse (`restockSupply`), the week line, `pay`'s `late` | the clock | the desk's minute cron asks once a Kuala Lumpur day, 00:05 to 03:00 MYT; the page counts `late` and the hold, hide and lock stages on its own day besides |
+| A guest link minted or approved since the last publish | the Counter's KV `g:` | nothing yet: it reads `board:2` until the next publish (below) |
+
+The desk Worker's `wantPublish` writes `publish:wanted` `{at, reason}`; `publishWanted`, on the minute cron, sends
+one `stage_only` dispatch named `publish: <reason>` when the mark is newer than the last such dispatch
+(`publish:dispatched`) and five minutes have passed since it, the dispatch mark written first. A `stage_only` run and
+not a new mode, because it shares the chain's lock (`cloud-commit`, never cancelled), so no older checkout publishes
+over a newer chain, which the Counter would then withhold on the build id. **It is never sent while a Cloud commit run
+waits in the group** (`cloudCommitWaiting`: the workflow's runs, and the jobs of one in progress, since the lock is job `chain`'s): GitHub keeps one pending run and a newer one
+replaces it, so a pending push run, which deploys, re-seeds and retires, would be lost to a run that does none of those;
+the waiting run reads everything when it starts and publishes, so it covers the mark. GitHub unread, nothing is sent and
+the next minute asks again. A failed dispatch is logged and not retried: the next write or
+the four-a-day net publishes. **A new input outside git calls `wantPublish` at its write road.**
 
 **The rule states what is EXCLUDED, not what it is on.** A list of events goes stale the moment a
 trigger is added, and that is exactly how this broke: it was gated on `deploy` alone, a bare
@@ -564,7 +586,7 @@ engine prices: the publish opens the master in jsdom for the desk's PRICING inpu
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
-**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the hourly publish moves:
+**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the scheduled publish moves:
 `priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
 prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
 list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
@@ -1058,7 +1080,9 @@ no entry, row or note reads it, and a rating queues no stage (`orderWork`). A wo
 at, msgs[], quiet?}`, folded in the order book from `tsay` and `tmark` events under oid `thread`, one row an account in
 its own table `thr`, written behind to `thr:<username>` in the week of reading both. The KV road has no reader: there a
 line is refused (`e.threadOff`, 503) and the read is empty. Routes: `GET` and `POST /thread` on their session (a line
-under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders; `GET
+under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders (the orders,
+the claims and the thread read from the book in ONE round trip, the book's `mine` through `accountBook`, since 06 Oct 2026;
+it was three, every ten seconds for every open page); `GET
 /desk/threads` (every thread, newest first) and `POST /desk/threads/<u>` `{message}` or `{noReply: true}` on the desk key.
 Theirs: 200 characters, 20 a Kuala Lumpur day (`e.threadCap`); his uncapped; the last 200 lines kept. A line of theirs marks
 `last-said` and touches no order; his wakes them as kind `message` (`Counter says:` and his words in quotation marks, tag
@@ -1071,9 +1095,13 @@ lines take their thread lines too. On the desk each thread is a card of Waiting 
 their line is the last and not marked No reply needed, else under Chat; read every 2 seconds (`THR_POLL`) only while one is
 open and the desk showing. `public/sw.js` never caches `/threads` (`salt-shell-v7`).
 
-**A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
-cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:
-`npx wrangler deploy -c wrangler.stmt.jsonc`.
+**A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `wrangler.stmt.jsonc` is on
+`cloud-commit.yml`'s push paths (since 03 Sep 2026), so a push to master that touches it runs the job, and its
+`Deploy the statements site` step deploys it. `public/rev.json`'s id does not cover it, so `tools/update.mjs`
+reports the phone current and ships nothing: a laptop change not yet pushed, or a push whose Actions run was
+refused, needs `npx wrangler deploy -c wrangler.stmt.jsonc`.
+
+`wrangler.stmt.jsonc` sets `preview_urls` to `false` (09 Oct 2026, as the desk did on 03 Oct 2026), because a version's own preview address would sit outside the Access application that covers `/all` by hostname. Nothing used one (checked 09 Oct 2026: no reference in the repo or the workflows).
 
 **AND A PAYMENT THAT COMPLETES AN ORDER WAKES THE PHONE** (v700). It is the one customer move worth
 waking for, because it is the only one whose answer arrives after they have put the phone down;
@@ -1157,8 +1185,8 @@ exists the page says notifications are not switched on.
 Statements reach the site through the two steps at the foot of job `chain` in
 `cloud-commit.yml`. **`Deploy the statements site` uploads the site's CODE** and runs on a push
 touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on every fold.
-**`Publish the statements, live` writes the site's CONTENT and runs on every deploy** (16 Sep
-2026): the content is the ledger and the master, so any version that moves a price makes a
+**`Publish the statements, live` writes the site's CONTENT and runs on every run but the key probe**
+(16 Sep 2026, on every deploy; every run since v701; what asks for one: "What asks for a publish", above): the content is the ledger and the master, so any version that moves a price makes a
 published list stale, and v652, v654 and v655 each left the customers' pages on the lists sealed
 at v651 while the desk quoted something else. Both run after every step the ledger needs, so a
 fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
@@ -1180,7 +1208,8 @@ Counter's `DESK` service binding and the Desk's `/stmt/rev` route use the existi
 either missing configuration, a failed read, or an invalid id withholds the live document. The Desk
 answers `GET /stmt/rev` before its human Access gate, since a service binding carries no owner JWT:
 that one path alone, keyed and read-only, so `REQUIRE_ACCESS` "1" never withholds every statement. A change
-to `wrangler.stmt.jsonc` needs its manual deploy. Without `STMT_KEY` in the cloud the records go up
+to `wrangler.stmt.jsonc` deploys with the push that carries it (it is on the push paths); only one not yet
+pushed needs the hand deploy. Without `STMT_KEY` in the cloud the records go up
 as issued and "Now" is simply absent; the step warns.
 `node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
 call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one
@@ -1188,7 +1217,7 @@ list and one `kv bulk get`, falling back to a get per link, with a warning, when
 command does not answer as text; and the three lists that feed only the retirement not at all
 under `--no-retire`. Every intended real account is verified by a separate bulk read, falling
 back to individual reads with a warning if the bulk read fails or has an invalid shape. With eight
-links and up to a hundred accounts, the hourly run spawns eleven processes, including the two
+links and up to a hundred accounts, the scheduled run spawns eleven processes, including the two
 test-account reads and the real-account verification.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
@@ -1360,7 +1389,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   any Access gate with a token whose claims are right and whose signature is another key's.
   Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
-  `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
+  `wrangler.stmt.jsonc` is a config edit, deployed by the push that carries it, and every device signs in again.
 - **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). Since S9 9.3 it is made AS THE ACCOUNT OPENS, never on a
   draw of the list, so the tap only shares (the plan's must-not-ship rule): each opening, and from 1080px the
   account Needs you opens beside itself on every load, files a live three-day record and pointer that nobody may
