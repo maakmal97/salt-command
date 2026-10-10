@@ -181,7 +181,7 @@ chain is cloud-reachable and the laptop is off the critical path.
 | Queue an entry | KV, from the phone | on tap |
 | Draft the row | Worker | on arrival, 15-min cron as the net |
 | Approve | D1, from the phone | on tap |
-| Stage the approved rows | Actions, `cloud-commit.yml` | **on every approval** (the Worker dispatches it), and hourly as the net |
+| Stage the approved rows | Actions, `cloud-commit.yml` | **on every approval** (the Worker dispatches it), and every two hours as the net |
 | **Fold, bump, build, test, push** | **the `fold` job in `cloud-commit.yml`: the Claude Code action, following `docs/CLOUD_FOLD.md`**; or an agent asked to | **in the same run, whenever the stage staged rows**; or on demand |
 | Deploy, prove, mark committed, **re-seed the D1 mirror** | Actions, `cloud-commit.yml` | on push |
 | Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
