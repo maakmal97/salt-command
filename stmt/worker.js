@@ -52,6 +52,7 @@ import { FONTS } from "./fonts.js";
 import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
+import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
   exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace } from "./testfix.js";
@@ -439,11 +440,19 @@ async function handleCustomer(request, env, p, m, ctx) {
         { thread: threadView(isTest(u) ? await exampleThread(env, u) : mine.thread) }));
     }
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-    const pb = await readJson(request);
+    /* 10 Oct 2026: the exact spot, sealed on their phone, is taken off the body for its id before anything is asked of the
+       book, so no event holds the ciphertext; a test account's is dropped, never filed */
+    const tp = await takePin(await readJson(request));
+    if (tp.error) return refuse(tp);
+    const pb = tp.body;
+    if (isTest(u) && pb) delete pb.pin;
     /* Negotiate: a test account's ask is written into its fixture alone, so no desk ever sees it */
     const r = isTest(u) && pb && pb.ask === true ? await examplePlace(env, u, pb) : await placeOrder(env, u, pb);
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
     if (r.error) return refuse(r, "prices" in r ? { prices: r.prices } : {});
+    /* filed only once the order is recorded and names it: a refused Place, or a retry answered with an order naming another,
+       files nothing */
+    if (tp.pin && !isTest(u)) await keepPin(env, u, tp.pin, r.order && r.order.pin);
     return json({ ok: true, order: customerView(r.order) });
   }
   if (p === "/push/subscribe") {
@@ -1019,6 +1028,16 @@ async function handleDesk(request, env, p, m) {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     const slip = await readSlip(env, u, sm[2]);
     return slip ? json({ ok: true, slip }) : json({ ok: false, error: "that slip is not kept" }, 404);
+  }
+  /* 10 Oct 2026: A DELIVERY'S EXACT SPOT, AS IT WAS FILED: ciphertext, for the desk to open with the key only his vault
+     holds; each read keeps it another 30 days (stmt/pin.js) */
+  const pm = /^\/desk\/pins\/([^/]+)\/([^/]+)$/.exec(p);
+  if (pm) {
+    const u = normUser(pm[1]);
+    if (!u || !SLIP_ID_RE.test(pm[2])) return notFound();
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const pin = await readPin(env, u, pm[2]);
+    return pin ? json({ ok: true, pin }) : json({ ok: false, error: "that location is not kept" }, 404);
   }
   /* S6 11.14 and 11.15: his Received or Not found on one of them */
   const cm = /^\/desk\/claims\/([^/]+)\/([^/]+)$/.exec(p);
@@ -1892,7 +1911,7 @@ export default {
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {

@@ -32819,15 +32819,19 @@ await (async () => {
   ok(onDead.status === 200 && (await onDead.json()).order.msgs.length === 1, "a line still reaches an order that has been withdrawn: " + onDead.status);
 
   /* ---- AND NOTHING A CUSTOMER TYPED REACHES A LEDGER ENTRY, which is v694's rule for `place` ---- */
-  const { pendingEntry, payEntry, handoverEntry, cancelEntry } = await import("../src/orders.js");
+  const { pendingEntry, payEntry, handoverEntry, cancelEntry, amendEntry, closeEntry } = await import("../src/orders.js");
+  /* 10 Oct 2026: and the exact spot's id and the delivery window, which are the site's and the cards', never the book's */
   const dirty = { id: "20260920000000-zzzz", u: un, product: "salt", qty: 1, unit: 110, total: 110, delivery: 0, mode: "deliver",
     place: "42 Jalan Something", moved: 1, movedOn: "2026-09-20", paid: 110, status: "ready",
+    pin: "5ec7e75ec7e75ec7e75ec7e75ec7e75e", slot: "2026-09-23T08", slotSpan: "09:15-11:45",
     msgs: [{ at: "2026-09-20T00:00:00.000Z", by: "customer", text: "SECRETSTREETNAME and my name is REALNAME" }],
     history: [{ at: "2026-09-20T00:00:00.000Z", status: "acknowledged", by: "desk" }] };
   const entries = [pendingEntry(dirty, "CX0-AA", "2026-09-20T01:00:00.000Z"), payEntry(dirty, "CX0-AA", 110, "2026-09-20T01:00:01.000Z"),
-    handoverEntry(dirty, "CX0-AA", 1, "2026-09-20T01:00:02.000Z"), cancelEntry(dirty, "CX0-AA", "customer", "2026-09-20T01:00:03.000Z")].filter(Boolean);
-  ok(entries.length === 4, "the four entries an order can queue are built: " + entries.length);
-  const leaked = entries.filter((e) => /SECRETSTREETNAME|REALNAME|Jalan/.test(JSON.stringify(e)));
+    handoverEntry(dirty, "CX0-AA", 1, "2026-09-20T01:00:02.000Z"), cancelEntry(dirty, "CX0-AA", "customer", "2026-09-20T01:00:03.000Z"),
+    amendEntry(Object.assign({}, dirty, { ledgerKey: "CX0-AA|2026-09-20|110" }), "CX0-AA", { qty: 1, total: 120, delivery: 0 }, { qty: 1, total: 110, delivery: 0 }, "2026-09-20T01:00:04.000Z"),
+    closeEntry(Object.assign({}, dirty, { qty: 2, closed: { qty: 2 }, ledgerKey: "CX0-AA|2026-09-20|110" }), "CX0-AA", "2026-09-20T01:00:05.000Z")].filter(Boolean);
+  ok(entries.length === 6, "the six entries an order can queue are built: " + entries.length);
+  const leaked = entries.filter((e) => /SECRETSTREETNAME|REALNAME|Jalan|5ec7e75e|2026-09-23T08|09:15|11:45/.test(JSON.stringify(e)));
   ok(!leaked.length, "and not one of them carries a word the customer typed: " + (leaked.length ? JSON.stringify(leaked[0]).slice(0, 200) : "clean"));
 })();
 
@@ -51436,6 +51440,10 @@ await (async () => {
 section("10 Oct 2026: a delivery's time window, as soon as it can or four hours inside the Counter's hours, one rule on page and Worker");
 await (async () => {
   await (await import("./delivery-window.mjs")).run({ ok });
+})();
+section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
+await (async () => {
+  await (await import("./delivery-pin.mjs")).run({ ok });
 })();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {

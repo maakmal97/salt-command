@@ -296,6 +296,8 @@ export const customerView = (o) => {
   if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
   /* 05 Oct 2026: a negotiation, through its own whitelist (priceView) */
   if (o && o.price) v.price = priceView(o.price);
+  /* 10 Oct 2026: that the exact spot is shared, never its id: the id names a sealed record they have no road to */
+  if (o && o.pin) v.pinned = true;
   return v;
 };
 
@@ -567,7 +569,11 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null, hou
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
   const place = clip(String(body.place || "").replace(/\s+/g, " ").trim(), 60);
-  if (mode === "deliver" && place.length < 2) return refusal("placeWhere");
+  /* 10 Oct 2026: AND THE EXACT SPOT, if they share it: sealed on their phone (stmt/pin.js), here only its id, which the
+     Worker set when it took the sealed pin off the body. A delivery with a pin needs no area words; one without, as ever */
+  const pin = typeof body.pin === "string" && SLIP_ID_RE.test(body.pin) ? body.pin : "";
+  if (body.pin !== undefined && body.pin !== "" && (!pin || mode !== "deliver")) return refusal("pinBad");
+  if (mode === "deliver" && place.length < 2 && !pin) return refusal("placeWhere");
   /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
      friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
      CHECKED BY NOBODY HERE: this site holds no roster and knows no codes, so it records the claim
@@ -601,7 +607,7 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null, hou
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pool ? { pool } : {}), note,
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pin ? { pin } : {}, pool ? { pool } : {}), note,
     ask: ask ? Object.assign({ state: "asked", at }, isNum(body.propose) ? { proposed: +body.propose.toFixed(2) } : {}) : null };
 }
 
@@ -703,7 +709,8 @@ export function decideReplace(order, body, mine, at, digest, ctx = {}) {
   if (!body || typeof body !== "object" || Object.keys(body).some((key) => !fields.includes(key))
     || !ridOf(body) || typeof body.digest !== "string" || body.product !== order.product)
     return Object.assign(refusal("amendShape"), { status: 400 });
-  const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {});
+  /* 10 Oct 2026: an amendment keeps the exact spot the order shared, while it is still delivered */
+  const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {}, order.pin && body.mode === "deliver" ? { pin: order.pin } : {});
   const placed = decidePlace(order.u, next, mine.filter((item) => item.id !== order.id && OPEN_STATES.includes(item.status)), at, digest, "customer", null, ctx);
   if (placed.error) return placed;
   placed.ev.order.replaces = order.id;
