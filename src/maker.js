@@ -53,7 +53,7 @@ export function makerOrderFault(action, body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
   const fields = {
     preview: ["delivery", "total"],
-    accept: ["delivery", "total", "hash"],
+    accept: ["delivery", "total", "hash", "slot"],
     handed: ["qty", "close", "rid"],
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
@@ -61,7 +61,7 @@ export function makerOrderFault(action, body) {
     restate: ["qty", "total", "delivery", "rid"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode"],
-    amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"],
+    amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"],
     take: []
   };
   if (!Object.hasOwn(fields, action) || Object.keys(body).some((key) => !fields[action].includes(key)))
@@ -82,6 +82,9 @@ export function makerOrderFault(action, body) {
     if (body[key] !== undefined && (typeof body[key] !== "number" || !Number.isFinite(body[key])
       || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
   }
+  /* 10 Oct 2026: a delivery's time window, written as stmt/window.js writes it (SLOT_RE there) */
+  if (body.slot !== undefined && body.slot !== "" && (typeof body.slot !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(body.slot)))
+    return "A time window is a day and one of the six four-hour windows.";
   if (body.close !== undefined && typeof body.close !== "boolean") return "Close must be a boolean.";
   if (body.covered !== undefined && typeof body.covered !== "boolean") return "Covered must be a boolean.";
   if (body.hash !== undefined && (typeof body.hash !== "string" || !/^[a-f0-9]{64}$/.test(body.hash)))

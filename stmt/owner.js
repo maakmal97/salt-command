@@ -2416,6 +2416,9 @@ export const OWNER_JS = `
       var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
       card.appendChild(ownerLine);
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
+      if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
+        card.appendChild(el('p','maker-facts','Delivery wanted between '+String(order.slotSpan).replace('-',' and ')+' on '+String(order.slot).slice(0,10)));
       var againAck=makerAgainAck(order);
       if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');

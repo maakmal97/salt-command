@@ -79,6 +79,26 @@ export function validateManualHours(value, now = Date.now()) {
   return { open: value.open, until: new Date(until).toISOString() };
 }
 
+export const HOURS_KEY = "maker:hours";
+
+/** The hours as a delivery window reads them (stmt/window.js), from Counter Admin's store: {schedule, manual}, each null
+ *  when unset. A store that cannot be read, or holds what no longer validates, reads as none set, every window open, so a
+ *  fault in the hours never stops an order (as the page's own note says, "you can still place an order"). */
+export async function hoursConfig(env) {
+  let value = null;
+  try { value = env && env.STMT ? await env.STMT.get(HOURS_KEY, "json") : null; } catch (e) { value = null; }
+  return windowHours(value);
+}
+/** The two parts of the stored hours a window reads, checked: the weekly days and a manual override still well formed. */
+export function windowHours(value) {
+  if (!value || typeof value !== "object") return { schedule: null, manual: null };
+  const days = value.schedule != null ? validateWeeklyHours(value.schedule) : null;
+  const m = value.manual;
+  const manual = m && typeof m === "object" && typeof m.open === "boolean" && typeof m.until === "string" && Number.isFinite(Date.parse(m.until))
+    ? { open: m.open, until: new Date(Date.parse(m.until)).toISOString() } : null;
+  return { schedule: days && !days.error ? { days: days.days.map((d) => d && { open: d.open, close: d.close }) } : null, manual };
+}
+
 export function hoursStatus(config, at = Date.now()) {
   const parsed = !config || config.schedule == null ? { days: null } : validateWeeklyHours(config.schedule);
   if (parsed.error) throw new TypeError(parsed.error);

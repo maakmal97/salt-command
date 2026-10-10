@@ -592,7 +592,7 @@ export class OrderBook {
          or against the account, which Negotiate reads; both read here, in the one step nobody comes between */
       const mine = this.ordersOf(u), overdue = mine.some((o) => isAdvance(o) && graceOver(o, at)), claimWaiting = mine.some(claimWaits)
         || this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ?", u).toArray().some((r) => JSON.parse(r.doc).state === "waiting");
-      const d = decidePlace(u, a.body, mine.filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer", null, { steps: a.steps || null, claimWaiting, overdue });
+      const d = decidePlace(u, a.body, mine.filter((o) => OPEN_STATES.includes(o.status)), at, a.digest, a.by === "desk" ? "desk" : "customer", null, { steps: a.steps || null, claimWaiting, overdue, hours: a.hours || null });
       if (d.error) return no(d, 400);
       return this.append(eid, u, d.ev.order.id, d.ev, null);
     }
@@ -602,7 +602,7 @@ export class OrderBook {
       const seen = eid ? this.event(eid) : null;
       if (seen) return { ok: true, order: this.order(u, seen.oid), again: true };
       const order = this.order(u, id);
-      const d = decideReplace(order, a.body, this.ordersOf(u), at, a.digest, { steps: a.steps || null });
+      const d = decideReplace(order, a.body, this.ordersOf(u), at, a.digest, { steps: a.steps || null, hours: a.hours || null });
       if (d.error) return no(d, d.status || 400);
       return this.state.storage.transactionSync(() => {
         this.append(null, u, id, d.cancel, order, true);

@@ -51433,6 +51433,10 @@ section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
 })();
+section("10 Oct 2026: a delivery's time window, as soon as it can or four hours inside the Counter's hours, one rule on page and Worker");
+await (async () => {
+  await (await import("./delivery-window.mjs")).run({ ok });
+})();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
   await (await import("./clip-text.mjs")).run({ ok });
@@ -52961,7 +52965,7 @@ await (async () => {
   ok(O.decideReplace(original, { ...change, note: "not an amendment field" }, [original], at, digest).code === "amendShape"
     && O.decideReplace(original, { ...change, product: "rice" }, [original], at, digest).code === "amendShape",
     "replacement refuses unsupported fields and cannot change a sheet line to another product");
-  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
   const terms = Object.fromEntries(fields.map((key) => [key, original[key] ?? null]));
   const reservation = O.decideDesk(original, { reserveReview: terms }, at);
   const reserved = O.applyEvent(structuredClone(original), reservation.ev).order;

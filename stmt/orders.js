@@ -61,6 +61,8 @@ import { sessKey } from "./signin.js";
 import { refusal, clip } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
+import { slotTake } from "./window.js";
+import { hoursConfig } from "./hours.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -281,7 +283,8 @@ export async function storeCompare(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
+  "slot", "slotSpan"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -538,7 +541,7 @@ export const priceView = (p) => {
   if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { total: p.offer.total, delivery: null, until: p.offer.until });
   return v;
 };
-export function checkPlacement(body, open, at, poolOk = false, steps = null) {
+export function checkPlacement(body, open, at, poolOk = false, steps = null, hours = null) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -576,6 +579,17 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   const note = cleanMsg(body.note, NOTE_MAX);
   if (wantByFault(body.wantBy, at)) return refusal("wantBy", { n: WANT_DAYS });
   const wantBy = body.wantBy ? body.wantBy : "";
+  /* 10 Oct 2026: A DELIVERY'S WINDOW (stmt/window.js, his decisions of 10 Oct 2026): as soon as it can when none is sent, else
+     one of six four-hour windows, taken while its end is ahead and it is not wholly outside the Counter's hours read now; its
+     span, the part inside them, is written beside it, so every reader says what the customer was told. A day is a
+     collection's; a window is a delivery's */
+  let slot = "", span = "";
+  if (body.slot !== undefined && body.slot !== null && body.slot !== "") {
+    if (mode !== "deliver" || wantBy) return { error: "a time window is for a delivery, in place of a day" };
+    const t = slotTake(body.slot, hours, Date.parse(at));
+    if (t.error) return refusal("slot");
+    slot = t.slot; span = t.span;
+  }
   /* a group order is joined, never placed: a body naming one is read only where the join asks (poolOk), and it is collected, alone */
   const pool = poolOk && typeof body.pool === "string" && isPoolId(body.pool) ? body.pool : "";
   if (body.pool !== undefined && (!poolOk || !pool)) return { error: "a group order is joined from its own card" };
@@ -587,7 +601,7 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, pool ? { pool } : {}), note,
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pool ? { pool } : {}), note,
     ask: ask ? Object.assign({ state: "asked", at }, isNum(body.propose) ? { proposed: +body.propose.toFixed(2) } : {}) : null };
 }
 
@@ -656,7 +670,7 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
    stands: the stamp is what holds a total typed at any quantity to the sealed grid. `ctx` carries the grid's steps in the
    clear (the account's record) and whether a claim of theirs waits, which Negotiate reads. */
 export function decidePlace(u, body, open, at, digest, by = "customer", pool = null, ctx = {}) {
-  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps);
+  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours);
   if (c.error) return c;
   /* a stamped list is checked whatever the page sends, a Place with no stamp included; a list published with none has
      nothing to check */
@@ -685,7 +699,7 @@ export function decideReplace(order, body, mine, at, digest, ctx = {}) {
   if (order.status !== "placed" || order.reviewed || order.ledgerKey || (order.queued || {}).ack
     || (+order.paid || 0) > 0 || (+order.moved || 0) > 0 || claimWaits(order))
     return Object.assign(refusal("amendClosed"), { status: 409 });
-  const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy"];
+  const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"];
   if (!body || typeof body !== "object" || Object.keys(body).some((key) => !fields.includes(key))
     || !ridOf(body) || typeof body.digest !== "string" || body.product !== order.product)
     return Object.assign(refusal("amendShape"), { status: 400 });
@@ -806,7 +820,7 @@ export function decideDesk(order, body, at) {
   if (!order) return { error: "no such order", status: 404 };
   if (body && body.reserveReview) {
     const terms = body.reserveReview;
-    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
     if (order.status !== "placed" || !terms || typeof terms !== "object" || Array.isArray(terms)
       || Object.keys(terms).length !== fields.length || fields.some((key) => terms[key] !== (order[key] ?? null)))
       return { error: "the order changed before its review could be reserved", status: 409 };
@@ -1260,9 +1274,11 @@ export async function placeOrder(env, u, body, by = "customer") {
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   /* 05 Oct 2026: the grid's steps in the clear beside the stamp; Negotiate needs the order book, whose one step reads their claims */
   const steps = (prices && prices.steps) || null;
+  /* 10 Oct 2026: the Counter's hours as they stand, which a delivery's window is taken against (stmt/window.js) */
+  const hours = await hoursConfig(env);
   if (body && body.ask === true && !onBook(env)) return Object.assign(refusal("askStore"), { status: 503 });
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by, steps });
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by, steps, hours });
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
@@ -1271,7 +1287,7 @@ export async function placeOrder(env, u, body, by = "customer") {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps });
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps, hours });
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
@@ -1293,7 +1309,8 @@ export async function replaceOrder(env, u, id, body) {
   const digest = account.prices && account.prices.digest || "";
   const replacement = Object.assign({}, body);
   delete replacement.buildId;
-  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest, steps: (account.prices && account.prices.steps) || null });
+  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest, steps: (account.prices && account.prices.steps) || null,
+    hours: await hoursConfig(env) });
   if (result.error === PRICES_MOVED) return Object.assign({}, result, { status: 409, prices: account.prices || null });
   return result.error ? result : { order: result.order };
 }

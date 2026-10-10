@@ -36,6 +36,7 @@ import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
+import { slotSpan, slotNext, WINDOWS } from "./window.js";
 import { TEST_USERS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
 
@@ -1231,6 +1232,9 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
       .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
+      /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
+         exactly the windows the Worker takes */
+      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
@@ -2876,7 +2880,8 @@ const CLIENT_JS = `
       draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
       draft.wantBy=wantOk(amend.wantBy)?amend.wantBy:'';
       draft.when=draft.wantBy?'day':'soon'; draft.sheetKeep='';
-    }
+      draft.slot=amend.slot||'';
+    } else if(draft.slot==null) draft.slot='';
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
     else {
@@ -2981,13 +2986,24 @@ const CLIENT_JS = `
     if(!quotes().length) return tw('sh.whySize');
     if(draft.pool) return '';
     if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return tw('sh.whyWhere');
-    if(draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
+    if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
     return '';
   }
   /* FUTURE-DATED ORDERS (29 Sep 2026): the day they want it by, tomorrow to WANT_DAYS days on in Kuala Lumpur, the
      Worker's wantByFault the check behind it; left for as soon as it can come, nothing is sent */
   function klPlus(n){ var d=new Date(todayKL()+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
   function wantOk(v){ return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(v||''))&&v>=klPlus(1)&&v<=klPlus(WANT_DAYS); }
+  /* 10 Oct 2026: A DELIVERY'S TIME WINDOW, as soon as it can or one of six four-hour windows, each its next occurrence inside
+     the Counter's hours (the Worker's slotNext and slotSpan, carried below); a window partly inside says the part inside */
+  /*__WINDOW__*/
+  var WINS=__WINDOWS__;
+  function winCfg(){ return !hoursError&&counterHours&&counterHours.config||null; }
+  function winOpen(){ var now=Date.now(), out=[];
+    WINS.forEach(function(w){ var n=slotNext(w,winCfg(),now); if(n) out.push(n); });
+    out.sort(function(x,y){ return x.slot<y.slot?-1:x.slot>y.slot?1:0; }); return out; }
+  function winHm(w){ return (w<10?'0':'')+w+':00'; }
+  function winDay(slot){ return String(slot||'').slice(0,10); }
+  function winPart(span,i){ return String(span||'').split('-')[i]||''; }
   function whereHint(){
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
   }
@@ -3045,10 +3061,20 @@ const CLIENT_JS = `
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
       wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
     }
+    /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
+       a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
+    if(draft.mode==='deliver'){
+      var WO=winOpen(), opts=[['',tw('sh.soon')]];
+      if(draft.slot&&!WO.some(function(n){ return n.slot===draft.slot; })) draft.slot='';
+      WO.forEach(function(n){ var w=+n.slot.slice(11,13); opts.push([n.slot,tw('sh.winAt',{d:ymdDay(winDay(n.slot)), a:winHm(w), b:winHm(w+4)})]); });
+      B.appendChild(oChoice(tw('sh.when'),opts,draft.slot||'','win',function(v){ draft.slot=v; sheetDraw(); }));
+      var cho=WO.filter(function(n){ return n.slot===draft.slot; })[0];
+      B.appendChild(el('p','salt-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
+    } else
     /* 29 Sep 2026: when they want it, as soon as it can come unless they pick a day */
     B.appendChild(oChoice(tw('sh.when'),[['soon',tw('sh.soon')],['day',tw('sh.onDay')]],draft.when==='day'?'day':'soon','when',
       function(v){ draft.when=v; sheetDraw(); }));
-    if(draft.when==='day'){
+    if(draft.mode!=='deliver'&&draft.when==='day'){
       var df=el('div','salt-field'), dl=el('label','salt-field__label',tw('sh.wantBy')); dl.htmlFor='oWant';
       var di=el('input','salt-field__input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
       di.setAttribute('data-k','want');
@@ -3115,9 +3141,12 @@ const CLIENT_JS = `
       amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
       place:draft.mode==='deliver'&&!draft.pool?String(draft.place||'').trim():'', say:draft.pool?'':String(draft.say||'').trim(), forFriend:ff,
       pool:draft.pool||'',
-      wantBy:draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
+      wantBy:draft.mode!=='deliver'&&draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
+      /* 10 Oct 2026: a delivery's window, with the span it was offered at, for the check to say */
+      slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
+    if(draft.check.slot){ var cs=winOpen().filter(function(n){ return n.slot===draft.check.slot; })[0]; draft.check.span=cs?cs.span:''; }
     draft.step='check'; draft.snote=''; sheetDraw();
   }
   function sheetSum(c){ var t=0; c.lines.forEach(function(l){ t+=l.total; }); return +t.toFixed(2); }
@@ -3226,7 +3255,8 @@ const CLIENT_JS = `
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
+    if(!c.pool&&c.mode==='deliver') row(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
+    else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
@@ -3296,6 +3326,7 @@ const CLIENT_JS = `
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
       if(c.wantBy) body.wantBy=c.wantBy;
+      if(c.slot) body.slot=c.slot;
       /* Negotiate: its own request id, so an ask is never answered with a placing of the same line, or the other way */
       if(ask){ body.ask=true; if(!l.askRid) l.askRid=mintRid(); body.rid=l.askRid; if(fig!=null) body.propose=+fig.toFixed(2); }
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
@@ -3633,6 +3664,9 @@ const CLIENT_JS = `
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
+    /* 10 Oct 2026: the time asked for, while the goods are still to go */
+    if(o.slot&&o.slotSpan&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' '));
+      put('ow.window',{a:esch(winPart(o.slotSpan,0)), b:esch(winPart(o.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(o.slot),L)); }}); }
     if(o.closed&&o.closed.qty){ p.appendChild(document.createTextNode(' ')); put('ow.closed',{a:sz(o.qty), b:esch(o.closed.qty), rm:rm(o.total)}); }
     w.appendChild(p);
     var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));

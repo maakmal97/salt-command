@@ -20865,6 +20865,15 @@ function ordWantLine(o){
   const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+nDays(n):n===-1?'yesterday':nDays(-n)+' ago';
   return `<p class="ordline ordwant">Wanted by <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
 }
+/* 10 OCT 2026, A DELIVERY'S TIME WINDOW: the part of the window they asked for inside the Counter's hours, while the goods are
+   still to go. A request, never a promise: he manages it. Never on the row: it is the site's and this card's. */
+function ordSlotLine(o){
+  const s=String(o&&o.slot||''),m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})T[0-9]{2}$/.exec(s),sp=/^([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2})$/.exec(String(o&&o.slotSpan||''));
+  if(!m||!sp||o.mode!=='deliver'||!['placed','acknowledged','ready'].includes(o.status)||(+o.moved||0)>=(+o.qty||0)-0.004)return '';
+  const today=new Date(Date.now()+8*36e5).toISOString().slice(0,10),n=Math.round((Date.parse(s.slice(0,10))-Date.parse(today))/864e5);
+  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+nDays(n):n===-1?'yesterday':nDays(-n)+' ago';
+  return `<p class="ordline ordwant">Delivery wanted between <b>${sp[1]} and ${sp[2]}</b> on <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
+}
 function ordCard(o){
   if(o&&o.kind==='account')return clmCard(o);
   if(o&&o.kind==='thread')return thrCard(o);
@@ -21032,7 +21041,7 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${ordSheetLine(o)}${ordWantLine(o)}
+    ${ordSheetLine(o)}${ordWantLine(o)}${ordSlotLine(o)}
     ${yes?'':pa?ordOfferBlock(o,when)+(ordPriceAct(o)?ordPvBlock(o):''):o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?NIL:fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
