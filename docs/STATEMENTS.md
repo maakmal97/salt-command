@@ -1213,6 +1213,18 @@ exists the page says notifications are not switched on.
   the take. Limits: two asks open an account, none while a claim of theirs waits, none for a friend (a `-R` bucket) or on a
   sheet; while the overdue gate is on the page closes the sheet, Negotiate with it (the Worker cannot read the sealed
   `pay`). Their view of it is `priceView`: {state, total, delivery: null, until}. The accepted price stays on that order.
+- **His Accept, for their yes** (version 2, his decisions of 10 Oct 2026). `needsYes` decides it: goods above what they
+  placed it at (to the sen), or a window other than the one they chose. Never his first delivery charge, never a window on an
+  order asked for as soon as it can, never a lower price. Accept with either is refused (409, `needsYes`), and the card, or
+  Counter Admin's button, sends it instead as an offer of the whole order as he would agree it (`POST /orders/<id>/offer`
+  with `slot`, the preview's `offerHash`): `{id, kind: "accept", total, delivery, slot, until}`, `until` from `acceptUntil`
+  (48 hours, or the window's start when that is an hour or more ahead and sooner, else its end), the window cut to the hours
+  as at an acknowledgement and refused once past. His yes is filed as an offer pre-approval and no row is queued. Their Yes
+  is Negotiate's take, drafted and spent only on an exact match (D6), the acknowledgement carrying the offer's window
+  (`slotShown`); their No thanks cancels the order at no cost; his Withdraw or the lapse (`acceptClosed`) leaves it placed,
+  his to Accept at their terms, send again or Decline, and Accept then lets the old yes go. A sheet that would need their yes
+  is refused (his Q7), and so is an offer with nothing to agree. Their view adds `from: "accept"`, the delivery and the
+  window; it is never an ask (`askOpen`), and its push is `confirm`, words only.
 
 ### Publishing, and the one-time setup
 
@@ -1359,7 +1371,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
   offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
   Step 1b, F10, F15, V4b.2, V5, F13 (a slip sent, and one no longer kept) and the delivery's window and spot (a window
-  asked for, one partly inside the hours, a spot shared, and his window at Accept, 10 Oct 2026) have their cases; a feature that lands
+  asked for, one partly inside the hours, a spot shared, and his window at Accept, 10 Oct 2026) and his Accept for their yes (a
+  raise and another window waiting on them, one lapsed then agreed at their terms, 10 Oct 2026) have their cases; a feature that lands
   later is added by the lane that builds it.
 - **The test accounts are wrapped on his page** (fold 2.7): Make the test accounts makes a key for each and wraps it
   under the zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`),

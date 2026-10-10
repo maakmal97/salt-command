@@ -459,7 +459,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **A delivery's window and exact spot** (his decisions of 10 Oct 2026): As soon as it can or one of six four-hour windows,
   one rule on page and Worker (`stmt/window.js`) over Counter Admin's weekly Hours, its span the part inside; his Accept may
-  answer an as-soon-as delivery with a window and never changes theirs, and reminds them to pay now in words only. The spot is
+  answer an as-soon-as delivery with a window, and reminds them to pay now in words only. **A raise or another window than
+  theirs is never his Accept's alone** (`needsYes`): it goes to them as an offer of the whole order, their Yes the take, their
+  No thanks a cancellation, a lapse or his Withdraw leaving it placed; never on a sheet (`docs/STATEMENTS.md`). The spot is
   sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
   opened only on the Desk with the one unlock: the fee's point ahead of `vault-addr`, filed as their place only on his tap.
 - **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark, never a figure or the word stock; yellow or red carry "Expected by DD Mon" from the desk's `expected` date (KV `expected`, set in Enter through `/expected`, never named restock). Ordering is never refused.
