@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="7ec3bbaf0c747d73";
+var SALT_BUILD_ID="6270ec955d6593e2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9184,7 +9184,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1059","d":"10 Oct 2026","t":"CORRECTION: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 10 OCT","n":["<b>ONE CORRECTION FOLDED.</b> Order s247 for CZ5-TM, 2 units for RM190, is marked as collected on 10 Oct: delivered quantity 2, delivered on 10 Oct, handover collected. No cash moves. The drafter flagged that the row's trail of 3 steps will no longer add up to the corrected figure, and that RM95 a unit is below the party's usual rate.","<b>SHELF ROLLED.</b> Salt goes out by 2 units to CZ5-TM, the difference the correction states. The stated shelf of 12.14 units is rolled down by that amount by the tool, and the stock cost of RM56 is untouched."]}];
+const evolution=[{"v":"v1060","d":"10 Oct 2026","t":"AN EXISTING CUSTOMER CAN BE APPOINTED A RESELLER OR A REFERRAL FROM COUNTER ADMIN","n":["<b>Appoint, keeping the code.</b> Counter Admin carries a code-only choice of an existing customer and a role. The appointment goes through Add ID's own appointment and fold, keeps their roster code, names, place and statement username, and opens their -R account. Suppliers, buckets, departed or banned IDs and existing associates are not offered.","<b>Once only.</b> A retry carries the same immutable request and a claim per customer, so a changed or doubled tap cannot appoint twice, and Add ID still refuses a duplicate. An appointment writes no vault receipt, so the new associate can be picked for an R2 sale once it is folded. No row, price or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9335,7 +9335,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 15:49 KL';
+const LAST_UPDATED='10 Oct 2026, 16:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
