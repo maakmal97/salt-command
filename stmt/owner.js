@@ -646,10 +646,10 @@ export const OWNER_JS = `
   /* 10 Oct 2026: the next occurrence of each four-hour window, Kuala Lumpur time, its start ahead, as the Desk's ordWinPicks */
   function makerWinPicks(now){
     var H=3600000, out=[], ws=[0,4,8,12,16,20], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    function day(x){ return new Date(x+8*H).toISOString().slice(0,10); }
-    function p(n){ return (n<10?'0':'')+n; }
-    ws.forEach(function(w){ var d=day(now), s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s<=now){ s+=24*H; d=day(s); }
-      out.push([d+'T'+p(w),(+d.slice(8))+' '+MON[+d.slice(5,7)-1]+', '+p(w)+':00 to '+p(w+4)+':00',s]); });
+    function mwDay(x){ return new Date(x+8*H).toISOString().slice(0,10); }
+    function mwPad(n){ return (n<10?'0':'')+n; }
+    ws.forEach(function(w){ var d=mwDay(now), s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s<=now){ s+=24*H; d=mwDay(s); }
+      out.push([d+'T'+mwPad(w),(+d.slice(8))+' '+MON[+d.slice(5,7)-1]+', '+mwPad(w)+':00 to '+mwPad(w+4)+':00',s]); });
     return out.sort(function(a,b){ return a[2]-b[2]; });
   }
   var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
