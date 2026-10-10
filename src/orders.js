@@ -182,6 +182,17 @@ export async function threadRelay(env, u, body) {
   return { ok: true, thread: Object.assign({ code: users[b.thread && b.thread.u] || null }, b.thread), push: b.push || null };
 }
 
+/** 10 Oct 2026: a delivery's exact spot as the site filed it, ciphertext sealed on the customer's phone to his slip key under
+ *  the info "salt-pin v1" (stmt/pin.js), for the desk to open with the key his vault holds. Stored nowhere here. */
+export async function pinRelay(env, u, id) {
+  if (!/^[0-9a-f]{32}$/.test(String(id || "")) || !/^[a-z0-9-]{1,40}$/.test(String(u || ""))) return { ok: false, status: 404, error: "no such location" };
+  const r = await site(env, "/desk/pins/" + encodeURIComponent(u) + "/" + id);
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status === 404 ? 404 : 502, error: b.error || ("the statements site answered http " + r.status) };
+  return { ok: true, pin: b.pin };
+}
+
 /** F13: a payment slip as the site filed it, ciphertext sealed on the customer's phone to his slip key, for the desk to
  *  open with the key his vault holds. The username and the id as the claim carries them; stored nowhere here. */
 export async function slipRelay(env, u, id) {

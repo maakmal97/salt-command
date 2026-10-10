@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, bookOnce, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
@@ -2251,7 +2251,7 @@ export default {
     if (p === "/stmt/rev") return handleStmtRev(request, env, url, m);
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
-        || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/")
+        || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
         || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
@@ -2282,6 +2282,7 @@ export default {
       || p === "/vault/maintenance"
       || p === "/vault/key"   /* F13: the slip key's envelope is his alone */
       || p.startsWith("/slips/")   /* F13: a slip is ciphertext, and still his alone to fetch */
+      || p.startsWith("/pins/")   /* 10 Oct 2026: a delivery's exact spot is ciphertext too, and his alone to fetch */
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -2677,6 +2678,13 @@ export default {
     if (sl) {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await slipRelay(env, decodeURIComponent(sl[1]), decodeURIComponent(sl[2]));
+      return json(r, r.ok ? 200 : (r.status || 502));
+    }
+    /* 10 Oct 2026: A DELIVERY'S EXACT SPOT, relayed as the site filed it: ciphertext the desk opens with the slip key */
+    const pn = /^\/pins\/([^/]+)\/([^/]+)$/.exec(p);
+    if (pn) {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await pinRelay(env, decodeURIComponent(pn[1]), decodeURIComponent(pn[2]));
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     if (p === "/geo/expand") {                                          // F14: a short Maps link, one redirect, nothing kept

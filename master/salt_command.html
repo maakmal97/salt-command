@@ -9817,7 +9817,9 @@ function deliveryFeeFor(km){const d=RULES.delivery;if(!(km>=0))return null;
   let f=Math.round(km*d.roadFactor*d.rmPerKm/d.roundTo)*d.roundTo;f=Math.max(d.minRm||0,f);if(d.maxRm!=null)f=Math.min(d.maxRm,f);return +f.toFixed(2);}
 const feePt=p=>p&&typeof p.lat==='number'&&typeof p.lng==='number'&&isFinite(p.lat)&&isFinite(p.lng)?{lat:p.lat,lng:p.lng}:null;
 /* the party's point: its own, else its associate's for a resale bucket (the goods go to the associate); exact first */
-function feeTo(code){
+function feeTo(code,pin){
+  /* 10 Oct 2026: the spot the customer shared on this order, opened on this device, before anything filed */
+  {const q=feePt(pin);if(q)return Object.assign(q,{how:'pin',code:String(code||'')});}
   const c=String(code||''),ids=/-R$/.test(c)?[c,c.slice(0,-2)]:[c];
   for(const id of ids){const p=feePt(vaultPlaces&&vaultPlaces[id]);if(p)return Object.assign(p,{how:'exact',code:id});}
   if(RULES.delivery.localityFallback)for(const id of ids){const g=PLACED[id];if(Array.isArray(g)){const p=feePt({lat:g[0],lng:g[1]});if(p)return Object.assign(p,{how:'locality',code:id});}}
@@ -9832,9 +9834,9 @@ async function feeFrom(){const h=await hereNow();if(h)return Object.assign(h,{ho
   const b=feePt(vaultPlaces&&vaultPlaces._base);return b?Object.assign(b,{how:'base'}):null;}
 /* the offer: {fee, km, road, from, to, code} when both points stand, {why} when one does not, null when nothing may be offered */
 function feeOpen(){try{return cloudMode()&&namesShown();}catch(e){return false;}}
-async function deliveryOffer(code){
+async function deliveryOffer(code,pin){
   if(!feeOpen()||!code)return null;
-  const to=feeTo(code);if(!to)return {why:'none',code};
+  const to=feeTo(code,pin);if(!to)return {why:'none',code};
   const from=await feeFrom();if(!from)return {why:'nofrom',code,to:to.how};
   const km=haversineKm(from,to);
   return {fee:deliveryFeeFor(km),km:+km.toFixed(1),road:+(km*RULES.delivery.roadFactor).toFixed(1),from:from.how,to:to.how,code:to.code};
@@ -9847,7 +9849,7 @@ function feeLine(off){
   const d=RULES.delivery;
   return fmt(off.fee)+' by distance: '+off.road+' km by road ('+off.km+' km straight, times '+d.roadFactor+') at '+fmt(d.rmPerKm)+' a km, one way, '
     +(off.from==='here'?'from where you are':'from your base point, as your location was not read')+' to '
-    +(off.to==='exact'?codeOf(off.code)+'’s filed point.':codeOf(off.code)+'’s locality, about a kilometre out: no exact point is filed.');
+    +(off.to==='pin'?'the spot '+codeOf(off.code)+' shared on this order.':off.to==='exact'?codeOf(off.code)+'’s filed point.':codeOf(off.code)+'’s locality, about a kilometre out: no exact point is filed.');
 }
 function creditCapFor(prod,tier){const c=RULES.creditUnits[prod||PROD]||RULES.creditUnits[DEFAULT_PROD];return c[tier==='associate'?'associate':'retail'];}
 /* 24 SEP 2026, HIS INSTRUCTION: THE REORDER POINT IS MEASURED. It is restockFor's, forecast demand over
@@ -16705,12 +16707,12 @@ async function vaultSlipKeyOpen(pass){
 /* A slip, sealed on the customer's device to the key's public half: {v, epk, iv, ct}, the ephemeral point raw in base64,
    ECDH, HKDF-SHA-256 with no salt and info 'salt-slip v1', AES-GCM-256. The laptop's slipSeal in tools/seed-vault.mjs is the
    same protocol. Answers the bytes, or null with the vault locked or a slip that will not open. */
-async function slipOpen(sealed){
+async function slipOpen(sealed,info){
   if(!vaultSlipKey||!sealed)return null;
   try{const epk=await crypto.subtle.importKey('raw',_b64d(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
     const bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},vaultSlipKey,256);
     const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
-    const key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
+    const key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode(info||'salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
     return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:_b64d(sealed.iv)},key,_b64d(sealed.ct)));
   }catch(e){return null;}
 }
@@ -16758,7 +16760,7 @@ async function vaultReveal(pass){
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
 function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}try{slipShut();}catch(e){}
-  try{ORD_FEE={};WB_FEE=null;}catch(e){}}   /* F15: a fee worked from the places goes with them */
+  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};}catch(e){}}   /* F15: a fee worked from the places goes with them, and a shared spot */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -20547,7 +20549,7 @@ async function ordFeeRead(o){
   if(!o||o.status!=='placed'||o.mode!=='deliver'||ordAgainAck(o)||!feeOpen())return;
   const k=ordFeeKey(o);if(ORD_FEE[k])return;
   const mine={st:'looking'};ORD_FEE[k]=mine;
-  const off=await deliveryOffer(o.code);
+  const off=await deliveryOffer(o.code,await ordPinPoint(o));
   if(ORD_FEE[k]!==mine)return;   /* locked, or read again, meanwhile */
   if(!off){delete ORD_FEE[k];return;}
   ORD_FEE[k]={st:'ok',off};
@@ -20771,6 +20773,58 @@ function slipPart(u,id,at){
   const k=u+'|'+id,v=SLIP_VIEW[k];
   if(v&&v.st==='ok')return `<div class="ordslip"><img src="${v.url}" alt="The payment slip they sent" style="display:block;max-width:100%;height:auto;margin:8px 0;border-radius:8px"><button class="salt-ghost" data-slipoff="${esc(k)}">Hide slip</button></div>`;
   return `<div class="ordslip"><button class="salt-ghost" data-slip="${esc(id)}" data-u="${esc(u)}" data-at="${esc(at||'')}"${v&&v.st==='wait'?' disabled':''}>${v&&v.st==='wait'?'Opening the slip':'View slip'}</button>${v&&v.st==='err'?`<p class="dsc" role="status">${esc(v.msg)}</p>`:''}</div>`;
+}
+/* 10 OCT 2026, A DELIVERY'S EXACT SPOT: sealed on the customer's phone to the slip key under its own info ('salt-pin v1'),
+   read through the desk Worker's keyed relay (/pins) and opened here with the key the one unlock holds. The point lives in
+   memory alone (ORD_PIN), dropped by lockVault; it is the order's point for the fee, ahead of the places vault and the
+   locality, and may be filed as their place, encrypted on this device by the vault's own road. A short Google link they
+   shared is opened as Add ID opens one (/geo/expand, nothing kept). The card names the spot, never its figures. */
+let ORD_PIN={};
+async function ordPinPoint(o){
+  if(!o||!o.pin||o.mode!=='deliver'||!feeOpen()||!vaultSlipKey)return null;
+  const k=o.id;if(ORD_PIN[k])return ORD_PIN[k].pt||null;
+  const mine={st:'looking'};ORD_PIN[k]=mine;
+  let st='err',msg='',pt=null;
+  try{const r=await fetch('pins/'+encodeURIComponent(o.u)+'/'+encodeURIComponent(o.pin),{cache:'no-store',headers:qHeaders()});
+    let j=null;try{j=await r.json();}catch(e){}
+    if(r.status===404)msg='The spot they shared is no longer kept, so the fee is measured to their filed place.';
+    else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The server answered http '+r.status+'.');
+    else{const b=await slipOpen(j.pin,'salt-pin v1');let p=null;try{p=b?JSON.parse(new TextDecoder().decode(b)):null;}catch(e){p=null;}
+      if(!p)msg='The spot they shared would not open with this key.';
+      else if(feePt(p))pt=feePt(p);
+      else if(typeof p.link==='string'){const L=mapsLink(p.link);
+        if(L&&L.short){try{const x=await fetch('geo/expand',{method:'POST',headers:qHeaders(),body:JSON.stringify({url:L.short})});
+          const e=await x.json();const m2=e&&e.ok&&e.location?mapsLink(e.location):null;pt=m2&&!m2.short?feePt(m2):null;}catch(e){pt=null;}}
+        else pt=L?feePt(L):null;
+        if(!pt)msg='The link they shared could not be opened to a point.';}
+      else msg='The spot they shared holds no point.';
+      if(pt)st='ok';}
+  }catch(e){msg='No connection.';}
+  if(ORD_PIN[k]!==mine)return null;   /* locked meanwhile */
+  ORD_PIN[k]={st,pt,msg};
+  return pt;
+}
+function ordPinLine(o){
+  if(!o||!o.pin||o.mode!=='deliver'||!['placed','acknowledged','ready'].includes(o.status))return '';
+  const v=ORD_PIN[o.id];
+  if(!v||!feeOpen())return '<p class="ordline ordpin">They shared their exact spot, sealed: show names to open it for the fee.</p>';
+  if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
+  if(v.st!=='ok')return `<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
+  const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
+  const can=!same&&!!o.code&&!o.forFriend&&!/-R$/.test(String(o.code));
+  return `<p class="ordline ordpin">The spot they shared is open on this device${same?', the place filed for them':''}.</p>`
+    +(v.filed?'<p class="ordline ordpin" role="status">Filed as their place.</p>':can?`<button type="button" class="salt-ghost" data-pinfile="${esc(o.id)}">File as their place</button>`:'')
+    +(v.fileMsg?`<p class="ordline ordpin" role="status">${esc(v.fileMsg)}</p>`:'');
+}
+async function ordPinFile(id){
+  const o=ORD_OPEN.find(x=>x&&x.id===id),v=ORD_PIN[id];
+  if(!o||!v||v.st!=='ok'||!o.code||o.forFriend||/-R$/.test(String(o.code)))return;
+  const code=o.code,pt=v.pt,entry=placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'});
+  const why=await wbVaultFile(null,pm=>{pm[code]=Object.assign(entry,{addr:(pm[code]&&pm[code].addr)||null});});
+  if(ORD_PIN[id]!==v)return;   /* locked meanwhile */
+  if(why)ORD_PIN[id]=Object.assign({},v,{fileMsg:why});
+  else{ORD_PIN[id]=Object.assign({},v,{filed:true,fileMsg:''});try{if(vaultPlaces)vaultPlaces[code]=entry;}catch(e){}}
+  ordDraw();
 }
 async function slipView(u,id,at){
   const k=u+'|'+id;
@@ -21041,7 +21095,7 @@ function ordCard(o){
   return `<div class="salt-approve ordcard" data-id="${esc(o.id)}">
     <div class="salt-approve__head"><span class="salt-approve__party">${who}</span><span class="salt-approve__entry">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <p class="ordline">${units(o.qty)} ${esc(o.product||'salt')}, ${fmt(o.total)}${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?(o.place?'deliver to '+esc(o.place):'delivered'):'to collect'}</p>
-    ${ordSheetLine(o)}${ordWantLine(o)}${ordSlotLine(o)}
+    ${ordSheetLine(o)}${ordWantLine(o)}${ordSlotLine(o)}${ordPinLine(o)}
     ${yes?'':pa?ordOfferBlock(o,when)+(ordPriceAct(o)?ordPvBlock(o):''):o.status==='placed'||againAck?ordPvBlock(o)+(sLead?G.slice(1).map(x=>`<p class="ordline">${units(+x.qty||0)} ${esc(x.product||'salt')}, ${fmt(+x.total||0)}</p>`+ordPvBlock(x)).join(''):''):`<div class="kpis k4">${cell('Rate',rate==null?NIL:fmt(rate),'',rate==null?'':'a unit')
       +cell('Their usual',usual==null?NIL:fmt(usual),off==null?'':Math.abs(off)>=0.10?'r':'g',usual==null?'':'a unit')
       +cell('Paid',paid>0?fmt(paid)+(due>0.004?' of '+fmt(o.total+(+o.delivery||0)):''):'nothing yet',due<=0.004&&rowed?'g':'')
@@ -21197,6 +21251,7 @@ function ordDraw(){
   box.querySelectorAll('button[data-undo]').forEach(b=>{b.onclick=()=>ordUndo(b.dataset.undo);});
   /* F13: a slip opened on the card, and let go */
   box.querySelectorAll('button[data-slip]').forEach(b=>{b.onclick=()=>slipView(b.dataset.u,b.dataset.slip,b.dataset.at);});
+  box.querySelectorAll('button[data-pinfile]').forEach(b=>{b.onclick=()=>ordPinFile(b.dataset.pinfile);});
   box.querySelectorAll('button[data-slipoff]').forEach(b=>{b.onclick=()=>{const v=SLIP_VIEW[b.dataset.slipoff];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}delete SLIP_VIEW[b.dataset.slipoff];ordDraw();};});
   box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
     const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordPartSay(b.dataset.for);};});

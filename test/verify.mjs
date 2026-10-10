@@ -51445,6 +51445,10 @@ section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key,
 await (async () => {
   await (await import("./delivery-pin.mjs")).run({ ok });
 })();
+section("10 Oct 2026: the desk opens a delivery's exact spot with the one unlock, measures the fee to it and may file it as their place");
+await (async () => {
+  await (await import("./delivery-pin-desk.mjs")).run({ ok });
+})();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
   await (await import("./clip-text.mjs")).run({ ok });
