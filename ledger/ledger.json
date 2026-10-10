@@ -1,6 +1,6 @@
 {
- "v": "v1049",
- "stamped": "10 Oct 2026, 08:50 KL",
+ "v": "v1050",
+ "stamped": "10 Oct 2026, 08:52 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6958,6 +6958,17 @@
     "deliveredQty": 0,
     "note": "<b>SALT SALE DATED 10 OCT: 2 UNITS TO CZ5-TM AT RM190, PENDING, NOTHING PAID OR HANDED OVER.</b> Order 20261009164607-zasz2w, acknowledged, to collect, preapproved by phone. For 2 units the dossier gives a floor of RM116 and an ask of RM250, so RM190 clears the floor and stays under the ask. CZ5-TM has 3 orders, a median rate of RM110, a range of RM110 to RM110, RM0 outstanding before and 0 units on credit before, against a cap of 1 unit. The cost carried is RM58 a unit off the latest purchase, p036, not the inventory's own RM56. Drafter flag: RM95 a unit against RM110 on every earlier order; the figures confirm the lower rate but give no reason for it. The order was placed at RM240. Open: RM190 unpaid and 2 units to collect.",
     "rid": "s247"
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-10-10",
+    "deliveredQty": 0,
+    "note": "<b>SALT SALE DATED 10 OCT: 1 UNIT TO CS6-BS AT RM130, PENDING, NOTHING PAID OR HANDED OVER.</b> Order 20261009132912-8kglqg, acknowledged, to be delivered, preapproved by phone. For 1 unit the dossier gives a floor of RM58 and an ask of RM140, so RM130 clears the floor and stays under the ask. CS6-BS has 14 orders, a median rate of RM95, a range of RM11 to RM126.67, RM0 outstanding before and 0 units on credit before, against a cap of 2 units. The cost carried is RM58 a unit off the latest purchase, p036, not the inventory's own RM56. Drafter flag: the party typically pays about RM100 a unit and this is 30% above that; the figures show RM130 is above the party's median and its top earlier rate, but within the ask. Open: RM130 unpaid and 1 unit to deliver.",
+    "cost": 56,
+    "rid": "s248"
    }
   ],
   "contacts": [
@@ -7599,9 +7610,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T00:50:07.599Z",
+  "QUEUE_COMMITTED": "2026-10-10T00:50:35.526Z",
   "PRICING": {
-   "takenAt": "2026-10-10T00:50:56.048Z",
+   "takenAt": "2026-10-10T00:52:52.695Z",
    "sizes": [
     0.5,
     1,
@@ -14453,11 +14464,11 @@
      ]
     }
    },
-   "v": "v1049"
+   "v": "v1050"
   },
   "OPEN": {
-   "at": "2026-10-10T00:50:56.861Z",
-   "count": 10,
+   "at": "2026-10-10T00:52:53.502Z",
+   "count": 11,
    "byKey": {
     "CZ5-TM|2026-10-10|190": {
      "d": "2026-10-10",
@@ -14472,6 +14483,20 @@
      "oweUnits": 2,
      "rid": "s247",
      "key": "CZ5-TM|2026-10-10|190"
+    },
+    "CS6-BS|2026-10-10|130": {
+     "d": "2026-10-10",
+     "p": "CS6-BS",
+     "dir": "S",
+     "q": 1,
+     "t": 130,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 130,
+     "oweUnits": 1,
+     "rid": "s248",
+     "key": "CS6-BS|2026-10-10|130"
     },
     "CM4-MK|2026-10-09|90": {
      "d": "2026-10-09",
@@ -14630,9 +14655,9 @@
      "free": 5.64,
      "owedOut": 6.5,
      "coverDays": 1.4,
-     "rate": 4.95,
+     "rate": 5,
      "owedToYou": 430,
-     "promised": 8.5,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -14687,7 +14712,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1049"
+   "v": "v1050"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14695,7 +14720,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1049"
+   "v": "v1050"
   },
   "REWARD": {
    "stated": {
@@ -14707,7 +14732,7 @@
      }
     }
    },
-   "v": "v1049"
+   "v": "v1050"
   }
  }
 }
