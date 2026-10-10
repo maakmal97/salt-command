@@ -47666,7 +47666,11 @@ await (async () => {
         step('order',function(){ORD_OPEN=[{id:'zt9',status:'placed',total:100,delivery:0,paid:0,at:new Date().toISOString(),code:'ZT9-TST'}];},
           function(){ORD_OPEN=keepOpen;});
         var t0=TODAY.getTime();
+        /* a sale handed over today and unpaid is within its term now and long past it in 400 days, so the date step moves the
+           Today count on any book: the live book alone may hold nothing a date moves (10 Oct 2026, after the re-merge) */
+        var dr={date:day(0),customer:'ZT9-TST',qty:2,total:200,cash:0,deliveredQty:2,rid:'sZT8'};sales.push(dr);
         step('date',function(){TODAY.setTime(t0+400*864e5);},function(){TODAY.setTime(t0);});
+        sales.splice(sales.indexOf(dr),1);
         var keepHush=HUSH;
         step('hush',function(){HUSH={zt9:'2999-01-01'};},function(){HUSH=keepHush;});
         var keepDr=AP_DRAFTS;
