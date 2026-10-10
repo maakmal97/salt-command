@@ -11257,7 +11257,7 @@ await (async () => {
      ran on that push at all. It is still last and still after the statements; it simply no longer
      asks who deployed. Since 26 Sep 2026 it is its own job, on the chain's deploy (the section below). */
   ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+run: npm test -- --part \$\{\{ matrix\.part \}\}\/3 --jobs 2\n/.test(wf.replace(/\r\n/g, "\n"))
-     && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'\n/.test(wf.replace(/\r\n/g, "\n")),
+     && /\n  suite:\n    needs: chain\n(?:    [^\n]*\n)*?    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1' && needs\.chain\.outputs\.proved == ''\n/.test(wf.replace(/\r\n/g, "\n")),
      "the full suite comes after the statements, in its own job on the chain's deploy, and runs whoever deployed");
   /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
      ran next listed the prefix "stmt" and deleted what it found. Both keys begin with it, so both
@@ -11376,7 +11376,7 @@ await (async () => {
   /* THE LOCK */
   ok(chain !== "" && !/^concurrency:/m.test(wf) && /^    concurrency:\n      group: cloud-commit\n      cancel-in-progress: false$/m.test(chain),
     "the lock is job chain's, group cloud-commit, never cancelling a chain in progress, and the workflow holds none");
-  ok(suite !== "" && /^    needs: chain$/m.test(suite) && /^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1'$/m.test(suite)
+  ok(suite !== "" && /^    needs: chain$/m.test(suite) && /^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1' && needs\.chain\.outputs\.proved == ''$/m.test(suite)
      && /^      - uses: actions\/checkout@[0-9a-f]{40} # v5\n        with: \{ ref: "\$\{\{ needs\.chain\.outputs\.sha \}\}" \}$/m.test(suite) && !/^\s+concurrency:/m.test(suite),
     "job suite needs chain, runs only when chain succeeded and deployed, checks out the sha chain proved, and takes no lock");
   /* 05 Oct 2026: a third of the suite a runner, and the notice once after all three */
@@ -11445,30 +11445,34 @@ await (async () => {
       "the live check reads /rev and says same only while the phone serves the build this suite tested; a moved phone or no answer is not same, and never fails the step: "
       + JSON.stringify({ onIt: onIt.o, moved: moved2.o, down: down.o, code: down.code }) + " " + down.text.slice(-200));
 
-    /* THE NOTICES, BY THEIR if: CONDITIONS. `&&` of always(), success(), failure() and == or != against a quoted
-       string, which is all the steps use; anything else reads as unknown and fails. No status function is an
-       implied success(), as GitHub reads it. */
+    /* THE NOTICES, BY THEIR if: CONDITIONS. `&&` of always(), success(), failure(), == or != against a quoted
+       string, and one parenthesised `||` of those comparisons (10 Oct 2026), which is all the steps use; anything else
+       reads as unknown and fails. No status function is an implied success(), as GitHub reads it. */
+    const cmp = (p, ctx) => { const m = /^([\w.]+) (==|!=) '([^']*)'$/.exec(p); if (!m) return null; const v = ctx[m[1]] ?? ""; return m[2] === "==" ? v === m[3] : v !== m[3]; };
     const cond = (expr, ctx) => {
       if (!expr) return ctx.status === "success";
       let status = null, val = true;
       for (const p of expr.split(/\s*&&\s*/)) {
-        let m;
+        let m, c;
         if (p === "always()") status = true;
         else if (p === "success()" || p === "failure()") { status = true; val = val && ctx.status === p.slice(0, -2); }
-        else if ((m = /^([\w.]+) (==|!=) '([^']*)'$/.exec(p))) { const v = ctx[m[1]] ?? ""; val = val && (m[2] === "==" ? v === m[3] : v !== m[3]); }
+        else if ((m = /^\((.+)\)$/.exec(p))) { const any = m[1].split(/\s*\|\|\s*/).map((q) => cmp(q, ctx)); if (any.includes(null)) return null; val = val && any.includes(true); }
+        else if ((c = cmp(p, ctx)) !== null) val = val && c;
         else return null;
       }
       return status ? val : val && ctx.status === "success";
     };
     const LIVE = "Is the phone still on this build?", FAIL = "Say so on the phone if the suite failed", CLEAR = "Clear a test notice once the suite passes";
-    const fires = (suiteOut, phoneSame) => {
-      const ctx = { status: "success", "needs.suite.result": suiteOut };
+    const fires = (suiteOut, phoneSame, proved = "") => {
+      const ctx = { status: "success", "needs.suite.result": suiteOut, "needs.chain.outputs.proved": proved };
       ctx["steps.live.outputs.same"] = cond(ifOf(notice, LIVE), ctx) === true ? phoneSame : "";
       return [FAIL, CLEAR].filter((n) => cond(ifOf(notice, n), ctx) === true).map((n) => (n === FAIL ? "note" : "clear"));
     };
     const ns = stepsOf(notice);
-    const table = { failSame: fires("failure", "1"), failMoved: fires("failure", "0"), passSame: fires("success", "1"), passMoved: fires("success", "0") };
-    ok(JSON.stringify(table) === JSON.stringify({ failSame: ["note"], failMoved: [], passSame: ["clear"], passMoved: [] })
+    /* 10 Oct 2026: a suite that stood down because CI passed the whole suite on this tree clears too; a skip without that proof is not a pass */
+    const table = { failSame: fires("failure", "1"), failMoved: fires("failure", "0"), passSame: fires("success", "1"), passMoved: fires("success", "0"),
+      provedSame: fires("skipped", "1", "101"), provedMoved: fires("skipped", "0", "101"), skippedBare: fires("skipped", "1"), cancelled: fires("cancelled", "1") };
+    ok(JSON.stringify(table) === JSON.stringify({ failSame: ["note"], failMoved: [], passSame: ["clear"], passMoved: [], provedSame: ["clear"], provedMoved: [], skippedBare: [], cancelled: [] })
        && ns.indexOf(LIVE) >= 0 && ns.indexOf(FAIL) > ns.indexOf(LIVE) && ns.indexOf(CLEAR) > ns.indexOf(LIVE) && [LIVE, FAIL, CLEAR].every((n) => ss.indexOf(n) < 0)
        && /--refused-note "suite:\$v"/.test(stepIn(notice, FAIL)) && /--clear-suite-notices/.test(stepIn(notice, CLEAR)),
       "a failed suite notes the phone and a passing one clears, once for the three parts, each only while the phone serves the build it tested: " + JSON.stringify(table));
@@ -11482,6 +11486,121 @@ await (async () => {
      && /node tools\/d1\.mjs --seed/.test(chain) && /npx wrangler deploy -c wrangler\.stmt\.jsonc/.test(chain) && /node tools\/stmt-publish\.mjs/.test(chain)
      && !/npm test|--refused-note "suite:|--clear-suite-notices/.test(chain),
     "job suite reads the repository and writes only its notice, while the re-seed, the Counter and the publish stay in chain, which runs no suite");
+})();
+
+section("10 Oct 2026: job suite stands down when CI has already passed the whole suite on the tree chain proved");
+await (async () => {
+  /* His yes of 10 Oct 2026: "Yes, skip duplicate run". A pull request merges only level with master, so the squash
+     commit's tree is the head's, and ci.yml has already run verify and all three test parts on it. tools/suite-proved.mjs
+     is driven here against an invented GitHub: proved only by a green ci.yml run whose four jobs each passed, on a commit
+     with the proved tree that holds every parent of it; anything else, an API error included, runs the suite. Then the
+     CLI against a local server standing in for the API, and the workflow's wiring. Each assertion was proved red by its
+     own mutation, one at a time. */
+  const { proveTree, CI_JOBS } = await import("../tools/suite-proved.mjs");
+  const R = "o/r", C = "c".repeat(40), M = "a".repeat(40), H = "b".repeat(40), T = "d".repeat(40), T2 = "e".repeat(40);
+  const runsOf = (h) => `repos/${R}/actions/workflows/ci.yml/runs?head_sha=${h}&status=success&per_page=30`;
+  const jobs = (over = {}) => ({ jobs: CI_JOBS.map((name) => ({ name, conclusion: over[name] || "success" })) });
+  const base = () => ({
+    [`repos/${R}/commits/${C}`]: { commit: { tree: { sha: T } }, parents: [{ sha: M }] },
+    [`repos/${R}/commits/${C}/pulls?per_page=100`]: [{ number: 7, base: { ref: "master" }, head: { sha: H, ref: "feat" } }],
+    [`repos/${R}/commits/${H}`]: { commit: { tree: { sha: T } }, parents: [{ sha: M }] },
+    [`repos/${R}/compare/${M}...${H}`]: { status: "ahead" },
+    /* a run's own pull_requests comes back empty in this repo (read live on 10 Oct 2026), so the branch's pull requests and #7's events are read */
+    [`repos/${R}/pulls?state=all&head=o:feat&per_page=100`]: [{ number: 7, base: { ref: "master" } }],
+    [`repos/${R}/issues/7/events?per_page=100`]: [{ event: "head_ref_force_pushed" }],
+    [runsOf(C)]: { workflow_runs: [] },
+    [runsOf(H)]: { workflow_runs: [{ id: 101, head_sha: H, status: "completed", conclusion: "success", event: "pull_request", head_branch: "feat", pull_requests: [], html_url: "https://example.invalid/runs/101" }] },
+    [`repos/${R}/actions/runs/101/jobs?per_page=100`]: jobs(),
+  });
+  const getOf = (world) => async (p) => { if (!(p in world)) throw new Error("GET " + p + " answered 404"); return JSON.parse(JSON.stringify(world[p])); };
+  const prove = (edit, sha = C) => { const w = base(); if (edit) edit(w); return proveTree({ repo: R, sha, get: getOf(w) }); };
+  const v = {
+    full: await prove(),
+    stoodDown: await prove((w) => { w[`repos/${R}/actions/runs/101/jobs?per_page=100`] = jobs({ "tests (1)": "skipped", "tests (2)": "skipped", "tests (3)": "skipped" }); }),
+    partRed: await prove((w) => { w[`repos/${R}/actions/runs/101/jobs?per_page=100`] = jobs({ "tests (2)": "failure" }); }),
+    verifyRed: await prove((w) => { w[`repos/${R}/actions/runs/101/jobs?per_page=100`] = jobs({ verify: "failure" }); }),
+    moved: await prove((w) => { w[`repos/${R}/commits/${H}`].commit.tree.sha = T2; }),
+    lacksParent: await prove((w) => { w[`repos/${R}/compare/${M}...${H}`].status = "diverged"; }),
+    otherBase: await prove((w) => { w[`repos/${R}/commits/${C}/pulls?per_page=100`][0].base.ref = "release"; }),
+    otherBranch: await prove((w) => { w[runsOf(H)].workflow_runs[0].head_branch = "other"; }),
+    runOtherBase: await prove((w) => { w[runsOf(H)].workflow_runs[0].pull_requests = [{ base: { ref: "release" } }]; }),
+    /* review of 10 Oct 2026: the same branch had a pull request into another base, or #7 was retargeted, or its events are unread */
+    branchToRelease: await prove((w) => { w[`repos/${R}/pulls?state=all&head=o:feat&per_page=100`].push({ number: 6, base: { ref: "release" } }); }),
+    retargeted: await prove((w) => { w[`repos/${R}/issues/7/events?per_page=100`].push({ event: "base_ref_changed" }); }),
+    eventsUnread: await prove((w) => { delete w[`repos/${R}/issues/7/events?per_page=100`]; }),
+    apiDown: await prove((w) => { delete w[runsOf(H)]; }),
+    fold: await prove((w) => { w[`repos/${R}/commits/${C}/pulls?per_page=100`] = []; }),
+    noSha: await prove(null, "not-a-sha"),
+  };
+  const pushOn = (stood) => prove((w) => {
+    w[`repos/${R}/commits/${C}/pulls?per_page=100`] = [];
+    w[runsOf(C)] = { workflow_runs: [{ id: 202, head_sha: C, status: "completed", conclusion: "success", event: "push", head_branch: "master", pull_requests: [] }] };
+    /* a push run whose guard stood Tests down: the matrix never expands, so one job `tests`, skipped */
+    w[`repos/${R}/actions/runs/202/jobs?per_page=100`] = stood ? { jobs: [{ name: "verify", conclusion: "success" }, { name: "tests", conclusion: "skipped" }] } : jobs();
+  });
+  v.pushOnC = await pushOn(false); v.pushStoodDown = await pushOn(true);
+  const got = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, x.proved ? x.run + "@" + x.head.slice(0, 1) : "run"]));
+  ok(JSON.stringify(got) === JSON.stringify({ full: "101@b", stoodDown: "run", partRed: "run", verifyRed: "run", moved: "run", lacksParent: "run", otherBase: "run",
+    otherBranch: "run", runOtherBase: "run", branchToRelease: "run", retargeted: "run", eventsUnread: "run", apiDown: "run", fold: "run", noSha: "run", pushOnC: "202@c", pushStoodDown: "run" }),
+    "only a green CI run that passed verify and all three parts, on a commit with this tree holding every parent, stands the suite down: " + JSON.stringify(got));
+  ok(/did not pass tests \(1\), tests \(2\), tests \(3\)/.test(v.stoodDown.text) && /did not answer/.test(v.apiDown.text) && /101/.test(v.full.text) && v.full.url === "https://example.invalid/runs/101",
+    "and says why in words: " + [v.stoodDown.text, v.apiDown.text].join(" | "));
+
+  /* THE CLI, against a local stand-in for the API: proved writes the run to GITHUB_OUTPUT and the step summary; a 500 writes nothing */
+  const { createServer } = await import("node:http");
+  const { spawn } = await import("node:child_process");
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "proved-"));
+  let world = base(), auth = [];
+  const srv = createServer((req, res) => {
+    auth.push(req.headers.authorization || "");
+    const k = req.url.replace(/^\//, "");
+    if (!(k in world)) { res.writeHead(500); res.end("{}"); return; }
+    res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(world[k]));
+  });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const cli = (name) => new Promise((done) => {
+    const out = join(dir, name + ".out"), sum = join(dir, name + ".md");
+    writeFileSync(out, ""); writeFileSync(sum, "");
+    const env = { ...process.env, GH_TOKEN: "tok", REPO: R, GITHUB_API_URL: "http://127.0.0.1:" + srv.address().port, GITHUB_OUTPUT: out, GITHUB_STEP_SUMMARY: sum };
+    const p = spawn(process.execPath, [join(REPO, "tools", "suite-proved.mjs"), "--sha", C], { env });
+    let text = ""; p.stdout.on("data", (d) => (text += d)); p.stderr.on("data", (d) => (text += d));
+    p.on("close", (code) => done({ code, text, out: readFileSync(out, "utf8"), sum: readFileSync(sum, "utf8") }));
+  });
+  try {
+    const yes = await cli("yes");
+    world = base(); delete world[`repos/${R}/actions/runs/101/jobs?per_page=100`];
+    const down = await cli("down");
+    ok(yes.code === 0 && yes.out === "proved=101\n" && /https:\/\/example\.invalid\/runs\/101/.test(yes.sum) && yes.sum.includes(H)
+       && auth.length > 0 && auth.every((a) => a === "Bearer tok")
+       && down.code === 0 && down.out === "" && down.sum === "" && /job suite runs/.test(down.text),
+      "the CLI writes proved and the commit to the output and names the run in the summary, and on an API error writes nothing and exits 0: "
+      + JSON.stringify({ yes: yes.out, down: down.text.trim().slice(-160) }));
+  } finally {
+    srv.close();
+    try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
+
+  /* THE WIRING: chain asks last, read only, never failing for it; job suite stands down on its answer alone */
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8").replace(/\r\n/g, "\n");
+  const jobsBody = wf.slice(Math.max(0, wf.search(/^jobs:[ \t]*$/m)));
+  const job = (name) => {
+    const heads = [...jobsBody.matchAll(/^  ([A-Za-z0-9_-]+):[^\n]*$/gm)], k = heads.findIndex((h) => h[1] === name);
+    return k < 0 ? "" : jobsBody.slice(heads[k].index, k + 1 < heads.length ? heads[k + 1].index : undefined);
+  };
+  const chain = job("chain"), suite = job("suite");
+  const cs = [...chain.matchAll(/^      - name: ([^\n]+)$/gm)].map((m) => m[1]);
+  const step = chain.slice(chain.indexOf("      - name: Has CI already run the suite on this tree?\n"));
+  ok(cs[cs.length - 1] === "Has CI already run the suite on this tree?" && cs.indexOf("The tree the phone is serving") >= 0
+     && /^        id: proved\n        if: steps\.plan\.outputs\.deploy == '1'\n        continue-on-error: true\n/m.test(step)
+     && step.includes("GH_TOKEN: ${{ github.token }}") && /\n          node tools\/suite-proved\.mjs --sha "\$\{\{ steps\.tip\.outputs\.sha \}\}"\n/.test(step + "\n")
+     && /^    permissions:\n      contents: write\n      id-token: write\n      actions: read\n      pull-requests: read\n      issues: read\n/m.test(chain)
+     && /^      proved: \$\{\{ steps\.proved\.outputs\.proved \}\}$/m.test(chain),
+    "chain's last step asks about the tree it proved, may fail without failing chain, reads with the run's token, and hands on proved: " + cs.slice(-3).join(" > "));
+  ok(/^    if: needs\.chain\.result == 'success' && needs\.chain\.outputs\.deploy == '1' && needs\.chain\.outputs\.proved == ''$/m.test(suite)
+     && (wf.match(/needs\.chain\.outputs\.proved/g) || []).length === 2,
+    "job suite runs only when chain deployed and nothing proved the tree; the clear is the one other reader of proved");
 })();
 
 section("26 Sep 2026: the banner follows the proof, the proof reads /rev every 2 s for a minute, and a gated tree is not gated twice");
@@ -46945,7 +47064,7 @@ await (async () => {
     "and it says in words that nothing is needed from him, and what clears it: " + note);
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const clear = wf.slice(wf.indexOf("- name: Clear a test notice once the suite passes"));
-  ok(/if: needs\.suite\.result == 'success'/.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 600))
+  ok(/if: steps\.live\.outputs\.same == '1' && \(needs\.suite\.result == 'success' \|\| /.test(clear.slice(0, 200)) && /run: node tools\/drafts\.mjs --clear-suite-notices/.test(clear.slice(0, 700))
      && /DELETE FROM refused WHERE id LIKE 'suite:%'/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")),
     "a run whose suite passes clears every test notice, rather than waiting for the next fold");
   try { w.close(); } catch (e) { /* best effort */ }
