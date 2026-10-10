@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1058",
+  "d": "10 Oct 2026",
+  "t": "ONE RENDER BUILDS A CARD'S TIER ROW ONCE PER BOOK AND SIZE",
+  "n": [
+   "<b>The card quote reads its row once a render.</b> A render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and on a drift book each row walked the whole grid. The row is now kept for the render by book, size and the cost override; outside a render it is built fresh.",
+   "<b>Nothing of the customer's is kept.</b> Their held tier or band, their drift, a late offer and a partner's cost are applied after the row, so every card quotes as it did. No row, price or stock figure moves."
+  ]
+ },
+ {
   "v": "v1057",
   "d": "10 Oct 2026",
   "t": "A SALE PAID IN FULL IS THE GOODS AND THE DELIVERY, IN THE DEFAULT GUARD AND THE UNDATED CARD",

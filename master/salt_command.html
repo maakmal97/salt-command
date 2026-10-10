@@ -9043,7 +9043,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1057","d":"10 Oct 2026","t":"A SALE PAID IN FULL IS THE GOODS AND THE DELIVERY, IN THE DEFAULT GUARD AND THE UNDATED CARD","n":["<b>The default guard reads what is owed.</b> A Default on a sale was measured against its total alone, so a delivered order with its goods paid and its delivery charge unpaid read as paid in full and could not be written off, while the account said RM owed. The guard reads the engine's txOwed now, as txStat and txAdvance have since v741.","<b>The undated-delivery card follows.</b> Its short-money figure and evidence line read txOwed too. Counter Admin sends a sale Correction through the same engine guard, and a sale Default is refused there. No row, price or stock figure moves."]}];
+const evolution=[{"v":"v1058","d":"10 Oct 2026","t":"ONE RENDER BUILDS A CARD'S TIER ROW ONCE PER BOOK AND SIZE","n":["<b>The card quote reads its row once a render.</b> A render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and on a drift book each row walked the whole grid. The row is now kept for the render by book, size and the cost override; outside a render it is built fresh.","<b>Nothing of the customer's is kept.</b> Their held tier or band, their drift, a late offer and a partner's cost are applied after the row, so every card quotes as it did. No row, price or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9194,7 +9194,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 15:22 KL';
+const LAST_UPDATED='10 Oct 2026, 15:35 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -21849,7 +21849,11 @@ function cardQuote(code,q,t){
   if(!(q>0))return null;
   const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
   if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
-  const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),P);
+  /* one render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and a drift book's row walks the whole
+     grid each time. The row is the book's at the size and nothing of the customer's: their held tier or band set, their drift,
+     a late offer and a partner's cost are all applied below, outside it. So its key is book, size and pxCost's own override
+     (cost, shrink); outside a render it is built fresh. */
+  const row=renderMemo('tierAt|'+PROD+'|'+q+'|'+pxOver.cost+'|'+pxOver.shrink,()=>PRICING_ENGINE.fiveTierAt(q,pxCost(),P));
   /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
      point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
      grid and the desk Worker's card read too. Never under the floor. */

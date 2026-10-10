@@ -47464,6 +47464,70 @@ await (async () => {
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
+section("Perf: one render builds a card's tier row once per book and size, and every view draws as it did");
+await (async () => {
+  /* cardQuote built the five-tier row at the size on every quote, 55 a render and 178 on Who buys, at a handful of distinct
+     sizes, and on a drift book each build walks the whole grid. The row is the book's at the size and nothing of the
+     customer's (their held tier or band set, their drift and a partner's cost are applied after it), so RENDER_MEMO keeps it
+     by book, size and pxCost's own override. Outside a render it is built fresh. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var ft=PRICING_ENGINE.fiveTierAt,cq=window.cardQuote,per={},n;
+      PRICING_ENGINE.fiveTierAt=function(){n.tierAt++;return ft.apply(this,arguments);};
+      window.cardQuote=function(){n.quotes++;return cq.apply(this,arguments);};
+      try{['today','concentration'].forEach(function(p){n={tierAt:0,quotes:0};switchTab(p);per[p]=n;});}
+      finally{PRICING_ENGINE.fiveTierAt=ft;window.cardQuote=cq;}
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
+      var keep=window.renderMemo,bare=function(k,f){return /^tierAt[|]/.test(k)?f():keep(k,f);};
+      var memo=draw(),again=draw(),fresh;
+      window.renderMemo=bare;try{fresh=draw();}finally{window.renderMemo=keep;}
+      /* the book is in the key: a stated book F's row at a size, then a drift book D's at the same size, inside one render */
+      var D=PROD_IDS.filter(function(p){return TIER_RULE[p]&&TIER_RULE[p].drift;})[0],F=PROD_IDS.filter(function(p){return TIER_RULE[p]&&TIER_RULE[p].fixed;})[0];
+      var on=function(p,f){var k=PROD;try{PROD=p;recompute();return f();}finally{PROD=k;recompute();}};
+      var q=12.5,ids=[...new Set(byCustomer().map(function(x){return POSITION_ENGINE.ownerCode(x.id);}))].filter(approachable);
+      var id=ids.filter(function(c){return on(D,function(){var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
+        return cardQuote(c,q)!==PRICING_ENGINE.quoteAt(q,pxCost(),P,0);});})[0]||null;
+      var keys=null;
+      if(id){RENDER_MEMO={};try{
+        on(F,function(){cardQuote(id,q);});
+        var sD=on(D,function(){return cardQuote(id,q);}),s0;
+        window.renderMemo=bare;try{s0=on(D,function(){return cardQuote(id,q);});}finally{window.renderMemo=keep;}
+        keys={id:id,D:D,F:F,sD:sD,s0:s0};}finally{RENDER_MEMO=null;}}
+      return {per:per,parts:parts.length,size:memo.concentration.length,ids:ids.slice(0,6),
+        diff:parts.filter(function(p){return memo[p]!==fresh[p];}),unstable:parts.filter(function(p){return memo[p]!==again[p];}),keys:keys};})())`));
+    const t = v.per.today, c = v.per.concentration;
+    ok(t.quotes >= 20 && t.tierAt > 0 && t.tierAt < t.quotes / 2,
+      "one Today render builds the row at the size for fewer than half its card quotes, once a size: " + JSON.stringify(t));
+    ok(c.quotes >= 60 && c.tierAt > 0 && c.tierAt < c.quotes / 2,
+      "one Who buys render builds the row once a size, not once a quote: " + JSON.stringify(c));
+    ok(v.parts >= 15 && v.size > 1000 && v.unstable.length === 0 && v.diff.length === 0,
+      "every part of every view draws the same with the row kept for the render as built fresh: " + JSON.stringify({ diff: v.diff, unstable: v.unstable }));
+    if (!v.keys) skipData("no customer whose drift moves the price at 12.5 unit on the drift book");
+    else ok(v.keys.sD === v.keys.s0,
+      "inside one render a stated book's row at a size never answers the drift book's quote at it: " + JSON.stringify(v.keys));
+    /* the override is in the key, and nothing of the customer is: on a level rule the row's own prices are quoted, so a cost moved
+       mid-render (boardHeadroom's walk) must read its own row, and customers on different held levels, a band set and a partner,
+       asked at the same sizes in one render, each read their own price off the one kept row. */
+    const ids = v.ids.filter((x) => x !== "CM4-TO").slice(0, 3);
+    const held = { [ids[0]]: "Gold", [ids[1]]: "Silver", [ids[2]]: { small: "Silver", mid: "Gold", big: "Platinum" } };
+    const h = JSON.parse(levelWindow(w, held).eval(`JSON.stringify((function(){
+      var keep=window.renderMemo,bare=function(k,f){return /^tierAt[|]/.test(k)?f():keep(k,f);};
+      var who=${JSON.stringify(ids.concat(["CM4-TO"]))},sizes=[0.5,1,3,5,12.5],id=who[0],q=12.5;
+      var all=function(){return who.map(function(c){return sizes.map(function(z){return cardQuote(c,z);});});};
+      RENDER_MEMO={};try{var mem=all(),fresh;window.renderMemo=bare;try{fresh=all();}finally{window.renderMemo=keep;}
+        var a=cardQuote(id,q),s=pxOver.cost;pxOver.cost=pxCost().eff*3;
+        var b=cardQuote(id,q),bf;window.renderMemo=bare;try{bf=cardQuote(id,q);}finally{window.renderMemo=keep;}
+        pxOver.cost=s;return {mem:mem,fresh:fresh,a:a,b:b,bf:bf,back:cardQuote(id,q)};}finally{RENDER_MEMO=null;}})())`));
+    ok(h.a > 0 && h.b > h.a && h.b === h.bf && h.back === h.a,
+      "inside one render a cost override moved mid-way quotes the level's own row at that cost, as read fresh, and moving it back quotes the first: " + JSON.stringify({ a: h.a, b: h.b, bf: h.bf, back: h.back }));
+    ok(JSON.stringify(h.mem) === JSON.stringify(h.fresh) && new Set(h.mem.map((r) => JSON.stringify(r))).size === h.mem.length,
+      "customers on different held levels, a band set and a partner quote each their own price off the one kept row, as built fresh: " + JSON.stringify(h.mem));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
 section("Perf: a table in a closed card is measured when the card opens, never while it is shut");
 await (async () => {
   /* Reading a width inside a closed <details> lays the hidden card out on its own, about 1 ms a table: 41 ms of a
