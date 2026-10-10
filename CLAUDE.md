@@ -95,11 +95,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
    recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
-   actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
-   (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
-   own CSS is a token, never a literal. Day shows (his word of 09 Oct 2026; no `data-time-day` hold on the
-   desk), and every colour the Day palette lends to text holds 4.5:1 on each Day panel, which the suite
-   measures (`docs/DESIGN.md`). The Counter takes the tokens and five
+   actions) migrates in one version, one commit per group (his word of 09 Oct 2026). **One theme:
+   Night**, the design system's `:root` (his word of 09 Oct 2026; the four times of day, `salt-time.js`
+   and the picker are retired, and the suite fails if any returns): a colour in the desk's own CSS is a
+   token, never a literal, and every text colour holds 4.5:1 on the ground and the slate, which the
+   suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and
@@ -114,7 +114,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
    then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
-   never a list of triggers. The hourly run passes `--no-retire`. `tools/update.mjs` is the laptop
+   never a list of triggers. The scheduled run passes `--no-retire`. `tools/update.mjs` is the laptop
    half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
    Workers Builds deploys the tip of master and stops**: it never folds, marks or writes D1 or KV,
    and its failure is SILENT. Its build command is `npm ci && node tools/gate.mjs`, then `npx
@@ -171,7 +171,7 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
-| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); hourly at :23 as the last net |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); every two hours at :23 as the last net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
 | Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
@@ -533,7 +533,8 @@ skips Cloudflare and the fetch).
 
 ## How a fold is sized
 
-- **Smaller folds.** One thing, shipped; a fold that cannot be described in one sentence is two.
+- **One version, many commits** (his word of 09 Oct 2026). A piece of work ships as one version, one
+  commit per part; a commit that cannot be described in one sentence is two.
 - **Sweep the class before shipping a fix.** Grep the pattern across the whole file first.
 - **A round points at the newest code.** Attack the fix; older code is regression only.
 - **An instrument is proved red before its green is trusted**, each mutation on its own. Reading
