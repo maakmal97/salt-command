@@ -9094,7 +9094,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1064","d":"10 Oct 2026","t":"CANCELLATION OF CS6-BS ORDER S248; STOCK UNMOVED","n":["<b>ONE CANCELLATION FOLDED.</b> The desk withdrew CS6-BS's order s248 of 1 unit for RM110 on the statements site on 10 Oct, recorded as order 20261009132912-8kglqg. The row is not recomputed here; the master's amendment routine applies it. Nothing had been paid or handed over, so there is nothing to refund or recover.","<b>INVENTORY UNCHANGED.</b> No unit had moved on s248, so stock stays at 10.14 units and the cost basis stays at RM56 a unit. CS6-BS's RM110 outstanding on the order falls away."]}];
+const evolution=[{"v":"v1065","d":"10 Oct 2026","t":"A DELIVERY ASKS ITS TIME AND MAY SHARE ITS EXACT SPOT, SEALED","n":["<b>A time window.</b> A delivery on Salt Counter asks As soon as it can or one of six four-hour windows, each its next occurrence, offered only where the Counter's weekly hours leave some of it; one they leave part of says the part inside. The card on Site orders and Counter Admin say the window wanted.","<b>Your Accept may answer an as-soon-as delivery with a window</b>, from chips on the card and in Counter Admin, a sheet's lines taking its first order's. A window or day they chose stands. The acknowledgement now asks them to pay now if they can; every term, the chase and the overdue gate are unchanged.","<b>The exact spot, sealed on their phone.</b> They may tap Use my location or paste a map link; the point is sealed to your slip key, so the Counter keeps ciphertext alone for 30 days. With names shown, the card opens it, measures the delivery fee to it ahead of the filed place, and offers File as their place, never for a friend's order. The lock drops it.","<b>Nothing prices by it.</b> The window and the spot never reach a row or a note; the goods, the floor and the board are untouched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9245,7 +9245,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 18:07 KL';
+const LAST_UPDATED='10 Oct 2026, 19:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
