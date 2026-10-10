@@ -1,6 +1,6 @@
 {
- "v": "v1069",
- "stamped": "10 Oct 2026, 22:00 KL",
+ "v": "v1070",
+ "stamped": "10 Oct 2026, 22:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7111,12 +7111,29 @@
     "customer": "CI4-OKR",
     "qty": 2,
     "total": 120,
-    "cash": 0,
+    "cash": 120,
     "product": "candy",
     "date": "2026-10-10",
     "deliveredQty": 0,
     "note": "<b>NEW SALE ON 10 OCT: 2 UNITS OF CANDY TO CI4-OKR FOR RM120.</b> Order 20261010135846-xz6kkq, acknowledged, to collect, nothing paid and nothing handed over, preapproved by phone. At RM60 a unit it sits at the desk's ask of RM120 for 2 units, clear of the RM84 floor. CI4-OKR has 5 orders, a median rate of RM92.5, a range of RM90 to RM96.67, RM0 outstanding before this and 0 units on credit, against a cap of 2. The row carries RM42 a unit, the drafter's COGS off purchase p031. The drafter flagged no committed candy order to compare with; the figures do not answer that. Open: payment and collection, and no stock is drawn yet.",
-    "rid": "s251"
+    "rid": "s251",
+    "amend": [
+     {
+      "date": "2026-10-10",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-10",
+      "kind": "Fulfilment",
+      "cash": 120,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM120 ON 10 OCT AGAINST ORDER s251, CANDY TO CI4-OKR.</b> Paid on the statements site, order 20261010135846-xz6kkq, by qr via maybank, preapproved by phone. The order is 2 units for RM120, at RM60 a unit. CI4-OKR has 6 orders, a median rate of RM92.5, a range of RM60 to RM96.67, RM120 outstanding before this payment and 0 units on credit, with nothing defaulted. The drafter flagged nothing, and the figures raise nothing against it. The payment moves RM120 and no units, leaving RM0 and 2 units outstanding. The row's own cost is not touched here. Open: collection of the 2 units, which have not yet left the stock."
+     }
+    ],
+    "paidOn": "2026-10-10"
    }
   ],
   "contacts": [
@@ -7758,9 +7775,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T13:59:30.879Z",
+  "QUEUE_COMMITTED": "2026-10-10T14:02:02.849Z",
   "PRICING": {
-   "takenAt": "2026-10-10T14:00:20.887Z",
+   "takenAt": "2026-10-10T14:08:10.185Z",
    "sizes": [
     0.5,
     1,
@@ -7809,7 +7826,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -8434,6 +8451,21 @@
       "unitsPerMonth": 3.01,
       "smallShare": 0.25,
       "bigShare": 0.25,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     },
+     "candy": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 0,
       "frequent": false,
       "small": false,
       "bigger": false,
@@ -14612,10 +14644,10 @@
      ]
     }
    },
-   "v": "v1069"
+   "v": "v1070"
   },
   "OPEN": {
-   "at": "2026-10-10T14:00:21.702Z",
+   "at": "2026-10-10T14:08:10.792Z",
    "count": 10,
    "byKey": {
     "CH5-KLC|2026-10-10|130": {
@@ -14638,13 +14670,13 @@
      "dir": "S",
      "q": 2,
      "t": 120,
-     "cash": 0,
+     "cash": 120,
      "mv": 0,
-     "st": "part",
-     "oweRM": 120,
+     "st": "oweStock",
      "oweUnits": 2,
      "pr": "candy",
      "rid": "s251",
+     "paidOn": "2026-10-10",
      "key": "CI4-OKR|2026-10-10|120|candy"
     },
     "CJ4-BJ|2026-10-09|500": {
@@ -14805,9 +14837,9 @@
     "candy": {
      "name": "Candy",
      "onHand": 13,
-     "free": 13,
-     "owedOut": 0,
-     "coverDays": 6,
+     "free": 11,
+     "owedOut": 2,
+     "coverDays": 5,
      "rate": 0.98,
      "owedToYou": 0,
      "promised": 2,
@@ -14843,7 +14875,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1069"
+   "v": "v1070"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14851,7 +14883,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1069"
+   "v": "v1070"
   },
   "REWARD": {
    "stated": {
@@ -14863,7 +14895,7 @@
      }
     }
    },
-   "v": "v1069"
+   "v": "v1070"
   }
  }
 }
