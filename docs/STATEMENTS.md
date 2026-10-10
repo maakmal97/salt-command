@@ -282,7 +282,7 @@ of the master (a master stating none stops the publish): the last day it can be 
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
 late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
-publishes, every two hours at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
+publishes, once a Kuala Lumpur day at least, soon after 00:05 MYT; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
 breach and its chase on Today count the same way (his answer of 28 Sep 2026): past the term from the handover the chase
 is Now and carries the reminder, inside it This week, and the suite holds the desk's breaches to the parties `payDue`
 seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten days from the order date, for its own
@@ -387,6 +387,28 @@ and `master/salt_command.html` out of the checkout, never `public/`, so it depen
 fold, the build nor the deploy, and the checkout, `setup-node` and `npm ci` above it are themselves
 unconditional. `cloud-commit.yml`'s `plan` step carries a third output, `publish`, which is 1 unless
 the run is a `probe_key` dispatch; the publish step reads it instead of `deploy`.
+
+**WHAT ASKS FOR A PUBLISH (10 Oct 2026, his choice).** Every input a sealed statement, price list, board or card
+reads, and what moves it:
+
+| Input | Where it lives | What publishes it |
+|---|---|---|
+| The rows, roster, tiers and drifts held, `TERMS`, `RULES`, the ladder and boards, `_users.json` and the issue's `_kv` | git: `ledger/book.json`, the master, `statements/` | the push: a version moves `public/rev.json`, and a statements path is on the push paths |
+| Site orders, claims and messages | the Counter's order book | nothing: none is sealed, and an order reaches a list once it is a row on the book, so through git |
+| The restock date | the Counter's KV `expected`, written only through the desk's `/expected` | the desk marks KV `publish:wanted`, and its minute cron dispatches |
+| The day: the drift's days since the last order and oldest overdue, the restock date's lapse (`restockSupply`), the week line, `pay`'s `late` | the clock | the desk's minute cron asks once a Kuala Lumpur day, 00:05 to 03:00 MYT; the page counts `late` and the hold, hide and lock stages on its own day besides |
+| A guest link minted or approved since the last publish | the Counter's KV `g:` | nothing yet: it reads `board:2` until the next publish (below) |
+
+The desk Worker's `wantPublish` writes `publish:wanted` `{at, reason}`; `publishWanted`, on the minute cron, sends
+one `stage_only` dispatch named `publish: <reason>` when the mark is newer than the last such dispatch
+(`publish:dispatched`) and five minutes have passed since it, the dispatch mark written first. A `stage_only` run and
+not a new mode, because it shares the chain's lock (`cloud-commit`, never cancelled), so no older checkout publishes
+over a newer chain, which the Counter would then withhold on the build id. **It is never sent while a Cloud commit run
+waits in the group** (`cloudCommitWaiting`: the workflow's runs, and the jobs of one in progress, since the lock is job `chain`'s): GitHub keeps one pending run and a newer one
+replaces it, so a pending push run, which deploys, re-seeds and retires, would be lost to a run that does none of those;
+the waiting run reads everything when it starts and publishes, so it covers the mark. GitHub unread, nothing is sent and
+the next minute asks again. A failed dispatch is logged and not retried: the next write or
+the four-a-day net publishes. **A new input outside git calls `wantPublish` at its write road.**
 
 **The rule states what is EXCLUDED, not what it is on.** A list of events goes stale the moment a
 trigger is added, and that is exactly how this broke: it was gated on `deploy` alone, a bare
@@ -1159,8 +1181,8 @@ exists the page says notifications are not switched on.
 Statements reach the site through the two steps at the foot of job `chain` in
 `cloud-commit.yml`. **`Deploy the statements site` uploads the site's CODE** and runs on a push
 touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on every fold.
-**`Publish the statements, live` writes the site's CONTENT and runs on every deploy** (16 Sep
-2026): the content is the ledger and the master, so any version that moves a price makes a
+**`Publish the statements, live` writes the site's CONTENT and runs on every run but the key probe**
+(16 Sep 2026, on every deploy; every run since v701; what asks for one: "What asks for a publish", above): the content is the ledger and the master, so any version that moves a price makes a
 published list stale, and v652, v654 and v655 each left the customers' pages on the lists sealed
 at v651 while the desk quoted something else. Both run after every step the ledger needs, so a
 fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
