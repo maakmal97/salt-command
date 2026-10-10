@@ -19,7 +19,7 @@
  *   --local                       act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
-import { d1Result, d1Rows } from "./d1json.mjs";
+import { d1Result, d1Rows, commandArgs } from "./d1json.mjs";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
@@ -50,7 +50,7 @@ function wrangler(args, { quiet = false } = {}) {
    because the seed is far too long for a command line. Found the first time verify ran. */
 /* 06 Oct 2026: FAILS CLOSED (tools/d1json.mjs); a refusal read as an empty store */
 function query(sql) {
-  const res = d1Result(wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true }));
+  const res = d1Result(wrangler(["d1", "execute", DB, WHERE, "--json", ...commandArgs(sql)], { quiet: true }));
   if (res.error) { fail(res.error); return null; }
   return res.sets;
 }
@@ -316,7 +316,7 @@ async function prove() {
 function readSnapshot(run = wrangler) {
   for (let i = 0; i < 2; i++) {
     /* a refusal is not "never seeded" (06 Oct 2026): only a readable answer with no row is null */
-    const res = d1Rows(run(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows,sha FROM snapshot WHERE one=1;")], { quiet: true }));
+    const res = d1Rows(run(["d1", "execute", DB, WHERE, "--json", ...commandArgs("SELECT v,rows,sha FROM snapshot WHERE one=1;")], { quiet: true }));
     if (res.error) continue;
     const s = res.rows[0];
     return s ? { v: s.v, rows: s.rows, sha: s.sha } : null;

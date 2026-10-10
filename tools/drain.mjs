@@ -51,7 +51,7 @@
  */
 
 import { wranglerSaid, againIfLapsed } from "./cloudflare.mjs";
-import { d1Rows } from "./d1json.mjs";
+import { d1Rows, commandArgs } from "./d1json.mjs";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { dirname, resolve, join } from "node:path";
@@ -128,7 +128,7 @@ function d1Drafts(ats) {
     const inList = "('" + ids.slice(i, i + 40).join("','") + "')";
     const sql = "SELECT id,status,committed_at,NULL AS why FROM draft WHERE id IN " + inList
       + " UNION ALL SELECT id,'refused',NULL,why FROM refused WHERE id IN " + inList;
-    const out = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", "--command", JSON.stringify(sql)], {
+    const out = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json", ...commandArgs(sql)], {
       cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: true
     }));
     const res = d1Rows({ code: 0, out });

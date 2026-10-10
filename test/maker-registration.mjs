@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { world } from "./maker-trades.mjs";
-import { approvedRows } from "../tools/drafts.mjs";
+import { approvedRows, APPROVED_SQL, readArgs } from "../tools/drafts.mjs";
 import { apply, plan } from "../tools/fold.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { makerInputCatalog, makerTradeEntry } from "../src/maker-inputs.js";
@@ -40,8 +40,9 @@ const approvedCommand = draftsSource.slice(draftsSource.indexOf("function approv
   draftsSource.indexOf("\nexport function approvedRows"));
 const stageApproved = (wd) => {
   let output;
-  Function("query", "approvedRows", "console", approvedCommand + "\napproved();")(
-    (sql) => wd.sqlite.prepare(sql).all(), approvedRows,
+  /* the statement as wrangler is handed it (readArgs), so the one line a shell sees is the one that selects */
+  Function("query", "approvedRows", "APPROVED_SQL", "console", approvedCommand + "\napproved();")(
+    (sql) => wd.sqlite.prepare(JSON.parse(readArgs(sql).at(-1))).all(), approvedRows, APPROVED_SQL,
     { log: (text) => { output = JSON.parse(text); } });
   return output;
 };
