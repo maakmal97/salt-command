@@ -1,6 +1,6 @@
 {
- "v": "v1064",
- "stamped": "10 Oct 2026, 18:07 KL",
+ "v": "v1066",
+ "stamped": "10 Oct 2026, 20:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7066,6 +7066,18 @@
     "deliveredQty": 0,
     "note": "<b>NEW SALE ON 10 OCT: 1 UNIT OF SALT TO CH5-KLC FOR RM130.</b> Order 20261010041637-37zsng, acknowledged, to collect, nothing paid and nothing handed over, preapproved by phone. At RM130 a unit the rate clears the desk's floor of RM58 and stays under the ask of RM140 for 1 unit. CH5-KLC has 4 orders, a median rate of RM210, a range of RM150 to RM210, RM0 outstanding and 0 units on credit, against a credit cap of 1. Drafter flag: he typically pays about RM180 a unit across 2 orders and this is 27.8% below that. The figures confirm it: RM130 is below his median and below his earlier rates. The row carries the drafter's cost of RM58 a unit, the latest purchase, which is not the inventory's own RM56. Open: RM130 unpaid and 1 unit to hand over.",
     "rid": "s249"
+   },
+   {
+    "customer": "CF5-WM",
+    "qty": 2,
+    "total": 200,
+    "cash": 0,
+    "delivery": 15,
+    "date": "2026-10-10",
+    "deliveredQty": 0,
+    "note": "<b>NEW SALE ON 10 OCT: 2 UNITS OF SALT TO CF5-WM FOR RM200.</b> Order 20261010122943-vjcaeg, acknowledged, to be delivered, RM15 delivery on top, nothing paid and nothing handed over, preapproved by phone. At RM100 a unit the rate is below the desk's floor of RM116 and well under the ask of RM250 for 2 units. CF5-WM has 3 orders, a median rate of RM115, a range of RM100 to RM115, RM0 outstanding and 0 units on credit, against a credit cap of 1. The drafter raised no flag. The figures show the rate is at the bottom of his own range. The row carries the drafter's cost of RM58 a unit, the latest purchase, which is not the inventory's own RM56. Open: RM215 unpaid and 2 units to deliver.",
+    "cost": 112,
+    "rid": "s250"
    }
   ],
   "contacts": [
@@ -7707,9 +7719,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T10:01:40.605Z",
+  "QUEUE_COMMITTED": "2026-10-10T12:30:27.705Z",
   "PRICING": {
-   "takenAt": "2026-10-10T10:07:49.656Z",
+   "takenAt": "2026-10-10T12:31:07.376Z",
    "sizes": [
     0.5,
     1,
@@ -8590,6 +8602,23 @@
       "rare": false
      }
     },
+    "CF5-WM": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 2,
+      "tenureDays": 38,
+      "sinceLastDays": 21,
+      "perMonth": 1.6,
+      "unitsPerMonth": 2.4,
+      "smallShare": 0.5,
+      "bigShare": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CZ5-TM": {
      "salt": {
       "name": "small and often",
@@ -8636,23 +8665,6 @@
       "bigShare": 0,
       "frequent": false,
       "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CF5-WM": {
-     "salt": {
-      "name": "occasional mid",
-      "orders": 2,
-      "tenureDays": 38,
-      "sinceLastDays": 21,
-      "perMonth": 1.6,
-      "unitsPerMonth": 2.4,
-      "smallShare": 0.5,
-      "bigShare": 0,
-      "frequent": false,
-      "small": false,
       "bigger": false,
       "loyal": false,
       "rare": false
@@ -10547,6 +10559,56 @@
         900
        ]
       ],
+      "CF5-WM": [
+       [
+        0.5,
+        70
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        190
+       ],
+       [
+        2,
+        240
+       ],
+       [
+        2.5,
+        280
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        950
+       ]
+      ],
       "CZ5-TM": [
        [
         0.5,
@@ -10695,56 +10757,6 @@
        [
         12.5,
         910
-       ]
-      ],
-      "CF5-WM": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        190
-       ],
-       [
-        2,
-        240
-       ],
-       [
-        2.5,
-        280
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        950
        ]
       ],
       "CH5-KLC": [
@@ -11328,10 +11340,10 @@
       "CY2-NIL": -0.2856,
       "CH6-SET": -0.2759,
       "CE5-SA": -0.3358,
+      "CF5-WM": -0.0907,
       "CZ5-TM": -0.384,
       "CA6-CYB": -0.1359,
       "CA5-BAN": -0.2549,
-      "CF5-WM": -0.0907,
       "CH5-KLC": -0.0428,
       "CZ6-WM": -0.0716,
       "CA5-SEN": -0.0241,
@@ -12174,6 +12186,28 @@
         450
        ]
       ],
+      "CF5-WM": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CZ5-TM": [
        [
         10,
@@ -12219,28 +12253,6 @@
        ]
       ],
       "CA5-BAN": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CF5-WM": [
        [
         10,
         130
@@ -13304,6 +13316,28 @@
         1500
        ]
       ],
+      "CF5-WM": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CZ5-TM": [
        [
         1,
@@ -13349,28 +13383,6 @@
        ]
       ],
       "CA5-BAN": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CF5-WM": [
        [
         1,
         60
@@ -14183,6 +14195,20 @@
         60
        ]
       ],
+      "CF5-WM": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CZ5-TM": [
        [
         1,
@@ -14212,20 +14238,6 @@
        ]
       ],
       "CA5-BAN": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CF5-WM": [
        [
         1,
         8
@@ -14561,11 +14573,11 @@
      ]
     }
    },
-   "v": "v1064"
+   "v": "v1066"
   },
   "OPEN": {
-   "at": "2026-10-10T10:07:50.478Z",
-   "count": 9,
+   "at": "2026-10-10T12:31:08.188Z",
+   "count": 10,
    "byKey": {
     "CH5-KLC|2026-10-10|130": {
      "d": "2026-10-10",
@@ -14580,6 +14592,21 @@
      "oweUnits": 1,
      "rid": "s249",
      "key": "CH5-KLC|2026-10-10|130"
+    },
+    "CF5-WM|2026-10-10|215": {
+     "d": "2026-10-10",
+     "p": "CF5-WM",
+     "dir": "S",
+     "q": 2,
+     "t": 200,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 215,
+     "oweUnits": 2,
+     "dv": 15,
+     "rid": "s250",
+     "key": "CF5-WM|2026-10-10|215"
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -14720,9 +14747,9 @@
      "free": 3.64,
      "owedOut": 6.5,
      "coverDays": 1,
-     "rate": 5,
+     "rate": 5.1,
      "owedToYou": 340,
-     "promised": 7.5,
+     "promised": 9.5,
      "short": 0
     },
     "oil": {
@@ -14777,7 +14804,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1064"
+   "v": "v1066"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14785,7 +14812,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1064"
+   "v": "v1066"
   },
   "REWARD": {
    "stated": {
@@ -14797,7 +14824,7 @@
      }
     }
    },
-   "v": "v1064"
+   "v": "v1066"
   }
  }
 }
