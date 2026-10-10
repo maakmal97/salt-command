@@ -314,6 +314,8 @@ async function concurrentFixture(ok) {
   fix.orders = fix.orders.filter((o) => !o.pool);
   /* and the negotiation cases (05 Oct 2026), another feature's, which would use up the open-order limit this replacement needs */
   fix.orders = fix.orders.filter((o) => !o.price);
+  /* and the delivery window cases (10 Oct 2026), for the same room */
+  fix.orders = fix.orders.filter((o) => !o.slot);
   const open = fix.orders.filter((o) => ["placed", "acknowledged", "ready"].includes(o.status));
   fix.orders = fix.orders.filter((o) => o !== open.at(-1));
   fix.salt = "concurrent-fixture"; fix.makerOrders = fix.orders; fix.makerBook = { sales: [] };

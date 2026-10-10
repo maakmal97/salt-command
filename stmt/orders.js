@@ -61,6 +61,8 @@ import { sessKey } from "./signin.js";
 import { refusal, clip } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
+import { slotTake, SLOT_RE, SPAN_RE } from "./window.js";
+import { hoursConfig } from "./hours.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -281,7 +283,8 @@ export async function storeCompare(env) {
    named here; and a desk mark, which changes none of these, no longer redraws their page.
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
-  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool"];
+  "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
+  "slot", "slotSpan"];
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
@@ -293,6 +296,8 @@ export const customerView = (o) => {
   if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
   /* 05 Oct 2026: a negotiation, through its own whitelist (priceView) */
   if (o && o.price) v.price = priceView(o.price);
+  /* 10 Oct 2026: that the exact spot is shared, never its id: the id names a sealed record they have no road to */
+  if (o && o.pin) v.pinned = true;
   return v;
 };
 
@@ -538,7 +543,7 @@ export const priceView = (p) => {
   if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { total: p.offer.total, delivery: null, until: p.offer.until });
   return v;
 };
-export function checkPlacement(body, open, at, poolOk = false, steps = null) {
+export function checkPlacement(body, open, at, poolOk = false, steps = null, hours = null) {
   if (!body || typeof body !== "object") return { error: "expected an order" };
   const product = String(body.product || "").trim();
   if (!/^[a-z]{1,20}$/.test(product)) return { error: "the product is not one the list carries" };
@@ -564,7 +569,11 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
   const place = clip(String(body.place || "").replace(/\s+/g, " ").trim(), 60);
-  if (mode === "deliver" && place.length < 2) return refusal("placeWhere");
+  /* 10 Oct 2026: AND THE EXACT SPOT, if they share it: sealed on their phone (stmt/pin.js), here only its id, which the
+     Worker set when it took the sealed pin off the body. A delivery with a pin needs no area words; one without, as ever */
+  const pin = typeof body.pin === "string" && SLIP_ID_RE.test(body.pin) ? body.pin : "";
+  if (body.pin !== undefined && body.pin !== "" && (!pin || mode !== "deliver")) return refusal("pinBad");
+  if (mode === "deliver" && place.length < 2 && !pin) return refusal("placeWhere");
   /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
      friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
      CHECKED BY NOBODY HERE: this site holds no roster and knows no codes, so it records the claim
@@ -576,6 +585,17 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   const note = cleanMsg(body.note, NOTE_MAX);
   if (wantByFault(body.wantBy, at)) return refusal("wantBy", { n: WANT_DAYS });
   const wantBy = body.wantBy ? body.wantBy : "";
+  /* 10 Oct 2026: A DELIVERY'S WINDOW (stmt/window.js, his decisions of 10 Oct 2026): as soon as it can when none is sent, else
+     one of six four-hour windows, taken while its end is ahead and it is not wholly outside the Counter's hours read now; its
+     span, the part inside them, is written beside it, so every reader says what the customer was told. A day is a
+     collection's; a window is a delivery's */
+  let slot = "", span = "";
+  if (body.slot !== undefined && body.slot !== null && body.slot !== "") {
+    if (mode !== "deliver" || wantBy) return { error: "a time window is for a delivery, in place of a day" };
+    const t = slotTake(body.slot, hours, Date.parse(at));
+    if (t.error) return refusal("slot");
+    slot = t.slot; span = t.span;
+  }
   /* a group order is joined, never placed: a body naming one is read only where the join asks (poolOk), and it is collected, alone */
   const pool = poolOk && typeof body.pool === "string" && isPoolId(body.pool) ? body.pool : "";
   if (body.pool !== undefined && (!poolOk || !pool)) return { error: "a group order is joined from its own card" };
@@ -587,7 +607,7 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   if (lines.length >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   if (!lines.length && openCount(open) >= MAX_OPEN) return refusal("openMax", { n: openCount(open) });
   return { order: Object.assign({ product, qty, mode, unit: +unit.toFixed(2), total: +total.toFixed(2), week,
-    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, pool ? { pool } : {}), note,
+    place: mode === "deliver" ? place : "", forFriend }, sheet ? { sheet } : {}, wantBy ? { wantBy } : {}, slot ? { slot, slotSpan: span } : {}, pin ? { pin } : {}, pool ? { pool } : {}), note,
     ask: ask ? Object.assign({ state: "asked", at }, isNum(body.propose) ? { proposed: +body.propose.toFixed(2) } : {}) : null };
 }
 
@@ -656,7 +676,7 @@ export const PRICES_MOVED = refusal("pricesMoved").error;
    stands: the stamp is what holds a total typed at any quantity to the sealed grid. `ctx` carries the grid's steps in the
    clear (the account's record) and whether a claim of theirs waits, which Negotiate reads. */
 export function decidePlace(u, body, open, at, digest, by = "customer", pool = null, ctx = {}) {
-  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps);
+  const c = checkPlacement(body, open, at, !!pool, ctx && ctx.steps, ctx && ctx.hours);
   if (c.error) return c;
   /* a stamped list is checked whatever the page sends, a Place with no stamp included; a list published with none has
      nothing to check */
@@ -685,11 +705,12 @@ export function decideReplace(order, body, mine, at, digest, ctx = {}) {
   if (order.status !== "placed" || order.reviewed || order.ledgerKey || (order.queued || {}).ack
     || (+order.paid || 0) > 0 || (+order.moved || 0) > 0 || claimWaits(order))
     return Object.assign(refusal("amendClosed"), { status: 409 });
-  const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy"];
+  const fields = ["product", "qty", "mode", "unit", "total", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"];
   if (!body || typeof body !== "object" || Object.keys(body).some((key) => !fields.includes(key))
     || !ridOf(body) || typeof body.digest !== "string" || body.product !== order.product)
     return Object.assign(refusal("amendShape"), { status: 400 });
-  const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {});
+  /* 10 Oct 2026: an amendment keeps the exact spot the order shared, while it is still delivered */
+  const next = Object.assign({}, body, order.sheet ? { sheet: order.sheet } : {}, order.pin && body.mode === "deliver" ? { pin: order.pin } : {});
   const placed = decidePlace(order.u, next, mine.filter((item) => item.id !== order.id && OPEN_STATES.includes(item.status)), at, digest, "customer", null, ctx);
   if (placed.error) return placed;
   placed.ev.order.replaces = order.id;
@@ -805,8 +826,10 @@ export function decideFix(order, f, at) {
 export function decideDesk(order, body, at) {
   if (!order) return { error: "no such order", status: 404 };
   if (body && body.reserveReview) {
-    const terms = body.reserveReview;
-    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+    /* 10 Oct 2026: a desk that names no window reserves an order that has none: absent is nothing, as before windows */
+    const terms = body.reserveReview && typeof body.reserveReview === "object" && !Array.isArray(body.reserveReview) && !("slot" in body.reserveReview)
+      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
     if (order.status !== "placed" || !terms || typeof terms !== "object" || Array.isArray(terms)
       || Object.keys(terms).length !== fields.length || fields.some((key) => terms[key] !== (order[key] ?? null)))
       return { error: "the order changed before its review could be reserved", status: 409 };
@@ -995,6 +1018,10 @@ export function decideDesk(order, body, at) {
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
     /* V5b2: the desk decides paid in advance at Accept, from the book; its verdict is the order's from then on */
     if (body && typeof body.prepay === "boolean") ev.prepay = body.prepay;
+    /* 10 Oct 2026 (his Q3): the window he chose for a delivery that asked for none, its span cut to the hours by deskMove.
+       Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
+    if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
+      && ev.delivery !== undefined && (ev.mode || order.mode) === "deliver" && !order.slot && !order.wantBy) { ev.slot = body.slot; ev.slotSpan = body.slotSpan; }
   }
   /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
      Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
@@ -1016,6 +1043,7 @@ export function applyEvent(order, ev) {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
+    if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }
     /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
     if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
     order.status = ev.status;
@@ -1260,9 +1288,11 @@ export async function placeOrder(env, u, body, by = "customer") {
   const moved = (r) => (r.error === PRICES_MOVED ? Object.assign({}, r, { status: 409, prices }) : r);
   /* 05 Oct 2026: the grid's steps in the clear beside the stamp; Negotiate needs the order book, whose one step reads their claims */
   const steps = (prices && prices.steps) || null;
+  /* 10 Oct 2026: the Counter's hours as they stand, which a delivery's window is taken against (stmt/window.js) */
+  const hours = await hoursConfig(env);
   if (body && body.ask === true && !onBook(env)) return Object.assign(refusal("askStore"), { status: 503 });
   if (onBook(env)) {
-    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by, steps });
+    const rid = ridOf(body), r = await bookMove(env, "place", { u, body, rid, digest, by, steps, hours });
     if (r.error) return moved(r);
     /* in the week of reading both the id is filed for the KV road too, so a retry after a flip back lands once (S10 fix DS4) */
     if (readsBoth(env) && !r.again) await fileRid(env, u, rid, r.order.id);
@@ -1271,7 +1301,7 @@ export async function placeOrder(env, u, body, by = "customer") {
   const rid = ridOf(body), again = await repeatOf(env, u, rid);
   if (again) return again;
   const open = (await ordersOf(env, u)).filter((o) => OPEN_STATES.includes(o.status));
-  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps });
+  const d = decidePlace(u, body, open, new Date().toISOString(), digest, by, null, { steps, hours });
   if (d.error) return moved(d);
   const { order } = applyEvent(null, d.ev);
   await env.STMT.put(OKEY(u, order.id), JSON.stringify(order));
@@ -1293,7 +1323,8 @@ export async function replaceOrder(env, u, id, body) {
   const digest = account.prices && account.prices.digest || "";
   const replacement = Object.assign({}, body);
   delete replacement.buildId;
-  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest, steps: (account.prices && account.prices.steps) || null });
+  const result = await bookMove(env, "replace", { u, id, body: replacement, rid: ridOf(body), digest, steps: (account.prices && account.prices.steps) || null,
+    hours: await hoursConfig(env) });
   if (result.error === PRICES_MOVED) return Object.assign({}, result, { status: 409, prices: account.prices || null });
   return result.error ? result : { order: result.order };
 }
@@ -1362,11 +1393,20 @@ function settle(order, at) {
   return true;
 }
 
+/* 10 Oct 2026: a window sent with the acknowledgement, its span the part inside the hours read now; one wholly outside them
+   is his choice and stands whole; one already past is left off. Its own span is never taken from the desk. */
+async function ackSlot(env, body) {
+  const b = Object.assign({}, body), now = Date.now();
+  delete b.slot; delete b.slotSpan;
+  const t = slotTake(body.slot, await hoursConfig(env), now), k = t.error ? slotTake(body.slot, null, now) : t;
+  return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });
+}
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
 
 /** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
 export async function deskMove(env, u, id, body) {
+  if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
   if (onBook(env)) {
     const r = await bookMove(env, "desk", { u, id, body });
     if (r.error) return r;

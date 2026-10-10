@@ -32819,15 +32819,19 @@ await (async () => {
   ok(onDead.status === 200 && (await onDead.json()).order.msgs.length === 1, "a line still reaches an order that has been withdrawn: " + onDead.status);
 
   /* ---- AND NOTHING A CUSTOMER TYPED REACHES A LEDGER ENTRY, which is v694's rule for `place` ---- */
-  const { pendingEntry, payEntry, handoverEntry, cancelEntry } = await import("../src/orders.js");
+  const { pendingEntry, payEntry, handoverEntry, cancelEntry, amendEntry, closeEntry } = await import("../src/orders.js");
+  /* 10 Oct 2026: and the exact spot's id and the delivery window, which are the site's and the cards', never the book's */
   const dirty = { id: "20260920000000-zzzz", u: un, product: "salt", qty: 1, unit: 110, total: 110, delivery: 0, mode: "deliver",
     place: "42 Jalan Something", moved: 1, movedOn: "2026-09-20", paid: 110, status: "ready",
+    pin: "5ec7e75ec7e75ec7e75ec7e75ec7e75e", slot: "2026-09-23T08", slotSpan: "09:15-11:45",
     msgs: [{ at: "2026-09-20T00:00:00.000Z", by: "customer", text: "SECRETSTREETNAME and my name is REALNAME" }],
     history: [{ at: "2026-09-20T00:00:00.000Z", status: "acknowledged", by: "desk" }] };
   const entries = [pendingEntry(dirty, "CX0-AA", "2026-09-20T01:00:00.000Z"), payEntry(dirty, "CX0-AA", 110, "2026-09-20T01:00:01.000Z"),
-    handoverEntry(dirty, "CX0-AA", 1, "2026-09-20T01:00:02.000Z"), cancelEntry(dirty, "CX0-AA", "customer", "2026-09-20T01:00:03.000Z")].filter(Boolean);
-  ok(entries.length === 4, "the four entries an order can queue are built: " + entries.length);
-  const leaked = entries.filter((e) => /SECRETSTREETNAME|REALNAME|Jalan/.test(JSON.stringify(e)));
+    handoverEntry(dirty, "CX0-AA", 1, "2026-09-20T01:00:02.000Z"), cancelEntry(dirty, "CX0-AA", "customer", "2026-09-20T01:00:03.000Z"),
+    amendEntry(Object.assign({}, dirty, { ledgerKey: "CX0-AA|2026-09-20|110" }), "CX0-AA", { qty: 1, total: 120, delivery: 0 }, { qty: 1, total: 110, delivery: 0 }, "2026-09-20T01:00:04.000Z"),
+    closeEntry(Object.assign({}, dirty, { qty: 2, closed: { qty: 2 }, ledgerKey: "CX0-AA|2026-09-20|110" }), "CX0-AA", "2026-09-20T01:00:05.000Z")].filter(Boolean);
+  ok(entries.length === 6, "the six entries an order can queue are built: " + entries.length);
+  const leaked = entries.filter((e) => /SECRETSTREETNAME|REALNAME|Jalan|5ec7e75e|2026-09-23T08|09:15|11:45/.test(JSON.stringify(e)));
   ok(!leaked.length, "and not one of them carries a word the customer typed: " + (leaked.length ? JSON.stringify(leaked[0]).slice(0, 200) : "clean"));
 })();
 
@@ -34796,7 +34800,7 @@ await (async () => {
   ok(JSON.stringify(bodies) === JSON.stringify([
     "Order on its way / Your payment is waiting for us to confirm it. / order-" + id,
     "Order collected / Thank you. Your order is now complete. / order-" + id,
-    "Order acknowledged / Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
+    "Order acknowledged / Please pay now if you can. Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
     "Order acknowledged / Please make your payment now. / order-" + id,
     "Counter says: / “Come after five” / m-" + id + "-2026-09-28T10:00:00.000Z",
     "Order not taken / Out of stock this week. / order-" + id,
@@ -51433,6 +51437,22 @@ section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
 })();
+section("10 Oct 2026: a delivery's time window, as soon as it can or four hours inside the Counter's hours, one rule on page and Worker");
+await (async () => {
+  await (await import("./delivery-window.mjs")).run({ ok });
+})();
+section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
+await (async () => {
+  await (await import("./delivery-pin.mjs")).run({ ok });
+})();
+section("10 Oct 2026: the desk opens a delivery's exact spot with the one unlock, measures the fee to it and may file it as their place");
+await (async () => {
+  await (await import("./delivery-pin-desk.mjs")).run({ ok });
+})();
+section("10 Oct 2026: his Accept carries the window on a delivery asked for as soon as it can, and reminds them to pay now");
+await (async () => {
+  await (await import("./delivery-accept-window.mjs")).run({ ok, KV, assets });
+})();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
   await (await import("./clip-text.mjs")).run({ ok });
@@ -52961,7 +52981,7 @@ await (async () => {
   ok(O.decideReplace(original, { ...change, note: "not an amendment field" }, [original], at, digest).code === "amendShape"
     && O.decideReplace(original, { ...change, product: "rice" }, [original], at, digest).code === "amendShape",
     "replacement refuses unsupported fields and cannot change a sheet line to another product");
-  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+  const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
   const terms = Object.fromEntries(fields.map((key) => [key, original[key] ?? null]));
   const reservation = O.decideDesk(original, { reserveReview: terms }, at);
   const reserved = O.applyEvent(structuredClone(original), reservation.ev).order;

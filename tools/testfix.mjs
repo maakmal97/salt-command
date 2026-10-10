@@ -22,6 +22,7 @@ import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
 import { liveFor, holdTerm, stageDays, ceilingRM } from "./make_statements.mjs";
 import { priceSteps } from "./pricelist.mjs";
+import { slotNext } from "../stmt/window.js";
 
 /* the invented account on the invented book: no roster holds either code */
 export const FIX_CODE = "TX0-FIX";
@@ -76,10 +77,10 @@ const priceOf = (list, product, q) => {
 };
 
 /* one order, taken through the order book's own moves: each step is [moment, who, body] */
-function order(id, list, placedAt, place, steps) {
+function order(id, list, placedAt, place, steps, hours) {
   const body = Object.assign({ unit: 0, week: list.week.monday, digest: list.digest }, place);
   body.total = priceOf(list, body.product, body.qty); body.unit = +(body.total / body.qty).toFixed(2);
-  const p = decidePlace(U, body, [], placedAt, list.digest, "customer", null, { steps: priceSteps(list) });
+  const p = decidePlace(U, body, [], placedAt, list.digest, "customer", null, { steps: priceSteps(list), hours: hours || null });
   if (p.error) throw new Error("the fixture's order " + id + " was refused at Place: " + p.error);
   let o = applyEvent(null, p.ev).order;
   o.id = id;
@@ -191,6 +192,16 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(22), "customer", Object.assign({ action: "pay", amount: 17 }, rail("tngbiz"))],
     [T(22, 30), "desk", { verdict: { kind: "received", claim: T(22), amount: 17 } }]]));
 
+  /* 10 Oct 2026: A DELIVERY'S TIME AND PLACE. One asked for in a window with their exact spot shared (sealed to his key on their
+     phone: the fixture names an invented id and files nothing), one in a window the Counter's hours leave part of, the part said;
+     and one asked for as soon as it can that he answered at Accept with a window, which reminds them to pay now */
+  const HOURS = { schedule: { days: Array.from({ length: 7 }, () => ({ open: "09:00", close: "18:00" })) } };
+  const next = (w) => slotNext(w, null, now.getTime()).slot;
+  O.push(order(oid(0, "41"), list, T(0, 4), { product: "candy", qty: 4, mode: "deliver", place: "Taman Rekaan", slot: next(12), pin: "f0a1b2c3d4e5f60718293a4b5c6d7e8f" }, []));
+  O.push(order(oid(0, "42"), list, T(0, 4), { product: "oil", qty: 1, mode: "deliver", place: "Taman Rekaan", slot: next(8) }, [], HOURS));
+  O.push(order(oid(1, "43"), list, T(1, 4), { product: "candy", qty: 1, mode: "deliver", place: "Taman Rekaan" }, [
+    [T(1, 30), "desk", { status: "acknowledged", delivery: 4, slot: next(12), slotSpan: "12:00-16:00" }]]));
+
   /* A GROUP ORDER (the pool): one open with the account joined (the order it made carries the pool's id, and the units in are the
      account's with invented others, `seedUnits`), and one he closed whose joined order is acknowledged. The order is made by the
      book's own moves, and the pool is a fixture's: a join on it is written there alone (stmt/testfix.js exampleJoin) */
@@ -293,6 +304,8 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
    One line a feature, and the test its case is in the fixture. The suite also derives cases from the code itself
    (every state, way, rail and claim answer), so a new one of those needs no line here to be asked for. */
 const has = (f, p) => f.orders.some(p);
+/* a window's whole four hours, as its span reads when the hours leave all of it */
+const spanWhole = (slot) => { const w = +String(slot).slice(11, 13), p = (n) => String(n).padStart(2, "0"); return p(w) + ":00-" + p(w + 4) + ":00"; };
 const hist = (o, p) => (o.history || []).some(p);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
@@ -362,6 +375,12 @@ export const FEATURES = [
   ["offer declined, the order back at its listed price", (f) => has(f, (o) => o.price && o.price.state === "passed" && o.status === "placed" && o.total > 0)],
   ["offer declined past the grid, the order cancelled", (f) => has(f, (o) => o.price && o.price.state === "passed" && o.status === "cancelled")],
   ["offer lapsed", (f) => has(f, (o) => o.status === "placed" && o.price && o.price.state === "offered" && String(o.price.offer.until) < f.at)],
+  ["a delivery's time window, asked for (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && o.mode === "deliver"
+    && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}$/.test(o.slot || "") && /^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$/.test(o.slotSpan || "") && o.slot > klDay(new Date(f.at)))],
+  ["a window the hours leave part of, the part said (10 Oct 2026)", (f) => has(f, (o) => o.slot && o.slotSpan && o.slotSpan !== spanWhole(o.slot))],
+  ["their exact spot shared, sealed (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && o.mode === "deliver" && /^[0-9a-f]{32}$/.test(o.pin || ""))],
+  ["his window at Accept, and the pay-now reminder (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.mode === "deliver" && !!o.slot
+    && !(+o.moved > 0) && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];

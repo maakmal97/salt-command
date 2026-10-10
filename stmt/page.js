@@ -36,6 +36,7 @@ import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
+import { slotSpan, slotNext, WINDOWS } from "./window.js";
 import { TEST_USERS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
 
@@ -1231,6 +1232,9 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* S6 6.4: the pay sheet's three marks, and the one link into the pay page, its source carried as it is */
       .replace("__GLYPH__", JSON.stringify({ bank: GLYPH.bank, qr: GLYPH.qr, copy: GLYPH.copy, cash: GLYPH.cash, star: GLYPH.star }))
       .replace("/*__PAYHREF__*/", () => payHref.toString())
+      /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
+         exactly the windows the Worker takes */
+      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */
@@ -2876,7 +2880,11 @@ const CLIENT_JS = `
       draft.forFriend=!!amend.forFriend; draft.say=''; draft.noteOpen=false;
       draft.wantBy=wantOk(amend.wantBy)?amend.wantBy:'';
       draft.when=draft.wantBy?'day':'soon'; draft.sheetKeep='';
-    }
+      draft.slot=amend.slot||'';
+    } else if(draft.slot==null) draft.slot='';
+    /* 10 Oct 2026: the exact spot is asked afresh on every sheet and kept nowhere; an amendment keeps the order's own */
+    draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
+    draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
     else {
@@ -2980,14 +2988,92 @@ const CLIENT_JS = `
     if(assoc&&draft.forFriend==null) return tw('sh.whyFor');
     if(!quotes().length) return tw('sh.whySize');
     if(draft.pool) return '';
-    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2) return tw('sh.whyWhere');
-    if(draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
+    if(draft.mode==='deliver'&&String(draft.place||'').trim().length<2&&!draft.pin&&!draft.pinKept) return tw('sh.whyWhere');
+    if(draft.mode!=='deliver'&&draft.when==='day'&&!wantOk(draft.wantBy)) return tw('sh.whyWhen',{n:WANT_DAYS});
     return '';
   }
   /* FUTURE-DATED ORDERS (29 Sep 2026): the day they want it by, tomorrow to WANT_DAYS days on in Kuala Lumpur, the
      Worker's wantByFault the check behind it; left for as soon as it can come, nothing is sent */
   function klPlus(n){ var d=new Date(todayKL()+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
   function wantOk(v){ return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(v||''))&&v>=klPlus(1)&&v<=klPlus(WANT_DAYS); }
+  /* 10 Oct 2026: A DELIVERY'S TIME WINDOW, as soon as it can or one of six four-hour windows, each its next occurrence inside
+     the Counter's hours (the Worker's slotNext and slotSpan, carried below); a window partly inside says the part inside */
+  /*__WINDOW__*/
+  var WINS=__WINDOWS__;
+  function winCfg(){ return !hoursError&&counterHours&&counterHours.config||null; }
+  function winOpen(){ var now=Date.now(), out=[];
+    WINS.forEach(function(w){ var n=slotNext(w,winCfg(),now); if(n) out.push(n); });
+    out.sort(function(x,y){ return x.slot<y.slot?-1:x.slot>y.slot?1:0; }); return out; }
+  function winHm(w){ return (w<10?'0':'')+w+':00'; }
+  function winDay(slot){ return String(slot||'').slice(0,10); }
+  function winPart(span,i){ return String(span||'').split('-')[i]||''; }
+  /* 10 Oct 2026: A DELIVERY'S EXACT SPOT. Read once on this phone (Use my location) or out of a Google Maps or Waze link they
+     paste, read here; a short Google link, which only a redirect opens, is kept as the link for the desk to open. Sealed at
+     Place to our key, as a slip is but under its own info (pinSeal), so the site holds ciphertext alone and only our vault
+     opens it. Kept nowhere on the phone */
+  function pinPt(a,b){ return typeof a==='number'&&typeof b==='number'&&isFinite(a)&&isFinite(b)&&a>=-90&&a<=90&&b>=-180&&b<=180&&!(a===0&&b===0); }
+  function pinHash(h){ var B='0123456789bcdefghjkmnpqrstuvwxyz', la=[-90,90], lo=[-180,180], even=true;
+    for(var i=0;i<h.length;i++){ var c=B.indexOf(h.charAt(i)); if(c<0) return null;
+      for(var k=4;k>=0;k--){ var r=even?lo:la, mid=(r[0]+r[1])/2; if((c>>k)&1) r[0]=mid; else r[1]=mid; even=!even; } }
+    var a=+((la[0]+la[1])/2).toFixed(6), b=+((lo[0]+lo[1])/2).toFixed(6); return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
+  function pinRead(v){
+    var s=String(v||'').trim(), m=/^https:[/][/]([a-z0-9.-]+)([/?][^ ]*)?$/i.exec(s);
+    if(!m||s.length>600) return null;
+    var host=m[1].toLowerCase(), path=m[2]||'', num='(-?[0-9]{1,3}[.][0-9]+)', x;
+    function pt(a,b){ a=+a; b=+b; return pinPt(a,b)?{lat:a, lng:b, src:'link'}:null; }
+    if(/(^|[.])google[.][a-z.]+$/.test(host)&&/^[/]maps/.test(path)){
+      x=new RegExp('!3d'+num+'!4d'+num).exec(path); if(x) return pt(x[1],x[2]);
+      x=new RegExp('[?&](q|query|ll|destination|center)=(loc:)?'+num+'(,|%2C)[+]?'+num).exec(path); if(x) return pt(x[3],x[5]);
+      x=new RegExp('@'+num+','+num).exec(path); if(x) return pt(x[1],x[2]);
+      return null;
+    }
+    if(host==='maps.app.goo.gl'&&path.length>2||host==='goo.gl'&&/^[/]maps[/]./.test(path)) return {link:'https://'+host+path, src:'link'};
+    if(/(^|[.])waze[.]com$/.test(host)){
+      x=new RegExp('[?&]ll='+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]);
+      x=new RegExp('[?&]to=ll[.]'+num+'(,|%2C)'+num).exec(path); if(x) return pt(x[1],x[3]);
+      x=/^[/]ul[/]h([0-9b-hjkmnp-z]{5,12})/.exec(path); if(x) return pinHash(x[1]);
+    }
+    return null;
+  }
+  function pinHere(){
+    var g=null; try{ g=navigator.geolocation; }catch(e){}
+    if(!g||typeof g.getCurrentPosition!=='function'){ draft.pinMsg=tw('sh.pinNo'); sheetDraw(); return; }
+    draft.pinBusy=true; draft.pinMsg=tw('sh.pinWait'); sheetDraw();
+    var done=false;
+    function end(p){ if(done) return; done=true; draft.pinBusy=false;
+      if(p){ draft.pin=p; draft.pinMsg=''; } else draft.pinMsg=tw('sh.pinNo');
+      if(osh) sheetDraw(); }
+    setTimeout(function(){ end(null); },20000);
+    try{ g.getCurrentPosition(function(pos){ var c=pos&&pos.coords, a=c?+c.latitude:NaN, b=c?+c.longitude:NaN;
+        end(pinPt(a,b)?{lat:a, lng:b, acc:Math.round(+c.accuracy||0), src:'gps'}:null); },
+      function(){ end(null); },{enableHighAccuracy:true, maximumAge:0, timeout:15000}); }catch(e){ end(null); }
+  }
+  function pinField(){
+    var f=el('div','salt-field opin');
+    f.appendChild(el('span','salt-field__label',tw('sh.pinT')));
+    if(draft.pin){
+      f.appendChild(el('span','salt-field__hint',tw(draft.pin.link?'sh.pinOkLink':'sh.pinOk')));
+      var off=el('button','salt-ghost',tw('sh.pinOff')); off.type='button'; off.id='oPinOff'; off.setAttribute('data-k','pinoff');
+      off.addEventListener('click',function(){ draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; sheetDraw(); });
+      f.appendChild(off); return f;
+    }
+    var row=el('div','salt-options__grid salt-options__grid--2');
+    var here=el('button','salt-ghost',tw('sh.pinHere')); here.type='button'; here.id='oPinHere'; here.setAttribute('data-k','pinhere'); here.disabled=!!draft.pinBusy;
+    here.addEventListener('click',pinHere); row.appendChild(here);
+    var lk=el('button','salt-ghost',tw('sh.pinLink')); lk.type='button'; lk.id='oPinLink'; lk.setAttribute('data-k','pinlink');
+    lk.addEventListener('click',function(){ draft.pinLinkOpen=true; draft.pinMsg=''; sheetDraw(); var x=document.getElementById('oPinUrl'); if(x) try{ x.focus(); }catch(e){} });
+    row.appendChild(lk); f.appendChild(row);
+    if(draft.pinLinkOpen){
+      var li=el('input','salt-field__input'); li.id='oPinUrl'; li.type='url'; li.autocomplete='off'; li.placeholder=tw('sh.pinLinkPh'); li.setAttribute('data-k','pinurl');
+      li.setAttribute('aria-label',tw('sh.pinLink'));
+      li.addEventListener('input',function(){ var p=pinRead(li.value); if(p){ draft.pin=p; draft.pinMsg=''; sheetDraw(); } });
+      li.addEventListener('change',function(){ var p=pinRead(li.value); if(p){ draft.pin=p; draft.pinMsg=''; } else if(String(li.value||'').trim()) draft.pinMsg=tw('sh.pinBad'); sheetDraw(); });
+      f.appendChild(li);
+    }
+    f.appendChild(el('span','salt-field__hint',draft.pinMsg||tw('sh.pinHint')));
+    return f;
+  }
+  function pinSeal(p){ return slipSeal(SLIPKEY,new TextEncoder().encode(JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1'); }
   function whereHint(){
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
   }
@@ -3044,11 +3130,28 @@ const CLIENT_JS = `
       var wh=el('span','salt-field__hint',whereHint());
       wi.addEventListener('input',function(){ draft.place=wi.value; wh.textContent=whereHint(); formFoot(); });
       wf.appendChild(wl); wf.appendChild(wi); wf.appendChild(wh); B.appendChild(wf);
+      /* 10 Oct 2026: AND THE EXACT SPOT, if they want to share it, offered once our key is filed (F13's slip key) */
+      if(!draft.pool){ slipKeyLoad();
+        if(draft.amend&&draft.pinKept) B.appendChild(el('p','salt-field__hint',tw('sh.pinKept')));
+        else if(!draft.amend&&SLIPKEY) B.appendChild(pinField()); }
     }
+    /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
+       a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
+    if(draft.mode==='deliver'){
+      var WO=winOpen(), opts=[['',tw('sh.soon')]], own=draft.amend&&draft.ownSlot;
+      /* an amendment keeps the order's own window while it is still to end, begun or not */
+      if(own&&!WO.some(function(n){ return n.slot===own.slot; })
+        &&Date.parse(winDay(own.slot)+'T00:00:00Z')+(+own.slot.slice(11,13)-4)*3600000>Date.now()) WO.unshift(own);
+      if(draft.slot&&!WO.some(function(n){ return n.slot===draft.slot; })) draft.slot='';
+      WO.forEach(function(n){ var w=+n.slot.slice(11,13); opts.push([n.slot,tw('sh.winAt',{d:ymdDay(winDay(n.slot)), a:winHm(w), b:winHm(w+4)})]); });
+      B.appendChild(oChoice(tw('sh.when'),opts,draft.slot||'','win',function(v){ draft.slot=v; sheetDraw(); }));
+      var cho=WO.filter(function(n){ return n.slot===draft.slot; })[0];
+      B.appendChild(el('p','salt-field__hint',cho?tw('sh.winSpan',{a:winPart(cho.span,0), b:winPart(cho.span,1), d:ymdDay(winDay(cho.slot))}):tw('sh.winHint')));
+    } else
     /* 29 Sep 2026: when they want it, as soon as it can come unless they pick a day */
     B.appendChild(oChoice(tw('sh.when'),[['soon',tw('sh.soon')],['day',tw('sh.onDay')]],draft.when==='day'?'day':'soon','when',
       function(v){ draft.when=v; sheetDraw(); }));
-    if(draft.when==='day'){
+    if(draft.mode!=='deliver'&&draft.when==='day'){
       var df=el('div','salt-field'), dl=el('label','salt-field__label',tw('sh.wantBy')); dl.htmlFor='oWant';
       var di=el('input','salt-field__input'); di.id='oWant'; di.type='date'; di.min=klPlus(1); di.max=klPlus(WANT_DAYS); di.value=draft.wantBy||'';
       di.setAttribute('data-k','want');
@@ -3115,9 +3218,15 @@ const CLIENT_JS = `
       amend:draft.amend||'', sheet:draft.pool?'':draft.sheetKeep||(qs.length>1?mintRid():''), mode:draft.pool?'collect':draft.mode,
       place:draft.mode==='deliver'&&!draft.pool?String(draft.place||'').trim():'', say:draft.pool?'':String(draft.say||'').trim(), forFriend:ff,
       pool:draft.pool||'',
-      wantBy:draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
+      wantBy:draft.mode!=='deliver'&&draft.when==='day'&&wantOk(draft.wantBy)&&!draft.pool?draft.wantBy:'',
+      /* 10 Oct 2026: a delivery's window, with the span it was offered at, for the check to say */
+      slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
+      /* the exact spot as read, sealed at Place; an amendment's is the order's own, kept by the Worker */
+      pin:draft.mode==='deliver'&&!draft.pool&&!draft.amend?draft.pin:null, pinKept:draft.mode==='deliver'&&!!draft.amend&&!!draft.pinKept, pinSealed:null,
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
+    /* from the list the form drew: the open windows, and an amendment's own window kept while it is still to end */
+    if(draft.check.slot){ var cs=winOpen().concat(draft.amend&&draft.ownSlot?[draft.ownSlot]:[]).filter(function(n){ return n.slot===draft.check.slot; })[0]; draft.check.span=cs?cs.span:''; }
     draft.step='check'; draft.snote=''; sheetDraw();
   }
   function sheetSum(c){ var t=0; c.lines.forEach(function(l){ t+=l.total; }); return +t.toFixed(2); }
@@ -3225,8 +3334,10 @@ const CLIENT_JS = `
       row(tw('sh.total'),rm(sheetSum(c)));
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
+    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw('sh.pinRow'),tw('sh.pinShared'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
-    if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
+    if(!c.pool&&c.mode==='deliver') row(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
+    else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
     if(one&&lk) row(tw('sh.pay'),tw('sh.inAdvance'));
     if(c.say) row(tw('sh.note'),c.say);
     B.appendChild(L);
@@ -3290,12 +3401,20 @@ const CLIENT_JS = `
     if(!ask&&c.lines.some(function(l){ return l.over; })) return;
     draft.busy=true; draft.snote=''; sheetDraw();
     var mine=ticket, week=(prices&&prices.week&&prices.week.monday)||'';
+    /* 10 Oct 2026: the exact spot sealed once, here, before anything leaves; a retry sends the same sealed copy */
+    if(c.pin&&!c.pinSealed){
+      try{ c.pinSealed=SLIPKEY?await pinSeal(c.pin):null; }catch(e){ c.pinSealed=null; }
+      if(mine!==ticket) return;
+      if(!c.pinSealed){ draft.busy=false; draft.snote=tw('e.pinBad'); sheetDraw(); return; }
+    }
     var todo=c.lines.filter(function(l){ return !l.placed; });
     for(var i=0;i<todo.length;i++){
       var l=todo[i], body={product:l.product,qty:l.q,mode:c.mode,unit:l.rate,total:l.total,place:c.place,
         forFriend:!!(assoc&&c.forFriend),note:l===c.lines[0]?c.say:'',rid:l.rid,week:week,digest:c.digest};
       if(c.sheet) body.sheet=c.sheet;
       if(c.wantBy) body.wantBy=c.wantBy;
+      if(c.slot) body.slot=c.slot;
+      if(c.pinSealed) body.pin=c.pinSealed;
       /* Negotiate: its own request id, so an ask is never answered with a placing of the same line, or the other way */
       if(ask){ body.ask=true; if(!l.askRid) l.askRid=mintRid(); body.rid=l.askRid; if(fig!=null) body.propose=+fig.toFixed(2); }
       if(c.amend){ delete body.note; delete body.sheet; delete body.total; delete body.unit; }
@@ -3631,8 +3750,14 @@ const CLIENT_JS = `
     else if(mv>0) put(d?'ow.partDeliveredOn':'ow.partCollectedOn',{a:sz(mv), b:sz(o.qty), d:went(function(L){ return ymdDay(o.movedOn,L); })});
     else if(s==='ready') put(d?'ow.readyDeliver':'ow.readyCollect',{d:Dd(oDay,firstAt(o,'ready'))});
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
+    /* 10 Oct 2026 (his Q4): his Accept reminds them to pay now, in words only; every term stands */
+    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit'); }
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
+    /* 10 Oct 2026: the time asked for, while the goods are still to go */
+    if(o.slot&&o.slotSpan&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' '));
+      put('ow.window',{a:esch(winPart(o.slotSpan,0)), b:esch(winPart(o.slotSpan,1)), d:function(L){ return esch(ymdDay(winDay(o.slot),L)); }}); }
+    if(o.pinned&&o.mode==='deliver'&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.pinned'); }
     if(o.closed&&o.closed.qty){ p.appendChild(document.createTextNode(' ')); put('ow.closed',{a:sz(o.qty), b:esch(o.closed.qty), rm:rm(o.total)}); }
     w.appendChild(p);
     var tp=oTap(o); if(tp.k==='state'&&tp.t) w.appendChild(statusLine(tp.t));
@@ -4330,14 +4455,14 @@ const CLIENT_JS = `
   function slipKeyLoad(){
     if(SLIPKEY!==undefined||view) return;
     SLIPKEY=null;   /* asked once a visit */
-    api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); });
+    api('/slip/key').then(function(r){ var k=r.body&&r.body.ok&&r.body.key; if(!k) return; SLIPKEY=k; if(PS&&PS.step==='check') drawPay(); if(osh&&draft.step==='form') sheetDraw(); });
   }
-  async function slipSeal(pub,bytes){
+  async function slipSeal(pub,bytes,info){
     var S=crypto.subtle, E={name:'ECDH',namedCurve:'P-256'}, iv=crypto.getRandomValues(new Uint8Array(12));
     var eph=await S.generateKey(E,false,['deriveBits']);
     var pk=await S.importKey('jwk',{kty:pub.kty,crv:pub.crv,x:pub.x,y:pub.y},E,false,[]);
     var hk=await S.importKey('raw',await S.deriveBits({name:'ECDH',public:pk},eph.privateKey,256),'HKDF',false,['deriveKey']);
-    var key=await S.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['encrypt']);
+    var key=await S.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode(info||'salt-slip v1')},hk,{name:'AES-GCM',length:256},false,['encrypt']);
     return {v:1, epk:b64e(await S.exportKey('raw',eph.publicKey)), iv:b64e(iv), ct:b64e(await S.encrypt({name:'AES-GCM',iv:iv},key,bytes))};
   }
   function slipRead(f,how){ return new Promise(function(ok,no){ var rd=new FileReader(); rd.onload=function(){ ok(rd.result); }; rd.onerror=no; rd[how](f); }); }
@@ -4782,6 +4907,8 @@ const CLIENT_JS = `
       counterHours=result; hoursError=false;
     }catch(error){ hoursError=true; }
     if(before!==JSON.stringify([counterHours,hoursError])&&tab==='order'&&!view) drawOrder();
+    /* 10 Oct 2026: a sheet opened before the hours arrived offers the windows they leave, now they are here */
+    if(before!==JSON.stringify([counterHours,hoursError])&&osh&&draft.step==='form') sheetDraw();
   }
   async function refresh(){
     if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */

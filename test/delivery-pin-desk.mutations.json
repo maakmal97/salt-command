@@ -1,0 +1,22 @@
+[
+ {"name": "the spot is read with no key", "file": "src/worker.js", "find": "      || p.startsWith(\"/pins/\")   /* 10 Oct 2026", "replace": "      || false   /* 10 Oct 2026"},
+ {"name": "the relay asks the slip road", "file": "src/orders.js", "find": "\"/desk/pins/\" + encodeURIComponent(u) + \"/\" + id);", "replace": "\"/desk/slips/\" + encodeURIComponent(u) + \"/\" + id);"},
+ {"name": "a spot not kept answers 502", "file": "src/orders.js", "find": "  const r = await site(env, \"/desk/pins/\" + encodeURIComponent(u) + \"/\" + id);\n  if (!r) return { ok: false, status: 503, error: \"the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)\" };\n  const b = await r.json().catch(() => ({}));\n  if (!r.ok || !b.ok) return { ok: false, status: r.status === 404 ? 404 : 502,", "replace": "  const r = await site(env, \"/desk/pins/\" + encodeURIComponent(u) + \"/\" + id);\n  if (!r) return { ok: false, status: 503, error: \"the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)\" };\n  const b = await r.json().catch(() => ({}));\n  if (!r.ok || !b.ok) return { ok: false, status: 502,"},
+ {"name": "a POST reaches the relay", "file": "src/worker.js", "find": "    if (pn) {\n      if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n", "replace": "    if (pn) {\n"},
+ {"name": "the service worker caches a spot", "file": "public/sw.js", "find": "|slips|pins|threads)", "replace": "|slips|threads)"},
+ {"name": "locked, the card fetches the spot", "find": "if(!o||!o.pin||o.mode!=='deliver'||!feeOpen()||!vaultSlipKey)return null;", "replace": "if(!o||!o.pin||o.mode!=='deliver')return null;"},
+ {"name": "the spot is opened as a slip", "find": "const b=await slipOpen(j.pin,'salt-pin v1');", "replace": "const b=await slipOpen(j.pin);"},
+ {"name": "the card prints the figures", "find": "<p class=\"ordline ordpin\">The spot they shared is open on this device", "replace": "<p class=\"ordline ordpin\">The spot they shared (${v.pt.lat}, ${v.pt.lng}) is open on this device"},
+ {"name": "a slip opens as a spot", "find": "const b=await slipOpen(j.pin,'salt-pin v1');", "replace": "const b=(await slipOpen(j.pin,'salt-pin v1'))||(await slipOpen(j.pin));"},
+ {"name": "a short link is not followed", "find": "        if(L&&L.short){try{const x=await fetch('geo/expand'", "replace": "        if(false){try{const x=await fetch('geo/expand'"},
+ {"name": "a lapsed spot is not named", "find": "if(r.status===404)msg='The spot they shared is no longer kept", "replace": "if(r.status===410)msg='The spot they shared is no longer kept"},
+ {"name": "the fee ignores the spot", "find": "  {const q=feePt(pin);if(q)return Object.assign(q,{how:'pin',code:String(code||'')});}\n", "replace": ""},
+ {"name": "the fee line does not name the spot", "find": "(off.to==='pin'?'the spot '", "replace": "(off.to==='nope'?'the spot '"},
+ {"name": "the card's fee read passes no spot", "find": "const off=await deliveryOffer(o.code,await ordPinPoint(o));", "replace": "const off=await deliveryOffer(o.code);"},
+ {"name": "the filed place is not marked a pin", "find": "placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'})", "replace": "placeEntry({lat:pt.lat,lng:pt.lng,src:'link'})"},
+ {"name": "filing drops the address", "find": "pm[code]=Object.assign(entry,{addr:(pm[code]&&pm[code].addr)||null});", "replace": "pm[code]=Object.assign(entry,{addr:null});"},
+ {"name": "a friend's spot is filed", "find": "if(!o||!v||v.st!=='ok'||!o.code||o.forFriend||/-R$/.test(String(o.code)))return;", "replace": "if(!o||!v||v.st!=='ok'||!o.code||/-R$/.test(String(o.code)))return;"},
+ {"name": "a friend's card offers the filing", "find": "const can=!same&&!!o.code&&!o.forFriend&&", "replace": "const can=!same&&!!o.code&&"},
+ {"name": "the lock keeps the spots", "find": "  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};}catch(e){}}", "replace": "  try{ORD_FEE={};WB_FEE=null;}catch(e){}}"},
+ {"name": "an agreed order's spot is never opened", "find": "  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>ordDraw());},0);return", "replace": "  if(!v){return"}
+]

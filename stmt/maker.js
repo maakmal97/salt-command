@@ -1,8 +1,7 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
 import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS } from "./testfix.js";
-import { hoursStatus, validateManualHours, validateWeeklyHours } from "./hours.js";
+import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 
-const HOURS_KEY = "maker:hours";
 const OWNER_EMAIL = "maakmal97@icloud.com";
 const HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -112,7 +111,7 @@ export async function customerAmend(env, u, id, body) {
   const secret = String(env.COUNTER_MAKER_KEY || "");
   if (!env.DESK_MAKER || secret.length < 32)
     return { error: "The private Desk maker bridge is not configured.", code: "amendBridge", status: 503 };
-  const fields = ["product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy"];
+  const fields = ["product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"];
   if (!/^[0-9]{14}-[a-z0-9]{1,8}$/.test(id) || !body || typeof body !== "object" || Array.isArray(body)
     || Object.keys(body).some((key) => !fields.includes(key)))
     return { error: "Send only the replacement order fields.", code: "amendShape", status: 400 };
@@ -513,10 +512,12 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
 
 export async function publicHours(env) {
   const value = env.STMT ? await env.STMT.get(HOURS_KEY, "json") : null;
-  if (!value) return hoursStatus(null);
+  if (!value) return Object.assign(hoursStatus(null), { config: windowHours(null) });
   if (value.schedule != null) {
     const valid = validateWeeklyHours(value.schedule);
     if (valid.error) throw new TypeError("Stored operating hours are invalid: " + valid.error);
   }
-  return hoursStatus(value);
+  /* 10 Oct 2026: and the hours themselves, the weekly days and a manual override, so the order sheet offers the delivery
+     windows the Worker takes (stmt/window.js): opening hours, which the page said in words already */
+  return Object.assign(hoursStatus(value), { config: windowHours(value) });
 }

@@ -37,7 +37,7 @@ const SHELL = [
 /* /bulletin joins 26 Sep 2026 for the same reason: his editor read back the notice it first cached. */
 /* /slips joins 29 Sep 2026 (F13): a slip is fetched live when he opens it, and never kept on the phone, ciphertext or not. */
 /* /threads joins 29 Sep 2026 (Step 7): his Chat reads it every 2 seconds, and a cached first answer would be all it ever read. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips|threads)(\/|$)/;
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now|bulletin|slips|pins|threads)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

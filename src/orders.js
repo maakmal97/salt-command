@@ -182,6 +182,17 @@ export async function threadRelay(env, u, body) {
   return { ok: true, thread: Object.assign({ code: users[b.thread && b.thread.u] || null }, b.thread), push: b.push || null };
 }
 
+/** 10 Oct 2026: a delivery's exact spot as the site filed it, ciphertext sealed on the customer's phone to his slip key under
+ *  the info "salt-pin v1" (stmt/pin.js), for the desk to open with the key his vault holds. Stored nowhere here. */
+export async function pinRelay(env, u, id) {
+  if (!/^[0-9a-f]{32}$/.test(String(id || "")) || !/^[a-z0-9-]{1,40}$/.test(String(u || ""))) return { ok: false, status: 404, error: "no such location" };
+  const r = await site(env, "/desk/pins/" + encodeURIComponent(u) + "/" + id);
+  if (!r) return { ok: false, status: 503, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, status: r.status === 404 ? 404 : 502, error: b.error || ("the statements site answered http " + r.status) };
+  return { ok: true, pin: b.pin };
+}
+
 /** F13: a payment slip as the site filed it, ciphertext sealed on the customer's phone to his slip key, for the desk to
  *  open with the key his vault holds. The username and the id as the claim carries them; stored nowhere here. */
 export async function slipRelay(env, u, id) {
@@ -236,6 +247,20 @@ export function toldOf(o) {
  * and the digest an Accept sends back to prove it answered this row. */
 const rm = (n) => "RM " + (Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2));
 const chargeOf = (b) => (b && typeof b.delivery === "number" && Number.isFinite(b.delivery) && b.delivery >= 0 ? +b.delivery.toFixed(2) : null);
+/* 10 Oct 2026 (his Q3): A WINDOW AT ACCEPT, only on a delivery that asked for none (as soon as it can, no day wanted), so no
+   window goes out without their yes: theirs is never changed this version (his Q2). Its end ahead and its start at most eight
+   days off; the Counter cuts it to its hours as it moves the order. Absent or empty, none. Returns { slot } or { error }. */
+export const ACCEPT_SLOT_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/;
+export function slotOf(b, o, at) {
+  const s = b && b.slot;
+  if (s === undefined || s === null || s === "") return { slot: null };
+  if (typeof s !== "string" || !ACCEPT_SLOT_RE.test(s)) return { error: "a time window is a day and one of the six four-hour windows", status: 400 };
+  if (!o || o.mode !== "deliver") return { error: "only a delivery takes a time window", status: 400 };
+  if (o.slot || o.wantBy) return { error: "they chose their own time, and it stands", status: 409 };
+  const start = Date.parse(s.slice(0, 10) + "T00:00:00Z") + (+s.slice(11, 13) - 8) * 3600e3, now = at.getTime();
+  if (!(start + 4 * 3600e3 > now) || start - now > 8 * 86400e3) return { error: "that window has passed or is more than a week off: choose another", status: 400 };
+  return { slot: s };
+}
 /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER at its acknowledgement, the goods to 2 dp. Absent, the
    order's own total; present and not a figure above nothing, refused. The board, the tiers and the pricing state never move. */
 const priceOf = (b) => {
@@ -416,7 +441,9 @@ export async function ackOnApproval(env, pre) {
     : await moveOrder(env, pre.u, pre.order_id, Object.assign({ status: "acknowledged", delivery: +(entry.payload && entry.payload.delivery) || 0, prepay: entry.prepay === true },
       /* Step 2: the goods the row was drafted at, the site keeping what they placed it at beside it; a yes filed without a
          figure (an older entry's shape) sends none, and the order keeps its own */
-      typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {}));
+      typeof entry.total === "number" && entry.total > 0 ? { total: entry.total } : {},
+      /* 10 Oct 2026: the window he chose at Accept, from what he was shown, never a body: this runs minutes later */
+      typeof shown.slot === "string" && ACCEPT_SLOT_RE.test(shown.slot) ? { slot: shown.slot } : {}));
   /* told once the move is made, or refused for good: the order ended, or was moved already */
   if ((r.ok || r.status === 409) && env.SALT_LEDGER)
     await env.SALT_LEDGER.prepare("UPDATE preapproval SET acked_at=?1 WHERE id=?2").bind(new Date().toISOString(), pre.id).run();
@@ -455,18 +482,21 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const pr = again ? { price: null } : priceOf(body);
   if (pr.error) return { ok: false, status: 400, error: pr.error };
+  const win = again ? { slot: null } : slotOf(body, o, at);
+  if (win.error) return { ok: false, status: win.status, error: win.error };
   const pv = await previewAck(env, o, o.code, delivery, at, { orders: f.orders, again }, pr.price, mirror);
   if (!pv.ok) return pv;
   const entry = pv.entry;
   delete pv.entry;
   if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the row has changed since the card drew it: look at it again before you accept", preview: pv };
   if (o.status === "placed") {
-    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"];
+    /* the window is named only on an order that has one, so a Counter not yet carrying windows still reserves the rest */
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"].concat(o.slot ? ["slot"] : []);
     const reserved = await moveOrder(env, o.u, id, { reserveReview: Object.fromEntries(fields.map((key) => [key, o[key] ?? null])) });
     if (!reserved.ok) return reserved;
   }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage: "ack", hash: pv.hash, entry, at: at.toISOString(), by,
-    shown: { from: o.status, row: pv.row, flags: pv.flags, pricing: pv.pricing } });
+    shown: Object.assign({ from: o.status, row: pv.row, flags: pv.flags, pricing: pv.pricing }, win.slot ? { slot: win.slot } : {}) });
   await queueSale(env, entry, false, mirror);   /* which may move entry.at to a free millisecond */
   await db.prepare("UPDATE preapproval SET entry_at=?1, entry=?2 WHERE id=?3").bind(entry.at, JSON.stringify(entry), preId).run();
   /* D6: THE DRAFTER READS THE MIRROR FOR ITSELF, never the card's read above, so a mirror that moved under the tap drafts

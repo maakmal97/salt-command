@@ -642,7 +642,16 @@ export const OWNER_JS = `
     if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
     return j;
   }
-  var makerData=null, makerQuotes={}, makerFee={}, makerHours=null, makerBusy=false;
+  var makerData=null, makerQuotes={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
+  /* 10 Oct 2026: the next occurrence of each four-hour window, Kuala Lumpur time, its start ahead, as the Desk's ordWinPicks */
+  function makerWinPicks(now){
+    var H=3600000, out=[], ws=[0,4,8,12,16,20], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function mwDay(x){ return new Date(x+8*H).toISOString().slice(0,10); }
+    function mwPad(n){ return (n<10?'0':'')+n; }
+    ws.forEach(function(w){ var d=mwDay(now), s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s<=now){ s+=24*H; d=mwDay(s); }
+      out.push([d+'T'+mwPad(w),(+d.slice(8))+' '+MON[+d.slice(5,7)-1]+', '+mwPad(w)+':00 to '+mwPad(w+4)+':00',s]); });
+    return out.sort(function(a,b){ return a[2]-b[2]; });
+  }
   var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
   function makerSlipClose(){
     makerSlipGeneration++;
@@ -2416,6 +2425,11 @@ export const OWNER_JS = `
       var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
       card.appendChild(ownerLine);
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
+      if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
+        card.appendChild(el('p','maker-facts','Delivery wanted between '+String(order.slotSpan).replace('-',' and ')+' on '+String(order.slot).slice(0,10)));
+      /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
+      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));
       var againAck=makerAgainAck(order);
       if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
@@ -2460,6 +2474,22 @@ export const OWNER_JS = `
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
           card.appendChild(fieldset);
         }
+        /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
+        var win=makerWin[order.id]||(makerWin[order.id]={value:''});
+        if(deliver&&!order.slot&&!order.wantBy){
+          var wset=el('fieldset','salt-options'), wgrid=el('div','salt-options__grid salt-options__grid--2');
+          wset.appendChild(el('legend','salt-options__legend','Delivery time'));
+          [['','As soon as it can']].concat(makerWinPicks(Date.now())).forEach(function(opt){
+            var label=el('label','salt-option'), radio=el('input','salt-option__input'),
+                face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+            radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0];
+            radio.addEventListener('change',function(){ win.value=opt[0]; });
+            face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
+          });
+          wset.appendChild(wgrid);
+          wset.appendChild(el('p','salt-insight','They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.'));
+          card.appendChild(wset);
+        }
         function makerPlacedDelivery(){
           if(!deliver) return 0;
           if(chip.value==='other'){ var v=Number(otherField.value); return otherField.value!==''&&v>=0?v:null; }
@@ -2483,8 +2513,11 @@ export const OWNER_JS = `
             var accept=card.querySelector('[data-accept]'); if(!accept){
               accept=makerButton(card,'Accept order at '+rm(result.quote)+', delivery '+rm(result.delivery),function(){
                 var q=makerQuotes[order.id]; if(!q||!q.hash) return;
-                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',
-                  {total:q.total,delivery:q.delivery,hash:q.hash},'Order sent to the Desk for acknowledgement.');
+                var body={total:q.total,delivery:q.delivery,hash:q.hash};
+                /* a sheet's lines take its first order's window, as they take its one delivery charge */
+                var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';
+                if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
+                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.');
               },true); accept.setAttribute('data-accept','');
             }
           }).catch(function(error){
