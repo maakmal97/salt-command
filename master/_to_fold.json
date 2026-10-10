@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T05:48:23.956Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CH5-KLC",
+    "qty": 1,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-10-10",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261010041637-37zsng, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1 unit of salt to CH5-KLC for RM 130, RM 130/unit. Costed at RM 58/unit from COGS off the latest purchase p036 landed 2026-10-06: RM 1400 quote plus RM 50 freight over 25 unit, so RM 72 on the goods at 55.4%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-10 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CH5-KLC typically pays about RM 180/unit for salt across 2 orders; this one is RM 130, 27.8% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-10T05:48:23.956Z",
+    "type": "SELL",
+    "party": "CH5-KLC",
+    "qty": 1,
+    "total": 130,
+    "status": "Pending",
+    "raw": "SELL CH5-KLC 1 salt RM 130, nothing paid, nothing moved (order 20261010041637-37zsng)",
+    "orderKey": "CH5-KLC|2026-10-10|130",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CH5-KLC",
+     "newId": null,
+     "date": "2026-10-10",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261010041637-37zsng, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261010041637-37zsng"
+   },
+   "decidedAt": "2026-10-10T05:48:25.821Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
