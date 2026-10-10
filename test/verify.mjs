@@ -53363,10 +53363,15 @@ await (async () => {
   ok(!await held(stmtM, on, "/all") && !await held(stmtM, on, "/all/maker/x") && await held(stmtM, on, "/allx"),
     "counter: /all and its sub-paths pass for Access to verify, and /allx does not");
   ok(!await held(deskM, on, "/push/send", { "X-Push-Key": "k" }), "desk: the push wake's X-Push-Key passes during the window");
-  for (const f of ["wrangler.jsonc", "wrangler.stmt.jsonc"]) {
-    const t = readFileSync(join(REPO, f), "utf8");
-    ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(t), f + " carries MAINTENANCE_UNTIL empty (guard off)");
+  {
+    const words = { MAINTENANCE_UNTIL: future, MAINTENANCE_TEXT: "  Back by 6:00 a.m. <b>&</b> 'soon'  " };
+    const r = await stmtM.fetch(req("/", { accept: "text/html" }), words, {}), b = await r.text();
+    ok(r.status === 503 && b.includes("<p>Back by 6:00 a.m. &#60;b&#62;&#38;&#60;/b&#62; &#39;soon&#39;</p>") && !b.includes(TEXT),
+      "counter: MAINTENANCE_TEXT replaces the words, trimmed and escaped");
   }
+  ok(/^\s*"MAINTENANCE_UNTIL": "",/m.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")), "wrangler.jsonc carries MAINTENANCE_UNTIL empty (guard off)");
+  ok(/^\s*"MAINTENANCE_UNTIL": "(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)?",/m.test(readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8")),
+    "wrangler.stmt.jsonc carries MAINTENANCE_UNTIL empty or one ISO UTC time, which lifts itself");
 })();
 
 section("S10 10.5: under object the book writes no KV, the store-check route is keyed and read-only, and the retirement tool deletes only the order keys");
