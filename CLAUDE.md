@@ -156,7 +156,8 @@ directory. The leak checks exempt a directory place only when it IS an official 
 
 **Money he is holding that is somebody else's is Now**: an open `customerRefunds` row is severity
 `now` in `actions()` from the day it is raised. **Nothing closes a refund from the phone**: add
-`paidOn` in `ledger/book.json`, `booksync --sync`, build.
+`paidOn` in `ledger/book.json`, `booksync --sync`, build. **A refund the book no longer owes is flagged, never withdrawn**
+(the engine's `refundStale`, a fold move and a provenance note): he removes the row in `ledger/book.json`.
 
 **A defaulted sale is written off**: `txAdvance` reads nothing owed on it and `txWrittenOff`
 carries it to every reading of what was lost, so no price moves. A new reader of what is owed uses
@@ -203,8 +204,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   if the draft equals what he was shown, every field, flag and (for Accept) pricing version; else it
   waits under Approve, marked. Accept moves the order only once its row is approved; a later stage
   tapped before the first row lands is booked when it lands, and the answer says so. A claim against the account (S6) is
-  drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. A close under what they paid
-  is never approved on a tap: nothing books the difference as a refund yet.
+  drawn as the engine's `claimAlloc` (goods out oldest first, then the orders at Ready, each owing all that is left, V2), each row less the money already on its way to it, and its one Received approves exactly those rows. **A row paid past what it
+  comes to is a refund the fold raises** (06 Oct 2026, the engine's `refundOnOverpay` beside `refundOnCancel`, read off the row as
+  every sale amendment folds and on the desk's overlay): a close at what was handed over or an amendment under what they paid is
+  one tap like any other, and the difference opens as a `customerRefunds` row, Now until `paidOn`.
 - **Every tap that books money checks what its row can still take** (`rowRoom` in `src/orders.js`:
   the mirror's figure less every payment on its way to the row by any road), **and the fold's
   `payFault` is the last check**, refusing a payment measured before other money reached its row.

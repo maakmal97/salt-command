@@ -751,12 +751,6 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
   mirror = mirror || (db ? bookOnce(db) : null);   /* the tap's one read: the preview, the yes it tests and the route's tail */
   const pv = await stagePreview(env, o, stage, b.entry, mirror);
   if (!pv.ok) return pv;
-  /* a row that leaves money owed back is never approved on a tap: it waits under Approve with the drafter's own flags */
-  if (b.hold) {
-    const r = b.site ? await moveOrder(env, o.u, id, b.site) : { ok: true, order: o };
-    if (!r.ok) return r;
-    return { ok: true, order: r.order, preapproval: { stage, waits: pv.waits, held: true, says: "It waits under Approve: " + b.hold, flags: pv.d.flags } };
-  }
   const preId = await recordPre(db, { order_id: id, u: o.u, stage, hash: pv.hash, entry: b.queueIt ? b.entry : null, at: at.toISOString(), by,
     shown: { from: o.status, figures: b.shown, flags: pv.d.flags, waits: pv.waits } });
   if (b.pin) await db.prepare("UPDATE preapproval SET entry_at=?1 WHERE id=?2").bind(b.pin, preId).run();
@@ -775,8 +769,9 @@ async function stageTap(env, id, body, by, now, stage, build, mirror) {
      row: a stage the site makes is queued after this, so any row of its stage drafted before it is an older one */
   const pre = await preById(db, preId);
   const spent = pre.status === "waiting" && b.pin ? await settlePre(db, pre, await mirror()) : null;
-  return { ok: true, order: o, push, preapproval: { stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
-    draft: spent ? (await preById(db, preId)).draft_id : null } };
+  /* 06 Oct 2026: a close or an amendment under what they paid says what opens with it: the refund the fold raises */
+  return { ok: true, order: o, push, preapproval: Object.assign({ stage, waits: pv.waits, says: yesWords(pv.waits), flags: pv.d.flags, spent: spent || null,
+    draft: spent ? (await preById(db, preId)).draft_id : null }, b.refund > 0.004 ? { refund: +b.refund.toFixed(2) } : {}) };
 }
 const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
 
@@ -803,11 +798,14 @@ export async function handedOrder(env, id, body, by, now, mirror) {
     entry.orderId = o.id;
     const handover = { units: qty, mode: o.mode };
     if (closing) { handover.close = true; handover.total = entry.total; }   /* stated, the site pricing nothing */
-    /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs, and nothing books that as a refund yet (the
-       fold raises one only for a cancelled row): so no tap approves it, and it waits under Approve for him */
+    /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs. Until 06 Oct 2026 nothing booked it, so
+       the close waited under Approve; the fold now raises a customerRefunds row for the difference as its Correction
+       lands (the engine's refundOnOverpay, as a paid cancel's), so the tap files his yes like any close, and the answer
+       and the drafter's flag say what opens */
     const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;
-    const hold = over > 0.004 ? "they have paid " + rm(+o.paid || 0) + ", " + rm(over) + " more than it now comes to, and the book carries no refund for that" : "";
-    return { entry, hold, site: { handover }, shown: { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing } };
+    const shown = { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing };
+    if (over > 0.004) shown.refund = over;
+    return Object.assign({ entry, site: { handover }, shown }, over > 0.004 ? { refund: over } : {});
   }, mirror);
 }
 
@@ -1247,8 +1245,9 @@ export async function cashOrder(env, id, body, by, now, mirror) {
 
 /** POST /orders/<id>/restate {qty, total, delivery}: his decision of 06 Oct 2026, that EVERYTHING ON AN AGREED ORDER IS AMENDABLE,
  *  the size, the goods' price and the delivery charge. One Correction restating the row, for approval, the digest of what he
- *  was shown; the floor holds at the size and the board is never repriced, the row cannot be taken under what is paid or on
- *  its way to it (rowRoom, which the fold's payFault repeats), and one amendment is in flight at a time. */
+ *  was shown; the floor holds at the size and the board is never repriced, the row waits for money on its way to it
+ *  (rowRoom, which the fold's payFault repeats), under what is paid the fold raises the refund (06 Oct 2026), and one
+ *  amendment is in flight at a time. */
 export async function restateOrder(env, id, body, by, now, mirror) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read, the book's and the tap's are one */
   const db = env.SALT_LEDGER;
@@ -1273,7 +1272,8 @@ export async function restateOrder(env, id, body, by, now, mirror) {
     if (o.closed && Math.abs(figs.qty - was.qty) > 0.0004) return { status: 409, error: "the order was closed at what was handed over, so its size stays; amend the price or the delivery" };
     if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
     const owed = +(figs.total + figs.delivery).toFixed(2);
-    if (owed < (+o.paid || 0) - 0.004) return { status: 409, error: "they have paid " + rm(+o.paid || 0) + ", more than that comes to, and the book carries no refund for the difference" };
+    /* 06 Oct 2026: under what they paid is no longer refused; the fold raises a refund for the difference (refundOnOverpay) */
+    const over = +((+o.paid || 0) - owed).toFixed(2);
     if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
     /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
     if (figs.qty !== was.qty || figs.total !== was.total) {
@@ -1281,18 +1281,21 @@ export async function restateOrder(env, id, body, by, now, mirror) {
       if (!fl || !fl.exact) return { status: 409, error: "no floor is known at " + figs.qty + " unit, so no price can be set on it" };
       if (figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
     }
-    /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is not lost by the new figure */
+    /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is measured once it lands:
+       the refund is read off the row as it stands when each entry folds, so the figure waits for that money */
     const r = room ? room(ledgerKeyOf(o), null) : null;
-    if (r) {
+    if (r && r.on > 0.004) {
       const paidRow = +(was.total + was.delivery - r.owes).toFixed(2);
-      if (owed < paidRow + r.on - 0.004) return { status: 409, error: "the row has " + rm(paidRow) + " paid and " + rm(r.on) + " more on its way, so it cannot come to " + rm(owed) };
+      if (owed < paidRow + r.on - 0.004) return { status: 409, error: "the row has " + rm(paidRow) + " paid and " + rm(r.on) + " more on its way, so it cannot come to " + rm(owed) + " until that lands" };
     }
     if ((earlier.results || []).some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
       return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
     if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
     const entry = amendEntry(o, o.code, figs, was, at);
     entry.orderId = o.id;
-    return { entry, queueIt: true, site: { restate: figs }, shown: Object.assign({ was }, figs) };
+    const shown = Object.assign({ was }, figs);
+    if (over > 0.004) shown.refund = over;
+    return Object.assign({ entry, queueIt: true, site: { restate: figs }, shown }, over > 0.004 ? { refund: over } : {});
   }, mirror);
 }
 /** The amendment as a Correction restating the row's size, the goods' price and the delivery charge. */

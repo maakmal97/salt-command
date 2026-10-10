@@ -40317,9 +40317,9 @@ await (async () => {
     const box = card("a1").querySelector('input[data-hand="a1"]');
     const close = card("a1").querySelector('button[data-ord="handover"][data-close="1"]');
     ok(!card("a1").querySelector(".ordpart").hidden && box.value === "4" && close && close.textContent === "Close at 4 unit"
-      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, RM 100 more than that, so a close there waits under Approve: the book carries no refund for it\./.test(card("a1").textContent)
-      && !/would be theirs to refund/.test(card("a1").textContent),
-      "Delivered part steps down in halves and says what a close there would mean, and never promises a refund the book does not carry: " + JSON.stringify({ v: box.value, c: close && close.textContent }));
+      && /Close at 4 unit ends the order there: RM 400 for the goods at the rate they agreed, nothing more owed on the rest\. They have paid RM 500, RM 100 more than that: a refund of RM 100 opens on the book as the close folds, Now until you return it\./.test(card("a1").textContent)
+      && !/waits under Approve/.test(card("a1").textContent),
+      "Delivered part steps down in halves and says what a close there would mean, the refund the fold raises included (06 Oct 2026): " + JSON.stringify({ v: box.value, c: close && close.textContent }));
     close.click();
     await settle();
     ok(JSON.stringify(handed().slice(-1)[0].body) === '{"qty":4,"close":true}' && /Closed at 4 unit\. They see it closed there/.test(card("a1").querySelector('[data-msg="a1"]').textContent),
@@ -40750,11 +40750,11 @@ await (async () => {
   }
 })();
 
-section("S11 fix: a close that leaves more paid than it comes to is never approved on the tap, and waits under Approve");
+section("06 Oct 2026: a close under what they paid is one tap, its yes spent on its row, the answer and the card naming the refund");
 await (async () => {
-  /* Found in review: an order paid RM 300 and closed at 1 unit of 3 had its Correction approved at the tap, with the
-     drafter's own overpaid flags on it, and nothing booked the RM 200 as money owed back (the fold raises a refund only
-     for a cancelled row). Such a close now waits under Approve, and the tap says why. */
+  /* Found in review (S11 fix): an order paid RM 300 and closed at 1 unit of 3 had nothing booking the RM 200 as money owed
+     back, so the close waited under Approve. The fold raises that refund now (refundOnOverpay, test/close-refund.mjs), so
+     the close files his yes like any other, the drafter spends it on the Correction, and the answer says what opens. */
   let DatabaseSync = null;
   try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the close was not driven against the real schema"); return; }
@@ -40804,13 +40804,14 @@ await (async () => {
   const c = await send("/orders/" + o.id + "/handed", { qty: 1, close: true });
   await reconcileOrders(denv); await runDrafter(denv);
   const cl = draftsOf(o.id, "Close");
-  ok(cash.length === 1 && cash[0].status === "approved" && c.status === 200 && c.j.preapproval && c.j.preapproval.held === true
-    && /^It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that$/.test(c.j.preapproval.says)
-    && cl.length === 1 && cl[0].status === "pending" && !db.prepare("SELECT id FROM preapproval WHERE order_id=? AND stage='move'").all(o.id).length,
-    "a close under what they paid is said to wait, carries no yes, and its Correction waits under Approve: "
-    + JSON.stringify({ cash: cash.map((d) => d.status), st: c.status, pre: c.j.preapproval, close: cl.map((d) => [d.status, d.decided_by]) }));
+  const preMove = db.prepare("SELECT status FROM preapproval WHERE order_id=? AND stage='move'").all(o.id);
+  ok(cash.length === 1 && cash[0].status === "approved" && c.status === 200 && c.j.preapproval && !c.j.preapproval.held && c.j.preapproval.refund === 200
+    && /^Booked as it is drafted$/.test(c.j.preapproval.says)
+    && cl.length === 1 && cl[0].status === "approved" && preMove.length === 1 && preMove[0].status === "applied",
+    "a close under what they paid files his yes, says the RM 200 refund, and its Correction is approved as it is drafted: "
+    + JSON.stringify({ cash: cash.map((d) => d.status), st: c.status, pre: c.j.preapproval, close: cl.map((d) => [d.status, d.decided_by]), preMove }));
 
-  /* and the card says it in those words, never "if it is the row you saw" of a row no yes is waiting for */
+  /* and the card says the refund in those words, beside the row he saw */
   const { openMaster: omHd } = await import("../tools/payload.mjs");
   const { w } = await omHd();
   try {
@@ -40827,8 +40828,8 @@ await (async () => {
     D.querySelector('.ordcard[data-id="h1"] button[data-ord="handover"][data-close="1"]').click();
     for (let i = 0; i < 30 && !/Closed/.test((D.querySelector('[data-msg="h1"]') || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
     const said = (D.querySelector('[data-msg="h1"]') || {}).textContent || "";
-    ok(/^Closed at 1 unit\. They see it closed there\. It waits under Approve: they have paid RM 300, RM 200 more than it now comes to, and the book carries no refund for that\. The customer is told/.test(said)
-      && !/row you saw/.test(said), "the card says the close waits, and why: " + said);
+    ok(/^Closed at 1 unit\. They see it closed there\. Booked as it is drafted, if it is the row you saw\. They have paid RM 200 more than it now comes to: a refund for it opens on the book as the row folds, Now until you return it\. The customer is told/.test(said)
+      && !/waits under Approve/.test(said), "the card says the close is booked and names the refund that opens with it: " + said);
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -49757,6 +49758,20 @@ await (async () => {
   ok(r.status === 200 && j.ok && pre.length === 1 && pre[0].stage === "amend" && pre[0].status === "waiting" && /"Amendment"/.test(pre[0].entry || "") && now.total === 95,
     "an amendment of an agreed order's goods price files his yes as stage amend in the migrations' own preapproval table, its entry queued, and the order restated: "
     + JSON.stringify({ status: r.status, err: j.error, pre: pre.map((x) => x.stage + "/" + x.status), total: now.total }));
+  /* 06 Oct 2026: and an amendment UNDER WHAT THEY PAID, on the Desk's road with the mirror seeded, is taken and its answer names the
+     refund the fold will raise (it was refused before, "the book carries no refund"); the order card says it from the same figure */
+  const row2 = { rid: "s71", customer: C, product: "salt", date: "2026-10-05", qty: 1, total: 85, cash: 85 };
+  db.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 1, "h1", JSON.stringify(row2));
+  setState("OPEN", withPending(bk, row2).state.OPEN);
+  const o2 = (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 85, total: 85, week: "" })).order;
+  await O.deskMove(senv, U, o2.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U, o2.id, { mark: { ledgerKey: E.ovKey(row2), ack: "2026-10-05T01:00:00.000Z" } });
+  bko.book.append(null, U, o2.id, { kind: "ledger", at: new Date().toISOString(), paid: 85, moved: 0 }, bko.book.order(U, o2.id));
+  const r2 = await deskW.fetch(new Request("https://salt-command.example/orders/" + o2.id + "/restate", { method: "POST",
+    headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify({ total: 60 }) }), denv, {});
+  const j2 = await r2.json().catch(() => ({}));
+  ok(r2.status === 200 && j2.ok && j2.preapproval && j2.preapproval.refund === 25 && !j2.preapproval.held,
+    "an amendment of a paid order to RM 60 under the RM 85 paid is taken, and the answer names the RM 25 refund the fold raises: " + JSON.stringify({ status: r2.status, err: j2.error, pre: j2.preapproval }));
   /* and the rebuild keeps every yes already filed, every column, and both of 0011's indexes */
   const old = new DatabaseSync(":memory:"), files = readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort();
   const last = files.filter((f) => /preapproval/.test(readFileSync(join(REPO, "migrations", f), "utf8"))).pop();
@@ -51199,6 +51214,11 @@ await (async () => {
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
 await (async () => {
   await (await import("./maker-paid-cancel.mjs")).run({ ok });
+})();
+
+section("06 Oct 2026: a close or an amendment under what they paid opens a refund for the difference, on the fold and the desk");
+await (async () => {
+  await (await import("./close-refund.mjs")).run({ ok });
 })();
 
 section("Counter maker order controls: close, Ready mode, offer again, quick replies");
