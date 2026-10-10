@@ -404,7 +404,7 @@ one `stage_only` dispatch named `publish: <reason>` when the mark is newer than 
 (`publish:dispatched`) and five minutes have passed since it, the dispatch mark written first. A `stage_only` run and
 not a new mode, because it shares the chain's lock (`cloud-commit`, never cancelled), so no older checkout publishes
 over a newer chain, which the Counter would then withhold on the build id. **It is never sent while a Cloud commit run
-waits in the group** (`cloudCommitWaiting`, one read of the workflow's runs): GitHub keeps one pending run and a newer one
+waits in the group** (`cloudCommitWaiting`: the workflow's runs, and the jobs of one in progress, since the lock is job `chain`'s): GitHub keeps one pending run and a newer one
 replaces it, so a pending push run, which deploys, re-seeds and retires, would be lost to a run that does none of those;
 the waiting run reads everything when it starts and publishes, so it covers the mark. GitHub unread, nothing is sent and
 the next minute asks again. A failed dispatch is logged and not retried: the next write or

@@ -38781,11 +38781,14 @@ await (async () => {
   const WANT = "publish:wanted", SENT = "publish:dispatched", DAY = "publish:day";
   const DISP = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/dispatches$/;
   const RUNS = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/runs\?/;
+  const JOBS = /\/repos\/maakmal97\/salt-command\/actions\/runs\/(\d+)\/jobs$/;
   /* one minute of the cron at a given UTC instant; the stand-in reads the SENT mark at the moment the dispatch goes */
   const tick = async (env, iso, how = {}) => {
     const hits = [], logs = [], waits = [], lists = [], realF = globalThis.fetch, realL = console.log;
     globalThis.fetch = async (u, o) => {
       if (RUNS.test(String(u))) { lists.push(String(u)); return how.runsDown ? new Response("{}", { status: 502 }) : Response.json({ workflow_runs: how.runs || [{ id: 9, status: "in_progress" }, { id: 8, status: "completed" }] }); }
+      const jm = JOBS.exec(String(u));
+      if (jm) { lists.push(String(u)); if (how.jobsDown) return new Response("{}", { status: 502 }); return Response.json({ jobs: (how.jobs && how.jobs[jm[1]]) || [{ name: "chain", status: "in_progress" }, { name: "suite (1)", status: "queued" }] }); }
       if (!DISP.test(String(u))) return new Response("{}", { status: 404 });
       hits.push({ sentThen: await env.SALT_QUEUE.get(SENT, "json"), body: JSON.parse(o.body) });
       if (how.throws) throw new Error("github is down");
@@ -38887,10 +38890,18 @@ await (async () => {
     const kv4 = new KV(), env4 = armed(kv4);
     await kv4.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
     const d1 = await tick(env4, plus(1), { runsDown: true }), d2 = await tick(env4, plus(2));
-    ok(w.n === 0 && w.lists === 1 && w.sent && w.sent.covered === 77 && w.said.length === 1 && w2.n === 0
-      && d1.n === 0 && d1.lists === 1 && d1.sent === null && d2.n === 1 && d2.sent && d2.sent.covered === undefined,
-      "a Cloud commit run pending in the group covers the mark and nothing is sent; with GitHub unread nothing is sent or marked, and the next minute sends it: "
-      + JSON.stringify([say(w), say(w2), say(d1), say(d2)]));
+    /* THE LOCK IS THE JOB'S: a run that has started, its chain job waiting on the lock, covers the mark too */
+    const kv6 = new KV(), env6 = armed(kv6);
+    await kv6.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const j1 = await tick(env6, plus(1), { runs: [{ id: 5, status: "in_progress" }, { id: 6, status: "in_progress" }, { id: 4, status: "completed" }],
+      jobs: { 5: [{ name: "chain", status: "completed" }, { name: "suite (1)", status: "in_progress" }], 6: [{ name: "chain", status: "pending" }] } });
+    const kv7 = new KV(); await kv7.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const j2 = await tick(armed(kv7), plus(1), { jobsDown: true });
+    ok(w.n === 0 && w.sent && w.sent.covered === 77 && j2.n === 0 && j2.sent === null && w.said.length === 1 && w2.n === 0
+      && j1.n === 0 && j1.sent && j1.sent.covered === 6
+      && d1.n === 0 && d1.sent === null && d2.n === 1 && d2.sent && d2.sent.covered === undefined,
+      "a Cloud commit run waiting in the group covers the mark and nothing is sent, a started run whose chain job waits on the lock included; a run whose chain is done or running does not; with GitHub unread nothing is sent or marked, and the next minute sends it: "
+      + JSON.stringify([say(w), say(w2), say(j1), say(j2), say(d1), say(d2)]));
   }
 
   /* ---- 6. THE WORKFLOW'S HALF, read as text: the input is declared, named in run-name alone, and the net is four a day ---- */

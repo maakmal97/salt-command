@@ -1766,19 +1766,32 @@ async function wantPublish(env, reason, now = new Date()) {
   try { await env.SALT_QUEUE.put(PUBLISH_WANTED_KEY, JSON.stringify({ at: now.toISOString(), reason })); return true; }
   catch (e) { console.log("publish mark FAILED (" + reason + "): " + String((e && e.message) || e)); return false; }
 }
-/* the id of a Cloud commit run not yet started (queued, or pending on the lock), 0 for none, null when GitHub did not answer */
+/* The id of a Cloud commit run whose job `chain` has not started, 0 for none, null when GitHub did not answer. THE LOCK IS
+   THE JOB'S, not the run's (cloud-commit.yml), so a run waiting on it may read in_progress: a run not yet started counts at
+   once, and a run in progress is asked for its jobs. Scope: the publish roads only; an approval's tap and the ladder dispatch
+   as before. Two holes are accepted: a hand-sent probe_key run waiting counts as cover though it publishes nothing, and a
+   push run that turns pending between this read and the dispatch, seconds, is still replaced; the net publishes either way. */
 const RUN_WAITING = ["queued", "pending", "waiting", "requested"];
 async function cloudCommitWaiting(env) {
+  const said = (why) => { console.log("publish: the runs did not read: " + why); return null; };
   try {
     const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
-    const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/runs?per_page=10", {
-      headers: { ...GH_HEADERS, authorization: "Bearer " + token } });
-    if (!r.ok) { console.log(await ghRefusal(r, "publish: the runs did not read:")); return null; }
+    const get = (path) => fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/" + path, { headers: { ...GH_HEADERS, authorization: "Bearer " + token } });
+    const r = await get("workflows/cloud-commit.yml/runs?per_page=10");
+    if (!r.ok) return said(await ghRefusal(r, "runs"));
     const j = await r.json();
-    if (!j || !Array.isArray(j.workflow_runs)) { console.log("publish: the runs did not read: no workflow_runs"); return null; }
-    const w = j.workflow_runs.find((x) => RUN_WAITING.includes(x && x.status));
-    return w ? (w.id || 1) : 0;
-  } catch (e) { console.log("publish: the runs did not read: " + String((e && e.message) || e)); return null; }
+    if (!j || !Array.isArray(j.workflow_runs)) return said("no workflow_runs");
+    for (const run of j.workflow_runs) {
+      if (!run || run.status === "completed") continue;
+      if (RUN_WAITING.includes(run.status)) return run.id || 1;
+      const jr = await get("runs/" + run.id + "/jobs");
+      if (!jr.ok) return said(await ghRefusal(jr, "jobs of " + run.id));
+      const jj = await jr.json();
+      if (!jj || !Array.isArray(jj.jobs)) return said("no jobs for " + run.id);
+      if (jj.jobs.some((x) => x && x.name === "chain" && RUN_WAITING.includes(x.status))) return run.id || 1;
+    }
+    return 0;
+  } catch (e) { return said(String((e && e.message) || e)); }
 }
 async function publishWanted(env, ctx, now) {
   if (!env.SALT_QUEUE || !dispatchArmed(env)) return {};
