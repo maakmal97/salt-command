@@ -1,6 +1,6 @@
 {
- "v": "v1067",
- "stamped": "10 Oct 2026, 20:33 KL",
+ "v": "v1069",
+ "stamped": "10 Oct 2026, 22:00 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7106,6 +7106,17 @@
      }
     ],
     "paidOn": "2026-10-10"
+   },
+   {
+    "customer": "CI4-OKR",
+    "qty": 2,
+    "total": 120,
+    "cash": 0,
+    "product": "candy",
+    "date": "2026-10-10",
+    "deliveredQty": 0,
+    "note": "<b>NEW SALE ON 10 OCT: 2 UNITS OF CANDY TO CI4-OKR FOR RM120.</b> Order 20261010135846-xz6kkq, acknowledged, to collect, nothing paid and nothing handed over, preapproved by phone. At RM60 a unit it sits at the desk's ask of RM120 for 2 units, clear of the RM84 floor. CI4-OKR has 5 orders, a median rate of RM92.5, a range of RM90 to RM96.67, RM0 outstanding before this and 0 units on credit, against a cap of 2. The row carries RM42 a unit, the drafter's COGS off purchase p031. The drafter flagged no committed candy order to compare with; the figures do not answer that. Open: payment and collection, and no stock is drawn yet.",
+    "rid": "s251"
    }
   ],
   "contacts": [
@@ -7747,9 +7758,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T12:31:00.416Z",
+  "QUEUE_COMMITTED": "2026-10-10T13:59:30.879Z",
   "PRICING": {
-   "takenAt": "2026-10-10T12:33:04.362Z",
+   "takenAt": "2026-10-10T14:00:20.887Z",
    "sizes": [
     0.5,
     1,
@@ -8413,6 +8424,23 @@
       "rare": false
      }
     },
+    "CI4-OKR": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 4,
+      "tenureDays": 81,
+      "sinceLastDays": 8,
+      "perMonth": 1.5,
+      "unitsPerMonth": 3.01,
+      "smallShare": 0.25,
+      "bigShare": 0.25,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CA2-SEN": {
      "salt": {
       "name": "rare and large",
@@ -8443,23 +8471,6 @@
       "frequent": false,
       "small": false,
       "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CI4-OKR": {
-     "salt": {
-      "name": "occasional mid",
-      "orders": 4,
-      "tenureDays": 81,
-      "sinceLastDays": 8,
-      "perMonth": 1.5,
-      "unitsPerMonth": 3.01,
-      "smallShare": 0.25,
-      "bigShare": 0.25,
-      "frequent": false,
-      "small": false,
-      "bigger": false,
       "loyal": false,
       "rare": false
      }
@@ -10037,6 +10048,56 @@
         900
        ]
       ],
+      "CI4-OKR": [
+       [
+        0.5,
+        70
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        190
+       ],
+       [
+        2,
+        240
+       ],
+       [
+        2.5,
+        280
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        570
+       ],
+       [
+        12.5,
+        910
+       ]
+      ],
       "CA2-SEN": [
        [
         0.5,
@@ -10088,56 +10149,6 @@
        ]
       ],
       "CH4-KS": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        190
-       ],
-       [
-        2,
-        240
-       ],
-       [
-        2.5,
-        280
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        570
-       ],
-       [
-        12.5,
-        910
-       ]
-      ],
-      "CI4-OKR": [
        [
         0.5,
         70
@@ -11357,9 +11368,9 @@
       "CA4-DAM": 0.5,
       "CA7-AMP": -0.2147,
       "CC9-OKR": -0.3303,
+      "CI4-OKR": -0.2853,
       "CA2-SEN": -0.1394,
       "CH4-KS": -0.2875,
-      "CI4-OKR": -0.2853,
       "CR4-PJ": -0.0595,
       "CM4-SK": -0.0541,
       "CJ2-KUC": 0,
@@ -11972,6 +11983,28 @@
         450
        ]
       ],
+      "CI4-OKR": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CA2-SEN": [
        [
         10,
@@ -11995,28 +12028,6 @@
        ]
       ],
       "CH4-KS": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CI4-OKR": [
        [
         10,
         130
@@ -13102,6 +13113,28 @@
         1500
        ]
       ],
+      "CI4-OKR": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CA2-SEN": [
        [
         1,
@@ -13125,28 +13158,6 @@
        ]
       ],
       "CH4-KS": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CI4-OKR": [
        [
         1,
         60
@@ -14069,6 +14080,20 @@
         60
        ]
       ],
+      "CI4-OKR": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CA2-SEN": [
        [
         1,
@@ -14084,20 +14109,6 @@
        ]
       ],
       "CH4-KS": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CI4-OKR": [
        [
         1,
         8
@@ -14601,11 +14612,11 @@
      ]
     }
    },
-   "v": "v1067"
+   "v": "v1069"
   },
   "OPEN": {
-   "at": "2026-10-10T12:33:05.132Z",
-   "count": 9,
+   "at": "2026-10-10T14:00:21.702Z",
+   "count": 10,
    "byKey": {
     "CH5-KLC|2026-10-10|130": {
      "d": "2026-10-10",
@@ -14620,6 +14631,21 @@
      "oweUnits": 1,
      "rid": "s249",
      "key": "CH5-KLC|2026-10-10|130"
+    },
+    "CI4-OKR|2026-10-10|120|candy": {
+     "d": "2026-10-10",
+     "p": "CI4-OKR",
+     "dir": "S",
+     "q": 2,
+     "t": 120,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 120,
+     "oweUnits": 2,
+     "pr": "candy",
+     "rid": "s251",
+     "key": "CI4-OKR|2026-10-10|120|candy"
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -14781,10 +14807,10 @@
      "onHand": 13,
      "free": 13,
      "owedOut": 0,
-     "coverDays": 6.7,
-     "rate": 0.85,
+     "coverDays": 6,
+     "rate": 0.98,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 2,
      "short": 0
     },
     "rice": {
@@ -14817,7 +14843,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1067"
+   "v": "v1069"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14825,7 +14851,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1067"
+   "v": "v1069"
   },
   "REWARD": {
    "stated": {
@@ -14837,7 +14863,7 @@
      }
     }
    },
-   "v": "v1067"
+   "v": "v1069"
   }
  }
 }
