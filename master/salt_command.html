@@ -9094,7 +9094,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1062","d":"10 Oct 2026","t":"A COUNT OF ONE DAY SAYS 1 DAY","n":["<b>1 day, never 1 days.</b> The Stock tile printed 1 days at its rate, and about fifty other counts of days across the desk had no singular. One helper, nDays, now prints every count of days on the desk: the singular only for 1, a list such as 2, 6, 1 days apart staying plural.","<b>Copy only.</b> No figure, rule or price moves; the dated records are untouched."]}];
+const evolution=[{"v":"v1063","d":"10 Oct 2026","t":"THE RAIL BADGE COUNTS ARE KEPT AGAINST EVERY INPUT OF ACTIONS()","n":["<b>The rail counts once, not on every render.</b> The Today and Money badges walked every action on each render, about a fifth of a pass over the desk. railCounts keeps the two counts, numbers only, against badgeKey: the text of every input actions() reads, the book, the view, the date and each open offer's lapse, and the identity of the readers it stands on. Any change recomputes at once.","<b>A missed input fails the suite.</b> One check walks every mutable global actions() can reach and refuses one the key omits without a reason; another refuses an in-place write to a constant the key leaves out. Each input, changed in turn, moves the badge to the fresh figure and back. No row, price or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9245,7 +9245,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 16:53 KL';
+const LAST_UPDATED='10 Oct 2026, 17:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
