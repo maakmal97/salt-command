@@ -1,6 +1,6 @@
 {
- "v": "v1070",
- "stamped": "10 Oct 2026, 22:08 KL",
+ "v": "v1071",
+ "stamped": "10 Oct 2026, 22:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -78,7 +78,7 @@
    "candy": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 13
+    "stated": 11
    },
    "rice": {
     "qty": 0,
@@ -7114,8 +7114,8 @@
     "cash": 120,
     "product": "candy",
     "date": "2026-10-10",
-    "deliveredQty": 0,
-    "note": "<b>NEW SALE ON 10 OCT: 2 UNITS OF CANDY TO CI4-OKR FOR RM120.</b> Order 20261010135846-xz6kkq, acknowledged, to collect, nothing paid and nothing handed over, preapproved by phone. At RM60 a unit it sits at the desk's ask of RM120 for 2 units, clear of the RM84 floor. CI4-OKR has 5 orders, a median rate of RM92.5, a range of RM90 to RM96.67, RM0 outstanding before this and 0 units on credit, against a cap of 2. The row carries RM42 a unit, the drafter's COGS off purchase p031. The drafter flagged no committed candy order to compare with; the figures do not answer that. Open: payment and collection, and no stock is drawn yet.",
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON s251, 10 OCT: 2 UNITS OF CANDY COLLECTED BY CI4-OKR.</b> Order 20261010135846-xz6kkq, RM120, preapproved by phone. It sets deliveredQty from 0 to 2, deliveredOn from unset to 10 Oct 2026 and handover from unset to collected. It moves no cash; the 2 units leave the shelf. CI4-OKR has 6 orders, a median rate of RM92.5, a range of RM60 to RM96.67, RM0 outstanding before this and 0 units on credit. The dossier gives no cost for this correction and sets none. The drafter flagged that the row's trail of 2 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag stands as a note, not an error. Open: nothing further is shown. <b>NEW SALE ON 10 OCT: 2 UNITS OF CANDY TO CI4-OKR FOR RM120.</b> Order 20261010135846-xz6kkq, acknowledged, to collect, nothing paid and nothing handed over, preapproved by phone. At RM60 a unit it sits at the desk's ask of RM120 for 2 units, clear of the RM84 floor. CI4-OKR has 5 orders, a median rate of RM92.5, a range of RM90 to RM96.67, RM0 outstanding before this and 0 units on credit, against a cap of 2. The row carries RM42 a unit, the drafter's COGS off purchase p031. The drafter flagged no committed candy order to compare with; the figures do not answer that. Open: payment and collection, and no stock is drawn yet.",
     "rid": "s251",
     "amend": [
      {
@@ -7131,9 +7131,21 @@
       "cash": 120,
       "kg": 0,
       "note": "<b>PAYMENT OF RM120 ON 10 OCT AGAINST ORDER s251, CANDY TO CI4-OKR.</b> Paid on the statements site, order 20261010135846-xz6kkq, by qr via maybank, preapproved by phone. The order is 2 units for RM120, at RM60 a unit. CI4-OKR has 6 orders, a median rate of RM92.5, a range of RM60 to RM96.67, RM120 outstanding before this payment and 0 units on credit, with nothing defaulted. The drafter flagged nothing, and the figures raise nothing against it. The payment moves RM120 and no units, leaving RM0 and 2 units outstanding. The row's own cost is not touched here. Open: collection of the 2 units, which have not yet left the stock."
+     },
+     {
+      "date": "2026-10-10",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON s251, 10 OCT: 2 UNITS OF CANDY COLLECTED BY CI4-OKR.</b> Order 20261010135846-xz6kkq, RM120, preapproved by phone. It sets deliveredQty from 0 to 2, deliveredOn from unset to 10 Oct 2026 and handover from unset to collected. It moves no cash; the 2 units leave the shelf. CI4-OKR has 6 orders, a median rate of RM92.5, a range of RM60 to RM96.67, RM0 outstanding before this and 0 units on credit. The dossier gives no cost for this correction and sets none. The drafter flagged that the row's trail of 2 steps will no longer add up to the figure set directly; the correction is recorded beside them, so the flag stands as a note, not an error. Open: nothing further is shown.",
+      "cost": 84
      }
     ],
-    "paidOn": "2026-10-10"
+    "paidOn": "2026-10-10",
+    "deliveredOn": "2026-10-10",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-10: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-10; handover (unset) to collected",
+    "cost": 84
    }
   ],
   "contacts": [
@@ -7775,9 +7787,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T14:02:02.849Z",
+  "QUEUE_COMMITTED": "2026-10-10T14:55:17.178Z",
   "PRICING": {
-   "takenAt": "2026-10-10T14:08:10.185Z",
+   "takenAt": "2026-10-10T14:55:54.067Z",
    "sizes": [
     0.5,
     1,
@@ -7826,7 +7838,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -12677,9 +12689,9 @@
        "attrib": 1,
        "shrinkRate": 0.022222222222222223,
        "avgDel": {
-        "n": 4,
-        "kg": 31,
-        "mean": 7.75
+        "n": 5,
+        "kg": 33,
+        "mean": 6.6
        }
       },
       "policy": {
@@ -14644,11 +14656,11 @@
      ]
     }
    },
-   "v": "v1070"
+   "v": "v1071"
   },
   "OPEN": {
-   "at": "2026-10-10T14:08:10.792Z",
-   "count": 10,
+   "at": "2026-10-10T14:55:54.815Z",
+   "count": 9,
    "byKey": {
     "CH5-KLC|2026-10-10|130": {
      "d": "2026-10-10",
@@ -14663,21 +14675,6 @@
      "oweUnits": 1,
      "rid": "s249",
      "key": "CH5-KLC|2026-10-10|130"
-    },
-    "CI4-OKR|2026-10-10|120|candy": {
-     "d": "2026-10-10",
-     "p": "CI4-OKR",
-     "dir": "S",
-     "q": 2,
-     "t": 120,
-     "cash": 120,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 2,
-     "pr": "candy",
-     "rid": "s251",
-     "paidOn": "2026-10-10",
-     "key": "CI4-OKR|2026-10-10|120|candy"
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -14836,13 +14833,13 @@
     },
     "candy": {
      "name": "Candy",
-     "onHand": 13,
+     "onHand": 11,
      "free": 11,
-     "owedOut": 2,
+     "owedOut": 0,
      "coverDays": 5,
      "rate": 0.98,
      "owedToYou": 0,
-     "promised": 2,
+     "promised": 0,
      "short": 0
     },
     "rice": {
@@ -14875,7 +14872,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1070"
+   "v": "v1071"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14883,7 +14880,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1070"
+   "v": "v1071"
   },
   "REWARD": {
    "stated": {
@@ -14895,7 +14892,7 @@
      }
     }
    },
-   "v": "v1070"
+   "v": "v1071"
   }
  }
 }
