@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="76ad309e80804f3c";
+var SALT_BUILD_ID="9c84c38854cd3756";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9221,7 +9221,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1061","d":"10 Oct 2026","t":"A CLOSE OR AN AMENDMENT UNDER WHAT THEY PAID OPENS THE REFUND FOR THE DIFFERENCE","n":["<b>The refund opens as the Correction folds.</b> A close at fewer units than they paid for waited under Approve, and an amendment under what was paid was refused, because nothing booked the difference. The engine's refundOnOverpay, beside refundOnCancel, now opens a customerRefunds row for it, from the Desk and from Counter Admin alike: Now on the desk, on their Refunds list at the next publish, closed only by paidOn, as a paid cancel's is.","<b>Once for each sum.</b> It reads what the row already carries, so a further lowering raises only the further difference, a cancellation after a part refund raises the rest, and a re-run raises nothing. A refund the book no longer owes is flagged, never withdrawn. The close is one tap like any other; money still on its way to the row still holds it. Nothing prices anything new."]}];
+const evolution=[{"v":"v1062","d":"10 Oct 2026","t":"A COUNT OF ONE DAY SAYS 1 DAY","n":["<b>1 day, never 1 days.</b> The Stock tile printed 1 days at its rate, and about fifty other counts of days across the desk had no singular. One helper, nDays, now prints every count of days on the desk: the singular only for 1, a list such as 2, 6, 1 days apart staying plural.","<b>Copy only.</b> No figure, rule or price moves; the dated records are untouched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9372,7 +9372,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 16:39 KL';
+const LAST_UPDATED='10 Oct 2026, 16:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
