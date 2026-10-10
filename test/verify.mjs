@@ -7083,8 +7083,10 @@ await (async () => {
       `${label}: and the forecast ends on the same cash (${got.cashEnd} against ${control.cashEnd})`);
 
     /* AND NOTHING ABSURD REACHES THE PAGE. Rendered, across every part, because an age that is
-       merely printed wrong is still wrong on the one screen he reads. */
-    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
+       merely printed wrong is still wrong on the one screen he reads. 10 Oct 2026: each block element ends in a space,
+       because textContent ran one line into the next: a tile reading "11 Oct 2026" over "1 days at" read as "20261 days"
+       (v1056 red), a false age whenever a date sat over a count of one to nine days. */
+    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});[].slice.call(c.querySelectorAll('div,p,li,tr,td,th,dt,dd,h1,h2,h3,h4,h5,h6,br')).forEach(function(b){b.appendChild(document.createTextNode(' '));});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
     ok(!/THREW/.test(text), `${label}: every part renders (${(text.match(/THREW [^ ]+/) || [""])[0]})`);
     ok(!/NaN/.test(text), `${label}: no NaN reaches the page (${(text.match(/.{0,28}NaN.{0,20}/) || [""])[0]})`);
     ok(!/-\d+ ?(d ago|days ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days ago|d out)/) || [""])[0]})`);
