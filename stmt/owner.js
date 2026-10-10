@@ -643,15 +643,23 @@ export const OWNER_JS = `
     return j;
   }
   var makerData=null, makerQuotes={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
-  /* 10 Oct 2026: the next occurrence of each four-hour window, Kuala Lumpur time, its start ahead, as the Desk's ordWinPicks */
-  function makerWinPicks(now){
-    var H=3600000, out=[], ws=[0,4,8,12,16,20], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    function mwDay(x){ return new Date(x+8*H).toISOString().slice(0,10); }
-    function mwPad(n){ return (n<10?'0':'')+n; }
-    ws.forEach(function(w){ var d=mwDay(now), s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s<=now){ s+=24*H; d=mwDay(s); }
-      out.push([d+'T'+mwPad(w),(+d.slice(8))+' '+MON[+d.slice(5,7)-1]+', '+mwPad(w)+':00 to '+mwPad(w+4)+':00',s]); });
-    return out.sort(function(a,b){ return a[2]-b[2]; });
+  /* 10 Oct 2026, version 2: today and the seven days after it, Kuala Lumpur, and a day's six windows whose start is ahead, as the
+     Desk's ordWinDays and ordWinOn */
+  var MW_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function mwPad(n){ return (n<10?'0':'')+n; }
+  function mwDayLabel(d){ return (+d.slice(8))+' '+MW_MON[+d.slice(5,7)-1]; }
+  function makerWinOn(day,now){
+    return [0,4,8,12,16,20].map(function(w){ return [day+'T'+mwPad(w),mwPad(w)+':00 to '+mwPad(w+4)+':00',Date.parse(day+'T00:00:00Z')+(w-8)*3600000]; })
+      .filter(function(x){ return x[2]>now; });
   }
+  function makerWinDays(now){
+    var out=[]; for(var i=0;i<8;i++){ var d=new Date(now+8*3600000+i*86400000).toISOString().slice(0,10); if(makerWinOn(d,now).length) out.push(d); }
+    return out;
+  }
+  /* what needs their yes, the Worker's needsYes: goods above what they placed it at, or a window other than theirs */
+  function makerNeedsYes(order,total,slot){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot); }
+  /* his Accept sent for their yes, open or said yes to: the order waits on them, or on its row */
+  function makerAccHeld(order){ var p=order&&order.price; return !!p&&p.from==='accept'&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
   var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
   function makerSlipClose(){
     makerSlipGeneration++;
@@ -2431,7 +2439,13 @@ export const OWNER_JS = `
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
       if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));
       var againAck=makerAgainAck(order);
-      if(order.status==='placed'){
+      if(order.status==='placed'&&makerAccHeld(order)){
+        var ap=order.price, apf=ap.offer||{};
+        card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They said yes to ':'Sent for their yes: ')+'goods '+rm(apf.total)
+          +(order.mode==='deliver'?', delivery '+rm(apf.delivery||0):'')+(apf.slot&&apf.slotSpan?', between '+String(apf.slotSpan).replace('-',' and ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
+          +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+String(apf.until).slice(0,16).replace('T',' ')+' UTC.')));
+        if(ap.state!=='taken') makerButton(card,'Withdraw the offer',function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
+      }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
         var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
         card.appendChild(form);
@@ -2475,19 +2489,33 @@ export const OWNER_JS = `
           card.appendChild(fieldset);
         }
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
-        var win=makerWin[order.id]||(makerWin[order.id]={value:''});
-        if(deliver&&!order.slot&&!order.wantBy){
+        var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
+        if(deliver&&!order.wantBy){
+          var now=Date.now(), days=makerWinDays(now), theirs=order.slot?String(order.slot).slice(0,10):'';
+          if(days.indexOf(win.day)<0) win.day=days.indexOf(theirs)>=0?theirs:(days[0]||'');
           var wset=el('fieldset','salt-options'), wgrid=el('div','salt-options__grid salt-options__grid--2');
           wset.appendChild(el('legend','salt-options__legend','Delivery time'));
-          [['','As soon as it can']].concat(makerWinPicks(Date.now())).forEach(function(opt){
-            var label=el('label','salt-option'), radio=el('input','salt-option__input'),
-                face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-            radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0];
-            radio.addEventListener('change',function(){ win.value=opt[0]; });
-            face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
-          });
+          var dl=el('label','salt-field'), ds=el('select','salt-field__input');
+          dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday','');
+          days.forEach(function(d){ var op=el('option','',mwDayLabel(d)); op.value=d; op.selected=d===win.day; ds.appendChild(op); });
+          dl.appendChild(ds); wset.appendChild(dl);
+          var own=order.slot&&order.slotSpan?'Theirs, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(theirs):'As soon as it can';
+          function makerWinDraw(){
+            wgrid.textContent='';
+            [['',own]].concat(makerWinOn(win.day,Date.now()).filter(function(x){ return x[0]!==order.slot; })).forEach(function(opt){
+              var label=el('label','salt-option'), radio=el('input','salt-option__input'),
+                  face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+              radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0];
+              /* a window decides whether Accept goes to them for their yes, so a change asks for a fresh preview */
+              radio.addEventListener('change',function(){ win.value=opt[0]; makerPlacedInvalidate(); });
+              face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
+            });
+          }
+          ds.addEventListener('change',function(){ win.day=ds.value; makerWinDraw(); });
+          makerWinDraw();
           wset.appendChild(wgrid);
-          wset.appendChild(el('p','salt-insight','They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.'));
+          wset.appendChild(el('p','salt-insight',order.slot?'Their window stands. Another goes to them for their yes before it is agreed.'
+            :'They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.'));
           card.appendChild(wset);
         }
         function makerPlacedDelivery(){
@@ -2506,16 +2534,20 @@ export const OWNER_JS = `
           var oldNote=card.querySelector('.maker-quote'); if(oldNote) oldNote.remove();
           refs('/all/maker/orders/'+encodeURIComponent(order.id)+'/preview',payload).then(function(result){
             if(turn!==previewTurn||!card.isConnected) return;
-            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash};
+            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash};
             var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
             note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting.'));
             makerPlacedReading(note,result);
+            /* a sheet's lines take its first order's window, as they take its one delivery charge */
+            var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';
+            var yes=makerNeedsYes(order,payload.total,order.mode==='deliver'?wv:'');
             var accept=card.querySelector('[data-accept]'); if(!accept){
-              accept=makerButton(card,'Accept order at '+rm(result.quote)+', delivery '+rm(result.delivery),function(){
+              accept=makerButton(card,(yes?'Send for their yes at ':'Accept order at ')+rm(result.quote)+', delivery '+rm(result.delivery),function(){
                 var q=makerQuotes[order.id]; if(!q||!q.hash) return;
+                /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
+                if(yes){ var ob={total:q.total,delivery:q.delivery,hash:q.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
+                  makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
                 var body={total:q.total,delivery:q.delivery,hash:q.hash};
-                /* a sheet's lines take its first order's window, as they take its one delivery charge */
-                var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';
                 if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
                 makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.');
               },true); accept.setAttribute('data-accept','');

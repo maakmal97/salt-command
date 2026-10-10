@@ -54,6 +54,9 @@ export function makerOrderFault(action, body) {
   const fields = {
     preview: ["delivery", "total"],
     accept: ["delivery", "total", "hash", "slot"],
+    /* version 2: his Accept sent for their yes, and taken back; each under its tap's immutable id */
+    offer: ["delivery", "total", "hash", "slot", "rid"],
+    withdraw: ["rid"],
     handed: ["qty", "close", "rid"],
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
@@ -99,7 +102,8 @@ export function makerOrderFault(action, body) {
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
   if (action === "again" && !["pay", "cash", "move", "cancel", "amend"].includes(body.stage)) return "Choose a stage to offer again.";
-  if (["notfound", "move", "handed", "again", "cash", "received", "restate"].includes(action)
+  if (action === "offer" && body.hash === undefined) return "An offer needs the preview digest.";
+  if (["notfound", "move", "handed", "again", "cash", "received", "restate", "offer", "withdraw"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))
     return "Send the action's immutable request id.";
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))

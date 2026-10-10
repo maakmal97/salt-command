@@ -217,7 +217,7 @@ function internalOperation(path) {
   if (/^\/all\/maker\/drafts$/.test(path)) return { kind: "drafts" };
   const dm = /^\/all\/maker\/drafts\/([^/]+)\/(approve|reject)$/.exec(path);
   if (dm) return { kind: "draft-decision", id: dm[1], decision: dm[2] };
-  const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again)$/.exec(path);
+  const om = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again)$/.exec(path);
   if (om) return { kind: "order-action", id: om[1], action: om[2] };
   const mm = /^\/all\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(move|notfound|restate)$/.exec(path);
   if (mm) return { kind: "order-move", id: mm[1], action: mm[2] };
