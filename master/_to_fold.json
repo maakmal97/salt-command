@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T00:50:07.599Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ5-TM",
+    "qty": 2,
+    "total": 190,
+    "cash": 0,
+    "date": "2026-10-10",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261009164607-zasz2w, acknowledged, to collect, priced at RM 190 on this order, placed at RM 240. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 2 unit of salt to CZ5-TM for RM 190, RM 95/unit. Costed at RM 58/unit from COGS off the latest purchase p036 landed 2026-10-06: RM 1400 quote plus RM 50 freight over 25 unit, so RM 74 on the goods at 38.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-10 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CZ5-TM has paid RM 110/unit on every one of their 3 orders of salt; this one is RM 95."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-10T00:50:07.599Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 2,
+    "total": 190,
+    "status": "Pending",
+    "raw": "SELL CZ5-TM 2 salt RM 190, nothing paid, nothing moved (order 20261009164607-zasz2w)",
+    "orderKey": "CZ5-TM|2026-10-10|190",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "newId": null,
+     "date": "2026-10-10",
+     "qty": 2,
+     "total": 190,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261009164607-zasz2w, acknowledged, to collect, priced at RM 190 on this order, placed at RM 240. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261009164607-zasz2w"
+   },
+   "decidedAt": "2026-10-10T00:50:09.510Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
