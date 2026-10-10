@@ -114,12 +114,19 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    mirror, publishes the statements and deploys the Counter in job `chain`, which holds the lock;
    then job `suite` runs the suite on the sha chain proved, outside the lock. **The statements
    publish runs on every run but the `probe_key` dispatch**: the rule names what is excluded,
-   never a list of triggers. The scheduled run passes `--no-retire`. `tools/update.mjs` is the laptop
+   never a list of triggers. A run that did not deploy passes `--no-retire`. **A publish follows a
+   change, not the clock** (his choice of 10 Oct 2026): a version moves `public/rev.json`, and that push
+   publishes; a desk write outside git (`/expected`) marks KV `publish:wanted`, and the desk's minute
+   cron sends one `stage_only` dispatch for it, five minutes apart at most, as it does once each Kuala
+   Lumpur day between 00:05 and 03:00 MYT; GitHub's schedule, four a day, is the net. A dispatch names
+   its `reason`, the run's name and nothing else. `tools/update.mjs` is the laptop
    half and publishes no statements. **Every desk deploy deploys the Counter.** **Cloudflare
    Workers Builds deploys the tip of master and stops**: it never folds, marks or writes D1 or KV,
    and its failure is SILENT. Its build command is `npm ci && node tools/gate.mjs`, then `npx
    wrangler deploy`. Actions runs only on a push touching `public/rev.json` or the statements
-   paths, so a push touching `src/` or the master alone ships through Workers Builds only. **Read
+   paths. A `src/*.js` or master change moves `rev.json`'s id and the gate refuses it unbuilt, so it
+   carries the rebuilt `public/` and runs Actions too; only a push touching neither (docs, tests,
+   most tools, `public/_headers`, `wrangler.jsonc`) ships through Workers Builds alone. **Read
    its config back through the Cloudflare API**, never the dashboard or the MCP builds tool
    (`docs/DESK.md`). Never point anything on the laptop at `salt_sync.ps1`: a fourth deployer.
 
@@ -171,9 +178,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival, plus the quarter-hour cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
-| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); every two hours at :23 as the last net |
+| Stage approved rows | Actions `cloud-commit.yml`, job `chain` | dispatched by every approval; again by the desk's minute cron 15, 30 and 60 minutes after the newest approval while one waits uncommitted (`redispatchStale`); at 00:23, 06:23, 12:23 and 18:23 MYT as the last net |
 | **Fold, bump, build, push** | `tools/foldcall.mjs` (one Claude call for the notes) over `fold.mjs`, else `tools/foldnotes.mjs`; or any agent per `docs/CLOUD_FOLD.md` | same job; or on demand |
 | Gate, deploy, prove, mark, re-seed D1, publish, Counter | same job | same job; or on push |
+| Publish with nothing to fold | a `stage_only` run of the same job | the desk's minute cron, after a write outside git marks `publish:wanted` (`publishWanted`), and once each Kuala Lumpur day from 00:05 MYT |
 | Suite, on the sha chain proved | job `suite`, outside the lock; a failure is red and written to the phone's refusals while the phone serves that build, never rolled back | once chain has deployed |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 
@@ -490,7 +498,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
   may instead name its introducer and follow them, recomputed every publish as `gboard:<id>`.
-- **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time.
+- **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time. A new input
+  to a sealed document that lives outside git calls `wantPublish` at its write road, or the lists go stale.
 
 ## Files that carry a rule
 
