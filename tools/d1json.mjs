@@ -57,3 +57,27 @@ export function d1Rows(r) {
   const res = d1Result(r);
   return res.error ? res : { rows: res.sets.flatMap((s) => s.results) };
 }
+
+/* ONE LINE ON THE COMMAND LINE (10 Oct 2026). A read goes to wrangler as `--command` through a shell
+   (shell: true; npx is a .cmd on Windows), and a line break in the SQL arrives there as a literal
+   backslash-n: #86 made approved()'s SELECT a multi-line template and D1 answered `unrecognized
+   token: "\"`, so --approved staged nothing. Every --command builds its argument here: whitespace
+   holding a line break becomes one space outside a quoted literal, and a line break inside one is
+   refused, since changing it would change what is asked; such a statement goes by --file. */
+export function oneLine(sql) {
+  let out = "", inStr = false;
+  const s = String(sql);
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "'") { inStr = !inStr; out += c; continue; }
+    if (c === "\n" || c === "\r") {
+      if (inStr) throw new Error("a line break inside a SQL literal cannot pass --command; send it by --file");
+      out = out.replace(/[ \t]+$/, "") + " ";
+      while (i + 1 < s.length && /\s/.test(s[i + 1])) i++;
+      continue;
+    }
+    out += c;
+  }
+  return out.trim();
+}
+export const commandArgs = (sql) => ["--command", JSON.stringify(oneLine(sql))];

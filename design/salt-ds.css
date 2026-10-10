@@ -127,127 +127,13 @@
   --salt-radius-xl: 36px;
   --salt-radius-pill: 100px;
 
-  /* THE TIME OF DAY (05 Oct 2026, his approval of the version 2 design). The six colours and the
-     materials above are ROLES from here on: obsidian is the ground, slate the raised surface, salt the
-     text, mist the captions, brass the accent. A theme below re-points the roles, so every recipe and
-     every consumer that reads a token follows it with no rule of its own. Night is this block, unchanged.
-     Three tokens do not follow a theme: the ink on a filled control (dark on the brass pill in every
-     theme) and the QR's field and ink, which stay light and dark so a code always scans. */
+  /* One theme (his word of 09 Oct 2026): the identity as drawn, obsidian ground and salt text. The four
+     times of day of 05 Oct 2026 are retired. Three tokens name a fixed use: the ink on a filled control
+     (dark on the brass pill) and the QR's field and ink, light and dark so a code always scans. */
   --salt-ink-on-accent: var(--salt-obsidian);
   --salt-qr-field: #f2f4f5;
   --salt-qr-ink: #0b1215;
-  --salt-theme-fade: 1200ms;
   color-scheme: dark;
-}
-
-/* Four themes, six hours each, on the viewer's own clock: Dawn 04:00, Day 10:00, Dusk 16:00, Night
-   22:00. salt-time.js sets data-time on <html> before the first paint and again at each boundary. Every
-   text and ground pair below was computed before it was written: text, captions and the three semantic
-   words at 4.5:1 or more on the ground and on the raised surface, accents and field edges at 3:1, and the
-   ink on both ends of the pill's gradient at 4.5:1. Day is the one light theme, for a phone read outdoors
-   at the market in full sun. */
-:root[data-time="dawn"] {
-  --salt-obsidian: #0f131a;
-  --salt-slate: #171d26;
-  --salt-slate-light: #222a35;
-  --salt-brass: #e4a67c;
-  --salt-copper: #c77a52;
-  --salt-salt: #f4f2f0;
-  --salt-mist: #8d95a1;
-  --salt-mist-light: #b7bcc5;
-  --salt-mist-bright: #c6cad1;
-  --salt-edge-field: #a77c60;
-  --salt-verdigris: #80c3a7;
-  --salt-ember: #f09576;
-  --salt-steel: #a5b8cc;
-  --salt-brass-soft: #f0c9ad;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(228, 166, 124, 0.24);
-  --salt-line-strong: rgba(228, 166, 124, 0.45);
-  --salt-veil: rgba(15, 19, 26, 0.86);
-  --salt-scrim: rgba(15, 19, 26, 0.55);
-  --salt-pane: rgba(23, 29, 38, 0.66);
-  --salt-panel: rgb(34, 28, 29);
-}
-:root[data-time="day"] {
-  --salt-obsidian: #f3efe6;
-  --salt-slate: #fcfaf5;
-  --salt-slate-light: #ebe3d3;
-  --salt-brass: #8a5618;
-  --salt-copper: #b8732f;
-  --salt-salt: #1a1611;
-  --salt-mist: #6f665a;
-  --salt-mist-light: #524a40;
-  --salt-mist-bright: #3d362e;
-  --salt-edge-field: #9a7440;
-  --salt-verdigris: #246e52;
-  --salt-ember: #b23e24;
-  --salt-steel: #45607a;
-  --salt-brass-soft: #7d6233;
-  --salt-alarm: #c4122f;
-  --salt-amber: #8a6400;
-  --salt-product-salt: #6b7b86;
-  --salt-product-oil: #a07a2c;
-  --salt-product-candy: #a8537f;
-  --salt-product-rice: #4c58a6;
-  --salt-product-spare: #6b7330;
-  --salt-glass: rgba(26, 22, 17, 0.03);
-  --salt-glass-faint: rgba(26, 22, 17, 0.02);
-  --salt-line: rgba(138, 86, 24, 0.22);
-  --salt-line-faint: rgba(26, 22, 17, 0.08);
-  --salt-line-strong: rgba(138, 86, 24, 0.45);
-  --salt-glass-hover: rgba(26, 22, 17, 0.05);
-  --salt-highlight: rgba(255, 255, 255, 0.6);
-  --salt-shadow: 0 32px 64px rgba(40, 30, 10, 0.18);
-  --salt-shadow-desk: 0 18px 40px rgba(40, 30, 10, 0.14);
-  --salt-well: rgba(26, 22, 17, 0.06);
-  --salt-well-hover: rgba(26, 22, 17, 0.09);
-  --salt-veil: rgba(243, 239, 230, 0.9);
-  --salt-scrim: rgba(26, 22, 17, 0.35);
-  --salt-pane: rgba(252, 250, 245, 0.82);
-  --salt-panel: rgb(235, 227, 211);
-  --salt-gradient: linear-gradient(135deg, #c5a059, #b8732f);
-  --salt-gradient-title: linear-gradient(135deg, #1a1611 30%, #8a5618 100%);
-  --salt-deskbar-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
-  --salt-deskbar-fill: rgba(243, 239, 230, 0.9);
-  --salt-deskbar-solid: rgb(243, 239, 230);
-  --salt-ink-on-accent: #1a1611;
-  color-scheme: light;
-}
-:root[data-time="dusk"] {
-  --salt-obsidian: #120d0b;
-  --salt-slate: #1c1512;
-  --salt-slate-light: #2a201b;
-  --salt-brass: #dba35f;
-  --salt-copper: #c46a37;
-  --salt-salt: #f6f0e8;
-  --salt-mist: #9a8878;
-  --salt-mist-light: #c3b3a5;
-  --salt-mist-bright: #d0c2b5;
-  --salt-edge-field: #a17a48;
-  --salt-verdigris: #80c2a8;
-  --salt-ember: #ef9372;
-  --salt-steel: #a7b6c7;
-  --salt-brass-soft: #ecd0a6;
-  --salt-alarm: #ff5a72;
-  --salt-line: rgba(219, 163, 95, 0.24);
-  --salt-line-strong: rgba(219, 163, 95, 0.45);
-  --salt-veil: rgba(18, 13, 11, 0.86);
-  --salt-scrim: rgba(18, 13, 11, 0.55);
-  --salt-pane: rgba(28, 21, 18, 0.66);
-  --salt-panel: rgb(42, 28, 18);
-}
-/* The change of theme is a slow cross-fade, set by salt-time.js for the length of the fade only. */
-:root.salt-theming,
-:root.salt-theming * {
-  transition: background-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    border-color var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    fill var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1),
-    stroke var(--salt-theme-fade) cubic-bezier(0.2, 0, 0, 1) !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  :root.salt-theming, :root.salt-theming * { transition: none !important; }
 }
 
 /* ---- Root ---- */
@@ -290,8 +176,6 @@
   pointer-events: none;
   z-index: 0;
 }
-/* Day is flat paper: the aurora's light would read as a stain on it. */
-:root[data-time="day"] .salt-aurora { opacity: 0; }
 .salt-aurora__blob {
   position: absolute;
   border-radius: 50%;
@@ -1248,11 +1132,13 @@ label.salt-field__label {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
-.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; }
+.salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; white-space: normal; overflow-wrap: break-word; }
 .salt-table tbody td { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
 .salt-table tr.tot td { font-weight: 500; background: rgba(197, 160, 89, 0.07); }
 .salt-table tr.tot .salt-table__label { background: linear-gradient(rgba(197, 160, 89, 0.07), rgba(197, 160, 89, 0.07)), var(--salt-panel); }
 .salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
+/* a phone: the gutters close up, as the desk draws them (7px 8px) */
+@media (max-width: 560px) { .salt-table th, .salt-table td { padding: 7px 8px; } }
 
 /* ---- Logo ---- */
 
@@ -1724,9 +1610,11 @@ label.salt-field__label {
   color: var(--salt-mist-bright);
 }
 
-/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there,
+/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the way there (__go),
    and its share of the money as a bar. Severity is one variable, --salt-sev, which the modifiers set
-   and a consumer may bind (the desk sets --sev on the row). Synced to the desk 22 Sep 2026. ---- */
+   and a consumer may bind (the desk sets --salt-sev on the row). Synced to the desk 22 Sep 2026 and
+   again 09 Oct 2026 (the radius, the why's gap, the bar, __go and the narrow layout, which is the
+   desk's own at 860 and 560). ---- */
 
 .salt-action {
   --salt-sev: var(--salt-brass);
@@ -1737,7 +1625,7 @@ label.salt-field__label {
   background: var(--salt-glass);
   border: 1px solid var(--salt-line);
   border-left: 2px solid var(--salt-sev);
-  border-radius: var(--salt-radius-md);
+  border-radius: var(--salt-radius-sm);
   padding: 13px 16px;
   box-shadow: inset 0 1px 0 var(--salt-highlight);
 }
@@ -1756,7 +1644,7 @@ label.salt-field__label {
   padding-top: 3px;
 }
 .salt-action__title { font-family: var(--salt-font-display); font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--salt-salt); }
-.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 4px; }
+.salt-action__why { font-family: var(--salt-font-display); font-size: 0.84375rem; line-height: 1.55; color: var(--salt-mist-bright); margin-top: 5px; }
 .salt-action__why b { color: var(--salt-salt); font-weight: 500; }
 .salt-action__money {
   font-family: var(--salt-font-mono);
@@ -1770,20 +1658,28 @@ label.salt-field__label {
 }
 .salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: var(--salt-text-sm); }
 .salt-action__body { min-width: 0; }
+.salt-action__go { align-self: center; }
 .salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
 .salt-action__bar {
   grid-column: 1 / -1;
-  height: 3px;
+  height: 4px;
   border-radius: 99px;
   background: var(--salt-well);
   overflow: hidden;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 .salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; box-shadow: none; }
-@media (max-width: 720px) {
-  .salt-action { grid-template-columns: minmax(0, 1fr) auto; }
-  .salt-action__kind { grid-column: 1 / -1; padding-top: 0; }
+@media (max-width: 860px) {
+  .salt-action { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .salt-action__kind { grid-column: 1 / 2; padding-top: 0; }
+  .salt-action__money { grid-column: 2 / 3; grid-row: 1; }
+  .salt-action__body { grid-column: 1 / 3; }
+  .salt-action__go { grid-column: 1 / 3; justify-self: start; margin-top: 4px; }
   .salt-action__chips { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .salt-action { gap: 8px 10px; }
+  .salt-action__kind { grid-column: 1 / -1; }
 }
 
 /* ---- Status chip, the added tones ---- */
@@ -1816,12 +1712,13 @@ label.salt-field__label {
 .salt-product--candy { --salt-hue: var(--salt-product-candy); }
 .salt-product--rice { --salt-hue: var(--salt-product-rice); }
 .salt-product--spare { --salt-hue: var(--salt-product-spare); }
-.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
+.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); flex: 0 0 auto; }
 .salt-product__sub { font-family: var(--salt-font-display); font-size: 0.71875rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
 .salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
 
 /* ---- Product tag: the stamp on a row. The dot is an element and not a pseudo, because the desk
-   already draws one; its hue is the modifier's, or the tag's own colour where none is set. ---- */
+   already draws one; its hue is --salt-hue (the modifier's, or set on the tag by a page whose book
+   carries its own accent), and the name takes it too. Synced to the desk's measured stamp: 3px 9px. ---- */
 
 .salt-producttag {
   display: inline-flex;
@@ -1832,11 +1729,11 @@ label.salt-field__label {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--salt-salt);
+  color: var(--salt-hue, var(--salt-salt));
   background: transparent;
   border: 1px solid var(--salt-line-faint);
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   white-space: nowrap;
   vertical-align: middle;
   box-shadow: none;
@@ -1963,8 +1860,8 @@ label.salt-field__label {
 .salt-queue--syncing::before { background: var(--salt-brass); }
 .salt-queue--offline::before { background: var(--salt-ember); }
 
-/* ---- Tier pill: a word with a dot in its colour and a hairline, never a fill, the brightest first
-   because that is the order they earn (synced to the desk 22 Sep 2026) ---- */
+/* ---- Tier pill: a word with a dot in its colour, a hairline and a faint tint of that colour, the brightest first
+   because that is the order they earn (synced to the desk 22 Sep 2026; the tint is the one the desk draws; the desk sets its own face at 10.5px, under the system's floor) ---- */
 
 .salt-tier {
   display: inline-flex;
@@ -1981,12 +1878,13 @@ label.salt-field__label {
   background: transparent;
   line-height: 1.5;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   vertical-align: middle;
 }
 .salt-tier__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
-.salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
-.salt-tier--2 { color: var(--salt-brass-soft); box-shadow: none; }
-.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; box-shadow: none; }
+.salt-tier--1 { color: var(--salt-salt); background: color-mix(in srgb, var(--salt-salt) 10%, transparent); box-shadow: 0 0 10px -2px color-mix(in srgb, var(--salt-salt) 55%, transparent); }
+.salt-tier--2 { color: var(--salt-brass-soft); background: color-mix(in srgb, var(--salt-brass-soft) 9%, transparent); box-shadow: none; }
+.salt-tier--3 { color: var(--salt-brass); background: color-mix(in srgb, var(--salt-brass) 7%, transparent); opacity: 0.85; box-shadow: none; }
 
 /* ---- Plan: a headline with the reasoning behind it, folded ---- */
 

@@ -1,6 +1,14 @@
 import { makerRequestFingerprint } from "./maker-request.js";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
+const canonical = (value) => Array.isArray(value) ? value.map(canonical)
+  : object(value) ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])])) : value;
+const sameJson = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
+const parsed = (value) => {
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value); } catch { return null; }
+};
 const encoded = (value, bytes) => {
   if (typeof value !== "string" || value.length > 524288 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value))
     return false;
@@ -89,4 +97,55 @@ export async function consumeVaultOutbox(db, id, send) {
   await db.prepare("UPDATE vault_outbox SET state='complete',completed_at=?2 WHERE id=?1 AND state='pending'")
     .bind(id, new Date().toISOString()).run();
   return { ok: true, queued: true };
+}
+
+export function verifiedVaultRegistration(draft, receipt, outbox) {
+  if (!draft || draft.collection !== "roster" || !["pending", "approved"].includes(draft.status)
+    || !receipt || receipt.id !== draft.id || receipt.operation !== "add-id"
+    || !Number.isSafeInteger(receipt.revision) || receipt.revision < 1
+    || !/^[0-9a-f]{64}$/.test(receipt.fingerprint || "")
+    || !/^[0-9a-f]{64}$/.test(receipt.request_fingerprint || "")
+    || !outbox || outbox.id !== draft.id || outbox.state !== "complete"
+    || typeof outbox.completed_at !== "string" || !Number.isFinite(Date.parse(outbox.completed_at)))
+    return null;
+  const entry = parsed(draft.entry), queued = parsed(outbox.entry), row = parsed(draft.row);
+  if (!object(entry) || !object(queued) || !object(row) || !sameJson(entry, queued)) return null;
+  const payload = entry.payload;
+  if (!object(payload) || payload.mode !== "addid" || payload.note != null
+    || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(payload.code || "")
+    || !["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(payload.kind)
+    || (payload.parent ?? null) !== (row.parent ?? null)
+    || row.code !== payload.code || row.kind !== payload.kind
+    || (payload.rev ?? null) !== (POSITION_ENGINE.ADDID_APPOINTS[payload.kind] || null))
+    return null;
+  const expected = POSITION_ENGINE.addIdEntry({ at: draft.id, code: payload.code, kind: payload.kind,
+    parent: payload.parent ?? null, rev: payload.rev ?? null, geo: payload.geo ?? null,
+    tiers: payload.tiers ?? null, note: null });
+  if (!sameJson(entry, expected)) return null;
+  return { id: draft.id, code: payload.code, kind: payload.kind, parent: payload.parent ?? null };
+}
+
+export async function readVaultRegistrations(db) {
+  if (!db) throw new Error("The versioned vault registration store is unavailable.");
+  const rows = (await db.prepare(`SELECT d.id,d.status,d.collection,d.entry,d.row,
+      r.id AS receipt_id,r.fingerprint AS receipt_fingerprint,r.request_fingerprint,r.revision AS receipt_revision,
+      r.operation AS receipt_operation,o.id AS outbox_id,o.entry AS outbox_entry,o.state AS outbox_state,
+      o.completed_at AS outbox_completed_at
+    FROM draft d
+    JOIN vault_receipt r ON r.id=d.id
+    LEFT JOIN vault_outbox o ON o.id=d.id
+    WHERE d.collection='roster' AND d.committed_at IS NULL AND d.status IN ('pending','approved')`).all()).results || [];
+  const verified = rows.flatMap((row) => {
+    const registration = verifiedVaultRegistration(row, {
+      id: row.receipt_id, fingerprint: row.receipt_fingerprint, request_fingerprint: row.request_fingerprint,
+      revision: row.receipt_revision, operation: row.receipt_operation
+    }, {
+      id: row.outbox_id, entry: row.outbox_entry, state: row.outbox_state, completed_at: row.outbox_completed_at
+    });
+    return registration ? [{ ...registration, status: row.status }] : [];
+  });
+  const counts = new Map();
+  for (const registration of verified)
+    counts.set(registration.code, (counts.get(registration.code) || 0) + 1);
+  return verified.filter((registration) => counts.get(registration.code) === 1);
 }

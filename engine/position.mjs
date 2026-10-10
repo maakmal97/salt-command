@@ -217,6 +217,14 @@ function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=
     raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
     payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers}};
 }
+/* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. One name-free entry naming a code already on the roster; the
+   drafter makes it a roster row carrying partner:true, which the fold files in `partners` and, if they are no associate yet,
+   appoints them on the R2 stream with their -R account, so every associate property comes with the standing. */
+function partnerEntry({at,code,raw}){
+  return {at,type:'PARTNER',party:code,qty:null,total:null,status:'partner',
+    raw:raw===undefined?'Make '+code+' a partner: pays cost, keeps every associate property':raw,
+    payload:{mode:'partner',code}};
+}
 function renameEntry({at,from,to,geo=null,raw}){
   return {at,type:'RENAME',party:from,qty:null,total:null,status:'rename',
     raw:raw===undefined?'Amend ID: re-key '+from+' to '+to+' wherever the book names it':raw,
@@ -1129,7 +1137,10 @@ function correctionFaults(row,fields,isSale){
     const bareD=Object.assign({},after);delete bareD.defaulted;
     if(isSale){
       if(txEffDeliv(bareD)<=0.009)out.push('a sale nothing has been handed over on cannot default: cancel it instead');
-      else if(!after.unpriced&&txPaid(bareD)>=(+after.total||0)-0.009)out.push('a sale paid in full has nothing to default on');}
+      /* 06 Oct 2026: paid in full is the goods AND the delivery (txOwed), as txStat and txAdvance have read it since v741. On the
+         goods alone a delivered order whose charge was never paid read as paid in full, so the RM it still owed could not be
+         written off: txAdvance said money owed and this line said nothing to default on. */
+      else if(!after.unpriced&&txPaid(bareD)>=txOwed(bareD)-0.009)out.push('a sale paid in full has nothing to default on');}
     else{const rcv=poRecvUnits(bareD);if(rcv>0.009)out.push('a lot that has received '+rcv+' unit cannot be defaulted on');}}
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */
@@ -1193,6 +1204,43 @@ function refundOnCancel(list,row,date){
   if(row.rid)rec.rid=row.rid;
   list.push(rec);
   return rec;
+}
+/* ====== A ROW PAID PAST WHAT IT COMES TO IS THE SAME PAYABLE (06 Oct 2026) =============
+   A close at what was handed over, or an amendment of an agreed order, can take a row under what
+   the customer has paid, and nothing booked the difference: the desk held such a close under
+   Approve and refused such an amendment, "the book carries no refund for that". It carries one
+   now, in the shape above, so the same six readers show it and the money he holds is Now from the
+   day it is raised. IT ASKS THE ROW WHAT IT IS, as refundOnCancel does: what was paid less what
+   the row comes to (nothing, on a cancelled row), less every refund already raised on the rid,
+   open or paid, so a second lowering raises only the further difference, a cancellation after a
+   partial refund raises the rest, and a re-run adds nothing. An unpriced row comes to nothing yet
+   and books none; a row with no rid is refundOnCancel's and the hand's. */
+function refundOnOverpay(list,row,date){
+  if(!list||!row||!row.rid||row.unpriced)return null;
+  const party=row.customer||null;
+  if(!party)return null;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  const had=list.reduce((a,r)=>a+(r&&r.rid===row.rid?(+r.amount||0):0),0);
+  const raw=paid-owed-had;
+  if(!(raw>0.009))return null;
+  const amt=+raw.toFixed(2);
+  const rec={party:party,rid:row.rid,amount:amt,since:date||row.date||null,
+    note:(row.cancelled?'cancelled order ':'order ')+row.rid+' paid RM '+(+paid.toFixed(2))+' against RM '+(+owed.toFixed(2))
+      +' it comes to: RM '+amt+' payable back to the customer.'};
+  list.push(rec);
+  return rec;
+}
+/* A REFUND THE BOOK NO LONGER OWES IS FLAGGED, NEVER WITHDRAWN (owner, 09 Oct 2026). A later correction can take the
+   cash on a row down, or the row up, until what it was paid past is less than the refunds the rid carries. This answers
+   how much of the OPEN ones (no paidOn) that is, 0 when none; the fold and the desk's overlay say it in a note, and he
+   removes the row in ledger/book.json by hand. It writes nothing. */
+function refundStale(list,row){
+  if(!list||!row||!row.rid||row.unpriced)return 0;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  let had=0,open=0;
+  for(const r of list)if(r&&r.rid===row.rid){const a=+r.amount||0;had+=a;if(!r.paidOn)open+=a;}
+  const x=Math.min(open,had-(paid-owed));
+  return x>0.009?+x.toFixed(2):0;
 }
 /* the key an amendment names a row by, shared with the phone and the drafter */
 /* THE ORDER KEY IS WHAT THE CUSTOMER AGREED TO PAY, goods and carriage together, and it stays that
@@ -1280,6 +1328,12 @@ function tripFault(rows){
   return null;
 }
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
+function addIdPlan(code,kind,roster=[],associates=[]){
+  const stream=ADDID_APPOINTS[kind]||null,known=!!code&&roster.indexOf(code)>=0;
+  const resell=appointBucket(kind,code);
+  return {stream,known,elevate:!!stream&&known,already:!!stream&&!!code&&associates.indexOf(code)>=0,
+    resell:resell&&roster.indexOf(resell)<0?resell:null};
+}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
    whose name is known is noted on the row as downstream and credited nothing. The bucket is never a
@@ -1348,6 +1402,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
+  const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
   const safe=(v,key)=>{
     if(v===null||typeof v==='boolean')return true;
     if(typeof v==='number')return Number.isFinite(v);
@@ -1369,8 +1424,14 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
+    ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
+    ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))
+    ||new Date(record.body.at).toISOString()!==record.body.at
+    ||typeof record.body.code!=='string'
+    ||!['reseller','referral'].includes(record.body.kind)))return false;
   if(/\/offset$/.test(record.path)&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==4||Object.keys(record.body).some(k=>!['at','code','rid','date'].includes(k))
     ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))||new Date(record.body.at).toISOString()!==record.body.at
@@ -1417,15 +1478,15 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,addIdPlan:addIdPlan,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
         vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;
