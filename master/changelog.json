@@ -1,5 +1,23 @@
 [
  {
+  "v": "v1050",
+  "d": "10 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CS6-BS; NOTHING MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALT SALE, PENDING.</b> 1 unit to CS6-BS at RM130, nothing paid and nothing handed over, preapproved by phone. The drafter flagged the rate against the party's usual; the desk's own ladder answers it, as RM130 sits between the floor and the ask for 1 unit.",
+   "<b>INVENTORY UNCHANGED.</b> A pending row draws no stock and books no revenue until something moves. The stock stays at 12.14 units, last counted 3 Oct 2026, and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v1049",
+  "d": "10 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CZ5-TM, NO STOCK MOVED",
+  "n": [
+   "<b>FOLDED:</b> one new sale, 2 units of salt to CZ5-TM at RM190, dated 10 Oct 2026, ordered on the statements site and preapproved by phone. Nothing was paid and nothing handed over, so the row is pending. It draws no stock and books no revenue until something moves. The drafter costed it off the latest purchase, p036, and the fold keeps that cost.",
+   "<b>UNUSUAL:</b> the price is RM95 a unit where CZ5-TM has paid RM110 on every earlier order. It sits above the desk's floor and below its ask for 2 units. The order was placed at RM240 and priced at RM190 on this order. <b>INVENTORY:</b> unchanged, as no unit has left."
+  ]
+ },
+ {
   "v": "v1048",
   "d": "09 Oct 2026",
   "t": "FREE REDEMPTION OF 0.86 UNIT SALT FOR CR3-DAM, BOOKED AS COST",

@@ -282,7 +282,7 @@ of the master (a master stating none stops the publish): the last day it can be 
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
 late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
-publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
+publishes, every two hours at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
 breach and its chase on Today count the same way (his answer of 28 Sep 2026): past the term from the handover the chase
 is Now and carries the reminder, inside it This week, and the suite holds the desk's breaches to the parties `payDue`
 seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten days from the order date, for its own
@@ -564,7 +564,7 @@ engine prices: the publish opens the master in jsdom for the desk's PRICING inpu
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
-**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the hourly publish moves:
+**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the scheduled publish moves:
 `priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
 prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
 list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
@@ -1190,7 +1190,7 @@ list and one `kv bulk get`, falling back to a get per link, with a warning, when
 command does not answer as text; and the three lists that feed only the retirement not at all
 under `--no-retire`. Every intended real account is verified by a separate bulk read, falling
 back to individual reads with a warning if the bulk read fails or has an invalid shape. With eight
-links and up to a hundred accounts, the hourly run spawns eleven processes, including the two
+links and up to a hundred accounts, the scheduled run spawns eleven processes, including the two
 test-account reads and the real-account verification.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
