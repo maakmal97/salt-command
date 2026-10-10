@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T03:37:22.986Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 80,
+    "cash": 0,
+    "date": "2026-10-09",
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Fulfilment against CM4-MK's order of 1 unit for RM 80 with RM 10 delivery, RM 90 owed agreed 2026-10-09. RM 90 and 0 unit move on 2026-10-10, against RM 90 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s243",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-10T03:37:22.986Z",
+    "type": "AMEND",
+    "party": "CM4-MK",
+    "qty": 0,
+    "total": 90,
+    "status": "paid",
+    "raw": "Fulfilment on CM4-MK s243: RM 90 cash, recorded 2026-10-10",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "product": "salt",
+     "rid": "s243",
+     "orderKey": "CM4-MK|2026-10-09|90",
+     "date": "2026-10-10",
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 90,
+     "cash": 90,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-10T03:37:39.019Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
