@@ -31,7 +31,7 @@ export const TEST_PASS = "0000-0000-0000-0000";
 export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
 export const TEST_USERS = Object.keys(TESTS);
 export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 5;   /* 5: any amount off the grid, and a price asked, offered, taken, declined and lapsed (05 Oct 2026) */
+export const FIX_VERSION = 6;   /* 6: a delivery's window, partly inside the hours, a spot shared, and his window at Accept (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */
