@@ -534,13 +534,16 @@ export const onStep = (q, g) => {
 export const offerOpen = (o, at) => !!(o && o.price && o.price.state === "offered" && o.price.offer
   && String(at || new Date().toISOString()) <= String(o.price.offer.until));
 /** An ask still waiting on his answer or on theirs: asked, or offered and open. */
-export const askOpen = (o, at) => !!(o && o.price && OPEN_STATES.includes(o.status) && (o.price.state === "asked" || offerOpen(o, at)));
+export const askOpen = (o, at) => !!(o && o.price && o.price.from !== "accept" && OPEN_STATES.includes(o.status) && (o.price.state === "asked" || offerOpen(o, at)));
 /** What the customer reads of a negotiation, his whitelist: {state, total, delivery: null, until}, delivery being set at the
  *  acknowledgement as ever. Never a floor, a cost, a margin, a digest, a drift or anything else of the desk's. */
 export const priceView = (p) => {
   if (!p || typeof p !== "object") return null;
   const v = { state: ["asked", "offered", "taken", "passed", "withdrawn"].includes(p.state) ? p.state : "asked" };
   if (p.offer && ["offered", "taken", "passed"].includes(p.state)) Object.assign(v, { total: p.offer.total, delivery: null, until: p.offer.until });
+  /* version 2: his Accept for their yes, the whole order as he would agree it: goods, delivery and the window with its span */
+  if (p.from === "accept") Object.assign(v, { from: "accept" }, p.offer && ["offered", "taken", "passed"].includes(p.state)
+    ? { delivery: p.offer.delivery, slot: p.offer.slot || null, slotSpan: p.offer.slotSpan || null } : {});
   return v;
 };
 export function checkPlacement(body, open, at, poolOk = false, steps = null, hours = null) {
@@ -742,9 +745,10 @@ export function decideCustomer(order, action, body, mine, at) {
     if (!p || p.state !== "offered" || !p.offer || order.status !== "placed") return Object.assign(refusal("offerNone"), { status: 409 });
     if (action === "take" && String(at) > String(p.offer.until)) return Object.assign(refusal("offerLapsed"), { status: 409 });
     if (action === "take" && (p.offer.product !== order.product || Math.abs(+p.offer.qty - +order.qty) > 0.0004)) return Object.assign(refusal("offerVoid"), { status: 409 });
+    /* version 2: No thanks to his Accept withdraws the order, at no cost: nothing is paid before it is agreed */
     /* 06 Oct 2026: No thanks closes the ask. The order stands at its listed price; past the grid it has none, and is cancelled */
     return { ev: Object.assign({ kind: "price", at, state: action === "take" ? "taken" : "passed", by: "customer", offer: p.offer.id },
-      action === "pass" && !(+order.total > 0) ? { cancel: true } : {}) };
+      action === "pass" && (!(+order.total > 0) || p.from === "accept") ? { cancel: true } : {}) };
   }
   if (action === "method") {
     if (!PAYABLE.includes(order.status)) return Object.assign(refusal("methodEarly"), { status: 409 });
@@ -970,6 +974,7 @@ export function decideDesk(order, body, at) {
      drafted the row at it (never under the floor) and recorded his yes: one live offer an order, a new one replacing the
      old, open OFFER_HOURS. The site keeps the figure and the moment it lapses, bound to the order's product and size, and
      never the digest, which is the desk's. Withdrawn, it is no longer theirs to take. */
+  if (body && body.offer !== undefined && body.offer && body.offer.kind === "accept") return acceptOfferEv(order, body.offer, at);
   if (body && body.offer !== undefined) {
     const f = body.offer;
     if (!order.price || order.status !== "placed") return { error: "no price was asked for on this order, so there is nothing to offer", status: 409 };
@@ -992,7 +997,8 @@ export function decideDesk(order, body, at) {
   /* 05 Oct 2026: an open offer freezes the order for him too: he withdraws it first. And an order whose price was asked for
      is agreed only by an offer they took */
   if ((status === "declined" || status === "cancelled") && offerOpen(order, at)) return { error: "an offer is open on this order: withdraw it first", status: 409 };
-  if (status === "acknowledged" && order.price && ["asked", "offered"].includes(order.price.state)) return { error: "they asked for a price on this order: it is agreed by an offer they take", status: 409 };
+  if (status === "acknowledged" && order.price && order.price.from === "accept" && offerOpen(order, at)) return { error: "an offer is open on this order, waiting on their answer", status: 409 };
+  if (status === "acknowledged" && order.price && order.price.from !== "accept" && ["asked", "offered"].includes(order.price.state)) return { error: "they asked for a price on this order: it is agreed by an offer they take", status: 409 };
   /* Step 1b (his 1.13 and 1.14, 28 Sep 2026): READY AGAIN FOR THE REST. A part handed over tells them "We will notify you
      when the rest of your order is ready", so while units are still owed on an order at ready, Ready is his to tap again,
      and it tells them so; with nothing handed over, or nothing left, it stays a state reached once */
@@ -1021,7 +1027,10 @@ export function decideDesk(order, body, at) {
     /* 10 Oct 2026 (his Q3): the window he chose for a delivery that asked for none, its span cut to the hours by deskMove.
        Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
     if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
-      && ev.delivery !== undefined && (ev.mode || order.mode) === "deliver" && !order.slot && !order.wantBy) { ev.slot = body.slot; ev.slotSpan = body.slotSpan; }
+      && ev.delivery !== undefined && (ev.mode || order.mode) === "deliver"
+      && ((!order.slot && !order.wantBy) || (order.price && order.price.from === "accept" && order.price.state === "taken" && order.price.offer && order.price.offer.slot === body.slot))) {
+      ev.slot = body.slot; ev.slotSpan = body.slotSpan;   /* version 2: or the window of the offer they said yes to */
+    }
   }
   /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
      Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
@@ -1096,6 +1105,9 @@ export function applyEvent(order, ev) {
     order.payments = (order.payments || []).concat([{ at, amount: ev.amount, method: "cod", account: null, by: "desk" }]);
     order.history.push({ at, status: order.status, by: "desk", method: "cod", note: "paid " + ev.amount.toFixed(2) + " in cash" });
     done = settle(order, at);
+  } else if (ev.kind === "offer" && ev.offer.kind === "accept") {   /* version 2: his Accept, for their yes */
+    order.price = { state: "offered", from: "accept", offer: Object.assign({}, ev.offer), offeredAt: at };
+    order.history.push({ at, status: order.status, by: "desk", note: "price confirm" });
   } else if (ev.kind === "offer") {   /* 05 Oct 2026: his offer, replacing any before it */
     order.price = Object.assign({}, order.price || { state: "asked" }, { state: "offered", offer: Object.assign({}, ev.offer), offeredAt: at });
     order.history.push({ at, status: order.status, by: "desk", note: "price offered " + (+ev.offer.total).toFixed(2) });
@@ -1250,7 +1262,7 @@ export function wakes(ev, order, done) {
   }
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o, t: ev.text, m: ev.at };
   /* 05 Oct 2026: his offer, its own kind (news.offer): never the figure, the product or a name */
-  if (ev.kind === "offer") return { k: "offer", o };
+  if (ev.kind === "offer") return { k: ev.offer && ev.offer.kind === "accept" ? "confirm" : "offer", o };
   /* Step 7: his line on the account's thread, its own kind; a tap opens the thread, never an order */
   if (ev.kind === "tsay" && ev.by === "desk") return { k: "message", o: "", t: ev.text, m: ev.at };
   if (ev.kind === "pay" && done) return { k: "complete", o };
@@ -1401,12 +1413,33 @@ async function ackSlot(env, body) {
   const t = slotTake(body.slot, await hoursConfig(env), now), k = t.error ? slotTake(body.slot, null, now) : t;
   return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });
 }
+/* VERSION 2: HIS ACCEPT FOR THEIR YES, on a placed order with no ask of theirs, or one whose offer for their yes is closed; the
+   whole order as he would agree it, bound to its product and size, and its window's span cut to the hours by deskMove */
+function acceptOfferEv(order, f, at) {
+  if (!order || order.status !== "placed") return { error: "only a placed order is agreed", status: 409 };
+  const p = order.price;
+  if (p && (p.from === "accept" ? p.state === "taken" || offerOpen(order, at) : !["passed", "withdrawn"].includes(p.state)))
+    return { error: "an offer or an ask is open on this order", status: 409 };
+  const deliver = order.mode === "deliver";
+  if (typeof f.id !== "string" || !/^[A-Za-z0-9_|:.-]{1,80}$/.test(f.id) || !isNum(f.total) || !(f.total > 0) || f.total > 1000000
+    || !isNum(f.delivery) || f.delivery < 0 || (!deliver && f.delivery !== 0) || typeof f.until !== "string" || !(Date.parse(f.until) > Date.parse(at)))
+    return { error: "an offer for their yes is a figure for the goods, a delivery charge, its own name and when it lapses", status: 400 };
+  if (f.slot != null && (!deliver || typeof f.slot !== "string" || !SLOT_RE.test(f.slot) || typeof f.slotSpan !== "string" || !SPAN_RE.test(f.slotSpan)))
+    return { error: "a window is a day and one of the six four-hour windows, on a delivery", status: 400 };
+  return { ev: { kind: "offer", at, offer: { id: f.id, kind: "accept", total: +f.total.toFixed(2), delivery: +f.delivery.toFixed(2),
+    slot: f.slot || null, slotSpan: f.slot ? f.slotSpan : null, until: new Date(Date.parse(f.until)).toISOString(), product: order.product, qty: order.qty } } };
+}
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
 
 /** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
 export async function deskMove(env, u, id, body) {
   if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
+  if (body && body.offer && body.offer.kind === "accept" && body.offer.slot) {
+    const s = await ackSlot(env, { slot: body.offer.slot });
+    if (!s.slot) return { error: "that window has passed: choose another", status: 400 };
+    body = Object.assign({}, body, { offer: Object.assign({}, body.offer, { slot: s.slot, slotSpan: s.slotSpan }) });
+  }
   if (onBook(env)) {
     const r = await bookMove(env, "desk", { u, id, body });
     if (r.error) return r;
