@@ -17,7 +17,7 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter, readBook, draftRow, tripCheck } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, bookOnce, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
@@ -236,25 +236,28 @@ async function afterApproval(env, ctx, ids) {
    cannot double up whichever gets there first.
    IT DOES NOT WAKE HIM. This is his own tap, exactly as a row he typed is (v759): the desk draws
    the row under Approve while he is looking at it. The drafter still runs, so the row is there. */
-function reconcileOnTap(env, ctx) {
+function reconcileOnTap(env, ctx, mirror) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.STMT_SITE) return;
   ctx.waitUntil((async () => {
     try {
-      const rc = await reconcileOrders(env);
+      /* 06 Oct 2026: the tap's one read of the mirror (bookOnce), the route's when it hands one down, shared by the
+         reconcile, the desk pass and the drafter */
+      mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);
+      const rc = await reconcileOrders(env, undefined, mirror);
       console.log("orders reconcile (on the tap): " + JSON.stringify(rc));
       /* S11: and what the desk queues itself (cash taken at the counter), in the same tail */
-      const dp = await deskPass(env, new Date());
+      const dp = await deskPass(env, new Date(), mirror);
       await afterApproval(env, ctx, dp.approved);
-      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
+      if ((rc.queued || dp.queued) && env.SALT_LEDGER) { const d = await runDrafter(env, { mirror }); console.log("drafter (on the tap): " + JSON.stringify(d)); await afterApproval(env, ctx, d.approved); }
     } catch (e) { console.log("orders reconcile (on the tap) FAILED: " + String((e && e.stack) || e)); }
   })());
 }
 
-function draftOnArrival(env, ctx) {
+function draftOnArrival(env, ctx, mirror) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
   ctx.waitUntil((async () => {
     try {
-      const r = await runDrafter(env);
+      const r = await runDrafter(env, { mirror });
       console.log("drafter (on arrival): " + JSON.stringify(r));
       await afterApproval(env, ctx, r.approved);
       /* v759: AND NO BANNER. This road is a tap on the phone in his hand, and the desk draws the
@@ -307,9 +310,11 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
       || entry.payload.fields && (entry.payload.fields.rebateKg != null || entry.payload.fields.coverUnits != null)
       || entry.payload.more && entry.payload.more.coverUnits != null));
   let book, waiting = [];
+  /* 06 Oct 2026: the request's one read of the mirror (bookOnce), the drafter in its tail reading the same */
+  const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;
   if (reserved) {
     if (!env.SALT_LEDGER) return json({ ok: false, error: "The ledger is required to check pending reward and loan inputs." }, 503);
-    book = await readBook(env.SALT_LEDGER);
+    book = await mirror();
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded. Keep the input and retry." }, 503);
     const drafts = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
     waiting = (drafts.results || []).map((row) => JSON.parse(row.entry));
@@ -350,7 +355,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
       if (!kept.some((item) => item && item.at === entry.id))
         await withdrawInputAdmission(env.SALT_LEDGER, entry.id, "device:" + payload.device);
   }
-  draftOnArrival(env, ctx);
+  draftOnArrival(env, ctx, mirror);
   return json({ ok: true, entries: kept.length, device: payload.device,
     dropped: gone.size, droppedAts: [...gone],
     withdrawn: withdrawn.size, withdrawnAts: [...withdrawn] });
@@ -604,7 +609,9 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       && !(operation === "add-id" && body?.kind === "bucket"))
       return handleVaultInput(env, operation, body);
     if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "the Desk queue and mirror are required" }, 503);
-    const book = await readBook(env.SALT_LEDGER);
+    /* 06 Oct 2026: the request's one read of the mirror (bookOnce); the queue and the drafter below read the same */
+    const mirror = bookOnce(env.SALT_LEDGER);
+    const book = await mirror();
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
     if (!body || typeof body !== "object" || Array.isArray(body)
       || typeof body.at !== "string" || !Number.isFinite(Date.parse(body.at))
@@ -695,13 +702,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try {
         if (Array.isArray(entry) && entry.some((item) => POSITION_ENGINE.inputConsumesResource(item)))
           await queueResourceTrades(env, entry);
-        else await queueSale(env, entry, true);
+        else await queueSale(env, entry, true, mirror);
       }
       catch (error) {
         if (error.status !== 409 && error.status !== 503) throw error;
         return json({ ok: false, error: error.message }, error.status);
       }
-      await runDrafter(env);
+      await runDrafter(env, { mirror });
       const drafts = [];
       for (const item of entries) {
         const draft = await env.SALT_LEDGER.prepare("SELECT status,entry FROM draft WHERE id=?1").bind(item.at).first();
@@ -752,13 +759,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     }
     if (body.addrVault) await env.SALT_QUEUE.put(AKEY, JSON.stringify({ updated: new Date().toISOString(), vault: body.addrVault }));
     let queued;
-    try { queued = await queueSale(env, entry); }
+    try { queued = await queueSale(env, entry, false, mirror); }
     catch (error) {
       if (error.status !== 409 && error.status !== 503) throw error;
       if (admission.newSource) await withdrawInputAdmission(env.SALT_LEDGER, entry.at, "orders");
       return json({ ok: false, error: error.message }, error.status);
     }
-    await runDrafter(env);
+    await runDrafter(env, { mirror });
     const draft = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(entry.at).first();
     const response = { ok: true, queued, draft: entry.at, status: draft ? draft.status : "queued" };
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
@@ -810,14 +817,15 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       } else {
         /* a handover, a close, cash, a Received or a move offered again carries its request id: a retry is answered from the first answer */
         const { rid, ...rest } = body;
+        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;   /* the tap and its tail read the mirror once */
         const tap = () => ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[action](
-          env, id, rest, "Counter Admin"
+          env, id, rest, "Counter Admin", undefined, mirror
         );
         result = !rid ? await tap() : !env.SALT_LEDGER ? { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" }
           : await makerOrderOnce(env.SALT_LEDGER, rid, action, { id, ...rest }, tap);
         if (result.ok && !result.again && result.preapproval && result.preapproval.spent === "applied")
           await afterApproval(env, ctx, [result.preapproval.draft]);
-        if (result.ok && !result.again) reconcileOnTap(env, ctx);
+        if (result.ok && !result.again) reconcileOnTap(env, ctx, mirror);
       }
     } catch (e) { result = { ok: false, status: 500, error: String((e && e.message) || e) }; }
     return json(result, result.ok ? 200 : (result.status || 502));
@@ -1707,7 +1715,9 @@ async function appInstallToken(env) {
   return j.token;
 }
 const dispatchArmed = (env) => !!(env.GH_APP_KEY || env.SALT_GITHUB_TOKEN);
-function stageOnApproval(env, ctx) {
+/* `reason` names the run on GitHub (the workflow's run-name, 10 Oct 2026); the workflow declares it, and GitHub refuses
+   a dispatch carrying an input it does not declare (422), so the workflow lands before this does */
+function stageOnApproval(env, ctx, reason = "approval") {
   if (!ctx || typeof ctx.waitUntil !== "function" || !dispatchArmed(env)) return;
   ctx.waitUntil((async () => {
     try {
@@ -1715,7 +1725,7 @@ function stageOnApproval(env, ctx) {
       const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/dispatches", {
         method: "POST",
         headers: { ...GH_HEADERS, authorization: "Bearer " + token, "content-type": "application/json" },
-        body: JSON.stringify({ ref: "master", inputs: { stage_only: "true" } })
+        body: JSON.stringify({ ref: "master", inputs: { stage_only: "true", reason: String(reason).slice(0, 80) } })
       });
       console.log(r.ok ? "stage dispatch: " + r.status : await ghRefusal(r, "stage dispatch:"));
     } catch (e) {
@@ -1751,7 +1761,7 @@ async function redispatchStale(env, ctx, now) {
   const age = (now.getTime() - Date.parse(r.newest)) / 60000;
   if (!Number.isFinite(age) || age < REDISPATCH_MIN[tries]) return { waiting: r.n, newest: r.newest, tries };
   await env.SALT_QUEUE.put(REDISPATCH_KEY, JSON.stringify({ newest: r.newest, tries: tries + 1, at: now.toISOString() }));
-  stageOnApproval(env, ctx);
+  stageOnApproval(env, ctx, "re-dispatch " + (tries + 1) + " of " + REDISPATCH_MIN.length);
   return { did: true, waiting: r.n, newest: r.newest, tries: tries + 1, last: tries + 1 === REDISPATCH_MIN.length };
 }
 
@@ -1801,6 +1811,84 @@ async function makerRegistrationApprovalFault(env, current) {
     }
   }
   return null;
+}
+
+/* PUBLISH ON CHANGE, NOT ON THE CLOCK (10 Oct 2026, his choice of the same day). Every Cloud commit run but the key probe
+ * publishes the statements (rule 8), and a stage_only run is the one to ask for: it shares the chain's lock, so it never
+ * publishes an older checkout over a newer one. It is never sent while a run waits in the group (cloudCommitWaiting): a
+ * newer pending run replaces the older, and a push run replaced by it would lose its deploy. What a sealed statement or list reads from outside git asks for one here:
+ *   - a write road marks KV `publish:wanted` {at, reason} (wantPublish): today the restock date, /expected;
+ *   - the Kuala Lumpur day asks once between 00:05 and 03:00 MYT, since the drift (days since the last order, the oldest
+ *     overdue), the restock date's lapse and the week line move with the day alone. Outside that window it asks nothing, so a
+ *     missed window waits for the four-a-day net in cloud-commit.yml, 00:23 and 06:23 MYT among them.
+ * The minute cron dispatches one stage_only run when the mark is newer than the last such dispatch and five minutes have
+ * passed since it. The dispatch mark is written first, as the ladder's is: a failed dispatch is logged, not retried, and
+ * the next write or the GitHub net publishes. What git carries needs none of this: a version moves public/rev.json, and
+ * that push publishes. */
+const PUBLISH_WANTED_KEY = "publish:wanted", PUBLISH_SENT_KEY = "publish:dispatched", PUBLISH_DAY_KEY = "publish:day";
+const PUBLISH_GAP_MIN = 5, PUBLISH_DAY_FROM_MIN = 5, PUBLISH_DAY_UNTIL_MIN = 180;
+const KL_MS = 8 * 3600000;
+async function wantPublish(env, reason, now = new Date()) {
+  if (!env.SALT_QUEUE) return false;
+  try { await env.SALT_QUEUE.put(PUBLISH_WANTED_KEY, JSON.stringify({ at: now.toISOString(), reason })); return true; }
+  catch (e) { console.log("publish mark FAILED (" + reason + "): " + String((e && e.message) || e)); return false; }
+}
+/* The id of a Cloud commit run whose job `chain` has not started, 0 for none, null when GitHub did not answer. THE LOCK IS
+   THE JOB'S, not the run's (cloud-commit.yml), so a run waiting on it may read in_progress: a run not yet started counts at
+   once, and a run in progress is asked for its jobs. Scope: the publish roads only; an approval's tap and the ladder dispatch
+   as before. Two holes are accepted: a hand-sent probe_key run waiting counts as cover though it publishes nothing, and a
+   push run that turns pending between this read and the dispatch, seconds, is still replaced; the net publishes either way. */
+const RUN_WAITING = ["queued", "pending", "waiting", "requested"];
+async function cloudCommitWaiting(env) {
+  const said = (why) => { console.log("publish: the runs did not read: " + why); return null; };
+  try {
+    const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
+    const get = (path) => fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/" + path, { headers: { ...GH_HEADERS, authorization: "Bearer " + token } });
+    const r = await get("workflows/cloud-commit.yml/runs?per_page=10");
+    if (!r.ok) return said(await ghRefusal(r, "runs"));
+    const j = await r.json();
+    if (!j || !Array.isArray(j.workflow_runs)) return said("no workflow_runs");
+    for (const run of j.workflow_runs) {
+      if (!run || run.status === "completed") continue;
+      if (RUN_WAITING.includes(run.status)) return run.id || 1;
+      const jr = await get("runs/" + run.id + "/jobs");
+      if (!jr.ok) return said(await ghRefusal(jr, "jobs of " + run.id));
+      const jj = await jr.json();
+      if (!jj || !Array.isArray(jj.jobs)) return said("no jobs for " + run.id);
+      if (jj.jobs.some((x) => x && x.name === "chain" && RUN_WAITING.includes(x.status))) return run.id || 1;
+    }
+    return 0;
+  } catch (e) { return said(String((e && e.message) || e)); }
+}
+async function publishWanted(env, ctx, now) {
+  if (!env.SALT_QUEUE || !dispatchArmed(env)) return {};
+  let want = null, sent = null;
+  try { want = await env.SALT_QUEUE.get(PUBLISH_WANTED_KEY, "json"); } catch (e) { want = null; }
+  try { sent = await env.SALT_QUEUE.get(PUBLISH_SENT_KEY, "json"); } catch (e) { sent = null; }
+  const kl = now.getTime() + KL_MS, day = new Date(kl).toISOString().slice(0, 10), into = (kl % 86400000) / 60000;
+  const dayWhy = "the day " + day;
+  if (into >= PUBLISH_DAY_FROM_MIN && into < PUBLISH_DAY_UNTIL_MIN && !(want && want.reason === dayWhy)) {
+    let last = null;
+    try { last = await env.SALT_QUEUE.get(PUBLISH_DAY_KEY); } catch (e) { last = null; }
+    /* the want first, the day after: a want that did not land is asked again next minute */
+    if (last !== day && await wantPublish(env, dayWhy, now)) {
+      want = { at: now.toISOString(), reason: dayWhy };
+      await env.SALT_QUEUE.put(PUBLISH_DAY_KEY, day);
+    }
+  }
+  const wantAt = want ? Date.parse(want.at) : NaN, sentAt = sent ? Date.parse(sent.at) || 0 : 0;
+  if (!Number.isFinite(wantAt) || wantAt <= sentAt) return {};
+  if (now.getTime() - sentAt < PUBLISH_GAP_MIN * 60000) return { waiting: true, reason: want.reason };
+  /* A RUN ALREADY WAITING PUBLISHES IT (review of 10 Oct 2026). GitHub keeps one pending run in the group and a newer one
+     replaces it: a dispatch here would cancel a pending PUSH run, which deploys, re-seeds and retires, for a stage_only one
+     that does none of those. A run that has not started reads everything when it starts, and every run publishes, so a
+     waiting one covers this mark. Unreadable, nothing is sent or marked, and the next minute asks again. */
+  const waiting = await cloudCommitWaiting(env);
+  if (waiting === null) return { unread: true, reason: want.reason };
+  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify(Object.assign({ at: now.toISOString(), for: want.at, reason: want.reason }, waiting ? { covered: waiting } : {})));
+  if (waiting) return { covered: waiting, reason: want.reason };
+  stageOnApproval(env, ctx, "publish: " + want.reason);
+  return { did: true, reason: want.reason };
 }
 
 async function handleDraftDecide(request, env, ctx, id, decision) {
@@ -1966,6 +2054,9 @@ export default {
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
           return;
         }
+        /* 06 Oct 2026: THE MINUTE'S ONE READ OF THE MIRROR (bookOnce), read on the first step that needs it and never on a
+           quiet minute, shared by the return leg, the reconcile, the desk pass and both drafter passes */
+        const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;
         /* V4a: an order acknowledged before the row key named the product takes the key as it is now, once, before
            anything this minute reads its key */
         try {
@@ -1976,7 +2067,7 @@ export default {
            an order brought level here owes nothing for the reconcile to queue. A cheap read of the book's
            version on a quiet minute; the site is asked only after a fold. */
         try {
-          const ts = await tellSite(env);
+          const ts = await tellSite(env, undefined, mirror);
           if (!ts.ok || ts.told || ts.followed || ts.fixed || ts.refused || ts.waiting || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
         } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
         /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
@@ -1997,14 +2088,14 @@ export default {
            so no two roads can queue the same stage; it drafts what it queued rather than waiting
            for the quarter-hour, because he is looking at Approve. */
         try {
-          const rc = await reconcileOrders(env, read);
+          const rc = await reconcileOrders(env, read, mirror);
           /* waiting is logged too (20 Sep 2026): a stage held for its row was invisible for as long as it waited */
           if (!rc.ok || rc.queued || rc.unmapped || rc.waiting || rc.failed || rc.dropped) console.log("orders reconcile: " + JSON.stringify(rc));
           /* S11: and what the desk queued itself, beside it */
-          const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()));
+          const dp = await deskPass(env, new Date(event.scheduledTime || Date.now()), mirror);
           if (dp.queued || dp.dropped || dp.approved) console.log("orders desk pass: " + JSON.stringify(dp));
           await afterApproval(env, ctx, dp.approved);
-          if (rc.queued || dp.queued) { const d = await runDrafter(env); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
+          if (rc.queued || dp.queued) { const d = await runDrafter(env, { mirror }); console.log("drafter (orders): " + JSON.stringify(d)); await pushIfDrafted(env, d); await afterApproval(env, ctx, d.approved); }
         } catch (e) { console.log("orders reconcile FAILED: " + String((e && e.stack) || e)); }
         /* fold 3.3: an approval still uncommitted is rung again on the ladder; one line a try, none after the last */
         try {
@@ -2012,9 +2103,15 @@ export default {
           if (rd.did) console.log("stage re-dispatch " + rd.tries + " of " + REDISPATCH_MIN.length + " for " + rd.waiting + " approved row(s) up to " + rd.newest
             + (rd.last ? ": the last; the hourly net stands" : ""));
         } catch (e) { console.log("stage re-dispatch FAILED: " + String((e && e.stack) || e)); }
+        /* 10 Oct 2026: a publish asked for since the last one, at most one dispatch every five minutes */
+        try {
+          const pw = await publishWanted(env, ctx, new Date(event.scheduledTime || Date.now()));
+          if (pw.did) console.log("publish dispatch: " + pw.reason);
+          if (pw.covered) console.log("publish covered by waiting run " + pw.covered + ": " + pw.reason);
+        } catch (e) { console.log("publish dispatch FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
-          const r = await runDrafter(env);
+          const r = await runDrafter(env, { mirror });
           console.log("drafter: " + JSON.stringify(r));
           await pushIfDrafted(env, r);
           await afterApproval(env, ctx, r.approved);
@@ -2197,6 +2294,8 @@ export default {
       if (!ids || !ids.length) return json({ ok: false, error: "the live book's products could not be read" }, 503);
       if (typeof b.product !== "string" || !ids.includes(b.product)) return json({ ok: false, error: "that is not one of the book's products" }, 400);
       const r = await expectedRelay(env, "POST", b);
+      /* the date is sealed into every price list at publish, and it lives outside git: ask for one (10 Oct 2026) */
+      if (r.ok) await wantPublish(env, "restock date");
       return json(r, r.ok ? 200 : (r.status || 502));
     }
     /* A5: the hushed Whiteboard tips, one store for the desk and Counter Maker */
@@ -2311,9 +2410,10 @@ export default {
         } else {
           /* S11 11.12: Collected, Cash received and Received record his yes, then the site hears the move and the
              ledger is told in the request's tail, as any move of his is (v762) */
-          r = await ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by);
+          const mirror = env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null;   /* the tap and its tail read the mirror once */
+          r = await ({ handed: handedOrder, cash: cashOrder, restate: restateOrder, received: receivedOrder, again: againOrder })[cm[2]](env, id, b, by, undefined, mirror);
           if (r.ok && r.preapproval && r.preapproval.spent === "applied") await afterApproval(env, ctx, [r.preapproval.draft]);
-          if (r.ok) reconcileOnTap(env, ctx);
+          if (r.ok) reconcileOnTap(env, ctx, mirror);
         }
       } catch (e) { r = { ok: false, status: 500, error: String((e && e.message) || e) }; }
       return json(r, r.ok ? 200 : (r.status || 502));
