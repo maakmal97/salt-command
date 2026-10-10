@@ -1095,9 +1095,11 @@ lines take their thread lines too. On the desk each thread is a card of Waiting 
 their line is the last and not marked No reply needed, else under Chat; read every 2 seconds (`THR_POLL`) only while one is
 open and the desk showing. `public/sw.js` never caches `/threads` (`salt-shell-v7`).
 
-**A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `public/rev.json`'s id does not
-cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:
-`npx wrangler deploy -c wrangler.stmt.jsonc`.
+**A CRON REACHES PRODUCTION ONLY THROUGH A DEPLOY OF THAT CONFIG.** `wrangler.stmt.jsonc` is on
+`cloud-commit.yml`'s push paths (since 03 Sep 2026), so a push to master that touches it runs the job, and its
+`Deploy the statements site` step deploys it. `public/rev.json`'s id does not cover it, so `tools/update.mjs`
+reports the phone current and ships nothing: a laptop change not yet pushed, or a push whose Actions run was
+refused, needs `npx wrangler deploy -c wrangler.stmt.jsonc`.
 
 `wrangler.stmt.jsonc` sets `preview_urls` to `false` (09 Oct 2026, as the desk did on 03 Oct 2026), because a version's own preview address would sit outside the Access application that covers `/all` by hostname. Nothing used one (checked 09 Oct 2026: no reference in the repo or the workflows).
 
@@ -1206,7 +1208,8 @@ Counter's `DESK` service binding and the Desk's `/stmt/rev` route use the existi
 either missing configuration, a failed read, or an invalid id withholds the live document. The Desk
 answers `GET /stmt/rev` before its human Access gate, since a service binding carries no owner JWT:
 that one path alone, keyed and read-only, so `REQUIRE_ACCESS` "1" never withholds every statement. A change
-to `wrangler.stmt.jsonc` needs its manual deploy. Without `STMT_KEY` in the cloud the records go up
+to `wrangler.stmt.jsonc` deploys with the push that carries it (it is on the push paths); only one not yet
+pushed needs the hand deploy. Without `STMT_KEY` in the cloud the records go up
 as issued and "Now" is simply absent; the step warns.
 `node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing. Each wrangler
 call is a process, so it reads as little as it can (fold 5.5, 26 Sep 2026): the guest links in one
@@ -1386,7 +1389,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   any Access gate with a token whose claims are right and whose signature is another key's.
   Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
-  `wrangler.stmt.jsonc` is a config edit plus a hand deploy, and every device signs in again.
+  `wrangler.stmt.jsonc` is a config edit, deployed by the push that carries it, and every device signs in again.
 - **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). Since S9 9.3 it is made AS THE ACCOUNT OPENS, never on a
   draw of the list, so the tap only shares (the plan's must-not-ship rule): each opening, and from 1080px the
   account Needs you opens beside itself on every load, files a live three-day record and pointer that nobody may
