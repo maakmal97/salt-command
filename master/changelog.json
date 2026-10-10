@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1061",
+  "d": "10 Oct 2026",
+  "t": "A CLOSE OR AN AMENDMENT UNDER WHAT THEY PAID OPENS THE REFUND FOR THE DIFFERENCE",
+  "n": [
+   "<b>The refund opens as the Correction folds.</b> A close at fewer units than they paid for waited under Approve, and an amendment under what was paid was refused, because nothing booked the difference. The engine's refundOnOverpay, beside refundOnCancel, now opens a customerRefunds row for it, from the Desk and from Counter Admin alike: Now on the desk, on their Refunds list at the next publish, closed only by paidOn, as a paid cancel's is.",
+   "<b>Once for each sum.</b> It reads what the row already carries, so a further lowering raises only the further difference, a cancellation after a part refund raises the rest, and a re-run raises nothing. A refund the book no longer owes is flagged, never withdrawn. The close is one tap like any other; money still on its way to the row still holds it. Nothing prices anything new."
+  ]
+ },
+ {
   "v": "v1060",
   "d": "10 Oct 2026",
   "t": "AN EXISTING CUSTOMER CAN BE APPOINTED A RESELLER OR A REFERRAL FROM COUNTER ADMIN",
