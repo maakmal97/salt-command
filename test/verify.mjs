@@ -53700,5 +53700,32 @@ await (async () => {
   ok(/date in YYYY-MM-DD/.test(JSON.stringify(chk)), "a correction to an impossible day is refused: " + JSON.stringify(chk).slice(0, 120));
 })();
 
+section("Copy: a count of days says 1 day, never 1 days, through the one helper");
+await (async () => {
+  /* 10 Oct 2026: the Stock tile printed "1 days at 3 units/day", and about fifty printers across the desk wrote
+     `${n} days` with no singular beside a dozen that each spelt their own ternary. nDays is the one road. */
+  const { openMaster: omDays } = await import("../tools/payload.mjs");
+  const { w } = await omDays();
+  try {
+    const nd = (e) => String(w.eval(e));
+    const unit = [["nDays(1)", "1 day"], ["nDays(2)", "2 days"], ["nDays(0)", "0 days"], ["nDays(-1)", "-1 day"],
+      ["nDays('1.0')", "1.0 days"], ["nDays(1,'lead')", "1 lead day"], ["nDays(3,'public holiday')", "3 public holiday days"]]
+      .filter(([e, want]) => nd(e) !== want).map(([e, want]) => e + " gave " + nd(e) + ", not " + want);
+    /* the tile itself, its lot read as the desk reads it and then a day old, a day of cover and a day to dry */
+    const html = nd("(function(){setProd('salt');recompute();var was=currentLot;currentLot=function(L){var s=was(L);"
+      + "if(s){s.empty=false;s.age=1;s.coverLeft=1;s.dryD=1;}return s;};try{return tabSourcing();}finally{currentLot=was;}})()");
+    const said = [", 1 day ago", "; 1 day at today's rate", ">1 day at "].filter((t) => !html.includes(t));
+    /* a list ending in 1 ("2, 6, 1 days apart") is plural and stays */
+    ok(!unit.length && !said.length && !/(?<!, )\b1 days\b/.test(html),
+      "nDays says the singular only for 1, and the Stock tile's lot reads 1 day ago, 1 day at today's rate and 1 day at its rate: "
+      + JSON.stringify({ unit, missing: said, oneDays: (/.{0,40}(?<!, )\b1 days\b.{0,20}/.exec(html) || [""])[0] }));
+  } finally { try { w.close(); } catch (e) { /* jsdom */ } }
+  /* and the class: no printer outside the generated blocks writes a count before "days" by itself */
+  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");   /* the run's master, so a mutation reaches it */
+  const body = src.slice(src.indexOf("/* ==== END GEO ==== */"));
+  const bare = [...body.matchAll(/\$\{(?:[^{}`]|\{\})+?\} (?:(?:public )?holiday |lead |review )?days?\b|[\w.)\]]+ ?\+ ?['"] ?days?\b/g)].map((m) => m[0].slice(-40));
+  ok(!bare.length, "and no other printer in the master writes a count of days by itself: " + (bare.join(" | ") || "none"));
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
