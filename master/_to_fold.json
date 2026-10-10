@@ -1,0 +1,67 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T03:38:26.524Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s248",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "date": "2026-10-10",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 120,
+      "to": 110
+     }
+    ],
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Correction against CS6-BS's order of 1 unit for RM 120 dated 2026-10-10 (s248). Sets total from 120 to 110. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-BS typically pays about RM 100/unit for salt across 21 orders; this one is RM 110, 10% above that."
+   ],
+   "amends": "s248",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-10T03:38:26.524Z",
+    "type": "SELL",
+    "party": "CS6-BS",
+    "qty": 1,
+    "total": 110,
+    "status": "Amendment",
+    "raw": "Amended CS6-BS, order 20261009132912-8kglqg: goods RM 120 to 110",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "rid": null,
+     "orderKey": "CS6-BS|2026-10-10|120",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-10",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "qty": 1,
+      "total": 110,
+      "delivery": 0
+     },
+     "note": "Amended after Accept for order 20261009132912-8kglqg: goods RM 120 to 110."
+    },
+    "orderId": "20261009132912-8kglqg"
+   },
+   "decidedAt": "2026-10-10T03:40:20.914Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
