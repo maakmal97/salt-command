@@ -22,7 +22,7 @@
  *   --local                                    act on the local D1 rather than the remote one
  */
 import { againIfLapsed } from "./cloudflare.mjs";
-import { d1Rows } from "./d1json.mjs";
+import { d1Rows, commandArgs } from "./d1json.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync, readdirSync } from "node:fs";
@@ -73,8 +73,10 @@ export function readRows(r) {
   if (res.error) { fail(res.error); return null; }
   return res.rows;
 }
+/* the read's arguments, through commandArgs: one line, so no shell sees a line break (10 Oct 2026, after #86) */
+export const readArgs = (sql) => ["d1", "execute", DB, WHERE, "--json", ...commandArgs(sql)];
 function query(sql) {
-  return readRows(wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true }));
+  return readRows(wrangler(readArgs(sql), { quiet: true }));
 }
 const q = (v) => v === null || v === undefined ? "NULL" : "'" + String(v).split("'").join("''") + "'";
 const num = (v) => (typeof v === "number" && Number.isFinite(v)) ? String(v) : "NULL";
@@ -349,13 +351,14 @@ function approve() {
 /* ---- approved ------------------------------------------------------------------------ */
 /* What the commit run asks for: approved and not yet folded into the master. Approved and
    committed are different questions, because an approved row stays approved forever. */
-function approved() {
-  const rows = query(`SELECT d.id,d.status,d.collection,d.row,d.reasoning,d.flags,d.amends,d.amend_kind,d.entry,d.decided_at,d.decided_by,
+export const APPROVED_SQL = `SELECT d.id,d.status,d.collection,d.row,d.reasoning,d.flags,d.amends,d.amend_kind,d.entry,d.decided_at,d.decided_by,
       r.id AS receipt_id,r.fingerprint AS receipt_fingerprint,r.request_fingerprint,r.revision AS receipt_revision,
       r.operation AS receipt_operation,o.id AS outbox_id,o.entry AS outbox_entry,o.state AS outbox_state,
       o.completed_at AS outbox_completed_at
     FROM draft d LEFT JOIN vault_receipt r ON r.id=d.id LEFT JOIN vault_outbox o ON o.id=d.id
-    WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY d.drafted_at`);
+    WHERE d.status='approved' AND d.committed_at IS NULL ORDER BY d.drafted_at`;
+function approved() {
+  const rows = query(APPROVED_SQL);
   if (!rows) return;
   console.log(JSON.stringify({ ok: true, count: rows.length, approved: approvedRows(rows) }, null, 1));
 }
