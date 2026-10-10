@@ -1291,6 +1291,12 @@ function tripFault(rows){
   return null;
 }
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
+function addIdPlan(code,kind,roster=[],associates=[]){
+  const stream=ADDID_APPOINTS[kind]||null,known=!!code&&roster.indexOf(code)>=0;
+  const resell=appointBucket(kind,code);
+  return {stream,known,elevate:!!stream&&known,already:!!stream&&!!code&&associates.indexOf(code)>=0,
+    resell:resell&&roster.indexOf(resell)<0?resell:null};
+}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
    whose name is known is noted on the row as downstream and credited nothing. The bucket is never a
@@ -1359,6 +1365,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
+  const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
   const safe=(v,key)=>{
     if(v===null||typeof v==='boolean')return true;
     if(typeof v==='number')return Number.isFinite(v);
@@ -1380,8 +1387,14 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
+    ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
+    ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))
+    ||new Date(record.body.at).toISOString()!==record.body.at
+    ||typeof record.body.code!=='string'
+    ||!['reseller','referral'].includes(record.body.kind)))return false;
   if(/\/offset$/.test(record.path)&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==4||Object.keys(record.body).some(k=>!['at','code','rid','date'].includes(k))
     ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))||new Date(record.body.at).toISOString()!==record.body.at
@@ -1436,7 +1449,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,addIdPlan:addIdPlan,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
         vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

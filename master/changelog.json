@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1060",
+  "d": "10 Oct 2026",
+  "t": "AN EXISTING CUSTOMER CAN BE APPOINTED A RESELLER OR A REFERRAL FROM COUNTER ADMIN",
+  "n": [
+   "<b>Appoint, keeping the code.</b> Counter Admin carries a code-only choice of an existing customer and a role. The appointment goes through Add ID's own appointment and fold, keeps their roster code, names, place and statement username, and opens their -R account. Suppliers, buckets, departed or banned IDs and existing associates are not offered.",
+   "<b>Once only.</b> A retry carries the same immutable request and a claim per customer, so a changed or doubled tap cannot appoint twice, and Add ID still refuses a duplicate. An appointment writes no vault receipt, so the new associate can be picked for an R2 sale once it is folded. No row, price or stock figure moves."
+  ]
+ },
+ {
   "v": "v1059",
   "d": "10 Oct 2026",
   "t": "CORRECTION: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 10 OCT",
