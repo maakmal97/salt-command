@@ -51232,6 +51232,11 @@ await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });
 })();
 
+section("Counter maker placed-order preview: no default delivery approval, native comparison tiles, and a failed or changed preview takes Accept away");
+await (async () => {
+  await (await import("./maker-placed-preview.mjs")).run({ ok });
+})();
+
 section("Counter maker amends an agreed order after Accept: size, goods price and delivery");
 await (async () => {
   await (await import("./maker-amend.mjs")).run({ ok });
@@ -52508,9 +52513,9 @@ await (async () => {
     const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
     preview.click();
     for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    ok(/Cost RM 56/.test(cards[0].textContent) && /Margin RM 44/.test(cards[0].textContent)
+    ok(/on RM 56\.00 cost/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
       && /Review preview flag/.test(cards[0].textContent) && !!doc.querySelector("[data-accept]"),
-      "Accept appears only after the preview cost, margin and flags are shown: "
+      "Accept appears only after the preview's native margin tile and flags are shown: "
         + JSON.stringify({ text: cards[0].textContent, accept: !!doc.querySelector("[data-accept]") }));
     const total = cards[0].querySelector('input[type="number"]');
     total.value = "120"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));

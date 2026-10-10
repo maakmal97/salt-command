@@ -914,6 +914,7 @@ chosen there and every other order drafted and accepted at RM 0 (`ordPvDelivery`
 Accept shut until every row is; the other cards keep Decline. While none has moved, the first card also makes the sheet
 Ready and hands it over whole. The one tap is each order's own move in turn (`ordSheetAct` over `ordAct`), the plan of
 charges fixed before the first move, stopping at the first refusal and saying how many went.
+**The Counter Admin card takes the same charge rule** (`stmt/owner.js`, placed-order preview): RM 0, 10, 15 or Other, none chosen by default, and only a sheet's first order asks, the rest sending 0. The distance-based delivery offer is the Desk's alone: it needs the vault's places, which never reach the Counter.
 The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
