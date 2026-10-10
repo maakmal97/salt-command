@@ -1600,6 +1600,7 @@ await (async () => {
     const o = calls[0].opts, b = JSON.parse(o.body);
     ok(o.method === "POST" && o.headers.authorization === "Bearer ghp-test" && o.headers["user-agent"], "as a POST, with the token as a bearer and a user agent, which GitHub requires");
     ok(b.ref === "master" && b.inputs.stage_only === "true", "on master, stage only: the deploy waits for the fold's push");
+    ok(b.inputs.reason === "approval", "and names its reason, approval, for the run's name (10 Oct 2026): " + JSON.stringify(b.inputs));
     globalThis.fetch = async () => { throw new Error("github is down"); };
     d = await decide(await draftNo(4), "approve", armed);
     ok(d.status === 200 && d.j.draft.status === "approved", "a dispatch fault never fails the approval");
@@ -7082,8 +7083,10 @@ await (async () => {
       `${label}: and the forecast ends on the same cash (${got.cashEnd} against ${control.cashEnd})`);
 
     /* AND NOTHING ABSURD REACHES THE PAGE. Rendered, across every part, because an age that is
-       merely printed wrong is still wrong on the one screen he reads. */
-    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
+       merely printed wrong is still wrong on the one screen he reads. 10 Oct 2026: each block element ends in a space,
+       because textContent ran one line into the next: a tile reading "11 Oct 2026" over "1 days at" read as "20261 days"
+       (v1056 red), a false age whenever a date sat over a count of one to nine days. */
+    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});[].slice.call(c.querySelectorAll('div,p,li,tr,td,th,dt,dd,h1,h2,h3,h4,h5,h6,br')).forEach(function(b){b.appendChild(document.createTextNode(' '));});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
     ok(!/THREW/.test(text), `${label}: every part renders (${(text.match(/THREW [^ ]+/) || [""])[0]})`);
     ok(!/NaN/.test(text), `${label}: no NaN reaches the page (${(text.match(/.{0,28}NaN.{0,20}/) || [""])[0]})`);
     ok(!/-\d+ ?(d ago|days ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days ago|d out)/) || [""])[0]})`);
@@ -11121,6 +11124,9 @@ await (async () => {
   const tag = pin("actions/checkout@v5"), sha = pin("actions/checkout@" + "a".repeat(40) + " # v5"), local = pin("./.github/actions/x");
   ok(tag.status === 1 && /actions\/checkout@v5` is not pinned to a full commit sha/.test(tag.stdout) && sha.status === 0 && local.status === 0,
     "the lint fails an action named by tag, and passes one pinned to a full commit sha and a local action: " + [tag.status, sha.status, local.status].join(" "));
+  /* 10 Oct 2026: a file GitHub cannot load must fail. `run-name: a: b` passed every line check above */
+  { const d = join(dirL, "parse"); mkdirSync(d, { recursive: true }); writeFileSync(join(d, "f.yml"), "run-name: a: b\n" + head); const r = lint(d);
+    ok(r.status === 1 && /f\.yml:1  is not valid YAML/.test(r.stdout), "the lint fails a workflow that does not parse as YAML: " + (r.stdout.split("\n").find((l) => /FAIL/.test(l)) || "passed").trim()); }
   rmSync(dirL, { recursive: true, force: true });
 })();
 
@@ -38976,6 +38982,8 @@ await (async () => {
   ok(walk[15].n === 1 && walk[15].hits[0].body.ref === "master" && walk[15].hits[0].body.inputs.stage_only === "true"
     && JSON.stringify(walk[15].mark) === JSON.stringify({ newest: T0, tries: 1, at: at(15) }) && walk[15].rung.length === 1 && /^stage re-dispatch 1 of 3 /.test(walk[15].rung[0]),
     "at fifteen minutes the stage is dispatched once, stage only, and the mark names the newest approval with one try: " + say(walk[15]));
+  ok(walk[15].hits[0] && walk[15].hits[0].body.inputs.reason === "re-dispatch 1 of 3" && walk[60].hits[0] && walk[60].hits[0].body.inputs.reason === "re-dispatch 3 of 3",
+    "each re-dispatch names its rung as the run's reason (10 Oct 2026): " + JSON.stringify([walk[15].hits[0] && walk[15].hits[0].body.inputs, walk[60].hits[0] && walk[60].hits[0].body.inputs]));
   ok(walk[16].n === 0 && walk[29].n === 0 && walk[29].mark && walk[29].mark.tries === 1,
     "and the minutes after it ring nothing until the next rung: " + JSON.stringify([say(walk[16]), say(walk[29])]));
   ok(walk[30].n === 1 && walk[30].mark && walk[30].mark.tries === 2 && walk[31].n + walk[59].n === 0 && walk[60].n === 1 && walk[60].mark && walk[60].mark.tries === 3
@@ -39014,6 +39022,151 @@ await (async () => {
   const Y = await world([{ id: "D-DAWN-1", status: "approved" }]);
   const y15 = await tick(Y, 15, { cron: "0 1 * * *" });
   ok(y15.n === 0 && y15.mark === null, "the morning cron is the nudge alone and never rings the stage: " + say(y15));
+})();
+
+section("Publish on change (10 Oct 2026): a write outside git and the Kuala Lumpur day ask for a publish, and the minute cron sends one stage_only run, five minutes apart");
+await (async () => {
+  /* HIS CHOICE OF 10 OCT 2026. The statements were kept fresh by the GitHub schedule, which fired 36 of about 216 ticks from
+     01 to 10 Oct. What a sealed list reads from outside git (the restock date, KV `expected`) now marks KV `publish:wanted`,
+     the desk's minute cron asks once a Kuala Lumpur day between 00:05 and 03:00 MYT, and the cron sends one stage_only
+     dispatch, which publishes (rule 8), when the mark is newer than the last such dispatch and five minutes have passed.
+     Driven through fetch() and scheduled() with the suite's KV and a captured fetch; invented ids only. */
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const WANT = "publish:wanted", SENT = "publish:dispatched", DAY = "publish:day";
+  const DISP = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/dispatches$/;
+  const RUNS = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/runs\?/;
+  const JOBS = /\/repos\/maakmal97\/salt-command\/actions\/runs\/(\d+)\/jobs$/;
+  /* one minute of the cron at a given UTC instant; the stand-in reads the SENT mark at the moment the dispatch goes */
+  const tick = async (env, iso, how = {}) => {
+    const hits = [], logs = [], waits = [], lists = [], realF = globalThis.fetch, realL = console.log;
+    globalThis.fetch = async (u, o) => {
+      if (RUNS.test(String(u))) { lists.push(String(u)); return how.runsDown ? new Response("{}", { status: 502 }) : Response.json({ workflow_runs: how.runs || [{ id: 9, status: "in_progress" }, { id: 8, status: "completed" }] }); }
+      const jm = JOBS.exec(String(u));
+      if (jm) { lists.push(String(u)); if (how.jobsDown) return new Response("{}", { status: 502 }); return Response.json({ jobs: (how.jobs && how.jobs[jm[1]]) || [{ name: "chain", status: "in_progress" }, { name: "suite (1)", status: "queued" }] }); }
+      if (!DISP.test(String(u))) return new Response("{}", { status: 404 });
+      hits.push({ sentThen: await env.SALT_QUEUE.get(SENT, "json"), body: JSON.parse(o.body) });
+      if (how.throws) throw new Error("github is down");
+      return new Response(null, { status: 204 });
+    };
+    console.log = (...x) => logs.push(x.join(" "));
+    try {
+      await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => waits.push(p) });
+      for (let n = -1; n !== waits.length;) { n = waits.length; await Promise.allSettled(waits); }
+    } finally { globalThis.fetch = realF; console.log = realL; }
+    return { n: hits.length, hits, lists: lists.length, said: logs.filter((l) => /^publish (dispatch|covered)/.test(l)), want: await env.SALT_QUEUE.get(WANT, "json"), sent: await env.SALT_QUEUE.get(SENT, "json") };
+  };
+  const say = (t) => JSON.stringify({ n: t.n, reasons: t.hits.map((h) => h.body.inputs.reason), said: t.said, want: t.want, sent: t.sent });
+  const armed = (kv) => ({ SALT_QUEUE: kv, SALT_GITHUB_TOKEN: "ghp-test", REQUIRE_ACCESS: "0" });
+
+  /* ---- 1. THE WRITE ROAD: a restock date set through the desk marks a publish; a refused one marks nothing ---- */
+  {
+    const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" }, dkv = new KV();
+    const pxDb = { prepare() { const all = async () => ({ results: [{ key: "PRICING", doc: JSON.stringify({ byProduct: { salt: {}, oil: {} } }) }] });
+      return { bind: () => ({ all, first: async () => null }), all, first: async () => null }; } };
+    const denv = { ...mkEnv(dkv), SALT_LEDGER: pxDb, SALT_WRITE_KEY: "k-pub", STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (u, i) => stmtW.fetch(new Request(u, i), senv) } };
+    const post = (b) => deskW.fetch(new Request("https://salt-command.example/expected", { method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": "k-pub" }, body: JSON.stringify(b) }), denv);
+    const day = new Date(Date.now() + 8 * 36e5 + 3 * 864e5).toISOString().slice(0, 10);
+    const badBook = await post({ product: "zzz", on: day }), pastDay = await post({ product: "salt", on: "2020-01-01" });
+    const before = await dkv.get(WANT, "json");
+    const t0 = Date.now(), okSet = await post({ product: "salt", on: day }), t1 = Date.now();
+    const after = await dkv.get(WANT, "json"), at = after ? Date.parse(after.at) : NaN;
+    ok(badBook.status === 400 && pastDay.status === 400 && before === null && okSet.status === 200
+      && after && after.reason === "restock date" && at >= t0 - 1 && at <= t1 + 1,
+      "a restock date the Counter keeps marks publish:wanted, stamped inside the request; a book the master lacks and a day the Counter refuses mark nothing: "
+      + JSON.stringify({ bad: badBook.status, past: pastDay.status, before, after }));
+  }
+
+  /* ---- 2. THE CRON: one stage_only dispatch for a mark, the dispatch mark written first, then quiet ---- */
+  const T = "2026-10-10T05:00:30.000Z";   /* 13:00 MYT, off the quarter-hour and outside the day's window */
+  const plus = (min) => new Date(Date.parse(T) + min * 60000).toISOString();
+  {
+    const kv = new KV(), env = armed(kv);
+    const quiet = await tick(env, plus(0));
+    await kv.put(WANT, JSON.stringify({ at: plus(1), reason: "restock date" }));
+    const first = await tick(env, plus(2)), again = await tick(env, plus(3)), later = await tick(env, plus(30));
+    ok(quiet.n === 0 && quiet.sent === null && first.n === 1 && first.hits[0].body.ref === "master" && first.hits[0].body.inputs.stage_only === "true"
+      && first.hits[0].body.inputs.reason === "publish: restock date" && first.hits[0].sentThen && first.hits[0].sentThen.at === plus(2)
+      && first.said.length === 1 && again.n === 0 && later.n === 0,
+      "no mark sends nothing; a mark sends one stage_only run named publish: restock date, the dispatch mark already in KV as it goes, and nothing after it until a newer mark: "
+      + JSON.stringify([say(quiet), say(first), say(again), say(later)]));
+  }
+
+  /* ---- 3. FIVE MINUTES APART: a newer mark inside the gap waits for it, then goes once ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    await kv.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const a = await tick(env, plus(1));
+    await kv.put(WANT, JSON.stringify({ at: plus(2), reason: "restock date" }));
+    const b = await tick(env, plus(3)), c = await tick(env, plus(5.9)), d = await tick(env, plus(6)), e = await tick(env, plus(7));
+    ok(a.n === 1 && b.n === 0 && c.n === 0 && d.n === 1 && e.n === 0 && d.sent && d.sent.for === plus(2),
+      "a write two minutes after a dispatch waits out the five-minute gap, goes at five, and only once: " + JSON.stringify([say(a), say(b), say(c), say(d), say(e)]));
+  }
+
+  /* ---- 4. THE KUALA LUMPUR DAY: asked once between 00:05 and 03:00 MYT, not before, not after, not twice ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    const at = (h, m) => new Date(Date.UTC(2026, 9, 10, h, m, 30) - 8 * 36e5).toISOString();   /* 10 Oct 2026 at h:m MYT */
+    const early = await tick(env, at(0, 4)), go = await tick(env, at(0, 5));
+    /* a write inside the window replaces the day's mark; the day must not ask again once that write has gone */
+    await kv.put(WANT, JSON.stringify({ at: at(0, 10), reason: "restock date" }));
+    const write = await tick(env, at(0, 11)), next = await tick(env, at(0, 30)), noon = await tick(env, at(12, 0));
+    const kv2 = new KV(), env2 = armed(kv2);
+    const lateOnly = await tick(env2, at(3, 0)), lastIn = await tick(env2, at(2, 59));
+    /* the want's write fails once: the day is not marked asked, so the next minute asks again */
+    const kv5 = new KV(), put5 = kv5.put.bind(kv5); let refuse = 1;
+    kv5.put = async (k, v, o) => { if (k === WANT && refuse-- > 0) throw new Error("kv down"); return put5(k, v, o); };
+    const lost = await tick(armed(kv5), at(0, 5)), kept = await tick(armed(kv5), at(0, 6));
+    ok(early.n === 0 && early.want === null && go.n === 1 && go.hits[0].body.inputs.reason === "publish: the day 2026-10-10"
+      && write.n === 1 && write.hits[0].body.inputs.reason === "publish: restock date"
+      && next.n === 0 && noon.n === 0 && (await kv.get(DAY)) === "2026-10-10" && lateOnly.n === 0 && lateOnly.want === null && lastIn.n === 1
+      && lost.n === 0 && kept.n === 1 && kept.hits[0].body.inputs.reason === "publish: the day 2026-10-10",
+      "the day asks for one publish from 00:05 MYT, none at 00:04 or from 03:00, and only once a day, a write in between included: "
+      + JSON.stringify([say(early), say(go), say(write), say(next), say(noon), say(lateOnly), say(lastIn)]));
+  }
+
+  /* ---- 5. A FAILED DISPATCH IS LOGGED AND NOT RETRIED, and with no token nothing is marked or sent ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    await kv.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const f = await tick(env, plus(1), { throws: true }), g = await tick(env, plus(10));
+    const kv3 = new KV(); await kv3.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const bare = await tick({ SALT_QUEUE: kv3, REQUIRE_ACCESS: "0" }, plus(1));
+    ok(f.n === 1 && f.sent && f.sent.at === plus(1) && g.n === 0 && bare.n === 0 && bare.sent === null,
+      "a dispatch that throws still counts, so the next minutes send nothing until a newer mark; unarmed, nothing is marked sent: " + JSON.stringify([say(f), say(g), say(bare)]));
+  }
+
+  /* ---- 5b. A RUN ALREADY WAITING IN THE GROUP COVERS THE MARK: nothing is sent, since a dispatch would replace it (a push
+     run's deploy lost); GitHub unread, nothing is sent or marked and the next minute asks again ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    await kv.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const w = await tick(env, plus(1), { runs: [{ id: 7, status: "in_progress" }, { id: 77, status: "pending" }] }), w2 = await tick(env, plus(10));
+    const kv4 = new KV(), env4 = armed(kv4);
+    await kv4.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const d1 = await tick(env4, plus(1), { runsDown: true }), d2 = await tick(env4, plus(2));
+    /* THE LOCK IS THE JOB'S: a run that has started, its chain job waiting on the lock, covers the mark too */
+    const kv6 = new KV(), env6 = armed(kv6);
+    await kv6.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const j1 = await tick(env6, plus(1), { runs: [{ id: 5, status: "in_progress" }, { id: 6, status: "in_progress" }, { id: 4, status: "completed" }],
+      jobs: { 5: [{ name: "chain", status: "completed" }, { name: "suite (1)", status: "in_progress" }], 6: [{ name: "chain", status: "pending" }] } });
+    const kv7 = new KV(); await kv7.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const j2 = await tick(armed(kv7), plus(1), { jobsDown: true });
+    ok(w.n === 0 && w.sent && w.sent.covered === 77 && j2.n === 0 && j2.sent === null && w.said.length === 1 && w2.n === 0
+      && j1.n === 0 && j1.sent && j1.sent.covered === 6
+      && d1.n === 0 && d1.sent === null && d2.n === 1 && d2.sent && d2.sent.covered === undefined,
+      "a Cloud commit run waiting in the group covers the mark and nothing is sent, a started run whose chain job waits on the lock included; a run whose chain is done or running does not; with GitHub unread nothing is sent or marked, and the next minute sends it: "
+      + JSON.stringify([say(w), say(w2), say(j1), say(j2), say(d1), say(d2)]));
+  }
+
+  /* ---- 6. THE WORKFLOW'S HALF, read as text: the input is declared, named in run-name alone, and the net is four a day ---- */
+  {
+    const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
+    const runs = wf.split(/\n/).reduce((a, l) => { if (/^\s+run: \|/.test(l)) a.on = l.search(/\S/); else if (a.on >= 0 && l.trim() && l.search(/\S/) <= a.on) a.on = -1; if (a.on >= 0) a.body.push(l); return a; }, { on: -1, body: [] }).body.join("\n");
+    ok(/\n      reason:\n        description: [^\n]+\n        type: string\n/.test(wf) && /\nrun-name: "\$\{\{ inputs\.reason && /.test(wf)
+      && /\n    - cron: '23 4,10,16,22 \* \* \*'\n/.test(wf) && runs.length > 1000 && !/inputs\.reason/.test(runs)
+      && wf.split(/\n/).filter((l) => !/^\s*#/.test(l) && /inputs\.reason/.test(l)).length === 1,
+      "cloud-commit.yml declares reason as a string, names the run by it, never reads it in a step's shell, and keeps the four-a-day net");
+  }
 })();
 
 section("S1 1.14: Approve asks before rejecting a row a site order made, and the rejection is told to the order");
