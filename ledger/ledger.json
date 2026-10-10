@@ -1,6 +1,6 @@
 {
- "v": "v1051",
- "stamped": "10 Oct 2026, 11:37 KL",
+ "v": "v1052",
+ "stamped": "10 Oct 2026, 11:39 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6852,7 +6852,7 @@
     "qty": 1,
     "total": 80,
     "cost": 58,
-    "cash": 0,
+    "cash": 90,
     "delivery": 10,
     "handover": "delivered",
     "coverUnits": 1.06,
@@ -6861,7 +6861,24 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-10-09",
     "note": "<b>SALT SELL DATED 09 OCT: 1 UNIT FOR RM80 PLUS RM10 DELIVERY, DELIVERED WITH ALL RM90 OUTSTANDING.</b> Booked to CM4-MK, delivered on 09 Oct with RM0 cash in. The rate is RM80 a unit. The floor for 1 unit is RM58 and the ask RM140, so it is above the floor and below the ask. CM4-MK has a median rate of RM103.33 and a range of RM85 to RM113.33, nothing outstanding before, 0 units on credit against a cap of 1. This sale takes him to the cap. The row carries RM58, COGS off the latest purchase, which is the inventory's own rate. The drafter flagged a rate 21.7% below his usual RM102.17; the figures do not answer it, as RM80 is under his whole range. The desk's word is that 1.06 unit of his reward covers RM59.56. Open: RM90.",
-    "rid": "s243"
+    "rid": "s243",
+    "amend": [
+     {
+      "date": "2026-10-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-10",
+      "kind": "Fulfilment",
+      "cash": 90,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s243 DATED 10 OCT: RM90 CASH FROM CM4-MK, ORDER SETTLED IN FULL.</b> The order was 1 unit at RM80 plus RM10 delivery, RM90 owed, delivered on 09 Oct with RM0 cash in. The rate of RM80 a unit sits above the floor of RM58 and under the ask of RM140 for 1 unit. CM4-MK has 13 orders, a median rate of RM101, a range of RM80 to RM113.33, RM90 outstanding before and 1 unit on credit before, with no default. The RM80 rate is the lowest in his range. The drafter flagged that this settles the order in full, and the figures agree: RM90 against RM90 outstanding leaves RM0. No unit moves. Nothing is left outstanding."
+     }
+    ],
+    "paidOn": "2026-10-10"
    },
    {
     "customer": "CJ4-BJ",
@@ -7628,9 +7645,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-10T03:37:04.912Z",
+  "QUEUE_COMMITTED": "2026-10-10T03:37:22.986Z",
   "PRICING": {
-   "takenAt": "2026-10-10T03:37:53.477Z",
+   "takenAt": "2026-10-10T03:39:26.415Z",
    "sizes": [
     0.5,
     1,
@@ -11227,7 +11244,7 @@
       "CJ4-BJ": 0.0801,
       "CE4-CHE": -0.4875,
       "CS6-PER": -0.445,
-      "CM4-MK": 0.0318,
+      "CM4-MK": 0.0292,
       "CN3-WM": 0.5,
       "CR3-DAM": 0.0699,
       "CM4-TO": "partner",
@@ -14482,11 +14499,11 @@
      ]
     }
    },
-   "v": "v1051"
+   "v": "v1052"
   },
   "OPEN": {
-   "at": "2026-10-10T03:37:53.895Z",
-   "count": 11,
+   "at": "2026-10-10T03:39:27.270Z",
+   "count": 10,
    "byKey": {
     "CZ5-TM|2026-10-10|190": {
      "d": "2026-10-10",
@@ -14515,24 +14532,6 @@
      "oweUnits": 1,
      "rid": "s248",
      "key": "CS6-BS|2026-10-10|120"
-    },
-    "CM4-MK|2026-10-09|90": {
-     "d": "2026-10-09",
-     "p": "CM4-MK",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 90,
-     "dv": 10,
-     "rid": "s243",
-     "deliveredOn": "2026-10-09",
-     "handover": "delivered",
-     "key": "CM4-MK|2026-10-09|90",
-     "age": 1,
-     "exp": 67.5
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -14674,7 +14673,7 @@
      "owedOut": 6.5,
      "coverDays": 1.4,
      "rate": 5,
-     "owedToYou": 430,
+     "owedToYou": 340,
      "promised": 9.5,
      "short": 0
     },
@@ -14730,7 +14729,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1051"
+   "v": "v1052"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14738,7 +14737,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1051"
+   "v": "v1052"
   },
   "REWARD": {
    "stated": {
@@ -14750,7 +14749,7 @@
      }
     }
    },
-   "v": "v1051"
+   "v": "v1052"
   }
  }
 }

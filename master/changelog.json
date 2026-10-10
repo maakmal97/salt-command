@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1052",
+  "d": "10 Oct 2026",
+  "t": "ONE FULFILMENT SETTLES CM4-MK'S ORDER IN FULL",
+  "n": [
+   "<b>FOLDED:</b> one fulfilment on s243, dated 10 Oct, for CM4-MK. RM90 cash comes in against RM90 outstanding, so the order is settled in full. No unit moves, as the unit was already delivered on 09 Oct.",
+   "<b>INVENTORY:</b> nothing moved. Stock stays at 12.14 units and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1051",
   "d": "10 Oct 2026",
   "t": "CORRECTION TO S248: TOTAL RM130 TO RM120, NO STOCK MOVED",
