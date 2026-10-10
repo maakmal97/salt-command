@@ -457,6 +457,11 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   reason at Decline or Cancel as the body, both checked by `siteWords` before they leave the desk. The acknowledgement is
   pay-now on an order paid in advance (`prepay`), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
+- **A delivery's window and exact spot** (his decisions of 10 Oct 2026): As soon as it can or one of six four-hour windows,
+  one rule on page and Worker (`stmt/window.js`) over Counter Admin's weekly Hours, its span the part inside; his Accept may
+  answer an as-soon-as delivery with a window and never changes theirs, and reminds them to pay now in words only. The spot is
+  sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
+  opened only on the Desk with the one unlock: the fee's point ahead of `vault-addr`, filed as their place only on his tap.
 - **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark, never a figure or the word stock; yellow or red carry "Expected by DD Mon" from the desk's `expected` date (KV `expected`, set in Enter through `/expected`, never named restock). Ordering is never refused.
 - **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from

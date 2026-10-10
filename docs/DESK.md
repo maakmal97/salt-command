@@ -454,7 +454,8 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
 - **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (`hereNow`, kept nowhere), else `_base`; to the
-  party's exact point in `vault-addr` (a `-R` bucket's associate's when it has none), else its
+  exact spot the customer shared on that order, opened on the device (`ordPinPoint`, 10 Oct 2026, `docs/STATEMENTS.md`),
+  else the party's exact point in `vault-addr` (a `-R` bucket's associate's when it has none), else its
   `PLACED` locality, said as about a kilometre out (`RULES.delivery.localityFallback`, his answer at
   design); `haversineKm` times `roadFactor` at `rmPerKm`, rounded to `roundTo` (`deliveryFeeFor`).
   Only with the vault open on the phone (`feeOpen`), and on the card only once it is on screen

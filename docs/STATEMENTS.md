@@ -703,6 +703,21 @@ dropped on a collection. It is shown on his card and **never rides into the ledg
 note reaches the committed book, and free text a customer typed is the one thing here that could
 carry a street. **Nothing is placed on one tap**: the page reviews the order in words first.
 
+**AND MAY SHARE THE EXACT SPOT, SEALED** (his decisions of 10 Oct 2026): under the area a delivery offers Use my location
+(read once, fresh, `getCurrentPosition` with no cache) or Paste a map link (Google Maps or Waze, read on the phone by
+`pinRead`; a `maps.app.goo.gl` short link is kept as the link). Only while the site serves his slip key, and not on an
+amendment, which keeps the order's spot. The point is held as a name is held (rule 2): the page seals it to the slip key
+with the slip's protocol under its own info, `salt-pin v1`, so a spot never opens as a slip nor a slip as a spot, and the
+area may then be left empty. `takePin` (`stmt/pin.js`) swaps the envelope for its id before the order book is asked, so
+the book's events hold the id alone; `keepPin` files the ciphertext at `pin:<username>:<id>` for 30 days ONLY ONCE THE
+ORDER IS RECORDED AND NAMES IT, and each read by the desk files it for 30 more. A test account's is never filed. The
+customer reads `pinned` and never the id; Counter Admin says Location shared and opens nothing. **Only the desk opens
+one**: the Site orders card, with the vault open, reads it keyed (`GET /pins/<username>/<id>`, relayed from
+`/desk/pins/...`, never cached by `sw.js`), opens it with the slip key the one unlock holds (`ordPinPoint`), measures the
+fee to it ahead of `vault-addr` and `PLACED` (F15), names it and never its figures, and offers File as their place, which
+writes it into the places vault on the device through the vault's own road (`src: "pin"`, the address filed kept); never
+for a friend's order or a `-R` bucket. The lock drops every spot opened (`ORD_PIN`).
+
 **AN ORDER MAY BE WANTED BY A DAY** (29 Sep 2026, the plan's future-dated orders): the sheet asks When you want it, As
 soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` (60) days on in Kuala Lumpur. The Worker's
 `wantByFault` (`stmt/orders.js`) is the check, a real YYYY-MM-DD in range or nothing; `wantBy` rides on the order, in
@@ -710,6 +725,22 @@ soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` 
 dated at the acknowledgement under the same key, its note carrying ", wanted by YYYY-MM-DD" in fixed words
 (`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
 reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
+
+**A DELIVERY ASKS AS SOON AS IT CAN, OR A FOUR-HOUR WINDOW** (his decisions of 10 Oct 2026): a delivery's When is As soon
+as it can or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occurrence within `SLOT_DAYS` (7) whose start
+is ahead (`slotNext`), and never a day. One rule on page and Worker (`stmt/window.js`, its ES5 carried into the page as
+text): a window the Counter's weekly Hours leave none of is not offered, and one they leave part of says "Delivery will be
+between x and y", the part inside (`slotSpan`, manual override included). The hours are Counter Admin's own (`maker:hours`,
+served with `GET /hours` as `config`); none set, every window is whole. The Worker's check at Place is `slotTake`: its end
+ahead, its start at most eight days off, not wholly outside the hours read then; the order carries `slot`
+(`YYYY-MM-DDTHH`) and `slotSpan` (`HH:MM-HH:MM`), a request he manages, never on the row. **His Accept may answer an
+as-soon-as delivery with a window** (Q3), on the desk's card and Counter Admin's, a sheet's lines taking its first order's:
+the desk's `slotOf` refuses one on a collection or on an order with its own window or day, which stand unchanged (Q2), and
+one ended or more than a week off. The yes carries it in what he was shown (`shown.slot`), `ackOnApproval` sends it from
+there, and `deskMove` cuts it to the hours read at that moment (`ackSlot`), his choice standing whole when they leave none
+of it and left off when it has already passed, so an approved row never stalls. **The acknowledgement reminds them to pay
+now, in words only** (Q4): "Please pay now if you can" on credit, "Please make your payment now" in advance, on the banner
+and on the order while anything is owed; every term, the chase and the overdue gate stand.
 
 **ITS FIRST HANDOVER REDATES THE ROW** (Step 2, 30 Sep 2026): on an order with a wanted day, the first handover on a later
 day than the acknowledgement moves the row to the handover's day, so demand and revenue read from when the goods went.
@@ -1326,7 +1357,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   seals new ones. **A feature a customer sees lands with its case**:
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
   offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
-  Step 1b, F10, F15, V4b.2, V5 and F13 (a slip sent, and one no longer kept) have their cases; a feature that lands
+  Step 1b, F10, F15, V4b.2, V5, F13 (a slip sent, and one no longer kept) and the delivery's window and spot (a window
+  asked for, one partly inside the hours, a spot shared, and his window at Accept, 10 Oct 2026) have their cases; a feature that lands
   later is added by the lane that builds it.
 - **The test accounts are wrapped on his page** (fold 2.7): Make the test accounts makes a key for each and wraps it
   under the zeros and under the master at 150,000 rounds (`testKeys` in `stmt/owner.js`, the page's own `wrapUnder`),
