@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T14:55:17.178Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s251",
+    "qty": 2,
+    "total": 120,
+    "cash": 120,
+    "date": "2026-10-10",
+    "product": "candy",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 2
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-10"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CI4-OKR"
+   },
+   "reasoning": "Correction against CI4-OKR's order of 2 unit for RM 120 dated 2026-10-10 (s251). Sets deliveredQty from 0 to 2, deliveredOn from unset to 2026-10-10, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s251",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-10T14:55:17.178Z",
+    "type": "SELL",
+    "party": "CI4-OKR",
+    "qty": 2,
+    "total": 0,
+    "status": "Handover",
+    "raw": "2 unit collected to CI4-OKR, order 20261010135846-xz6kkq, on 2026-10-10",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "rid": null,
+     "orderKey": "CI4-OKR|2026-10-10|120|candy",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-10",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 2,
+      "deliveredOn": "2026-10-10",
+      "handover": "collected"
+     },
+     "note": "2 unit collected for order 20261010135846-xz6kkq."
+    },
+    "orderId": "20261010135846-xz6kkq"
+   },
+   "decidedAt": "2026-10-10T14:55:19.039Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
