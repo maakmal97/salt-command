@@ -185,6 +185,89 @@ What was not done that day: the brand fonts. They followed as v785, above.
   the suite need updating.
 - Land one component group per version, report, and wait for his word on the next.
 
+**The fields group (06 Oct 2026, unbumped, for his word).** The body carries `.salt-fields`, the recipe's scope
+for a page that draws its own forms: every input, select and textarea takes the well, the hairline
+(`--salt-edge-field`), the ink, the brass focus ring, the placeholder at full strength and the option colours from
+`design/salt-ds.css`, and the desk keeps size, face and padding (the recipe says so). Deleted: the material of
+`.qfield`, `.ledbar` and bare `select` in the older layers, section 8 of `design/desk.css`, the `box`/`bx` field
+styles and the inline borders and fills on the editor, the update box, the vault and Add ID boxes, the Journal
+note and the price book's customer select. Visible at Night: the resting edge is brass-toned where it was a
+6% white hairline, the focus ring is the system's 2px outline where it was a 3px glow, the placeholder is not
+dimmed; inline fields under 16px (Add ID, vault, editor, price book) are 16px. Not touched: the date field's
+Today button, `.qask`, labels. The suite section "Fields: the system" proves it.
+
+**The tier pill group (09 Oct 2026, unbumped, for his word).** `tierPill()` carries the system's `.salt-tier`
+recipe (`salt-tier salt-tier--1` to `--3`, the dot `salt-tier__dot`) beside the desk's `tierpill`, which keeps only the margin
+beside the name. Deleted: the v245 pill, its three tier rules and the `tierglow` keyframes in the older layer, the desk's
+four restatements in `design/desk.css` and the pill's entry in the mono list. The recipe was changed to the desk, not the desk to the
+recipe: the three tints the desk drew (10, 9 and 7% of the tier's colour, which the old section-10 `background:transparent`
+never beat, as `.tierpill.t1` outranks it), tabular figures, and the glow as a token mix. Measured: 34 of 34 shots the same;
+the first run differed on Concentration's customer column until the tint was in the recipe. Left on the layer: `.tierpill{font-size:10.5px}`,
+because the system's floor is its 11px `--salt-text-xs` (the suite reads it) and the desk's measured face is half a pixel under;
+moving to 11px would widen every pill by about 4px and is his call. The suite section "Tier pill" proves it.
+
+**The product bands and tags group (09 Oct 2026, unbumped, for his word).** The heading that says which book a block
+draws is the system's `.salt-product` (`__dot`, `__sub`, `__rule`) and the stamp on a row its `.salt-producttag`
+(`__dot`), beside `prodhd` and `prodtag`, which the suite and the parts still query. The book's accent reaches both as
+`--salt-hue` on the element, never a colour written in the desk. Deleted: the band's and the stamp's older-layer rules
+(the 800-weight embossed stamp, its inset highlights, the `pd` and `gl` dots), their entries in the face lists and
+`design/desk.css`'s two override blocks. The recipe was synced to the desk, not the desk to it: no glow on the band's
+dot, 3px 9px on the stamp, and the stamp's name takes `--salt-hue` as its dot does. Measured: a probe of every
+`.prodhd`, `.prodtag` and child on all 17 parts at 1280 and 375 (1,374 elements, 35 computed properties each) reads
+no difference, and `renderdiff` reads 34 of 34 the same. Left on the layer: the stamp's 10px (the system's tag is its
+smallest token, 11px, and the suite forbids type under it), and the ledger's bare stamp (no frame, no padding), both
+scoped to the stamp in `design/desk.css` with the reason beside them. The consolidated band's hollow ring is inline,
+a token. The product switch (`.prodsw`) is another group. The suite section "Product bands" proves it.
+
+**The actions group (09 Oct 2026, unbumped, for his word).** The Today action card carries the system's `.salt-action`
+beside the desk's names (`salt-action__kind`, `__title`, `__why`, `__money` and `--nil`, `__go`, `__bar`, and the body),
+in the action list's row and in the shelf call. The row sets the recipe's `--salt-sev` where it set `--sev`, and the
+rule chips in its why read `--salt-sev` too (they went uncoloured in the first shot, which the suite now catches). The
+recipe was synced to the desk first: radius `--salt-radius-sm` (12px, was md), the why's gap 5px, the bar 4px with a 10px
+gap, a new `__go` cell for the way there (`align-self: center`; `ActionCard` takes a `go` prop), and the narrow layout at
+860 and 560 (money beside the kind, body and way there across, gaps 6px 12px then 8px 10px), which was the desk's own.
+Deleted: the card's rules in the older layer and in section 11 of `design/desk.css`, its two media rules, `.actk` from
+the 11px list and the actk, actm, actt and actw names from the font lists. Left: `.acts` (the list's gap), the bar's
+settle animation (motion the recipe does not carry), `.sevh` and the observations. Measured: 34 of 34 shots the same, and
+a computed-style census of all 18 cards and their parts at 375, 800, 1000 and 1280 differing in one property only, the
+money's `font-variant-numeric` (tabular, which the mono face already is). The Journal has had no desk markup since v802, so
+`.salt-journal` has nothing to carry; the suite section "Actions: the system" says so and proves the rest.
+
+**The ghosts group (09 Oct 2026, unbumped, for his word).** `.navlink`, `.ubtn`, `.obsbtn` and `.updchip` carry
+`.salt-ghost` beside their own name in every producer (19 class attributes), so the edge, the ink, the 11px mono
+uppercase face, the 44px tap both ways, the hover and the pressed state are the recipe's. Deleted: those classes'
+material in the older layers and in section 7 of `design/desk.css`, the `.updchip.on` rule (the chip now sets
+`aria-pressed` beside `.on`, which the recipe reads), and every `.lqb` and `.lquick` rule, a pair of classes no
+markup has made since v495. Kept on the layer, because the recipe draws one padding: each placement's own padding
+(navlink 6/11, ubtn 3/9, obsbtn 5/10, updchip 6/13), the hush row's 10.5px, and `.ubtn{--salt-ghost-tone}` bound to
+brass, as a tile's tone is bound. The recipe was not changed, so the Counter's `stmt/statement-css.js` did not move.
+Measured in a browser at 375 and 1280: all 386 live ghosts across the 17 parts are 44px by 44px or more, and read
+the recipe's type, case, weight, radius and padding as before. What moved: the resting edge is the recipe's
+brass-toned `--salt-edge-field` where it was a 6% white hairline (1.1:1), and a chip that is chosen has a brass edge
+where it had a faint one; an Undo's 50% brass edge becomes the same brass tone. Buttons narrower than 44px (a one
+word "Go") grow to 44px wide, which no live button was. `.exitbtn` stays on the layer: a fixed corner control with
+its own 22%-opacity shape, under 44px, which the group did not take. The suite section "Ghosts: the system" proves it.
+
+**The tables group (09 Oct 2026, unbumped, for his word).** Every data table carries the recipe's `salt-table` beside
+its own classes (60 tables) and every label cell `salt-table__label` beside `l` (231 cells); the two key-and-value
+lists in the calendar popover are not data tables and stay off it. The mist caps head, the salt figures, the faint
+hairline, the opaque warm panel under the sticky head and label column and the total row's wash layered over it (v567)
+are the recipe's, and the desk's copies are deleted: section 9 of `design/desk.css` bar the statements, and the generic
+`table`, `th`, `td`, `tbody td`, `tr.tot td` and `th.l,td.l` rules, the `fintab` head rules, the phone's `table`,
+`th,td` and `th{font-size:11px !important}` rules and the label wrap rules of the older layers. The recipe in
+`Codesalt-ds` was synced to the desk, not the other way: a label cell wraps (`white-space: normal`) and a phone
+closes the gutters to 7px 8px. A recipe at (0,1,1) loses to nothing earlier at the same weight, because the DESIGN base
+block sits after the older layer, so the older `.fintab`, `.istmt` and `.pxboard` gutters and the board's wrapping
+heads moved into `design/desk.css`, which sits after it. Left on the layer, scoped, because the recipe has no word for
+them: the sticky head and pinned label column (`thead th`, `th.l,td.l`, in the master's older layer), the statements'
+gutters (7px 9px, 6px 9px), their brass hairline and 13px figures, the year column, the group rows and the total rule,
+the pivot grid's 6px and 4px gutters, a code cell's salt-product ink (`.mono`), and a statement's first head in mist
+where every other label head is mist-light. Measured: the computed style of every cell, 27 properties, before and after,
+on 2,922 table instances and 87,702 cells over both widths and every view button: identical but for two properties of the
+<table> element itself (the popover lists' font size and the recipe's tabular figures), which no cell reads; the page never scrolls sideways at 375px on any part; the 34
+renderdiff shots read 0 pixels apart. The suite section "Tables: the system" proves it, and v567's sticky-fill checks now
+read the recipe.
+
 ## Traps in the layer
 
 - A last-wins layer beats a media query: a bare selector in `design/desk.css` overrides an earlier
@@ -200,7 +283,19 @@ What was not done that day: the brand fonts. They followed as v785, above.
   which is compositing rounding. After any type change probe `document.documentElement.scrollWidth`
   per part at 375px.
 
-## 05 Oct 2026: the time of day (version 2, step 1)
+## 09 Oct 2026: one theme, Night
+
+His word: remove the four themes and keep one default. Night is the design system's `:root`, the identity as
+drawn. Retired in `Code\salt-ds`: the Dawn, Day and Dusk blocks (the desk bar's Day tokens with them), the
+cross-fade, `salt-time.js`, `SALT_THEMES`, `SALT_TIME_HOURS` and `timeOf`. Retired here: the `DESIGN time` block
+(`designsync --check` now fails if its marker is left in the master), the rail's picker, the redraw on a theme
+change, the Day, Dawn and Dusk values of the `--desk-*` tokens, and Day's product switch rule. The tokens stay:
+every colour in the desk's own CSS is still a token, and a `--desk-*` declaration is the one place its literal
+lives. Night's text colours measured on its panels: all 4.5:1 or more on the ground and the slate; on the lit
+slate, mist (4.44) and copper (4.36) fall just short, which is the identity as drawn. A device's `salt-time` key in
+localStorage is left behind and read by nothing. The record below is history.
+
+## 05 Oct 2026: the time of day (version 2, step 1), retired 09 Oct 2026
 
 His approval of the version 2 design: four themes that follow the viewer's clock, six hours each. Dawn
 from 04:00 (cool slate, rose-gold accent), Day from 10:00 (the one light theme: salt paper and deep copper

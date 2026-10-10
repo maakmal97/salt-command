@@ -95,11 +95,11 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
    recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
-   actions) migrates one group per version, on his word. **The theme follows the viewer's clock**
-   (Dawn 04, Day 10, Dusk 16, Night 22; the `DESIGN time` block, `salt-time.js`): a colour in the desk's
-   own CSS is a token, never a literal. Day shows (his word of 09 Oct 2026; no `data-time-day` hold on the
-   desk), and every colour the Day palette lends to text holds 4.5:1 on each Day panel, which the suite
-   measures (`docs/DESIGN.md`). The Counter takes the tokens and five
+   actions) migrates in one version, one commit per group (his word of 09 Oct 2026). **One theme:
+   Night**, the design system's `:root` (his word of 09 Oct 2026; the four times of day, `salt-time.js`
+   and the picker are retired, and the suite fails if any returns): a colour in the desk's own CSS is a
+   token, never a literal, and every text colour holds 4.5:1 on the ground and the slate, which the
+   suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and
@@ -533,7 +533,8 @@ skips Cloudflare and the fetch).
 
 ## How a fold is sized
 
-- **Smaller folds.** One thing, shipped; a fold that cannot be described in one sentence is two.
+- **One version, many commits** (his word of 09 Oct 2026). A piece of work ships as one version, one
+  commit per part; a commit that cannot be described in one sentence is two.
 - **Sweep the class before shipping a fix.** Grep the pattern across the whole file first.
 - **A round points at the newest code.** Attack the fix; older code is regression only.
 - **An instrument is proved red before its green is trusted**, each mutation on its own. Reading
