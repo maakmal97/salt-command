@@ -12421,6 +12421,16 @@ await (async () => {
     ok(d.maxRetries === 3 && d.timeout === 90000 && set.maxRetries === 0 && set.timeout === 300 && junk.maxRetries === 3 && junk.timeout === 90000,
       "the fold's call retries three times at 90 s an attempt, about 6.1 min at most, and the env sets both, zero retries included: " + JSON.stringify([d, set, junk])); }
   ok(!/JSON\.stringify\("(UPDATE|INSERT)/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "no write in drafts.mjs goes to wrangler by --command, where a shell reads the text");
+  /* 10 Oct 2026: #86 made approved()'s SELECT span lines, and a read goes by --command through a shell, which handed
+     wrangler a literal backslash-n: D1 answered `unrecognized token: "\"` and --approved staged nothing. */
+  { const { readArgs, APPROVED_SQL } = await import("../tools/drafts.mjs");
+    const { oneLine } = await import("../tools/d1json.mjs");
+    const arg = readArgs(APPROVED_SQL).at(-1);
+    let refused = ""; try { oneLine("SELECT id FROM draft WHERE id='a" + String.fromCharCode(10) + "b'"); } catch (e) { refused = e.message; }
+    ok(APPROVED_SQL.includes(String.fromCharCode(10)) && !/[\r\n\\]/.test(arg) && /^"SELECT d\.id,d\.status,.* ORDER BY d\.drafted_at"$/.test(arg) && /--file/.test(refused),
+      "drafts.mjs --approved hands wrangler its multi-line SELECT as one line with no backslash, and a line break inside a literal is refused: " + arg.slice(0, 60) + " ... " + arg.slice(-40));
+    const sent = readdirSync(join(REPO, "tools")).filter((n) => n.endsWith(".mjs") && n !== "d1json.mjs" && /"--command",\s*JSON\.stringify\(/.test(readFileSync(join(REPO, "tools", n), "utf8")));
+    ok(!sent.length, "and no tool hands --command its SQL except through d1json's oneLine: " + (sent.join(" ") || "none")); }
 
   /* the drain: update.mjs pulls and keeps; only the hand mode clears (09 Sep 2026) */
   {

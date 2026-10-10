@@ -8,6 +8,7 @@ import { readVaultPair, sealedVaultEnvelope } from "../src/vault-pair.js";
 import { vaultWriteStatus, changeVaultWritePhase } from "../src/vault-write-gate.js";
 import { execFileSync } from "node:child_process";
 import { againIfLapsed } from "./cloudflare.mjs";
+import { oneLine } from "./d1json.mjs";
 
 const digest = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const literal = (value) => "'" + String(value).replaceAll("'", "''") + "'";
@@ -88,7 +89,7 @@ async function main(args) {
         try {
           text = againIfLapsed(() => execFileSync("npx", ["wrangler", "d1", "execute", "salt_ledger", "--remote", "--json",
             ...(writing ? ["--file", process.platform === "win32" ? '"' + file + '"' : file]
-              : ["--command", process.platform === "win32" ? JSON.stringify(sql) : sql])],
+              : ["--command", process.platform === "win32" ? JSON.stringify(oneLine(sql)) : sql])],
             { encoding: "utf8", shell: process.platform === "win32" }));
         } finally {
           if (file) { unlinkSync(file); rmdirSync(directory); }
