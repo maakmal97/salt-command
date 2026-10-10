@@ -47794,6 +47794,10 @@ await (async () => {
            Today count on any book: the live book alone may hold nothing a date moves (10 Oct 2026, after the re-merge) */
         var dr={date:day(0),customer:'ZT9-TST',qty:2,total:200,cash:0,deliveredQty:2,rid:'sZT8'};sales.push(dr);
         step('date',function(){TODAY.setTime(t0+400*864e5);},function(){TODAY.setTime(t0);});
+        /* the count alone can net out: a book short of stock loses its reorder once 400 days empty its demand window (11 Oct
+           2026, 8 before and 8 after), so the probe's own chase is what proves the date reached the walk */
+        var chased=function(){return allActionsNow().some(function(x){return x.sev==='now'&&x.kind==='collect'&&x.title.indexOf('ZT9-TST')>=0;});};
+        out.dateChase=[chased()];TODAY.setTime(t0+400*864e5);out.dateChase.push(chased());TODAY.setTime(t0);
         sales.splice(sales.indexOf(dr),1);
         var keepHush=HUSH;
         step('hush',function(){HUSH={zt9:'2999-01-01'};},function(){HUSH=keepHush;});
@@ -47834,7 +47838,8 @@ await (async () => {
       "a new unpaid sale raises the Today count, and an open refund and a placed order each by one: " + JSON.stringify({ row: [v.row.before, v.row.after], refund: [v.refund.before, v.refund.after], order: [v.order.before, v.order.after] }));
     ok(v.row.after[1] === v.row.before[1] + 1 && v.refund.after[1] === v.refund.before[1] + 1,
       "and the Money count by one for the sale and the refund: " + JSON.stringify({ row: v.row.after, refund: v.refund.after }));
-    ok(v.date.after[0] !== v.date.before[0], "advancing the date 400 days moves the Today count: " + JSON.stringify(v.date));
+    ok(v.dateChase[0] === false && v.dateChase[1] === true,
+      "advancing the date 400 days puts the probe's unpaid sale on Today as a chase it was not before: " + JSON.stringify({ chase: v.dateChase, date: v.date }));
     /* the saving, counted and timed: a pass over every part, kept and then made fresh on every draw */
     const m = JSON.parse(w.eval(`JSON.stringify((function(){
       var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
