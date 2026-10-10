@@ -642,7 +642,7 @@ export const OWNER_JS = `
     if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
     return j;
   }
-  var makerData=null, makerQuotes={}, makerHours=null, makerBusy=false;
+  var makerData=null, makerQuotes={}, makerFee={}, makerHours=null, makerBusy=false;
   var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
   function makerSlipClose(){
     makerSlipGeneration++;
@@ -1019,6 +1019,35 @@ export const OWNER_JS = `
       detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
     }
   }
+  /* the placed-order preview's own native comparison, mirroring ordPvBlock on the Desk: their card today, margin,
+     floor and their usual, read off the preview the server drafted (src/orders.js previewAck), never raw row JSON */
+  function makerPlacedReading(parent, result){
+    var note=function(text){ return el('span',null,text); };
+    var tiles=el('div','maker-fields'), card=typeof result.card==='number'?result.card:null,
+        floor=result.floor&&typeof result.floor.rm==='number'?result.floor.rm:null,
+        margin=result.margin&&typeof result.margin.rm==='number'?result.margin:null,
+        usual=result.usual&&typeof result.usual.rate==='number'?result.usual.rate:null,
+        quote=typeof result.quote==='number'?result.quote:null;
+    /* every figure is the server's; the browser only words a comparison, it computes none */
+    if(card==null) tiles.appendChild(kpiTile('mist','Their card today','-',note(result.cardNote||'no card for this size')));
+    else tiles.appendChild(kpiTile(quote==null||quote>=card?'steel':'copper','Their card today',rm(card),
+      note('the quote is '+(quote==null?'not read':rm(quote))+(result.cardNote?' · '+result.cardNote:''))));
+    if(margin==null) tiles.appendChild(kpiTile('mist','Margin','-',note('no cost on this book')));
+    else tiles.appendChild(kpiTile(margin.rm>0.004?'verdigris':'ember','Margin',rm(margin.rm),note((result.cost&&typeof result.cost.total==='number'?'on '+rm(result.cost.total)+' cost · ':'')+margin.pct+'%')));
+    if(floor==null) tiles.appendChild(kpiTile('mist','Floor','-',note('no floor for this size')));
+    else tiles.appendChild(kpiTile(quote!=null&&quote>=floor-0.004?'verdigris':'ember','Floor',rm(floor),
+      note(quote!=null&&quote>=floor-0.004?'the quote clears it':'the quote is under it')));
+    if(usual==null) tiles.appendChild(kpiTile('mist','Their usual','-',note('no priced order yet')));
+    else tiles.appendChild(kpiTile('steel','Their usual',rm(usual),note('a unit')));
+    parent.appendChild(tiles);
+    var flags=result.flags||[];
+    parent.appendChild(el('p','salt-insight',flags.length?('The drafter flags '+(flags.length===1?'one thing':flags.length+' things')+':'):'The drafter raises no flag.'));
+    flags.forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
+    if(result.owedWith!=null&&result.ceiling!=null)
+      parent.appendChild(el('p','salt-insight',(result.prepay?'In advance':'On credit')+': '+(result.late&&typeof result.late.run==='number'&&typeof result.late.need==='number'?'paid late before, '+result.late.run+' of '+result.late.need+' on time since; ':'')+rm(result.owedWith)+' owed with this order, '
+        +(result.owedWith>result.ceiling+0.004?'over':'within')+' '+rm(result.ceiling)+'.'
+        +(result.prepay?' They are asked to pay before it is handed over.':'')));
+  }
   function makerButton(parent, label, action, primary, onSuccess){
     var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
     var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
@@ -1263,7 +1292,7 @@ export const OWNER_JS = `
       throw new Error('Paste a Maps or Waze link carrying a point or address, or clear the field.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
-  async function makerOtherInputs(parent,catalog){
+  async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
@@ -1568,10 +1597,39 @@ export const OWNER_JS = `
         if(idDraft)makerPairBody(idBody,idDraft);
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
-        idName.value='';idPlace.value='';idLink.value='';idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review.';
+        idName.value='';idPlace.value='';idLink.value='';
+        try{
+          await refreshTradeCatalog();
+          idStatus.textContent='Encrypted envelope filed; '+code+' is queued for review and is now selectable.';
+        }catch(refreshError){
+          idStatus.textContent=code+' was filed for review, but the trade choices could not be refreshed: '+refreshError.message;
+        }
         loadMaker();
       }catch(error){idPass.value='';idStatus.textContent=error.message;}
       idBusy=false;
+    },true);
+    var appointment=el('section','maker-input');appointment.appendChild(el('h3',null,'Appoint existing customer'));
+    appointment.appendChild(el('p','msg','The existing ID, name and place stay as filed. The appointment changes no customer identity and waits for approval and folding.'));
+    parent.appendChild(appointment);
+    var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
+    var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':catalog.appointmentNotice?'Appointments unavailable':'No eligible customer'}]
+      .concat(appointmentCustomers.map(function(code){return {value:code,label:code};}));
+    var appointmentCustomer=addSelect(appointment,'Existing customer',appointmentCustomerItems);
+    var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
+      return {value:item.kind,label:item.kind.charAt(0).toUpperCase()+item.kind.slice(1)+' · '+item.stream};
+    });
+    var appointmentRoleItems=[{value:'',label:'Choose an appointment role'}].concat(appointmentKinds);
+    var appointmentRole=addSelect(appointment,'Appointment role',appointmentRoleItems);
+    var appointmentStatus=makerStatus(appointment);
+    makerButton(appointment,'Send appointment for review',async function(send){
+      var code=appointmentCustomer.value, kind=appointmentRole.value;
+      if(!code||!kind){appointmentStatus.textContent='Choose an existing customer and appointment role.';return;}
+      await send('/all/maker/inputs/appoint-existing',{at:new Date().toISOString(),code:code,kind:kind});
+      var option=[].filter.call(appointmentCustomer.options,function(item){return item.value===code;})[0];
+      if(option)option.remove();
+      appointmentCustomer.value='';
+      appointmentStatus.textContent='Sent for review. The existing identity is unchanged until the appointment is approved and folded.';
+      loadMaker();
     },true);
     var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
     amend.appendChild(el('p','msg','Names and filed addresses are re-keyed and encrypted here. Choose the locality; an optional map link replaces the encrypted address. Only codes and the rounded locality point are queued.'));
@@ -2005,18 +2063,28 @@ export const OWNER_JS = `
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
+        var keptProduct=tradeProduct.value, keptParty=tradeParty.value;
         tradeProduct.textContent='';
         (catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).forEach(function(item){
           var option=el('option',null,pshape(item.product)); option.value=item.product; tradeProduct.appendChild(option);
         });
+        if(Array.from(tradeProduct.options).some(function(option){return option.value===keptProduct;}))tradeProduct.value=keptProduct;
         tradeParty.textContent='';
         (catalog.parties||[]).forEach(function(code){
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
         });
+        if(Array.from(tradeParty.options).some(function(option){return option.value===keptParty;}))tradeParty.value=keptParty;
         carriage.parentNode.querySelector('.lbl').textContent=isSale?'Delivery (RM)':'Freight (RM)';
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
+      }
+      async function refreshMakerTradeCatalog(){
+        var refreshed=await refs('/all/maker/inputs');
+        if(!refreshed.catalog||!Array.isArray(refreshed.catalog.parties))
+          throw new Error('The Desk returned no confirmed-party catalog.');
+        catalog=refreshed.catalog;
+        fillTradeChoices();
       }
       direction.addEventListener('change',fillTradeChoices);
       tradeProduct.addEventListener('change',function(){
@@ -2270,7 +2338,7 @@ export const OWNER_JS = `
           tipPending=false;
         },true,function(){ tipAt=null; tipSignature=''; });
       }
-      makerOtherInputs(box,catalog);
+      makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
       makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
   }
@@ -2352,31 +2420,82 @@ export const OWNER_JS = `
       if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
         var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
-        var delivery=makerField(form,'Delivery (RM)','number',quote.delivery==null?(order.delivery||0):quote.delivery);
-        var previewTurn=0;
-        [total,delivery].forEach(function(input){ input.addEventListener('input',function(){
-          previewTurn++;
-          delete makerQuotes[order.id]; var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
-          var old=card.querySelector('.maker-quote'); if(old) old.remove();
-        }); });
         card.appendChild(form);
-        makerButton(card,'Preview',function(){
-          var payload={total:Number(total.value),delivery:Number(delivery.value)}, turn=++previewTurn;
+        /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
+           the others hide the chips and send nought */
+        var group=open.filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
+        var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
+        var deliver=order.mode==='deliver'&&!follower;
+        var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
+        var otherField=null, previewTurn=0, previewBtn=null;
+        /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
+           none of it is usable until a fresh exact-input preview succeeds (immediate safety requirement) */
+        function makerPlacedInvalidate(){
+          previewTurn++;
+          delete makerQuotes[order.id];
+          var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
+          var old=card.querySelector('.maker-quote'); if(old) old.remove();
+          if(previewBtn) previewBtn.disabled=deliver&&!chip.value;
+        }
+        total.addEventListener('input',makerPlacedInvalidate);
+        if(deliver){
+          /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
+             figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set */
+          var fieldset=el('fieldset','salt-options'), grid=el('div','salt-options__grid salt-options__grid--2');
+          fieldset.appendChild(el('legend','salt-options__legend','Delivery charge'));
+          [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
+            var label=el('label','salt-option'), radio=el('input','salt-option__input'),
+                face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0];
+            radio.addEventListener('change',function(){
+              chip.value=opt[0];
+              if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
+              makerPlacedInvalidate();
+            });
+            face.appendChild(text); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
+          });
+          fieldset.appendChild(grid);
+          otherField=makerField(fieldset,'Other, RM','number',chip.other);
+          otherField.closest('label').hidden=chip.value!=='other';
+          otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
+          card.appendChild(fieldset);
+        }
+        function makerPlacedDelivery(){
+          if(!deliver) return 0;
+          if(chip.value==='other'){ var v=Number(otherField.value); return otherField.value!==''&&v>=0?v:null; }
+          if(chip.value==='0'||chip.value==='10'||chip.value==='15') return Number(chip.value);
+          return null;
+        }
+        previewBtn=makerButton(card,'Preview',function(){
+          var delivery=makerPlacedDelivery(), status=document.getElementById('makerReviewStatus');
+          if(delivery==null){ if(status) status.textContent='Choose the delivery charge first.'; return; }
+          var payload={total:Number(total.value),delivery:delivery}, turn=++previewTurn;
+          /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
+          delete makerQuotes[order.id];
+          var oldAccept=card.querySelector('[data-accept]'); if(oldAccept) oldAccept.remove();
+          var oldNote=card.querySelector('.maker-quote'); if(oldNote) oldNote.remove();
           refs('/all/maker/orders/'+encodeURIComponent(order.id)+'/preview',payload).then(function(result){
             if(turn!==previewTurn||!card.isConnected) return;
             makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash};
             var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
             note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting.'));
-            makerReading(note,result);
+            makerPlacedReading(note,result);
             var accept=card.querySelector('[data-accept]'); if(!accept){
-              accept=makerButton(card,'Accept order',function(){
+              accept=makerButton(card,'Accept order at '+rm(result.quote)+', delivery '+rm(result.delivery),function(){
                 var q=makerQuotes[order.id]; if(!q||!q.hash) return;
                 makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',
                   {total:q.total,delivery:q.delivery,hash:q.hash},'Order sent to the Desk for acknowledgement.');
               },true); accept.setAttribute('data-accept','');
             }
-          }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
+          }).catch(function(error){
+            if(turn!==previewTurn) return;
+            delete makerQuotes[order.id];
+            var stale=card.querySelector('[data-accept]'); if(stale) stale.remove();
+            var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); }
+            note.textContent=error.message;
+          });
         },true);
+        if(deliver&&!chip.value) previewBtn.disabled=true;
       }else if(againAck){
         makerAcceptAgain(card,order);
       }else if(order.status==='acknowledged'){

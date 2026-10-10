@@ -56,8 +56,8 @@ async function shoot(label, only) {
   const b = await chromium.launch();
   for (const [w, h] of WIDTHS) {
     const page = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: w < 600, hasTouch: w < 600 });
-    /* 05 Oct 2026: SALT_TIME=dawn|day|dusk|night holds that theme (the desk's salt-time choice), so a shot does not
-       depend on the hour it is taken; a build from before the themes ignores it */
+    /* SALT_TIME=dawn|day|dusk|night holds that theme on a build of 05 to 09 Oct 2026, which followed the clock, so a
+       shot of it does not depend on the hour; one theme since (Night), and any other build ignores it */
     if (process.env.SALT_TIME) await page.addInitScript((t) => { try { localStorage.setItem("salt-time", t); } catch (e) {} }, process.env.SALT_TIME);
     await page.goto(`http://127.0.0.1:${port}/desk`, { waitUntil: "networkidle" });
     /* the stamp, the version chip, the entry counts and the version entries move on every build; nothing else may */

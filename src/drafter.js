@@ -72,6 +72,22 @@ export async function readBook(db) {
     pricing: state.PRICING || null
   };
 }
+/* 06 OCT 2026: ONE READ OF THE MIRROR AN INVOCATION. The book is four queries and every row of the mirror (299 rows,
+ * 378 KB of JSON on the live extract, about 2 ms of CPU to parse), and the mirror moves only when the deploy job seeds it,
+ * never inside one invocation; yet a minute that queued a stage read it twice (the reconcile, then the drafter), the
+ * quarter-hour three times, the minute after a fold four, and a tap on an order twice with its tail. `bookOnce(db)` is a
+ * reader: its first call reads, every later call answers the same book, and a read that failed is read again on the next
+ * call, so a caller's own catch keeps its meaning. The Worker's CPU budget is per invocation, so the reads a tick repeats
+ * are what it spends. A caller without a reader reads as before. THE ONE READ THAT IS NEVER SHARED WITH A CARD'S: where a
+ * tap draws the row and runs the drafter in one request (Accept, a taken offer, Received on a claim), the drafter reads for
+ * itself (D6, S11 11.11), so a mirror that moved under the tap drafts a row that differs from what he saw. */
+export function bookOnce(db) {
+  let p = null;
+  return () => {
+    if (!p) { p = readBook(db); p.catch(() => { p = null; }); }
+    return p;
+  };
+}
 /* 05 OCT 2026: THE LOTS DRAFTED AND NOT YET FOLDED, pending or approved, each tagged with its draft id, so a sale
    drafted after a purchase it follows (p035 and s232, one batch) is costed off that purchase, not the lot before it.
    Read by the drafting passes alone, once, just before their first draft (readBook's callers are timed against its
@@ -151,7 +167,9 @@ export const HANDOVER = POSITION_ENGINE.HANDOVER;
 export const CORRECTABLE = POSITION_ENGINE.CORRECTABLE;
 const CORRECT_REQUIRED = POSITION_ENGINE.CORRECT_REQUIRED;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/* A date is a REAL day in YYYY-MM-DD: the shape alone let 2026-02-30 and 2026-13-01 through the queue road to a
+ * row nothing could date-order. The Counter's inputs (maker-inputs.js, maker.js) already read it this way. */
+const DATE_RE = { test: (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v };
 
 /* Each field checked against the book it is going onto, so a correction is refused for the same
  * reasons a new row is: an unknown product cannot be costed, an unknown code cannot be credited.
@@ -613,6 +631,9 @@ const BUY_KINDS = ["Payment", "Receipt", "Default"];
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
+  /* ONE DATE GATE FOR EVERY MODE: a count, loss, loan, gift, redemption and the rest read pay.date unchecked, so an
+   * impossible day (2026-02-30) drafted, was approved and reached the fold. */
+  if (pay.date != null && pay.date !== "" && !DATE_RE.test(String(pay.date))) return { skip: `the date is not a date in YYYY-MM-DD: ${pay.date}` };
   /* THE REASON HAS TO NAME THE ACTUAL CASE. This once answered "amends an existing row" for
      every mode that was not `new`, so an ADDID, which registers a party and amends nothing,
      was reported as an amendment. That reads as a bug in the entry rather than a category the
@@ -722,7 +743,12 @@ export function draftRow(entry, book) {
       const changed = (f) => chk.changes.some((c) => c.field === f);
       const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
       const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
-      if (changed("total") && isNum(after.total) && after.total < paid - 0.005) {
+      /* 06 Oct 2026: ON A SALE THE DIFFERENCE IS A REFUND THE FOLD RAISES (the engine's refundOnOverpay), so a close at what
+         was handed over or an amendment under what they paid is approved like any row, and the card says what opens */
+      const owedAfter = isSale && isNum(after.total) ? +after.total + (isNum(after.delivery) ? +after.delivery : 0) : null;
+      if (isSale && (changed("total") || changed("delivery")) && owedAfter != null && owedAfter < paid - 0.005) {
+        flags.push(`The corrected row comes to RM ${round(owedAfter)}, under the RM ${round(paid)} already paid: the fold raises a refund payable to the customer for RM ${round(paid - owedAfter)}, open and Now until it is returned (paidOn in the book).`);
+      } else if (!isSale && changed("total") && isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
       if (changed("qty") && isNum(after.qty) && after.qty < movedQty - 0.005) {
@@ -873,7 +899,8 @@ export function draftRow(entry, book) {
       flags.push(`Marks the lot as never delivered: the RM ${round(t.cash || 0)} already paid becomes a recoverable, not inventory, and the lot leaves the cost basis.`);
     } else if (isMove) {
       if (cash > oweRM + 0.005) {
-        flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
+        flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`
+          + (dir2 === "SELL" ? ` The fold raises a refund payable to the customer for it, open and Now until it is returned (paidOn in the book).` : ""));
       }
       if (moved > oweUnits + 0.005) {
         flags.push(`This hands over ${round(moved)} unit against ${round(oweUnits)} still to move, so ${round(moved - oweUnits)} unit more than the order calls for.`);
@@ -1233,6 +1260,27 @@ export function draftRow(entry, book) {
   /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for
      each product, code to product to level, a null clearing a product's tier. Codes, products and level names only, the
      names checked against the ones the desk's PRICING snapshot carries. */
+  /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. The row is a roster row for someone already on the roster: the fold
+     appoints them on the R2 stream with their -R account if they are no associate yet, and files them in `partners`, which the
+     engine quotes at the floor. No name travels; the code is the whole of it. */
+  if (pay.mode === "partner") {
+    const code = String(pay.code || "").trim().toUpperCase();
+    const roster = (book.state && book.state.roster) || [];
+    const associates = (book.state && book.state.associates) || [];
+    const partners = (book.state && book.state.partners) || [];
+    if (!code || !roster.includes(code)) return { skip: `${code || "the code"} is not on the roster, so there is no one to make a partner` };
+    if (code[0] !== "C" || POSITION_ENGINE.isBucket(code) || /-Gen$/.test(code) || /-d+-/.test(code)) return { skip: `${code} is not a customer's own code: a partner is a person, never a supplier, a resale account or an end buyer` };
+    if (partners.includes(code)) return { skip: `${code} is already a partner` };
+    const resell = POSITION_ENGINE.appointBucket("reseller", code), isAssoc = associates.includes(code);
+    return {
+      collection: "roster",
+      row: { code, kind: "reseller", parent: null, note: null, partner: true },
+      flags: [],
+      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the floor itself to the sen (COGS times the size), no profit and no rounding up to the ten, and the Drift card sets no drift for them.`
+        + (isAssoc ? " They are an associate already, so nothing is appointed twice." : ` They are no associate yet, so this APPOINTS them on the R2 stream${resell && !roster.includes(resell) ? `, and ${resell} joins the roster as their resell account` : ""}: the associate credit cap, hurdles and bench come with it.`)
+        + " It moves no stock and no cash, and carries no name.",
+    };
+  }
   if (pay.mode === "tierset") {
     const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
     const tiers = isObj(pay.tiers) ? pay.tiers : {};
@@ -1894,7 +1942,7 @@ export async function settlePre(db, pre, book, now) {
  * later fold had moved the mark was counted as committed, never drafted, never refused, and the
  * phone then cleared it as folded. A sale vanished with no trace. Drafting it puts it to a
  * person; a twin already on the book is named by check 6b and rejected in one tap. */
-export async function runDrafter(env, { now = () => new Date().toISOString() } = {}) {
+export async function runDrafter(env, { now = () => new Date().toISOString(), mirror = null } = {}) {
   if (!env.SALT_LEDGER) return { ok: false, error: "no ledger binding" };
   if (!env.SALT_QUEUE) return { ok: false, error: "no queue binding" };
 
@@ -1906,7 +1954,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const withdrawn = new Set((withdrawalRows.results || []).map((row) =>
     row.id.slice("queue-withdraw:".length)));
   for (const at of withdrawn) byAt.delete(at);
-  const book = await readBook(env.SALT_LEDGER);
+  /* 06 Oct 2026: the invocation's one read (bookOnce), when the caller holds one; a pass of its own reads */
+  const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
      first and writes it last (tools/d1.mjs buildSeed), so a mirror without one is being seeded or was never
      seeded. Drafting against it refused every sale for want of a cost or, on a book half written, froze a card's

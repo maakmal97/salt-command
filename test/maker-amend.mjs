@@ -3,13 +3,16 @@
    request id, the Desk's own route, the Desk's refusals (collection, floor, paid, claim, size under what is out), the order
    book's restate event, an acceptance order in its fixture alone, and the owner page's control. */
 import { webcrypto } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
 import { orderBook } from "./orderbook-harness.mjs";
 import * as O from "../stmt/orders.js";
 import { amendEntry } from "../src/orders.js";
-import { STAGE_OF } from "../src/drafter.js";
+import { STAGE_OF, withPending } from "../src/drafter.js";
+import PE from "../engine/position.mjs";
 import { landingPage } from "../stmt/page.js";
 import { TEST_USER, FIX_VERSION, fixKey, exampleAccount } from "../stmt/testfix.js";
 import { Store, ledger } from "./maker-order-controls.mjs";
@@ -94,13 +97,15 @@ export async function run({ ok }) {
     const claimText = (await claimed.json()).error || "";
     ok(claimed.status === 409 && /waits on this order|waits on/.test(claimText), "[" + claimed.status + " " + claimText + "] An order with a payment waiting on his answer is not amended until he answers it.");
 
-    /* what is paid and what is handed over are read on the Desk's road too, ahead of the mirror */
+    /* what is handed over is read on the Desk's road too, ahead of the mirror; under what is paid is no refusal since 06 Oct 2026
+       (the fold raises the refund), so that figure goes on to the mirror, unseeded here */
     const idSettled = make();
     harness.book.append(null, u, idSettled, { kind: "ledger", at, paid: 280, moved: 2 }, harness.book.order(u, idSettled));
     const underPaid = await tap(idSettled, { total: 270, rid: rid(9) });
+    const underPaidText = (await underPaid.json()).error || "";
     const underMoved = await tap(idSettled, { qty: 1, total: 95, rid: rid(10) });
-    ok(underPaid.status === 409 && /paid/.test((await underPaid.json()).error) && underMoved.status === 400 && /already handed over/.test((await underMoved.json()).error),
-      "The Desk refuses a figure under what is paid and a size under what is handed over: " + underPaid.status + " " + underMoved.status);
+    ok(underPaid.status === 503 && /being seeded/.test(underPaidText) && !/paid/.test(underPaidText) && underMoved.status === 400 && /already handed over/.test((await underMoved.json()).error),
+      "The Desk refuses a size under what is handed over, and a figure under what is paid is no refusal of its own: " + underPaid.status + " " + underPaidText + " / " + underMoved.status);
     const o = book(idReady), t0 = Date.now();
     const none = O.decideDesk({ ...o, status: "acknowledged" }, { restate: { qty: 3, total: 285, delivery: 0 } }, at);
     ok(none.none === true, "The order book takes an amendment that changes nothing as no event.");
@@ -111,10 +116,13 @@ export async function run({ ok }) {
       O.decideDesk({ ...o, moved: 2 }, { restate: { qty: 1, total: 95, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 0, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 285, delivery: 5 } }, at),
-      O.decideDesk({ ...o, paid: 280, delivery: 0 }, { restate: { qty: 3, total: 270, delivery: 0 } }, at),
       O.decideDesk({ ...o, payments: [{ claim: "waiting", amount: 10, at }] }, { restate: { qty: 3, total: 300, delivery: 0 } }, at)];
-    ok(refused.every((r) => r.error), "The order book refuses an amendment of a done order, a size under what is handed over, no goods price, a charge on a collection, a total under what is paid, or one with a claim waiting: "
+    ok(refused.every((r) => r.error), "The order book refuses an amendment of a done order, a size under what is handed over, no goods price, a charge on a collection, or one with a claim waiting: "
       + refused.map((r) => r.error || "accepted").join(" | "));
+    /* 06 Oct 2026: under what they paid is taken, as a close under it is; the ledger raises the refund for the difference */
+    const underPaidEv = O.decideDesk({ ...o, status: "ready", paid: 280, delivery: 0 }, { restate: { qty: 3, total: 270, delivery: 0 } }, at);
+    ok(underPaidEv.ev && underPaidEv.ev.kind === "restate" && underPaidEv.ev.total === 270,
+      "The order book takes an amendment under what they paid as a restate event: " + JSON.stringify(underPaidEv));
 
     /* the restate event moves the figures, never `closed`, and says so in the history the customer reads */
     harness.book.run("desk", { u, id: idReady, body: { restate: { qty: 3, total: 300, delivery: 0 } } });
@@ -147,6 +155,36 @@ export async function run({ ok }) {
     ok(exTap.status === 200 && exNow.total === 295 && exAgain.status === 200 && (await exAgain.json()).again === true
       && exBad.status === 400 && harness.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n === realEvents && L.requests.size === 0,
       "An acceptance order's amendment lands in its fixture alone, once under its id, and the same refusals hold there: " + JSON.stringify([exTap.status, exNow.total, exBad.status]));
+    /* 06 Oct 2026: AND UNDER WHAT THEY PAID, through Counter Admin with the Desk's mirror seeded (the stub D1 above cannot be): the
+       restate is taken and the answer names the refund the fold raises. The Desk's real-schema proof is in verify.mjs. */
+    let DatabaseSync = null;
+    try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+    if (DatabaseSync) {
+      const sq = new DatabaseSync(":memory:");
+      for (const f of readdirSync(join(import.meta.dirname, "..", "migrations")).filter((x) => /^[0-9]+_.*[.]sql$/.test(x)).sort()) sq.exec(readFileSync(join(import.meta.dirname, "..", "migrations", f), "utf8"));
+      const D1 = { prepare(sql) { const st = sq.prepare(sql);
+        const mk = (a) => ({ async run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+          async first() { const r = st.get(...a); return r === undefined ? null : r; }, async all() { return { results: st.all(...a) }; } });
+        const self = mk([]); self.bind = (...a) => mk(a); return self; } };
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("PRICING", JSON.stringify({ v: "v1", byProduct: { salt: { stockCost: 30, floors: { "3": { floor: 100 } }, inputs: null, sizes: [3] } } }));
+      const seedRow = { rid: "s90", customer: "CX1-AB", product: "salt", date: at.slice(0, 10), qty: 3, total: 285, cash: 280 };
+      sq.prepare("INSERT INTO entry (collection,seq,hash,doc) VALUES (?,?,?,?)").run("sales", 0, "h0", JSON.stringify(seedRow));
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("OPEN", JSON.stringify(withPending({ sales: [], state: { OPEN: { byKey: {}, position: {} } } }, seedRow).state.OPEN));
+      sq.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run("roster", JSON.stringify(["CX1-AB"]));
+      sq.prepare("INSERT INTO snapshot (one,v,stamped,at) VALUES (1,'v1',NULL,?)").run(new Date().toISOString());
+      const seeded = { ...deskEnv, SALT_LEDGER: D1, SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: { fetch: async () => new Response("", { status: 404 }) } };
+      const keep = env.DESK_MAKER;
+      env.DESK_MAKER = { fetch: (request) => desk.fetch(request, seeded, {}) };
+      try {
+        const idOver = make();
+        harness.book.append(null, u, idOver, { kind: "mark", at, mark: { ledgerKey: PE.ovKey(seedRow) } }, harness.book.order(u, idOver));
+        harness.book.append(null, u, idOver, { kind: "ledger", at, paid: 280, moved: 0 }, harness.book.order(u, idOver));
+        const over = await tap(idOver, { total: 270, rid: rid(11) });
+        const overBody = await over.json().catch(() => ({}));
+        ok(over.status === 200 && overBody.ok && overBody.preapproval && overBody.preapproval.refund === 10,
+          "Counter Admin amends a paid order to RM 270 under the RM 280 paid, and the answer names the RM 10 refund the fold raises: " + over.status + " " + JSON.stringify(overBody).slice(0, 240));
+      } finally { env.DESK_MAKER = keep; }
+    }
     void t0; void events;
   } finally { globalThis.fetch = originalFetch; }
 

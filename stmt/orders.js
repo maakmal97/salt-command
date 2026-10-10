@@ -58,7 +58,7 @@
 import { PAY_ACCOUNTS } from "./pay.js";
 import { wakeCustomer } from "./push.js";
 import { sessKey } from "./signin.js";
-import { refusal } from "./words.js";
+import { refusal, clip } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
 
@@ -112,7 +112,7 @@ export const NOTE_MAX = 140;
 export const LAST_SAID = "last-said";
 /* one reader for both: collapsed to single spaces, trimmed, cut to length. Whitespace is where a
    long silent block hides, and a line drawn on the page has to be one line. */
-export const cleanMsg = (s, max) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, max);
+export const cleanMsg = (s, max) => clip(String(s == null ? "" : s).replace(/\s+/g, " ").trim(), max);
 /* their own lines, which is what the cap counts */
 export const saidBy = (o, who) => ((o && o.msgs) || []).filter((m) => m && m.by === who).length;
 
@@ -560,10 +560,10 @@ export function checkPlacement(body, open, at, poolOk = false, steps = null) {
   if (ask && body.propose !== undefined && body.propose !== null && (!isNum(body.propose) || !(body.propose > 0) || body.propose > 1000000)) return refusal("askFigure");
   if (ask && body.forFriend === true) return refusal("askFriend");
   if (ask && (body.sheet || body.pool !== undefined)) return refusal("askSheet");
-  const week = String(body.week || "").slice(0, 40);
+  const week = clip(body.week || "", 40);
   /* v694: a delivery says roughly where it is going. One line, no punctuation a street needs, and
      never a figure of its own: it tells him which way to drive and nothing else. */
-  const place = String(body.place || "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const place = clip(String(body.place || "").replace(/\s+/g, " ").trim(), 60);
   if (mode === "deliver" && place.length < 2) return refusal("placeWhere");
   /* v702, his instruction of 18 Sep 2026: an associate's own order and one placed on behalf of a
      friend are no longer told apart by what they buy, so they tick it. IT IS TAKEN FROM ANYONE AND
@@ -792,7 +792,7 @@ export function decideFix(order, f, at) {
   } else if (f.unpay !== true) return { error: FIX_REFUSED + "a fix restates a line or takes it back", status: 400 };
   else fix.unpay = true;
   if (f.unmove === true || f.cancel !== undefined) {
-    const note = String(f.cancel || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const note = clip(String(f.cancel || "").replace(/\s+/g, " ").trim(), 120);
     if (!fix.unpay || f.unmove !== true || !note) return { error: FIX_REFUSED + "an order is cancelled by a fix only with its line and its handover taken back, and his reason", status: 400 };
     if ((+order.paid || 0) - line.amount > 0.004 || (+order.claimed || 0) > 0.004) return { error: FIX_REFUSED + "money would still be on it: that is a cancellation for the desk's own Cancel", status: 409 };
     fix.unmove = true; fix.cancel = note;
@@ -907,7 +907,8 @@ export function decideDesk(order, body, at) {
   }
   /* 06 Oct 2026, his decision: EVERYTHING ON AN AGREED ORDER IS AMENDABLE, the size, the goods' price and the delivery
      charge. The desk checked the floor and stated the figures; the site prices nothing, so it holds only what makes the
-     order true: not under what is out or what they have paid or claimed, no charge on a collection, no waiting claim. */
+     order true: not under what is out, no charge on a collection, no waiting claim. Under what they have paid is taken
+     since 06 Oct 2026, as a close under it is: the ledger raises the refund for the difference when the amendment folds. */
   if (body && body.restate) {
     if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
     const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
@@ -915,7 +916,6 @@ export function decideDesk(order, body, at) {
     if (!isNum(t) || !(t > 0) || t > 1000000) return { error: "the goods' price has to be a figure above nothing", status: 400 };
     if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && order.mode !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
-    if (+(t + d).toFixed(2) < (+order.paid || 0) - 0.004) return { error: "they have paid more than that comes to", status: 409 };
     if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004) return { none: true };
     return { ev: { kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) } };
   }
@@ -1548,6 +1548,15 @@ export async function threadOf(env, u) {
   const r = await bookRead(env, "thread", { u }, async () => ({ thread: await env.STMT.get("thr:" + u, "json") }));
   return (r && r.thread) || null;
 }
+/** One customer's orders, claims and thread, what GET /orders hands their page: on the object road ONE round trip to the
+ *  book (06 Oct 2026; it was three, `ordersOf`, `claimsOf` and `threadOf`, every ten seconds for every open page), each
+ *  list exactly what its own reader answers; on the KV road the two lists, and no thread, as the three answer there. */
+export async function accountBook(env, u) {
+  const fromKv = async () => ({ orders: await listOrders(env, "order:" + u + ":"), claims: await listOrders(env, "aclaim:" + u + ":"),
+    thread: onBook(env) ? await env.STMT.get("thr:" + u, "json") : null });
+  const r = onBook(env) ? await bookRead(env, "mine", { u }, fromKv) : await fromKv();
+  return { orders: (r && r.orders) || [], claims: (r && r.claims) || [], thread: (r && r.thread) || null };
+}
 /** Every account's thread, newest first: the desk's read. */
 export async function allThreads(env) {
   if (!onBook(env)) return [];
@@ -1617,7 +1626,7 @@ export function decidePoolJoin(u, pool, body, mine, at, digest, by = "customer")
 export function decidePoolClose(pool, body, at) {
   if (!pool) return Object.assign(refusal("poolNone"), { status: 404 });
   const left = body && Array.isArray(body.left) ? body.left.slice(0, 200).filter((x) => x && OID_SHAPE.test(String(x.id || "")))
-    .map((x) => ({ id: String(x.id), why: String(x.why || "").replace(/\s+/g, " ").trim().slice(0, 200) })) : null;
+    .map((x) => ({ id: String(x.id), why: clip(String(x.why || "").replace(/\s+/g, " ").trim(), 200) })) : null;
   if (pool.state === "open") return { ev: Object.assign({ kind: "pclose", at }, left ? { left } : {}) };
   return left ? { ev: { kind: "pclose", at, left, again: true } } : { none: true };
 }

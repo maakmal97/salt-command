@@ -492,13 +492,19 @@ export class OrderBook {
     }
     if (WRITES.includes(op) && this.frozen()) return { ok: false, error: FROZEN, code: "frozen", status: 503, frozen: true };
     if (op === "orders") return { ok: true, orders: a.u ? this.ordersOf(String(a.u)) : this.all() };
+    /* 06 Oct 2026: one customer's orders, claims and thread in ONE answer, what GET /orders hands their page every ten
+       seconds; it read them as three round trips to this object. Each list is the one its own op answers, byte for byte */
+    if (op === "mine") {
+      const u = String(a.u || "");
+      return { ok: true, orders: this.ordersOf(u), claims: this.claimsOf(u), thread: this.order(u, THREAD_ID) };
+    }
     if (op === "replacement") {
       const u = String(a.u || ""), id = String(a.id || "");
       const seen = a.rid ? this.event("c:" + u + ":" + id + ":replace:" + a.rid) : null;
       return { ok: true, order: seen ? this.order(u, seen.oid) : null };
     }
     /* S6 6.6: the account claims, one customer's or all, newest first */
-    if (op === "claims") return { ok: true, claims: this.state.storage.sql.exec("SELECT doc FROM acl" + (a.u ? " WHERE u = ?" : "") + " ORDER BY at DESC", ...(a.u ? [String(a.u)] : [])).toArray().map((r) => JSON.parse(r.doc)) };
+    if (op === "claims") return { ok: true, claims: a.u ? this.claimsOf(String(a.u)) : this.allClaims() };
     if (op === "aclaim") {
       const u = String(a.u || ""), eid = a.rid ? "c:" + u + ":aclaim:" + a.rid : null;
       const seen = eid ? this.event(eid) : null;
@@ -700,6 +706,9 @@ export class OrderBook {
   doc(u, oid) { const r = this.state.storage.sql.exec("SELECT doc FROM " + TABLE(oid) + " WHERE u = ? AND oid = ?", u, oid).toArray()[0]; return r ? r.doc : null; }
   order(u, oid) { const d = this.doc(u, oid); return d == null ? null : JSON.parse(d); }
   ordersOf(u) { return this.state.storage.sql.exec("SELECT doc FROM ord WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
+  /* S6 6.6: the account claims, one customer's or all, newest first */
+  claimsOf(u) { return this.state.storage.sql.exec("SELECT doc FROM acl WHERE u = ? ORDER BY at DESC", u).toArray().map((r) => JSON.parse(r.doc)); }
+  allClaims() { return this.state.storage.sql.exec("SELECT doc FROM acl ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc)); }
   /* the pools, each with its units in read live, and with a customer named only what they may see, carrying their own join */
   pools(u) {
     const list = this.state.storage.sql.exec("SELECT doc FROM pool ORDER BY at DESC").toArray().map((r) => JSON.parse(r.doc));

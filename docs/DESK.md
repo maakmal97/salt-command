@@ -84,7 +84,7 @@
   is the levels his customers are actually on, and the prudent end of that range is the lowest
   level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
 - **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
-- **Partner** (v1029, his decision of 06 Oct 2026) pays cost: the floor itself, to the sen, at every size on every book, no profit and no ten-rounding. Above Ambassador; a co-founder's or CBDO's equal. `partners` in `ledger/book.json`; the engine's `quoteAt` and `quoteGrid` take `d` of `'partner'`, the desk's `cardQuote` (`isPartner`), the snapshot's `partners` and `drift`, and `tools/pricelist.mjs` and `src/orders.js` `quoteOff` pass it on. Not a Drift card level and no level a customer sees. `test/partner.mjs`.
+$1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make partner queues `partnerEntry` (`mode: 'partner'`, the code alone, not an Add ID so the pair vault's gate does not meet it); the drafter returns a `roster` row with `partner: true` and `kind: 'reseller'`; the fold files the code in `partners` and appoints an associate with their -R account if they are none, so a partner keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve. `test/partner-control.mjs`.
 - **What the inventory is carried at is DERIVED, and it is not pricing** (his instruction of 26 Sep
   2026). Each book's stock, counted or walked, is allocated newest-first onto its received lots
   (units leave oldest first), and the rate is the units-weighted goods rate of those allocations,
@@ -445,8 +445,11 @@
   delivery charge of an acknowledged or ready order, one Correction for approval (`restateOrder` in `src/orders.js`,
   `POST /orders/<id>/restate`, the Counter's `/all/maker/orders/<id>/restate` under a request id). Refused: a
   collection with a delivery charge, a size under what is handed over, a size change on an order closed short, a
-  figure under what is paid, a claim waiting, a total under the floor at the size, a row that cannot take what is on
-  its way (`rowRoom`), an earlier amendment not yet on the book. The board is never repriced; the order book's `restate`
+  claim waiting, a total under the floor at the size, a figure under what is paid and still on its way to the row
+  (`rowRoom`, until it lands), an earlier amendment not yet on the book. A figure under what is paid is taken (06 Oct
+  2026): the answer carries `refund`, the card says it, and the fold opens a `customerRefunds` row for the difference as
+  the Correction lands (the engine's `refundOnOverpay`, the same rule on every sale amendment, a payment over the row
+  included, and on the desk's overlay). The board is never repriced; the order book's `restate`
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
 - **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the

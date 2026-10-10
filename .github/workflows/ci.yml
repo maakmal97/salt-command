@@ -12,10 +12,22 @@
 # by accident, and the deploy already has an owner.
 name: CI
 
+# MINUTES (09 Oct 2026): the repo is private and billed. A newer push to the same branch or pull
+# request cancels the run still going on it; master is never cancelled, and its group carries the
+# run id so a queued master run is not replaced by a newer one either. paths-ignore holds only
+# what no check reads: the suite scans CLAUDE.md, MEMORY.md and every docs/*.md for the banned
+# word, so they, and *.md generally, must still run CI. A required check on an ignored push stays
+# pending, not skipped green.
+concurrency:
+  group: ci-${{ github.ref == 'refs/heads/master' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 on:
   push:
     branches: [master]
+    paths-ignore: ['README.md', '.claude/launch.json']
   pull_request:
+    paths-ignore: ['README.md', '.claude/launch.json']
   workflow_dispatch:
 
 jobs:
