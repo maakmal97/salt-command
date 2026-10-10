@@ -5989,6 +5989,43 @@ function refundOnCancel(list,row,date){
   list.push(rec);
   return rec;
 }
+/* ====== A ROW PAID PAST WHAT IT COMES TO IS THE SAME PAYABLE (06 Oct 2026) =============
+   A close at what was handed over, or an amendment of an agreed order, can take a row under what
+   the customer has paid, and nothing booked the difference: the desk held such a close under
+   Approve and refused such an amendment, "the book carries no refund for that". It carries one
+   now, in the shape above, so the same six readers show it and the money he holds is Now from the
+   day it is raised. IT ASKS THE ROW WHAT IT IS, as refundOnCancel does: what was paid less what
+   the row comes to (nothing, on a cancelled row), less every refund already raised on the rid,
+   open or paid, so a second lowering raises only the further difference, a cancellation after a
+   partial refund raises the rest, and a re-run adds nothing. An unpriced row comes to nothing yet
+   and books none; a row with no rid is refundOnCancel's and the hand's. */
+function refundOnOverpay(list,row,date){
+  if(!list||!row||!row.rid||row.unpriced)return null;
+  const party=row.customer||null;
+  if(!party)return null;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  const had=list.reduce((a,r)=>a+(r&&r.rid===row.rid?(+r.amount||0):0),0);
+  const raw=paid-owed-had;
+  if(!(raw>0.009))return null;
+  const amt=+raw.toFixed(2);
+  const rec={party:party,rid:row.rid,amount:amt,since:date||row.date||null,
+    note:(row.cancelled?'cancelled order ':'order ')+row.rid+' paid RM '+(+paid.toFixed(2))+' against RM '+(+owed.toFixed(2))
+      +' it comes to: RM '+amt+' payable back to the customer.'};
+  list.push(rec);
+  return rec;
+}
+/* A REFUND THE BOOK NO LONGER OWES IS FLAGGED, NEVER WITHDRAWN (owner, 09 Oct 2026). A later correction can take the
+   cash on a row down, or the row up, until what it was paid past is less than the refunds the rid carries. This answers
+   how much of the OPEN ones (no paidOn) that is, 0 when none; the fold and the desk's overlay say it in a note, and he
+   removes the row in ledger/book.json by hand. It writes nothing. */
+function refundStale(list,row){
+  if(!list||!row||!row.rid||row.unpriced)return 0;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  let had=0,open=0;
+  for(const r of list)if(r&&r.rid===row.rid){const a=+r.amount||0;had+=a;if(!r.paidOn)open+=a;}
+  const x=Math.min(open,had-(paid-owed));
+  return x>0.009?+x.toFixed(2):0;
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 /* THE ORDER KEY IS WHAT THE CUSTOMER AGREED TO PAY, goods and carriage together, and it stays that
    way through the split of 19 Sep 2026 (v694 names a row by this to the character, and it is
@@ -6229,7 +6266,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
@@ -9057,7 +9094,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1060","d":"10 Oct 2026","t":"AN EXISTING CUSTOMER CAN BE APPOINTED A RESELLER OR A REFERRAL FROM COUNTER ADMIN","n":["<b>Appoint, keeping the code.</b> Counter Admin carries a code-only choice of an existing customer and a role. The appointment goes through Add ID's own appointment and fold, keeps their roster code, names, place and statement username, and opens their -R account. Suppliers, buckets, departed or banned IDs and existing associates are not offered.","<b>Once only.</b> A retry carries the same immutable request and a claim per customer, so a changed or doubled tap cannot appoint twice, and Add ID still refuses a duplicate. An appointment writes no vault receipt, so the new associate can be picked for an R2 sale once it is folded. No row, price or stock figure moves."]}];
+const evolution=[{"v":"v1061","d":"10 Oct 2026","t":"A CLOSE OR AN AMENDMENT UNDER WHAT THEY PAID OPENS THE REFUND FOR THE DIFFERENCE","n":["<b>The refund opens as the Correction folds.</b> A close at fewer units than they paid for waited under Approve, and an amendment under what was paid was refused, because nothing booked the difference. The engine's refundOnOverpay, beside refundOnCancel, now opens a customerRefunds row for it, from the Desk and from Counter Admin alike: Now on the desk, on their Refunds list at the next publish, closed only by paidOn, as a paid cancel's is.","<b>Once for each sum.</b> It reads what the row already carries, so a further lowering raises only the further difference, a cancellation after a part refund raises the rest, and a re-run raises nothing. A refund the book no longer owes is flagged, never withdrawn. The close is one tap like any other; money still on its way to the row still holds it. Nothing prices anything new."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9208,7 +9245,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 16:18 KL';
+const LAST_UPDATED='10 Oct 2026, 16:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9369,6 +9406,12 @@ function ovRefund(row,date){
   if(typeof customerRefunds==='undefined')return;
   const rec=POSITION_ENGINE.refundOnCancel(customerRefunds,row,date||null);
   if(rec)provNotes.push('refund payable '+fmt0(rec.amount)+' to '+codeOf(rec.party)+' on the cancelled order');
+  /* 06 Oct 2026: and a row paid past what it comes to (a close or an amendment under what they paid, a payment over
+     the row), the engine's rule as the fold applies it, so the preview and the book carry one payable */
+  const over=POSITION_ENGINE.refundOnOverpay(customerRefunds,row,date||null);
+  if(over)provNotes.push('refund payable '+fmt0(over.amount)+' to '+codeOf(over.party)+', paid past what the row comes to');
+  const stale=POSITION_ENGINE.refundStale(customerRefunds,row);
+  if(stale)provNotes.push('STALE refund on '+row.rid+': '+fmt0(stale)+' of its open refunds is no longer owed; remove it in ledger/book.json');
 }
 function applyOverlay(){
   stockCostFor._c=null;   // 26 Sep 2026: the rows are rebuilt, so no book's inventory rate stands
@@ -9697,6 +9740,7 @@ function ovAmend(p,q){
   if(!row.date)row.date=p.date;
   if((+p.kg||0)>0.009&&row.qty>0&&row.deliveredQty>=row.qty-0.0001)row.deliveredOn=p.date;
   if((+p.cash||0)>0.009&&row.total>0&&row.cash>=txOwed(row)-0.009)row.paidOn=p.date;   // v738: paid in full is the goods and the delivery
+  if(p.direction!=='BUY'&&(+p.cash||0)>0.009)ovRefund(row,p.date);   /* 06 Oct 2026: a payment past what the row comes to, as the fold books it */
 }
 const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
 /* ============ BOUNDARIES ============
@@ -20593,7 +20637,7 @@ let ORD_PART={},ORD_AMEND={};
 function ordPartNow(o){const i=document.querySelector('input[data-hand="'+o.id+'"]');const v=i?parseFloat(i.value):NaN;return v>=0?+v.toFixed(3):((+o.moved||0)>0?+o.moved:+o.qty||0);}
 /* what a part of n units would mean, said under the stepper */
 function ordPartCap(o,n){const paid=+o.paid||0,st=POSITION_ENGINE.closeGoods(o.total,+o.qty,n),over=+(paid-st-(+o.delivery||0)).toFixed(2);
-  return n>0&&n<o.qty-0.004?`Record keeps the other ${units(+(o.qty-n).toFixed(3))} owed. Close at ${units(n)} ends the order there: ${fmt(st)} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', '+fmt(over)+' more than that, so a close there waits under Approve: the book carries no refund for it.':''}`
+  return n>0&&n<o.qty-0.004?`Record keeps the other ${units(+(o.qty-n).toFixed(3))} owed. Close at ${units(n)} ends the order there: ${fmt(st)} for the goods at the rate they agreed${+o.delivery>0?', and the '+fmt(+o.delivery)+' delivery':''}, nothing more owed on the rest.${over>0.004?' They have paid '+fmt(paid)+', '+fmt(over)+' more than that: a refund of '+fmt(over)+' opens on the book as the close folds, Now until you return it.':''}`
     :'Step to what went. Record keeps the rest owed; Close ends the order there.';}
 /* S11 fix: A FIGURE TYPED OR STEPPED IS SAID IN PLACE. The card was redrawn on the box's change, which a tap on Close
    fires first, so the button under the finger was replaced and the tap was lost; the labels and the line under the
@@ -21242,12 +21286,14 @@ async function ordAct(b){
     const told='The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
     /* S11 (D6): what the desk Worker did with the yes, in its own words: booked as it is drafted, or when the
        first row lands, never a stage waiting silently; and whether Accept's row was the one he saw */
-    const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.held?j.preapproval.says+'. ':j.preapproval.says+', if it is the row you saw. ';
+    const says=!(j.preapproval&&j.preapproval.says)?'':j.preapproval.says+', if it is the row you saw. ';
+    /* 06 Oct 2026: a close or an amendment under what they paid opens a refund for the difference as its row folds */
+    const back=j.preapproval&&+j.preapproval.refund>0.004?'They have paid '+fmt(+j.preapproval.refund)+' more than it now comes to: a refund for it opens on the book as the row folds, Now until you return it. ':'';
     const said=r.status===401?'That write key was refused. The order is unchanged.'
       :!r.ok?'The server refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
       :j.warn?j.warn
       :st==='handover'?(b.dataset.close?'Closed at '+units(JSON.parse(body).qty)+'. They see it closed there. '
-        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+told
+        :'Recorded: '+units(JSON.parse(body).qty)+' handed over. ')+says+back+told
       :st==='acknowledged'?(j.approved?'Accepted. They see Acknowledged, and the row you saw is approved. '+told
         :j.differs?'Accepted, but the row came out other than you saw, so it waits under Approve, marked, and they still see Sent until you approve it there.'
         :'Accepted. The row is being drafted; it is approved as it lands if it is the one you saw, and they see Acknowledged then.')
@@ -21266,6 +21312,7 @@ async function ordAct(b){
       /* a part leaves the rest owed, and the chase (aheadOnGoods on the site) goes on for it: said so, never "paid" */
       :st==='cash'?(a=>{const left=+(ordDue(ORD_OPEN.find(x=>x&&x.id===id)||{})-a).toFixed(2);
         return 'Recorded: '+fmt(a)+' in cash. '+(left>0.004?'They see '+fmt(left)+' still owed. ':'They see it paid and the chase stops. ');})(JSON.parse(body).amount)+says+told
+      :st==='restate'?'Amendment sent: its Correction is drafted and approved as it lands if it is the row you saw. They read it amended. '+back+told
       :st==='noreply'?'Marked as needing no reply. Nothing was sent to them.'
       :st==='declined'?'Declined. They read Not taken: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+' '+told
       :st==='cancelled'?'Cancelled. They read Cancelled by us: '+ordWhyText(ORD_OPEN.find(x=>x&&x.id===id)||{id})+' Any payment taken is refunded on the row. '+told

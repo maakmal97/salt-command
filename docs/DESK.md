@@ -445,8 +445,11 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   delivery charge of an acknowledged or ready order, one Correction for approval (`restateOrder` in `src/orders.js`,
   `POST /orders/<id>/restate`, the Counter's `/all/maker/orders/<id>/restate` under a request id). Refused: a
   collection with a delivery charge, a size under what is handed over, a size change on an order closed short, a
-  figure under what is paid, a claim waiting, a total under the floor at the size, a row that cannot take what is on
-  its way (`rowRoom`), an earlier amendment not yet on the book. The board is never repriced; the order book's `restate`
+  claim waiting, a total under the floor at the size, a figure under what is paid and still on its way to the row
+  (`rowRoom`, until it lands), an earlier amendment not yet on the book. A figure under what is paid is taken (06 Oct
+  2026): the answer carries `refund`, the card says it, and the fold opens a `customerRefunds` row for the difference as
+  the Correction lands (the engine's `refundOnOverpay`, the same rule on every sale amendment, a payment over the row
+  included, and on the desk's overlay). The board is never repriced; the order book's `restate`
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
 - **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the

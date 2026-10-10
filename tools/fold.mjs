@@ -1024,6 +1024,14 @@ export function apply(book, staged, notes, masterText) {
         book.customerRefunds = book.customerRefunds || [];
         const rec = E.refundOnCancel(book.customerRefunds, it.target, (it.pay && it.pay.date) || null);
         if (rec) moves.push(`refund payable: ${rec.party} RM ${rec.amount}`);
+        /* 06 Oct 2026: AND A ROW PAID PAST WHAT IT COMES TO, by the same rule asked of the row: a close at what was
+           handed over or an amendment of an agreed order under what they paid, which the desk held or refused until
+           now, and a payment over the row. The engine measures it against every refund the rid already carries. */
+        const over = E.refundOnOverpay(book.customerRefunds, it.target, (it.pay && it.pay.date) || null);
+        if (over) moves.push(`refund payable: ${over.party} RM ${over.amount}, paid past what the row comes to`);
+        /* and a refund the row no longer owes is flagged, never withdrawn: he removes it in ledger/book.json */
+        const stale = E.refundStale(book.customerRefunds, it.target);
+        if (stale) moves.push(`STALE refund on ${it.target.rid}: RM ${stale} of its open refunds is no longer owed; remove it in ledger/book.json`);
       }
       /* v496: the shelf's figure is RM per unit; the order's cost is absolute, so it is the shelf times the order's units. */
       /* 24 Sep 2026: A PENDING ORDER ALSO GOES OUT BY A CORRECTION, which raises deliveredQty and moves no kg,

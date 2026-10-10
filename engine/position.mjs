@@ -1205,6 +1205,43 @@ function refundOnCancel(list,row,date){
   list.push(rec);
   return rec;
 }
+/* ====== A ROW PAID PAST WHAT IT COMES TO IS THE SAME PAYABLE (06 Oct 2026) =============
+   A close at what was handed over, or an amendment of an agreed order, can take a row under what
+   the customer has paid, and nothing booked the difference: the desk held such a close under
+   Approve and refused such an amendment, "the book carries no refund for that". It carries one
+   now, in the shape above, so the same six readers show it and the money he holds is Now from the
+   day it is raised. IT ASKS THE ROW WHAT IT IS, as refundOnCancel does: what was paid less what
+   the row comes to (nothing, on a cancelled row), less every refund already raised on the rid,
+   open or paid, so a second lowering raises only the further difference, a cancellation after a
+   partial refund raises the rest, and a re-run adds nothing. An unpriced row comes to nothing yet
+   and books none; a row with no rid is refundOnCancel's and the hand's. */
+function refundOnOverpay(list,row,date){
+  if(!list||!row||!row.rid||row.unpriced)return null;
+  const party=row.customer||null;
+  if(!party)return null;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  const had=list.reduce((a,r)=>a+(r&&r.rid===row.rid?(+r.amount||0):0),0);
+  const raw=paid-owed-had;
+  if(!(raw>0.009))return null;
+  const amt=+raw.toFixed(2);
+  const rec={party:party,rid:row.rid,amount:amt,since:date||row.date||null,
+    note:(row.cancelled?'cancelled order ':'order ')+row.rid+' paid RM '+(+paid.toFixed(2))+' against RM '+(+owed.toFixed(2))
+      +' it comes to: RM '+amt+' payable back to the customer.'};
+  list.push(rec);
+  return rec;
+}
+/* A REFUND THE BOOK NO LONGER OWES IS FLAGGED, NEVER WITHDRAWN (owner, 09 Oct 2026). A later correction can take the
+   cash on a row down, or the row up, until what it was paid past is less than the refunds the rid carries. This answers
+   how much of the OPEN ones (no paidOn) that is, 0 when none; the fold and the desk's overlay say it in a note, and he
+   removes the row in ledger/book.json by hand. It writes nothing. */
+function refundStale(list,row){
+  if(!list||!row||!row.rid||row.unpriced)return 0;
+  const paid=+txPaid(row), owed=row.cancelled?0:+txOwed(row);
+  let had=0,open=0;
+  for(const r of list)if(r&&r.rid===row.rid){const a=+r.amount||0;had+=a;if(!r.paidOn)open+=a;}
+  const x=Math.min(open,had-(paid-owed));
+  return x>0.009?+x.toFixed(2):0;
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 /* THE ORDER KEY IS WHAT THE CUSTOMER AGREED TO PAY, goods and carriage together, and it stays that
    way through the split of 19 Sep 2026 (v694 names a row by this to the character, and it is
@@ -1445,7 +1482,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,

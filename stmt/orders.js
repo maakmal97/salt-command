@@ -907,7 +907,8 @@ export function decideDesk(order, body, at) {
   }
   /* 06 Oct 2026, his decision: EVERYTHING ON AN AGREED ORDER IS AMENDABLE, the size, the goods' price and the delivery
      charge. The desk checked the floor and stated the figures; the site prices nothing, so it holds only what makes the
-     order true: not under what is out or what they have paid or claimed, no charge on a collection, no waiting claim. */
+     order true: not under what is out, no charge on a collection, no waiting claim. Under what they have paid is taken
+     since 06 Oct 2026, as a close under it is: the ledger raises the refund for the difference when the amendment folds. */
   if (body && body.restate) {
     if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
     const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
@@ -915,7 +916,6 @@ export function decideDesk(order, body, at) {
     if (!isNum(t) || !(t > 0) || t > 1000000) return { error: "the goods' price has to be a figure above nothing", status: 400 };
     if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && order.mode !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
-    if (+(t + d).toFixed(2) < (+order.paid || 0) - 0.004) return { error: "they have paid more than that comes to", status: 409 };
     if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004) return { none: true };
     return { ev: { kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) } };
   }
