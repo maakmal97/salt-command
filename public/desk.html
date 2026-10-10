@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="381f0c212deec839";
+var SALT_BUILD_ID="9c84c38854cd3756";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9221,7 +9221,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1061","d":"10 Oct 2026","t":"A CLOSE OR AN AMENDMENT UNDER WHAT THEY PAID OPENS THE REFUND FOR THE DIFFERENCE","n":["<b>The refund opens as the Correction folds.</b> A close at fewer units than they paid for waited under Approve, and an amendment under what was paid was refused, because nothing booked the difference. The engine's refundOnOverpay, beside refundOnCancel, now opens a customerRefunds row for it, from the Desk and from Counter Admin alike: Now on the desk, on their Refunds list at the next publish, closed only by paidOn, as a paid cancel's is.","<b>Once for each sum.</b> It reads what the row already carries, so a further lowering raises only the further difference, a cancellation after a part refund raises the rest, and a re-run raises nothing. A refund the book no longer owes is flagged, never withdrawn. The close is one tap like any other; money still on its way to the row still holds it. Nothing prices anything new."]}];
+const evolution=[{"v":"v1062","d":"10 Oct 2026","t":"A COUNT OF ONE DAY SAYS 1 DAY","n":["<b>1 day, never 1 days.</b> The Stock tile printed 1 days at its rate, and about fifty other counts of days across the desk had no singular. One helper, nDays, now prints every count of days on the desk: the singular only for 1, a list such as 2, 6, 1 days apart staying plural.","<b>Copy only.</b> No figure, rule or price moves; the dated records are untouched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9245,19 +9245,19 @@ function ledFact(t,am){
   /* round six: a settle dated before its own row is impossible data, and computing "N sooner
      than his usual" from it compounds a typo into a confident falsehood. Say what the trail
      says and stop. */
-  if(settle<0)return `settled ${-settle} day${-settle===1?'':'s'} before its own order date; check the amendment trail`;
+  if(settle<0)return `settled ${nDays(-settle)} before its own order date; check the amendment trail`;
   const peers=sales.filter(o=>o.customer===t.customer&&!o.cancelled&&o.amend&&o.amend.length&&ovKey(o)!==ovKey(t))
     .map(o=>{const a=o.amend.slice().sort((x,y)=>new Date(x.date)-new Date(y.date));
       return Math.round((new Date(a[a.length-1].date)-new Date(o.date))/86400000);})
     .filter(d=>d>=0).sort((a,b)=>a-b);
   if(peers.length>=2){
     const med=peers[Math.floor(peers.length/2)];
-    if(settle<=med-2)return `settled in ${settle} day${settle===1?'':'s'}, ${med-settle} sooner than his usual ${med}`;
-    if(settle>=med+2)return `took ${settle} days against his usual ${med}`;
+    if(settle<=med-2)return `settled in ${nDays(settle)}, ${med-settle} sooner than his usual ${med}`;
+    if(settle>=med+2)return `took ${nDays(settle)} against his usual ${med}`;
     return '';                       // behaved exactly as he always does, which is not news
   }
   /* not enough history for a habit, so the only honest fact is the calendar */
-  return settle>=3?`${settle} days from agreed to settled`:'';
+  return settle>=3?`${nDays(settle)} from agreed to settled`:'';
 }
 const LEDGER_NOISE=/^(as booked|as agreed|no change|opening|opened|booked)\.?$/i;
 const NOTE_MIN=140;   /* prose at or over this is method: cut to its first sentence (v372) */
@@ -9372,7 +9372,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 16:39 KL';
+const LAST_UPDATED='10 Oct 2026, 16:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11485,7 +11485,7 @@ function boundaryScan(){
   arList.forEach(s=>{const since=txUnpaidSince(s),dd=since?dAge(since):0;if(!(dd>RULES.holdDays))return;
     /* V5: the provision it has reached, and at 100% a default review */
     const pr=Math.round(saleProvRate(s,dd)*100);
-    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+dd+' days after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade; '+(pr>=100?'fully provisioned, so review it for default':pr+'% provisioned, fully provisioned at '+SALE_FULL+' days'));});
+    add('breach','Credit age',s.customer,fmt0(outstandingOf(s))+' unpaid '+nDays(dd)+' after the handover','past the '+RULES.holdDays+'-day limit from the handover, so it is collection rather than trade; '+(pr>=100?'fully provisioned, so review it for default':pr+'% provisioned, fully provisioned at '+nDays(SALE_FULL)));});
   /* 2. margin floor, BY ORDER SIZE. A closed sale at 39% is history: the money is
      banked and the price cannot be revisited, so listing every one of them buries the
      handful you can still do something about. Only two kinds get their own row, the
@@ -11590,8 +11590,8 @@ function boundaryScan(){
   //    29 Sep 2026: its ladder is full by day 4, inside the hold), so only the supplier's recoverable is aged here
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const dd=dAge(supplierReceivable.since);
-    if(dd>=RULES.fullProvDays)add('breach','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+dd+' days','fully provisioned');
-    else if(dd>=8)add('watch','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+dd+' days',Math.round(provRate(dd)*100)+'% provisioned, fully provisioned at '+RULES.fullProvDays+' days');}
+    if(dd>=RULES.fullProvDays)add('breach','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+nDays(dd),'fully provisioned');
+    else if(dd>=8)add('watch','Aged recoverable',supplierReceivable.party,fmt0(supRecovGross)+' at '+nDays(dd),Math.round(provRate(dd)*100)+'% provisioned, fully provisioned at '+nDays(RULES.fullProvDays));}
   return out;
 }
 /* the commit boundary: which provisional entries will probably read differently
@@ -11627,7 +11627,7 @@ function boundaryPanel(b,r){
   /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
      row and made the table 596px tall at 375px. Each x.why still exists where the rule is
      built, so restoring it is one cell, and the rule names stay self-stating. */
-  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.holdDays} day${RULES.holdDays===1?'':'s'} from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.filter(capStated).map(p=>PRODUCTS[p].name.toLowerCase()+' '+units(creditCapFor(p,'retail'))).join(', ')}) or ${nDays(RULES.holdDays)} from the handover, nothing under its band floor, nothing owed out beyond the inventory.${capBorrowNote()}</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
@@ -11775,6 +11775,9 @@ const dbet=d=>Math.floor((TODAY-new Date(d))/86400000+1e-9);  // floor: ageing s
    folding against. The comment above stays: it is why the rule exists, and it now describes the
    engine's function as much as this wrapper. null is still the trap it names. */
 const dAge=d=>POSITION_ENGINE.dayAge(TODAY,d);
+/* ONE WORD FOR A DAY COUNT (10 Oct 2026): "1 day", never "1 days". Singular only when the figure prints as 1
+   (1.0 stays as written); w is a word between, so nDays(1,'lead') is "1 lead day". Every count of days goes through it. */
+function nDays(n,w){return `${n} ${w?w+' ':''}day${/^-?1$/.test(String(n))?'':'s'}`;}
 const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
 /* ONE LABEL MAP FOR THE WHOLE DESK (hoisted at v273 out of tabToday, which owned it while
    the Whiteboard needed it too). Every jump button anywhere reads this. */
@@ -11889,7 +11892,7 @@ function tabOverview(){
   ${boundaryPanel(bnd,risks)}
   ${defAll.length?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${defAll.length} owed out</span></h3><div class="pchips">${defAll.map(d=>`<span class="pchip"><b>${ID(d.who)}</b> ${units(d.u)} ${tag(d.p)}</span>`).join('')}${ids.filter(p=>B[p].defUnits>B[p].held).map(p=>`<span class="pchip bad">${esc(PRODUCTS[p].name)}: exceeds ${units(B[p].held)} on hand</span>`).join('')}</div></div>`:''}
   ${arG>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(arG)} owed to you</span></h3><div class="pchips">${advRows.map(a=>`<span class="pchip${a.over.length?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over.map(p=>' &middot; over the '+units(capForParty(a.who,p))+' '+esc(PRODUCTS[p].name.toLowerCase())+' cap').join('')}</span>`).join('')}<span class="pchip warn">${fmt0(arNet)} net of provisioning</span></div></div>`:''}
-  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${dAge(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
+  ${(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default: ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(srGross)+' written off':fmt0(srNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(srGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(srNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip bad">${fmt0(srGross)} charged to margin</span>`:`<span class="pchip">${nDays(dAge(supplierReceivable.since))} out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(srGross)} gross</span><span class="pchip warn">${fmt0(srNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="sub" style="font-weight:400">money added across the books, each book's part beside it</span> <span class="rule"></span></h2>
   <div class="kpis k3">
     ${kpi('','Inventory at cost',fmt0(sum('stockVal')),split('held',units)||'nothing on hand')}
@@ -12064,7 +12067,7 @@ function drawTodayCharts(){
               /* the key names the two series in their resting colours; a bar under its trigger turns red on its own */
               plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11},generateLabels:()=>[['Cover',tcol('verdigris')],['Trigger',tcol('ink',0.40)]]
                 .map((x,i)=>({text:x[0],fillStyle:x[1],strokeStyle:x[1],lineWidth:0,hidden:false,datasetIndex:i}))}},
-                tooltip:{callbacks:{label:i=>i.dataset.label+': '+Number(i.raw).toLocaleString('en-MY',{maximumFractionDigits:1})+' days'}}},
+                tooltip:{callbacks:{label:i=>i.dataset.label+': '+nDays(Number(i.raw).toLocaleString('en-MY',{maximumFractionDigits:1}))}}},
               scales:{x:{grid:{display:false},ticks:{color:tcol('ink',0.66),font:{size:11}}},
                       y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>v+'d'},
                          beginAtZero:true}}}});
@@ -12122,7 +12125,7 @@ function tabForward(){
   const tag=p=>prodTag({product:p}), tags=x=>x.books&&x.books.length?' '+x.books.map(tag).join(' '):'';
   const buys=ids.filter(p=>A.per[p].buys.length);
   const buyWord=buys.map(p=>`${units(A.per[p].buys.reduce((a,x)=>a+x.qty,0))} of ${esc(PRODUCTS[p].name.toLowerCase())}`).join(' and ');
-  const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
+  const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${nDays(n)}</button>`).join('');
   const evRows=[];
   A.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}${tags(x)}`,kind:'stock in',rm:x.rm}));
   A.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${(x.held!=null?x.held:x.age)!=null?`, ${x.held!=null?x.held:x.age}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}${tags(x)}`,kind:'cash in',rm:x.rm}));
@@ -12131,10 +12134,10 @@ function tabForward(){
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
-  const provNote=A.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.held!=null?x.held+' days from the handover':x.age+' days out'}, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
+  const provNote=A.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.held!=null?nDays(x.held)+' from the handover':nDays(x.age)+' out'}, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
   /* the book that empties first leads, because that is the order to place */
   const dryOf=p=>A.per[p].f.dry, first=ids.filter(p=>dryOf(p)!=null).sort((a,b)=>dryOf(a)-dryOf(b))[0];
-  const emptyCell=g=>g.dry==null?`past ${g.days} days`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
+  const emptyCell=g=>g.dry==null?`past ${nDays(g.days)}`:g.dry===0?'<b style="color:var(--crim)">today</b>':g.dryDate;
   const bookRows=ids.map(p=>{const g=A.per[p].f;return `<tr><td class="l salt-table__label">${tag(p)}</td><td class="mono">${units(g.rate)}</td><td class="mono">${emptyCell(g)}</td><td class="mono">${g.commitUnits>0.009?units(g.commitUnits):NIL}</td></tr>`;}).join('');
   return `<h1>Next 30 days</h1>
   <div class="pscope"><span class="pbadge">Every book</span></div>
@@ -12146,8 +12149,8 @@ function tabForward(){
   </div>
   ${/* v385: one sentence carries the scenario, because stripMethod cuts an .insight to its first sentence */''}${(fwdBuy&&buys.length||fwdPlans)?`<div class="insight salt-insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy&&buys.length?`the agreed ${buyWord}, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k2" style="margin-top:13px">
-    <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):NIL}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${fwdDays} days`}</div></div>
-    <div class="kpi salt-kpi ${f.cashEnd<0?'r':'p'}"><div class="l salt-kpi__label">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v salt-kpi__value">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n salt-kpi__note">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
+    <div class="kpi salt-kpi ${first&&dryOf(first)===0?'r':first?'gold':'g'}"><div class="l salt-kpi__label">First to run empty</div><div class="v salt-kpi__value">${first?esc(PRODUCTS[first].name):NIL}</div><div class="n salt-kpi__note">${first?(dryOf(first)===0?'nothing on the inventory now':`day ${dryOf(first)}, ${A.per[first].f.dryDate}`):`every book holds past ${nDays(fwdDays)}`}</div></div>
+    <div class="kpi salt-kpi ${f.cashEnd<0?'r':'p'}"><div class="l salt-kpi__label">Cash ${cash?`at day ${f.days}`:`movement, ${nDays(f.days)}`}</div><div class="v salt-kpi__value">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n salt-kpi__note">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
   <h2 style="margin-top:18px">Inventory, book by book <span class="rule"></span></h2>
   <div class="card"><div class="tscroll"><table class="salt-table"><thead><tr><th class="l salt-table__label">Book</th><th title="shipped a day over the last fortnight">A day</th><th>Empty on</th><th title="promised out and not yet handed over">Out</th></tr></thead><tbody>${bookRows}</tbody></table></div></div>
@@ -12401,7 +12404,7 @@ function tabSourcing(){
        reading the deployed build rather than the diff, which is the only place all three are
        visible at once. One rule now: concentration he has chosen is a watch; it earns the alarm
        where that same name has cost him something. */}
-    <div class="kpi salt-kpi ${conc&&conc.recentShare>80?(conc.defaults?'r':'g'):''}"><div class="l salt-kpi__label">Top supplier share</div><div class="v salt-kpi__value" style="${conc&&conc.recentShare>80?(conc.defaults?'color:var(--crim)':'color:var(--gold)'):''}">${conc?conc.recentShare.toFixed(0)+'%':NIL}</div><div class="n salt-kpi__note">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
+    <div class="kpi salt-kpi ${conc&&conc.recentShare>80?(conc.defaults?'r':'g'):''}"><div class="l salt-kpi__label">Top supplier share</div><div class="v salt-kpi__value" style="${conc&&conc.recentShare>80?(conc.defaults?'color:var(--crim)':'color:var(--gold)'):''}">${conc?conc.recentShare.toFixed(0)+'%':NIL}</div><div class="n salt-kpi__note">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${nDays(conc.recentDays)} (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
     ${''/* v553: the note has to say WHICH basis it is on. Under a COST_RULE the effective figure is
        a flat markup on the buy rate, so the old sentence, "goods plus freight loaded for leak",
        described arithmetic that no longer ran and named a leak percentage the figure did not use. */}
@@ -12422,10 +12425,10 @@ function tabSourcing(){
     if(!s)return hd('no lot received yet');
     return hd('')+`<div class="card">
     <div class="kpis k6">
-      <div class="kpi salt-kpi ${s.owed>0.009?'p':''}"><div class="l salt-kpi__label">Current lot</div><div class="v salt-kpi__value">${units(s.qty)}</div><div class="n salt-kpi__note">${s.lot.date||'not dated'}, from ${ID(s.lot.sup)}${s.age==null?'':`, ${s.age} day${s.age===1?'':'s'} ago`}${s.owed>0.009?`; ${units(s.recvOnLot)} landed and ${units(s.owed)} still to come`:''}</div></div>
+      <div class="kpi salt-kpi ${s.owed>0.009?'p':''}"><div class="l salt-kpi__label">Current lot</div><div class="v salt-kpi__value">${units(s.qty)}</div><div class="n salt-kpi__note">${s.lot.date||'not dated'}, from ${ID(s.lot.sup)}${s.age==null?'':`, ${nDays(s.age)} ago`}${s.owed>0.009?`; ${units(s.recvOnLot)} landed and ${units(s.owed)} still to come`:''}</div></div>
       <div class="kpi salt-kpi"><div class="l salt-kpi__label">What it cost</div><div class="v salt-kpi__value">${fmt0(s.total)}</div><div class="n salt-kpi__note">${fmt(s.lot.rate)}/unit on the goods${s.lot.freight?` plus ${fmt0(s.lot.freight)} freight`:''}, ${fmt(s.eff)} effective at the ${s.lvl}% ${SL.label} level; average cost ${fmt(wavgBuy)}</div></div>
-      <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Left of it</div><div class="v salt-kpi__value">${units(s.lot.left)}</div><div class="n salt-kpi__note">${fmt0(s.lot.costLeft)} at cost, of the ${units(s.recvOnLot)} landed${s.coverLeft==null?'':`; ${s.coverLeft} days at today's rate`}</div></div>
-      <div class="kpi salt-kpi ${s.below?'r':'g'}"><div class="l salt-kpi__label">Inventory runs dry</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.empty?'empty already':(s.dry||NIL)}</div><div class="n salt-kpi__note">${s.empty?`nothing left to sell, at ${units(s.rate)}/day`:(s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`)}</div></div>
+      <div class="kpi salt-kpi gold"><div class="l salt-kpi__label">Left of it</div><div class="v salt-kpi__value">${units(s.lot.left)}</div><div class="n salt-kpi__note">${fmt0(s.lot.costLeft)} at cost, of the ${units(s.recvOnLot)} landed${s.coverLeft==null?'':`; ${nDays(s.coverLeft)} at today's rate`}</div></div>
+      <div class="kpi salt-kpi ${s.below?'r':'g'}"><div class="l salt-kpi__label">Inventory runs dry</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.empty?'empty already':(s.dry||NIL)}</div><div class="n salt-kpi__note">${s.empty?`nothing left to sell, at ${units(s.rate)}/day`:(s.dryD==null?'no sell rate':`${nDays(s.dryD)} at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`)}</div></div>
       <div class="kpi salt-kpi ${s.below?'r':''}"><div class="l salt-kpi__label">${s.below?'Short of the mark':'Reorder mark'}</div><div class="v salt-kpi__value" style="${s.below?'color:var(--crim)':''}">${s.below?units(s.mark-s.free):(s.reorder||NIL)}</div><div class="n salt-kpi__note">${s.empty?`nothing free to sell${s.free<-0.009?`, and ${units(-s.free)} owed out beyond the inventory`:''}, against a ${units(s.mark)} mark`:s.below?`under the ${units(s.mark)} mark, with ${units(s.free)} free to sell`:`${units(s.free)} free to sell against a ${units(s.mark)} mark`}</div></div>
       <div class="kpi salt-kpi"><div class="l salt-kpi__label">Against a month</div><div class="v salt-kpi__value">${s.monthly>0.009?(s.qty/s.monthly).toFixed(1)+'&times;':NIL}</div><div class="n salt-kpi__note">${s.monthly>0.009?`${units(s.qty)} against ${units(s.monthly)} a month, ${units(s.monthly28)} at the four-week rate; ${s.multiple}&times; the largest lot bought`:'no demand rate to size it against'}</div></div>
     </div>
@@ -12440,7 +12443,7 @@ function tabSourcing(){
     ${''/* v549: the cadence replaces the rateBasis line that stood here. It says what the book
        knows and refuses the thing it does not: how often he HAS bought, never when he will. */}
     <div class="dsc" style="margin-top:9px"><b>${s.gaps.length
-      ? `Your last ${s.gaps.length+1} lots landed ${s.gaps.join(', ')} days apart, ${s.gapAvg} on average.`
+      ? `Your last ${s.gaps.length+1} lots landed ${nDays(s.gaps.join(', '))} apart, ${s.gapAvg} on average.`
       : `Only one lot on this book, so there is no cadence to read yet.`}</b> The desk does not know when you will buy again and does not guess; this is how often you have.${s.undatedRecv?` ${s.undatedRecv} landed lot${s.undatedRecv===1?' carries':'s carry'} no date, so ${s.undatedRecv===1?'it sits':'they sit'} in the inventory but not in the cadence.`:''}</div>
     </div>`;})()}
 
@@ -12533,7 +12536,7 @@ function tabSourcing(){
        history is not lost, it is in the sentence's own words two clauses along; it simply stops
        shouting a third time in a colour that is supposed to be scarce. */
     const hurt=conc.defaults>0;
-    return `<div class="dsc" style="margin-top:8px"><b style="color:${hurt?'var(--crim)':'var(--gold)'}">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
+    return `<div class="dsc" style="margin-top:8px"><b style="color:${hurt?'var(--crim)':'var(--gold)'}">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${nDays(conc.recentDays)}</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
 
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">by landing date, RM/unit; the defaulted lot drawn hollow</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div></div>
   ${(()=>{/* v385: THE PROFIT COLUMN WAS INVERTED, AND THE PROSE UNDER IT CLAIMED THE OPPOSITE.
@@ -12765,7 +12768,7 @@ function tabAnalysis(){
   <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${units(reorderFor(PROD))} trigger, ending on the counted <b>${units(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=pSales(PROD).map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);   /* round six: bare `sales` put whole-book counts inside every product block */
-    if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${units((sh.length?Math.min.apply(null,sh.map(r=>r.raw)):0))}</span></h3>
+    if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${nDays(neg.length)}, and that is a finding <span class="cd crim">low ${units((sh.length?Math.min.apply(null,sh.map(r=>r.raw)):0))}</span></h3>
       <div class="insight salt-insight">A dating artefact, not a stockout: add a <b>deliveredOn</b> to the orders that fall back to their order date.</div></div>`;
     /* THE CLEAN WALK IS PROVENANCE, SO IT FOLDS, and the summary still carries the answer.
        Nothing is deleted to fold it: the three date sources are the sentence they always were,
@@ -13341,7 +13344,7 @@ function restockCard(){
   const dd=s=>{if(!s)return null;const d=new Date(s);return d.getUTCDate()+' '+MAP_MON[d.getUTCMonth()];};
   const pc=v=>v==null?'none':Math.round(v*100)+'%';
   const tile=(tone,l,v,n)=>`<div class="kpi salt-kpi ${tone}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${n}</div></div>`;
-  const fc=(x,n)=>tile('',`Next ${n} days`,units(x.use),`${x.by==='named'?'named customers lead':'run rate leads'}: run rate ${units(x.run)}, named ${units(x.named)}`);
+  const fc=(x,n)=>tile('',`Next ${nDays(n)}`,units(x.use),`${x.by==='named'?'named customers lead':'run rate leads'}: run rate ${units(x.run)}, named ${units(x.named)}`);
   const top=b.common[0];
   const typical=tile(b.conf==='thin'?'r':'gold','Typical order',units(b.median),
     `half of orders ${b.p25===b.p75?'at '+units(b.p25):units(b.p25)+' to '+units(b.p75)}; 1 in 10 over ${units(b.p90)}; most often ${units(top.qty)} (${top.n} order${top.n===1?'':'s'}); ${b.n} order${b.n===1?'':'s'}${b.conf==='thin'?', a thin sample':''}`);
@@ -13350,12 +13353,12 @@ function restockCard(){
     r.free<=0.009?'nothing free to sell':`${units(r.free)} free${r.coverDate?', runs out '+dd(r.coverDate):', lasts past the forecast'}`);
   const bound=RO.bound==='floor'?', held up at 4':RO.bound==='ceiling'?', held down at 14':'';
   const reorder=tile(r.below?'r':'g','Reorder point',units(RO.units),
-    `${RO.days} days of demand, always 4 to 14 days${bound}; ${r.below?'under it now':'reached '+(r.reachDate?dd(r.reachDate):'after the forecast')}`);
+    `${nDays(RO.days)} of demand, always 4 to 14 days${bound}; ${r.below?'under it now':'reached '+(r.reachDate?dd(r.reachDate):'after the forecast')}`);
   const lot=!L?tile('','Next lot','none','no quote on this book to size a lot from')
-    :tile('gold','Next lot',units(L.qty),`${fmt0(L.total)} at ${fmt(L.rate)}/unit, ${lotWords(L)}; lasts ${L.cover==null?'an unknown time':L.cover+' days'}; ${r.below?'order now':r.reachDate?'order by '+dd(r.reachDate):'no order due inside the forecast'}${L.overstock?'; the smallest lot sold outlasts the 4-week forecast':''}`);
+    :tile('gold','Next lot',units(L.qty),`${fmt0(L.total)} at ${fmt(L.rate)}/unit, ${lotWords(L)}; lasts ${L.cover==null?'an unknown time':nDays(L.cover)}; ${r.below?'order now':r.reachDate?'order by '+dd(r.reachDate):'no order due inside the forecast'}${L.overstock?'; the smallest lot sold outlasts the 4-week forecast':''}`);
   const brk=!N?tile('','Price break','none','one rate at every size, so the smallest lot that covers the need is the cheapest to hold')
     :N.won?tile('g','Price break','taken',`${fmt(N.rate)}/unit beats ${fmt(N.over.rate)}/unit on ${units(N.over.qty)}, the leak over the longer hold included`)
-    :tile('','Price break',`${units(N.qty)} at ${fmt(N.rate)}`,N.why==='overstock'?'not taken: it outlasts the 4-week forecast':`not taken: the leak over ${N.cover} days costs more than the ${fmt(+(L.rate-N.rate).toFixed(2))}/unit it saves`);
+    :tile('','Price break',`${units(N.qty)} at ${fmt(N.rate)}`,N.why==='overstock'?'not taken: it outlasts the 4-week forecast':`not taken: the leak over ${nDays(N.cover)} costs more than the ${fmt(+(L.rate-N.rate).toFixed(2))}/unit it saves`);
   const band=(k,l)=>`<tr><td class="l salt-table__label">${l}</td><td>${b.bands[k].orders}</td><td>${pc(b.bands[k].orderShare)}</td><td>${units(b.bands[k].units)}</td><td>${pc(b.bands[k].unitShare)}</td></tr>`;
   const tw=r.trendRaw==null?'no full weeks to read a trend from':`${r.trend>=0?'+':''}${(r.trend*100).toFixed(1)}% a week over ${r.weeks} weeks (measured ${(r.trendRaw*100).toFixed(1)}%, shrunk and capped at 50%)`;
   return h+`<div class="card" id="restockCard">
@@ -13365,8 +13368,8 @@ function restockCard(){
       ${band('small',units(b.smallUpTo)+' or under')}${band('mid','over '+units(b.smallUpTo)+', under '+units(b.bigFrom))}${band('big',units(b.bigFrom)+' and over')}
     </tbody></table>
     <details class="obsec"><summary>How it is measured <span class="q">${units(r.base)} a day, ${r.dues.length} named customer${r.dues.length===1?'':'s'} due</span></summary><div class="card">
-      <div class="dsc">Base: ${units(r.base)} a day, each day weighted by recency (half-life 14 days) over ${r.young?'28 days, the book being '+r.days+' days old':'all '+r.days+' days of the book'}, silent days included. Trend: ${tw}. Weekday and pay-window rhythm from this book, shrunk towards none on thin days.${r.hols.length?' Holidays ahead ('+r.hols.map(x=>dd(x.iso)).join(', ')+') are flagged and move nothing until one has been traded through.':''}</div>
-      <div class="dsc" style="margin-top:9px">Each window takes the run rate or what named customers are due to take in it on their own cadence, whichever is more. Safety: ${units(RO.safety)}, 1.65 times the daily spread of ${units(r.sigma)} over ${r.lead} lead day${r.lead===1?'':'s'} and ${r.review} review days${r.reviewMeasured?' (the median gap between lots)':' (not measured: one lot so far)'}. A lot is scored at its rate plus ${r.leakPct}% leak over half its cover; a lot the forecast would not sell in 4 weeks is not offered.</div>
+      <div class="dsc">Base: ${units(r.base)} a day, each day weighted by recency (half-life 14 days) over ${r.young?'28 days, the book being '+nDays(r.days)+' old':'all '+nDays(r.days)+' of the book'}, silent days included. Trend: ${tw}. Weekday and pay-window rhythm from this book, shrunk towards none on thin days.${r.hols.length?' Holidays ahead ('+r.hols.map(x=>dd(x.iso)).join(', ')+') are flagged and move nothing until one has been traded through.':''}</div>
+      <div class="dsc" style="margin-top:9px">Each window takes the run rate or what named customers are due to take in it on their own cadence, whichever is more. Safety: ${units(RO.safety)}, 1.65 times the daily spread of ${units(r.sigma)} over ${nDays(r.lead,'lead')} and ${nDays(r.review,'review')}${r.reviewMeasured?' (the median gap between lots)':' (not measured: one lot so far)'}. A lot is scored at its rate plus ${r.leakPct}% leak over half its cover; a lot the forecast would not sell in 4 weeks is not offered.</div>
     </div></details>
   </div>`;
 }
@@ -16201,7 +16204,7 @@ function observations(){
         title:`Weekends run ${pct<5?'level with':(up?'busier than':'quieter than')} weekdays`,
         why:pct<5
           ? `Saturday and Sunday take ${R.wknd.ordPerDay.toFixed(2)} orders a day against ${R.wkdy.ordPerDay.toFixed(2)} on weekdays. On this book the weekend is not a different market, so there is nothing to buy against here.`
-          : `Saturday and Sunday take ${R.wknd.ordPerDay.toFixed(2)} orders a day against ${R.wkdy.ordPerDay.toFixed(2)} on weekdays, ${pct.toFixed(0)}% ${up?'more':'less'}. Measured instead against the all-day average of ${R.all.ordPerDay.toFixed(2)}, which is the basis the restock signal works in, the weekend sits at ${R.fWknd.raw==null?'no reading':R.fWknd.raw.toFixed(2)} and arrives as ${R.fWknd.f.toFixed(2)} once shrunk for ${R.wknd.days} days of evidence. The two comparisons are different questions and both are shown, because a weekend that is quiet against weekdays is not the same claim as a weekend that is quiet against the week.`,
+          : `Saturday and Sunday take ${R.wknd.ordPerDay.toFixed(2)} orders a day against ${R.wkdy.ordPerDay.toFixed(2)} on weekdays, ${pct.toFixed(0)}% ${up?'more':'less'}. Measured instead against the all-day average of ${R.all.ordPerDay.toFixed(2)}, which is the basis the restock signal works in, the weekend sits at ${R.fWknd.raw==null?'no reading':R.fWknd.raw.toFixed(2)} and arrives as ${R.fWknd.f.toFixed(2)} once shrunk for ${nDays(R.wknd.days)} of evidence. The two comparisons are different questions and both are shown, because a weekend that is quiet against weekdays is not the same claim as a weekend that is quiet against the week.`,
         ev:[`${R.wknd.days} weekend days and ${R.wkdy.days} weekdays observed, ${R.from} to ${R.to}`,
             `weekend ${units(R.wknd.kg)} over ${R.wknd.orders} orders, weekday ${units(R.wkdy.kg)} over ${R.wkdy.orders}`,
             `units a day: ${(R.wknd.unitsPerDay||0).toFixed(2)} weekend against ${(R.wkdy.unitsPerDay||0).toFixed(2)} weekday`]});
@@ -16215,7 +16218,7 @@ function observations(){
       add({id:'rhythm:dow:'+DEFAULT_PROD,fam:'rhythm',sev:'note',conf:confDay,rm:null,tab:'analysis',
         title:`${DOW[hi.i]} is the busiest day, ${DOW[lo.i]} the quietest`,
         why:`${DOW[hi.i]} takes ${hi.b.ordPerDay.toFixed(2)} orders a day and ${DOW[lo.i]} ${lo.b.ordPerDay.toFixed(2)}${spread?`, a spread of ${spread.toFixed(1)} to 1`:''}. Each weekday stands on about ${Math.round(R.days/7)} observations, so treat this as where to look rather than as a rule. One 12.5 unit lot on a Tuesday would rewrite it.`,
-        ev:R.byDow.map((b,i)=>`${DOW3[i]}: ${b.days} days, ${b.orders} orders, ${units(b.kg)}`)});
+        ev:R.byDow.map((b,i)=>`${DOW3[i]}: ${nDays(b.days)}, ${b.orders} orders, ${units(b.kg)}`)});
     }
     /* THE PAY WINDOW */
     const pr=obsDiv(R.payw.ordPerDay,R.mid.ordPerDay);
@@ -16224,7 +16227,7 @@ function observations(){
       add({id:'rhythm:payday:'+DEFAULT_PROD,fam:'rhythm',sev:pct>=25?'watch':'note',conf:conf,rm:null,tab:'analysis',
         title:`The pay window runs ${pct<5?'level with':(up?'ahead of':'behind')} mid-month`,
         why:`Malaysian wages must be paid within seven days of the end of the wage period, so a monthly salary lands somewhere between the 25th and the 7th. Across that window this book takes ${R.payw.ordPerDay.toFixed(2)} orders a day against ${R.mid.ordPerDay.toFixed(2)} from the 8th to the 24th${pct<5?'. On this book payday is not visible in the order flow yet.':`, ${pct.toFixed(0)}% ${up?'more':'less'}. Shrunk for sample that is a factor of ${R.fPay.f.toFixed(2)}.`}`,
-        ev:[`${R.payw.days} days inside the window, ${R.mid.days} outside`,
+        ev:[`${nDays(R.payw.days)} inside the window, ${R.mid.days} outside`,
             `in-window ${units(R.payw.kg)} over ${R.payw.orders} orders, mid-month ${units(R.mid.kg)} over ${R.mid.orders}`,
             `the window is 25th to 7th, which spans a month end, so it is two part-months rather than one block`]});
     }
@@ -16235,10 +16238,10 @@ function observations(){
       add({id:'rhythm:holiday:'+DEFAULT_PROD,fam:'rhythm',sev:hs.length?'watch':'note',conf:'none',rm:null,tab:'inventory',
         title:hs.length
           ? `${hs.length} Kuala Lumpur ${hs.length===1?'holiday':'holidays'} inside the next fortnight`
-          : (nextH?`Next Kuala Lumpur holiday is ${esc(nextH.n)}, ${-dbet(nextH.d)} days out`:'No verified holiday left in the table'),
+          : (nextH?`Next Kuala Lumpur holiday is ${esc(nextH.n)}, ${nDays(-dbet(nextH.d))} out`:'No verified holiday left in the table'),
         why:`${hs.length?`${hs.map(h=>`${esc(h.hol)} on ${h.iso}`).join(' and ')}. `:''}${R.holIn===0
           ? `THIS BOOK HAS NEVER TRADED THROUGH A HOLIDAY. Not one Kuala Lumpur holiday falls inside ${R.from} to ${R.to}, so there is no measured lift or drop to apply and the restock signal holds the holiday factor at 1.00 rather than guessing one. What the calendar can tell you is that the inventory should not be allowed to run thin across the date; what it cannot tell you is which way demand moves.`
-          : `${R.holIn} holiday day${R.holIn===1?'':'s'} sit inside the observed window, which is still too few to read a factor from.`}`,
+          : `${nDays(R.holIn,'holiday')} sit inside the observed window, which is still too few to read a factor from.`}`,
         ev:[`holiday table verified 08 Aug 2026 for Kuala Lumpur, complete to ${HOL_VERIFIED_TO}`,
             `2027 carries statutory fixed dates only; the lunar and Islamic festivals are left out rather than guessed`,
             F.pastTable?'the forward window now runs past the verified table, so treat the far end as unchecked':'the forward window sits inside the verified table']});
@@ -16259,7 +16262,7 @@ function observations(){
         ev:[`fourteen days from ${F.days[0].iso} to ${F.days[13].iso}`,
             `${F.days.filter(d=>d.pay).length} of them fall inside the pay window`,
             `${F.days.filter(d=>isWknd(new Date(d.iso))).length} are weekend days`,
-            F.hols.length?`${F.hols.length} public holiday day${F.hols.length===1?'':'s'} in the window, not weighted`:'no public holiday in the window']});
+            F.hols.length?`${nDays(F.hols.length,'public holiday')} in the window, not weighted`:'no public holiday in the window']});
     }
   }
 
@@ -16295,7 +16298,7 @@ function observations(){
       add({id:key,fam:'integrity',sev:twin?'act':'note',conf:'measured',rm:+s.total,tab:'ledger',
         title:twin
           ? `${ID(s.customer)} carries the same order twice and nothing tells them apart`
-          : `${ID(s.customer)} bought the same thing twice in ${gap} day${gap===1?'':'s'}`,
+          : `${ID(s.customer)} bought the same thing twice in ${nDays(gap)}`,
         why:twin
           ? `${s.date} and ${t.date} both book ${units(+s.qty)} for ${fmt0(+s.total)} to the same party, with identical settlement on both. Either the second is real and something on it should say so, or one is the other re-entered. Booking a duplicate counts the money twice, takes salt off a inventory it never left, and can push a reseller across a rebate step nobody earned. Nothing is assumed either way: check it and say which.`
           : `${s.date} and ${t.date} both book ${units(+s.qty)} for ${fmt0(+s.total)}, but the book already separates them by ${tell.join(', ')}. That is what a regular customer with a fixed order looks like rather than a double entry, so this is raised for completeness and not as a fault. Dismiss it and it stays dismissed.`,
@@ -16350,7 +16353,7 @@ function observations(){
     add({id:'int:stalepend',fam:'integrity',sev:'watch',conf:'measured',rm:rm,tab:'receivables',
       title:`${stale.length} pending ${stale.length===1?'order has':'orders have'} sat a week or more`,
       why:`${units(q)} worth ${fmt0(rm)} agreed with nothing moved either way. Pending counts nowhere by design, so it costs nothing on the books and everything in attention: the salt is not reserved, the money is not owed, and the customer may well think it is settled. Convert it or close it.`,
-      ev:stale.map(s=>`${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.qty)} for ${fmt0(+s.total)}, ${dbet(s.date)} days`)});
+      ev:stale.map(s=>`${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.qty)} for ${fmt0(+s.total)}, ${nDays(dbet(s.date))}`)});
   }
   /* A SINGLE-STEP TRAIL DATED ON THE ORDER DATE restates the row it belongs to, so the
      ledger card draws Opened, then a movement identical to the opening, then Closed. The
@@ -16404,8 +16407,8 @@ function observations(){
     const f=past.slice().sort((a,b)=>b.late-a.late)[0], nm=esc(PRODUCTS[p].name.toLowerCase());
     add({id:'cust:cadence:'+p,fam:'customer',sev:'watch',conf:'measured',rm:B.S.rm,tab:'concentration',
       title:`${past.length} ${past.length===1?'customer is':'customers are'} past their own habit on ${nm}`,
-      why:`${B.S.dueNow} due now and ${B.S.lapsing} lapsing, split as the Clients board splits them: due now is past their own date by up to twice their own usual gap, lapsing by more. ${ID(f.id)} is furthest out: ${f.late} days past a ${f.cad.med}-day habit${burst(f)?`, though that habit was cut from ${f.cad.n} orders inside ${span(f)} days, so it is the pace of one burst rather than a settled habit`:''}. Worth ${fmt0(B.S.rm)} of profit if each reorders their usual lot at their own price: what they have paid before, not a forecast that they will.`,
-      ev:past.slice(0,8).map(x=>`${ID(x.id)}: ${x.cad.n} orders over ${span(x)} days, ${x.cad.med}-day habit${burst(x)?' (one burst)':''}, ${x.late} days past it, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
+      why:`${B.S.dueNow} due now and ${B.S.lapsing} lapsing, split as the Clients board splits them: due now is past their own date by up to twice their own usual gap, lapsing by more. ${ID(f.id)} is furthest out: ${nDays(f.late)} past a ${f.cad.med}-day habit${burst(f)?`, though that habit was cut from ${f.cad.n} orders inside ${nDays(span(f))}, so it is the pace of one burst rather than a settled habit`:''}. Worth ${fmt0(B.S.rm)} of profit if each reorders their usual lot at their own price: what they have paid before, not a forecast that they will.`,
+      ev:past.slice(0,8).map(x=>`${ID(x.id)}: ${x.cad.n} orders over ${nDays(span(x))}, ${x.cad.med}-day habit${burst(x)?' (one burst)':''}, ${nDays(x.late)} past it, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
   });
   /* ONE AND DONE. The single most expensive pattern a young book can have and the one it
      is least likely to notice, because every first order looks like a success. */
@@ -16426,7 +16429,7 @@ function observations(){
     add({id:'cust:noreply',fam:'customer',sev:'note',conf:'measured',rm:null,tab:'concentration',
       title:`${noreply.length} follow-${noreply.length===1?'up has':'ups have'} gone unanswered`,
       why:`The silence is theirs rather than yours, which is worth knowing before spending another message on it. A second approach to a name that did not answer the first is usually worth less than a first approach to a name nobody has tried.`,
-      ev:noreply.map(k=>`${ID(k.party)}: ${esc(k.how||'contact')} on ${k.date}, ${dbet(k.date)} days, no reply`)});
+      ev:noreply.map(k=>`${ID(k.party)}: ${esc(k.how||'contact')} on ${k.date}, ${nDays(dbet(k.date))}, no reply`)});
   }
 
   /* ---------- PRICING ---------- */
@@ -16485,7 +16488,7 @@ function observations(){
     add({id:'promo:revive:'+p,fam:'promo',sev:'note',conf:'measured',rm:rm,tab:'concentration',
       title:`${top.length===3?'Three':'Two'} messages are worth about ${fmt0(rm)} on ${esc(PRODUCTS[p].name.toLowerCase())}`,
       why:`${top.map(x=>ID(x.id)).join(', ')} are the ${top.length===3?'three':'two'} past their own habit with the most profit in their usual lot. Nothing here needs a discount: they bought at a price they accepted, and the cost of asking is one message each.`,
-      ev:top.map(x=>`${ID(x.id)}: ${x.late} days past a ${x.cad.med}-day habit, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
+      ev:top.map(x=>`${ID(x.id)}: ${nDays(x.late)} past a ${x.cad.med}-day habit, ${x.lapse?'lapsing':'due now'}, worth ${fmt0(x.profit)}`)});
   });
 
   /* ---------- UPKEEP ---------- */
@@ -16503,7 +16506,7 @@ function observations(){
   /* THE COST LOCK. A locked rate is a decision with a inventory life. */
   if(C&&C.locked&&C.lockAge!=null&&C.lockAge>=3){
     add({id:'upkeep:costlock:'+PROD,fam:'upkeep',sev:C.lockAge>=10?'watch':'note',conf:'measured',rm:null,tab:'pricing',
-      title:`The replacement rate has been locked for ${C.lockAge} days`,
+      title:`The replacement rate has been locked for ${nDays(C.lockAge)}`,
       why:`Locked at ${fmt(C.repl)} a unit on ${esc(C.lockedOn)}. A lock is right while a quote is live and wrong once it is stale, because every floor on the board is computed from it. If the supplier has moved since, every floor is being read off a rate that no longer exists.`,
       ev:[`locked ${esc(C.lockedOn)} at ${fmt(C.repl)} a unit`,`landed ${fmt(C.landed)} after freight`,`effective ${fmt(C.eff)} once the plug is attributed`]});
   }
@@ -16597,7 +16600,7 @@ function tabPlans(){
      being small today. Two blocks, one sentence each, and neither can be cut however the book
      grows. Under NOTE_MIN is a property of a template AND its figures, never the template. */
   const rhythmCount=R.empty?'No priced order on the book yet, so there is no rhythm to read.'
-    :`${R.n} priced orders across ${R.days} days, ${R.from} to ${R.to}.`;
+    :`${R.n} priced orders across ${nDays(R.days)}, ${R.from} to ${R.to}.`;
   const rhythmCaveat=R.empty?''
     :(R.all.orders>=40?'Enough to read a direction from, not enough to forecast with.'
                       :'A thin book: every factor below is shrunk towards no effect before it reaches an instruction.');
@@ -17991,9 +17994,9 @@ function driftOfNow(code,prod){
 function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
 function lateWhy(l){
   const w=RULES.lateWindowDays;
-  const why=l.why==='long'?(l.open?'unpaid ':'paid ')+l.days+' days after the handover'
-    :l.why==='shorts'?'paid late twice within '+w+' days'
-    :'late again within '+w+' days of paying on time';
+  const why=l.why==='long'?(l.open?'unpaid ':'paid ')+nDays(l.days)+' after the handover'
+    :l.why==='shorts'?'paid late twice within '+nDays(w)
+    :'late again within '+nDays(w)+' of paying on time';
   return why+(l.need>1?', '+l.streak+' of '+l.need+' on time since':'');
 }
 function ruleProposal(code,prod,boards){
@@ -18144,7 +18147,7 @@ function pxSignalsNow(){
   const shipped=pricedSales.filter(s=>new Date(s.date)>=new Date(TODAY.getTime()-14*MS)).reduce((a,s)=>a+txPhys(s),0);
   const perDay=shipped/14, cover=perDay>0?free/perDay:null;
   const sc=(free<0||(cover!=null&&cover<2))?4:cover==null?0:cover<5?2:cover<=14?0:cover<=30?-2:-4;
-  out.push({k:'Stock cover',v:sc,read:cover==null?'no shipments in 14 days':`${units(Math.max(0,free))} free against ${units(+perDay.toFixed(2))}/day shipped, ${cover.toFixed(1)} days`});
+  out.push({k:'Stock cover',v:sc,read:cover==null?'no shipments in 14 days':`${units(Math.max(0,free))} free against ${units(+perDay.toFixed(2))}/day shipped, ${nDays(cover.toFixed(1))}`});
   // 2 demand. ORDERED units, because on a desk that runs dry an unfillable order is still demand.
   const ordWin=(f,t)=>sales.filter(s=>!s.cancelled).filter(s=>{const d=new Date(s.date);return d>=new Date(TODAY.getTime()-f*MS)&&d<new Date(TODAY.getTime()-t*MS);}).reduce((a,s)=>a+s.qty,0);
   const d0=+ordWin(14,0).toFixed(2),d1=+ordWin(28,14).toFixed(2);
@@ -18434,7 +18437,7 @@ function remindText(ds,gross){
   /* a part-paid order says what is left of what total, so RM50 is not read as the price of the whole lot.
      28 SEP 2026, HIS ANSWER (Q4): the age is counted from the handover, as the Counter counts it, so each order is named
      by its date and says how long ago it was received (the engine's txUnpaidSince, held on the debt as `held`). */
-  const ago=n=>n==null?'':`, received ${n} day${n===1?'':'s'} ago`;
+  const ago=n=>n==null?'':`, received ${nDays(n)} ago`;
   const line=x=>{const owed=txOwed(x.s),goods=`${units(x.s.qty)} of ${(PRODUCTS[prodOf(x.s)]||{name:'goods'}).name.toLowerCase()}${x.s.date?` ordered on ${day(x.s.date)}`:''}${ago(x.held)}`;
     return x.g<owed-0.009?`${fmt0(x.g)} left of the ${fmt0(owed)} for ${goods}`:`${fmt0(x.g)} for ${goods}`;};
   return `Hi, a reminder that ${fmt0(gross)} is still outstanding: ${ds.slice().sort(byHeld).map(line).join('; ')}. Could you settle it when you can? Thank you.`;
@@ -18471,7 +18474,7 @@ function actions(){
     const refill=rq?rq.total:+(needUnits*c.eff).toFixed(2);
     const title=short&&low?`Buy: ${units(f.shortUnits)} short on promises, ${units(cv.shortBy)} under trigger`
       :short?`Buy: ${units(f.shortUnits)} short of what is promised`
-      :`Reorder: ${units(cv.free)} free, ${cv.days==null?'no rate to read':cv.days+' days cover'}`;
+      :`Reorder: ${units(cv.free)} free, ${cv.days==null?'no rate to read':nDays(cv.days)+' cover'}`;
     const why=(short?`<b>${units(f.commitUnits)} owed out</b> against ${units(currentStock)} held, ${units(f.unmet)} unmet. `
         /* THE SEPARATOR BELONGS TO THE JOIN, NOT TO THE SECOND CLAUSE. With no pending rows this
            read `2.75 unit unmet. ; deferred CE4-CHE 0.5 unit.`, a semicolon opening a sentence
@@ -18480,7 +18483,7 @@ function actions(){
         +`${f.pendRows.map(r=>ID(r.id)+' '+units(r.kg)).join(', ')}${f.defRows.length?(f.pendRows.length?'; ':'')+'deferred '+f.defRows.map(r=>ID(r.id)+' '+units(r.kg)).join(', '):''}${f.pendRows.length||f.defRows.length?'. ':''}`:'')
       +(low?`${units(cv.shortBy)} under the ${units(cv.reorderAt)} trigger, ${units(cv.rate)}/day. `:'')
       /* v794: lots of one tier are said as lots, since salt's quote is one 12.5 unit tier bought in multiples (23 Sep 2026) */
-      +(pl?`Next lot, as On hand sizes it: ${pl.lots>1?`${lotWords(pl)}, ${units(pl.qty)}`:units(pl.qty)}, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit${rq.cover!=null?`, lasting ${rq.cover} days`:''}.`
+      +(pl?`Next lot, as On hand sizes it: ${pl.lots>1?`${lotWords(pl)}, ${units(pl.qty)}`:units(pl.qty)}, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit${rq.cover!=null?`, lasting ${nDays(rq.cover)}`:''}.`
         :rq&&rq.quoted?`Refill: ${rq.lots>1?`${rq.lots} lots of ${units(+(rq.qty/rq.lots).toFixed(2))}`:`the ${units(rq.qty)} tier`} covers the ${units(+needUnits.toFixed(2))} needed, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit quoted.`
         :`Refill ${fmt0(refill)} at ${fmt(rq?rq.rate:c.eff)}/unit, no quote on this book.`)
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
@@ -18553,7 +18556,7 @@ function actions(){
      open refund badged nothing anywhere. The rule is his own instruction, which is what a rule is
      here; it is not an ageing, because he did not ask for one. Today's is 23 days old. */
   customerRefunds.filter(r=>!r.paidOn).forEach(r=>add('now','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
-    `Owed since ${r.since}, ${dAge(r.since)} days. Money of theirs you are holding. ${esc(r.note||'')}`,'receivables'));
+    `Owed since ${r.since}, ${nDays(dAge(r.since))}. Money of theirs you are holding. ${esc(r.note||'')}`,'receivables'));
   /* 5. rules already broken, grouped by person. Four separate rows about one man is a
      list you stop reading; one row naming all four rules is a decision about him. */
   const br={};boundaryScan().filter(x=>x.sev==='breach').forEach(x=>{(br[x.who]=br[x.who]||[]).push(x);});
@@ -19222,10 +19225,10 @@ function approachBoard(S,bm){
     const act=x.debt>0.009
       ?`<span style="color:var(--crim)"><b>Collect ${fmt0(x.debt)} first.</b></span> A chase comes before an offer.`
       :d==null?`<b>One order so far.</b> ${offer}`
-      :lapses(x)?`<b>Lapsing: ${d} days past</b>, over twice their usual gap. A win-back: ${offer}`
-      :d>0?`<b style="color:var(--gold)">Overdue by ${d} day${d===1?'':'s'}</b> on their own habit. ${offer}`
+      :lapses(x)?`<b>Lapsing: ${nDays(d)} past</b>, over twice their usual gap. A win-back: ${offer}`
+      :d>0?`<b style="color:var(--gold)">Overdue by ${nDays(d)}</b> on their own habit. ${offer}`
       :d===0?`<b style="color:var(--gold)">Due today.</b> ${offer}`
-      :`Due in ${-d} day${-d===1?'':'s'}. Nothing needed yet.`;
+      :`Due in ${nDays(-d)}. Nothing needed yet.`;
     return `<span class="appop ap${side}">
       <div class="apname mono">${ID(x.id)}${custBadgeHtml(bm,x.id)}</div>
       <table>
@@ -20872,7 +20875,7 @@ async function slipView(u,id,at){
   try{const r=await fetch('slips/'+encodeURIComponent(u)+'/'+encodeURIComponent(id),{cache:'no-store',headers:qHeaders()});
     let j=null;try{j=await r.json();}catch(e){}
     const age=Date.now()-Date.parse(at||'');
-    if(r.status===404)msg=age>SLIP_DAYS*864e5?'The slip is no longer kept: a slip is kept '+SLIP_DAYS+' days.':age<5*60e3?'The slip is on its way. Try again in a minute.':'The slip could not be found.';
+    if(r.status===404)msg=age>SLIP_DAYS*864e5?'The slip is no longer kept: a slip is kept '+nDays(SLIP_DAYS)+'.':age<5*60e3?'The slip is on its way. Try again in a minute.':'The slip could not be found.';
     else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The server answered http '+r.status+'.');
     else{const b=await slipOpen(j.slip);if(!b)msg='The slip would not open with this key.';else{url=URL.createObjectURL(new Blob([b],{type:'image/jpeg'}));st='ok';}}
   }catch(e){msg='No connection.';}
@@ -20954,7 +20957,7 @@ function ordWantLine(o){
   const w=String(o&&o.wantBy||''),m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(w);
   if(!m||!['placed','acknowledged','ready'].includes(o.status)||(+o.moved||0)>=(+o.qty||0)-0.004)return '';
   const today=new Date(Date.now()+8*36e5).toISOString().slice(0,10),n=Math.round((Date.parse(w)-Date.parse(today))/864e5);
-  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+n+' days':n===-1?'yesterday':(-n)+' days ago';
+  const rel=n===0?'today':n===1?'tomorrow':n>1?'in '+nDays(n):n===-1?'yesterday':nDays(-n)+' ago';
   return `<p class="ordline ordwant">Wanted by <b>${+m[3]} ${MAP_MON[+m[2]-1]}</b>, ${rel}</p>`;
 }
 function ordCard(o){
@@ -22739,7 +22742,7 @@ function tabPricing(){
       ${line('Cogs',LB.cogs,`${fmt(c.landed)} landed, over ${units(q)}`)}
       ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${(quoteFor(PROD)||{}).supplier||'the supplier'}’s own ladder`)}
       ${line('Ask',R.price,`rounded up to the ${fmt0(LD.round.to)}, floor ${fmt0(R.floor)}`,true)}
-      ${line('Cost to serve',serve,`the basis over ${units(q)}, one delivery and ${(PRICE_ENGINE.tiers.find(t=>t.code===R.code)||{}).days} days of credit`,true)}
+      ${line('Cost to serve',serve,`the basis over ${units(q)}, one delivery and ${nDays((PRICE_ENGINE.tiers.find(t=>t.code===R.code)||{}).days)} of credit`,true)}
       ${line('Margin',marg,`${((marg/R.price)*100).toFixed(1)}% of the ask`,true)}
     </tbody></table>
     <div class="dsc" style="margin-top:8px">The markup is struck on cogs and the margin on the cost to serve, which is why they are different numbers.${R.wanted&&isFinite(R.wanted)&&Math.abs(R.wanted-R.price)>0.5?` The retired engine would have asked ${fmt0(R.wanted)}.`:''}</div>`;})()}</div>`;})()}
@@ -25157,7 +25160,7 @@ function consoOrderBlock(){
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
     +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):NIL,o
-      ? `${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`
+      ? `${nDays(o.d)} &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`
       : wo.length
         ? `nothing left to chase; ${fmt0(woG)} on ${wo.length} order${wo.length===1?'':'s'} is written off`
         : 'nothing is owed to you')

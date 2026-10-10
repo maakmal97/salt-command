@@ -7143,7 +7143,7 @@ await (async () => {
     const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});[].slice.call(c.querySelectorAll('div,p,li,tr,td,th,dt,dd,h1,h2,h3,h4,h5,h6,br')).forEach(function(b){b.appendChild(document.createTextNode(' '));});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
     ok(!/THREW/.test(text), `${label}: every part renders (${(text.match(/THREW [^ ]+/) || [""])[0]})`);
     ok(!/NaN/.test(text), `${label}: no NaN reaches the page (${(text.match(/.{0,28}NaN.{0,20}/) || [""])[0]})`);
-    ok(!/-\d+ ?(d ago|days ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days ago|d out)/) || [""])[0]})`);
+    ok(!/-\d+ ?(d ago|days? ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days? ago|d out)/) || [""])[0]})`);
     ok(!/\b2\d{4} days\b/.test(text), `${label}: no epoch-sized age is printed (${(text.match(/\b2\d{4} days\b/) || [""])[0]})`);
   }
   for (const f of tmp) { try { rmF(f); } catch (e) { /* best effort */ } }
@@ -27559,7 +27559,7 @@ await (async () => {
       const acts = rd8("actions().filter(a=>a.kind==='pay')");
       ok(acts.length === open8.length && acts.every((a) => a.sev === "now"),
         "every open refund is Now, from the day it is raised: " + JSON.stringify(acts.map((a) => [a.title, a.sev])));
-      ok(acts.every((a) => /Money of theirs you are holding/.test(a.why) && /days/.test(a.why)),
+      ok(acts.every((a) => /Money of theirs you are holding/.test(a.why) && /\bdays?\b/.test(a.why)),
         "and it says whose money it is and how long he has had it");
       /* the rail's Today badge counts the Now rows, so this is what makes a refund badge at all */
       const nowN = rd8("actions().filter(a=>a.sev==='now').length");
@@ -47256,11 +47256,12 @@ await (async () => {
      cover it does state must be the plan's. Neither form is skipped, and a form no book carries today says so. */
   const stated = books.filter((p) => v[p].row && !v[p].short), shortRows = books.filter((p) => v[p].row && v[p].short);
   if (stated.length) {
-    const row = stated.filter((p) => v[p].row.indexOf(v[p].plan.days + " days cover") < 0);
+    /* one day of cover reads "1 day cover" (nDays, 10 Oct 2026) */
+    const row = stated.filter((p) => v[p].row.indexOf(v[p].plan.days + (String(v[p].plan.days) === "1" ? " day" : " days") + " cover") < 0);
     ok(row.length === 0, "To do's buy row states the plan's cover: " + JSON.stringify(row.map((p) => [p, v[p].row, v[p].plan.days])));
   } else skipData("no book's buy row states a cover today, so To do's cover was not read against the plan");
   if (shortRows.length) {
-    const short = shortRows.filter((p) => { const c = /(\S+) days cover/.exec(v[p].row);
+    const short = shortRows.filter((p) => { const c = /(\S+) days? cover/.exec(v[p].row);
       return v[p].row.indexOf("Buy: " + v[p].short + " short") !== 0 || (c && c[1] !== String(v[p].plan.days)); });
     ok(short.length === 0, "and a row short on promises leads with the forecast's shortfall, stating no cover but the plan's: "
       + JSON.stringify(short.map((p) => [p, v[p].row, v[p].short, v[p].plan.days])));
@@ -53718,6 +53719,33 @@ await (async () => {
   ok(!refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date: "2028-02-29" } }, shelf)), "a leap day still drafts");
   const chk = checkCorrection({ date: "2026-02-30" }, shelf, { date: "2026-07-28", qty: 100, total: 4700 }, false);
   ok(/date in YYYY-MM-DD/.test(JSON.stringify(chk)), "a correction to an impossible day is refused: " + JSON.stringify(chk).slice(0, 120));
+})();
+
+section("Copy: a count of days says 1 day, never 1 days, through the one helper");
+await (async () => {
+  /* 10 Oct 2026: the Stock tile printed "1 days at 3 units/day", and about fifty printers across the desk wrote
+     `${n} days` with no singular beside a dozen that each spelt their own ternary. nDays is the one road. */
+  const { openMaster: omDays } = await import("../tools/payload.mjs");
+  const { w } = await omDays();
+  try {
+    const nd = (e) => String(w.eval(e));
+    const unit = [["nDays(1)", "1 day"], ["nDays(2)", "2 days"], ["nDays(0)", "0 days"], ["nDays(-1)", "-1 day"],
+      ["nDays('1.0')", "1.0 days"], ["nDays(1,'lead')", "1 lead day"], ["nDays(3,'public holiday')", "3 public holiday days"]]
+      .filter(([e, want]) => nd(e) !== want).map(([e, want]) => e + " gave " + nd(e) + ", not " + want);
+    /* the tile itself, its lot read as the desk reads it and then a day old, a day of cover and a day to dry */
+    const html = nd("(function(){setProd('salt');recompute();var was=currentLot;currentLot=function(L){var s=was(L);"
+      + "if(s){s.empty=false;s.age=1;s.coverLeft=1;s.dryD=1;}return s;};try{return tabSourcing();}finally{currentLot=was;}})()");
+    const said = [", 1 day ago", "; 1 day at today's rate", ">1 day at "].filter((t) => !html.includes(t));
+    /* a list ending in 1 ("2, 6, 1 days apart") is plural and stays */
+    ok(!unit.length && !said.length && !/(?<!, )\b1 days\b/.test(html),
+      "nDays says the singular only for 1, and the Stock tile's lot reads 1 day ago, 1 day at today's rate and 1 day at its rate: "
+      + JSON.stringify({ unit, missing: said, oneDays: (/.{0,40}(?<!, )\b1 days\b.{0,20}/.exec(html) || [""])[0] }));
+  } finally { try { w.close(); } catch (e) { /* jsdom */ } }
+  /* and the class: no printer outside the generated blocks writes a count before "days" by itself */
+  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");   /* the run's master, so a mutation reaches it */
+  const body = src.slice(src.indexOf("/* ==== END GEO ==== */"));
+  const bare = [...body.matchAll(/\$\{(?:[^{}`]|\{\})+?\} (?:(?:public )?holiday |lead |review )?days?\b|[\w.)\]]+ ?\+ ?['"] ?days?\b/g)].map((m) => m[0].slice(-40));
+  ok(!bare.length, "and no other printer in the master writes a count of days by itself: " + (bare.join(" | ") || "none"));
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
