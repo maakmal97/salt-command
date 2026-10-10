@@ -1,0 +1,52 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-10T10:01:40.605Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-10",
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Cancellation against CS6-BS's order of 1 unit for RM 110 agreed 2026-10-10. The order is withdrawn and counts nowhere. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s248",
+   "amendKind": "Cancellation",
+   "entry": {
+    "at": "2026-10-10T10:01:40.605Z",
+    "type": "SELL",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 0,
+    "status": "Cancellation",
+    "raw": "Cancellation on CS6-BS, order 20261009132912-8kglqg, recorded 2026-10-10",
+    "payload": {
+     "mode": "amend",
+     "kind": "Cancellation",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "rid": null,
+     "orderKey": "CS6-BS|2026-10-10|110",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-10",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "Withdrawn on the statements site by the desk, order 20261009132912-8kglqg."
+    },
+    "orderId": "20261009132912-8kglqg"
+   },
+   "decidedAt": "2026-10-10T10:07:10.565Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
